@@ -55,11 +55,16 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_WEEK;
 import java.util.Locale;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.NumberPrinterParser;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestNumberParser extends AbstractTestPrinterParser {
 
     Object[][] data_error() {

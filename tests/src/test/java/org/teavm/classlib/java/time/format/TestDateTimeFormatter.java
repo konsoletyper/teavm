@@ -60,6 +60,7 @@ import java.util.Locale;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TLocalTime;
@@ -68,7 +69,11 @@ import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.TZonedDateTime;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalQuery;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestDateTimeFormatter {
 
     private static final TDateTimeFormatter BASIC_FORMATTER = TDateTimeFormatter.ofPattern("'ONE'd");

@@ -44,47 +44,58 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.teavm.classlib.java.time.temporal;
+package org.teavm.classlib.java.time.format;
 
-import org.teavm.classlib.java.time.TDateTimeException;
+import static org.junit.Assert.assertEquals;
 
-public final class MockFieldValue implements TTemporalAccessor {
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.StringLiteralPrinterParser;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
-    private final TTemporalField field;
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
+public class TestStringLiteralPrinter extends AbstractTestPrinterParser {
 
-    private final long value;
+    @Test
+    public void test_print_emptyCalendrical() {
 
-    public MockFieldValue(TTemporalField field, long value) {
-
-        this.field = field;
-        this.value = value;
+        this.buf.append("EXISTING");
+        StringLiteralPrinterParser pp = new StringLiteralPrinterParser("hello");
+        pp.print(this.printEmptyContext, this.buf);
+        assertEquals(this.buf.toString(), "EXISTINGhello");
     }
 
-    @Override
-    public boolean isSupported(TTemporalField field) {
+    @Test
+    public void test_print_dateTime() {
 
-        return field != null && field.equals(this.field);
+        this.buf.append("EXISTING");
+        StringLiteralPrinterParser pp = new StringLiteralPrinterParser("hello");
+        pp.print(this.printContext, this.buf);
+        assertEquals(this.buf.toString(), "EXISTINGhello");
     }
 
-    @Override
-    public TValueRange range(TTemporalField field) {
+    @Test
+    public void test_print_emptyAppendable() {
 
-        if (field instanceof TChronoField) {
-            if (isSupported(field)) {
-                return field.range();
-            }
-            throw new TDateTimeException("Unsupported field: " + field);
-        }
-        return field.rangeRefinedBy(this);
+        StringLiteralPrinterParser pp = new StringLiteralPrinterParser("hello");
+        pp.print(this.printContext, this.buf);
+        assertEquals(this.buf.toString(), "hello");
     }
 
-    @Override
-    public long getLong(TTemporalField field) {
+    @Test
+    public void test_toString() {
 
-        if (this.field.equals(field)) {
-            return this.value;
-        }
-        throw new TDateTimeException("Unsupported field: " + field);
+        StringLiteralPrinterParser pp = new StringLiteralPrinterParser("hello");
+        assertEquals(pp.toString(), "'hello'");
+    }
+
+    @Test
+    public void test_toString_apos() {
+
+        StringLiteralPrinterParser pp = new StringLiteralPrinterParser("o'clock");
+        assertEquals(pp.toString(), "'o''clock'");
     }
 
 }

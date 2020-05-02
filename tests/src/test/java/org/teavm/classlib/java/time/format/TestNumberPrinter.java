@@ -52,11 +52,16 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
 import static org.teavm.classlib.java.time.temporal.TChronoField.HOUR_OF_DAY;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.NumberPrinterParser;
 import org.teavm.classlib.java.time.temporal.MockFieldValue;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestNumberPrinter extends AbstractTestPrinterParser {
 
     @Test(expected = TDateTimeException.class)

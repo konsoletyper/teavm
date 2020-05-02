@@ -49,8 +49,13 @@ package org.teavm.classlib.java.time.format;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.SettingsParser;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestSettingsParser extends AbstractTestPrinterParser {
 
     @Test

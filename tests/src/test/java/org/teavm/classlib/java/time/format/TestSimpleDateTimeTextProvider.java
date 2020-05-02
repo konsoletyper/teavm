@@ -54,8 +54,13 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 import java.util.Locale;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestSimpleDateTimeTextProvider {
 
     Locale enUS = new Locale("en", "US");

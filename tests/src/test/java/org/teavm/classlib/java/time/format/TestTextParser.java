@@ -55,11 +55,16 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 import java.util.Locale;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.TextPrinterParser;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestTextParser extends AbstractTestPrinterParser {
 
     private static final TDateTimeTextProvider PROVIDER = TDateTimeTextProvider.getInstance();

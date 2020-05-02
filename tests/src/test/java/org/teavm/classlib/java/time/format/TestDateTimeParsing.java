@@ -60,6 +60,7 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_MINUT
 import java.util.Locale;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TInstant;
 import org.teavm.classlib.java.time.TLocalDateTime;
@@ -67,7 +68,11 @@ import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.TZonedDateTime;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestDateTimeParsing {
 
     private static final TZoneId PARIS = TZoneId.of("Europe/Paris");

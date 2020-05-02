@@ -51,27 +51,41 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
 import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_WEEK;
 import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
-import org.junit.Before;
 import org.junit.Test;
-import org.teavm.classlib.java.time.TLocalDateTime;
-import org.teavm.classlib.java.time.TMonth;
+import org.junit.runner.RunWith;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.TLocalDate;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.TextPrinterParser;
+import org.teavm.classlib.java.time.temporal.MockFieldValue;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
-public class TestDateTimeTextPrinting {
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
+public class TestTextPrinter extends AbstractTestPrinterParser {
 
-    private TDateTimeFormatterBuilder builder;
+    private static final TDateTimeTextProvider PROVIDER = TDateTimeTextProvider.getInstance();
 
-    @Before
-    public void setUp() {
+    @Test(expected = TDateTimeException.class)
+    public void test_print_emptyCalendrical() {
 
-        this.builder = new TDateTimeFormatterBuilder();
+        TextPrinterParser pp = new TextPrinterParser(DAY_OF_WEEK, TTextStyle.FULL, PROVIDER);
+        pp.print(this.printEmptyContext, this.buf);
     }
 
-    Object[][] data_text() {
+    public void test_print_append() {
+
+        this.printContext.setDateTime(TLocalDate.of(2012, 4, 18));
+        TextPrinterParser pp = new TextPrinterParser(DAY_OF_WEEK, TTextStyle.FULL, PROVIDER);
+        this.buf.append("EXISTING");
+        pp.print(this.printContext, this.buf);
+        assertEquals(this.buf.toString(), "EXISTINGWednesday");
+    }
+
+    Object[][] provider_dow() {
 
         return new Object[][] { { DAY_OF_WEEK, TTextStyle.FULL, 1, "Monday" },
         { DAY_OF_WEEK, TTextStyle.FULL, 2, "Tuesday" }, { DAY_OF_WEEK, TTextStyle.FULL, 3, "Wednesday" },
@@ -99,107 +113,54 @@ public class TestDateTimeTextPrinting {
     }
 
     @Test
-    public void test_appendText2arg_print() {
+    public void test_print() {
 
-        for (Object[] data : data_text()) {
+        for (Object[] data : provider_dow()) {
+            StringBuilder sb = new StringBuilder();
             TTemporalField field = (TTemporalField) data[0];
             TTextStyle style = (TTextStyle) data[1];
             int value = (int) data[2];
             String expected = (String) data[3];
 
-            TDateTimeFormatter f = new TDateTimeFormatterBuilder().appendText(field, style).toFormatter(Locale.ENGLISH);
-            TLocalDateTime dt = TLocalDateTime.of(2010, 1, 1, 0, 0);
-            dt = dt.with(field, value);
-            String text = f.format(dt);
-            assertEquals(text, expected);
+            this.printContext.setDateTime(new MockFieldValue(field, value));
+            TextPrinterParser pp = new TextPrinterParser(field, style, PROVIDER);
+            pp.print(this.printContext, sb);
+            assertEquals(sb.toString(), expected);
         }
     }
 
     @Test
-    public void test_appendText1arg_print() {
+    public void test_print_french_long() {
 
-        for (Object[] data : data_text()) {
-            TTemporalField field = (TTemporalField) data[0];
-            TTextStyle style = (TTextStyle) data[1];
-            int value = (int) data[2];
-            String expected = (String) data[3];
-
-            if (style == TTextStyle.FULL) {
-                TDateTimeFormatter f = new TDateTimeFormatterBuilder().appendText(field).toFormatter(Locale.ENGLISH);
-                TLocalDateTime dt = TLocalDateTime.of(2010, 1, 1, 0, 0);
-                dt = dt.with(field, value);
-                String text = f.format(dt);
-                assertEquals(text, expected);
-            }
-        }
+        this.printContext.setLocale(Locale.FRENCH);
+        this.printContext.setDateTime(TLocalDate.of(2012, 1, 1));
+        TextPrinterParser pp = new TextPrinterParser(MONTH_OF_YEAR, TTextStyle.FULL, PROVIDER);
+        pp.print(this.printContext, this.buf);
+        assertEquals(this.buf.toString(), "janvier");
     }
 
     @Test
-    public void test_print_appendText2arg_french_long() {
+    public void test_print_french_short() {
 
-        TDateTimeFormatter f = this.builder.appendText(MONTH_OF_YEAR, TTextStyle.FULL).toFormatter(Locale.FRENCH);
-        TLocalDateTime dt = TLocalDateTime.of(2010, 1, 1, 0, 0);
-        String text = f.format(dt);
-        assertEquals(text, "janvier");
+        this.printContext.setLocale(Locale.FRENCH);
+        this.printContext.setDateTime(TLocalDate.of(2012, 1, 1));
+        TextPrinterParser pp = new TextPrinterParser(MONTH_OF_YEAR, TTextStyle.SHORT, PROVIDER);
+        pp.print(this.printContext, this.buf);
+        assertEquals(this.buf.toString(), "janv.");
     }
 
     @Test
-    public void test_print_appendText2arg_french_short() {
+    public void test_toString1() {
 
-        TDateTimeFormatter f = this.builder.appendText(MONTH_OF_YEAR, TTextStyle.SHORT).toFormatter(Locale.FRENCH);
-        TLocalDateTime dt = TLocalDateTime.of(2010, 1, 1, 0, 0);
-        String text = f.format(dt);
-        assertEquals(text, "janv.");
+        TextPrinterParser pp = new TextPrinterParser(MONTH_OF_YEAR, TTextStyle.FULL, PROVIDER);
+        assertEquals(pp.toString(), "Text(MonthOfYear)");
     }
 
     @Test
-    public void test_appendTextMap() {
+    public void test_toString2() {
 
-        Map<Long, String> map = new HashMap<>();
-        map.put(1L, "JNY");
-        map.put(2L, "FBY");
-        map.put(3L, "MCH");
-        map.put(4L, "APL");
-        map.put(5L, "MAY");
-        map.put(6L, "JUN");
-        map.put(7L, "JLY");
-        map.put(8L, "AGT");
-        map.put(9L, "SPT");
-        map.put(10L, "OBR");
-        map.put(11L, "NVR");
-        map.put(12L, "DBR");
-        this.builder.appendText(MONTH_OF_YEAR, map);
-        TDateTimeFormatter f = this.builder.toFormatter();
-        TLocalDateTime dt = TLocalDateTime.of(2010, 1, 1, 0, 0);
-        for (TMonth month : TMonth.values()) {
-            assertEquals(f.format(dt.with(month)), map.get((long) month.getValue()));
-        }
-    }
-
-    @Test
-    public void test_appendTextMap_DOM() {
-
-        Map<Long, String> map = new HashMap<Long, String>();
-        map.put(1L, "1st");
-        map.put(2L, "2nd");
-        map.put(3L, "3rd");
-        this.builder.appendText(DAY_OF_MONTH, map);
-        TDateTimeFormatter f = this.builder.toFormatter();
-        TLocalDateTime dt = TLocalDateTime.of(2010, 1, 1, 0, 0);
-        assertEquals(f.format(dt.withDayOfMonth(1)), "1st");
-        assertEquals(f.format(dt.withDayOfMonth(2)), "2nd");
-        assertEquals(f.format(dt.withDayOfMonth(3)), "3rd");
-    }
-
-    @Test
-    public void test_appendTextMapIncomplete() {
-
-        Map<Long, String> map = new HashMap<Long, String>();
-        map.put(1L, "JNY");
-        this.builder.appendText(MONTH_OF_YEAR, map);
-        TDateTimeFormatter f = this.builder.toFormatter();
-        TLocalDateTime dt = TLocalDateTime.of(2010, 2, 1, 0, 0);
-        assertEquals(f.format(dt), "2");
+        TextPrinterParser pp = new TextPrinterParser(MONTH_OF_YEAR, TTextStyle.SHORT, PROVIDER);
+        assertEquals(pp.toString(), "Text(MonthOfYear,SHORT)");
     }
 
 }

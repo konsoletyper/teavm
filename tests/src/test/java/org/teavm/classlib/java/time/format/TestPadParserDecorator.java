@@ -50,11 +50,16 @@ import static org.junit.Assert.assertEquals;
 import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.CharLiteralPrinterParser;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.NumberPrinterParser;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.PadPrinterParserDecorator;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestPadParserDecorator extends AbstractTestPrinterParser {
 
     @Test(expected = IndexOutOfBoundsException.class)

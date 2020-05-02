@@ -50,37 +50,47 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
-import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.CharLiteralPrinterParser;
+import org.junit.runner.RunWith;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.StringLiteralPrinterParser;
 import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
-public class TestCharLiteralParser extends AbstractTestPrinterParser {
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
+public class TestStringLiteralParser extends AbstractTestPrinterParser {
 
     Object[][] data_success() {
 
         return new Object[][] {
         // match
-        { new CharLiteralPrinterParser('a'), true, "a", 0, 1 },
-        { new CharLiteralPrinterParser('a'), true, "aOTHER", 0, 1 },
-        { new CharLiteralPrinterParser('a'), true, "OTHERaOTHER", 5, 6 },
-        { new CharLiteralPrinterParser('a'), true, "OTHERa", 5, 6 },
+        { new StringLiteralPrinterParser("hello"), true, "hello", 0, 5 },
+        { new StringLiteralPrinterParser("hello"), true, "helloOTHER", 0, 5 },
+        { new StringLiteralPrinterParser("hello"), true, "OTHERhelloOTHER", 5, 10 },
+        { new StringLiteralPrinterParser("hello"), true, "OTHERhello", 5, 10 },
 
         // no match
-        { new CharLiteralPrinterParser('a'), true, "", 0, ~0 }, { new CharLiteralPrinterParser('a'), true, "a", 1, ~1 },
-        { new CharLiteralPrinterParser('a'), true, "A", 0, ~0 },
-        { new CharLiteralPrinterParser('a'), true, "b", 0, ~0 },
-        { new CharLiteralPrinterParser('a'), true, "OTHERbOTHER", 5, ~5 },
-        { new CharLiteralPrinterParser('a'), true, "OTHERb", 5, ~5 },
+        { new StringLiteralPrinterParser("hello"), true, "", 0, ~0 },
+        { new StringLiteralPrinterParser("hello"), true, "a", 1, ~1 },
+        { new StringLiteralPrinterParser("hello"), true, "HELLO", 0, ~0 },
+        { new StringLiteralPrinterParser("hello"), true, "hlloo", 0, ~0 },
+        { new StringLiteralPrinterParser("hello"), true, "OTHERhllooOTHER", 5, ~5 },
+        { new StringLiteralPrinterParser("hello"), true, "OTHERhlloo", 5, ~5 },
+        { new StringLiteralPrinterParser("hello"), true, "h", 0, ~0 },
+        { new StringLiteralPrinterParser("hello"), true, "OTHERh", 5, ~5 },
 
         // case insensitive
-        { new CharLiteralPrinterParser('a'), false, "a", 0, 1 },
-        { new CharLiteralPrinterParser('a'), false, "A", 0, 1 }, };
+        { new StringLiteralPrinterParser("hello"), false, "hello", 0, 5 },
+        { new StringLiteralPrinterParser("hello"), false, "HELLO", 0, 5 },
+        { new StringLiteralPrinterParser("hello"), false, "HelLo", 0, 5 },
+        { new StringLiteralPrinterParser("hello"), false, "HelLO", 0, 5 }, };
     }
 
     @Test
     public void test_parse_success() {
 
         for (Object[] data : data_success()) {
-            CharLiteralPrinterParser pp = (CharLiteralPrinterParser) data[0];
+            StringLiteralPrinterParser pp = (StringLiteralPrinterParser) data[0];
             boolean caseSensitive = (boolean) data[1];
             String text = (String) data[2];
             int pos = (int) data[3];
@@ -96,15 +106,16 @@ public class TestCharLiteralParser extends AbstractTestPrinterParser {
 
     Object[][] data_error() {
 
-        return new Object[][] { { new CharLiteralPrinterParser('a'), "a", -1, IndexOutOfBoundsException.class },
-        { new CharLiteralPrinterParser('a'), "a", 2, IndexOutOfBoundsException.class }, };
+        return new Object[][] {
+        { new StringLiteralPrinterParser("hello"), "hello", -1, IndexOutOfBoundsException.class },
+        { new StringLiteralPrinterParser("hello"), "hello", 6, IndexOutOfBoundsException.class }, };
     }
 
     @Test
     public void test_parse_error() {
 
         for (Object[] data : data_error()) {
-            CharLiteralPrinterParser pp = (CharLiteralPrinterParser) data[0];
+            StringLiteralPrinterParser pp = (StringLiteralPrinterParser) data[0];
             String text = (String) data[1];
             int pos = (int) data[2];
             Class<?> expected = (Class<?>) data[3];

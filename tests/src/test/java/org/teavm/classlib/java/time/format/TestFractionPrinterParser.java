@@ -54,6 +54,7 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_MINUT
 import java.util.Locale;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDateTime;
 import org.teavm.classlib.java.time.TLocalTime;
@@ -63,7 +64,11 @@ import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.FractionPrinterParser;
 import org.teavm.classlib.java.time.temporal.MockFieldValue;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestFractionPrinterParser extends AbstractTestPrinterParser {
 
     @Test(expected = TDateTimeException.class)

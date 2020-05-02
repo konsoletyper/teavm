@@ -53,11 +53,16 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.OFFSET_SECONDS;
 import java.util.Locale;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.OffsetIdPrinterParser;
 import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestZoneOffsetParser extends AbstractTestPrinterParser {
 
     Object[][] data_error() {

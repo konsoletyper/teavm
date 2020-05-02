@@ -50,10 +50,15 @@ import static org.junit.Assert.assertEquals;
 import static org.teavm.classlib.java.time.temporal.TChronoField.OFFSET_SECONDS;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.OffsetIdPrinterParser;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestZoneOffsetPrinter extends AbstractTestPrinterParser {
 
     private static final TZoneOffset OFFSET_0130 = TZoneOffset.of("+01:30");

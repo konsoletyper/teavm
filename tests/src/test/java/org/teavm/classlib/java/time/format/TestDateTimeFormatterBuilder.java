@@ -60,8 +60,13 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestDateTimeFormatterBuilder {
 
     private TDateTimeFormatterBuilder builder;

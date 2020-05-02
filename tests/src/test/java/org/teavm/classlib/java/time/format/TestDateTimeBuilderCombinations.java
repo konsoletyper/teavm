@@ -60,6 +60,7 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.PROLEPTIC_MONTH
 import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.TInstant;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TZoneId;
@@ -68,7 +69,11 @@ import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TTemporalQuery;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestDateTimeBuilderCombinations {
 
     private static final TZoneId PARIS = TZoneId.of("Europe/Paris");

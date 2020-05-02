@@ -53,6 +53,7 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
 import java.util.Locale;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TLocalDateTime;
@@ -60,7 +61,11 @@ import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.TZonedDateTime;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.ReducedPrinterParser;
 import org.teavm.classlib.java.time.temporal.MockFieldValue;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestReducedPrinter extends AbstractTestPrinterParser {
 
     @Test(expected = TDateTimeException.class)
