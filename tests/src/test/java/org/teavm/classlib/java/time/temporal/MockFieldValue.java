@@ -1,6 +1,21 @@
 /*
- * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
+ *  Copyright 2020 Alexey Andreev.
  *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
+ * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
+*
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,21 +44,31 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.jdk8;
+package org.teavm.classlib.java.time.temporal;
 
-import org.threeten.bp.temporal.ChronoField;
-import org.threeten.bp.temporal.TemporalAccessor;
-import org.threeten.bp.temporal.TemporalField;
-import org.threeten.bp.temporal.TemporalQueries;
-import org.threeten.bp.temporal.TemporalQuery;
-import org.threeten.bp.temporal.UnsupportedTemporalTypeException;
-import org.threeten.bp.temporal.ValueRange;
+import java.time.DateTimeException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.ValueRange;
 
 /**
- * A temporary class providing implementations that will become default interface
- * methods once integrated into JDK 8.
+ * Mock simple date-time with one field-value.
  */
-public abstract class DefaultInterfaceTemporalAccessor implements TemporalAccessor {
+public final class MockFieldValue implements TemporalAccessor {
+
+    private final TemporalField field;
+    private final long value;
+
+    public MockFieldValue(TemporalField field, long value) {
+        this.field = field;
+        this.value = value;
+    }
+
+    @Override
+    public boolean isSupported(TemporalField field) {
+        return field != null && field.equals(this.field);
+    }
 
     @Override
     public ValueRange range(TemporalField field) {
@@ -51,22 +76,17 @@ public abstract class DefaultInterfaceTemporalAccessor implements TemporalAccess
             if (isSupported(field)) {
                 return field.range();
             }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            throw new DateTimeException("Unsupported field: " + field);
         }
         return field.rangeRefinedBy(this);
     }
 
     @Override
-    public int get(TemporalField field) {
-        return range(field).checkValidIntValue(getLong(field), field);
-    }
-
-    @Override
-    public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQueries.zoneId() || query == TemporalQueries.chronology() || query == TemporalQueries.precision()) {
-            return null;
+    public long getLong(TemporalField field) {
+        if (this.field.equals(field)) {
+            return value;
         }
-        return query.queryFrom(this);
+        throw new DateTimeException("Unsupported field: " + field);
     }
 
 }

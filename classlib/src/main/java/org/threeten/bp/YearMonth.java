@@ -88,7 +88,6 @@ import org.threeten.bp.temporal.ValueRange;
  */
 public final class YearMonth
         implements Temporal, TemporalAdjuster, Comparable<YearMonth>, Serializable, TemporalAccessor {
-
     /**
      * Parser.
      */
