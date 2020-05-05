@@ -56,12 +56,17 @@ import java.time.Month;
 import java.time.OffsetDateTime;
 import java.time.Year;
 import java.time.ZoneOffset;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.Test;
 
 /**
  * Test OffsetDateTime creation.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestOffsetDateTimeInstants {
 
     private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);

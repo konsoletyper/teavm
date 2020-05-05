@@ -70,6 +70,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -78,6 +81,8 @@ import org.testng.annotations.Test;
  * Test DayOfWeek.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestDayOfWeek extends AbstractDateTimeTest {
 
     @BeforeMethod

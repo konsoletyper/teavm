@@ -59,6 +59,9 @@ import java.time.chrono.ThaiBuddhistChronology;
 import java.time.temporal.ChronoField;
 import java.util.Locale;
 import java.util.Set;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -68,6 +71,8 @@ import org.testng.annotations.Test;
  * Test Chrono class.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestChronology {
 
     @BeforeMethod

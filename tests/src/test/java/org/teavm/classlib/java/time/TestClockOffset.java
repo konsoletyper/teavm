@@ -55,12 +55,17 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.Test;
 
 /**
  * Test offset clock.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestClockOffset extends AbstractTest {
 
     private static final ZoneId MOSCOW = ZoneId.of("Europe/Moscow");

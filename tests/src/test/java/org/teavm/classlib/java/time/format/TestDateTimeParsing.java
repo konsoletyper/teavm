@@ -65,6 +65,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalAccessor;
 import java.util.Locale;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -72,6 +75,8 @@ import org.testng.annotations.Test;
  * Test parsing of edge cases.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestDateTimeParsing {
 
     private static final ZoneId PARIS = ZoneId.of("Europe/Paris");

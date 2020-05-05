@@ -52,12 +52,17 @@ import java.time.format.DecimalStyle;
 import java.util.Locale;
 import java.util.Set;
 
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.Test;
 
 /**
  * Test DecimalStyle.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestDecimalStyle {
 
     @Test

@@ -68,6 +68,9 @@ import static org.threeten.bp.zone.ZoneOffsetTransitionRule.TimeDefinition.WALL;
 
 import java.util.List;
 
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.Test;
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.LocalDateTime;
@@ -81,6 +84,8 @@ import org.threeten.bp.zone.ZoneOffsetTransitionRule.TimeDefinition;
  * Test ZoneRulesBuilder.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestZoneRulesBuilder {
 
     private static final ZoneOffset OFFSET_1 = ZoneOffset.ofHours(1);

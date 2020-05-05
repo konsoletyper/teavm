@@ -66,6 +66,9 @@ import java.time.chrono.IsoChronology;
 import java.time.chrono.IsoEra;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAdjusters;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -74,6 +77,8 @@ import org.testng.annotations.Test;
  * Test.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestIsoChronology {
 
     //-----------------------------------------------------------------------

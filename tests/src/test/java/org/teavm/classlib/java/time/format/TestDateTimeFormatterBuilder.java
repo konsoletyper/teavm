@@ -60,6 +60,9 @@ import java.time.format.TextStyle;
 import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -68,6 +71,8 @@ import org.testng.annotations.Test;
  * Test DateTimeFormatterBuilder.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestDateTimeFormatterBuilder {
 
     private DateTimeFormatterBuilder builder;

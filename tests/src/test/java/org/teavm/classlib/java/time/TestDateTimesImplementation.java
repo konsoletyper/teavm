@@ -48,6 +48,9 @@ package org.teavm.classlib.java.time;
 
 import static org.testng.Assert.assertEquals;
 
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.threeten.bp.jdk8.Jdk8Methods;
@@ -56,6 +59,8 @@ import org.threeten.bp.jdk8.Jdk8Methods;
  * Test.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestDateTimesImplementation {
 
     //-----------------------------------------------------------------------

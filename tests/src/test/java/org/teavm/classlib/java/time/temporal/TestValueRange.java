@@ -49,7 +49,10 @@ package org.teavm.classlib.java.time.temporal;
 import static org.testng.Assert.assertEquals;
 
 import java.time.temporal.ValueRange;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.AbstractTest;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -57,6 +60,8 @@ import org.testng.annotations.Test;
  * Test.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestValueRange extends AbstractTest {
 
     //-----------------------------------------------------------------------

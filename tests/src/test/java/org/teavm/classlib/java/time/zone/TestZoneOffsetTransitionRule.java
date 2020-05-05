@@ -56,13 +56,18 @@ import java.time.ZoneOffset;
 import java.time.zone.ZoneOffsetTransition;
 import java.time.zone.ZoneOffsetTransitionRule;
 import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.AbstractTest;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.Test;
 
 /**
  * Test ZoneOffsetTransitionRule.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     private static final LocalTime TIME_0100 = LocalTime.of(1, 0);

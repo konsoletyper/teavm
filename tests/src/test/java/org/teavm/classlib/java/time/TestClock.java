@@ -51,12 +51,17 @@ import static org.testng.Assert.assertEquals;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.Test;
 
 /**
  * Test Clock.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestClock {
 
     static class MockInstantClock extends Clock {

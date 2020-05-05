@@ -44,26 +44,32 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.zone;
+package org.teavm.classlib.java.time.zone;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
-
+import java.time.ZoneOffset;
+import java.time.zone.ZoneRules;
+import java.time.zone.ZoneRulesException;
+import java.time.zone.ZoneRulesProvider;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
-
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.Test;
-import org.threeten.bp.ZoneOffset;
 
 /**
  * Test ZoneRulesProvider.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestZoneRulesProvider {
 
     //-----------------------------------------------------------------------
@@ -94,12 +100,12 @@ public class TestZoneRulesProvider {
         assertEquals(rules2, rules);
     }
 
-    @Test(expectedExceptions=ZoneRulesException.class)
+    @Test(expectedExceptions = ZoneRulesException.class)
     public void test_getRules_String_unknownId() {
         ZoneRulesProvider.getRules("Europe/Lon", false);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_getRules_String_null() {
         ZoneRulesProvider.getRules(null, false);
     }
@@ -114,19 +120,19 @@ public class TestZoneRulesProvider {
         ZoneRules rules = ZoneRulesProvider.getRules("Europe/London", false);
         assertEquals(versions.lastEntry().getValue(), rules);
 
-        NavigableMap<String, ZoneRules> copy = new TreeMap<String, ZoneRules>(versions);
+        NavigableMap<String, ZoneRules> copy = new TreeMap<>(versions);
         versions.clear();
         assertEquals(versions.size(), 0);
         NavigableMap<String, ZoneRules> versions2 = ZoneRulesProvider.getVersions("Europe/London");
         assertEquals(versions2, copy);
     }
 
-    @Test(expectedExceptions=ZoneRulesException.class)
+    @Test(expectedExceptions = ZoneRulesException.class)
     public void test_getVersions_String_unknownId() {
         ZoneRulesProvider.getVersions("Europe/Lon");
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_getVersions_String_null() {
         ZoneRulesProvider.getVersions(null);
     }

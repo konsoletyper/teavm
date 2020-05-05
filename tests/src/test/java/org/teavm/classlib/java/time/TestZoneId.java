@@ -65,6 +65,9 @@ import java.util.Map;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import java.time.format.TextStyle;
@@ -77,6 +80,8 @@ import java.time.zone.ZoneRulesException;
  * Test ZoneId.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestZoneId extends AbstractTest {
 
     private static final ZoneId ZONE_PARIS = ZoneId.of("Europe/Paris");

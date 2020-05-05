@@ -70,7 +70,7 @@ final class SimpleDateTimeTextProvider extends DateTimeTextProvider {
     };
 
     /** Cache. */
-    private final Map<Entry<TemporalField, Locale>, Object> cache =  new HashMap<>();
+    private final Map<Entry<TemporalField, Locale>, Object> cache = new HashMap<>();
 
     //-----------------------------------------------------------------------
     @Override

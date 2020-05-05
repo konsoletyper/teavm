@@ -44,42 +44,44 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.zone;
+package org.teavm.classlib.java.time.zone;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.Year;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.TextStyle;
+import java.time.zone.ZoneOffsetTransition;
+import java.time.zone.ZoneOffsetTransitionRule;
+import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;
+import java.time.zone.ZoneRules;
 import java.util.Iterator;
 import java.util.List;
-
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.Test;
-import org.threeten.bp.DayOfWeek;
-import org.threeten.bp.Duration;
-import org.threeten.bp.Instant;
-import org.threeten.bp.LocalDate;
-import org.threeten.bp.LocalDateTime;
-import org.threeten.bp.LocalTime;
-import org.threeten.bp.Month;
-import org.threeten.bp.Year;
-import org.threeten.bp.ZoneId;
-import org.threeten.bp.ZoneOffset;
-import org.threeten.bp.ZonedDateTime;
-import org.threeten.bp.format.DateTimeFormatter;
-import org.threeten.bp.format.DateTimeFormatterBuilder;
-import org.threeten.bp.format.TextStyle;
-import org.threeten.bp.zone.ZoneOffsetTransitionRule.TimeDefinition;
 
 /**
  * Test ZoneRules.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestStandardZoneRules {
 
     private static final ZoneOffset OFFSET_ZERO = ZoneOffset.ofHours(0);
@@ -88,29 +90,6 @@ public class TestStandardZoneRules {
     public static final String LATEST_TZDB = "2009b";
     private static final int OVERLAP = 2;
     private static final int GAP = 0;
-
-    //-----------------------------------------------------------------------
-    // Basics
-    //-----------------------------------------------------------------------
-    public void test_serialization_loaded() throws Exception {
-        assertSerialization(europeLondon());
-        assertSerialization(europeParis());
-        assertSerialization(americaNewYork());
-    }
-
-    private void assertSerialization(ZoneRules test) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(baos);
-        out.writeObject(test);
-        baos.close();
-        byte[] bytes = baos.toByteArray();
-
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        ObjectInputStream in = new ObjectInputStream(bais);
-        ZoneRules result = (ZoneRules) in.readObject();
-
-        assertEquals(result, test);
-    }
     
     //-----------------------------------------------------------------------
     // Etc/GMT
@@ -663,7 +642,8 @@ public class TestStandardZoneRules {
                 assertEquals(test.getOffset(instant), OFFSET_PONE, zdt.toString());
             } else {
                 assertEquals(test.getStandardOffset(instant), OFFSET_ZERO, zdt.toString());
-                assertEquals(test.getOffset(instant), zdt.getMonth() == Month.JANUARY ? OFFSET_ZERO : OFFSET_PONE, zdt.toString());
+                assertEquals(test.getOffset(instant), zdt.getMonth() == Month.JANUARY ? OFFSET_ZERO : OFFSET_PONE,
+                        zdt.toString());
             }
             zdt = zdt.plusMonths(6);
         }
@@ -1106,13 +1086,13 @@ public class TestStandardZoneRules {
     }
 
     //-------------------------------------------------------------------------
-    @Test(expectedExceptions=UnsupportedOperationException.class)
+    @Test(expectedExceptions = UnsupportedOperationException.class)
     public void test_getTransitions_immutable() {
         ZoneRules test = europeParis();
         test.getTransitions().clear();
     }
 
-    @Test(expectedExceptions=UnsupportedOperationException.class)
+    @Test(expectedExceptions = UnsupportedOperationException.class)
     public void test_getTransitionRules_immutable() {
         ZoneRules test = europeParis();
         test.getTransitionRules().clear();
@@ -1160,7 +1140,8 @@ public class TestStandardZoneRules {
         return LocalDateTime.of(year, month, day, hour, min).toInstant(offset);
     }
 
-    private Instant createInstant(int year, int month, int day, int hour, int min, int sec, int nano, ZoneOffset offset) {
+    private Instant createInstant(int year, int month, int day, int hour, int min, int sec, int nano,
+            ZoneOffset offset) {
         return LocalDateTime.of(year, month, day, hour, min, sec, nano).toInstant(offset);
     }
 

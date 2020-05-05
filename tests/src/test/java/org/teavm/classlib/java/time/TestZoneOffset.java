@@ -68,12 +68,17 @@ import java.time.temporal.TemporalQueries;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.Test;
 
 /**
  * Test ZoneOffset.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestZoneOffset extends AbstractDateTimeTest {
 
     //-----------------------------------------------------------------------

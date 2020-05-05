@@ -40,7 +40,6 @@ import static org.threeten.bp.temporal.ChronoUnit.DAYS;
 import static org.threeten.bp.temporal.ChronoUnit.MONTHS;
 import static org.threeten.bp.temporal.ChronoUnit.WEEKS;
 import static org.threeten.bp.temporal.ChronoUnit.YEARS;
-
 import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.util.GregorianCalendar;

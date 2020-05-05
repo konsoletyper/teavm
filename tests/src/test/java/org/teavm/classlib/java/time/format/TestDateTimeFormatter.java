@@ -68,6 +68,9 @@ import java.time.format.SignStyle;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQuery;
 import java.util.Locale;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -75,6 +78,8 @@ import org.testng.annotations.Test;
  * Test DateTimeFormatter.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestDateTimeFormatter {
 
     private static final DateTimeFormatter BASIC_FORMATTER = DateTimeFormatter.ofPattern("'ONE'd");

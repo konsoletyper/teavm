@@ -109,6 +109,9 @@ import java.time.temporal.TemporalQueries;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -117,6 +120,8 @@ import org.testng.annotations.Test;
  * Test OffsetDateTime.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     private static final ZoneId ZONE_PARIS = ZoneId.of("Europe/Paris");

@@ -105,7 +105,10 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.temporal.MockFieldNoValue;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -114,6 +117,8 @@ import org.testng.annotations.Test;
  * Test LocalTime.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestLocalTime extends AbstractDateTimeTest {
 
     private LocalTime test12x30x40x987654321;

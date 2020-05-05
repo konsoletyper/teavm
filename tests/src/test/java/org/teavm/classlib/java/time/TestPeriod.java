@@ -51,6 +51,9 @@ import static org.testng.Assert.assertSame;
 
 import java.time.LocalDate;
 import java.time.Period;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -58,6 +61,8 @@ import org.testng.annotations.Test;
  * Test.
  */
 @Test
+@RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestPeriod extends AbstractTest {
     //-----------------------------------------------------------------------
     // factories
