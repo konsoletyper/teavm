@@ -1398,7 +1398,7 @@ public class TestLocalDateTime extends AbstractDateTimeTest {
 
     @Test(dataProvider = "samplePlusWeeksSymmetry")
     public void test_plusWeeks_symmetry(LocalDateTime reference) {
-        for (int weeks = 0; weeks < 365 * 8; weeks++) {
+        for (int weeks = 0; weeks < 52 * 8; weeks++) {
             LocalDateTime t = reference.plusWeeks(weeks).plusWeeks(-weeks);
             assertEquals(t, reference);
 
@@ -2108,7 +2108,7 @@ public class TestLocalDateTime extends AbstractDateTimeTest {
 
     @Test(dataProvider = "sampleMinusWeeksSymmetry")
     public void test_minusWeeks_symmetry(LocalDateTime reference) {
-        for (int weeks = 0; weeks < 365 * 8; weeks++) {
+        for (int weeks = 0; weeks < 52 * 8; weeks++) {
             LocalDateTime t = reference.minusWeeks(weeks).minusWeeks(-weeks);
             assertEquals(t, reference);
 
@@ -2728,7 +2728,7 @@ public class TestLocalDateTime extends AbstractDateTimeTest {
     public void test_toEpochSecond_afterEpoch() {
         for (int i = -5; i < 5; i++) {
             ZoneOffset offset = ZoneOffset.ofHours(i);
-            for (int j = 0; j < 100000; j++) {
+            for (int j = 0; j < 1000; j++) {
                 LocalDateTime a = LocalDateTime.of(1970, 1, 1, 0, 0).plusSeconds(j);
                 assertEquals(a.toEpochSecond(offset), j - i * 3600);
             }
@@ -2737,7 +2737,7 @@ public class TestLocalDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_toEpochSecond_beforeEpoch() {
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 1000; i++) {
             LocalDateTime a = LocalDateTime.of(1970, 1, 1, 0, 0).minusSeconds(i);
             assertEquals(a.toEpochSecond(ZoneOffset.UTC), -i);
         }
@@ -2808,20 +2808,20 @@ public class TestLocalDateTime extends AbstractDateTimeTest {
             for (int j = 0; j < localDateTimes.length; j++) {
                 LocalDateTime b = localDateTimes[j];
                 if (i < j) {
-                    assertTrue(a.compareTo(b) < 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), true, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), false, a + " <=> " + b);
-                    assertEquals(a.equals(b), false, a + " <=> " + b);
+                    assertTrue(a.compareTo(b) < 0);
+                    assertTrue(a.isBefore(b));
+                    assertFalse(a.isAfter(b));
+                    assertFalse(a.equals(b));
                 } else if (i > j) {
-                    assertTrue(a.compareTo(b) > 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), false, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), true, a + " <=> " + b);
-                    assertEquals(a.equals(b), false, a + " <=> " + b);
+                    assertTrue(a.compareTo(b) > 0);
+                    assertFalse(a.isBefore(b));
+                    assertTrue(a.isAfter(b));
+                    assertFalse(a.equals(b));
                 } else {
-                    assertEquals(a.compareTo(b), 0, a + " <=> " + b);
-                    assertEquals(a.isBefore(b), false, a + " <=> " + b);
-                    assertEquals(a.isAfter(b), false, a + " <=> " + b);
-                    assertEquals(a.equals(b), true, a + " <=> " + b);
+                    assertEquals(a.compareTo(b), 0);
+                    assertFalse(a.isBefore(b));
+                    assertFalse(a.isAfter(b));
+                    assertTrue(a.equals(b));
                 }
             }
         }

@@ -452,12 +452,12 @@ public class TestLocalDate extends AbstractDateTimeTest {
         assertEquals(LocalDate.ofEpochDay(minValidEpochdays), LocalDate.of(Year.MIN_VALUE, 1, 1));
 
         LocalDate test = LocalDate.of(0, 1, 1);
-        for (long i = date0000x01x01; i < 700000; i++) {
+        for (long i = date0000x01x01; i < date0000x01x01 + 1000; i++) {
             assertEquals(LocalDate.ofEpochDay(i), test);
             test = next(test);
         }
         test = LocalDate.of(0, 1, 1);
-        for (long i = date0000x01x01; i > -2000000; i--) {
+        for (long i = date0000x01x01; i > date0000x01x01 - 1000; i--) {
             assertEquals(LocalDate.ofEpochDay(i), test);
             test = previous(test);
         }
@@ -1815,12 +1815,12 @@ public class TestLocalDate extends AbstractDateTimeTest {
         long date0000x01x01 = -678941 - 40587;
 
         LocalDate test = LocalDate.of(0, 1, 1);
-        for (long i = date0000x01x01; i < 700000; i++) {
+        for (long i = date0000x01x01; i < date0000x01x01 + 1000; i++) {
             assertEquals(test.toEpochDay(), i);
             test = next(test);
         }
         test = LocalDate.of(0, 1, 1);
-        for (long i = date0000x01x01; i > -2000000; i--) {
+        for (long i = date0000x01x01; i > date0000x01x01 - 1000; i--) {
             assertEquals(test.toEpochDay(), i);
             test = previous(test);
         }

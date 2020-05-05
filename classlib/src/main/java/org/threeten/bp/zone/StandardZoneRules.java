@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.threeten.bp.Duration;
 import org.threeten.bp.Instant;
 import org.threeten.bp.LocalDate;
@@ -90,7 +89,7 @@ final class StandardZoneRules extends ZoneRules implements Serializable {
     /**
      * The map of recent transitions.
      */
-    private final Map<Integer, ZoneOffsetTransition[]> lastRulesCache =  new HashMap<>();
+    private final Map<Integer, ZoneOffsetTransition[]> lastRulesCache = new HashMap<>();
 
     /**
      * Creates an instance.

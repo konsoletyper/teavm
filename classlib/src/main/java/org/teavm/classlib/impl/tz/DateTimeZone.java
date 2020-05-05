@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.impl.tz;
 
+import java.time.zone.ZoneRules;
+
 /**
  * DateTimeZone represents a time zone.
  * <p>
@@ -485,4 +487,6 @@ public abstract class DateTimeZone {
      * @return milliseconds from 1970-01-01T00:00:00Z
      */
     public abstract long previousTransition(long instant);
+
+    public abstract ZoneRules asZoneRules();
 }

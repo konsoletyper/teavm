@@ -79,8 +79,9 @@ public abstract class ZoneRulesProvider {
      * The lookup from zone region ID to provider.
      */
     private static final Map<String, ZoneRulesProvider> ZONES = new HashMap<>();
+
     static {
-        ZoneRulesInitializer.initialize();
+        registerProvider0(new JodaRulesProvider());
     }
 
     //-------------------------------------------------------------------------

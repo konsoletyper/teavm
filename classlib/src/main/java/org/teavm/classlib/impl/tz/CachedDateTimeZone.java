@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.impl.tz;
 
+import java.time.zone.ZoneRules;
+
 /**
  * Improves the performance of requesting time zone offsets and name keys by
  * caching the results. Time zones that have simple rules or are fixed should
@@ -95,6 +97,11 @@ public final class CachedDateTimeZone extends StorableDateTimeZone {
     @Override
     public long previousTransition(long instant) {
         return iZone.previousTransition(instant);
+    }
+
+    @Override
+    public ZoneRules asZoneRules() {
+        return iZone.asZoneRules();
     }
 
     // Although accessed by multiple threads, this method doesn't need to be
