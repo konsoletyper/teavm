@@ -96,15 +96,6 @@ import org.threeten.bp.temporal.ValueRange;
  */
 public final class MonthDay
         implements TemporalAccessor, TemporalAdjuster, Comparable<MonthDay>, Serializable {
-    /**
-     * Parser.
-     */
-    private static final DateTimeFormatter PARSER = new DateTimeFormatterBuilder()
-        .appendLiteral("--")
-        .appendValue(MONTH_OF_YEAR, 2)
-        .appendLiteral('-')
-        .appendValue(DAY_OF_MONTH, 2)
-        .toFormatter();
 
     /**
      * The month-of-year, not null.
@@ -254,7 +245,13 @@ public final class MonthDay
      * @throws DateTimeParseException if the text cannot be parsed
      */
     public static MonthDay parse(CharSequence text) {
-        return parse(text, PARSER);
+        // TODO: get rid of DateTimeFormatterBuilder
+        return parse(text, new DateTimeFormatterBuilder()
+                .appendLiteral("--")
+                .appendValue(MONTH_OF_YEAR, 2)
+                .appendLiteral('-')
+                .appendValue(DAY_OF_MONTH, 2)
+                .toFormatter());
     }
 
     /**

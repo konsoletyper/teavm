@@ -111,9 +111,9 @@ public class LinkedHashMapTest {
         assertNull("Empty LinkedHashMap access", empty.get("nothing"));
         empty.put("something", "here");
 
-        //CHECKSTYLE:OFF
+        //CHECKSTYLE.OFF:StringLiteralEquality
         assertTrue("cannot get element", empty.get("something") == "here");
-        //CHECKSTYLE:ON
+        //CHECKSTYLE.ON:StringLiteralEquality
     }
 
     @Test
@@ -131,9 +131,9 @@ public class LinkedHashMapTest {
         assertNull("Empty hashtable access", empty.get("nothing"));
         empty.put("something", "here");
 
-        //CHECKSTYLE:OFF
+        //CHECKSTYLE.OFF:StringLiteralEquality
         assertTrue("cannot get element", empty.get("something") == "here");
-        // CHECKSTYLE: ON
+        //CHECKSTYLE.ON:StringLiteralEquality
     }
 
     @Test

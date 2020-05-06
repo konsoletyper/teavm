@@ -2931,7 +2931,7 @@ public final class DateTimeFormatterBuilder {
     /**
      * Prints or parses an ISO-8601 instant.
      */
-    static final class InstantPrinterParser implements DateTimePrinterParser {
+    public static final class InstantPrinterParser implements DateTimePrinterParser {
         // days in a 400 year cycle = 146097
         // days in a 10,000 year cycle = 146097 * 25
         // seconds per day = 86400
@@ -2940,7 +2940,7 @@ public final class DateTimeFormatterBuilder {
 
         private final int fractionalDigits;
 
-        InstantPrinterParser(int fractionalDigits) {
+        public InstantPrinterParser(int fractionalDigits) {
             this.fractionalDigits = fractionalDigits;
         }
 

@@ -103,15 +103,6 @@ public final class YearMonth
         implements Temporal, TemporalAdjuster, Comparable<YearMonth>, Serializable, TemporalAccessor {
 
     /**
-     * Parser.
-     */
-    private static final DateTimeFormatter PARSER = new DateTimeFormatterBuilder()
-        .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
-        .appendLiteral('-')
-        .appendValue(MONTH_OF_YEAR, 2)
-        .toFormatter();
-
-    /**
      * The year.
      */
     private final int year;
@@ -243,7 +234,12 @@ public final class YearMonth
      * @throws DateTimeParseException if the text cannot be parsed
      */
     public static YearMonth parse(CharSequence text) {
-        return parse(text, PARSER);
+        // TODO: get rid of format
+        return parse(text, new DateTimeFormatterBuilder()
+                .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
+                .appendLiteral('-')
+                .appendValue(MONTH_OF_YEAR, 2)
+                .toFormatter());
     }
 
     /**

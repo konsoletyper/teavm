@@ -58,7 +58,9 @@ import static org.threeten.bp.temporal.ChronoUnit.NANOS;
 import java.io.Serializable;
 import java.util.Objects;
 import org.threeten.bp.format.DateTimeFormatter;
+import org.threeten.bp.format.DateTimeFormatterBuilder;
 import org.threeten.bp.format.DateTimeParseException;
+import org.threeten.bp.format.DateTimePrintContext;
 import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.ChronoUnit;
@@ -1166,6 +1168,9 @@ public final class Instant
      */
     @Override
     public String toString() {
-        return DateTimeFormatter.ISO_INSTANT.format(this);
+        StringBuilder sb = new StringBuilder();
+        new DateTimeFormatterBuilder.InstantPrinterParser(-2).print(
+                new DateTimePrintContext(this, null, null), sb);
+        return sb.toString();
     }
 }

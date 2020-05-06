@@ -61,8 +61,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.threeten.bp.format.DateTimeParseException;
 import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
@@ -117,15 +115,7 @@ public final class Duration
     /**
      * Constant for nanos per second.
      */
-    private static final BigInteger BI_NANOS_PER_SECOND = BigInteger.valueOf(NANOS_PER_SECOND);
-    /**
-     * The pattern for parsing.
-     */
-    // TODO: get rid of regexp
-    private final static Pattern PATTERN =
-            Pattern.compile("([-+]?)P(?:([-+]?[0-9]+)D)?"
-                    + "(T(?:([-+]?[0-9]+)H)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)(?:[.,]([0-9]{0,9}))?S)?)?",
-                    Pattern.CASE_INSENSITIVE);
+    private static BigInteger bigIntNanosPerSecond;
 
     /**
      * The number of seconds in the duration.
@@ -136,6 +126,13 @@ public final class Duration
      * number of seconds. This is always positive, and never exceeds 999,999,999.
      */
     private final int nanos;
+
+    private static BigInteger getBigIntNanosPerSecond() {
+        if (bigIntNanosPerSecond == null) {
+            bigIntNanosPerSecond = BigInteger.valueOf(NANOS_PER_SECOND);
+        }
+        return bigIntNanosPerSecond;
+    }
 
     //-----------------------------------------------------------------------
     /**
@@ -398,60 +395,156 @@ public final class Duration
      */
     public static Duration parse(CharSequence text) {
         Objects.requireNonNull(text, "text");
-        Matcher matcher = PATTERN.matcher(text);
-        if (matcher.matches()) {
-            // check for letter T but no time sections
-            if (!"T".equals(matcher.group(3))) {
-                boolean negate = "-".equals(matcher.group(1));
-                String dayMatch = matcher.group(2);
-                String hourMatch = matcher.group(4);
-                String minuteMatch = matcher.group(5);
-                String secondMatch = matcher.group(6);
-                String fractionMatch = matcher.group(7);
-                if (dayMatch != null || hourMatch != null || minuteMatch != null || secondMatch != null) {
-                    long daysAsSecs = parseNumber(text, dayMatch, SECONDS_PER_DAY, "days");
-                    long hoursAsSecs = parseNumber(text, hourMatch, SECONDS_PER_HOUR, "hours");
-                    long minsAsSecs = parseNumber(text, minuteMatch, SECONDS_PER_MINUTE, "minutes");
-                    long seconds = parseNumber(text, secondMatch, 1, "seconds");
-                    boolean negativeSecs = secondMatch != null && secondMatch.charAt(0) == '-';
-                    int nanos = parseFraction(text,  fractionMatch, negativeSecs ? -1 : 1);
-                    try {
-                        return create(negate, daysAsSecs, hoursAsSecs, minsAsSecs, seconds, nanos);
-                    } catch (ArithmeticException ex) {
-                        throw new DateTimeParseException("Text cannot be parsed to a Duration: overflow", text, 0, ex);
-                    }
+        Parser parser = new Parser(text);
+        if (!parser.parse() || !parser.hasOneField) {
+            throw new DateTimeParseException("Text cannot be parsed to a Duration", text, parser.ptr);
+        }
+        return create(parser.negative, parser.days * SECONDS_PER_DAY, parser.hours * SECONDS_PER_HOUR,
+                parser.minutes * SECONDS_PER_MINUTE, parser.seconds, parser.nanos);
+    }
+
+    static class Parser {
+        private int ptr;
+        private CharSequence text;
+        private int days;
+        private int hours;
+        private int minutes;
+        private int seconds;
+        private int nanos;
+        private boolean negative;
+        private boolean hasOneField;
+        private int parsedNumber;
+
+        Parser(CharSequence text) {
+            this.text = text;
+        }
+
+        boolean parse() {
+            negative = sign();
+            if (eof() || text.charAt(ptr) != 'P') {
+                return false;
+            }
+            ptr++;
+
+            if (eof()) {
+                return false;
+            }
+
+            if (text.charAt(ptr) != 'T') {
+                if (!tryParseDays()) {
+                    return false;
+                }
+                if (eof()) {
+                    return true;
+                }
+                if (text.charAt(ptr) != 'T') {
+                    return false;
+                }
+                ++ptr;
+                hasOneField = false;
+            } else {
+                ++ptr;
+            }
+
+            int state = 0;
+            loop: do {
+                if (!number()) {
+                    break;
+                }
+                if (eof()) {
+                    return false;
+                }
+                hasOneField = true;
+                char c = text.charAt(ptr);
+
+                //CHECKSTYLE.OFF: FallThrough
+                switch (state) {
+                    case 0:
+                        if (c == 'H') {
+                            ++ptr;
+                            hours = parsedNumber;
+                            state = 1;
+                            break;
+                        }
+                    case 1:
+                        if (c == 'M') {
+                            ++ptr;
+                            minutes = parsedNumber;
+                            state = 2;
+                            break;
+                        }
+                    case 2:
+                        if (c == 'S') {
+                            ++ptr;
+                            seconds = parsedNumber;
+                            break loop;
+                        } else if (c == '.') {
+                            seconds = parsedNumber;
+                            if (!number()) {
+                                return false;
+                            }
+                            nanos = parsedNumber;
+                            if (eof() || text.charAt(ptr) != 'S') {
+                                return false;
+                            }
+                            ++ptr;
+                            break loop;
+                        }
+                    default:
+                        return false;
+                }
+                //CHECKSTYLE.ON: FallThrough
+            } while (true);
+
+            return eof() && hasOneField;
+        }
+
+        private boolean tryParseDays() {
+            if (!number()) {
+                return false;
+            }
+            days = parsedNumber;
+            hasOneField = true;
+            if (ptr >= text.length() || text.charAt(ptr) != 'D') {
+                return false;
+            }
+            ++ptr;
+            return true;
+        }
+
+        boolean eof() {
+            return ptr >= text.length();
+        }
+
+        boolean sign() {
+            if (!eof()) {
+                if (text.charAt(ptr) == '-') {
+                    ptr++;
+                    return true;
+                } else if (text.charAt(ptr) == '+') {
+                    ptr++;
                 }
             }
+            return false;
         }
-        throw new DateTimeParseException("Text cannot be parsed to a Duration", text, 0);
-    }
 
-    private static long parseNumber(CharSequence text, String parsed, int multiplier, String errorText) {
-        // regex limits to [-+]?[0-9]+
-        if (parsed == null) {
-            return 0;
-        }
-        try {
-            if (parsed.startsWith("+")) {
-                parsed = parsed.substring(1);
+        boolean number() {
+            boolean negative = sign();
+            parsedNumber = 0;
+            boolean hasDigits = false;
+            while (ptr < text.length()) {
+                char c = text.charAt(ptr);
+                if (c < '0' || c >= '9') {
+                    break;
+                }
+                ++ptr;
+                hasDigits = true;
+                parsedNumber = parsedNumber * 10 + c - '0';
             }
-            long val = Long.parseLong(parsed);
-            return Jdk8Methods.safeMultiply(val, multiplier);
-        } catch (NumberFormatException | ArithmeticException ex) {
-            throw new DateTimeParseException("Text cannot be parsed to a Duration: " + errorText, text, 0, ex);
-        }
-    }
-
-    private static int parseFraction(CharSequence text, String parsed, int negate) {
-        // regex limits to [0-9]{0,9}
-        if (parsed == null || parsed.length() == 0) {
-            return 0;
-        }
-        try {
-            parsed = (parsed + "000000000").substring(0, 9);
-            return Integer.parseInt(parsed) * negate;
-        } catch (NumberFormatException | ArithmeticException ex) {
-            throw new DateTimeParseException("Text cannot be parsed to a Duration: fraction", text, 0, ex);
+            if (negative) {
+                parsedNumber = -parsedNumber;
+            }
+            return hasDigits;
         }
     }
 
@@ -951,7 +1044,7 @@ public final class Duration
      */
     private static Duration create(BigDecimal seconds) {
         BigInteger nanos = seconds.movePointRight(9).toBigIntegerExact();
-        BigInteger[] divRem = nanos.divideAndRemainder(BI_NANOS_PER_SECOND);
+        BigInteger[] divRem = nanos.divideAndRemainder(getBigIntNanosPerSecond());
         if (divRem[0].bitLength() > 63) {
             throw new ArithmeticException("Exceeds capacity of Duration: " + nanos);
         }

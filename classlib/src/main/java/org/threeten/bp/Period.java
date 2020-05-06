@@ -54,8 +54,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.threeten.bp.chrono.ChronoLocalDate;
 import org.threeten.bp.chrono.ChronoPeriod;
 import org.threeten.bp.chrono.Chronology;
@@ -110,12 +108,6 @@ public final class Period
      * A constant for a period of zero.
      */
     public static final Period ZERO = new Period(0, 0, 0);
-    /**
-     * The pattern for parsing.
-     */
-    private final static Pattern PATTERN =
-            Pattern.compile("([-+]?)P(?:([-+]?[0-9]+)Y)?(?:([-+]?[0-9]+)M)?(?:([-+]?[0-9]+)W)?(?:([-+]?[0-9]+)D)?",
-                    Pattern.CASE_INSENSITIVE);
 
     /**
      * The number of years.
@@ -312,38 +304,126 @@ public final class Period
      */
     public static Period parse(CharSequence text) {
         Objects.requireNonNull(text, "text");
-        Matcher matcher = PATTERN.matcher(text);
-        if (matcher.matches()) {
-            int negate = "-".equals(matcher.group(1)) ? -1 : 1;
-            String yearMatch = matcher.group(2);
-            String monthMatch = matcher.group(3);
-            String weekMatch = matcher.group(4);
-            String dayMatch = matcher.group(5);
-            if (yearMatch != null || monthMatch != null || weekMatch != null || dayMatch != null) {
-                try {
-                    int years = parseNumber(text, yearMatch, negate);
-                    int months = parseNumber(text, monthMatch, negate);
-                    int weeks = parseNumber(text, weekMatch, negate);
-                    int days = parseNumber(text, dayMatch, negate);
-                    days = Jdk8Methods.safeAdd(days, Jdk8Methods.safeMultiply(weeks, 7));
-                    return create(years, months, days);
-                } catch (NumberFormatException ex) {
-                    throw new DateTimeParseException("Text cannot be parsed to a Period", text, 0, ex);
-                }
-            }
+        Parser parser = new Parser(text);
+        if (!parser.parse() || !parser.hasOneField) {
+            throw new DateTimeParseException("Text cannot be parsed to a Period", text, parser.ptr);
         }
-        throw new DateTimeParseException("Text cannot be parsed to a Period", text, 0);
+        if (parser.negative) {
+            parser.years = -parser.years;
+            parser.months = -parser.months;
+            parser.weeks = -parser.weeks;
+            parser.days = -parser.days;
+        }
+        int days = Jdk8Methods.safeAdd(parser.days, Jdk8Methods.safeMultiply(parser.weeks, 7));
+        return create(parser.years, parser.months, days);
     }
 
-    private static int parseNumber(CharSequence text, String str, int negate) {
-        if (str == null) {
-            return 0;
+    static class Parser {
+        private int ptr;
+        private CharSequence text;
+        private int years;
+        private int months;
+        private int weeks;
+        private int days;
+        private boolean negative;
+        private boolean hasOneField;
+        private int parsedNumber;
+
+        Parser(CharSequence text) {
+            this.text = text;
         }
-        int val = Integer.parseInt(str);
-        try {
-            return Jdk8Methods.safeMultiply(val, negate);
-        } catch (ArithmeticException ex) {
-            throw new DateTimeParseException("Text cannot be parsed to a Period", text, 0, ex);
+
+        boolean parse() {
+            negative = sign();
+            if (eof() || text.charAt(ptr) != 'P') {
+                return false;
+            }
+            ptr++;
+
+            if (eof()) {
+                return false;
+            }
+
+            int state = 0;
+            while (number()) {
+                if (eof()) {
+                    return false;
+                }
+                hasOneField = true;
+                char c = text.charAt(ptr);
+
+                //CHECKSTYLE.OFF: FallThrough
+                switch (state) {
+                    case 0:
+                        if (c == 'Y') {
+                            ++ptr;
+                            years = parsedNumber;
+                            state = 1;
+                            break;
+                        }
+                    case 1:
+                        if (c == 'M') {
+                            ++ptr;
+                            months = parsedNumber;
+                            state = 2;
+                            break;
+                        }
+                    case 2:
+                        if (c == 'W') {
+                            ++ptr;
+                            weeks = parsedNumber;
+                            state = 3;
+                            break;
+                        }
+                    case 3:
+                        if (c == 'D') {
+                            ++ptr;
+                            days = parsedNumber;
+                            state = 4;
+                            break;
+                        }
+                    default:
+                        return false;
+                }
+                //CHECKSTYLE.ON: FallThrough
+            }
+
+            return eof() && hasOneField;
+        }
+
+        boolean eof() {
+            return ptr >= text.length();
+        }
+
+        boolean sign() {
+            if (!eof()) {
+                if (text.charAt(ptr) == '-') {
+                    ptr++;
+                    return true;
+                } else if (text.charAt(ptr) == '+') {
+                    ptr++;
+                }
+            }
+            return false;
+        }
+
+        boolean number() {
+            boolean negative = sign();
+            parsedNumber = 0;
+            boolean hasDigits = false;
+            while (ptr < text.length()) {
+                char c = text.charAt(ptr);
+                if (c < '0' || c >= '9') {
+                    break;
+                }
+                ++ptr;
+                hasDigits = true;
+                parsedNumber = parsedNumber * 10 + c - '0';
+            }
+            if (negative) {
+                parsedNumber = -parsedNumber;
+            }
+            return hasDigits;
         }
     }
 
