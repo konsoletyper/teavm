@@ -28,6 +28,7 @@ public class ClassHolder extends ElementHolder implements ClassReader {
     private String ownerName;
     private String simpleName;
     private String declaringClassName;
+    private String sourceFile;
 
     public ClassHolder(String name) {
         super(name);
@@ -158,4 +159,9 @@ public class ClassHolder extends ElementHolder implements ClassReader {
     public void setDeclaringClassName(String declaringClassName) {
         this.declaringClassName = declaringClassName;
     }
+
+    @Override
+    public String getSourceFile() { return sourceFile; }
+
+    public void setSourceFile(String sourceFile) { this.sourceFile = sourceFile; }
 }

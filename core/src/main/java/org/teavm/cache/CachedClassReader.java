@@ -32,6 +32,7 @@ class CachedClassReader extends CachedElement implements ClassReader {
     String owner;
     String declaringClass;
     String simpleName;
+    String sourceFile;
     Set<String> interfaces;
     Set<GenericValueType.Object> genericInterfaces;
     Map<MethodDescriptor, CachedMethod> methods;
@@ -96,4 +97,7 @@ class CachedClassReader extends CachedElement implements ClassReader {
     public String getDeclaringClassName() {
         return declaringClass;
     }
+
+    @Override
+    public String getSourceFile() { return sourceFile; }
 }

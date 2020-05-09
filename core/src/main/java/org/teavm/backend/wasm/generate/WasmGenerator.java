@@ -32,6 +32,7 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.util.ModelUtils;
 
 public class WasmGenerator {
     private Decompiler decompiler;
@@ -94,7 +95,9 @@ public class WasmGenerator {
 
         AnnotationReader exportAnnot = method.getAnnotations().get(Export.class.getName());
         if (exportAnnot != null) {
-            function.setExportName(exportAnnot.getValue("name").getString());
+            if (!ModelUtils.isScalaInternalClass(cls)) {
+                function.setExportName(exportAnnot.getValue("name").getString());
+            }
         }
 
         return function;

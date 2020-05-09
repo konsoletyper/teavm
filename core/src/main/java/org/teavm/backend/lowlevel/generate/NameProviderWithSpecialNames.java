@@ -21,11 +21,13 @@ import org.teavm.interop.Export;
 import org.teavm.interop.Import;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ClassReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.util.ModelUtils;
 
 public class NameProviderWithSpecialNames implements NameProvider {
     private NameProvider underlyingProvider;
@@ -47,12 +49,14 @@ public class NameProviderWithSpecialNames implements NameProvider {
 
     private String getSpecialName(MethodReference methodReference) {
         MethodReader method = classSource.resolve(methodReference);
+        ClassReader cls = classSource.get(method.getReference().getClassName());
+
         if (method == null) {
             return null;
         }
 
         AnnotationReader exportAnnot = method.getAnnotations().get(Export.class.getName());
-        if (exportAnnot != null) {
+        if (exportAnnot != null && !ModelUtils.isScalaInternalClass(cls)) {
             return exportAnnot.getValue("name").getString();
         }
 

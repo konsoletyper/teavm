@@ -42,4 +42,6 @@ public interface ClassReader extends ElementReader {
     String getSimpleName();
 
     String getDeclaringClassName();
+
+    String getSourceFile();
 }
