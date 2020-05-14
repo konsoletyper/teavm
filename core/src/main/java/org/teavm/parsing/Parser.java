@@ -57,6 +57,7 @@ import org.teavm.model.Variable;
 import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.PhiUpdater;
+import org.teavm.model.util.ProgramNodeSplittingBackend;
 import org.teavm.model.util.ProgramUtils;
 
 public class Parser {
@@ -86,6 +87,23 @@ public class Parser {
             programParser.setFileName(fileName);
             Program program = programParser.parse(node);
             new UnreachableBasicBlockEliminator().optimize(program);
+
+            Graph cfg = ProgramUtils.buildControlFlowGraph(program);
+            if (GraphUtils.isIrreducible(cfg)) {
+                ProgramNodeSplittingBackend be = new ProgramNodeSplittingBackend(program);
+                int[] weights = new int[program.basicBlockCount()];
+                for (int i = 0; i < weights.length; ++i) {
+                    int count = 0;
+                    Instruction insn = program.basicBlockAt(i).getFirstInstruction();
+                    while (insn != null) {
+                        count++;
+                        insn = insn.getNext();
+                    }
+                    weights[i] = count;
+                }
+                GraphUtils.splitIrreducibleGraph(cfg, weights, be);
+            }
+
             PhiUpdater phiUpdater = new PhiUpdater();
             Variable[] argumentMapping = applySignature(program, method.getParameterTypes());
             phiUpdater.updatePhis(program, argumentMapping);
