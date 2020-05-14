@@ -127,7 +127,9 @@ public class ClasspathResourceMapper implements Function<String, ClassHolder>, C
             }
         }
         if (cls == null) {
-            cls = innerMapper.apply(name);
+            if (!classExclusions.apply(name)) {
+                cls = innerMapper.apply(name);
+            }
         }
         if (cls != null && !elementFilters.isEmpty()) {
             for (ElementFilter filter : elementFilters) {
@@ -212,40 +214,41 @@ public class ClasspathResourceMapper implements Function<String, ClassHolder>, C
                 case STRIP_PREFIX_FROM_PACKAGE_HIERARCHY_PREFIX:
                     prefixMapping.setPackageHierarchyClassPrefixRule(instruction[1].split("\\."),
                             properties.getProperty(propertyName));
-                    continue;
+                    break;
                 case STRIP_PREFIX_FROM_PACKAGE_PREFIX:
                     prefixMapping.setPackageClassPrefixRule(instruction[1].split("\\."),
                             properties.getProperty(propertyName));
-                    continue;
+                    break;
                 case MAP_PACKAGE_HIERARCHY_PREFIX:
                     packageMappings.addPackageHierarchyMappingRule(properties.getProperty(propertyName).split("\\."),
                             instruction[1]);
                     reversePackageMappings.addPackageHierarchyMappingRule(instruction[1].split("\\."),
                             properties.getProperty(propertyName));
-                    continue;
+                    break;
                 case MAP_PACKAGE_PREFIX:
                     packageMappings
                             .addPackageMappingRule(properties.getProperty(propertyName).split("\\."), instruction[1]);
                     reversePackageMappings
                             .addPackageMappingRule(instruction[1].split("\\."), properties.getProperty(propertyName));
-                    continue;
+                    break;
                 case MAP_CLASS_PREFIX:
                     classMappings
                             .addClassMappingRule(properties.getProperty(propertyName).split("\\."), instruction[1]);
                     reverseClassMappings
                             .addClassMappingRule(instruction[1].split("\\."), properties.getProperty(propertyName));
-                    continue;
+                    break;
                 case INCLUDE_PACKAGE_HIERARCHY_PREFIX:
                     classExclusions.setPackageHierarchyExclusion(instruction[1].split("\\."),
                             !Boolean.parseBoolean(properties.getProperty(propertyName)));
-                    continue;
+                    break;
                 case INCLUDE_PACKAGE_PREFIX:
                     classExclusions.setPackageExclusion(instruction[1].split("\\."),
                             !Boolean.parseBoolean(properties.getProperty(propertyName)));
-                    continue;
+                    break;
                 case INCLUDE_CLASS_PREFIX:
                     classExclusions.setClassExclusion(instruction[1].split("\\."),
                             !Boolean.parseBoolean(properties.getProperty(propertyName)));
+                    break;
             }
         }
     }
