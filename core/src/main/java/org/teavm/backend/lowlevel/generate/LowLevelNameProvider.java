@@ -160,20 +160,21 @@ public abstract class LowLevelNameProvider implements NameProvider {
 
     private String sanitize(String name) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < name.length(); ++i) {
-            char c = name.charAt(i);
-            switch (c) {
-                case '>':
-                case '<':
-                case '$':
-                    sb.append('_');
-                    break;
-                default:
-                    sb.append(c);
-                    break;
-            }
+        char c = name.charAt(0);
+        sb.append(isIdentifierStart(c) ? c : '_');
+        for (int i = 1; i < name.length(); ++i) {
+            c = name.charAt(i);
+            sb.append(isIdentifierPart(c) ? c : '_');
         }
         return sb.toString();
+    }
+
+    private static boolean isIdentifierStart(char c) {
+        return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c == '_';
+    }
+
+    private static boolean isIdentifierPart(char c) {
+        return isIdentifierStart(c) || c >= '0' && c <= '9';
     }
 
     private String pickUnoccupied(String name) {
