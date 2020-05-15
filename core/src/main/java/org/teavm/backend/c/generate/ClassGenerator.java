@@ -106,6 +106,7 @@ public class ClassGenerator {
     private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
     private List<CallSiteDescriptor> callSites;
     private ClassMetadataRequirements metadataRequirements;
+    private static final int VT_STRUCTURE_INITIALIZER_DEPTH_THRESHOLD = 9;
 
     public ClassGenerator(GenerationContext context, TagRegistry tagRegistry, Decompiler decompiler,
             CacheStatus cacheStatus) {
@@ -569,25 +570,43 @@ public class ClassGenerator {
             } else {
                 VirtualTable virtualTable = context.getVirtualTableProvider().lookup(className);
                 if (cls.hasModifier(ElementModifier.INTERFACE)) {
-                    generateRuntimeClassInitializer(type, enumConstants);
+                    generateRuntimeClassInitializer(type, enumConstants, false, 0);
                 } else if (virtualTable != null) {
-                    generateVirtualTableContent(virtualTable, virtualTable, type, enumConstants);
+                    boolean tooDeep = getInheritanceDepth(className) > VT_STRUCTURE_INITIALIZER_DEPTH_THRESHOLD;
+                    if (tooDeep) {
+                        codeWriter.println("0");
+                        initWriter.print(structName).print("* vt_0 = &").print(name).println(";");
+                    }
+                    generateVirtualTableContent(virtualTable, virtualTable, type, enumConstants, tooDeep, 0);
                 } else {
                     codeWriter.println(".parent = {").indent();
-                    generateRuntimeClassInitializer(type, enumConstants);
+                    generateRuntimeClassInitializer(type, enumConstants, false, 0);
                     codeWriter.outdent().println("}");
                 }
             }
         } else {
-            generateRuntimeClassInitializer(type, enumConstants);
+            generateRuntimeClassInitializer(type, enumConstants, false, 0);
         }
 
         codeWriter.outdent().println("};");
     }
 
+    private int getInheritanceDepth(String className) {
+        int depth = 0;
+        while (true) {
+            ++depth;
+            ClassReader cls = context.getClassSource().get(className);
+            if (cls.getParent() == null) {
+                break;
+            }
+            className = cls.getParent();
+        }
+        return depth;
+    }
+
     private void generateDynamicVirtualTable(String name, ValueType type, String enumConstants) {
         codeWriter.println(".parent = {").indent();
-        generateRuntimeClassInitializer(type, enumConstants);
+        generateRuntimeClassInitializer(type, enumConstants, false, 0);
         codeWriter.outdent().println("}");
 
         String[] parentClasses;
@@ -619,14 +638,26 @@ public class ClassGenerator {
     }
 
     private void generateVirtualTableContent(VirtualTable current, VirtualTable original, ValueType type,
-            String enumConstants) {
-        codeWriter.println(".parent = {").indent();
-        if (current.getParent() == null) {
-            generateRuntimeClassInitializer(type, enumConstants);
+            String enumConstants, boolean initMethod, int depth) {
+        if (!initMethod) {
+            codeWriter.println(".parent = {").indent();
         } else {
-            generateVirtualTableContent(current.getParent(), original, type, enumConstants);
+            String parentStructName = current.getParent() != null
+                    ? context.getNames().forClassClass(current.getParent().getClassName())
+                    : "TeaVM_Class";
+            initWriter.print(parentStructName).print("* vt_").print(String.valueOf(depth + 1))
+                    .print(" = (").print(parentStructName).print("*) vt_").print(String.valueOf(depth)).println(";");
         }
-        codeWriter.outdent().print("}");
+
+        if (current.getParent() == null) {
+            generateRuntimeClassInitializer(type, enumConstants, initMethod, depth + 1);
+        } else {
+            generateVirtualTableContent(current.getParent(), original, type, enumConstants, initMethod, depth + 1);
+        }
+
+        if (!initMethod) {
+            codeWriter.outdent().print("}");
+        }
 
         for (MethodDescriptor method : current.getMethods()) {
             if (method == null) {
@@ -637,13 +668,24 @@ public class ClassGenerator {
                 continue;
             }
 
-            codeWriter.println(",");
+            if (!initMethod) {
+                codeWriter.println(",");
+            }
             String methodName = context.getNames().forVirtualMethod(method);
             String implName = "&" + context.getNames().forMethod(entry.getImplementor());
             includes.includeClass(entry.getImplementor().getClassName());
-            codeWriter.print(".").print(methodName).print(" = ").print(implName);
+
+            if (initMethod) {
+                initWriter.print("vt_").print(String.valueOf(depth)).print("->").print(methodName)
+                        .print(" = ").print(implName).println(";");
+            } else {
+                codeWriter.print(".").print(methodName).print(" = ").print(implName);
+            }
         }
-        codeWriter.println();
+
+        if (!initMethod) {
+            codeWriter.println();
+        }
     }
 
     private String writeEnumConstants(ClassReader cls, String baseName) {
@@ -660,7 +702,7 @@ public class ClassGenerator {
         return name;
     }
 
-    private void generateRuntimeClassInitializer(ValueType type, String enumConstants) {
+    private void generateRuntimeClassInitializer(ValueType type, String enumConstants, boolean initMethod, int depth) {
         String sizeExpr;
         int tag;
         String parent;
@@ -806,32 +848,63 @@ public class ClassGenerator {
         }
 
         includes.includePath("strings.h");
-        codeWriter.println(".size = " + sizeExpr + ",");
-        codeWriter.println(".flags = " + flags + ",");
-        codeWriter.println(".tag = " + tag + ",");
-        codeWriter.println(".canary = 0,");
-        codeWriter.println(".name = " + nameRef + ",");
-        codeWriter.println(".simpleName = " + simpleName + ",");
-        codeWriter.println(".arrayType = " + arrayTypeExpr + ",");
-        codeWriter.println(".itemType = " + itemTypeExpr + ",");
-        codeWriter.println(".isSupertypeOf = &" + superTypeFunction + ",");
-        codeWriter.println(".superclass = " + parent + ",");
-        codeWriter.println(".superinterfaceCount = " + superinterfaceCount + ",");
-        codeWriter.println(".superinterfaces = " + superinterfaces + ",");
-        codeWriter.println(".layout = " + layout + ",");
-        codeWriter.println(".enumValues = " + enumConstants + ",");
-        codeWriter.println(".declaringClass = " + declaringClass + ",");
-        codeWriter.println(".enclosingClass = " + enclosingClass + ",");
-        codeWriter.print(".init = " + initFunction);
+
+        List<FieldInitializer> initializers = new ArrayList<>();
+        initializers.add(new FieldInitializer("size", sizeExpr));
+        initializers.add(new FieldInitializer("flags", String.valueOf(flags)));
+        initializers.add(new FieldInitializer("tag", String.valueOf(tag)));
+        initializers.add(new FieldInitializer("canary", "0"));
+        initializers.add(new FieldInitializer("name", nameRef));
+        initializers.add(new FieldInitializer("simpleName", simpleName));
+        initializers.add(new FieldInitializer("arrayType", arrayTypeExpr));
+        initializers.add(new FieldInitializer("itemType", itemTypeExpr));
+        initializers.add(new FieldInitializer("isSupertypeOf", "&" + superTypeFunction));
+        initializers.add(new FieldInitializer("superclass", parent));
+        initializers.add(new FieldInitializer("superinterfaceCount", superinterfaceCount));
+        initializers.add(new FieldInitializer("superinterfaces", superinterfaces));
+        initializers.add(new FieldInitializer("layout", layout));
+        initializers.add(new FieldInitializer("enumValues", enumConstants));
+        initializers.add(new FieldInitializer("declaringClass", declaringClass));
+        initializers.add(new FieldInitializer("enclosingClass", enclosingClass));
+        initializers.add(new FieldInitializer("init", initFunction));
+
+        if (initMethod) {
+            for (FieldInitializer initializer : initializers) {
+                initWriter.print("vt_").print(String.valueOf(depth)).print("->").print(initializer.name)
+                        .print(" = ").print(initializer.value).println(";");
+            }
+        } else {
+            for (int i = 0; i < initializers.size(); ++i) {
+                if (i > 0) {
+                    codeWriter.println(",");
+                }
+                FieldInitializer initializer = initializers.get(i);
+                codeWriter.print(".").print(initializer.name).print(" = ").print(initializer.value);
+            }
+        }
 
         if (context.isHeapDump() && type instanceof ValueType.Object) {
             ClassReader cls = context.getClassSource().get(((ValueType.Object) type).getClassName());
-            generateHeapDumpMetadata(cls);
+            generateHeapDumpMetadata(initMethod ? initWriter : codeWriter, cls, initMethod, depth);
         }
-        codeWriter.println();
+
+        if (!initMethod) {
+            codeWriter.println();
+        }
     }
 
-    private void generateHeapDumpMetadata(ClassReader cls) {
+    static class FieldInitializer {
+        final String name;
+        final String value;
+
+        FieldInitializer(String name, String value) {
+            this.name = name;
+            this.value = value;
+        }
+    }
+
+    private void generateHeapDumpMetadata(CodeWriter codeWriter, ClassReader cls, boolean initMethod,
+            int depth) {
         List<HeapDumpField> fields = getHeapDumpFields(cls);
         List<HeapDumpField> staticFields = getHeapDumpStaticFields(cls);
         if (staticFields.isEmpty() && fields.isEmpty()) {
@@ -839,20 +912,37 @@ public class ClassGenerator {
         }
         codeWriter.println().println("#if TEAVM_HEAP_DUMP").indent();
         if (!fields.isEmpty()) {
-            codeWriter.println(",");
-            codeWriter.println(".fieldDescriptors = (TeaVM_FieldDescriptors*) "
+            if (initMethod) {
+                codeWriter.print("vt_" + depth + "->");
+            } else {
+                codeWriter.println(",");
+                codeWriter.print(".");
+            }
+
+            codeWriter.println("fieldDescriptors = (TeaVM_FieldDescriptors*) "
                     + "&(struct { uint32_t count; TeaVM_FieldDescriptor data["
                     + fields.size() + "]; }) {").indent();
             generateHeapDumpFields(fields);
             codeWriter.outdent().print("}");
+            if (initMethod) {
+                codeWriter.println(";");
+            }
         }
         if (!staticFields.isEmpty()) {
-            codeWriter.println(",");
-            codeWriter.println(".staticFieldDescriptors = (TeaVM_StaticFieldDescriptors*) "
+            if (initMethod) {
+                codeWriter.print("vt_" + depth + "->");
+            } else {
+                codeWriter.println(",");
+                codeWriter.print(".");
+            }
+            codeWriter.println("staticFieldDescriptors = (TeaVM_StaticFieldDescriptors*) "
                     + "&(struct { uint32_t count; TeaVM_StaticFieldDescriptor data["
                     + staticFields.size() + "]; }) {").indent();
             generateHeapDumpFields(staticFields);
             codeWriter.outdent().print("}");
+            if (initMethod) {
+                codeWriter.println(";");
+            }
         }
         codeWriter.println().outdent().println("#endif");
     }
