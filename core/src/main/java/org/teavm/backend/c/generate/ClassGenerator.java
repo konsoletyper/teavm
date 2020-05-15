@@ -922,7 +922,7 @@ public class ClassGenerator {
             codeWriter.println("fieldDescriptors = (TeaVM_FieldDescriptors*) "
                     + "&(struct { uint32_t count; TeaVM_FieldDescriptor data["
                     + fields.size() + "]; }) {").indent();
-            generateHeapDumpFields(fields);
+            generateHeapDumpFields(codeWriter, fields);
             codeWriter.outdent().print("}");
             if (initMethod) {
                 codeWriter.println(";");
@@ -938,7 +938,7 @@ public class ClassGenerator {
             codeWriter.println("staticFieldDescriptors = (TeaVM_StaticFieldDescriptors*) "
                     + "&(struct { uint32_t count; TeaVM_StaticFieldDescriptor data["
                     + staticFields.size() + "]; }) {").indent();
-            generateHeapDumpFields(staticFields);
+            generateHeapDumpFields(codeWriter, staticFields);
             codeWriter.outdent().print("}");
             if (initMethod) {
                 codeWriter.println(";");
@@ -947,7 +947,7 @@ public class ClassGenerator {
         codeWriter.println().outdent().println("#endif");
     }
 
-    private void generateHeapDumpFields(List<HeapDumpField> fields) {
+    private void generateHeapDumpFields(CodeWriter codeWriter, List<HeapDumpField> fields) {
         codeWriter.println(".count = " + fields.size() + ",");
         codeWriter.println(".data = {").indent();
         for (int i = 0; i < fields.size(); ++i) {
