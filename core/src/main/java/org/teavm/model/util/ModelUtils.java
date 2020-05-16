@@ -30,21 +30,7 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 
 public final class ModelUtils {
-
-    private static String scalaMarker = ".scala";
-    private static String scalaInternalMarker = "$";
-
     private ModelUtils() {
-    }
-
-    public static Boolean isScalaClass(ClassReader cls) {
-        String srcFile = cls.getSourceFile();
-        return srcFile != null && srcFile.endsWith(scalaMarker);
-    }
-
-    public static Boolean isScalaInternalClass(ClassReader cls) {
-        String clsName = cls.getName();
-        return isScalaClass(cls) && clsName.endsWith(scalaInternalMarker);
     }
 
     public static ClassHolder copyClass(ClassReader original, ClassHolder target) {
@@ -65,7 +51,6 @@ public final class ModelUtils {
         target.setOwnerName(original.getOwnerName());
         target.setDeclaringClassName(original.getDeclaringClassName());
         target.setSimpleName(original.getSimpleName());
-        target.setSourceFile(original.getSourceFile());
         copyAnnotations(original.getAnnotations(), target.getAnnotations());
         return target;
     }

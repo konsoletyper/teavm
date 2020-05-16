@@ -325,10 +325,6 @@ public class Parser {
             }
         }
 
-        if (node.sourceFile != null) {
-            cls.setSourceFile(node.sourceFile);
-        }
-
         parseAnnotations(cls.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
         return cls;
     }

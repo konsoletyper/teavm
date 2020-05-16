@@ -63,7 +63,6 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
 
     public ClassHolder rename(ClassHolder cls) {
         ClassHolder renamedCls = new ClassHolder(classNameMapper.apply(cls.getName()));
-        renamedCls.setSourceFile(cls.getSourceFile());
         renamedCls.getModifiers().addAll(cls.getModifiers());
         renamedCls.setLevel(cls.getLevel());
         String parent = cls.getParent();
