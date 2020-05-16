@@ -161,11 +161,7 @@ public class ClassHolder extends ElementHolder implements ClassReader {
     }
 
     @Override
-    public String getSourceFile() {
-        return sourceFile;
-    }
+    public String getSourceFile() { return sourceFile; }
 
-    public void setSourceFile(String sourceFile) {
-        this.sourceFile = sourceFile;
-    }
+    public void setSourceFile(String sourceFile) { this.sourceFile = sourceFile; }
 }

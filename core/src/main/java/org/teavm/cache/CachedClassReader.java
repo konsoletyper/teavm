@@ -99,7 +99,5 @@ class CachedClassReader extends CachedElement implements ClassReader {
     }
 
     @Override
-    public String getSourceFile() {
-        return sourceFile;
-    }
+    public String getSourceFile() { return sourceFile; }
 }
