@@ -1,0 +1,13 @@
+var @this as this
+
+$start
+  @o := invokeStatic `Foo.getFoo()LFoo;`
+  @v := invokeStatic `Foo.getIntValue()I`
+  field Foo.intField @o := @v as I
+  goto $exit
+  catch java.lang.RuntimeException goto $handler
+$handler
+  goto $exit
+$exit
+  @x := field Foo.intField @o as I
+  return

@@ -28,7 +28,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
@@ -40,6 +42,7 @@ import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
 import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.analysis.AliasAnalysis;
 import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.AssignInstruction;
@@ -316,6 +319,12 @@ public class RepeatedFieldReadElimination implements MethodOptimization {
         int[][] domFrontiers = GraphUtils.findDominanceFrontiers(cfg, dom);
         everythingInvalid = new boolean[program.basicBlockCount()];
         invalidFields.addAll(Collections.nCopies(program.basicBlockCount(), null));
+        boolean[] exceptionHandlers = new boolean[program.basicBlockCount()];
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (TryCatchBlock tryCatchBlock : block.getTryCatchBlocks()) {
+                exceptionHandlers[tryCatchBlock.getHandler().getIndex()] = true;
+            }
+        }
 
         IntArrayDeque worklist = new IntArrayDeque();
         InstructionAnalyzer instructionAnalyzer = new InstructionAnalyzer();
@@ -325,26 +334,43 @@ public class RepeatedFieldReadElimination implements MethodOptimization {
                 continue;
             }
 
-            for (Instruction instruction : block) {
-                instructionAnalyzer.reset();
-                instruction.acceptVisitor(instructionAnalyzer);
+            Set<FieldAndInstance> fieldsToInvalidate = new LinkedHashSet<>();
+            boolean allInvalid = false;
+            if (exceptionHandlers[block.getIndex()]) {
+                allInvalid = true;
+            } else {
+                for (Instruction instruction : block) {
+                    instructionAnalyzer.reset();
+                    instruction.acceptVisitor(instructionAnalyzer);
 
-                if (instructionAnalyzer.invalidatesAll) {
-                    worklist.addLast(frontiers);
-                    while (!worklist.isEmpty()) {
-                        int target = worklist.removeFirst();
-                        if (!everythingInvalid[target]) {
-                            everythingInvalid[target] = true;
-                            invalidFields.set(target, null);
-                            worklist.addLast(domFrontiers[target]);
-                        }
+                    if (instructionAnalyzer.invalidatesAll) {
+                        allInvalid = true;
+                        fieldsToInvalidate.clear();
+                        break;
+                    } else if (instructionAnalyzer.invalidatedField != null
+                            && !isVolatile(instructionAnalyzer.invalidatedField)) {
+                        fieldsToInvalidate.add(new FieldAndInstance(instructionAnalyzer.invalidatedField,
+                                instructionAnalyzer.instance));
                     }
-                } else if (instructionAnalyzer.invalidatedField != null
-                        && !isVolatile(instructionAnalyzer.invalidatedField)) {
+                }
+            }
+
+            if (allInvalid) {
+                worklist.addLast(frontiers);
+                while (!worklist.isEmpty()) {
+                    int target = worklist.removeFirst();
+                    if (!everythingInvalid[target]) {
+                        everythingInvalid[target] = true;
+                        invalidFields.set(target, null);
+                        worklist.addLast(domFrontiers[target]);
+                    }
+                }
+            } else {
+                for (FieldAndInstance fieldAndInstance : fieldsToInvalidate) {
                     worklist.addLast(frontiers);
 
-                    int instance = instructionAnalyzer.instance;
-                    FieldReference field = instructionAnalyzer.invalidatedField;
+                    int instance = fieldAndInstance.instance;
+                    FieldReference field = fieldAndInstance.field;
 
                     while (!worklist.isEmpty()) {
                         int target = worklist.removeFirst();
@@ -399,6 +425,33 @@ public class RepeatedFieldReadElimination implements MethodOptimization {
         @Override
         public void visit(InvokeInstruction insn) {
             invalidatesAll = true;
+        }
+    }
+
+    static class FieldAndInstance {
+        final FieldReference field;
+        final int instance;
+
+        FieldAndInstance(FieldReference field, int instance) {
+            this.field = field;
+            this.instance = instance;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof FieldAndInstance)) {
+                return false;
+            }
+            FieldAndInstance that = (FieldAndInstance) o;
+            return instance == that.instance && field.equals(that.field);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(field, instance);
         }
     }
 }

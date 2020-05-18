@@ -86,6 +86,11 @@ public class RepeatedFieldReadEliminationTest {
         doTest();
     }
 
+    @Test
+    public void readAfterException() {
+        doTest();
+    }
+
     private void doTest() {
         String originalPath = PREFIX + name.getMethodName() + ".original.txt";
         String expectedPath = PREFIX + name.getMethodName() + ".expected.txt";
@@ -126,6 +131,11 @@ public class RepeatedFieldReadEliminationTest {
         getFoo.getModifiers().add(ElementModifier.STATIC);
         getFoo.getModifiers().add(ElementModifier.NATIVE);
         foo.addMethod(getFoo);
+
+        MethodHolder getIntValue = new MethodHolder("getIntValue", ValueType.INTEGER);
+        getIntValue.getModifiers().add(ElementModifier.STATIC);
+        getIntValue.getModifiers().add(ElementModifier.NATIVE);
+        foo.addMethod(getIntValue);
 
         classSource.putClassHolder(foo);
 
