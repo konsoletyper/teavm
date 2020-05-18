@@ -16,6 +16,9 @@
 package org.teavm.classlib.impl;
 
 import java.util.Properties;
+import org.teavm.interop.Export;
+import org.teavm.model.AnnotationContainer;
+import org.teavm.model.AnnotationHolder;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
@@ -32,6 +35,8 @@ import org.teavm.model.instructions.PutFieldInstruction;
 
 public class ScalaHacks implements ClassHolderTransformer {
     private static final String ATTR_NAME_CLASS = "java.util.jar.Attributes$Name";
+    private static final String SCALA_INTERNAL_CLASS_MARKER = "$";
+
     @Override
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         switch (cls.getName()) {
@@ -41,6 +46,12 @@ public class ScalaHacks implements ClassHolderTransformer {
             case "scala.util.Properties$":
                 transformProperties(cls);
                 break;
+            default:
+            {
+                if (cls.getName().endsWith(SCALA_INTERNAL_CLASS_MARKER)) {
+                    checkAndRemoveExportAnnotation(cls);
+                }
+            } break;
         }
     }
 
@@ -83,6 +94,16 @@ public class ScalaHacks implements ClassHolderTransformer {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private void checkAndRemoveExportAnnotation(ClassHolder cls) {
+        for (MethodHolder method : cls.getMethods()) {
+            AnnotationContainer items = method.getAnnotations();
+            AnnotationHolder exportAnn = items.get(Export.class.getTypeName());
+            if (exportAnn != null) {
+                method.getAnnotations().remove(exportAnn);
             }
         }
     }
