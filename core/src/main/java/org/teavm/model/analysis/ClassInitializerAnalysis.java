@@ -301,7 +301,7 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
                 methodInfo.classesWithModifiedFields = null;
             } else if (calledMethod.classesWithModifiedFields != null) {
                 for (String className : calledMethod.classesWithModifiedFields) {
-                    if (className.equals(currentClass)) {
+                    if (!className.equals(currentClass)) {
                         if (methodInfo.classesWithModifiedFields == null) {
                             methodInfo.classesWithModifiedFields = new HashSet<>();
                         }

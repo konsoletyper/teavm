@@ -43,4 +43,13 @@ public class ServiceLoaderTest {
         strings.sort(String::compareTo);
         assertEquals(Arrays.asList("A", "B"), strings);
     }
+
+    @Test
+    public void classLoading() {
+        LoadOrderServiceLog.content.append("before;");
+        for (LoadOrderService service : ServiceLoader.load(LoadOrderService.class)) {
+            service.run();
+        }
+        assertEquals("before;class init;log create;log run;service run;", LoadOrderServiceLog.content.toString());
+    }
 }
