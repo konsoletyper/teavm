@@ -562,7 +562,7 @@ public class ClassGenerator {
         if (classLayout != null) {
             codeWriter.println("static int16_t teavm_classLayouts_" + name + "[" + (classLayout.length + 1) + "];");
         }
-        codeWriter.print("alignas(8) ").print(structName).print(" ").print(name).println(" = {").indent();
+        codeWriter.print("alignas(8) ").print(structName).print(" ").print(name);
 
         if (className != null) {
             if (context.isIncremental()) {
@@ -570,25 +570,35 @@ public class ClassGenerator {
             } else {
                 VirtualTable virtualTable = context.getVirtualTableProvider().lookup(className);
                 if (cls.hasModifier(ElementModifier.INTERFACE)) {
+                    codeWriter.println(" = {").indent();
                     generateRuntimeClassInitializer(type, enumConstants, false, 0);
+                    codeWriter.outdent().print("}");
                 } else if (virtualTable != null) {
                     boolean tooDeep = getInheritanceDepth(className) > VT_STRUCTURE_INITIALIZER_DEPTH_THRESHOLD;
                     if (tooDeep) {
-                        codeWriter.println("0");
                         initWriter.print(structName).print("* vt_0 = &").print(name).println(";");
+                    } else {
+                        codeWriter.println(" = {").indent();
                     }
                     generateVirtualTableContent(virtualTable, virtualTable, type, enumConstants, tooDeep, 0);
+                    if (!tooDeep) {
+                        codeWriter.outdent().print("}");
+                    }
                 } else {
+                    codeWriter.println(" = {").indent();
                     codeWriter.println(".parent = {").indent();
                     generateRuntimeClassInitializer(type, enumConstants, false, 0);
+                    codeWriter.outdent().println("}");
                     codeWriter.outdent().println("}");
                 }
             }
         } else {
+            codeWriter.println(" = {").indent();
             generateRuntimeClassInitializer(type, enumConstants, false, 0);
+            codeWriter.outdent().println("}");
         }
 
-        codeWriter.outdent().println("};");
+        codeWriter.outdent().println(";");
     }
 
     private int getInheritanceDepth(String className) {
