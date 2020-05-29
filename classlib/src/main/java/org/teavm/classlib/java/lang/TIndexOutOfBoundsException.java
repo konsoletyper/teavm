@@ -25,4 +25,8 @@ public class TIndexOutOfBoundsException extends TRuntimeException {
     public TIndexOutOfBoundsException(String message) {
         super(message);
     }
+
+    public TIndexOutOfBoundsException(int index) {
+        super("Index out of range: " + index);
+    }
 }
