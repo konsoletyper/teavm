@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 import org.junit.Test;
@@ -70,6 +71,11 @@ public class LambdaTest {
         B[] src = { new B(1), new B(2), new B(3) };
         int[] array = mapToInt(src, a -> a.value);
         assertArrayEquals(new int[] { 1, 2, 3 }, array);
+    }
+
+    @Test
+    public void unusedLambda() {
+        Consumer<String> foo = bar -> { };
     }
 
     private String acceptIntPredicate(IntPredicate p) {

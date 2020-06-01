@@ -920,7 +920,8 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
                         arguments, indy.getBootstrapMethod(), indy.getBootstrapArguments(),
                         agent);
                 ValueEmitter result = substitutor.substitute(callSite, pe);
-                if (result.getVariable() != null && result.getVariable() != indy.getReceiver()) {
+                if (result.getVariable() != null && result.getVariable() != indy.getReceiver()
+                        && indy.getReceiver() != null) {
                     AssignInstruction assign = new AssignInstruction();
                     assign.setAssignee(result.getVariable());
                     assign.setReceiver(indy.getReceiver());
