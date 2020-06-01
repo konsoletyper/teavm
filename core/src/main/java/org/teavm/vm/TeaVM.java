@@ -486,7 +486,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private ListableClassHolderSource lazyPipeline() {
-        return new PostProcessingClassHolderSource();
+        PostProcessingClassHolderSource result = new PostProcessingClassHolderSource();
+        writtenClasses = result;
+        return result;
     }
 
     private void insertClassInit(ListableClassHolderSource classes) {
