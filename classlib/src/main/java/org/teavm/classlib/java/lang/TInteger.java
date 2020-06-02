@@ -42,6 +42,10 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         return new TAbstractStringBuilder(20).append(i, radix).toString();
     }
 
+    public static int hashCode(int value) {
+        return (value >>> 4) ^ (value << 28) ^ (value << 8) ^ (value >>> 24);
+    }
+
     public static String toHexString(int i) {
         return toUnsignedLogRadixString(i, 4);
     }
@@ -156,7 +160,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
 
     @Override
     public int hashCode() {
-        return (value >>> 4) ^ (value << 28) ^ (value << 8) ^ (value >>> 24);
+        return TInteger.hashCode(value);
     }
 
     @Override
