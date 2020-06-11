@@ -27,7 +27,6 @@ public abstract class DOMParser implements JSObject {
 
     @JSBody(script = "return new DOMParser();")
     public static native DOMParser create();
-
     
     /**
      * Parses the given string.
