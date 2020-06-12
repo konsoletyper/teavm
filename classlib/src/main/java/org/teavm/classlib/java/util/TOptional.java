@@ -63,7 +63,7 @@ public final class TOptional<T> {
     }
 
     public TStream<T> stream() {
-        if (!isPresent()) {
+        if (value == null) {
             return TStream.empty();
         } else {
             return TStream.of(value);
