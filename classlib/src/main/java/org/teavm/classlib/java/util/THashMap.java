@@ -34,6 +34,8 @@ package org.teavm.classlib.java.util;
 
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
 import org.teavm.interop.Rename;
@@ -237,6 +239,22 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         public TIterator<TMap.Entry<K, V>> iterator() {
             return new EntryIterator<>(associatedMap);
         }
+
+        @Override
+        public void forEach(Consumer<? super TMap.Entry<K, V>> action) {
+            HashEntry<K,V>[] tab;
+            if (associatedMap.elementCount > 0 && (tab = associatedMap.elementData) != null) {
+                int mc = associatedMap.modCount;
+                for (HashEntry<K,V> e : tab) {
+                    for (; e != null; e = e.next) {
+                        action.accept(e);
+                    }
+                }
+                if (associatedMap.modCount != mc) {
+                    throw new TConcurrentModificationException();
+                }
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -425,6 +443,20 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                 @Override public TIterator<K> iterator() {
                     return new KeyIterator<>(THashMap.this);
                 }
+                @Override public void forEach(Consumer<? super K> action) {
+                    HashEntry<K,V>[] tab;
+                    if (elementCount > 0 && (tab = elementData) != null) {
+                        int mc = modCount;
+                        for (HashEntry<K,V> e : tab) {
+                            for (; e != null; e = e.next) {
+                                action.accept(e.key);
+                            }
+                        }
+                        if (modCount != mc) {
+                            throw new TConcurrentModificationException();
+                        }
+                    }
+                }
             };
         }
         return cachedKeySet;
@@ -578,6 +610,22 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     }
 
     @Override
+    public void forEach(BiConsumer<? super K, ? super V> action) {
+        HashEntry<K,V>[] tab;
+        if (elementCount > 0 && (tab = elementData) != null) {
+            int mc = modCount;
+            for (HashEntry<K,V> e : tab) {
+                for (; e != null; e = e.next) {
+                    action.accept(e.key, e.value);
+                }
+            }
+            if (modCount != mc) {
+                throw new ConcurrentModificationException();
+            }
+        }
+    }
+
+    @Override
     public int size() {
         return elementCount;
     }
@@ -597,6 +645,20 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                 }
                 @Override public TIterator<V> iterator() {
                     return new ValueIterator<>(THashMap.this);
+                }
+                @Override public void forEach(Consumer<? super V> action) {
+                    HashEntry<K,V>[] tab;
+                    if (elementCount > 0 && (tab = elementData) != null) {
+                        int mc = modCount;
+                        for (HashEntry<K,V> e : tab) {
+                            for (; e != null; e = e.next) {
+                                action.accept(e.value);
+                            }
+                        }
+                        if (modCount != mc) {
+                            throw new TConcurrentModificationException();
+                        }
+                    }
                 }
             };
         }
