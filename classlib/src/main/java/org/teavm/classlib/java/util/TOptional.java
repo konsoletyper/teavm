@@ -21,6 +21,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import org.teavm.classlib.java.util.stream.TStream;
+
 public final class TOptional<T> {
     private static TOptional<?> emptyInstance;
     private final T value;
@@ -54,6 +56,18 @@ public final class TOptional<T> {
 
     public boolean isPresent() {
         return value != null;
+    }
+
+    public boolean isEmpty() {
+        return value == null;
+    }
+
+    public TStream<T> stream() {
+        if (value == null) {
+            return TStream.empty();
+        } else {
+            return TStream.of(value);
+        }
     }
 
     public void ifPresent(Consumer<? super T> consumer) {
