@@ -33,7 +33,6 @@
 package org.teavm.classlib.java.util;
 
 import java.util.Arrays;
-import java.util.ConcurrentModificationException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.teavm.classlib.java.io.TSerializable;
@@ -103,7 +102,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             return false;
         }
 
-        final void checkConcurrentMod() throws ConcurrentModificationException {
+        final void checkConcurrentMod() throws TConcurrentModificationException {
             if (expectedModCount != associatedMap.modCount) {
                 throw new TConcurrentModificationException();
             }
@@ -620,7 +619,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                 }
             }
             if (modCount != mc) {
-                throw new ConcurrentModificationException();
+                throw new TConcurrentModificationException();
             }
         }
     }

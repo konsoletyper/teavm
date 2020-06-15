@@ -31,6 +31,8 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import org.teavm.classlib.java.lang.TIllegalStateException;
 
 public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
@@ -176,6 +178,18 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
         @Override
         public TIterator<Entry<K, V>> iterator() {
             return new EntryIterator<>((TLinkedHashMap<K, V>) hashMap());
+        }
+
+        @Override
+        public void forEach(Consumer<? super TMap.Entry<K, V>> action) {
+            TLinkedHashMap<K, V> map = (TLinkedHashMap<K, V>) hashMap();
+            int mc = map.modCount;
+            for (LinkedHashMapEntry<K,V> e = map.head; e != null; e = e.chainForward) {
+                action.accept(e);
+            }
+            if (map.modCount != mc) {
+                throw new TConcurrentModificationException();
+            }
         }
     }
 
@@ -427,9 +441,31 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
                 public TIterator<K> iterator() {
                     return new KeyIterator<>(TLinkedHashMap.this);
                 }
+
+                @Override
+                public void forEach(Consumer<? super K> action) {
+                    int mc = modCount;
+                    for (LinkedHashMapEntry<K,V> e = head; e != null; e = e.chainForward) {
+                        action.accept(e.key);
+                    }
+                    if (modCount != mc) {
+                        throw new TConcurrentModificationException();
+                    }
+                }
             };
         }
         return cachedKeySet;
+    }
+
+    @Override
+    public void forEach(BiConsumer<? super K, ? super V> action) {
+        int mc = modCount;
+        for (LinkedHashMapEntry<K,V> e = head; e != null; e = e.chainForward) {
+            action.accept(e.key, e.value);
+        }
+        if (modCount != mc) {
+            throw new TConcurrentModificationException();
+        }
     }
 
     @Override
@@ -454,6 +490,17 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
                 @Override
                 public TIterator<V> iterator() {
                     return new ValueIterator<>(TLinkedHashMap.this);
+                }
+
+                @Override
+                public void forEach(Consumer<? super V> action) {
+                    int mc = modCount;
+                    for (LinkedHashMapEntry<K,V> e = head; e != null; e = e.chainForward) {
+                        action.accept(e.value);
+                    }
+                    if (modCount != mc) {
+                        throw new TConcurrentModificationException();
+                    }
                 }
             };
         }
