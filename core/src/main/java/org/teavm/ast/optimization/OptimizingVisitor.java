@@ -762,6 +762,13 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             return false;
         }
 
+        VariableAccessFinder isVariableAccessed = new VariableAccessFinder(v -> v == optimization.arrayVariable
+                || v == optimization.unwrappedArrayVariable);
+        assign.getRightValue().acceptVisitor(isVariableAccessed);
+        if (isVariableAccessed.isFound()) {
+            return false;
+        }
+
         optimization.elements.add(assign.getRightValue());
         if (++optimization.arrayElementIndex == optimization.arraySize) {
             applyArrayOptimization(optimization);

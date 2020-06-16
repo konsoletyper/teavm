@@ -24,18 +24,30 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     protected void afterVisit(Expr expr) {
     }
 
+    protected boolean canceled;
+
+    protected final void cancel() {
+        canceled = true;
+    }
+
     @Override
     public void visit(BinaryExpr expr) {
         beforeVisit(expr);
-        expr.getFirstOperand().acceptVisitor(this);
-        expr.getSecondOperand().acceptVisitor(this);
+        if (!canceled) {
+            expr.getFirstOperand().acceptVisitor(this);
+            if (!canceled) {
+                expr.getSecondOperand().acceptVisitor(this);
+            }
+        }
         afterVisit(expr);
     }
 
     @Override
     public void visit(UnaryExpr expr) {
         beforeVisit(expr);
-        expr.getOperand().acceptVisitor(this);
+        if (!canceled) {
+            expr.getOperand().acceptVisitor(this);
+        }
         afterVisit(expr);
     }
 
@@ -43,6 +55,9 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     public void visit(AssignmentStatement statement) {
         if (statement.getLeftValue() != null) {
             statement.getLeftValue().acceptVisitor(this);
+            if (canceled) {
+                return;
+            }
         }
         statement.getRightValue().acceptVisitor(this);
     }
@@ -50,15 +65,24 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(ConditionalExpr expr) {
         beforeVisit(expr);
-        expr.getCondition().acceptVisitor(this);
-        expr.getConsequent().acceptVisitor(this);
-        expr.getAlternative().acceptVisitor(this);
+        if (!canceled) {
+            expr.getCondition().acceptVisitor(this);
+            if (!canceled) {
+                expr.getConsequent().acceptVisitor(this);
+                if (!canceled) {
+                    expr.getAlternative().acceptVisitor(this);
+                }
+            }
+        }
         afterVisit(expr);
     }
 
     public void visit(List<Statement> statements) {
         for (Statement part : statements) {
             part.acceptVisitor(this);
+            if (canceled) {
+                break;
+            }
         }
     }
 
@@ -77,7 +101,9 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     public void visit(ConditionalStatement statement) {
         statement.getCondition().acceptVisitor(this);
         visit(statement.getConsequent());
-        visit(statement.getAlternative());
+        if (!canceled) {
+            visit(statement.getAlternative());
+        }
     }
 
     @Override
@@ -90,23 +116,35 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     public void visit(SubscriptExpr expr) {
         beforeVisit(expr);
         expr.getArray().acceptVisitor(this);
-        expr.getIndex().acceptVisitor(this);
+        if (!canceled) {
+            expr.getIndex().acceptVisitor(this);
+        }
         afterVisit(expr);
     }
 
     @Override
     public void visit(SwitchStatement statement) {
         statement.getValue().acceptVisitor(this);
+        if (canceled) {
+            return;
+        }
         for (SwitchClause clause : statement.getClauses()) {
             visit(clause.getBody());
+            if (canceled) {
+                return;
+            }
         }
-        visit(statement.getDefaultClause());
+        if (!canceled) {
+            visit(statement.getDefaultClause());
+        }
     }
 
     @Override
     public void visit(UnwrapArrayExpr expr) {
         beforeVisit(expr);
-        expr.getArray().acceptVisitor(this);
+        if (!canceled) {
+            expr.getArray().acceptVisitor(this);
+        }
         afterVisit(expr);
     }
 
@@ -114,6 +152,9 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     public void visit(WhileStatement statement) {
         if (statement.getCondition() != null) {
             statement.getCondition().acceptVisitor(this);
+            if (canceled) {
+                return;
+            }
         }
         visit(statement.getBody());
     }
@@ -121,8 +162,13 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(InvocationExpr expr) {
         beforeVisit(expr);
-        for (Expr argument : expr.getArguments()) {
-            argument.acceptVisitor(this);
+        if (!canceled) {
+            for (Expr argument : expr.getArguments()) {
+                argument.acceptVisitor(this);
+                if (canceled) {
+                    break;
+                }
+            }
         }
         afterVisit(expr);
     }
@@ -135,8 +181,10 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(QualificationExpr expr) {
         beforeVisit(expr);
-        if (expr.getQualified() != null) {
-            expr.getQualified().acceptVisitor(this);
+        if (!canceled) {
+            if (expr.getQualified() != null) {
+                expr.getQualified().acceptVisitor(this);
+            }
         }
         afterVisit(expr);
     }
@@ -158,15 +206,22 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(NewArrayExpr expr) {
         beforeVisit(expr);
-        expr.getLength().acceptVisitor(this);
+        if (!canceled) {
+            expr.getLength().acceptVisitor(this);
+        }
         afterVisit(expr);
     }
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
         beforeVisit(expr);
-        for (Expr dimension : expr.getDimensions()) {
-            dimension.acceptVisitor(this);
+        if (!canceled) {
+            for (Expr dimension : expr.getDimensions()) {
+                dimension.acceptVisitor(this);
+                if (canceled) {
+                    break;
+                }
+            }
         }
         afterVisit(expr);
     }
@@ -174,8 +229,13 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(ArrayFromDataExpr expr) {
         beforeVisit(expr);
-        for (Expr element : expr.getData()) {
-            element.acceptVisitor(this);
+        if (!canceled) {
+            for (Expr element : expr.getData()) {
+                element.acceptVisitor(this);
+                if (canceled) {
+                    break;
+                }
+            }
         }
         afterVisit(expr);
     }
@@ -190,7 +250,9 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(InstanceOfExpr expr) {
         beforeVisit(expr);
-        expr.getExpr().acceptVisitor(this);
+        if (!canceled) {
+            expr.getExpr().acceptVisitor(this);
+        }
         afterVisit(expr);
     }
 
@@ -202,7 +264,9 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(CastExpr expr) {
         beforeVisit(expr);
-        expr.getValue().acceptVisitor(this);
+        if (!canceled) {
+            expr.getValue().acceptVisitor(this);
+        }
         afterVisit(expr);
     }
 
@@ -213,7 +277,9 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(PrimitiveCastExpr expr) {
         beforeVisit(expr);
-        expr.getValue().acceptVisitor(this);
+        if (!canceled) {
+            expr.getValue().acceptVisitor(this);
+        }
         afterVisit(expr);
     }
 
@@ -240,9 +306,11 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(BoundCheckExpr expr) {
         beforeVisit(expr);
-        expr.getIndex().acceptVisitor(this);
-        if (expr.getArray() != null) {
-            expr.getArray().acceptVisitor(this);
+        if (!canceled) {
+            expr.getIndex().acceptVisitor(this);
+            if (!canceled && expr.getArray() != null) {
+                expr.getArray().acceptVisitor(this);
+            }
         }
         afterVisit(expr);
     }
