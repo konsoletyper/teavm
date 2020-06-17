@@ -248,10 +248,10 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                     while (entry != null) {
                         action.accept(entry);
                         entry = entry.next;
+                        if (prevModCount != associatedMap.modCount) {
+                            throw new TConcurrentModificationException();
+                        }
                     }
-                }
-                if (prevModCount != associatedMap.modCount) {
-                    throw new TConcurrentModificationException();
                 }
             }
         }
@@ -451,10 +451,10 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                             while (entry != null) {
                                 action.accept(entry.key);
                                 entry = entry.next;
+                                if (prevModCount != modCount) {
+                                    throw new TConcurrentModificationException();
+                                }
                             }
-                        }
-                        if (prevModCount != modCount) {
-                            throw new TConcurrentModificationException();
                         }
                     }
                 }
@@ -639,10 +639,10 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                             while (entry != null) {
                                 action.accept(entry.value);
                                 entry = entry.next;
+                                if (prevModCount != modCount) {
+                                    throw new TConcurrentModificationException();
+                                }
                             }
-                        }
-                        if (prevModCount != modCount) {
-                            throw new TConcurrentModificationException();
                         }
                     }
                 }
@@ -660,10 +660,10 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                 while (entry != null) {
                     action.accept(entry.key, entry.value);
                     entry = entry.next;
+                    if (prevModCount != modCount) {
+                        throw new TConcurrentModificationException();
+                    }
                 }
-            }
-            if (prevModCount != modCount) {
-                throw new TConcurrentModificationException();
             }
         }
     }

@@ -189,10 +189,10 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
                 do {
                     action.accept(entry);
                     entry = entry.chainForward;
+                    if (map.modCount != prevModCount) {
+                        throw new TConcurrentModificationException();
+                    }
                 } while (entry != null);
-                if (map.modCount != prevModCount) {
-                    throw new TConcurrentModificationException();
-                }
             }
         }
     }
@@ -454,10 +454,10 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
                         do {
                             action.accept(entry.key);
                             entry = entry.chainForward;
+                            if (modCount != prevModCount) {
+                                throw new TConcurrentModificationException();
+                            }
                         } while (entry != null);
-                        if (modCount != prevModCount) {
-                            throw new TConcurrentModificationException();
-                        }
                     }
                 }
             };
@@ -497,10 +497,10 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
                         do {
                             action.accept(entry.value);
                             entry = entry.chainForward;
+                            if (modCount != prevModCount) {
+                                throw new TConcurrentModificationException();
+                            }
                         } while (entry != null);
-                        if (modCount != prevModCount) {
-                            throw new TConcurrentModificationException();
-                        }
                     }
                 }
             };
@@ -537,10 +537,10 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
             do {
                 action.accept(entry.key, entry.value);
                 entry = entry.chainForward;
+                if (modCount != prevModCount) {
+                    throw new TConcurrentModificationException();
+                }
             } while (entry != null);
-            if (modCount != prevModCount) {
-                throw new TConcurrentModificationException();
-            }
         }
     }
 
