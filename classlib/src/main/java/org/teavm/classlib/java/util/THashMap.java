@@ -33,7 +33,8 @@
 package org.teavm.classlib.java.util;
 
 import java.util.Arrays;
-import java.util.ConcurrentModificationException;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
 import org.teavm.interop.Rename;
@@ -101,7 +102,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             return false;
         }
 
-        final void checkConcurrentMod() throws ConcurrentModificationException {
+        final void checkConcurrentMod() throws TConcurrentModificationException {
             if (expectedModCount != associatedMap.modCount) {
                 throw new TConcurrentModificationException();
             }
@@ -236,6 +237,23 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         @Override
         public TIterator<TMap.Entry<K, V>> iterator() {
             return new EntryIterator<>(associatedMap);
+        }
+
+        @Override
+        public void forEach(Consumer<? super Entry<K, V>> action) {
+            if (associatedMap.elementCount > 0) {
+                int prevModCount = associatedMap.modCount;
+                for (int i = 0; i < associatedMap.elementData.length; i++) {
+                    HashEntry<K, V> entry = associatedMap.elementData[i];
+                    while (entry != null) {
+                        action.accept(entry);
+                        entry = entry.next;
+                        if (prevModCount != associatedMap.modCount) {
+                            throw new TConcurrentModificationException();
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -425,6 +443,21 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                 @Override public TIterator<K> iterator() {
                     return new KeyIterator<>(THashMap.this);
                 }
+                @Override public void forEach(Consumer<? super K> action) {
+                    if (elementCount > 0) {
+                        int prevModCount = modCount;
+                        for (int i = 0; i < elementData.length; i++) {
+                            HashEntry<K, V> entry = elementData[i];
+                            while (entry != null) {
+                                action.accept(entry.key);
+                                entry = entry.next;
+                                if (prevModCount != modCount) {
+                                    throw new TConcurrentModificationException();
+                                }
+                            }
+                        }
+                    }
+                }
             };
         }
         return cachedKeySet;
@@ -598,9 +631,41 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                 @Override public TIterator<V> iterator() {
                     return new ValueIterator<>(THashMap.this);
                 }
+                @Override public void forEach(Consumer<? super V> action) {
+                    if (elementCount > 0) {
+                        int prevModCount = modCount;
+                        for (int i = 0; i < elementData.length; i++) {
+                            HashEntry<K, V> entry = elementData[i];
+                            while (entry != null) {
+                                action.accept(entry.value);
+                                entry = entry.next;
+                                if (prevModCount != modCount) {
+                                    throw new TConcurrentModificationException();
+                                }
+                            }
+                        }
+                    }
+                }
             };
         }
         return cachedValues;
+    }
+
+    @Override
+    public void forEach(BiConsumer<? super K, ? super V> action) {
+        if (elementCount > 0) {
+            int prevModCount = modCount;
+            for (int i = 0; i < elementData.length; i++) {
+                HashEntry<K, V> entry = elementData[i];
+                while (entry != null) {
+                    action.accept(entry.key, entry.value);
+                    entry = entry.next;
+                    if (prevModCount != modCount) {
+                        throw new TConcurrentModificationException();
+                    }
+                }
+            }
+        }
     }
 
     static int computeHashCode(Object key) {
