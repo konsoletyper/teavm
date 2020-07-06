@@ -31,6 +31,8 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import org.teavm.classlib.java.lang.TIllegalStateException;
 
 public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
@@ -176,6 +178,22 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
         @Override
         public TIterator<Entry<K, V>> iterator() {
             return new EntryIterator<>((TLinkedHashMap<K, V>) hashMap());
+        }
+
+        @Override
+        public void forEach(Consumer<? super Entry<K, V>> action) {
+            TLinkedHashMap<K, V> map = (TLinkedHashMap<K, V>) hashMap();
+            if (map.elementCount > 0) {
+                int prevModCount = map.modCount;
+                LinkedHashMapEntry<K, V> entry = map.head;
+                do {
+                    action.accept(entry);
+                    entry = entry.chainForward;
+                    if (map.modCount != prevModCount) {
+                        throw new TConcurrentModificationException();
+                    }
+                } while (entry != null);
+            }
         }
     }
 
@@ -427,6 +445,21 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
                 public TIterator<K> iterator() {
                     return new KeyIterator<>(TLinkedHashMap.this);
                 }
+
+                @Override
+                public void forEach(Consumer<? super K> action) {
+                    if (elementCount > 0) {
+                        int prevModCount = modCount;
+                        LinkedHashMapEntry<K, V> entry = head;
+                        do {
+                            action.accept(entry.key);
+                            entry = entry.chainForward;
+                            if (modCount != prevModCount) {
+                                throw new TConcurrentModificationException();
+                            }
+                        } while (entry != null);
+                    }
+                }
             };
         }
         return cachedKeySet;
@@ -455,6 +488,21 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
                 public TIterator<V> iterator() {
                     return new ValueIterator<>(TLinkedHashMap.this);
                 }
+
+                @Override
+                public void forEach(Consumer<? super V> action) {
+                    if (elementCount > 0) {
+                        int prevModCount = modCount;
+                        LinkedHashMapEntry<K, V> entry = head;
+                        do {
+                            action.accept(entry.value);
+                            entry = entry.chainForward;
+                            if (modCount != prevModCount) {
+                                throw new TConcurrentModificationException();
+                            }
+                        } while (entry != null);
+                    }
+                }
             };
         }
         return cachedValues;
@@ -479,6 +527,21 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
             tail = p;
         }
         return m.value;
+    }
+
+    @Override
+    public void forEach(BiConsumer<? super K, ? super V> action) {
+        if (elementCount > 0) {
+            int prevModCount = modCount;
+            LinkedHashMapEntry<K, V> entry = head;
+            do {
+                action.accept(entry.key, entry.value);
+                entry = entry.chainForward;
+                if (modCount != prevModCount) {
+                    throw new TConcurrentModificationException();
+                }
+            } while (entry != null);
+        }
     }
 
     protected boolean removeEldestEntry(@SuppressWarnings("unused") Entry<K, V> eldest) {

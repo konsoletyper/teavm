@@ -26,7 +26,7 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 public class DefaultAliasProvider implements AliasProvider {
-    int topLevelAliasLimit;
+    private int topLevelAliasLimit;
     private final Map<String, ScopedName> classAliases = new HashMap<>();
     private final Set<String> knownAliases = new HashSet<>(200, 0.5f);
     private final ObjectIntMap<String> knowAliasesCounter = new ObjectIntHashMap<>();
@@ -142,7 +142,41 @@ public class DefaultAliasProvider implements AliasProvider {
         }
     }
 
+    private String sanitize(String s) {
+        if (s.isEmpty()) {
+            return "_";
+        }
+        boolean changed = false;
+        StringBuilder sb = new StringBuilder(s.length());
+        char c = s.charAt(0);
+        if (isIdentifierStart(c)) {
+            sb.append(c);
+        } else {
+            sb.append('_');
+            changed = true;
+        }
+        for (int i = 1; i < s.length(); ++i) {
+            c = s.charAt(i);
+            if (isIdentifierPart(c)) {
+                sb.append(c);
+            } else {
+                sb.append('_');
+                changed = true;
+            }
+        }
+        return changed ? sb.toString() : s;
+    }
+
+    private static boolean isIdentifierStart(char c) {
+        return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_' || c == '$';
+    }
+
+    private static boolean isIdentifierPart(char c) {
+        return isIdentifierStart(c) || c >= '0' && c <= '9';
+    }
+
     private String makeUnique(Set<String> knowAliases, ObjectIntMap<String> indexMap, String alias) {
+        alias = sanitize(alias);
         String uniqueAlias = alias;
         int index = indexMap.get(alias);
         if (index > 0) {
