@@ -17,12 +17,16 @@ package org.teavm.classlib.java.util.stream;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import org.teavm.classlib.java.util.TObjects;
 
 public final class TCollectors {
     private TCollectors() {
@@ -68,5 +72,47 @@ public final class TCollectors {
         };
         return TCollector.of(StringBuilder::new, accumulator, combiner,
                 sb -> sb.insert(0, prefix).append(suffix).toString());
+    }
+
+    public static <E, K, V> TCollector<E, ?, Map<K, V>> toMap(Function<? super E, ? extends K> keyMapper,
+            Function<? super E, ? extends V> valueMapper) {
+        return TCollector.of(HashMap::new,
+                (map, el) -> {
+                    K k = keyMapper.apply(el);
+                    V newV = TObjects.requireNonNull(valueMapper.apply(el));
+                    V oldV = map.putIfAbsent(k, newV);
+                    if (oldV != null) {
+                        throw new IllegalStateException(
+                                "Key " + k + " corresponds to values " + oldV + " and " + newV);
+                    }
+                },
+                (m1, m2) -> {
+                    m2.forEach((k, v) -> {
+                        V newV = TObjects.requireNonNull(v);
+                        V oldV = m1.putIfAbsent(k, newV);
+                        if (oldV != null) {
+                            throw new IllegalStateException(
+                                    "Key " + k + " corresponds to values " + oldV + " and " + newV);
+                        }
+                    });
+                    return m1;
+                },
+                TCollector.Characteristics.IDENTITY_FINISH);
+    }
+
+    public static <E, K, V> TCollector<E, ?, Map<K, V>> toMap(Function<? super E, ? extends K> keyMapper,
+            Function<? super E, ? extends V> valueMapper, BinaryOperator<V> mergeFunction) {
+        return toMap(keyMapper, valueMapper, mergeFunction, HashMap::new);
+    }
+
+    public static <E, K, V, M extends Map<K, V>> TCollector<E, ?, M> toMap(Function<? super E, ? extends K> keyMapper,
+            Function<? super E, ? extends V> valueMapper, BinaryOperator<V> mergeFunction, Supplier<M> mapFactory) {
+        return TCollector.of(mapFactory,
+                (map, el) -> map.merge(keyMapper.apply(el), valueMapper.apply(el), mergeFunction),
+                (m1, m2) -> {
+                    m2.forEach((k, v) -> m1.merge(k, v, mergeFunction));
+                    return m1;
+                },
+                TCollector.Characteristics.IDENTITY_FINISH);
     }
 }
