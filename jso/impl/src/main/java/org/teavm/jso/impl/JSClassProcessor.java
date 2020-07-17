@@ -550,6 +550,12 @@ class JSClassProcessor {
                 .map(AnnotationValue::getString)
                 .toArray(String[]::new) : new String[0];
 
+        if (methodToProcess.getResultType() != ValueType.VOID
+                && !script.contains("return")) {
+            diagnostics.error(location, "JSBody method {{m0}} has return type {{t1}}, but the script does not "
+                    + "contain a return statement", methodToProcess.getReference(), methodToProcess.getResultType());
+        }
+
         // Parse JS script
         TeaVMErrorReporter errorReporter = new TeaVMErrorReporter(diagnostics,
                 new CallLocation(methodToProcess.getReference()));
