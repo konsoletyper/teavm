@@ -226,12 +226,12 @@ public abstract class TSimpleStreamImpl<T> implements TStream<T> {
 
     @Override
     public Optional<T> min(Comparator<? super T> comparator) {
-        return reduce((a, b) -> comparator.compare(a, b) < 0 ? a : b);
+        return reduce((a, b) -> comparator.compare(a, b) <= 0 ? a : b);
     }
 
     @Override
     public Optional<T> max(Comparator<? super T> comparator) {
-        return reduce((a, b) -> comparator.compare(a, b) > 0 ? a : b);
+        return reduce((a, b) -> comparator.compare(a, b) >= 0 ? a : b);
     }
 
     @Override

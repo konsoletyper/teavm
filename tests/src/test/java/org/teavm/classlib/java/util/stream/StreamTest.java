@@ -287,6 +287,27 @@ public class StreamTest {
 
         assertFalse(Stream.<Integer>empty().min(Comparator.comparing(x -> x)).isPresent());
         assertFalse(Stream.<Integer>empty().max(Comparator.comparing(x -> x)).isPresent());
+
+        BrokenComparable first = new BrokenComparable(0, 0);
+        BrokenComparable second = new BrokenComparable(0, 1);
+
+        assertEquals(0, Stream.of(first, second).max(Comparator.comparing(x -> x)).get().id);
+        assertEquals(0, Stream.of(first, second).min(Comparator.comparing(x -> x)).get().id);
+    }
+
+    private static class BrokenComparable implements Comparable<BrokenComparable> {
+        private final int number;
+        private final int id;
+
+        private BrokenComparable(int number, int id) {
+            this.number = number;
+            this.id = id;
+        }
+
+        @Override
+        public int compareTo(BrokenComparable that) {
+            return this.number - that.number;
+        }
     }
 
     @Test
