@@ -18,12 +18,15 @@ package org.teavm.classlib.java.util.stream;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.teavm.classlib.java.util.stream.Helper.appendNumbersTo;
 import static org.teavm.classlib.java.util.stream.Helper.testDoubleStream;
 import static org.teavm.classlib.java.util.stream.Helper.testIntStream;
 import static org.teavm.classlib.java.util.stream.Helper.testIntegerStream;
 import static org.teavm.classlib.java.util.stream.Helper.testLongStream;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Spliterator;
@@ -287,6 +290,25 @@ public class StreamTest {
 
         assertFalse(Stream.<Integer>empty().min(Comparator.comparing(x -> x)).isPresent());
         assertFalse(Stream.<Integer>empty().max(Comparator.comparing(x -> x)).isPresent());
+
+        IntPair first = new IntPair(0, 0);
+        IntPair second = new IntPair(0, 1);
+
+        Comparator<IntPair> comp = Comparator.comparingInt(p -> p.number);
+        assertEquals(0, Stream.of(first, second).max(comp).get().id);
+        assertEquals(0, Stream.of(first, second).min(comp).get().id);
+        assertSame(Collections.max(Arrays.asList(first, second), comp), Stream.of(first, second).max(comp).get());
+        assertSame(Collections.min(Arrays.asList(first, second), comp), Stream.of(first, second).min(comp).get());
+    }
+
+    private static class IntPair {
+        private final int number;
+        private final int id;
+
+        private IntPair(int number, int id) {
+            this.number = number;
+            this.id = id;
+        }
     }
 
     @Test
