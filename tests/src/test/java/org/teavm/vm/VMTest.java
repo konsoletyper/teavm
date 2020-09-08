@@ -181,9 +181,19 @@ public class VMTest {
     public void stringConcat() {
         assertEquals("(23)", surroundWithParentheses(23));
         assertEquals("(42)", surroundWithParentheses(42));
+        assertEquals("(17)", surroundWithParentheses((byte) 17));
+        assertEquals("(19)", surroundWithParentheses((short) 19));
     }
 
     private String surroundWithParentheses(int value) {
+        return "(" + value + ")";
+    }
+
+    private String surroundWithParentheses(byte value) {
+        return "(" + value + ")";
+    }
+
+    private String surroundWithParentheses(short value) {
         return "(" + value + ")";
     }
 

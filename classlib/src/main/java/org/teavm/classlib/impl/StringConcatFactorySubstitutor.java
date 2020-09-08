@@ -23,6 +23,7 @@ import org.teavm.model.RuntimeConstant;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
+import org.teavm.model.instructions.IntegerSubtype;
 
 public class StringConcatFactorySubstitutor implements BootstrapMethodSubstitutor {
     private ReferenceCache referenceCache = new ReferenceCache();
@@ -99,7 +100,20 @@ public class StringConcatFactorySubstitutor implements BootstrapMethodSubstituto
     }
 
     private ValueEmitter appendArgument(ValueEmitter sb, ValueType type, ValueEmitter argument) {
-        if (!(type instanceof ValueType.Primitive)) {
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BYTE:
+                    argument = argument.castToInteger(IntegerSubtype.BYTE);
+                    type = ValueType.INTEGER;
+                    break;
+                case SHORT:
+                    argument = argument.castToInteger(IntegerSubtype.SHORT);
+                    type = ValueType.INTEGER;
+                    break;
+                default:
+                    break;
+            }
+        } else {
             type = ValueType.object("java.lang.Object");
         }
         MethodReference method = referenceCache.getCached(new MethodReference(STRING_BUILDER, "append", type,
