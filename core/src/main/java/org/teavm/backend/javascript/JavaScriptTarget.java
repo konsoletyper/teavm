@@ -427,10 +427,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
             for (Map.Entry<? extends String, ? extends TeaVMEntryPoint> entry
                     : controller.getEntryPoints().entrySet()) {
-                sourceWriter.append("").append(entry.getKey()).ws().append("=").ws();
+                sourceWriter.append(entry.getKey()).ws().append("=").ws();
                 MethodReference ref = entry.getValue().getMethod();
                 sourceWriter.append("$rt_mainStarter(").appendMethodBody(ref);
                 sourceWriter.append(");").newLine();
+                sourceWriter.append(entry.getKey()).append(".").append("javaException").ws().append("=").ws()
+                        .append("$rt_javaException;").newLine();
             }
 
             for (RendererListener listener : rendererListeners) {

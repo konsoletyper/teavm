@@ -73,9 +73,10 @@ function launchTest(argument, callback) {
 
     function buildErrorMessage(e) {
         let stack = "";
-        if (e.$javaException && e.$javaException.constructor.$meta) {
-            stack = e.$javaException.constructor.$meta.name + ": ";
-            stack += e.$javaException.getMessage();
+        var je = main.javaException(e);
+        if (je && je.constructor.$meta) {
+            stack = je.constructor.$meta.name + ": ";
+            stack += je.getMessage();
             stack += "\n";
         }
         stack += e.stack;

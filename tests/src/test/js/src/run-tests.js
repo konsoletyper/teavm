@@ -273,9 +273,10 @@ function runTeaVM() {
 
         function makeErrorMessage(message, e) {
             message.status = "failed";
-            if (e.$javaException) {
-                message.className = e.$javaException.constructor.name;
-                message.message = e.$javaException.getMessage();
+            var je = main.javaException(e);
+            if (je) {
+                message.className = je.constructor.name;
+                message.message = je.getMessage();
             } else {
                 message.className = Object.getPrototypeOf(e).name;
                 message.message = e.message;
