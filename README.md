@@ -1,4 +1,4 @@
-TeaVM
+TeaVM-(Awesome project)
 =====
 
 [![Build Status](https://travis-ci.org/konsoletyper/teavm.svg?branch=master)](https://travis-ci.org/konsoletyper/teavm) 
