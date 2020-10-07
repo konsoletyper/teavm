@@ -15,20 +15,30 @@
  */
 package org.teavm.jso.canvas;
 
+import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
-public interface ImageData extends JSObject {
-    @JSProperty
-    int getWidth();
+public abstract class ImageData implements JSObject {
+    private ImageData() {
+    }
 
     @JSProperty
-    int getHeight();
+    public abstract int getWidth();
 
     @JSProperty
-    Uint8ClampedArray getData();
+    public abstract int getHeight();
 
     @JSProperty
-    void setData(Uint8ClampedArray data);
+    public abstract Uint8ClampedArray getData();
+
+    @JSBody(params = { "array", "width" }, script = "return new ImageData(array, width);")
+    public static native ImageData create(Uint8ClampedArray array, int width);
+
+    @JSBody(params = { "width", "height" }, script = "return new ImageData(width, height);")
+    public static native ImageData create(int width, int height);
+
+    @JSBody(params = { "array", "width", "height" }, script = "return new ImageData(array, width, height);")
+    public static native ImageData create(Uint8ClampedArray array, int width, int height);
 }
