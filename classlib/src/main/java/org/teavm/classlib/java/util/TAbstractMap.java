@@ -76,7 +76,7 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
 
         @Override
         public String toString() {
-            return String.valueOf(getKey()) + "=" + String.valueOf(getValue());
+            return getKey() + "=" + getValue();
         }
     }
 
@@ -127,7 +127,7 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
 
         @Override
         public String toString() {
-            return String.valueOf(getKey()) + "=" + String.valueOf(getValue());
+            return getKey() + "=" + getValue();
         }
     }
 
