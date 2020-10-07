@@ -87,14 +87,14 @@ public final class TCollectors {
                     }
                 },
                 (m1, m2) -> {
-                    m2.forEach((k, v) -> {
-                        V newV = TObjects.requireNonNull(v);
-                        V oldV = m1.putIfAbsent(k, newV);
+                    for (Map.Entry<K, V> e : m2.entrySet()) {
+                        V newV = TObjects.requireNonNull(e.getValue());
+                        V oldV = m1.putIfAbsent(e.getKey(), newV);
                         if (oldV != null) {
                             throw new IllegalStateException(
-                                    "Key " + k + " corresponds to values " + oldV + " and " + newV);
+                                    "Key " + e.getKey() + " corresponds to values " + oldV + " and " + newV);
                         }
-                    });
+                    }
                     return m1;
                 },
                 TCollector.Characteristics.IDENTITY_FINISH);
@@ -110,7 +110,9 @@ public final class TCollectors {
         return TCollector.of(mapFactory,
                 (map, el) -> map.merge(keyMapper.apply(el), valueMapper.apply(el), mergeFunction),
                 (m1, m2) -> {
-                    m2.forEach((k, v) -> m1.merge(k, v, mergeFunction));
+                    for (Map.Entry<K, V> e : m2.entrySet()) {
+                        m1.merge(e.getKey(), e.getValue(), mergeFunction);
+                    }
                     return m1;
                 },
                 TCollector.Characteristics.IDENTITY_FINISH);
