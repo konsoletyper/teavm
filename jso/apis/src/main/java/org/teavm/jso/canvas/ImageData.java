@@ -21,7 +21,7 @@ import org.teavm.jso.JSProperty;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 public abstract class ImageData implements JSObject {
-    protected ImageData() {
+    private ImageData() {
     }
 
     @JSProperty
