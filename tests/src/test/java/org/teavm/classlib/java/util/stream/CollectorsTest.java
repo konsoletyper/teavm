@@ -18,9 +18,13 @@ package org.teavm.classlib.java.util.stream;
 import static org.junit.Assert.assertEquals;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,5 +58,24 @@ public class CollectorsTest {
         List<Integer> c = new ArrayList<>();
         Stream.of(1, 2, 3).collect(Collectors.toCollection(() -> c));
         assertEquals(Arrays.asList(1, 2, 3), c);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void noNullsInToMap() {
+        Stream.of(1, 2, null).collect(Collectors.toMap(Function.identity(), Function.identity()));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void noDuplicatesInToMap() {
+        Stream.of(1, 2, 2).collect(Collectors.toMap(Function.identity(), Function.identity()));
+    }
+
+    @Test
+    public void toMap() {
+        Map<Integer, Integer> expected = new HashMap<>();
+        IntStream.range(1, 4).forEach(i -> expected.put(i, i));
+
+        assertEquals(expected,
+                IntStream.range(1, 4).boxed().collect(Collectors.toMap(Function.identity(), Function.identity())));
     }
 }
