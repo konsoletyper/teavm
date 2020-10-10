@@ -50,6 +50,8 @@ public class FloatTest {
         assertEquals(0, Float.parseFloat("23E-8000"), 1E-12F);
         assertEquals(0, Float.parseFloat("00000"), 1E-12F);
         assertEquals(0, Float.parseFloat("00000.0000"), 1E-12F);
+        assertEquals(4499999285F, Float.parseFloat("4499999285"), 100F);
+        assertEquals(0.4499999285F, Float.parseFloat("0.4499999285"), 1E-9F);
     }
 
     @Test

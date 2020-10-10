@@ -121,7 +121,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
                 if (c < '0' || c > '9') {
                     break;
                 }
-                if (mantissa < 1E17) {
+                if (mantissa < TLong.MAX_VALUE / 10 - 9) {
                     mantissa = mantissa * 10 + (c - '0');
                 } else {
                     ++exp;
@@ -136,7 +136,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
                 if (c < '0' || c > '9') {
                     break;
                 }
-                if (mantissa < 1E17) {
+                if (mantissa < TLong.MAX_VALUE / 10 - 9) {
                     mantissa = mantissa * 10 + (c - '0');
                     --exp;
                 }

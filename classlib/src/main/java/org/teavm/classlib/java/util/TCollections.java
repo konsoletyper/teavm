@@ -21,7 +21,7 @@ import org.teavm.classlib.java.util.TMap.Entry;
 
 public class TCollections extends TObject {
     @SuppressWarnings("rawtypes")
-    public static final TSet EMPTY_SET = new TAbstractSet<Object>() {
+    public static final TSet EMPTY_SET = new TTemplateCollections.AbstractImmutableSet<Object>() {
         @Override public int size() {
             return 0;
         }
@@ -40,7 +40,7 @@ public class TCollections extends TObject {
     };
 
     @SuppressWarnings("rawtypes")
-    public static final TMap EMPTY_MAP = new TAbstractMap<Object, Object>() {
+    public static final TMap EMPTY_MAP = new TTemplateCollections.AbstractImmutableMap<Object, Object>() {
         @Override public TSet<Entry<Object, Object>> entrySet() {
             return emptySet();
         }
@@ -63,7 +63,7 @@ public class TCollections extends TObject {
     };
 
     @SuppressWarnings("rawtypes")
-    public static final TList EMPTY_LIST = new TAbstractList<Object>() {
+    public static final TList EMPTY_LIST = new TTemplateCollections.AbstractImmutableList<Object>() {
         @Override public Object get(int index) {
             throw new TIndexOutOfBoundsException();
         }
@@ -164,47 +164,12 @@ public class TCollections extends TObject {
         return (TMap<K, V>) EMPTY_MAP;
     }
 
-    public static <T> TList<T> singletonList(final T o) {
-        return new TAbstractList<T>() {
-            @Override public T get(int index) {
-                if (index != 0) {
-                    throw new TIndexOutOfBoundsException();
-                }
-                return o;
-            }
-            @Override public int size() {
-                return 1;
-            }
-        };
+    public static <T> TList<T> singletonList(T o) {
+        return new TTemplateCollections.SingleElementList<>(o);
     }
 
-    public static <T> TSet<T> singleton(final T o) {
-        return new TAbstractSet<T>() {
-            @Override public int size() {
-                return 1;
-            }
-            @Override public TIterator<T> iterator() {
-                return new TIterator<T>() {
-                    private boolean read;
-                    @Override public boolean hasNext() {
-                        return !read;
-                    }
-                    @Override public T next() {
-                        if (read) {
-                            throw new TNoSuchElementException();
-                        }
-                        read = true;
-                        return o;
-                    }
-                    @Override public void remove() {
-                        throw new TUnsupportedOperationException();
-                    }
-                };
-            }
-            @Override public boolean contains(Object o2) {
-                return TObjects.equals(o, o2);
-            }
-        };
+    public static <T> TSet<T> singleton(T o) {
+        return new TTemplateCollections.SingleElementSet<>(o);
     }
 
     public static <K, V> TMap<K, V> singletonMap(final K key, final V value) {
