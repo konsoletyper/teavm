@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util;
 
 import java.util.Spliterator;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import org.teavm.classlib.java.lang.TIterable;
 import org.teavm.classlib.java.util.stream.TStream;
@@ -32,6 +33,10 @@ public interface TCollection<E> extends TIterable<E> {
     Object[] toArray();
 
     <T> T[] toArray(T[] a);
+
+    default <T> T[] toArray(IntFunction<T[]> gen) {
+        return toArray(gen.apply(0));
+    }
 
     boolean add(E e);
 
