@@ -31,8 +31,8 @@ public abstract class Float64Array extends ArrayBufferView {
     @JSBody(params = "buffer", script = "return new Float64Array(buffer);")
     public static native Float64Array create(ArrayBuffer buffer);
 
-    @JSBody(params = "buffer", script = "return new Float64Array(buffer);")
-    public static native Float64Array create(ArrayBufferView buffer);
+    @JSBody(params = "bufferView", script = "return new Float64Array(bufferView.buffer);")
+    public static native Float64Array create(ArrayBufferView bufferView);
 
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new Float64Array(buffer, offset, length);")
     public static native Float64Array create(ArrayBuffer buffer, int offset, int length);
