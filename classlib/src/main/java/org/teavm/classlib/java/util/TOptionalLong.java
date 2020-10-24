@@ -19,6 +19,7 @@ import java.util.NoSuchElementException;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
+import org.teavm.classlib.java.util.stream.TLongStream;
 
 public class TOptionalLong {
     private static TOptionalLong emptyInstance;
@@ -51,6 +52,10 @@ public class TOptionalLong {
         return this != emptyInstance;
     }
 
+    public boolean isEmpty() {
+        return this == emptyInstance;
+    }
+
     public void ifPresent(LongConsumer consumer) {
         if (this != emptyInstance) {
             consumer.accept(value);
@@ -65,11 +70,34 @@ public class TOptionalLong {
         return this != emptyInstance ? value : other.getAsLong();
     }
 
+    public void ifPresentOrElse(LongConsumer action, Runnable emptyAction) {
+        if (this == emptyInstance) {
+            emptyAction.run();
+        } else {
+            action.accept(value);
+        }
+    }
+
     public <X extends Throwable> long orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
-        if (!isPresent()) {
+        if (this == emptyInstance) {
             throw exceptionSupplier.get();
         }
         return value;
+    }
+
+    public long orElseThrow() {
+        if (this == emptyInstance) {
+            throw new NoSuchElementException();
+        }
+        return value;
+    }
+
+    public TLongStream stream() {
+        if (this == emptyInstance) {
+            return TLongStream.empty();
+        } else {
+            return TLongStream.of(value);
+        }
     }
 
     @Override
@@ -77,7 +105,7 @@ public class TOptionalLong {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof TOptionalLong)) {
+        if (this == emptyInstance || obj == emptyInstance || !(obj instanceof TOptionalLong)) {
             return false;
         }
 
