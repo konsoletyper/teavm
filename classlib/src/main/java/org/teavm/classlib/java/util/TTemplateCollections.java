@@ -201,7 +201,7 @@ class TTemplateCollections {
             for (T element : data) {
                 Objects.requireNonNull(element);
 
-                int suggestedIndex = element.hashCode() % data.length;
+                int suggestedIndex = Math.abs(element.hashCode()) % data.length;
                 int index = suggestedIndex;
                 boolean found = false;
                 while (index < data.length) {
@@ -268,7 +268,7 @@ class TTemplateCollections {
                 return false;
             }
 
-            int suggestedIndex = o.hashCode() % data.length;
+            int suggestedIndex = Math.abs(o.hashCode()) % data.length;
             for (int i = suggestedIndex; i < data.length; ++i) {
                 if (data[i].equals(o)) {
                     return true;
@@ -413,16 +413,17 @@ class TTemplateCollections {
         private Entry<K, V>[] data;
         private AbstractImmutableSet<Entry<K, V>> entrySet;
 
+        @SuppressWarnings("unchecked")
         @SafeVarargs
         NEtriesMap(Entry<K, V>... data) {
-            Entry<K, V>[] table = data.clone();
+            Entry<K, V>[] table = new Entry[data.length];
             Arrays.fill(table, null);
 
             for (Entry<K, V> entry : data) {
                 Objects.requireNonNull(entry.getKey());
                 Objects.requireNonNull(entry.getValue());
 
-                int suggestedIndex = entry == null ? 0 : entry.getKey().hashCode() % data.length;
+                int suggestedIndex = Math.abs(entry.getKey().hashCode()) % data.length;
                 int index = suggestedIndex;
                 boolean found = false;
                 while (index < data.length) {
@@ -481,7 +482,7 @@ class TTemplateCollections {
             if (key == null) {
                 return false;
             }
-            int suggestedIndex = key.hashCode() % data.length;
+            int suggestedIndex = Math.abs(key.hashCode()) % data.length;
             for (int i = suggestedIndex; i < data.length; ++i) {
                 if (data[i].getKey().equals(key)) {
                     return true;
@@ -500,7 +501,7 @@ class TTemplateCollections {
             if (key == null) {
                 return null;
             }
-            int suggestedIndex = key.hashCode() % data.length;
+            int suggestedIndex = Math.abs(key.hashCode()) % data.length;
             for (int i = suggestedIndex; i < data.length; ++i) {
                 Entry<K, V> entry = data[i];
                 if (entry.getKey().equals(key)) {
@@ -561,7 +562,7 @@ class TTemplateCollections {
                         if (key == null) {
                             return false;
                         }
-                        int suggestedIndex = key.hashCode() % data.length;
+                        int suggestedIndex = Math.abs(key.hashCode()) % data.length;
                         for (int i = suggestedIndex; i < data.length; ++i) {
                             Entry<K, V> entry = data[i];
                             if (entry.getKey().equals(key)) {
