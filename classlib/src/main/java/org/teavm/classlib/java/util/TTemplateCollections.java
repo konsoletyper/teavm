@@ -201,19 +201,32 @@ class TTemplateCollections {
             for (T element : data) {
                 Objects.requireNonNull(element);
 
-                int suggestedIndex = Math.abs(element.hashCode()) % data.length;
+                int suggestedIndex = element.hashCode() % data.length;
                 int index = suggestedIndex;
-                while (index < suggestedIndex + data.length) {
-                    T existingElement = table[index % data.length];
+                boolean found = false;
+                while (index < data.length) {
+                    T existingElement = table[index];
                     if (existingElement == null) {
+                        found = true;
                         break;
+                    } else if (existingElement.equals(element)) {
+                        throw new IllegalArgumentException();
                     }
-                    if (existingElement.equals(element)) {
-                        throw new IllegalArgumentException("Duplicate element " + element);
-                    }
-                    index++;
+                    ++index;
                 }
-                table[index % data.length] = element;
+                if (!found) {
+                    index = 0;
+                    while (index < suggestedIndex) {
+                        T existingElement = table[index];
+                        if (existingElement == null) {
+                            break;
+                        } else if (existingElement.equals(element)) {
+                            throw new IllegalArgumentException();
+                        }
+                        ++index;
+                    }
+                }
+                table[index] = element;
             }
 
             this.data = table;
@@ -255,9 +268,14 @@ class TTemplateCollections {
                 return false;
             }
 
-            int suggestedIndex = Math.abs(o.hashCode()) % data.length;
-            for (int i = suggestedIndex; i < suggestedIndex + data.length; i++) {
-                if (data[i % data.length].equals(o)) {
+            int suggestedIndex = o.hashCode() % data.length;
+            for (int i = suggestedIndex; i < data.length; ++i) {
+                if (data[i].equals(o)) {
+                    return true;
+                }
+            }
+            for (int i = 0; i < suggestedIndex; ++i) {
+                if (data[i].equals(o)) {
                     return true;
                 }
             }
@@ -395,28 +413,41 @@ class TTemplateCollections {
         private Entry<K, V>[] data;
         private AbstractImmutableSet<Entry<K, V>> entrySet;
 
-        @SuppressWarnings("unchecked")
         @SafeVarargs
         NEtriesMap(Entry<K, V>... data) {
-            Entry<K, V>[] table = new Entry[data.length];
+            Entry<K, V>[] table = data.clone();
+            Arrays.fill(table, null);
 
             for (Entry<K, V> entry : data) {
                 Objects.requireNonNull(entry.getKey());
                 Objects.requireNonNull(entry.getValue());
 
-                int suggestedIndex = Math.abs(entry.getKey().hashCode()) % data.length;
+                int suggestedIndex = entry == null ? 0 : entry.getKey().hashCode() % data.length;
                 int index = suggestedIndex;
-                while (index < suggestedIndex + data.length) {
-                    Entry<K, V> existingEntry = table[index % data.length];
+                boolean found = false;
+                while (index < data.length) {
+                    Entry<K, V> existingEntry = table[index];
                     if (existingEntry == null) {
+                        found = true;
                         break;
-                    }
-                    if (existingEntry.getKey().equals(entry.getKey())) {
-                        throw new IllegalArgumentException("Duplicate key " + entry.getKey());
+                    } else if (existingEntry.getKey().equals(entry.getKey())) {
+                        throw new IllegalArgumentException();
                     }
                     ++index;
                 }
-                table[index % data.length] = new ImmutableEntry<>(entry.getKey(), entry.getValue());
+                if (!found) {
+                    index = 0;
+                    while (index < suggestedIndex) {
+                        Entry<K, V> existingElement = table[index];
+                        if (existingElement == null) {
+                            break;
+                        } else if (existingElement.getKey().equals(entry.getKey())) {
+                            throw new IllegalArgumentException();
+                        }
+                        ++index;
+                    }
+                }
+                table[index] = new ImmutableEntry<>(entry.getKey(), entry.getValue());
             }
 
             this.data = table;
@@ -450,9 +481,14 @@ class TTemplateCollections {
             if (key == null) {
                 return false;
             }
-            int suggestedIndex = Math.abs(key.hashCode()) % data.length;
-            for (int i = suggestedIndex; i < suggestedIndex + data.length; i++) {
-                if (data[i % data.length].getKey().equals(key)) {
+            int suggestedIndex = key.hashCode() % data.length;
+            for (int i = suggestedIndex; i < data.length; ++i) {
+                if (data[i].getKey().equals(key)) {
+                    return true;
+                }
+            }
+            for (int i = 0; i < suggestedIndex; ++i) {
+                if (data[i].getKey().equals(key)) {
                     return true;
                 }
             }
@@ -464,9 +500,15 @@ class TTemplateCollections {
             if (key == null) {
                 return null;
             }
-            int suggestedIndex = Math.abs(key.hashCode()) % data.length;
-            for (int i = suggestedIndex; i < suggestedIndex + data.length; i++) {
-                Entry<K, V> entry = data[i % data.length];
+            int suggestedIndex = key.hashCode() % data.length;
+            for (int i = suggestedIndex; i < data.length; ++i) {
+                Entry<K, V> entry = data[i];
+                if (entry.getKey().equals(key)) {
+                    return entry.getValue();
+                }
+            }
+            for (int i = 0; i < suggestedIndex; ++i) {
+                Entry<K, V> entry = data[i];
                 if (entry.getKey().equals(key)) {
                     return entry.getValue();
                 }
@@ -519,9 +561,15 @@ class TTemplateCollections {
                         if (key == null) {
                             return false;
                         }
-                        int suggestedIndex = Math.abs(key.hashCode()) % data.length;
-                        for (int i = suggestedIndex; i < suggestedIndex + data.length; i++) {
-                            Entry<K, V> entry = data[i % data.length];
+                        int suggestedIndex = key.hashCode() % data.length;
+                        for (int i = suggestedIndex; i < data.length; ++i) {
+                            Entry<K, V> entry = data[i];
+                            if (entry.getKey().equals(key)) {
+                                return entry.getValue().equals(e.getValue());
+                            }
+                        }
+                        for (int i = 0; i < suggestedIndex; ++i) {
+                            Entry<K, V> entry = data[i];
                             if (entry.getKey().equals(key)) {
                                 return entry.getValue().equals(e.getValue());
                             }
