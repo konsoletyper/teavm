@@ -19,6 +19,7 @@ import java.util.NoSuchElementException;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
+import org.teavm.classlib.java.util.stream.TDoubleStream;
 
 public class TOptionalDouble {
     private static TOptionalDouble emptyInstance;
@@ -51,6 +52,10 @@ public class TOptionalDouble {
         return this != emptyInstance;
     }
 
+    public boolean isEmpty() {
+        return this == emptyInstance;
+    }
+
     public void ifPresent(DoubleConsumer consumer) {
         if (this != emptyInstance) {
             consumer.accept(value);
@@ -65,11 +70,34 @@ public class TOptionalDouble {
         return this != emptyInstance ? value : other.getAsDouble();
     }
 
+    public void ifPresentOrElse(DoubleConsumer action, Runnable emptyAction) {
+        if (this == emptyInstance) {
+            emptyAction.run();
+        } else {
+            action.accept(value);
+        }
+    }
+
     public <X extends Throwable> double orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
-        if (!isPresent()) {
+        if (this == emptyInstance) {
             throw exceptionSupplier.get();
         }
         return value;
+    }
+
+    public double orElseThrow() {
+        if (this == emptyInstance) {
+            throw new NoSuchElementException();
+        }
+        return value;
+    }
+
+    public TDoubleStream stream() {
+        if (this == emptyInstance) {
+            return TDoubleStream.empty();
+        } else {
+            return TDoubleStream.of(value);
+        }
     }
 
     @Override
@@ -77,7 +105,7 @@ public class TOptionalDouble {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof TOptionalDouble)) {
+        if (this == emptyInstance || obj == emptyInstance || !(obj instanceof TOptionalDouble)) {
             return false;
         }
 
