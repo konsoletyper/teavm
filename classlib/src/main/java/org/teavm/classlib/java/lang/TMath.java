@@ -127,6 +127,32 @@ public final class TMath extends TObject {
         return (long) (a + signum(a) * 0.5);
     }
 
+    public static int floorDiv(int a, int b) {
+        int div = a / b;
+        return (a ^ b) < 0 && div * b != a ? div - 1 : div;
+    }
+
+    public static long floorDiv(long a, int b) {
+        return floorDiv(a, (long) b);
+    }
+
+    public static long floorDiv(long a, long b) {
+        long div = a / b;
+        return (a ^ b) < 0 && div * b != a ? div - 1 : div;
+    }
+
+    public static int floorMod(int a, int b) {
+        return a - floorDiv(a, b) * b;
+    }
+
+    public static int floorMod(long a, int b) {
+        return (int) (a - floorDiv(a, b) * b);
+    }
+
+    public static long floorMod(long a, long b) {
+        return a - floorDiv(a, b) * b;
+    }
+
     @Unmanaged
     public static double random() {
         return PlatformDetector.isC() ? randomC() : randomImpl();
