@@ -18,8 +18,6 @@ package org.teavm.jso.dom.xml;
 import org.teavm.jso.JSProperty;
 
 public interface Element extends Node {
-    String getTagName();
-
     String getAttribute(String name);
 
     void setAttribute(String name, String value);
@@ -59,4 +57,7 @@ public interface Element extends Node {
 
     @JSProperty
     void setId(String id);
+
+    @JSProperty
+    String getTagName();
 }
