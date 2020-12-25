@@ -23,6 +23,8 @@ import java.util.Collections;
 import java.util.List;
 
 public class GraphBuilder {
+    private static final int[] EMPTY_INT_ARRAY = new int[0];
+
     private GraphImpl builtGraph;
     private List<IntSet> addedEdges = new ArrayList<>();
     private int sz;
@@ -75,24 +77,31 @@ public class GraphBuilder {
         if (builtGraph == null) {
             IntSet[] incomingEdges = new IntSet[sz];
             for (int i = 0; i < sz; ++i) {
-                incomingEdges[i] = new IntHashSet();
+                incomingEdges[i] = null;
             }
             int[][] outgoingEdgeList = new int[sz][];
-            for (int i = 0; i < addedEdges.size(); ++i) {
+            final int n = addedEdges.size();
+            for (int i = 0; i < n; ++i) {
                 IntSet edgeList = addedEdges.get(i);
                 outgoingEdgeList[i] = edgeList != null ? edgeList.toArray() : new int[0];
                 Arrays.sort(outgoingEdgeList[i]);
                 for (int j : outgoingEdgeList[i]) {
+                    if (incomingEdges[j]==null) incomingEdges[j] = new IntHashSet(1);
                     incomingEdges[j].add(i);
                 }
             }
-            for (int i = addedEdges.size(); i < sz; ++i) {
+            for (int i = n; i < sz; ++i) {
                 outgoingEdgeList[i] = new int[0];
             }
             int[][] incomingEdgeList = new int[sz][];
             for (int i = 0; i < sz; ++i) {
-                incomingEdgeList[i] = incomingEdges[i].toArray();
-                Arrays.sort(incomingEdgeList[i]);
+                final IntSet ii = incomingEdges[i];
+                if (ii!=null) {
+                    incomingEdgeList[i] = ii.toArray();
+                    Arrays.sort(incomingEdgeList[i]);
+                } else {
+                    incomingEdgeList[i] = EMPTY_INT_ARRAY;
+                }
             }
             builtGraph = new GraphImpl(incomingEdgeList, outgoingEdgeList);
         }
@@ -116,7 +125,8 @@ public class GraphBuilder {
         @Override
         public int[] incomingEdges(int node) {
             int[] result = incomingEdgeList[node];
-            return Arrays.copyOf(result, result.length);
+            //return Arrays.copyOf(result, result.length);
+            return result.clone();
         }
 
         @Override
@@ -129,7 +139,8 @@ public class GraphBuilder {
         @Override
         public int[] outgoingEdges(int node) {
             int[] result = outgoingEdgeList[node];
-            return Arrays.copyOf(result, result.length);
+            //return Arrays.copyOf(result, result.length);
+            return result.clone();
         }
 
         @Override
@@ -166,7 +177,7 @@ public class GraphBuilder {
                 }
             }
 
-            sb.append("}");
+            sb.append('}');
 
             return sb.toString();
         }
