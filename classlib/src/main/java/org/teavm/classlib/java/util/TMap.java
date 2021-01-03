@@ -28,6 +28,22 @@ public interface TMap<K, V> {
         V1 getValue();
 
         V1 setValue(V1 value);
+
+        static <K extends Comparable<? super K>, V> TComparator<TMap.Entry<K, V>> comparingByKey() {
+            return (a, b) -> a.getKey().compareTo(b.getKey());
+        }
+
+        static <K, V extends Comparable<? super V>> TComparator<TMap.Entry<K, V>> comparingByValue() {
+            return (a, b) -> a.getValue().compareTo(b.getValue());
+        }
+
+        static <K, V> TComparator<TMap.Entry<K, V>> comparingByKey(TComparator<? super K> comp) {
+            return (a, b) -> comp.compare(a.getKey(), b.getKey());
+        }
+
+        static <K, V> TComparator<TMap.Entry<K, V>> comparingByValue(TComparator<? super V> comp) {
+            return (a, b) -> comp.compare(a.getValue(), b.getValue());
+        }
     }
 
     int size();

@@ -58,7 +58,7 @@ public class WindowFeatures {
     }
 
     public WindowFeatures scrollbars() {
-        return add("resizable");
+        return add("scrollbars");
     }
 
     private WindowFeatures add(String feature) {

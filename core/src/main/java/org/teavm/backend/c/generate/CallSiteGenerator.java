@@ -219,7 +219,7 @@ public class CallSiteGenerator {
     }
 
     private String getStringExpr(String s) {
-        return s != null ? "&TEAVM_GET_STRING(" + context.getStringPool().getStringIndex(s) + ")" : "NULL";
+        return s != null ? "TEAVM_GET_STRING_ADDRESS(" + context.getStringPool().getStringIndex(s) + ")" : "NULL";
     }
 
     static class HandlerContainer {

@@ -15,9 +15,9 @@
  */
 package org.teavm.classlib.java.util.concurrent;
 
-import java.util.Random;
+import org.teavm.classlib.java.util.TRandom;
 
-public class TThreadLocalRandom extends Random {
+public class TThreadLocalRandom extends TRandom {
     private static final TThreadLocalRandom current = new TThreadLocalRandom();
 
     private TThreadLocalRandom() {
@@ -37,8 +37,8 @@ public class TThreadLocalRandom extends Random {
             throw new IllegalArgumentException();
         }
         int range = bound - origin;
-        if (range < 0) {
-            return nextInt(bound - origin) + origin;
+        if (range > 0) {
+            return nextInt(range) + origin;
         } else {
             while (true) {
                 int value = nextInt();
@@ -67,8 +67,8 @@ public class TThreadLocalRandom extends Random {
             throw new IllegalArgumentException();
         }
         long range = bound - origin;
-        if (range < 0) {
-            return nextLong(bound - origin) + origin;
+        if (range > 0) {
+            return nextLong(range) + origin;
         } else {
             while (true) {
                 long value = nextLong();
