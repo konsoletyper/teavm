@@ -33,6 +33,11 @@ public class TStringBuffer extends TAbstractStringBuilder implements TAppendable
     }
 
     @Override
+    public TStringBuffer append(Object obj) {
+        return append(String.valueOf(obj));
+    }
+
+    @Override
     public TStringBuffer append(String string) {
         super.append(string);
         return this;

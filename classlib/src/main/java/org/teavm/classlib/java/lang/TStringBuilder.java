@@ -33,6 +33,11 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
     }
 
     @Override
+    public TStringBuilder append(Object obj) {
+        return append(String.valueOf(obj));
+    }
+
+    @Override
     public TStringBuilder append(String string) {
         super.append(string);
         return this;
