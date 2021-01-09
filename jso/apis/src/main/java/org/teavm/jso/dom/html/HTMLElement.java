@@ -24,6 +24,7 @@ import org.teavm.jso.dom.events.KeyboardEventTarget;
 import org.teavm.jso.dom.events.LoadEventTarget;
 import org.teavm.jso.dom.events.MouseEventTarget;
 import org.teavm.jso.dom.events.WheelEventTarget;
+import org.teavm.jso.dom.types.DOMTokenList;
 import org.teavm.jso.dom.xml.Element;
 import org.teavm.jso.dom.xml.Node;
 import org.teavm.jso.dom.xml.NodeList;
@@ -149,6 +150,9 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
 
     @JSProperty
     void setClassName(String className);
+
+    @JSProperty
+    DOMTokenList getClassList();
 
     default HTMLElement withAttr(String name, String value) {
         setAttribute(name, value);
