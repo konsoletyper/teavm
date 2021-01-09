@@ -269,16 +269,16 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append('{');
-        TIterator<TMap.Entry<K,V>> iter = entrySet().iterator();
+        TIterator<TMap.Entry<K, V>> iter = entrySet().iterator();
         if (iter.hasNext()) {
-            TMap.Entry<K,V> e = iter.next();
+            TMap.Entry<K, V> e = iter.next();
             sb.append(e.getKey() == this ? "(this Map)" : e.getKey());
             sb.append('=');
             sb.append(e.getValue() == this ? "(this Map)" : e.getValue());
         }
         while (iter.hasNext()) {
             sb.append(", ");
-            TMap.Entry<K,V> e = iter.next();
+            TMap.Entry<K, V> e = iter.next();
             sb.append(e.getKey() == this ? "(this Map)" : e.getKey());
             sb.append('=');
             sb.append(e.getValue() == this ? "(this Map)" : e.getValue());
