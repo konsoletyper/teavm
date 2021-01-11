@@ -142,15 +142,17 @@ public abstract class TAbstractCollection<E> extends TObject implements TCollect
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("[");
+        sb.append('[');
         TIterator<E> iter = iterator();
         if (iter.hasNext()) {
-            sb.append(String.valueOf(iter.next()));
+            E e = iter.next();
+            sb.append(e == this ? "(this Collection)" : iter.next());
         }
         while (iter.hasNext()) {
-            sb.append(", ").append(String.valueOf(iter.next()));
+            E e = iter.next();
+            sb.append(", ").append(e == this ? "(this Collection)" : iter.next());
         }
-        sb.append("]");
+        sb.append(']');
         return sb.toString();
     }
 }
