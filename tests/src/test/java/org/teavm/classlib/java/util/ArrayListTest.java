@@ -174,4 +174,14 @@ public class ArrayListTest {
         assertEquals("A1", list.get(0));
         assertEquals("B1", list.get(1));
     }
+
+    @Test
+    public void testToString() {
+        List list = new ArrayList<>();
+        list.add(list);
+        list.add("A");
+
+        assertEquals("[(this Collection), A]", list.toString());
+        assertEquals("[]", new ArrayList().toString());
+    }
 }
