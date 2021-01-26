@@ -249,11 +249,9 @@ public final class TMath extends TObject {
     public static long multiplyExact(long a, long b) {
         if (b == 1) {
             return a;
-        }
-        if (a == 1) {
+        } else if (a == 1) {
             return b;
-        }
-        if (a == 0 || b == 0) {
+        } else if (a == 0 || b == 0) {
             return 0;
         }
         long total = a * b;
