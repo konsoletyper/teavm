@@ -21,8 +21,6 @@ import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
-
 @NoSideEffects
 public final class TMath extends TObject {
     public static final double E = 2.71828182845904523536;
