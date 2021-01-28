@@ -17,6 +17,8 @@ package org.teavm.idea;
 
 import static org.teavm.idea.jps.remote.TeaVMBuilderAssistant.REMOTE_PORT;
 import com.intellij.compiler.server.BuildProcessParametersProvider;
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -26,9 +28,10 @@ public class TeaVMJPSConfigurator extends BuildProcessParametersProvider {
     private TeaVMJPSRemoteService remoteService;
     private TeaVMDaemonComponent daemonComponent;
 
-    public TeaVMJPSConfigurator(TeaVMJPSRemoteService remoteService, TeaVMDaemonComponent daemonComponent) {
-        this.remoteService = remoteService;
-        this.daemonComponent = daemonComponent;
+    public TeaVMJPSConfigurator() {
+        Application app = ApplicationManager.getApplication();
+        this.remoteService = app.getComponent(TeaVMJPSRemoteService.class);
+        this.daemonComponent = app.getComponent(TeaVMDaemonComponent.class);
     }
 
     @NotNull

@@ -16,7 +16,7 @@ cat <<EOF >.idea-repository.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <plugins>
   <plugin id="org.teavm.idea" url="https://dl.bintray.com/konsoletyper/teavm/org/teavm/teavm-idea/$NEW_VERSION/teavm-idea-$NEW_VERSION.zip" version="$NEW_VERSION">
-    <idea-version since-build="173.*" until-build="223.*" />
+    <idea-version since-build="182.*" until-build="223.*" />
     <description>TeaVM support</description>
   </plugin>
 </plugins>
