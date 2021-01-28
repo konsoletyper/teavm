@@ -31,8 +31,8 @@ public abstract class Uint16Array extends ArrayBufferView {
     @JSBody(params = "buffer", script = "return new Uint16Array(buffer);")
     public static native Uint16Array create(ArrayBuffer buffer);
 
-    @JSBody(params = "bufferView", script = "return new Uint16Array(bufferView.buffer);")
-    public static native Uint16Array create(ArrayBufferView bufferView);
+    @JSBody(params = "buffer", script = "return new Uint16Array(buffer);")
+    public static native Uint16Array create(ArrayBufferView buffer);
 
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new Uint16Array(buffer, offset, length);")
     public static native Uint16Array create(ArrayBuffer buffer, int offset, int length);
