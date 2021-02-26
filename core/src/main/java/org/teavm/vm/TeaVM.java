@@ -603,6 +603,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (wasCancelled()) {
             return;
         }
+
+        boolean shouldLog = System.getProperty("org.teavm.logDevirtualization", "false").equals("true");
+        if (shouldLog) {
+            System.out.println("Running devirtualization");
+        }
+
         Devirtualization devirtualization = new Devirtualization(dependencyAnalyzer,
                 dependencyAnalyzer.getClassHierarchy());
         for (String className : classes.getClassNames()) {
@@ -618,6 +624,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             }
         }
         virtualMethods = devirtualization.getVirtualMethods();
+
+        if (shouldLog) {
+            System.out.println("Devirtualization complete");
+            System.out.println("Virtual calls: " + devirtualization.getVirtualCallSites());
+            System.out.println("Direct calls: " + devirtualization.getDirectCallSites());
+        }
     }
 
     private void inline(ListableClassHolderSource classes) {

@@ -34,14 +34,25 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 
 public class Devirtualization {
+    static final boolean shouldLog = System.getProperty("org.teavm.logDevirtualization", "false").equals("true");
     private DependencyInfo dependency;
     private ClassHierarchy hierarchy;
     private Set<MethodReference> virtualMethods = new HashSet<>();
     private Set<? extends MethodReference> readonlyVirtualMethods = Collections.unmodifiableSet(virtualMethods);
+    private int virtualCallSites;
+    private int directCallSites;
 
     public Devirtualization(DependencyInfo dependency, ClassHierarchy hierarchy) {
         this.dependency = dependency;
         this.hierarchy = hierarchy;
+    }
+
+    public int getVirtualCallSites() {
+        return virtualCallSites;
+    }
+
+    public int getDirectCallSites() {
+        return directCallSites;
     }
 
     public void apply(MethodHolder method) {
@@ -50,6 +61,11 @@ public class Devirtualization {
             return;
         }
         Program program = method.getProgram();
+
+        if (shouldLog) {
+            System.out.println("DEVIRTUALIZATION running at " + method.getReference());
+        }
+
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block) {
@@ -64,12 +80,45 @@ public class Devirtualization {
                 Set<MethodReference> implementations = getImplementations(var.getTypes(),
                         invoke.getMethod());
                 if (implementations.size() == 1) {
+                    MethodReference resolvedImplementaiton = implementations.iterator().next();
+                    if (shouldLog) {
+                        System.out.print("DIRECT CALL " + invoke.getMethod() + " resolved to "
+                                + resolvedImplementaiton.getClassName());
+                        if (insn.getLocation() != null) {
+                            System.out.print(" at " + insn.getLocation().getFileName() + ":"
+                                    + insn.getLocation().getLine());
+                        }
+                        System.out.println();
+                    }
                     invoke.setType(InvocationType.SPECIAL);
-                    invoke.setMethod(implementations.iterator().next());
+                    invoke.setMethod(resolvedImplementaiton);
+                    directCallSites++;
                 } else {
                     virtualMethods.addAll(implementations);
+                    if (shouldLog) {
+                        System.out.print("VIRTUAL CALL " + invoke.getMethod() + " resolved to [");
+                        boolean first = true;
+                        for (MethodReference impl : implementations) {
+                            if (!first) {
+                                System.out.print(", ");
+                            }
+                            first = false;
+                            System.out.print(impl.getClassName());
+                        }
+                        System.out.print("]");
+                        if (insn.getLocation() != null) {
+                            System.out.print(" at " + insn.getLocation().getFileName() + ":"
+                                    + insn.getLocation().getLine());
+                        }
+                        System.out.println();
+                    }
+                    virtualCallSites++;
                 }
             }
+        }
+
+        if (shouldLog) {
+            System.out.println("DEVIRTUALIZATION complete for " + method.getReference());
         }
     }
 
