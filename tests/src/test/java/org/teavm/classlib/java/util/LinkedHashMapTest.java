@@ -550,4 +550,14 @@ public class LinkedHashMapTest {
         }
         assertTrue("Entries left to iterate on", !it2.hasNext());
     }
+
+    @Test
+    public void test_to_String() {
+        LinkedHashMap lhm = new LinkedHashMap();
+        lhm.put("A", lhm);
+        lhm.put("B", "C");
+
+        assertEquals("{A=(this Map), B=C}", lhm.toString());
+        assertEquals("{}", new LinkedHashMap().toString());
+    }
 }

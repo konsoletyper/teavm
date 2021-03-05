@@ -15,6 +15,7 @@
  */
 package org.teavm.idea.ui;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.SearchableConfigurable;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -36,8 +37,8 @@ public class TeaVMSettingsEditorTab implements SearchableConfigurable {
     private JCheckBox incrementalCheckBox;
     private TeaVMDaemonComponent daemonComponent;
 
-    public TeaVMSettingsEditorTab(TeaVMDaemonComponent daemonComponent) {
-        this.daemonComponent = daemonComponent;
+    public TeaVMSettingsEditorTab() {
+        this.daemonComponent = ApplicationManager.getApplication().getComponent(TeaVMDaemonComponent.class);
 
         contentPane = new JPanel();
         daemonCheckBox = new JCheckBox("use build daemon (can increase performance in most cases)");

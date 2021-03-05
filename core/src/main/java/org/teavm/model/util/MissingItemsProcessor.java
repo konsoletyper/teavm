@@ -207,16 +207,12 @@ public class MissingItemsProcessor {
         if (!checkClass(location, method.getClassName())) {
             return false;
         }
-        if (!reachableMethods.contains(method)) {
-            return true;
-        }
 
         if (hierarchy.resolve(method) != null) {
             return true;
         }
 
-        diagnostics.error(new CallLocation(methodRef, location), "Method {{m0}} was not found",
-                method);
+        diagnostics.error(new CallLocation(methodRef, location), "Method {{m0}} was not found", method);
         emitExceptionThrow(location, NoSuchMethodError.class.getName(), "Method not found: " + method);
         return true;
     }

@@ -21,6 +21,7 @@ import com.intellij.openapi.extensions.PluginId;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -57,11 +58,16 @@ public final class DaemonUtil {
     }
 
     public static List<String> detectClassPath() {
-        IdeaPluginDescriptor plugin = PluginManager.getPlugin(PluginId.getId("org.teavm.idea"));
-        Set<File> visited = new HashSet<>();
-        List<String> classPath = new ArrayList<>();
-        findInHierarchy(plugin.getPath(), classPath, visited);
-        return classPath;
+        PluginId id = PluginId.getId("org.teavm.idea");
+        for (IdeaPluginDescriptor plugin : PluginManager.getPlugins()) {
+            if (plugin.getPluginId().compareTo(id) == 0) {
+                Set<File> visited = new HashSet<>();
+                List<String> classPath = new ArrayList<>();
+                findInHierarchy(plugin.getPath(), classPath, visited);
+                return classPath;
+            }
+        }
+        return Collections.emptyList();
     }
 
     private static void findInHierarchy(File file, List<String> targetFiles, Set<File> visited) {

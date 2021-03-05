@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 public class TeaVMDebugConfigurationType extends ConfigurationTypeBase {
     public TeaVMDebugConfigurationType() {
         super("TeaVMDebugConfiguration", "TeaVM debug server", "Debug server that expects connection from browser "
-                + "agent", IconLoader.getIcon("/teavm-16.png"));
+                + "agent", IconLoader.findIcon("/teavm-16.png"));
     }
 
     private final ConfigurationFactory factory = new ConfigurationFactory(this) {

@@ -25,6 +25,7 @@ import com.intellij.psi.JavaCodeFragment;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.util.PsiMethodUtil;
 import com.intellij.ui.EditorTextFieldWithBrowseButton;
+import com.intellij.util.ui.JBUI;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.text.DecimalFormat;
@@ -33,7 +34,6 @@ import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
 import org.teavm.idea.devserver.TeaVMDevServerConfiguration;
 
 public class TeaVMDevServerSettingsPanel extends JPanel {
@@ -89,7 +89,7 @@ public class TeaVMDevServerSettingsPanel extends JPanel {
 
     private void initLayout() {
         setLayout(new GridBagLayout());
-        setBorder(new EmptyBorder(10, 10, 10, 10));
+        setBorder(JBUI.Borders.empty(10));
 
         GridBagConstraints labelConstraints = new GridBagConstraints();
         labelConstraints.insets.right = 5;

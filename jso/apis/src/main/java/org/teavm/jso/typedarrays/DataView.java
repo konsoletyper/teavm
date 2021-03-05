@@ -77,8 +77,8 @@ public abstract class DataView extends ArrayBufferView {
     @JSBody(params = "buffer", script = "return new DataView(buffer);")
     public static native DataView create(ArrayBuffer buffer);
 
-    @JSBody(params = "bufferView", script = "return new DataView(bufferView.buffer);")
-    public static native DataView create(ArrayBufferView bufferView);
+    @JSBody(params = "buffer", script = "return new DataView(buffer);")
+    public static native DataView create(ArrayBufferView buffer);
 
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new DataView(buffer, offset, length);")
     public static native DataView create(ArrayBuffer buffer, int offset, int length);
