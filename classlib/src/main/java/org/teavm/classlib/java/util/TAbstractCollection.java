@@ -146,11 +146,11 @@ public abstract class TAbstractCollection<E> extends TObject implements TCollect
         TIterator<E> iter = iterator();
         if (iter.hasNext()) {
             E e = iter.next();
-            sb.append(e == this ? "(this Collection)" : iter.next());
+            sb.append(e == this ? "(this Collection)" : e);
         }
         while (iter.hasNext()) {
             E e = iter.next();
-            sb.append(", ").append(e == this ? "(this Collection)" : iter.next());
+            sb.append(", ").append(e == this ? "(this Collection)" : e);
         }
         sb.append(']');
         return sb.toString();
