@@ -283,6 +283,26 @@ public class FileOutputStreamTest {
         fos.close();
     }
 
+    @Test
+    public void repeatedWrite() throws IOException {
+        f = new File(System.getProperty("user.home"), "test.txt");
+        fos = new FileOutputStream(f);
+        fos.write("A very long test string for purposes of testing.".getBytes());
+        fos.close();
+
+        fos = new FileOutputStream(f);
+        fos.write("A short string.".getBytes());
+        fos.close();
+
+        int length = (int) f.length();
+        byte[] bytes = new byte[length];
+        fis = new FileInputStream(f);
+        fis.read(bytes, 0, length);
+        String str = new String(bytes);
+
+        assertEquals("A short string.", str);
+    }
+
     @After
     public void tearDown() throws Exception {
         if (f != null) {
