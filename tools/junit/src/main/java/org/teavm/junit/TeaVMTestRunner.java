@@ -17,10 +17,12 @@ package org.teavm.junit;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -164,7 +166,12 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 case "htmlunit":
                     jsRunStrategy = new HtmlUnitRunStrategy();
                     break;
-                case "":
+                case "browser":
+                    jsRunStrategy = new BrowserRunStrategy(outputDir, "JAVASCRIPT", this::customBrowser);
+                    break;
+                case "browser-chrome":
+                    jsRunStrategy = new BrowserRunStrategy(outputDir, "JAVASCRIPT", this::chromeBrowser);
+                    break;
                 case "none":
                     jsRunStrategy = null;
                     break;
@@ -178,6 +185,73 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         if (cCommand != null) {
             runners.get(RunKind.C).strategy = new CRunStrategy(cCommand);
         }
+    }
+
+    private Process customBrowser(String url) {
+        System.out.println("Open link to run tests: " + url + "?logging=true");
+        return null;
+    }
+
+    private Process chromeBrowser(String url) {
+        File temp;
+        try {
+            temp = File.createTempFile("teavm", "teavm");
+            temp.delete();
+            temp.mkdirs();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                deleteDir(temp);
+            }));
+            System.out.println("Running chrome with user data dir: " + temp.getAbsolutePath());
+            ProcessBuilder pb = new ProcessBuilder(
+                    "google-chrome-stable",
+                    "--headless",
+                    "--disable-gpu",
+                    "--remote-debugging-port=9222",
+                    "--no-first-run",
+                    "--user-data-dir=" + temp.getAbsolutePath(),
+                    url
+            );
+            Process process = pb.start();
+            logStream(process.getInputStream(), "Chrome stdout");
+            logStream(process.getErrorStream(), "Chrome stderr");
+            new Thread(() -> {
+               try {
+                   System.out.println("Chrome process terminated with code: " + process.waitFor());
+               } catch (InterruptedException e) {
+                   // ignore
+               }
+            });
+            return process;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void logStream(InputStream stream, String name) {
+        new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
+                while (true) {
+                    String line = reader.readLine();
+                    if (line == null) {
+                        break;
+                    }
+                    System.out.println(name + ": " + line);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private void deleteDir(File dir) {
+        for (File file : dir.listFiles()) {
+            if (file.isDirectory()) {
+                deleteDir(file);
+            } else {
+                file.delete();
+            }
+        }
+        dir.delete();
     }
 
     @Override
@@ -707,7 +781,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 }
             };
         }
-        return compile(configuration, targetSupplier, TestEntryPoint.class.getName(), path, ".js",
+        return compile(configuration, targetSupplier, TestJsEntryPoint.class.getName(), path, ".js",
                 postBuild, false, additionalProcessing, baseName);
     }
 

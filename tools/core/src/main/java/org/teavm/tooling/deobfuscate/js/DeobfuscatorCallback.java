@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2021 konsoletyper.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,18 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.junit;
+package org.teavm.tooling.deobfuscate.js;
 
-import java.io.IOException;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
 
-interface TestRunStrategy {
-    void beforeAll();
-
-    void afterAll();
-
-    void beforeThread();
-
-    void afterThread();
-
-    void runTest(TestRun run) throws IOException;
+@JSFunctor
+public interface DeobfuscatorCallback extends JSObject {
+    void run();
 }

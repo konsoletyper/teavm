@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2021 konsoletyper.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.devserver.deobfuscate;
+package org.teavm.tooling.deobfuscate.js;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,6 +26,7 @@ import org.teavm.debugging.information.SourceLocation;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.ajax.XMLHttpRequest;
 import org.teavm.jso.core.JSArray;
+import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.core.JSRegExp;
 import org.teavm.jso.core.JSString;
 import org.teavm.jso.typedarrays.ArrayBuffer;
@@ -33,9 +34,16 @@ import org.teavm.jso.typedarrays.Int8Array;
 import org.teavm.model.MethodReference;
 
 public final class Deobfuscator {
-    private static final JSRegExp FRAME_PATTERN = JSRegExp.create("^ +at ([^(]+) *\\((.+):([0-9]+):([0-9]+)\\) *$");
+    private static final JSRegExp FRAME_PATTERN = JSRegExp.create(""
+            + "(^ +at ([^(]+) *\\((.+):([0-9]+):([0-9]+)\\) *$)|"
+            + "(^([^@]*)@(.+):([0-9]+):([0-9]+)$)");
+    private DebugInformation debugInformation;
+    private String classesFileName;
 
-    private Deobfuscator() {
+    public Deobfuscator(ArrayBuffer buffer, String classesFileName) throws IOException {
+        Int8Array array = Int8Array.create(buffer);
+        debugInformation = DebugInformation.read(new Int8ArrayInputStream(array));
+        this.classesFileName = classesFileName;
     }
 
     public static void main(String[] args) {
@@ -52,37 +60,43 @@ public final class Deobfuscator {
         xhr.send();
     }
 
+    public Frame[] deobfuscate(String stack) {
+        List<Frame> frames = new ArrayList<>();
+        for (String line : splitLines(stack)) {
+            JSArray<JSString> groups = FRAME_PATTERN.exec(JSString.valueOf(line));
+            if (groups == null) {
+                continue;
+            }
+
+            int groupOffset = 1;
+            if (JSObjects.isUndefined(groups.get(1))) {
+                groupOffset = 6;
+            }
+
+            String functionName = groups.get(1 + groupOffset).stringValue();
+            String fileName = groups.get(2 + groupOffset).stringValue();
+            int lineNumber = Integer.parseInt(groups.get(3 + groupOffset).stringValue());
+            int columnNumber = Integer.parseInt(groups.get(4 + groupOffset).stringValue());
+            List<Frame> framesPerLine = deobfuscateFrames(debugInformation, classesFileName, fileName,
+                    lineNumber, columnNumber);
+            if (framesPerLine == null) {
+                framesPerLine = Arrays.asList(createDefaultFrame(fileName, functionName, lineNumber));
+            }
+            frames.addAll(framesPerLine);
+        }
+        return frames.toArray(new Frame[0]);
+    }
+
     private static void installDeobfuscator(ArrayBuffer buffer, String classesFileName) {
-        Int8Array array = Int8Array.create(buffer);
-        DebugInformation debugInformation;
+        Deobfuscator deobfuscator;
         try {
-            debugInformation = DebugInformation.read(new Int8ArrayInputStream(array));
+            deobfuscator = new Deobfuscator(buffer, classesFileName);
         } catch (IOException e) {
             e.printStackTrace();
             return;
         }
 
-        setDeobfuscateFunction(stack -> {
-            List<Frame> frames = new ArrayList<>();
-            for (String line : splitLines(stack)) {
-                JSArray<JSString> groups = FRAME_PATTERN.exec(JSString.valueOf(line));
-                if (groups == null) {
-                    continue;
-                }
-
-                String functionName = groups.get(1).stringValue();
-                String fileName = groups.get(2).stringValue();
-                int lineNumber = Integer.parseInt(groups.get(3).stringValue());
-                int columnNumber = Integer.parseInt(groups.get(4).stringValue());
-                List<Frame> framesPerLine = deobfuscateFrames(debugInformation, classesFileName, fileName,
-                        lineNumber, columnNumber);
-                if (framesPerLine == null) {
-                    framesPerLine = Arrays.asList(createDefaultFrame(fileName, functionName, lineNumber));
-                }
-                frames.addAll(framesPerLine);
-            }
-            return frames.toArray(new Frame[0]);
-        });
+        setDeobfuscateFunction(deobfuscator::deobfuscate);
         DeobfuscatorCallback callback = getCallback();
         if (callback != null) {
             callback.run();

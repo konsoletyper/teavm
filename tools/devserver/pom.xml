@@ -63,12 +63,6 @@
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
-      <artifactId>teavm-jso-apis</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.teavm</groupId>
       <artifactId>teavm-tooling</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -134,7 +128,7 @@
               <targetFileName>deobfuscator.js</targetFileName>
               <minifying>true</minifying>
               <optimizationLevel>ADVANCED</optimizationLevel>
-              <mainClass>org.teavm.devserver.deobfuscate.Deobfuscator</mainClass>
+              <mainClass>org.teavm.tooling.deobfuscate.js.Deobfuscator</mainClass>
               <entryPointName>$teavm_deobfuscator</entryPointName>
             </configuration>
           </execution>

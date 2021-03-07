@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2021 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,21 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.devserver.deobfuscate;
+package org.teavm.tooling.deobfuscate.js;
 
 import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
+import org.teavm.jso.typedarrays.ArrayBuffer;
 
-public interface Frame extends JSObject {
-    @JSProperty
-    void setClassName(String className);
-
-    @JSProperty
-    void setFileName(String fileName);
-
-    @JSProperty
-    void setMethodName(String methodName);
-
-    @JSProperty
-    void setLineNumber(int lineNumber);
+public interface DeobfuscatorJs extends JSObject {
+    DeobfuscateFunction create(ArrayBuffer buffer, String classesFileName);
 }
+
