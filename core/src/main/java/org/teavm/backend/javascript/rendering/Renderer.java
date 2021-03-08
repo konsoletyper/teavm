@@ -261,7 +261,8 @@ public class Renderer implements RenderingManager {
                 "$rt_createLongArrayFromData", "$rt_createBooleanArray", "$rt_createByteArray",
                 "$rt_createShortArray", "$rt_createCharArray", "$rt_createIntArray", "$rt_createLongArray",
                 "$rt_createFloatArray", "$rt_createDoubleArray", "$rt_compare",
-                "Long_toNumber", "Long_fromInt", "Long_fromNumber", "Long", "Long_ZERO");
+                "Long_toNumber", "Long_fromInt", "Long_fromNumber", "Long_create", "Long_ZERO",
+                "Long_hi", "Long_lo");
     }
 
     public void renderLongRuntimeAliases() throws IOException {

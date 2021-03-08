@@ -312,8 +312,10 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
         if (expr.getSource() == OperationType.LONG) {
             if (expr.getTarget() == OperationType.DOUBLE || expr.getTarget() == OperationType.FLOAT) {
                 consumer.consumeFunction("Long_toNumber");
+            } else if (expr.getTarget() == OperationType.INT) {
+                consumer.consumeFunction("Long_lo");
             }
-        } else {
+        } else if (expr.getTarget() == OperationType.LONG) {
             switch (expr.getSource()) {
                 case INT:
                     consumer.consumeFunction("Long_fromInt");
@@ -339,7 +341,7 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
             } else if ((int) value == value) {
                 consumer.consumeFunction("Long_fromInt");
             } else {
-                consumer.consumeFunction("Long");
+                consumer.consumeFunction("Long_create");
             }
         }
     }

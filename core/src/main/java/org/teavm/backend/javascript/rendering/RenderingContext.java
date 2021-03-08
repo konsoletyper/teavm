@@ -239,7 +239,7 @@ public class RenderingContext {
             } else if ((int) value == value) {
                 writer.appendFunction("Long_fromInt").append("(").append(String.valueOf(value)).append(")");
             } else {
-                writer.append("new ").appendFunction("Long").append("(" + (value & 0xFFFFFFFFL)
+                writer.appendFunction("Long_create").append("(" + (value & 0xFFFFFFFFL)
                         + ", " + (value >>> 32) + ")");
             }
         } else if (cst instanceof Character) {

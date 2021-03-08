@@ -929,11 +929,13 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                             precedence = Precedence.MEMBER_ACCESS;
                             Expr longShifted = extractLongRightShiftedBy32(expr.getValue());
                             if (longShifted != null) {
+                                writer.appendFunction("Long_hi").append("(");
                                 longShifted.acceptVisitor(this);
-                                writer.append(".hi");
+                                writer.append(")");
                             } else {
+                                writer.appendFunction("Long_lo").append("(");
                                 expr.getValue().acceptVisitor(this);
-                                writer.append(".lo");
+                                writer.append(")");
                             }
                             break;
                         case FLOAT:
