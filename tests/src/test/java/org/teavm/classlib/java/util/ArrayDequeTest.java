@@ -154,7 +154,7 @@ public class ArrayDequeTest {
 
     @Test
     public void removeFirstShouldNotContainTheFirstAddedObject() {
-        TArrayDeque<Object> arrayDeque1 = new TArrayDeque<>();
+        ArrayDeque<Object> arrayDeque1 = new ArrayDeque<>();
         Object object1 = new Object();
         Object object2 = new Object();
         Object object3 = new Object();
@@ -166,7 +166,7 @@ public class ArrayDequeTest {
         Assert.assertTrue(arrayDeque1.contains(object2));
         Assert.assertTrue(arrayDeque1.contains(object3));
 
-        TArrayDeque<Object> arrayDeque2 = new TArrayDeque<>();
+        ArrayDeque<Object> arrayDeque2 = new ArrayDeque<>();
         arrayDeque2.add(object1);
         arrayDeque2.add(object2);
         arrayDeque2.add(object3);
@@ -175,7 +175,7 @@ public class ArrayDequeTest {
         Assert.assertTrue(arrayDeque2.size() == 1);
         Assert.assertTrue(arrayDeque2.contains(object3));
 
-        TArrayDeque<Object> arrayDeque3 = new TArrayDeque<>();
+        ArrayDeque<Object> arrayDeque3 = new ArrayDeque<>();
         arrayDeque3.add(object1);
         arrayDeque3.add(object2);
         arrayDeque3.add(object3);
@@ -184,7 +184,7 @@ public class ArrayDequeTest {
         Assert.assertTrue(arrayDeque3.size() == 1);
         Assert.assertTrue(arrayDeque3.contains(object3));
 
-        TArrayDeque<Object> arrayDeque4 = new TArrayDeque<>();
+        ArrayDeque<Object> arrayDeque4 = new ArrayDeque<>();
         arrayDeque4.add(object1);
         arrayDeque4.add(object2);
         arrayDeque4.add(object3);
@@ -196,7 +196,7 @@ public class ArrayDequeTest {
 
     @Test
     public void removeLastShouldNotContainTheLastAddedObject() {
-        TArrayDeque<Object> arrayDeque1 = new TArrayDeque<>();
+        ArrayDeque<Object> arrayDeque1 = new ArrayDeque<>();
         Object object1 = new Object();
         Object object2 = new Object();
         Object object3 = new Object();
@@ -208,7 +208,7 @@ public class ArrayDequeTest {
         Assert.assertTrue(arrayDeque1.contains(object1));
         Assert.assertTrue(arrayDeque1.contains(object2));
 
-        TArrayDeque<Object> arrayDeque2 = new TArrayDeque<>();
+        ArrayDeque<Object> arrayDeque2 = new ArrayDeque<>();
         arrayDeque2.add(object1);
         arrayDeque2.add(object2);
         arrayDeque2.add(object3);
@@ -217,7 +217,7 @@ public class ArrayDequeTest {
         Assert.assertTrue(arrayDeque2.size() == 1);
         Assert.assertTrue(arrayDeque2.contains(object1));
 
-        TArrayDeque<Object> arrayDeque3 = new TArrayDeque<>();
+        ArrayDeque<Object> arrayDeque3 = new ArrayDeque<>();
         arrayDeque3.add(object1);
         arrayDeque3.add(object2);
         arrayDeque3.add(object3);
@@ -226,7 +226,7 @@ public class ArrayDequeTest {
         Assert.assertTrue(arrayDeque3.size() == 1);
         Assert.assertTrue(arrayDeque3.contains(object1));
 
-        TArrayDeque<Object> arrayDeque4 = new TArrayDeque<>();
+        ArrayDeque<Object> arrayDeque4 = new ArrayDeque<>();
         arrayDeque4.add(object1);
         arrayDeque4.add(object2);
         arrayDeque4.add(object3);
@@ -238,7 +238,7 @@ public class ArrayDequeTest {
 
     @Test
     public void removeElementInWrappedArray() {
-        TArrayDeque<Object> arrayDeque = new TArrayDeque<>(8);
+        ArrayDeque<Object> arrayDeque = new ArrayDeque<>(8);
         for (int i = 0; i < 4; ++i) {
             arrayDeque.addLast(0);
         }

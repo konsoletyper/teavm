@@ -64,7 +64,7 @@ public class BrowserRunStrategy implements TestRunStrategy {
     private AtomicInteger idGenerator = new AtomicInteger(0);
     private AtomicReference<Session> wsSession = new AtomicReference<>();
     private CountDownLatch wsSessionReady = new CountDownLatch(1);
-    private ConcurrentMap<Integer, TestRun> awaitingRuns = new ConcurrentHashMap<>();
+    private ConcurrentMap<Integer, TestRunCallback> awaitingRuns = new ConcurrentHashMap<>();
     private ObjectMapper objectMapper = new ObjectMapper();
 
     public BrowserRunStrategy(File baseDir, String type, Function<String, Process> browserRunner) {
@@ -138,7 +138,20 @@ public class BrowserRunStrategy implements TestRunStrategy {
             return;
         }
         int id = idGenerator.incrementAndGet();
-        awaitingRuns.put(id, run);
+        CountDownLatch latch = new CountDownLatch(1);
+        awaitingRuns.put(id, new TestRunCallback() {
+            @Override
+            public void complete() {
+                latch.countDown();
+                run.getCallback().complete();
+            }
+
+            @Override
+            public void error(Throwable e) {
+                latch.countDown();
+                run.getCallback().error(e);
+            }
+        });
 
         JsonNodeFactory nf = objectMapper.getNodeFactory();
         ObjectNode node = nf.objectNode();
@@ -160,6 +173,12 @@ public class BrowserRunStrategy implements TestRunStrategy {
 
         String message = node.toString();
         ws.getRemote().sendStringByFuture(message);
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            // do nothing
+        }
     }
 
     class TestCodeServlet extends HttpServlet {
@@ -292,8 +311,8 @@ public class BrowserRunStrategy implements TestRunStrategy {
         public void onWebSocketClose(int statusCode, String reason) {
             if (ready.get()) {
                 System.err.println("Browser has disconnected");
-                for (TestRun run : awaitingRuns.values()) {
-                    run.getCallback().error(new RuntimeException("Browser disconnected unexpectedly"));
+                for (TestRunCallback run : awaitingRuns.values()) {
+                    run.error(new RuntimeException("Browser disconnected unexpectedly"));
                 }
             }
         }
@@ -312,7 +331,7 @@ public class BrowserRunStrategy implements TestRunStrategy {
             }
 
             int id = node.get("id").asInt();
-            TestRun run = awaitingRuns.remove(id);
+            TestRunCallback run = awaitingRuns.remove(id);
             if (run == null) {
                 System.err.println("Unexpected run id: " + id);
                 return;
@@ -337,9 +356,9 @@ public class BrowserRunStrategy implements TestRunStrategy {
 
             String status = resultNode.get("status").asText();
             if (status.equals("OK")) {
-                run.getCallback().complete();
+                run.complete();
             } else {
-                run.getCallback().error(new RuntimeException(resultNode.get("errorMessage").asText()));
+                run.error(new RuntimeException(resultNode.get("errorMessage").asText()));
             }
         }
     }

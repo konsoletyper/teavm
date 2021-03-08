@@ -172,6 +172,9 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 case "browser-chrome":
                     jsRunStrategy = new BrowserRunStrategy(outputDir, "JAVASCRIPT", this::chromeBrowser);
                     break;
+                case "browser-firefox":
+                    jsRunStrategy = new BrowserRunStrategy(outputDir, "JAVASCRIPT", this::firefoxBrowser);
+                    break;
                 case "none":
                     jsRunStrategy = null;
                     break;
@@ -220,6 +223,39 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                } catch (InterruptedException e) {
                    // ignore
                }
+            });
+            return process;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Process firefoxBrowser(String url) {
+        File temp;
+        try {
+            temp = File.createTempFile("teavm", "teavm");
+            temp.delete();
+            temp.mkdirs();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                deleteDir(temp);
+            }));
+            System.out.println("Running firefox with user data dir: " + temp.getAbsolutePath());
+            ProcessBuilder pb = new ProcessBuilder(
+                    "firefox",
+                    "--headless",
+                    "--profile",
+                    temp.getAbsolutePath(),
+                    url
+            );
+            Process process = pb.start();
+            logStream(process.getInputStream(), "Firefox stdout");
+            logStream(process.getErrorStream(), "Firefox stderr");
+            new Thread(() -> {
+                try {
+                    System.out.println("Firefox process terminated with code: " + process.waitFor());
+                } catch (InterruptedException e) {
+                    // ignore
+                }
             });
             return process;
         } catch (IOException e) {
