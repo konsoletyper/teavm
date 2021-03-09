@@ -30,13 +30,13 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -62,9 +62,8 @@ public class BrowserRunStrategy implements TestRunStrategy {
     private Server server;
     private int port;
     private AtomicInteger idGenerator = new AtomicInteger(0);
-    private AtomicReference<Session> wsSession = new AtomicReference<>();
-    private CountDownLatch wsSessionReady = new CountDownLatch(1);
-    private ConcurrentMap<Integer, TestRunCallback> awaitingRuns = new ConcurrentHashMap<>();
+    private BlockingQueue<Session> wsSessionQueue = new LinkedBlockingQueue<>();
+    private ConcurrentMap<Integer, CallbackWrapper> awaitingRuns = new ConcurrentHashMap<>();
     private ObjectMapper objectMapper = new ObjectMapper();
 
     public BrowserRunStrategy(File baseDir, String type, Function<String, Process> browserRunner) {
@@ -122,36 +121,57 @@ public class BrowserRunStrategy implements TestRunStrategy {
     public void afterThread() {
     }
 
+    static class CallbackWrapper implements TestRunCallback {
+        private final CountDownLatch latch;
+        private final TestRun run;
+        volatile boolean shouldRepeat;
+
+        CallbackWrapper(CountDownLatch latch, TestRun run) {
+            this.latch = latch;
+            this.run = run;
+        }
+
+        @Override
+        public void complete() {
+            latch.countDown();
+            run.getCallback().complete();
+        }
+
+        @Override
+        public void error(Throwable e) {
+            latch.countDown();
+            run.getCallback().error(e);
+        }
+
+        void repeat() {
+            latch.countDown();
+            shouldRepeat = true;
+        }
+    }
+
     @Override
     public void runTest(TestRun run) throws IOException {
+        while (!runTestOnce(run)) {
+            // repeat
+        }
+    }
+
+    private boolean runTestOnce(TestRun run) {
+        Session ws;
         try {
-            while (!wsSessionReady.await(1L, TimeUnit.SECONDS)) {
-                // keep waiting
-            }
+            do {
+                ws = wsSessionQueue.poll(1, TimeUnit.SECONDS);
+            } while (ws == null || !ws.isOpen());
         } catch (InterruptedException e) {
             run.getCallback().error(e);
-            return;
+            return true;
         }
 
-        Session ws = wsSession.get();
-        if (ws == null) {
-            return;
-        }
         int id = idGenerator.incrementAndGet();
         CountDownLatch latch = new CountDownLatch(1);
-        awaitingRuns.put(id, new TestRunCallback() {
-            @Override
-            public void complete() {
-                latch.countDown();
-                run.getCallback().complete();
-            }
 
-            @Override
-            public void error(Throwable e) {
-                latch.countDown();
-                run.getCallback().error(e);
-            }
-        });
+        CallbackWrapper callbackWrapper = new CallbackWrapper(latch, run);
+        awaitingRuns.put(id, callbackWrapper);
 
         JsonNodeFactory nf = objectMapper.getNodeFactory();
         ObjectNode node = nf.objectNode();
@@ -179,6 +199,12 @@ public class BrowserRunStrategy implements TestRunStrategy {
         } catch (InterruptedException e) {
             // do nothing
         }
+
+        if (ws.isOpen()) {
+            wsSessionQueue.offer(ws);
+        }
+
+        return !callbackWrapper.shouldRepeat;
     }
 
     class TestCodeServlet extends HttpServlet {
@@ -295,34 +321,20 @@ public class BrowserRunStrategy implements TestRunStrategy {
     }
 
     class TestCodeSocket extends WebSocketAdapter {
-        private AtomicBoolean ready = new AtomicBoolean(false);
-
         @Override
         public void onWebSocketConnect(Session sess) {
-            if (wsSession.compareAndSet(null, sess)) {
-                ready.set(true);
-                wsSessionReady.countDown();
-            } else {
-                System.err.println("Link opened in multiple browsers");
-            }
+            wsSessionQueue.offer(sess);
         }
 
         @Override
         public void onWebSocketClose(int statusCode, String reason) {
-            if (ready.get()) {
-                System.err.println("Browser has disconnected");
-                for (TestRunCallback run : awaitingRuns.values()) {
-                    run.error(new RuntimeException("Browser disconnected unexpectedly"));
-                }
+            for (CallbackWrapper run : awaitingRuns.values()) {
+                run.repeat();
             }
         }
 
         @Override
         public void onWebSocketText(String message) {
-            if (!ready.get()) {
-                return;
-            }
-
             JsonNode node;
             try {
                 node = objectMapper.readTree(new StringReader(message));

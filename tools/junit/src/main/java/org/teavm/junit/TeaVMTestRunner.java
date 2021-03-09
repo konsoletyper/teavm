@@ -43,6 +43,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -196,63 +197,50 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     }
 
     private Process chromeBrowser(String url) {
-        File temp;
-        try {
-            temp = File.createTempFile("teavm", "teavm");
-            temp.delete();
-            temp.mkdirs();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                deleteDir(temp);
-            }));
-            System.out.println("Running chrome with user data dir: " + temp.getAbsolutePath());
-            ProcessBuilder pb = new ProcessBuilder(
+        return browserTemplate("chrome", url, (profile, params) -> {
+            params.addAll(Arrays.asList(
                     "google-chrome-stable",
                     "--headless",
                     "--disable-gpu",
                     "--remote-debugging-port=9222",
                     "--no-first-run",
-                    "--user-data-dir=" + temp.getAbsolutePath(),
-                    url
-            );
-            Process process = pb.start();
-            logStream(process.getInputStream(), "Chrome stdout");
-            logStream(process.getErrorStream(), "Chrome stderr");
-            new Thread(() -> {
-               try {
-                   System.out.println("Chrome process terminated with code: " + process.waitFor());
-               } catch (InterruptedException e) {
-                   // ignore
-               }
-            });
-            return process;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+                    "--user-data-dir=" + profile
+            ));
+        });
     }
 
     private Process firefoxBrowser(String url) {
+        return browserTemplate("firefox", url, (profile, params) -> {
+            params.addAll(Arrays.asList(
+                    "firefox",
+                    "--headless",
+                    "--profile",
+                    profile
+            ));
+        });
+    }
+
+    private Process browserTemplate(String name, String url, BiConsumer<String, List<String>> paramsBuilder) {
         File temp;
         try {
             temp = File.createTempFile("teavm", "teavm");
             temp.delete();
             temp.mkdirs();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                deleteDir(temp);
-            }));
-            System.out.println("Running firefox with user data dir: " + temp.getAbsolutePath());
-            ProcessBuilder pb = new ProcessBuilder(
-                    "firefox",
-                    "--headless",
-                    "--profile",
-                    temp.getAbsolutePath(),
-                    url
-            );
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> deleteDir(temp)));
+            System.out.println("Running " + name + " with user data dir: " + temp.getAbsolutePath());
+            List<String> params = new ArrayList<>();
+            paramsBuilder.accept(temp.getAbsolutePath(), params);
+            int tabs = Integer.parseInt(System.getProperty(THREAD_COUNT, "1"));
+            for (int i = 0; i < tabs; ++i) {
+                params.add(url);
+            }
+            ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[0]));
             Process process = pb.start();
-            logStream(process.getInputStream(), "Firefox stdout");
-            logStream(process.getErrorStream(), "Firefox stderr");
+            logStream(process.getInputStream(), name + " stdout");
+            logStream(process.getErrorStream(), name + " stderr");
             new Thread(() -> {
                 try {
-                    System.out.println("Firefox process terminated with code: " + process.waitFor());
+                    System.out.println(name + " process terminated with code: " + process.waitFor());
                 } catch (InterruptedException e) {
                     // ignore
                 }
