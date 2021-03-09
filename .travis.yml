@@ -20,7 +20,6 @@ branches:
 
 before_install:
   - export MVN_CMD="mvn -Dmaven.repo.local=$HOME/mvn_repo -B"
-  - nvm install 7
   - OLD_VERSION=`$MVN_CMD help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download)"`
   - BASE_VERSION=${OLD_VERSION%-SNAPSHOT}
   - NEW_VERSION=${BASE_VERSION}-dev-`printf %d $TRAVIS_BUILD_NUMBER`
@@ -34,29 +33,8 @@ before_install:
   - rm -rf $HOME/.rvm
   - rm -rf $HOME/.m2
 
-install:
-  - pushd tests/src/test/js
-  - npm config set prefix=$HOME/.node_modules
-  - npm install
-  - npm run build
-  - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 index.html &
-  - BROWSER_PID=$!
-  - node start.js test
-  - node ./bin/test-chrome.js
-  - kill $BROWSER_PID
-  - popd
-  - rm -rf tools/idea/idea-artifacts/dependencies
-
 script:
-  - $MVN_CMD -e install -Dteavm.junit.optimized=false -Dteavm.junit.js.decodeStack=false -P with-idea -P with-cli -Dteavm.junit.js.runner=none -V
-  - BASE_PATH=`pwd`
-  - pushd tests/src/test/js
-  - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 index.html  &
-  - BROWSER_PID=$!
-  - node start.js $BASE_PATH/tests/target/js-tests
-  - node start.js $BASE_PATH/html4j/target/js-tests
-  - kill $BROWSER_PID
-  - popd
+  - $MVN_CMD -e install -Dteavm.junit.optimized=false -Dteavm.junit.js.decodeStack=false -P with-idea -P with-cli -Dteavm.junit.threads=2 -Dteavm.junit.js.runner=browser-chrome -V
   - rm -rf $BASE_PATH/tests/target/js-tests
   - rm -rf $BASE_PATH/html4j/target/js-tests
   - du -sh $HOME/.[!.]* /home/travis/* | sort -h
