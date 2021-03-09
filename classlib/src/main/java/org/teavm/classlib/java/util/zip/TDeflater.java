@@ -150,7 +150,8 @@ public class TDeflater {
 
         flushParm = Z_NO_FLUSH;
         finished = false;
-        impl.init(compressLevel, strategy, nowrap);
+        impl.init(compressLevel, 15, nowrap);
+        impl.params(compressLevel, strategy);
     }
 
     public void setDictionary(byte[] buf) {
@@ -182,7 +183,7 @@ public class TDeflater {
             inLength = nbytes;
             inRead = 0;
             if (impl.next_in == null) {
-                impl.init(compressLevel, strategy, nowrap);
+                impl.init(compressLevel, 15, nowrap);
             }
             impl.setInput(buf, off, nbytes, false);
         } else {
