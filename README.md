@@ -8,12 +8,12 @@ TeaVM
 [![Code Quality: Java](https://img.shields.io/lgtm/grade/java/g/konsoletyper/teavm.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/konsoletyper/teavm/context:java)
 [![Total Alerts](https://img.shields.io/lgtm/alerts/g/konsoletyper/teavm.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/konsoletyper/teavm/alerts)
 
-See documentation at the [project web site](http://teavm.org/).
+See documentation at the [project web site](https://teavm.org/).
 
 Useful links:
 
-* [Getting started](http://teavm.org/docs/intro/getting-started.html)
-* [Gallery](http://teavm.org/gallery.html)
+* [Getting started](https://teavm.org/docs/intro/getting-started.html)
+* [Gallery](https://teavm.org/gallery.html)
 * [Flavour source code repository](https://github.com/konsoletyper/teavm-flavour)
 * [Site source code repository](https://github.com/konsoletyper/teavm-site)
 * [Discussion on Google groups](https://groups.google.com/forum/#!forum/teavm)
@@ -45,7 +45,7 @@ You may want to access new features and don't want to wait until stable release 
   </pluginRepositories>
 ```
 
-IDEA plugin is also available in preview builds. You need to add corresponding repository manually to IDEA. Open *Settings* -> *Plugins* -> *Browse repositories...* -> *Manage repositories...*, click *Add* button and enter `http://teavm.org/idea/dev/teavmRepository.xml`. Then get back to *Browse repositories* and pick TeaVM plugin from list. 
+IDEA plugin is also available in preview builds. You need to add corresponding repository manually to IDEA. Open *Settings* -> *Plugins* -> *Browse repositories...* -> *Manage repositories...*, click *Add* button and enter `https://teavm.org/idea/dev/teavmRepository.xml`. Then get back to *Browse repositories* and pick TeaVM plugin from list. 
 
 
 Embedding TeaVM
@@ -79,6 +79,6 @@ If you want to contribute code to implementation of Java class library, please m
 Feedback
 --------
 
-More information is available at the official site: http://teavm.org.
+More information is available at the official site: https://teavm.org.
 
 Ask your questions by email: info@teavm.org. Also you can report issues on a project's [issue tracker](https://github.com/konsoletyper/teavm/issues).
