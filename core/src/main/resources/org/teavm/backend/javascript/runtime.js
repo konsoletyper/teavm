@@ -724,6 +724,15 @@ function $dbg_class(obj) {
     }
     return clsName;
 }
+
+function Long(lo, hi) {
+    this.lo = lo | 0;
+    this.hi = hi | 0;
+}
+Long.prototype.__teavm_class__ = function() {
+    return "long";
+};
+
 var Long_MAX_NORMAL = 1 << 18;
 var Long_ZERO;
 var Long_create;
@@ -733,14 +742,6 @@ var Long_toNumber;
 var Long_hi;
 var Long_lo;
 if (typeof BigInt !== "function") {
-    function Long(lo, hi) {
-        this.lo = lo | 0;
-        this.hi = hi | 0;
-    }
-    Long.prototype.__teavm_class__ = function() {
-        return "long";
-    };
-
     function Long_isPositive(a) {
         return (a.hi & 0x80000000) === 0;
     }
@@ -781,7 +782,7 @@ if (typeof BigInt !== "function") {
         }
     }
     Long_create = function(lo, hi) {
-        return new Long(hi, lo);
+        return new Long(lo, hi);
     }
     Long_toNumber = function(val) {
         return 0x100000000 * val.hi + (val.lo >>> 0);
