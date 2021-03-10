@@ -33,13 +33,13 @@ You may want to access new features and don't want to wait until stable release 
   <repositories>
     <repository>
       <id>teavm-dev</id>
-      <url>https://dl.bintray.com/konsoletyper/teavm</url>
+      <url>https://teavm.org/maven/repository</url>
     </repository>
   </repositories>
   <pluginRepositories>
     <pluginRepository>
       <id>teavm-dev</id>
-      <url>https://dl.bintray.com/konsoletyper/teavm</url>
+      <url>https://teavm.org/maven/repository</url>
     </pluginRepository>
   </pluginRepositories>
 ```
