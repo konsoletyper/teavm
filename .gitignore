@@ -1,5 +1,8 @@
 # output dir
 target
+/build-dir
+/build-cache
+/deploy-with-env.sh
 
 # KDE
 .directory

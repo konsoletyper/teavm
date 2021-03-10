@@ -214,6 +214,13 @@
   </dependencyManagement>
 
   <build>
+    <extensions>
+      <extension>
+        <groupId>org.apache.maven.wagon</groupId>
+        <artifactId>wagon-ftp</artifactId>
+        <version>3.4.3</version>
+      </extension>
+    </extensions>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -399,6 +406,17 @@
           <id>bintray-teavm</id>
           <name>Bintray Preview Repository</name>
           <url>https://api.bintray.com/maven/konsoletyper/teavm/teavm-dev/;publish=1</url>
+        </repository>
+      </distributionManagement>
+    </profile>
+
+    <profile>
+      <id>deploy-to-teavm</id>
+      <distributionManagement>
+        <repository>
+          <id>teavm-repo</id>
+          <name>Development Preview Repository</name>
+          <url>{{TEAVM_DEPLOY_URL}}</url>
         </repository>
       </distributionManagement>
     </profile>

@@ -1,5 +1,5 @@
 <!--
-  ~  Copyright 2017 Alexey Andreev.
+  ~  Copyright 2021 Alexey Andreev.
   ~
   ~  Licensed under the Apache License, Version 2.0 (the "License");
   ~  you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@
                         http://maven.apache.org/xsd/settings-1.0.0.xsd">
   <servers>
     <server>
-      <id>bintray-teavm</id>
-      <username>${env.BINTRAY_LOGIN}</username>
-      <password>${env.BINTRAY_API_KEY}</password>
+      <id>teavm-repo</id>
+      <username>${env.TEAVM_DEPLOY_LOGIN}</username>
+      <password>${env.TEAVM_DEPLOY_PASSWORD}</password>
     </server>
   </servers>
 </settings>
