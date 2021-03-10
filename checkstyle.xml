@@ -2,6 +2,9 @@
     "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
 <module name="Checker">
   <module name="SuppressionCommentFilter"/>
+  <module name="SuppressionFilter">
+    <property name="file" value="${config_loc}/checkstyle-suppressions.xml"/>
+  </module>
   <module name="TreeWalker">
     <module name="FileContentsHolder"/>
     <module name="AnnotationUseStyle"/>

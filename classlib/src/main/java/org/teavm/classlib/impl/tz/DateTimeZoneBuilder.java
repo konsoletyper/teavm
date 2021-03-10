@@ -18,6 +18,10 @@ package org.teavm.classlib.impl.tz;
 import java.util.*;
 import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
+import org.teavm.classlib.java.time.TZoneId;
+import org.teavm.classlib.java.time.TZoneRegion;
+import org.teavm.classlib.java.time.zone.TStandardZoneRules;
+import org.teavm.classlib.java.time.zone.TZoneRules;
 
 /**
  * DateTimeZoneBuilder allows complex DateTimeZones to be constructed. Since
@@ -1024,6 +1028,12 @@ public class DateTimeZoneBuilder {
             Recurrence endRecurrence = Recurrence.read(flow);
             return new DSTZone(id, standardOffset, startRecurrence, endRecurrence);
         }
+        
+        @Override
+        public TZoneId getZoneId() {
+        
+            return null;
+        }
     }
 
     static final class PrecalculatedZone extends StorableDateTimeZone {
@@ -1072,6 +1082,8 @@ public class DateTimeZoneBuilder {
         private final int[] iStandardOffsets;
 
         private final DSTZone iTailZone;
+
+        private TZoneId zoneId;
 
         /**
          * Constructor used ONLY for valid input, loaded via static methods.
@@ -1275,6 +1287,24 @@ public class DateTimeZoneBuilder {
             }
 
             return false;
+        }
+        
+        @Override
+        public TZoneId getZoneId() {
+        
+            if (this.zoneId == null) {
+                long[] savingsInstantTransitions = new long[iTransitions.length - 1];
+                for (int i = 0; i < savingsInstantTransitions.length; i++) {
+                    savingsInstantTransitions[i] = iTransitions[i + 1] / 1000;
+                }
+                long[] standardTransitions = savingsInstantTransitions; // TODO no idea how to determine sub-set
+                // TODO
+                // TZoneOffsetTransitionRule lastRules;
+                TZoneRules rules = new TStandardZoneRules(standardTransitions, iStandardOffsets, 
+                        savingsInstantTransitions, iWallOffsets);
+                this.zoneId = new TZoneRegion(getID(), rules);
+            }
+            return this.zoneId;
         }
     }
 }

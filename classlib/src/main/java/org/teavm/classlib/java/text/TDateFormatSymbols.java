@@ -235,4 +235,13 @@ public class TDateFormatSymbols implements TSerializable, TCloneable {
     public void setZoneStrings(String[][] data) {
         zoneStrings = data.clone();
     }
+    
+    public static final TDateFormatSymbols getInstance() {
+        return new TDateFormatSymbols();
+    }
+
+    public static final TDateFormatSymbols getInstance(TLocale locale) {   
+        return new TDateFormatSymbols(locale);
+    }
+    
 }

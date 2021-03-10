@@ -166,4 +166,10 @@ public final class CachedDateTimeZone extends StorableDateTimeZone {
             return iNextInfo.getStandardOffset(millis);
         }
     }
+    
+    @Override
+    public org.teavm.classlib.java.time.TZoneId getZoneId() {
+    
+        return getUncachedZone().getZoneId();
+    }
 }

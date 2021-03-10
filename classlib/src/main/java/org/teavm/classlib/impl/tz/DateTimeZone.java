@@ -485,4 +485,9 @@ public abstract class DateTimeZone {
      * @return milliseconds from 1970-01-01T00:00:00Z
      */
     public abstract long previousTransition(long instant);
+    
+    /**
+     * @return this {@link DateTimeZone} as {@code ZoneId}.
+     */
+    public abstract org.teavm.classlib.java.time.TZoneId getZoneId();
 }
