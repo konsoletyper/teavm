@@ -33,7 +33,7 @@ function deploy_teavm {
   fi
   rm response
 
-  TEAVM_DEPLOY_VERSION_FULL="$TEAVM_DEPLOY_VERSION.0-$TEAVM_DEPLOY_BUILD"
+  TEAVM_DEPLOY_VERSION_FULL="$TEAVM_DEPLOY_VERSION.0-dev-$TEAVM_DEPLOY_BUILD"
 
   if [[ "200" == `curl --output response --silent --write-out "%{http_code}" https://teavm.org/maven/versions/$TEAVM_DEPLOY_VERSION_FULL-commit.txt` ]] ; then
     if [[ "$TEAVM_DEPLOY_COMMIT_ID" == `cat response` ]] ; then
