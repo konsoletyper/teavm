@@ -78,7 +78,7 @@ EOF
 Redirect /maven/_latest /maven/repository/org/teavm/teavm-cli/$TEAVM_DEPLOY_VERSION_FULL/teavm-cli-$TEAVM_DEPLOY_VERSION_FULL.jar
 EOF
 
-  cat $TEAVM_DEPLOY_BUILD >build-number.txt
+  echo "$TEAVM_DEPLOY_BUILD" >build-number.txt
 
   return 0
 }
