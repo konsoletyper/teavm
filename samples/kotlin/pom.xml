@@ -30,7 +30,7 @@
   <description>A sample application written in Kotlin and compiled by TeaVM</description>
 
   <properties>
-    <kotlin.version>1.2.31</kotlin.version>
+    <kotlin.version>1.4.30</kotlin.version>
   </properties>
 
   <dependencies>
