@@ -48,6 +48,10 @@ public class KotlinHacks implements ClassHolderTransformer {
                         && method.getName().equals("renderLambdaToString")
                         && method.getResultType().isObject(String.class)) {
                     Program program = new Program();
+                    program.createVariable();
+                    for (int i = 0; i < method.parameterCount(); ++i) {
+                        program.createVariable();
+                    }
                     BasicBlock block = program.createBasicBlock();
 
                     StringConstantInstruction stringConstant = new StringConstantInstruction();
