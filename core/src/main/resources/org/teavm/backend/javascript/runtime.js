@@ -79,7 +79,7 @@ function $rt_createNumericArray(cls, nativeArray) {
 }
 var $rt_createLongArray;
 var $rt_createLongArrayFromData;
-if (typeof BigInt !== 'function') {
+if (typeof BigInt64Array !== 'function') {
     $rt_createLongArray = function(sz) {
         var data = new Array(sz);
         var arr = new $rt_array($rt_longcls(), data);
