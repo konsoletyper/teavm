@@ -491,7 +491,15 @@ public class VMTest {
 
     @Test
     public void indirectDefaultMethod() {
+        new FirstPathOptimizationPrevention().foo();
         PathJoint o = new PathJoint();
+        assertEquals("SecondPath.foo", o.foo());
+    }
+
+    @Test
+    public void indirectDefaultMethodSubclass() {
+        new FirstPathOptimizationPrevention().foo();
+        PathJointSubclass o = new PathJointSubclass();
         assertEquals("SecondPath.foo", o.foo());
     }
 
@@ -509,6 +517,13 @@ public class VMTest {
     }
 
     class PathJoint implements FirstPath, SecondPath {
+    }
+
+    class PathJointSubclass extends PathJoint implements FirstPath {
+    }
+
+    class FirstPathOptimizationPrevention implements FirstPath {
+        // Used to ensure that the implementation of FirstPath.foo() is not optimized away by TeaVM.
     }
 
     @Test
