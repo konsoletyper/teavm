@@ -18,7 +18,7 @@ if [[ ! -d build-dir ]] ; then
   mkdir build-dir
 fi
 
-git archive master | tar -x -C build-dir
+git archive HEAD | tar -x -C build-dir
 
 pushd build-dir
 
