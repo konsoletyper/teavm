@@ -36,6 +36,11 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>org.testng</groupId>
+      <artifactId>testng</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-tooling</artifactId>
       <version>${project.version}</version>

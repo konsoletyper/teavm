@@ -16,10 +16,9 @@
 package org.teavm.junit;
 
 import java.util.List;
-import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
-import org.teavm.model.Program;
 import org.teavm.model.emit.ForkEmitter;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
@@ -34,8 +33,8 @@ class TestEntryPointTransformerForWholeClass extends TestEntryPointTransformer {
     }
 
     @Override
-    protected Program generateLaunchProgram(MethodHolder method, ClassHierarchy hierarchy) {
-        ProgramEmitter pe = ProgramEmitter.create(method, hierarchy);
+    protected void generateLaunchProgram(MethodHolder method, ClassHolderTransformerContext context) {
+        ProgramEmitter pe = ProgramEmitter.create(method, context.getHierarchy());
         ValueEmitter testName = pe.var(1, String.class);
 
         for (MethodReference testMethod : testMethods) {
@@ -45,13 +44,11 @@ class TestEntryPointTransformerForWholeClass extends TestEntryPointTransformer {
             pe.enter(pe.getProgram().createBasicBlock());
             fork.setThen(pe.getBlock());
 
-            generateSingleMethodLaunchProgram(testMethod, hierarchy, pe);
+            generateSingleMethodLaunchProgram(testMethod, context, pe);
             pe.enter(pe.getProgram().createBasicBlock());
             fork.setElse(pe.getBlock());
         }
 
         pe.construct(IllegalArgumentException.class, pe.constant("Invalid test name")).raise();
-
-        return pe.getProgram();
     }
 }

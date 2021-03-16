@@ -28,4 +28,6 @@ public interface ClassHolderTransformerContext {
     boolean isObfuscated();
 
     boolean isStrict();
+
+    void submit(ClassHolder cls);
 }

@@ -15,32 +15,46 @@
  */
 package org.teavm.junit;
 
+import java.util.ArrayList;
+import java.util.List;
+
 final class TestEntryPoint {
     private static Object testCase;
 
     private TestEntryPoint() {
     }
 
-    public static void run(String name) throws Exception {
-        before();
-        try {
-            launchTest(name);
-        } finally {
+    public static void run(String name) throws Throwable {
+        List<Launcher> launchers = new ArrayList<>();
+        testCase = createTestCase();
+        launchers(name, launchers);
+        for (Launcher launcher : launchers) {
+            before();
             try {
-                after();
-            } catch (Throwable e) {
-                e.printStackTrace();
+                launcher.launch(testCase);
+            } finally {
+                try {
+                    after();
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
 
+    private static native Object createTestCase();
+
     private static native void before();
 
-    private static native void launchTest(String name) throws Exception;
+    private static native void launchers(String name, List<Launcher> result) throws Throwable;
 
     private static native void after();
 
     public static void main(String[] args) throws Throwable {
         run(args.length == 1 ? args[0] : null);
+    }
+
+    interface Launcher {
+        void launch(Object testCase) throws Throwable;
     }
 }

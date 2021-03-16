@@ -15,10 +15,9 @@
  */
 package org.teavm.junit;
 
-import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
-import org.teavm.model.Program;
 import org.teavm.model.emit.ProgramEmitter;
 
 class TestEntryPointTransformerForSingleMethod extends TestEntryPointTransformer {
@@ -30,9 +29,8 @@ class TestEntryPointTransformerForSingleMethod extends TestEntryPointTransformer
     }
 
     @Override
-    protected Program generateLaunchProgram(MethodHolder method, ClassHierarchy hierarchy) {
-        ProgramEmitter pe = ProgramEmitter.create(method, hierarchy);
-        generateSingleMethodLaunchProgram(testMethod, hierarchy, pe);
-        return pe.getProgram();
+    protected void generateLaunchProgram(MethodHolder method, ClassHolderTransformerContext context) {
+        ProgramEmitter pe = ProgramEmitter.create(method, context.getHierarchy());
+        generateSingleMethodLaunchProgram(testMethod, context, pe);
     }
 }
