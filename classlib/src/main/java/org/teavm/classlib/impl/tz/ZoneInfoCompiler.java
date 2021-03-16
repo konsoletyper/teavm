@@ -128,6 +128,7 @@ public class ZoneInfoCompiler {
         long end = ISOChronology.getInstanceUTC().year().set(0, 2050);
 
         int offset = tz.getOffset(millis);
+        int stdOffset = tz.getStandardOffset(millis);
 
         List<Long> transitions = new ArrayList<>();
 
@@ -140,16 +141,18 @@ public class ZoneInfoCompiler {
             millis = next;
 
             int nextOffset = tz.getOffset(millis);
+            int nextStdOffset = tz.getStandardOffset(millis);
 
-            if (offset == nextOffset) {
+            if (offset == nextOffset && stdOffset == nextStdOffset) {
                 System.out.println("*d* Error in " + tz.getID() + " "
                         + new DateTime(millis, ISOChronology.getInstanceUTC()));
                 return false;
             }
 
-            transitions.add(Long.valueOf(millis));
+            transitions.add(millis);
 
             offset = nextOffset;
+            stdOffset = nextStdOffset;
         }
 
         // Now verify that reverse transitions match up.
@@ -165,7 +168,7 @@ public class ZoneInfoCompiler {
 
             millis = prev;
 
-            long trans = transitions.get(i).longValue();
+            long trans = transitions.get(i);
 
             if (trans - 1 != millis) {
                 System.out.println("*r* Error in " + tz.getID() + " "
@@ -203,11 +206,10 @@ public class ZoneInfoCompiler {
         Map<String, Zone> sourceMap = new TreeMap<>();
 
         // write out the standard entries
-        for (int i = 0; i < iZones.size(); i++) {
-            Zone zone = iZones.get(i);
+        for (Zone zone : iZones) {
             DateTimeZoneBuilder builder = new DateTimeZoneBuilder();
             zone.addToBuilder(builder, iRuleSets);
-            StorableDateTimeZone tz = builder.toDateTimeZone(zone.iName, true);
+            StorableDateTimeZone tz = new DateTimeZoneBuilder.RuleBasedZone(zone.iName, builder);
             if (test(tz.getID(), tz)) {
                 map.put(tz.getID(), tz);
                 sourceMap.put(tz.getID(), zone);
@@ -225,7 +227,7 @@ public class ZoneInfoCompiler {
             } else {
                 DateTimeZoneBuilder builder = new DateTimeZoneBuilder();
                 sourceZone.addToBuilder(builder, iRuleSets);
-                StorableDateTimeZone revived = builder.toDateTimeZone(alias, true);
+                StorableDateTimeZone revived = new DateTimeZoneBuilder.RuleBasedZone(alias, builder);
                 if (test(revived.getID(), revived)) {
                     map.put(revived.getID(), revived);
                 }
@@ -604,7 +606,7 @@ public class ZoneInfoCompiler {
                 return str;
             }
 
-            return str + "...\n" + iNext.toString();
+            return str + "...\n" + iNext;
         }
     }
 }
