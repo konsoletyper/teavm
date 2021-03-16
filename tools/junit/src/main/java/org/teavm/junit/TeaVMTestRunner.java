@@ -660,7 +660,11 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             return runner;
         }
 
-        String providerName = annot.getValue("dataProvider").getString();
+        AnnotationValue dataProviderValue = annot.getValue("dataProvider");
+        if (dataProviderValue == null) {
+            return runner;
+        }
+        String providerName = dataProviderValue.getString();
         if (providerName.isEmpty()) {
             return runner;
         }
