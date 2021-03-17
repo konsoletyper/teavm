@@ -17,6 +17,7 @@ package org.teavm.html4j.test;
 
 import static org.junit.Assert.*;
 import net.java.html.js.JavaScriptBody;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
@@ -24,6 +25,7 @@ import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
+@Ignore
 public class JavaScriptBodyConversionTest {
     @Test
     public void convertsInteger() {

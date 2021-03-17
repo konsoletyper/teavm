@@ -18,6 +18,7 @@ package org.teavm.html4j.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import java.lang.reflect.Method;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.netbeans.html.json.tck.JavaScriptTCK;
 import org.netbeans.html.json.tck.KOTest;
@@ -26,6 +27,7 @@ import org.netbeans.html.json.tck.KOTest;
  *
  * @author Jaroslav Tulach
  */
+@Ignore
 public class JavaScriptTCKCheckTest extends JavaScriptTCK {
     @Test
     public void allJavaScriptBodyTestMethodsOverriden() throws Exception {

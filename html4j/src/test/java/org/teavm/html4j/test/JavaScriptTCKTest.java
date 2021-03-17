@@ -16,6 +16,7 @@
 package org.teavm.html4j.test;
 
 import net.java.html.js.tests.JavaScriptBodyTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
@@ -27,6 +28,7 @@ import org.teavm.junit.TeaVMTestRunner;
  */
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
+@Ignore
 public class JavaScriptTCKTest extends JavaScriptBodyTest {
 
     @Test @Override

@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import java.lang.reflect.Method;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.netbeans.html.json.tck.KOTest;
 
@@ -26,6 +27,7 @@ import org.netbeans.html.json.tck.KOTest;
  *
  * @author Jaroslav Tulach
  */
+@Ignore
 public class KnockoutTCKCheckTest {
     @Test
     public void allKnockoutTestMethodsOverriden() throws Exception {
