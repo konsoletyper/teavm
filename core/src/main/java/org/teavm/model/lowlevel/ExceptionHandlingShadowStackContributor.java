@@ -41,6 +41,7 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BoundCheckInstruction;
+import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
@@ -280,7 +281,8 @@ public class ExceptionHandlingShadowStackContributor {
                 || insn instanceof ConstructArrayInstruction || insn instanceof ConstructMultiArrayInstruction
                 || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction
                 || insn instanceof MonitorEnterInstruction || insn instanceof MonitorExitInstruction
-                || insn instanceof NullCheckInstruction || insn instanceof BoundCheckInstruction) {
+                || insn instanceof NullCheckInstruction || insn instanceof BoundCheckInstruction
+                || insn instanceof CastInstruction) {
             return true;
         } else if (insn instanceof InvokeInstruction) {
             return isManagedMethodCall(characteristics, ((InvokeInstruction) insn).getMethod());
