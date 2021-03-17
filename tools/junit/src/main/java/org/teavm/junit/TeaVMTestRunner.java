@@ -41,7 +41,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -136,7 +135,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     static class RunnerKindInfo {
         volatile TestRunner runner;
         volatile TestRunStrategy strategy;
-        volatile ScheduledFuture<?> cleanupFuture;
     }
 
     static {
@@ -147,7 +145,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             synchronized (TeaVMTestRunner.class) {
                 for (RunnerKindInfo info : runners.values()) {
                     if (info.runner != null) {
-                        info.cleanupFuture = null;
                         info.runner.stop();
                         info.runner.waitForCompletion();
                     }
@@ -935,19 +932,13 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             }
             info.runner.run(run);
 
-            if (info.cleanupFuture != null) {
-                info.cleanupFuture.cancel(false);
-                info.cleanupFuture = null;
-            }
             RunKind kind = run.getKind();
-            info.cleanupFuture = executor.schedule(() -> cleanupRunner(kind), stopTimeout, TimeUnit.MILLISECONDS);
         }
     }
 
     private static void cleanupRunner(RunKind kind) {
         synchronized (TeaVMTestRunner.class) {
             RunnerKindInfo info = runners.get(kind);
-            info.cleanupFuture = null;
             info.runner.stop();
             info.runner = null;
         }
