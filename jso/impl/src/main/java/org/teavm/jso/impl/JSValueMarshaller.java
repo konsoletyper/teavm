@@ -21,7 +21,6 @@ import java.util.function.Function;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
-import org.teavm.jso.core.JSArrayReader;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
