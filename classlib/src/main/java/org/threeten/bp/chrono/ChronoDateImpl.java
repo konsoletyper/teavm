@@ -113,11 +113,6 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
         implements Temporal, TemporalAdjuster, Serializable {
 
     /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 6282433883239719096L;
-
-    /**
      * Creates an instance.
      */
     ChronoDateImpl() {

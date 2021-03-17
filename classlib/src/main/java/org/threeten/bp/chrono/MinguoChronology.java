@@ -103,10 +103,6 @@ public final class MinguoChronology extends Chronology implements Serializable {
     public static final MinguoChronology INSTANCE = new MinguoChronology();
 
     /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 1039765215346859963L;
-    /**
      * The difference in years between ISO and Minguo.
      */
     static final int YEARS_DIFFERENCE = 1911;

@@ -104,11 +104,6 @@ public final class IsoChronology extends Chronology implements Serializable {
     public static final IsoChronology INSTANCE = new IsoChronology();
 
     /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -1440403870442975015L;
-
-    /**
      * Restricted constructor.
      */
     private IsoChronology() {

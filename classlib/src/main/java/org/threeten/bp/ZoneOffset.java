@@ -33,11 +33,6 @@ package org.threeten.bp;
 
 import static org.threeten.bp.temporal.ChronoField.OFFSET_SECONDS;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -111,10 +106,6 @@ public final class ZoneOffset
      * The abs maximum seconds.
      */
     private static final int MAX_SECONDS = 18 * SECONDS_PER_HOUR;
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 2357656521762053153L;
 
     /**
      * The time-zone offset for UTC, with an ID of 'Z'.
@@ -713,39 +704,4 @@ public final class ZoneOffset
     public String toString() {
         return id;
     }
-
-    // -----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.ZONE_OFFSET_TYPE, this);
-    }
-
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    @Override
-    void write(DataOutput out) throws IOException {
-        out.writeByte(Ser.ZONE_OFFSET_TYPE);
-        writeExternal(out);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        final int offsetSecs = totalSeconds;
-        int offsetByte = offsetSecs % 900 == 0 ? offsetSecs / 900 : 127;  // compress to -72 to +72
-        out.writeByte(offsetByte);
-        if (offsetByte == 127) {
-            out.writeInt(offsetSecs);
-        }
-    }
-
-    static ZoneOffset readExternal(DataInput in) throws IOException {
-        int offsetByte = in.readByte();
-        return (offsetByte == 127 ? ZoneOffset.ofTotalSeconds(in.readInt()) : ZoneOffset.ofTotalSeconds(offsetByte * 900));
-    }
-
 }

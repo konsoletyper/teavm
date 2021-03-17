@@ -40,11 +40,6 @@ import static org.threeten.bp.temporal.ChronoUnit.ERAS;
 import static org.threeten.bp.temporal.ChronoUnit.MILLENNIA;
 import static org.threeten.bp.temporal.ChronoUnit.YEARS;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -107,10 +102,6 @@ public final class Year
      */
     public static final int MAX_VALUE = 999999999;
 
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -23038383694477807L;
     /**
      * Parser.
      */
@@ -947,27 +938,4 @@ public final class Year
         Objects.requireNonNull(formatter, "formatter");
         return formatter.format(this);
     }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.YEAR_TYPE, this);
-    }
-
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeInt(year);
-    }
-
-    static Year readExternal(DataInput in) throws IOException {
-        return Year.of(in.readInt());
-    }
-
 }

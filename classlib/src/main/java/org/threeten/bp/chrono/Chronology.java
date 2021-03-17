@@ -31,11 +31,6 @@
  */
 package org.threeten.bp.chrono;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -833,29 +828,6 @@ public abstract class Chronology implements Comparable<Chronology> {
     @Override
     public String toString() {
         return getId();
-    }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.CHRONO_TYPE, this);
-    }
-
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeUTF(getId());
-    }
-
-    static Chronology readExternal(DataInput in) throws IOException {
-        String id = in.readUTF();
-        return Chronology.of(id);
     }
 
 }

@@ -35,11 +35,6 @@ import static org.threeten.bp.temporal.ChronoField.INSTANT_SECONDS;
 import static org.threeten.bp.temporal.ChronoField.NANO_OF_SECOND;
 import static org.threeten.bp.temporal.ChronoField.OFFSET_SECONDS;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
@@ -2081,31 +2076,5 @@ public final class ZonedDateTime
         return super.format(formatter);
     }
 
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.ZONED_DATE_TIME_TYPE, this);
-    }
-
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        dateTime.writeExternal(out);
-        offset.writeExternal(out);
-        zone.write(out);
-    }
-
-    static ZonedDateTime readExternal(DataInput in) throws IOException {
-        LocalDateTime dateTime = LocalDateTime.readExternal(in);
-        ZoneOffset offset = ZoneOffset.readExternal(in);
-        ZoneId zone = (ZoneId) Ser.read(in);
-        return ZonedDateTime.ofLenient(dateTime, offset, zone);
-    }
 
 }

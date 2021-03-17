@@ -98,10 +98,6 @@ public final class Period
      */
     public static final Period ZERO = new Period(0, 0, 0);
     /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -8290556941213247973L;
-    /**
      * The pattern for parsing.
      */
     private final static Pattern PATTERN =

@@ -31,11 +31,6 @@
  */
 package org.threeten.bp;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -64,10 +59,6 @@ import org.threeten.bp.zone.ZoneRulesProvider;
  */
 final class ZoneRegion extends ZoneId implements Serializable {
 
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 8386373296231747096L;
     /**
      * The regex pattern for region IDs.
      */
@@ -176,34 +167,4 @@ final class ZoneRegion extends ZoneId implements Serializable {
         // that the provider was added after the ZoneId was created
         return (rules != null ? rules : ZoneRulesProvider.getRules(id, false));
     }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.ZONE_REGION_TYPE, this);
-    }
-
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    @Override
-    void write(DataOutput out) throws IOException {
-        out.writeByte(Ser.ZONE_REGION_TYPE);
-        writeExternal(out);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeUTF(id);
-    }
-
-    static ZoneId readExternal(DataInput in) throws IOException {
-        String id = in.readUTF();
-        return ofLenient(id);
-    }
-
 }

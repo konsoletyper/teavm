@@ -39,11 +39,6 @@ import static org.threeten.bp.temporal.ChronoUnit.DAYS;
 import static org.threeten.bp.temporal.ChronoUnit.NANOS;
 import static org.threeten.bp.temporal.ChronoUnit.SECONDS;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -98,10 +93,6 @@ public final class Duration
      * Constant for a duration of zero.
      */
     public static final Duration ZERO = new Duration(0, 0);
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 3078945930695997490L;
     /**
      * Constant for nanos per second.
      */
@@ -1232,29 +1223,5 @@ public final class Duration
         return buf.toString();
     }
 
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.DURATION_TYPE, this);
-    }
-
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeLong(seconds);
-        out.writeInt(nanos);
-    }
-
-    static Duration readExternal(DataInput in) throws IOException {
-        long seconds = in.readLong();
-        int nanos = in.readInt();
-        return Duration.ofSeconds(seconds, nanos);
-    }
 
 }

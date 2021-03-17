@@ -44,11 +44,6 @@ import org.threeten.bp.DateTimeException;
 public class DateTimeParseException extends DateTimeException {
 
     /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 4304633501674722597L;
-
-    /**
      * The text that was being parsed.
      */
     private final String parsedString;

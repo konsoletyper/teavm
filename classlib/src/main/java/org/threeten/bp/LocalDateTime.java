@@ -41,11 +41,6 @@ import static org.threeten.bp.LocalTime.NANOS_PER_MINUTE;
 import static org.threeten.bp.LocalTime.NANOS_PER_SECOND;
 import static org.threeten.bp.LocalTime.SECONDS_PER_DAY;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -1814,30 +1809,4 @@ public final class LocalDateTime
     public String format(DateTimeFormatter formatter) {
         return super.format(formatter);
     }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.LOCAL_DATE_TIME_TYPE, this);
-    }
-
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        date.writeExternal(out);
-        time.writeExternal(out);
-    }
-
-    static LocalDateTime readExternal(DataInput in) throws IOException {
-        LocalDate date = LocalDate.readExternal(in);
-        LocalTime time = LocalTime.readExternal(in);
-        return LocalDateTime.of(date, time);
-    }
-
 }

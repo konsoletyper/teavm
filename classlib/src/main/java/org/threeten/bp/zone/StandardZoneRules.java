@@ -31,9 +31,6 @@
  */
 package org.threeten.bp.zone;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,11 +56,6 @@ import org.threeten.bp.jdk8.Jdk8Methods;
  * This class is immutable and thread-safe.
  */
 final class StandardZoneRules extends ZoneRules implements Serializable {
-
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 3044319355680032515L;
     /**
      * The last year to have its transitions cached.
      */
@@ -194,77 +186,6 @@ final class StandardZoneRules extends ZoneRules implements Serializable {
             }
         }
         this.savingsLocalTransitions = localTransitionList.toArray(new LocalDateTime[localTransitionList.size()]);
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     * Uses a serialization delegate.
-     *
-     * @return the replacing object, not null
-     */
-    private Object writeReplace() {
-        return new Ser(Ser.SZR, this);
-    }
-
-    /**
-     * Writes the state to the stream.
-     *
-     * @param out  the output stream, not null
-     * @throws IOException if an error occurs
-     */
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeInt(standardTransitions.length);
-        for (long trans : standardTransitions) {
-            Ser.writeEpochSec(trans, out);
-        }
-        for (ZoneOffset offset : standardOffsets) {
-            Ser.writeOffset(offset, out);
-        }
-        out.writeInt(savingsInstantTransitions.length);
-        for (long trans : savingsInstantTransitions) {
-            Ser.writeEpochSec(trans, out);
-        }
-        for (ZoneOffset offset : wallOffsets) {
-            Ser.writeOffset(offset, out);
-        }
-        out.writeByte(lastRules.length);
-        for (ZoneOffsetTransitionRule rule : lastRules) {
-            rule.writeExternal(out);
-        }
-    }
-
-    /**
-     * Reads the state from the stream.
-     *
-     * @param in  the input stream, not null
-     * @return the created object, not null
-     * @throws IOException if an error occurs
-     */
-    static StandardZoneRules readExternal(DataInput in) throws IOException, ClassNotFoundException {
-        int stdSize = in.readInt();
-        long[] stdTrans = new long[stdSize];
-        for (int i = 0; i < stdSize; i++) {
-            stdTrans[i] = Ser.readEpochSec(in);
-        }
-        ZoneOffset[] stdOffsets = new ZoneOffset[stdSize + 1];
-        for (int i = 0; i < stdOffsets.length; i++) {
-            stdOffsets[i] = Ser.readOffset(in);
-        }
-        int savSize = in.readInt();
-        long[] savTrans = new long[savSize];
-        for (int i = 0; i < savSize; i++) {
-            savTrans[i] = Ser.readEpochSec(in);
-        }
-        ZoneOffset[] savOffsets = new ZoneOffset[savSize + 1];
-        for (int i = 0; i < savOffsets.length; i++) {
-            savOffsets[i] = Ser.readOffset(in);
-        }
-        int ruleSize = in.readByte();
-        ZoneOffsetTransitionRule[] rules = new ZoneOffsetTransitionRule[ruleSize];
-        for (int i = 0; i < ruleSize; i++) {
-            rules[i] = ZoneOffsetTransitionRule.readExternal(in);
-        }
-        return new StandardZoneRules(stdTrans, stdOffsets, savTrans, savOffsets, rules);
     }
 
     //-----------------------------------------------------------------------

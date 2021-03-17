@@ -104,10 +104,6 @@ public final class ThaiBuddhistChronology extends Chronology implements Serializ
     public static final ThaiBuddhistChronology INSTANCE = new ThaiBuddhistChronology();
 
     /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 2775954514031616474L;
-    /**
      * Containing the offset to add to the ISO year.
      */
     static final int YEARS_DIFFERENCE = 543;

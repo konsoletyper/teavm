@@ -177,10 +177,6 @@ public final class HijrahChronology extends Chronology implements Serializable {
     public static final HijrahChronology INSTANCE = new HijrahChronology();
 
     /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 3127340209035924785L;
-    /**
      * Narrow names for eras.
      */
     private static final HashMap<String, String[]> ERA_NARROW_NAMES = new HashMap<String, String[]>();

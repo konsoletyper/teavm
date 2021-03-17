@@ -42,11 +42,6 @@ import org.threeten.bp.DateTimeException;
 public class UnsupportedTemporalTypeException extends DateTimeException {
 
     /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -189676278478L;
-
-    /**
      * Constructs a new date-time exception with the specified message.
      *
      * @param message  the message to use for this exception, may be null

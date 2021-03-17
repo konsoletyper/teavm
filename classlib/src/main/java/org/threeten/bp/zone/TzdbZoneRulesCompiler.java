@@ -414,7 +414,7 @@ final class TzdbZoneRulesCompiler {
         for (ZoneRules rules : rulesList) {
             baos.reset();
             DataOutputStream dataos = new DataOutputStream(baos);
-            Ser.write(rules, dataos);
+            //Ser.write(rules, dataos);
             dataos.close();
             byte[] bytes = baos.toByteArray();
             out.writeShort(bytes.length);

@@ -31,11 +31,6 @@
  */
 package org.threeten.bp.chrono;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
@@ -97,11 +92,6 @@ public final class JapaneseEra
      */
     private static final int ADDITIONAL_VALUE = 4;
 
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 1466499369062886794L;
-
     // array for the singleton JapaneseEra instances
     private static JapaneseEra[] KNOWN_ERAS;
 
@@ -137,24 +127,6 @@ public final class JapaneseEra
         this.eraValue = eraValue;
         this.since = since;
         this.name = name;
-    }
-
-    /**
-     * Returns the singleton {@code JapaneseEra} corresponding to this object.
-     * It's possible that this version of {@code JapaneseEra} doesn't support the latest era value.
-     * In that case, this method throws an {@code ObjectStreamException}.
-     *
-     * @return the singleton {@code JapaneseEra} for this object
-     * @throws ObjectStreamException if the deserialized object has any unknown numeric era value.
-     */
-    private Object readResolve() throws ObjectStreamException {
-        try {
-            return of(eraValue);
-        } catch (DateTimeException e) {
-            InvalidObjectException ex = new InvalidObjectException("Invalid era");
-            ex.initCause(e);
-            throw ex;
-        }
     }
 
     //-----------------------------------------------------------------------
@@ -326,19 +298,4 @@ public final class JapaneseEra
     public String toString() {
         return name;
     }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.JAPANESE_ERA_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeByte(this.getValue());
-    }
-
-    static JapaneseEra readExternal(DataInput in) throws IOException {
-        byte eraValue = in.readByte();
-        return JapaneseEra.of(eraValue);
-    }
-
 }

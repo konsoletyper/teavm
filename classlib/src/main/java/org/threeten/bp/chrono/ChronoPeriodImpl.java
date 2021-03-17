@@ -57,11 +57,6 @@ final class ChronoPeriodImpl
         extends ChronoPeriod
         implements Serializable {
 
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 275618735781L;
-
     private final Chronology chronology;
     private final int years;
     private final int months;

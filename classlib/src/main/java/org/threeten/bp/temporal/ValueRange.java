@@ -56,11 +56,6 @@ import org.threeten.bp.DateTimeException;
 public final class ValueRange implements Serializable {
 
     /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -7317881728594519368L;
-
-    /**
      * The smallest minimum value.
      */
     private final long minSmallest;

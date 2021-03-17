@@ -33,9 +33,6 @@ package org.threeten.bp.chrono;
 
 import static org.threeten.bp.temporal.ChronoField.ERA;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.Locale;
 
 import org.threeten.bp.DateTimeException;
@@ -181,20 +178,6 @@ public enum HijrahEra implements Era {
      */
     int prolepticYear(int yearOfEra) {
         return (this == HijrahEra.AH ? yearOfEra : 1 - yearOfEra);
-    }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.HIJRAH_ERA_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeByte(this.getValue());
-    }
-
-    static HijrahEra readExternal(DataInput in) throws IOException {
-        byte eraValue = in.readByte();
-        return HijrahEra.of(eraValue);
     }
 
 }

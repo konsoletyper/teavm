@@ -40,11 +40,6 @@ import static org.threeten.bp.temporal.ChronoField.SECOND_OF_DAY;
 import static org.threeten.bp.temporal.ChronoField.SECOND_OF_MINUTE;
 import static org.threeten.bp.temporal.ChronoUnit.NANOS;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -176,11 +171,6 @@ public final class LocalTime
      * Nanos per day.
      */
     static final long NANOS_PER_DAY = NANOS_PER_HOUR * HOURS_PER_DAY;
-
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 6414437269572265201L;
 
     /**
      * The hour.
@@ -1503,64 +1493,4 @@ public final class LocalTime
         Objects.requireNonNull(formatter, "formatter");
         return formatter.format(this);
     }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.LOCAL_TIME_TYPE, this);
-    }
-
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        if (nano == 0) {
-            if (second == 0) {
-                if (minute == 0) {
-                    out.writeByte(~hour);
-                } else {
-                    out.writeByte(hour);
-                    out.writeByte(~minute);
-                }
-            } else {
-                out.writeByte(hour);
-                out.writeByte(minute);
-                out.writeByte(~second);
-            }
-        } else {
-            out.writeByte(hour);
-            out.writeByte(minute);
-            out.writeByte(second);
-            out.writeInt(nano);
-        }
-    }
-
-    static LocalTime readExternal(DataInput in) throws IOException {
-        int hour = in.readByte();
-        int minute = 0;
-        int second = 0;
-        int nano = 0;
-        if (hour < 0) {
-            hour = ~hour;
-        } else {
-            minute = in.readByte();
-            if (minute < 0) {
-                minute = ~minute;
-            } else {
-                second = in.readByte();
-                if (second < 0) {
-                    second = ~second;
-                } else {
-                    nano = in.readInt();
-                }
-            }
-        }
-        return LocalTime.of(hour, minute, second, nano);
-    }
-
 }

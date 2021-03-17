@@ -110,11 +110,6 @@ public final class JapaneseChronology extends Chronology implements Serializable
     public static final JapaneseChronology INSTANCE = new JapaneseChronology();
 
     /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 459996390165777884L;
-
-    /**
      * Narrow names for eras.
      */
     private static final Map<String, String[]> ERA_NARROW_NAMES = new HashMap<String, String[]>();

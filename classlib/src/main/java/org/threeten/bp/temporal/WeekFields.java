@@ -152,11 +152,6 @@ public final class WeekFields implements Serializable {
     public static final WeekFields SUNDAY_START = WeekFields.of(DayOfWeek.SUNDAY, 1);
 
     /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -1177360819670808121L;
-
-    /**
      * The first day-of-week.
      */
     private final DayOfWeek firstDayOfWeek;

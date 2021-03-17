@@ -31,8 +31,6 @@
  */
 package org.threeten.bp;
 
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
@@ -223,10 +221,6 @@ public abstract class ZoneId implements Serializable {
         base.put("HST", "-10:00");
         SHORT_IDS = Collections.unmodifiableMap(base);
     }
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 8352817235686L;
 
     //-----------------------------------------------------------------------
     /**
@@ -557,8 +551,5 @@ public abstract class ZoneId implements Serializable {
     public String toString() {
         return getId();
     }
-
-    //-----------------------------------------------------------------------
-    abstract void write(DataOutput out) throws IOException;
 
 }

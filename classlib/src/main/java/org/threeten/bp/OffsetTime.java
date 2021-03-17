@@ -39,11 +39,6 @@ import static org.threeten.bp.temporal.ChronoField.NANO_OF_DAY;
 import static org.threeten.bp.temporal.ChronoField.OFFSET_SECONDS;
 import static org.threeten.bp.temporal.ChronoUnit.NANOS;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -105,11 +100,6 @@ public final class OffsetTime
             return OffsetTime.from(temporal);
         }
     };
-
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 7264499704384272492L;
 
     /**
      * The local date-time.
@@ -1285,30 +1275,4 @@ public final class OffsetTime
         Objects.requireNonNull(formatter, "formatter");
         return formatter.format(this);
     }
-
-    // -----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.OFFSET_TIME_TYPE, this);
-    }
-
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        time.writeExternal(out);
-        offset.writeExternal(out);
-    }
-
-    static OffsetTime readExternal(DataInput in) throws IOException {
-        LocalTime time = LocalTime.readExternal(in);
-        ZoneOffset offset = ZoneOffset.readExternal(in);
-        return OffsetTime.of(time, offset);
-    }
-
 }

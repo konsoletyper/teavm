@@ -33,9 +33,6 @@ package org.threeten.bp.chrono;
 
 import static org.threeten.bp.temporal.ChronoField.EPOCH_DAY;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -70,10 +67,6 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
         extends ChronoLocalDateTime<D>
         implements Temporal, TemporalAdjuster, Serializable {
 
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 4556003607393004514L;
     /**
      * Hours per minute.
      */
@@ -346,22 +339,6 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
             return date.until(endDate, unit);
         }
         return unit.between(this, end);
-    }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.CHRONO_LOCALDATETIME_TYPE, this);
-    }
-
-    void writeExternal(ObjectOutput out) throws IOException {
-        out.writeObject(date);
-        out.writeObject(time);
-    }
-
-    static ChronoLocalDateTime<?> readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        ChronoLocalDate date = (ChronoLocalDate) in.readObject();
-        LocalTime time = (LocalTime) in.readObject();
-        return date.atTime(time);
     }
 
 }

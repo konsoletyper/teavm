@@ -50,8 +50,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
-import org.threeten.bp.jdk8.Jdk8Methods;
-
 /**
  * Loads time-zone rules for 'TZDB'.
  * <p>
@@ -316,7 +314,7 @@ public final class TzdbZoneRulesProvider extends ZoneRulesProvider {
             if (obj instanceof byte[]) {
                 byte[] bytes = (byte[]) obj;
                 DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bytes));
-                obj = Ser.read(dis);
+                obj = null; //Ser.read(dis);
                 ruleData.set(index, obj);
             }
             return (ZoneRules) obj;

@@ -36,9 +36,6 @@ import static org.threeten.bp.temporal.ChronoField.DAY_OF_MONTH;
 import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
 import static org.threeten.bp.temporal.ChronoField.YEAR;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -71,11 +68,6 @@ import org.threeten.bp.temporal.ValueRange;
 public final class ThaiBuddhistDate
         extends ChronoDateImpl<ThaiBuddhistDate>
         implements Serializable {
-
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -8722293800195731463L;
 
     /**
      * The underlying date.
@@ -356,24 +348,4 @@ public final class ThaiBuddhistDate
     public int hashCode() {
         return getChronology().getId().hashCode() ^ isoDate.hashCode();
     }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.THAIBUDDHIST_DATE_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        // MinguoChrono is implicit in the THAIBUDDHIST_DATE_TYPE
-        out.writeInt(this.get(YEAR));
-        out.writeByte(this.get(MONTH_OF_YEAR));
-        out.writeByte(this.get(DAY_OF_MONTH));
-    }
-
-    static ChronoLocalDate readExternal(DataInput in) throws IOException {
-        int year = in.readInt();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
-        return ThaiBuddhistChronology.INSTANCE.date(year, month, dayOfMonth);
-    }
-
 }

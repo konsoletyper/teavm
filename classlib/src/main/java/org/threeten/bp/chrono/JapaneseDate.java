@@ -31,14 +31,6 @@
  */
 package org.threeten.bp.chrono;
 
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.YEAR;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Objects;
@@ -85,10 +77,6 @@ public final class JapaneseDate
         extends ChronoDateImpl<JapaneseDate>
         implements Serializable {
 
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -305327627230580483L;
     /**
      * Minimum date.
      */
@@ -304,18 +292,6 @@ public final class JapaneseDate
         this.era = era;
         this.yearOfEra = year;
         this.isoDate = isoDate;
-    }
-
-    /**
-     * Reconstitutes this object from a stream.
-     *
-     * @param stream object input stream
-     */
-    private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
-        stream.defaultReadObject();
-        this.era = JapaneseEra.from(isoDate);
-        int yearOffset = this.era.startDate().getYear() - 1;
-        this.yearOfEra = isoDate.getYear() - yearOffset;
     }
 
     //-----------------------------------------------------------------------
@@ -583,25 +559,4 @@ public final class JapaneseDate
     public int hashCode() {
         return getChronology().getId().hashCode() ^ isoDate.hashCode();
     }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.JAPANESE_DATE_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        // JapaneseChrono is implicit in the JAPANESE_DATE_TYPE
-        out.writeInt(get(YEAR));
-        out.writeByte(get(MONTH_OF_YEAR));
-        out.writeByte(get(DAY_OF_MONTH));
-    }
-
-    static ChronoLocalDate readExternal(DataInput in) throws IOException {
-        int year = in.readInt();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
-        return JapaneseChronology.INSTANCE.date(year, month, dayOfMonth);
-    }
-
-
 }

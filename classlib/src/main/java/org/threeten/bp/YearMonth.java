@@ -43,11 +43,6 @@ import static org.threeten.bp.temporal.ChronoUnit.MILLENNIA;
 import static org.threeten.bp.temporal.ChronoUnit.MONTHS;
 import static org.threeten.bp.temporal.ChronoUnit.YEARS;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -94,10 +89,6 @@ import org.threeten.bp.temporal.ValueRange;
 public final class YearMonth
         implements Temporal, TemporalAdjuster, Comparable<YearMonth>, Serializable, TemporalAccessor {
 
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 4183400860270640070L;
     /**
      * Parser.
      */
@@ -1068,30 +1059,4 @@ public final class YearMonth
         Objects.requireNonNull(formatter, "formatter");
         return formatter.format(this);
     }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.YEAR_MONTH_TYPE, this);
-    }
-
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeInt(year);
-        out.writeByte(month);
-    }
-
-    static YearMonth readExternal(DataInput in) throws IOException {
-        int year = in.readInt();
-        byte month = in.readByte();
-        return YearMonth.of(year, month);
-    }
-
 }

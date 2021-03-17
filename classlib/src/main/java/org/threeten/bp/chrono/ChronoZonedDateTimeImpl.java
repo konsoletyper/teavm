@@ -33,11 +33,6 @@ package org.threeten.bp.chrono;
 
 import static org.threeten.bp.temporal.ChronoUnit.SECONDS;
 
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
@@ -73,11 +68,6 @@ import org.threeten.bp.zone.ZoneRules;
 final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
         extends ChronoZonedDateTime<D>
         implements Serializable {
-
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -5261813987200935591L;
 
     /**
      * The local date-time.
@@ -271,34 +261,6 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
             return dateTime.until(end.toLocalDateTime(), unit);
         }
         return unit.between(this, end);
-    }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.CHRONO_ZONEDDATETIME_TYPE, this);
-    }
-
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(ObjectOutput out) throws IOException {
-        out.writeObject(dateTime);
-        out.writeObject(offset);
-        out.writeObject(zone);
-    }
-
-    static ChronoZonedDateTime<?> readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        ChronoLocalDateTime<?> dateTime = (ChronoLocalDateTime<?>) in.readObject();
-        ZoneOffset offset = (ZoneOffset) in.readObject();
-        ZoneId zone = (ZoneId) in.readObject();
-        return dateTime.atZone(offset).withZoneSameLocal(zone);
-        // TODO: ZDT uses ofLenient()
     }
 
     //-------------------------------------------------------------------------

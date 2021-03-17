@@ -44,11 +44,6 @@ import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
 import static org.threeten.bp.temporal.ChronoField.PROLEPTIC_MONTH;
 import static org.threeten.bp.temporal.ChronoField.YEAR;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -113,10 +108,6 @@ public final class LocalDate
      */
     public static final LocalDate MAX = LocalDate.of(Year.MAX_VALUE, 12, 31);
 
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 2942565459149668126L;
     /**
      * The number of days in a 400 year cycle.
      */
@@ -1850,32 +1841,4 @@ public final class LocalDate
     public String format(DateTimeFormatter formatter) {
         return super.format(formatter);
     }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.LOCAL_DATE_TYPE, this);
-    }
-
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeInt(year);
-        out.writeByte(month);
-        out.writeByte(day);
-    }
-
-    static LocalDate readExternal(DataInput in) throws IOException {
-        int year = in.readInt();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
-        return LocalDate.of(year, month, dayOfMonth);
-    }
-
 }

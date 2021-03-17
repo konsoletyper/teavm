@@ -33,9 +33,6 @@ package org.threeten.bp.chrono;
 
 import static org.threeten.bp.temporal.ChronoField.ERA;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.Locale;
 
 import org.threeten.bp.DateTimeException;
@@ -171,19 +168,4 @@ public enum ThaiBuddhistEra implements Era {
     public String getDisplayName(TextStyle style, Locale locale) {
         return new DateTimeFormatterBuilder().appendText(ERA, style).toFormatter(locale).format(this);
     }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.THAIBUDDHIST_ERA_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeByte(this.getValue());
-    }
-
-    static ThaiBuddhistEra readExternal(DataInput in) throws IOException {
-        byte eraValue = in.readByte();
-        return ThaiBuddhistEra.of(eraValue);
-    }
-
 }

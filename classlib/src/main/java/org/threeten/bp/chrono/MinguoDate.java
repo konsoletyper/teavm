@@ -32,13 +32,8 @@
 package org.threeten.bp.chrono;
 
 import static org.threeten.bp.chrono.MinguoChronology.YEARS_DIFFERENCE;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
 import static org.threeten.bp.temporal.ChronoField.YEAR;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -71,11 +66,6 @@ import org.threeten.bp.temporal.ValueRange;
 public final class MinguoDate
         extends ChronoDateImpl<MinguoDate>
         implements Serializable {
-
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 1300372329181994526L;
 
     /**
      * The underlying date.
@@ -356,26 +346,4 @@ public final class MinguoDate
     public int hashCode() {
         return getChronology().getId().hashCode() ^ isoDate.hashCode();
     }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.MINGUO_DATE_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        // MinguoChrono is implicit in the MINGUO_DATE_TYPE
-        out.writeInt(get(YEAR));
-        out.writeByte(get(MONTH_OF_YEAR));
-        out.writeByte(get(DAY_OF_MONTH));
-
-    }
-
-    static ChronoLocalDate readExternal(DataInput in) throws IOException {
-        int year = in.readInt();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
-        return MinguoChronology.INSTANCE.date(year, month, dayOfMonth);
-    }
-
-
 }

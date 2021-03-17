@@ -35,13 +35,8 @@ import static org.threeten.bp.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH;
 import static org.threeten.bp.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR;
 import static org.threeten.bp.temporal.ChronoField.ALIGNED_WEEK_OF_MONTH;
 import static org.threeten.bp.temporal.ChronoField.ALIGNED_WEEK_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.YEAR;
 
 import java.io.BufferedReader;
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -114,11 +109,6 @@ public final class HijrahDate
         implements Serializable {
     // this class is package-scoped so that future conversion to public
     // would not change serialization
-
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -5207853542612002020L;
 
     /**
      * The minimum valid year-of-era.
@@ -602,15 +592,6 @@ public final class HijrahDate
         this.dayOfWeek = DayOfWeek.of(dateInfo[5]);
         this.gregorianEpochDay = gregorianDay;
         this.isLeapYear = isLeapYear(this.yearOfEra);
-    }
-
-    /**
-     * Replaces the date instance from the stream with a valid one.
-     *
-     * @return the resolved date, never null
-     */
-    private Object readResolve() {
-        return new HijrahDate(this.gregorianEpochDay);
     }
 
     //-----------------------------------------------------------------------
@@ -1756,23 +1737,4 @@ public final class HijrahDate
             return null;
         }
     }
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.HIJRAH_DATE_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        // HijrahChrono is implicit in the Hijrah_DATE_TYPE
-        out.writeInt(get(YEAR));
-        out.writeByte(get(MONTH_OF_YEAR));
-        out.writeByte(get(DAY_OF_MONTH));
-    }
-
-    static ChronoLocalDate readExternal(DataInput in) throws IOException {
-        int year = in.readInt();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
-        return HijrahChronology.INSTANCE.date(year, month, dayOfMonth);
-    }
-
 }

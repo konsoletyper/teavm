@@ -31,9 +31,6 @@
  */
 package org.threeten.bp.zone;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,10 +63,6 @@ import org.threeten.bp.ZoneOffset;
 public final class ZoneOffsetTransition
         implements Comparable<ZoneOffsetTransition>, Serializable {
 
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -6946044323557704546L;
     /**
      * The local transition date-time at the transition.
      */
@@ -135,45 +128,6 @@ public final class ZoneOffsetTransition
         this.transition = LocalDateTime.ofEpochSecond(epochSecond, 0, offsetBefore);
         this.offsetBefore = offsetBefore;
         this.offsetAfter = offsetAfter;
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     * Uses a serialization delegate.
-     *
-     * @return the replacing object, not null
-     */
-    private Object writeReplace() {
-        return new Ser(Ser.ZOT, this);
-    }
-
-    /**
-     * Writes the state to the stream.
-     *
-     * @param out  the output stream, not null
-     * @throws IOException if an error occurs
-     */
-    void writeExternal(DataOutput out) throws IOException {
-        Ser.writeEpochSec(toEpochSecond(), out);
-        Ser.writeOffset(offsetBefore, out);
-        Ser.writeOffset(offsetAfter, out);
-    }
-
-    /**
-     * Reads the state from the stream.
-     *
-     * @param in  the input stream, not null
-     * @return the created object, not null
-     * @throws IOException if an error occurs
-     */
-    static ZoneOffsetTransition readExternal(DataInput in) throws IOException {
-        long epochSecond = Ser.readEpochSec(in);
-        ZoneOffset before = Ser.readOffset(in);
-        ZoneOffset after = Ser.readOffset(in);
-        if (before.equals(after)) {
-            throw new IllegalArgumentException("Offsets must not be equal");
-        }
-        return new ZoneOffsetTransition(epochSecond, before, after);
     }
 
     //-----------------------------------------------------------------------

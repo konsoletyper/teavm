@@ -400,8 +400,6 @@ public abstract class ZoneRules {
      * Fixed time-zone.
      */
     static final class Fixed extends ZoneRules implements Serializable {
-        /** A serialization identifier for this class. */
-        private static final long serialVersionUID = -8733721350312276297L;
         /** The offset. */
         private final ZoneOffset offset;
 

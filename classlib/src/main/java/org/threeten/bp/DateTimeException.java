@@ -43,11 +43,6 @@ package org.threeten.bp;
 public class DateTimeException extends RuntimeException {
 
     /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -1632418723876261839L;
-
-    /**
      * Constructs a new date-time exception with the specified message.
      *
      * @param message  the message to use for this exception, may be null
