@@ -297,7 +297,7 @@ function $rt_exception(ex) {
 function $rt_fillStack(err, ex) {
     if (typeof $rt_decodeStack === "function" && err.stack) {
         var stack = $rt_decodeStack(err.stack);
-        var javaStack = $rt_createArray($rt_objcls(), stack.length);
+        var javaStack = $rt_createArray($rt_stecls(), stack.length);
         var elem;
         var noStack = false;
         for (var i = 0; i < stack.length; ++i) {

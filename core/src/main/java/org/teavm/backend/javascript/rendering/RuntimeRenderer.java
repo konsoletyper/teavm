@@ -37,6 +37,7 @@ import org.teavm.vm.RenderingException;
 public class RuntimeRenderer {
     private static final String STRING_CLASS = String.class.getName();
     private static final String THREAD_CLASS = Thread.class.getName();
+    private static final String STE_CLASS = StackTraceElement.class.getName();
 
     private static final MethodReference NPE_INIT_METHOD = new MethodReference(NullPointerException.class,
             "<init>", void.class);
@@ -68,6 +69,7 @@ public class RuntimeRenderer {
             renderRuntimeString();
             renderRuntimeUnwrapString();
             renderRuntimeObjcls();
+            renderRuntimeThrowablecls();
             renderRuntimeNullCheck();
             renderRuntimeIntern();
             renderRuntimeThreads();
@@ -188,6 +190,17 @@ public class RuntimeRenderer {
 
     private void renderRuntimeObjcls() throws IOException {
         writer.append("function $rt_objcls() { return ").appendClass("java.lang.Object").append("; }").newLine();
+    }
+
+    private void renderRuntimeThrowablecls() throws IOException {
+        writer.append("function $rt_stecls()").ws().append("{").indent().softNewLine();
+        writer.append("return ");
+        if (classSource.get(STE_CLASS) != null) {
+            writer.appendClass(STE_CLASS);
+        } else {
+            writer.appendClass("java.lang.Object");
+        }
+        writer.append(";").softNewLine().outdent().append("}").newLine();
     }
 
     private void renderRuntimeThreads() throws IOException {
