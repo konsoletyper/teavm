@@ -417,8 +417,6 @@ public class TestDateTimeFormatterBuilder {
             {"HH:MM:ss"},
             {"HHMMSS"},
             {"HH:MM:SS"},
-            {"+H"},
-            {"+HMM"},
             {"+HHM"},
             {"+A"},
         };
@@ -619,7 +617,7 @@ public class TestDateTimeFormatterBuilder {
 //            {"www", "Value(WeekOfWeekBasedYear,3)"},
 
             {"D", "Value(DayOfYear)"},
-            {"DD", "Value(DayOfYear,2)"},
+            {"DD", "Value(DayOfYear,2,3,NOT_NEGATIVE)"},
             {"DDD", "Value(DayOfYear,3)"},
 
             {"d", "Value(DayOfMonth)"},
@@ -658,17 +656,17 @@ public class TestDateTimeFormatterBuilder {
             {"SSS", "Fraction(NanoOfSecond,3,3)"},
             {"SSSSSSSSS", "Fraction(NanoOfSecond,9,9)"},
 
-            {"A", "Value(MilliOfDay)"},
-            {"AA", "Value(MilliOfDay,2)"},
-            {"AAA", "Value(MilliOfDay,3)"},
+            {"A", "Value(MilliOfDay,1,19,NOT_NEGATIVE)"},
+            {"AA", "Value(MilliOfDay,2,19,NOT_NEGATIVE)"},
+            {"AAA", "Value(MilliOfDay,3,19,NOT_NEGATIVE)"},
 
-            {"n", "Value(NanoOfSecond)"},
-            {"nn", "Value(NanoOfSecond,2)"},
-            {"nnn", "Value(NanoOfSecond,3)"},
+            {"n", "Value(NanoOfSecond,1,19,NOT_NEGATIVE)"},
+            {"nn", "Value(NanoOfSecond,2,19,NOT_NEGATIVE)"},
+            {"nnn", "Value(NanoOfSecond,3,19,NOT_NEGATIVE)"},
 
-            {"N", "Value(NanoOfDay)"},
-            {"NN", "Value(NanoOfDay,2)"},
-            {"NNN", "Value(NanoOfDay,3)"},
+            {"N", "Value(NanoOfDay,1,19,NOT_NEGATIVE)"},
+            {"NN", "Value(NanoOfDay,2,19,NOT_NEGATIVE)"},
+            {"NNN", "Value(NanoOfDay,3,19,NOT_NEGATIVE)"},
 
             {"z", "ZoneText(SHORT)"},
             {"zz", "ZoneText(SHORT)"},
@@ -694,7 +692,7 @@ public class TestDateTimeFormatterBuilder {
             {"xxxxx", "Offset(+HH:MM:ss,'+00:00')"},
 
             {"ppH", "Pad(Value(HourOfDay),2)"},
-            {"pppDD", "Pad(Value(DayOfYear,2),3)"},
+            {"pppDD", "Pad(Value(DayOfYear,2,3,NOT_NEGATIVE),3)"},
 
             {"uuuu[-MM[-dd", "Value(Year,4,19,EXCEEDS_PAD)['-'Value(MonthOfYear,2)['-'Value(DayOfMonth,2)]]"},
             {"uuuu[-MM[-dd]]", "Value(Year,4,19,EXCEEDS_PAD)['-'Value(MonthOfYear,2)['-'Value(DayOfMonth,2)]]"},

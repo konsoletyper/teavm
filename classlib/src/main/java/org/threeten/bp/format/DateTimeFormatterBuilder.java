@@ -1672,11 +1672,18 @@ public final class DateTimeFormatterBuilder {
             case 'D':
                 if (count == 1) {
                     appendValue(field);
-                } else if (count <= 3) {
+                } else if (count == 2) {
+                    appendValue(field, 2, 3, SignStyle.NOT_NEGATIVE);
+                } else if (count == 3) {
                     appendValue(field, count);
                 } else {
                     throw new IllegalArgumentException("Too many pattern letters: " + cur);
                 }
+                break;
+            case 'N':
+            case 'n':
+            case 'A':
+                appendValue(field, count, 19, SignStyle.NOT_NEGATIVE);
                 break;
             default:
                 if (count == 1) {
