@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -34,14 +49,12 @@ package org.threeten.bp.zone;
 import static org.threeten.bp.temporal.ChronoField.YEAR;
 import static org.threeten.bp.temporal.TemporalAdjusters.nextOrSame;
 import static org.threeten.bp.temporal.TemporalAdjusters.previousOrSame;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.DayOfWeek;
 import org.threeten.bp.LocalDate;
@@ -227,7 +240,8 @@ class ZoneRulesBuilder {
             boolean timeEndOfDay,
             TimeDefinition timeDefinition,
             int savingAmountSecs) {
-        return addRuleToWindow(year, year, month, dayOfMonthIndicator, null, time, timeEndOfDay, timeDefinition, savingAmountSecs);
+        return addRuleToWindow(year, year, month, dayOfMonthIndicator, null, time, timeEndOfDay,
+                timeDefinition, savingAmountSecs);
     }
 
     /**
@@ -270,16 +284,18 @@ class ZoneRulesBuilder {
         YEAR.checkValidValue(startYear);
         YEAR.checkValidValue(endYear);
         if (dayOfMonthIndicator < -28 || dayOfMonthIndicator > 31 || dayOfMonthIndicator == 0) {
-            throw new IllegalArgumentException("Day of month indicator must be between -28 and 31 inclusive excluding zero");
+            throw new IllegalArgumentException("Day of month indicator must be between -28 and 31 "
+                    + "inclusive excluding zero");
         }
-        if (timeEndOfDay && time.equals(LocalTime.MIDNIGHT) == false) {
+        if (timeEndOfDay && !time.equals(LocalTime.MIDNIGHT)) {
             throw new IllegalArgumentException("Time must be midnight when end of day flag is true");
         }
         if (windowList.isEmpty()) {
             throw new IllegalStateException("Must add a window before adding a rule");
         }
         TZWindow window = windowList.get(windowList.size() - 1);
-        window.addRule(startYear, endYear, month, dayOfMonthIndicator, dayOfWeek, time, timeEndOfDay ? 1 : 0, timeDefinition, savingAmountSecs);
+        window.addRule(startYear, endYear, month, dayOfMonthIndicator, dayOfWeek, time, timeEndOfDay ? 1 : 0,
+                timeDefinition, savingAmountSecs);
         return this;
     }
 
@@ -298,13 +314,15 @@ class ZoneRulesBuilder {
         YEAR.checkValidValue(startYear);
         YEAR.checkValidValue(endYear);
         if (dayOfMonthIndicator < -28 || dayOfMonthIndicator > 31 || dayOfMonthIndicator == 0) {
-            throw new IllegalArgumentException("Day of month indicator must be between -28 and 31 inclusive excluding zero");
+            throw new IllegalArgumentException("Day of month indicator must be between -28 and 31 "
+                    + "inclusive excluding zero");
         }
         if (windowList.isEmpty()) {
             throw new IllegalStateException("Must add a window before adding a rule");
         }
         TZWindow window = windowList.get(windowList.size() - 1);
-        window.addRule(startYear, endYear, month, dayOfMonthIndicator, dayOfWeek, time, adjustDays, timeDefinition, savingAmountSecs);
+        window.addRule(startYear, endYear, month, dayOfMonthIndicator, dayOfWeek, time, adjustDays,
+                timeDefinition, savingAmountSecs);
         return this;
     }
 
@@ -354,7 +372,8 @@ class ZoneRulesBuilder {
         if (firstWindow.fixedSavingAmountSecs != null) {
             loopSavings = firstWindow.fixedSavingAmountSecs;
         }
-        final ZoneOffset firstWallOffset = deduplicate(ZoneOffset.ofTotalSeconds(loopStandardOffset.getTotalSeconds() + loopSavings));
+        final ZoneOffset firstWallOffset = deduplicate(ZoneOffset.ofTotalSeconds(
+                loopStandardOffset.getTotalSeconds() + loopSavings));
         LocalDateTime loopWindowStart = deduplicate(LocalDateTime.of(Year.MIN_VALUE, 1, 1, 0, 0));
         ZoneOffset loopWindowOffset = firstWallOffset;
 
@@ -382,17 +401,19 @@ class ZoneRulesBuilder {
             }
 
             // check if standard offset changed, and update it
-            if (loopStandardOffset.equals(window.standardOffset) == false) {
+            if (!loopStandardOffset.equals(window.standardOffset)) {
                 standardTransitionList.add(deduplicate(
                     new ZoneOffsetTransition(
-                        LocalDateTime.ofEpochSecond(loopWindowStart.toEpochSecond(loopWindowOffset), 0, loopStandardOffset),
+                        LocalDateTime.ofEpochSecond(loopWindowStart.toEpochSecond(loopWindowOffset), 0,
+                                loopStandardOffset),
                         loopStandardOffset, window.standardOffset)));
                 loopStandardOffset = deduplicate(window.standardOffset);
             }
 
             // check if the start of the window represents a transition
-            ZoneOffset effectiveWallOffset = deduplicate(ZoneOffset.ofTotalSeconds(loopStandardOffset.getTotalSeconds() + effectiveSavings));
-            if (loopWindowOffset.equals(effectiveWallOffset) == false) {
+            ZoneOffset effectiveWallOffset = deduplicate(ZoneOffset.ofTotalSeconds(
+                    loopStandardOffset.getTotalSeconds() + effectiveSavings));
+            if (!loopWindowOffset.equals(effectiveWallOffset)) {
                 ZoneOffsetTransition trans = deduplicate(
                     new ZoneOffsetTransition(loopWindowStart, loopWindowOffset, effectiveWallOffset));
                 transitionList.add(trans);
@@ -402,9 +423,9 @@ class ZoneRulesBuilder {
             // apply rules within the window
             for (TZRule rule : window.ruleList) {
                 ZoneOffsetTransition trans = deduplicate(rule.toTransition(loopStandardOffset, loopSavings));
-                if (trans.toEpochSecond() < loopWindowStart.toEpochSecond(loopWindowOffset) == false &&
-                        trans.toEpochSecond() < window.createDateTimeEpochSecond(loopSavings) &&
-                        trans.getOffsetBefore().equals(trans.getOffsetAfter()) == false) {
+                if (trans.toEpochSecond() >= loopWindowStart.toEpochSecond(loopWindowOffset)
+                        && trans.toEpochSecond() < window.createDateTimeEpochSecond(loopSavings)
+                        && !trans.getOffsetBefore().equals(trans.getOffsetAfter())) {
                     transitionList.add(trans);
                     loopSavings = rule.savingAmountSecs;
                 }
@@ -412,7 +433,8 @@ class ZoneRulesBuilder {
 
             // calculate last rules
             for (TZRule lastRule : window.lastRuleList) {
-                ZoneOffsetTransitionRule transitionRule = deduplicate(lastRule.toTransitionRule(loopStandardOffset, loopSavings));
+                ZoneOffsetTransitionRule transitionRule = deduplicate(lastRule.toTransitionRule(loopStandardOffset,
+                        loopSavings));
                 lastTransitionRuleList.add(transitionRule);
                 loopSavings = lastRule.savingAmountSecs;
             }
@@ -436,7 +458,7 @@ class ZoneRulesBuilder {
      */
     @SuppressWarnings("unchecked")
     <T> T deduplicate(T object) {
-        if (deduplicateMap.containsKey(object) == false) {
+        if (!deduplicateMap.containsKey(object)) {
             deduplicateMap.put(object, object);
         }
         return (T) deduplicateMap.get(object);
@@ -535,7 +557,8 @@ class ZoneRulesBuilder {
             }
             int year = startYear;
             while (year <= endYear) {
-                TZRule rule = new TZRule(year, month, dayOfMonthIndicator, dayOfWeek, time, adjustDays, timeDefinition, savingAmountSecs);
+                TZRule rule = new TZRule(year, month, dayOfMonthIndicator, dayOfWeek, time, adjustDays,
+                        timeDefinition, savingAmountSecs);
                 if (lastRule) {
                     lastRuleList.add(rule);
                     maxLastRuleStartYear = Math.max(startYear, maxLastRuleStartYear);
@@ -554,8 +577,8 @@ class ZoneRulesBuilder {
          */
         void validateWindowOrder(TZWindow previous) {
             if (windowEnd.isBefore(previous.windowEnd)) {
-                throw new IllegalStateException("Windows must be added in date-time order: " +
-                        windowEnd + " < " + previous.windowEnd);
+                throw new IllegalStateException("Windows must be added in date-time order: "
+                        + windowEnd + " < " + previous.windowEnd);
             }
         }
 
@@ -577,7 +600,8 @@ class ZoneRulesBuilder {
                 maxLastRuleStartYear = Math.max(maxLastRuleStartYear, windowStartYear) + 1;
                 for (TZRule lastRule : lastRuleList) {
                     addRule(lastRule.year, maxLastRuleStartYear, lastRule.month, lastRule.dayOfMonthIndicator,
-                        lastRule.dayOfWeek, lastRule.time, lastRule.adjustDays, lastRule.timeDefinition, lastRule.savingAmountSecs);
+                        lastRule.dayOfWeek, lastRule.time, lastRule.adjustDays, lastRule.timeDefinition,
+                            lastRule.savingAmountSecs);
                     lastRule.year = maxLastRuleStartYear + 1;
                 }
                 if (maxLastRuleStartYear == Year.MAX_VALUE) {
@@ -590,7 +614,8 @@ class ZoneRulesBuilder {
                 int endYear = windowEnd.getYear();
                 for (TZRule lastRule : lastRuleList) {
                     addRule(lastRule.year, endYear + 1, lastRule.month, lastRule.dayOfMonthIndicator,
-                        lastRule.dayOfWeek, lastRule.time, lastRule.adjustDays, lastRule.timeDefinition, lastRule.savingAmountSecs);
+                        lastRule.dayOfWeek, lastRule.time, lastRule.adjustDays, lastRule.timeDefinition,
+                            lastRule.savingAmountSecs);
                 }
                 lastRuleList.clear();
                 maxLastRuleStartYear = Year.MAX_VALUE;
@@ -612,8 +637,8 @@ class ZoneRulesBuilder {
          * @return true if the window is only a standard offset
          */
         boolean isSingleWindowStandardOffset() {
-            return windowEnd.equals(LocalDateTime.MAX) && timeDefinition == TimeDefinition.WALL &&
-                    fixedSavingAmountSecs == null && lastRuleList.isEmpty() && ruleList.isEmpty();
+            return windowEnd.equals(LocalDateTime.MAX) && timeDefinition == TimeDefinition.WALL
+                    && fixedSavingAmountSecs == null && lastRuleList.isEmpty() && ruleList.isEmpty();
         }
 
         /**
@@ -682,8 +707,8 @@ class ZoneRulesBuilder {
             this.month = month;
             this.dayOfMonthIndicator = dayOfMonthIndicator;
             this.dayOfWeek = dayOfWeek;
-            this.time= time;
-            this.adjustDays= adjustDays;
+            this.time = time;
+            this.adjustDays = adjustDays;
             this.timeDefinition = timeDefinition;
             this.savingAmountSecs = savingAfterSecs;
         }
@@ -700,9 +725,11 @@ class ZoneRulesBuilder {
             LocalDate date = toLocalDate();
             date = deduplicate(date);
             LocalDateTime ldt = deduplicate(LocalDateTime.of(date.plusDays(adjustDays), time));
-            ZoneOffset wallOffset = deduplicate(ZoneOffset.ofTotalSeconds(standardOffset.getTotalSeconds() + savingsBeforeSecs));
+            ZoneOffset wallOffset = deduplicate(ZoneOffset.ofTotalSeconds(standardOffset.getTotalSeconds()
+                    + savingsBeforeSecs));
             LocalDateTime dt = deduplicate(timeDefinition.createDateTime(ldt, standardOffset, wallOffset));
-            ZoneOffset offsetAfter = deduplicate(ZoneOffset.ofTotalSeconds(standardOffset.getTotalSeconds() + savingAmountSecs));
+            ZoneOffset offsetAfter = deduplicate(ZoneOffset.ofTotalSeconds(standardOffset.getTotalSeconds()
+                    + savingAmountSecs));
             return new ZoneOffsetTransition(dt, wallOffset, offsetAfter);
         }
 
@@ -728,9 +755,10 @@ class ZoneRulesBuilder {
                     standardOffset, trans.getOffsetBefore(), trans.getOffsetAfter());
         }
 
+        @Override
         public int compareTo(TZRule other) {
             int cmp = year - other.year;
-            cmp = (cmp == 0 ? month.compareTo(other.month) : cmp);
+            cmp = cmp == 0 ? month.compareTo(other.month) : cmp;
             if (cmp == 0) {
                 // convert to date to handle dow/domIndicator/timeEndOfDay
                 LocalDate thisDate = toLocalDate();

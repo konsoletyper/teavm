@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -36,11 +51,9 @@ import static org.threeten.bp.temporal.ChronoField.INSTANT_SECONDS;
 import static org.threeten.bp.temporal.ChronoField.NANO_OF_DAY;
 import static org.threeten.bp.temporal.ChronoField.OFFSET_SECONDS;
 import static org.threeten.bp.temporal.ChronoUnit.NANOS;
-
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Objects;
-
 import org.threeten.bp.chrono.IsoChronology;
 import org.threeten.bp.format.DateTimeFormatter;
 import org.threeten.bp.format.DateTimeParseException;
@@ -303,8 +316,8 @@ public final class OffsetDateTime
                 return OffsetDateTime.ofInstant(instant, offset);
             }
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain OffsetDateTime from TemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName());
+            throw new DateTimeException("Unable to obtain OffsetDateTime from TemporalAccessor: "
+                    + temporal + ", type " + temporal.getClass().getName());
         }
     }
 
@@ -1206,7 +1219,9 @@ public final class OffsetDateTime
      */
     @Override
     public OffsetDateTime minus(long amountToSubtract, TemporalUnit unit) {
-        return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit) : plus(-amountToSubtract, unit));
+        return amountToSubtract == Long.MIN_VALUE
+                ? plus(Long.MAX_VALUE, unit).plus(1, unit)
+                : plus(-amountToSubtract, unit);
     }
 
     //-----------------------------------------------------------------------
@@ -1231,7 +1246,7 @@ public final class OffsetDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public OffsetDateTime minusYears(long years) {
-        return (years == Long.MIN_VALUE ? plusYears(Long.MAX_VALUE).plusYears(1) : plusYears(-years));
+        return years == Long.MIN_VALUE ? plusYears(Long.MAX_VALUE).plusYears(1) : plusYears(-years);
     }
 
     /**
@@ -1255,7 +1270,7 @@ public final class OffsetDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public OffsetDateTime minusMonths(long months) {
-        return (months == Long.MIN_VALUE ? plusMonths(Long.MAX_VALUE).plusMonths(1) : plusMonths(-months));
+        return months == Long.MIN_VALUE ? plusMonths(Long.MAX_VALUE).plusMonths(1) : plusMonths(-months);
     }
 
     /**
@@ -1274,7 +1289,7 @@ public final class OffsetDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public OffsetDateTime minusWeeks(long weeks) {
-        return (weeks == Long.MIN_VALUE ? plusWeeks(Long.MAX_VALUE).plusWeeks(1) : plusWeeks(-weeks));
+        return weeks == Long.MIN_VALUE ? plusWeeks(Long.MAX_VALUE).plusWeeks(1) : plusWeeks(-weeks);
     }
 
     /**
@@ -1293,7 +1308,9 @@ public final class OffsetDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public OffsetDateTime minusDays(long days) {
-        return (days == Long.MIN_VALUE ? plusDays(Long.MAX_VALUE).plusDays(1) : plusDays(-days));
+        return days == Long.MIN_VALUE
+                ? plusDays(Long.MAX_VALUE).plusDays(1)
+                : plusDays(-days);
     }
 
     /**
@@ -1306,7 +1323,7 @@ public final class OffsetDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public OffsetDateTime minusHours(long hours) {
-        return (hours == Long.MIN_VALUE ? plusHours(Long.MAX_VALUE).plusHours(1) : plusHours(-hours));
+        return hours == Long.MIN_VALUE ? plusHours(Long.MAX_VALUE).plusHours(1) : plusHours(-hours);
     }
 
     /**
@@ -1319,7 +1336,7 @@ public final class OffsetDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public OffsetDateTime minusMinutes(long minutes) {
-        return (minutes == Long.MIN_VALUE ? plusMinutes(Long.MAX_VALUE).plusMinutes(1) : plusMinutes(-minutes));
+        return minutes == Long.MIN_VALUE ? plusMinutes(Long.MAX_VALUE).plusMinutes(1) : plusMinutes(-minutes);
     }
 
     /**
@@ -1332,7 +1349,7 @@ public final class OffsetDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public OffsetDateTime minusSeconds(long seconds) {
-        return (seconds == Long.MIN_VALUE ? plusSeconds(Long.MAX_VALUE).plusSeconds(1) : plusSeconds(-seconds));
+        return seconds == Long.MIN_VALUE ? plusSeconds(Long.MAX_VALUE).plusSeconds(1) : plusSeconds(-seconds);
     }
 
     /**
@@ -1345,7 +1362,7 @@ public final class OffsetDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public OffsetDateTime minusNanos(long nanos) {
-        return (nanos == Long.MIN_VALUE ? plusNanos(Long.MAX_VALUE).plusNanos(1) : plusNanos(-nanos));
+        return nanos == Long.MIN_VALUE ? plusNanos(Long.MAX_VALUE).plusNanos(1) : plusNanos(-nanos);
     }
 
     //-----------------------------------------------------------------------
@@ -1665,8 +1682,8 @@ public final class OffsetDateTime
     public boolean isAfter(OffsetDateTime other) {
         long thisEpochSec = toEpochSecond();
         long otherEpochSec = other.toEpochSecond();
-        return thisEpochSec > otherEpochSec ||
-            (thisEpochSec == otherEpochSec && toLocalTime().getNano() > other.toLocalTime().getNano());
+        return thisEpochSec > otherEpochSec
+                || (thisEpochSec == otherEpochSec && toLocalTime().getNano() > other.toLocalTime().getNano());
     }
 
     /**
@@ -1682,8 +1699,8 @@ public final class OffsetDateTime
     public boolean isBefore(OffsetDateTime other) {
         long thisEpochSec = toEpochSecond();
         long otherEpochSec = other.toEpochSecond();
-        return thisEpochSec < otherEpochSec ||
-            (thisEpochSec == otherEpochSec && toLocalTime().getNano() < other.toLocalTime().getNano());
+        return thisEpochSec < otherEpochSec
+                || (thisEpochSec == otherEpochSec && toLocalTime().getNano() < other.toLocalTime().getNano());
     }
 
     /**
@@ -1697,8 +1714,8 @@ public final class OffsetDateTime
      * @return true if the instant equals the instant of the specified date-time
      */
     public boolean isEqual(OffsetDateTime other) {
-        return toEpochSecond() == other.toEpochSecond() &&
-                toLocalTime().getNano() == other.toLocalTime().getNano();
+        return toEpochSecond() == other.toEpochSecond()
+                && toLocalTime().getNano() == other.toLocalTime().getNano();
     }
 
     //-----------------------------------------------------------------------

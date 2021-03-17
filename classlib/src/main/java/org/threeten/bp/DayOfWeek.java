@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -33,9 +48,7 @@ package org.threeten.bp;
 
 import static org.threeten.bp.temporal.ChronoField.DAY_OF_WEEK;
 import static org.threeten.bp.temporal.ChronoUnit.DAYS;
-
 import java.util.Locale;
-
 import org.threeten.bp.format.DateTimeFormatterBuilder;
 import org.threeten.bp.format.TextStyle;
 import org.threeten.bp.temporal.ChronoField;
@@ -169,8 +182,8 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
         try {
             return of(temporal.get(DAY_OF_WEEK));
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain DayOfWeek from TemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName(), ex);
+            throw new DateTimeException("Unable to obtain DayOfWeek from TemporalAccessor: "
+                    + temporal + ", type " + temporal.getClass().getName(), ex);
         }
     }
 
@@ -179,7 +192,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
      * Gets the day-of-week {@code int} value.
      * <p>
      * The values are numbered following the ISO-8601 standard, from 1 (Monday) to 7 (Sunday).
-     * See {@link WeekFields#dayOfWeek} for localized week-numbering.
+     * See {@link WeekFields#dayOfWeek()} for localized week-numbering.
      *
      * @return the day-of-week, from 1 (Monday) to 7 (Sunday)
      */
@@ -382,8 +395,12 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
     public <R> R query(TemporalQuery<R> query) {
         if (query == TemporalQueries.precision()) {
             return (R) DAYS;
-        } else if (query == TemporalQueries.localDate() || query == TemporalQueries.localTime() || query == TemporalQueries.chronology() ||
-                query == TemporalQueries.zone() || query == TemporalQueries.zoneId() || query == TemporalQueries.offset()) {
+        } else if (query == TemporalQueries.localDate()
+                || query == TemporalQueries.localTime()
+                || query == TemporalQueries.chronology()
+                || query == TemporalQueries.zone()
+                || query == TemporalQueries.zoneId()
+                || query == TemporalQueries.offset()) {
             return null;
         }
         return query.queryFrom(this);
@@ -398,7 +415,7 @@ public enum DayOfWeek implements TemporalAccessor, TemporalAdjuster {
      * The adjustment is equivalent to using {@link Temporal#with(TemporalField, long)}
      * passing {@link ChronoField#DAY_OF_WEEK} as the field.
      * Note that this adjusts forwards or backwards within a Monday to Sunday week.
-     * See {@link WeekFields#dayOfWeek} for localized week start days.
+     * See {@link WeekFields#dayOfWeek()} for localized week start days.
      * See {@link TemporalAdjusters} for other adjusters
      * with more control, such as {@code next(MONDAY)}.
      * <p>

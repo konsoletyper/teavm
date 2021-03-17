@@ -50,7 +50,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
-
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -58,23 +57,22 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.TextStyle;
+import java.time.temporal.TemporalAccessor;
+import java.time.zone.ZoneOffsetTransition;
+import java.time.zone.ZoneRules;
+import java.time.zone.ZoneRulesException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
-
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import java.time.format.TextStyle;
-import java.time.temporal.TemporalAccessor;
-import java.time.zone.ZoneOffsetTransition;
-import java.time.zone.ZoneRules;
-import java.time.zone.ZoneRulesException;
 
 /**
  * Test ZoneId.
@@ -249,15 +247,15 @@ public class TestZoneId extends AbstractTest {
             {"+0", ""},
             {"+5", "+05:00"},
             {"+01", "+01:00"},
-            {"+0100", "+01:00"},{"+01:00", "+01:00"},
-            {"+010000", "+01:00"},{"+01:00:00", "+01:00"},
+            {"+0100", "+01:00"}, {"+01:00", "+01:00"},
+            {"+010000", "+01:00"}, {"+01:00:00", "+01:00"},
             {"+12", "+12:00"},
-            {"+1234", "+12:34"},{"+12:34", "+12:34"},
-            {"+123456", "+12:34:56"},{"+12:34:56", "+12:34:56"},
+            {"+1234", "+12:34"}, {"+12:34", "+12:34"},
+            {"+123456", "+12:34:56"}, { "+12:34:56", "+12:34:56"},
             {"-02", "-02:00"},
             {"-5", "-05:00"},
-            {"-0200", "-02:00"},{"-02:00", "-02:00"},
-            {"-020000", "-02:00"},{"-02:00:00", "-02:00"},
+            {"-0200", "-02:00"}, {"-02:00", "-02:00"},
+            {"-020000", "-02:00"}, {"-02:00:00", "-02:00"},
         };
     }
 
@@ -447,8 +445,10 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, ZoneOffset.UTC)), ZoneOffset.ofHours(0));
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 31, ZoneOffset.UTC)), ZoneOffset.ofHours(1));
         // cutover at 01:00Z
-        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 0, 59, 59, 999999999, ZoneOffset.UTC)), ZoneOffset.ofHours(0));
-        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 1, 0, 0, 0, ZoneOffset.UTC)), ZoneOffset.ofHours(1));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 0, 59, 59, 999999999, ZoneOffset.UTC)),
+                ZoneOffset.ofHours(0));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 1, 0, 0, 0, ZoneOffset.UTC)),
+                ZoneOffset.ofHours(1));
     }
 
     public void test_London_getOffset_fromDST() {
@@ -462,8 +462,10 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 10, 30, ZoneOffset.UTC)), ZoneOffset.ofHours(0));
         assertEquals(test.getRules().getOffset(createInstant(2008, 10, 31, ZoneOffset.UTC)), ZoneOffset.ofHours(0));
         // cutover at 01:00Z
-        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 0, 59, 59, 999999999, ZoneOffset.UTC)), ZoneOffset.ofHours(1));
-        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 1, 0, 0, 0, ZoneOffset.UTC)), ZoneOffset.ofHours(0));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 0, 59, 59, 999999999, ZoneOffset.UTC)),
+                ZoneOffset.ofHours(1));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 1, 0, 0, 0, ZoneOffset.UTC)),
+                ZoneOffset.ofHours(0));
     }
 
     public void test_London_getOffsetInfo() {
@@ -602,8 +604,10 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, ZoneOffset.UTC)), ZoneOffset.ofHours(1));
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 31, ZoneOffset.UTC)), ZoneOffset.ofHours(2));
         // cutover at 01:00Z
-        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 0, 59, 59, 999999999, ZoneOffset.UTC)), ZoneOffset.ofHours(1));
-        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 1, 0, 0, 0, ZoneOffset.UTC)), ZoneOffset.ofHours(2));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 0, 59, 59, 999999999, ZoneOffset.UTC)),
+                ZoneOffset.ofHours(1));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 1, 0, 0, 0, ZoneOffset.UTC)),
+                ZoneOffset.ofHours(2));
     }
 
     public void test_Paris_getOffset_fromDST() {
@@ -617,8 +621,10 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 10, 30, ZoneOffset.UTC)), ZoneOffset.ofHours(1));
         assertEquals(test.getRules().getOffset(createInstant(2008, 10, 31, ZoneOffset.UTC)), ZoneOffset.ofHours(1));
         // cutover at 01:00Z
-        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 0, 59, 59, 999999999, ZoneOffset.UTC)), ZoneOffset.ofHours(2));
-        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 1, 0, 0, 0, ZoneOffset.UTC)), ZoneOffset.ofHours(1));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 0, 59, 59, 999999999, ZoneOffset.UTC)),
+                ZoneOffset.ofHours(2));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 1, 0, 0, 0, ZoneOffset.UTC)),
+                ZoneOffset.ofHours(1));
     }
 
     public void test_Paris_getOffsetInfo() {
@@ -766,8 +772,10 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 13, offset)), ZoneOffset.ofHours(-4));
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 14, offset)), ZoneOffset.ofHours(-4));
         // cutover at 02:00 local
-        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 9, 1, 59, 59, 999999999, offset)), ZoneOffset.ofHours(-5));
-        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 9, 2, 0, 0, 0, offset)), ZoneOffset.ofHours(-4));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 9, 1, 59, 59, 999999999, offset)),
+                ZoneOffset.ofHours(-5));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 9, 2, 0, 0, 0, offset)),
+                ZoneOffset.ofHours(-4));
     }
 
     public void test_NewYork_getOffset_fromDST() {
@@ -781,8 +789,10 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 11, 6, offset)), ZoneOffset.ofHours(-5));
         assertEquals(test.getRules().getOffset(createInstant(2008, 11, 7, offset)), ZoneOffset.ofHours(-5));
         // cutover at 02:00 local
-        assertEquals(test.getRules().getOffset(createInstant(2008, 11, 2, 1, 59, 59, 999999999, offset)), ZoneOffset.ofHours(-4));
-        assertEquals(test.getRules().getOffset(createInstant(2008, 11, 2, 2, 0, 0, 0, offset)), ZoneOffset.ofHours(-5));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 11, 2, 1, 59, 59, 999999999, offset)),
+                ZoneOffset.ofHours(-4));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 11, 2, 2, 0, 0, 0, offset)),
+                ZoneOffset.ofHours(-5));
     }
 
     public void test_NewYork_getOffsetInfo() {

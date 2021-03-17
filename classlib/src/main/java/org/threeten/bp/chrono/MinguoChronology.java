@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -48,14 +63,12 @@ import static org.threeten.bp.temporal.ChronoUnit.DAYS;
 import static org.threeten.bp.temporal.ChronoUnit.MONTHS;
 import static org.threeten.bp.temporal.ChronoUnit.WEEKS;
 import static org.threeten.bp.temporal.TemporalAdjusters.nextOrSame;
-
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-
 import org.threeten.bp.Clock;
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.DayOfWeek;
@@ -242,10 +255,10 @@ public final class MinguoChronology extends Chronology implements Serializable {
 
     @Override
     public int prolepticYear(Era era, int yearOfEra) {
-        if (era instanceof MinguoEra == false) {
+        if (!(era instanceof MinguoEra)) {
             throw new ClassCastException("Era must be MinguoEra");
         }
-        return (era == MinguoEra.ROC ? yearOfEra : 1 - yearOfEra);
+        return era == MinguoEra.ROC ? yearOfEra : 1 - yearOfEra;
     }
 
     @Override
@@ -264,11 +277,13 @@ public final class MinguoChronology extends Chronology implements Serializable {
         switch (field) {
             case PROLEPTIC_MONTH: {
                 ValueRange range = PROLEPTIC_MONTH.range();
-                return ValueRange.of(range.getMinimum() - YEARS_DIFFERENCE * 12L, range.getMaximum() - YEARS_DIFFERENCE * 12L);
+                return ValueRange.of(range.getMinimum() - YEARS_DIFFERENCE * 12L,
+                        range.getMaximum() - YEARS_DIFFERENCE * 12L);
             }
             case YEAR_OF_ERA: {
                 ValueRange range = YEAR.range();
-                return ValueRange.of(1, range.getMaximum() - YEARS_DIFFERENCE, -range.getMinimum() + 1 + YEARS_DIFFERENCE);
+                return ValueRange.of(1, range.getMaximum() - YEARS_DIFFERENCE,
+                        -range.getMinimum() + 1 + YEARS_DIFFERENCE);
             }
             case YEAR: {
                 ValueRange range = YEAR.range();
@@ -306,18 +321,20 @@ public final class MinguoChronology extends Chronology implements Serializable {
                 if (resolverStyle == ResolverStyle.STRICT) {
                     // do not invent era if strict, but do cross-check with year
                     if (year != null) {
-                        updateResolveMap(fieldValues, YEAR, (year > 0 ? yoeLong: Jdk8Methods.safeSubtract(1, yoeLong)));
+                        updateResolveMap(fieldValues, YEAR, year > 0 ? yoeLong : Jdk8Methods.safeSubtract(1, yoeLong));
                     } else {
                         // reinstate the field removed earlier, no cross-check issues
                         fieldValues.put(YEAR_OF_ERA, yoeLong);
                     }
                 } else {
                     // invent era
-                    updateResolveMap(fieldValues, YEAR, (year == null || year > 0 ? yoeLong: Jdk8Methods.safeSubtract(1, yoeLong)));
+                    updateResolveMap(fieldValues, YEAR, year == null || year > 0
+                            ? yoeLong
+                            : Jdk8Methods.safeSubtract(1, yoeLong));
                 }
-            } else if (era.longValue() == 1L) {
+            } else if (era == 1L) {
                 updateResolveMap(fieldValues, YEAR, yoeLong);
-            } else if (era.longValue() == 0L) {
+            } else if (era == 0L) {
                 updateResolveMap(fieldValues, YEAR, Jdk8Methods.safeSubtract(1, yoeLong));
             } else {
                 throw new DateTimeException("Invalid value for era: " + era);
@@ -336,8 +353,10 @@ public final class MinguoChronology extends Chronology implements Serializable {
                         long days = Jdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_MONTH), 1);
                         return date(y, 1, 1).plusMonths(months).plusDays(days);
                     } else {
-                        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
-                        int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH), DAY_OF_MONTH);
+                        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR),
+                                MONTH_OF_YEAR);
+                        int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH),
+                                DAY_OF_MONTH);
                         if (resolverStyle == ResolverStyle.SMART && dom > 28) {
                             dom = Math.min(dom, date(y, moy, 1).lengthOfMonth());
                         }
@@ -355,7 +374,8 @@ public final class MinguoChronology extends Chronology implements Serializable {
                         }
                         int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
                         int aw = ALIGNED_WEEK_OF_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH));
-                        int ad = ALIGNED_DAY_OF_WEEK_IN_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH));
+                        int ad = ALIGNED_DAY_OF_WEEK_IN_MONTH.checkValidIntValue(
+                                fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH));
                         MinguoDate date = date(y, moy, 1).plus((aw - 1) * 7 + (ad - 1), DAYS);
                         if (resolverStyle == ResolverStyle.STRICT && date.get(MONTH_OF_YEAR) != moy) {
                             throw new DateTimeException("Strict mode rejected date parsed to a different month");
@@ -399,7 +419,8 @@ public final class MinguoChronology extends Chronology implements Serializable {
                         return date(y, 1, 1).plus(weeks, WEEKS).plus(days, DAYS);
                     }
                     int aw = ALIGNED_WEEK_OF_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR));
-                    int ad = ALIGNED_DAY_OF_WEEK_IN_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR));
+                    int ad = ALIGNED_DAY_OF_WEEK_IN_YEAR.checkValidIntValue(
+                            fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR));
                     MinguoDate date = date(y, 1, 1).plusDays((aw - 1) * 7 + (ad - 1));
                     if (resolverStyle == ResolverStyle.STRICT && date.get(YEAR) != y) {
                         throw new DateTimeException("Strict mode rejected date parsed to a different year");

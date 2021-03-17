@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -32,12 +47,10 @@
 package org.threeten.bp;
 
 import static org.threeten.bp.temporal.ChronoField.OFFSET_SECONDS;
-
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.Temporal;
 import org.threeten.bp.temporal.TemporalAccessor;
@@ -169,7 +182,9 @@ public final class ZoneOffset
         }
 
         // parse - +h, +hh, +hhmm, +hh:mm, +hhmmss, +hh:mm:ss
-        final int hours, minutes, seconds;
+        final int hours;
+        final int minutes;
+        final int seconds;
         switch (offsetId.length()) {
             case 2:
                 offsetId = offsetId.charAt(0) + "0" + offsetId.charAt(1);  // fallthru
@@ -300,8 +315,8 @@ public final class ZoneOffset
     public static ZoneOffset from(TemporalAccessor temporal) {
         ZoneOffset offset = temporal.query(TemporalQueries.offset());
         if (offset == null) {
-            throw new DateTimeException("Unable to obtain ZoneOffset from TemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName());
+            throw new DateTimeException("Unable to obtain ZoneOffset from TemporalAccessor: "
+                    + temporal + ", type " + temporal.getClass().getName());
         }
         return offset;
     }
@@ -317,27 +332,29 @@ public final class ZoneOffset
      */
     private static void validate(int hours, int minutes, int seconds) {
         if (hours < -18 || hours > 18) {
-            throw new DateTimeException("Zone offset hours not in valid range: value " + hours +
-                    " is not in the range -18 to 18");
+            throw new DateTimeException("Zone offset hours not in valid range: value "
+                    + hours + " is not in the range -18 to 18");
         }
         if (hours > 0) {
             if (minutes < 0 || seconds < 0) {
-                throw new DateTimeException("Zone offset minutes and seconds must be positive because hours is positive");
+                throw new DateTimeException("Zone offset minutes and seconds must be positive because hours"
+                        + " is positive");
             }
         } else if (hours < 0) {
             if (minutes > 0 || seconds > 0) {
-                throw new DateTimeException("Zone offset minutes and seconds must be negative because hours is negative");
+                throw new DateTimeException("Zone offset minutes and seconds must be negative because hours "
+                        + "is negative");
             }
         } else if ((minutes > 0 && seconds < 0) || (minutes < 0 && seconds > 0)) {
             throw new DateTimeException("Zone offset minutes and seconds must have the same sign");
         }
         if (Math.abs(minutes) > 59) {
-            throw new DateTimeException("Zone offset minutes not in valid range: abs(value) " +
-                    Math.abs(minutes) + " is not in the range 0 to 59");
+            throw new DateTimeException("Zone offset minutes not in valid range: abs(value) "
+                    + Math.abs(minutes) + " is not in the range 0 to 59");
         }
         if (Math.abs(seconds) > 59) {
-            throw new DateTimeException("Zone offset seconds not in valid range: abs(value) " +
-                    Math.abs(seconds) + " is not in the range 0 to 59");
+            throw new DateTimeException("Zone offset seconds not in valid range: abs(value) "
+                    + Math.abs(seconds) + " is not in the range 0 to 59");
         }
         if (Math.abs(hours) == 18 && (Math.abs(minutes) > 0 || Math.abs(seconds) > 0)) {
             throw new DateTimeException("Zone offset not in valid range: -18:00 to +18:00");
@@ -608,8 +625,9 @@ public final class ZoneOffset
     public <R> R query(TemporalQuery<R> query) {
         if (query == TemporalQueries.offset() || query == TemporalQueries.zone()) {
             return (R) this;
-        } else if (query == TemporalQueries.localDate() || query == TemporalQueries.localTime() ||
-                query == TemporalQueries.precision() || query == TemporalQueries.chronology() || query == TemporalQueries.zoneId()) {
+        } else if (query == TemporalQueries.localDate() || query == TemporalQueries.localTime()
+                || query == TemporalQueries.precision() || query == TemporalQueries.chronology()
+                || query == TemporalQueries.zoneId()) {
             return null;
         }
         return query.queryFrom(this);

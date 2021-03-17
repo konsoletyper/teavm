@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -39,10 +54,8 @@ import static org.threeten.bp.temporal.ChronoField.NANO_OF_SECOND;
 import static org.threeten.bp.temporal.ChronoField.SECOND_OF_DAY;
 import static org.threeten.bp.temporal.ChronoField.SECOND_OF_MINUTE;
 import static org.threeten.bp.temporal.ChronoUnit.NANOS;
-
 import java.io.Serializable;
 import java.util.Objects;
-
 import org.threeten.bp.format.DateTimeFormatter;
 import org.threeten.bp.format.DateTimeParseException;
 import org.threeten.bp.temporal.ChronoField;
@@ -389,8 +402,8 @@ public final class LocalTime
     public static LocalTime from(TemporalAccessor temporal) {
         LocalTime time = temporal.query(TemporalQueries.localTime());
         if (time == null) {
-            throw new DateTimeException("Unable to obtain LocalTime from TemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName());
+            throw new DateTimeException("Unable to obtain LocalTime from TemporalAccessor: "
+                    + temporal + ", type " + temporal.getClass().getName());
         }
         return time;
     }
@@ -620,9 +633,9 @@ public final class LocalTime
             case MINUTE_OF_HOUR: return minute;
             case MINUTE_OF_DAY: return hour * 60 + minute;
             case HOUR_OF_AMPM: return hour % 12;
-            case CLOCK_HOUR_OF_AMPM: int ham = hour % 12; return (ham % 12 == 0 ? 12 : ham);
+            case CLOCK_HOUR_OF_AMPM: int ham = hour % 12; return ham % 12 == 0 ? 12 : ham;
             case HOUR_OF_DAY: return hour;
-            case CLOCK_HOUR_OF_DAY: return (hour == 0 ? 24 : hour);
+            case CLOCK_HOUR_OF_DAY: return hour == 0 ? 24 : hour;
             case AMPM_OF_DAY: return hour / 12;
         }
         throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
@@ -1024,8 +1037,7 @@ public final class LocalTime
         if (secondstoAdd == 0) {
             return this;
         }
-        int sofd = hour * SECONDS_PER_HOUR +
-                    minute * SECONDS_PER_MINUTE + second;
+        int sofd = hour * SECONDS_PER_HOUR + minute * SECONDS_PER_MINUTE + second;
         int newSofd = ((int) (secondstoAdd % SECONDS_PER_DAY) + sofd + SECONDS_PER_DAY) % SECONDS_PER_DAY;
         if (sofd == newSofd) {
             return this;
@@ -1089,7 +1101,8 @@ public final class LocalTime
      * Returns a copy of this time with the specified period subtracted.
      * <p>
      * This method returns a new time based on this time with the specified period subtracted.
-     * This can be used to subtract any period that is defined by a unit, for example to subtract hours, minutes or seconds.
+     * This can be used to subtract any period that is defined by a unit, for example to subtract hours,
+     * minutes or seconds.
      * The unit is responsible for the details of the calculation, including the resolution
      * of any edge cases in the calculation.
      * <p>
@@ -1102,7 +1115,9 @@ public final class LocalTime
      */
     @Override
     public LocalTime minus(long amountToSubtract, TemporalUnit unit) {
-        return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit) : plus(-amountToSubtract, unit));
+        return amountToSubtract == Long.MIN_VALUE
+                ? plus(Long.MAX_VALUE, unit).plus(1, unit)
+                : plus(-amountToSubtract, unit);
     }
 
     //-----------------------------------------------------------------------
@@ -1194,9 +1209,9 @@ public final class LocalTime
             return (R) this;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
-        if (query == TemporalQueries.chronology() || query == TemporalQueries.zoneId() ||
-                query == TemporalQueries.zone() || query == TemporalQueries.offset() ||
-                query == TemporalQueries.localDate()) {
+        if (query == TemporalQueries.chronology() || query == TemporalQueries.zoneId()
+                || query == TemporalQueries.zone() || query == TemporalQueries.offset()
+                || query == TemporalQueries.localDate()) {
             return null;
         }
         return query.queryFrom(this);
@@ -1420,8 +1435,7 @@ public final class LocalTime
         }
         if (obj instanceof LocalTime) {
             LocalTime other = (LocalTime) obj;
-            return hour == other.hour && minute == other.minute &&
-                    second == other.second && nano == other.nano;
+            return hour == other.hour && minute == other.minute && second == other.second && nano == other.nano;
         }
         return false;
     }

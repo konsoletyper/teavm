@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -32,13 +47,9 @@
 package org.threeten.bp.chrono;
 
 import static org.threeten.bp.chrono.ThaiBuddhistChronology.YEARS_DIFFERENCE;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
 import static org.threeten.bp.temporal.ChronoField.YEAR;
-
 import java.io.Serializable;
 import java.util.Objects;
-
 import org.threeten.bp.Clock;
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.LocalDate;
@@ -164,7 +175,7 @@ public final class ThaiBuddhistDate
     /**
      * Creates an instance from an ISO date.
      *
-     * @param isoDate  the standard local date, validated not null
+     * @param date  the standard local date, validated not null
      */
     ThaiBuddhistDate(LocalDate date) {
         Objects.requireNonNull(date, "date");
@@ -199,7 +210,9 @@ public final class ThaiBuddhistDate
                         return isoDate.range(field);
                     case YEAR_OF_ERA: {
                         ValueRange range = YEAR.range();
-                        long max = (getProlepticYear() <= 0 ? -(range.getMinimum() + YEARS_DIFFERENCE) + 1 : range.getMaximum() + YEARS_DIFFERENCE);
+                        long max = getProlepticYear() <= 0
+                                ? -(range.getMinimum() + YEARS_DIFFERENCE) + 1
+                                : range.getMaximum() + YEARS_DIFFERENCE;
                         return ValueRange.of(1, max);
                     }
                 }
@@ -218,12 +231,12 @@ public final class ThaiBuddhistDate
                     return getProlepticMonth();
                 case YEAR_OF_ERA: {
                     int prolepticYear = getProlepticYear();
-                    return (prolepticYear >= 1 ? prolepticYear : 1 - prolepticYear);
+                    return prolepticYear >= 1 ? prolepticYear : 1 - prolepticYear;
                 }
                 case YEAR:
                     return getProlepticYear();
                 case ERA:
-                    return (getProlepticYear() >= 1 ? 1 : 0);
+                    return getProlepticYear() >= 1 ? 1 : 0;
             }
             return isoDate.getLong(field);
         }
@@ -261,7 +274,8 @@ public final class ThaiBuddhistDate
                     int nvalue = getChronology().range(f).checkValidIntValue(newValue, f);
                     switch (f) {
                         case YEAR_OF_ERA:
-                            return with(isoDate.withYear((getProlepticYear() >= 1 ? nvalue : 1 - nvalue)  - YEARS_DIFFERENCE));
+                            return with(isoDate.withYear((getProlepticYear() >= 1 ? nvalue : 1 - nvalue)
+                                    - YEARS_DIFFERENCE));
                         case YEAR:
                             return with(isoDate.withYear(nvalue - YEARS_DIFFERENCE));
                         case ERA:
@@ -311,12 +325,12 @@ public final class ThaiBuddhistDate
     }
 
     private ThaiBuddhistDate with(LocalDate newDate) {
-        return (newDate.equals(isoDate) ? this : new ThaiBuddhistDate(newDate));
+        return newDate.equals(isoDate) ? this : new ThaiBuddhistDate(newDate);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public final ChronoLocalDateTime<ThaiBuddhistDate> atTime(LocalTime localTime) {
+    public ChronoLocalDateTime<ThaiBuddhistDate> atTime(LocalTime localTime) {
         return (ChronoLocalDateTime<ThaiBuddhistDate>) super.atTime(localTime);
     }
 

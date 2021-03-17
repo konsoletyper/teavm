@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -40,10 +55,8 @@ import static org.threeten.bp.LocalTime.NANOS_PER_HOUR;
 import static org.threeten.bp.LocalTime.NANOS_PER_MINUTE;
 import static org.threeten.bp.LocalTime.NANOS_PER_SECOND;
 import static org.threeten.bp.LocalTime.SECONDS_PER_DAY;
-
 import java.io.Serializable;
 import java.util.Objects;
-
 import org.threeten.bp.chrono.ChronoLocalDateTime;
 import org.threeten.bp.format.DateTimeFormatter;
 import org.threeten.bp.format.DateTimeParseException;
@@ -230,7 +243,8 @@ public final class LocalDateTime
      * @throws DateTimeException if the value of any field is out of range
      * @throws DateTimeException if the day-of-month is invalid for the month-year
      */
-    public static LocalDateTime of(int year, Month month, int dayOfMonth, int hour, int minute, int second, int nanoOfSecond) {
+    public static LocalDateTime of(int year, Month month, int dayOfMonth, int hour, int minute, int second,
+            int nanoOfSecond) {
         LocalDate date = LocalDate.of(year, month, dayOfMonth);
         LocalTime time = LocalTime.of(hour, minute, second, nanoOfSecond);
         return new LocalDateTime(date, time);
@@ -299,7 +313,8 @@ public final class LocalDateTime
      * @throws DateTimeException if the value of any field is out of range
      * @throws DateTimeException if the day-of-month is invalid for the month-year
      */
-    public static LocalDateTime of(int year, int month, int dayOfMonth, int hour, int minute, int second, int nanoOfSecond) {
+    public static LocalDateTime of(int year, int month, int dayOfMonth, int hour, int minute,
+            int second, int nanoOfSecond) {
         LocalDate date = LocalDate.of(year, month, dayOfMonth);
         LocalTime time = LocalTime.of(hour, minute, second, nanoOfSecond);
         return new LocalDateTime(date, time);
@@ -391,8 +406,8 @@ public final class LocalDateTime
             LocalTime time = LocalTime.from(temporal);
             return new LocalDateTime(date, time);
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain LocalDateTime from TemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName());
+            throw new DateTimeException("Unable to obtain LocalDateTime from TemporalAccessor: "
+                    + temporal + ", type " + temporal.getClass().getName());
         }
     }
 
@@ -544,7 +559,7 @@ public final class LocalDateTime
     @Override
     public ValueRange range(TemporalField field) {
         if (field instanceof ChronoField) {
-            return (field.isTimeBased() ? time.range(field) : date.range(field));
+            return field.isTimeBased() ? time.range(field) : date.range(field);
         }
         return field.rangeRefinedBy(this);
     }
@@ -577,7 +592,7 @@ public final class LocalDateTime
     @Override
     public int get(TemporalField field) {
         if (field instanceof ChronoField) {
-            return (field.isTimeBased() ? time.get(field) : date.get(field));
+            return field.isTimeBased() ? time.get(field) : date.get(field);
         }
         return super.get(field);
     }
@@ -607,7 +622,7 @@ public final class LocalDateTime
     @Override
     public long getLong(TemporalField field) {
         if (field instanceof ChronoField) {
-            return (field.isTimeBased() ? time.getLong(field) : date.getLong(field));
+            return field.isTimeBased() ? time.getLong(field) : date.getLong(field);
         }
         return field.getFrom(this);
     }
@@ -1018,13 +1033,21 @@ public final class LocalDateTime
         if (unit instanceof ChronoUnit) {
             ChronoUnit f = (ChronoUnit) unit;
             switch (f) {
-                case NANOS: return plusNanos(amountToAdd);
-                case MICROS: return plusDays(amountToAdd / MICROS_PER_DAY).plusNanos((amountToAdd % MICROS_PER_DAY) * 1000);
-                case MILLIS: return plusDays(amountToAdd / MILLIS_PER_DAY).plusNanos((amountToAdd % MILLIS_PER_DAY) * 1000000);
-                case SECONDS: return plusSeconds(amountToAdd);
-                case MINUTES: return plusMinutes(amountToAdd);
-                case HOURS: return plusHours(amountToAdd);
-                case HALF_DAYS: return plusDays(amountToAdd / 256).plusHours((amountToAdd % 256) * 12);  // no overflow (256 is multiple of 2)
+                case NANOS:
+                    return plusNanos(amountToAdd);
+                case MICROS:
+                    return plusDays(amountToAdd / MICROS_PER_DAY).plusNanos((amountToAdd % MICROS_PER_DAY) * 1000);
+                case MILLIS:
+                    return plusDays(amountToAdd / MILLIS_PER_DAY).plusNanos((amountToAdd % MILLIS_PER_DAY) * 1000000);
+                case SECONDS:
+                    return plusSeconds(amountToAdd);
+                case MINUTES:
+                    return plusMinutes(amountToAdd);
+                case HOURS:
+                    return plusHours(amountToAdd);
+                case HALF_DAYS:
+                    // no overflow (256 is multiple of 2)
+                    return plusDays(amountToAdd / 256).plusHours((amountToAdd % 256) * 12);
             }
             return with(date.plus(amountToAdd, unit), time);
         }
@@ -1214,7 +1237,9 @@ public final class LocalDateTime
      */
     @Override
     public LocalDateTime minus(long amountToSubtract, TemporalUnit unit) {
-        return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit) : plus(-amountToSubtract, unit));
+        return amountToSubtract == Long.MIN_VALUE
+                ? plus(Long.MAX_VALUE, unit).plus(1, unit)
+                : plus(-amountToSubtract, unit);
     }
 
     //-----------------------------------------------------------------------
@@ -1239,7 +1264,9 @@ public final class LocalDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public LocalDateTime minusYears(long years) {
-        return (years == Long.MIN_VALUE ? plusYears(Long.MAX_VALUE).plusYears(1) : plusYears(-years));
+        return years == Long.MIN_VALUE
+                ? plusYears(Long.MAX_VALUE).plusYears(1)
+                : plusYears(-years);
     }
 
     /**
@@ -1263,7 +1290,9 @@ public final class LocalDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public LocalDateTime minusMonths(long months) {
-        return (months == Long.MIN_VALUE ? plusMonths(Long.MAX_VALUE).plusMonths(1) : plusMonths(-months));
+        return months == Long.MIN_VALUE
+                ? plusMonths(Long.MAX_VALUE).plusMonths(1)
+                : plusMonths(-months);
     }
 
     /**
@@ -1282,7 +1311,9 @@ public final class LocalDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public LocalDateTime minusWeeks(long weeks) {
-        return (weeks == Long.MIN_VALUE ? plusWeeks(Long.MAX_VALUE).plusWeeks(1) : plusWeeks(-weeks));
+        return weeks == Long.MIN_VALUE
+                ? plusWeeks(Long.MAX_VALUE).plusWeeks(1)
+                : plusWeeks(-weeks);
     }
 
     /**
@@ -1301,7 +1332,9 @@ public final class LocalDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public LocalDateTime minusDays(long days) {
-        return (days == Long.MIN_VALUE ? plusDays(Long.MAX_VALUE).plusDays(1) : plusDays(-days));
+        return days == Long.MIN_VALUE
+                ? plusDays(Long.MAX_VALUE).plusDays(1)
+                : plusDays(-days);
     }
 
     //-----------------------------------------------------------------------
@@ -1371,7 +1404,8 @@ public final class LocalDateTime
      * @param sign  the sign to determine add or subtract
      * @return the combined result, not null
      */
-    private LocalDateTime plusWithOverflow(LocalDate newDate, long hours, long minutes, long seconds, long nanos, int sign) {
+    private LocalDateTime plusWithOverflow(LocalDate newDate, long hours, long minutes, long seconds,
+            long nanos, int sign) {
         // 9223372036854775808 long, 2147483648 int
         if ((hours | minutes | seconds | nanos) == 0) {
             return with(newDate, time);
@@ -1389,7 +1423,7 @@ public final class LocalDateTime
         totNanos = totNanos * sign + curNoD;                    // total 432000000000000
         totDays += Jdk8Methods.floorDiv(totNanos, NANOS_PER_DAY);
         long newNoD = Jdk8Methods.floorMod(totNanos, NANOS_PER_DAY);
-        LocalTime newTime = (newNoD == curNoD ? time : LocalTime.ofNanoOfDay(newNoD));
+        LocalTime newTime = newNoD == curNoD ? time : LocalTime.ofNanoOfDay(newNoD);
         return with(newDate.plusDays(totDays), newTime);
     }
 

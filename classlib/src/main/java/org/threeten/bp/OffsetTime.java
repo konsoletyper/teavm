@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -38,10 +53,8 @@ import static org.threeten.bp.LocalTime.SECONDS_PER_DAY;
 import static org.threeten.bp.temporal.ChronoField.NANO_OF_DAY;
 import static org.threeten.bp.temporal.ChronoField.OFFSET_SECONDS;
 import static org.threeten.bp.temporal.ChronoUnit.NANOS;
-
 import java.io.Serializable;
 import java.util.Objects;
-
 import org.threeten.bp.format.DateTimeFormatter;
 import org.threeten.bp.format.DateTimeParseException;
 import org.threeten.bp.temporal.ChronoField;
@@ -252,8 +265,8 @@ public final class OffsetTime
             ZoneOffset offset = ZoneOffset.from(temporal);
             return new OffsetTime(time, offset);
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain OffsetTime from TemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName());
+            throw new DateTimeException("Unable to obtain OffsetTime from TemporalAccessor: "
+                    + temporal + ", type " + temporal.getClass().getName());
         }
     }
 
@@ -868,7 +881,8 @@ public final class OffsetTime
      * Returns a copy of this time with the specified period subtracted.
      * <p>
      * This method returns a new time based on this time with the specified period subtracted.
-     * This can be used to subtract any period that is defined by a unit, for example to subtract hours, minutes or seconds.
+     * This can be used to subtract any period that is defined by a unit, for example to subtract hours,
+     * minutes or seconds.
      * The unit is responsible for the details of the calculation, including the resolution
      * of any edge cases in the calculation.
      * The offset is not part of the calculation and will be unchanged in the result.
@@ -882,7 +896,9 @@ public final class OffsetTime
      */
     @Override
     public OffsetTime minus(long amountToSubtract, TemporalUnit unit) {
-        return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit) : plus(-amountToSubtract, unit));
+        return amountToSubtract == Long.MIN_VALUE
+                ? plus(Long.MAX_VALUE, unit).plus(1, unit)
+                : plus(-amountToSubtract, unit);
     }
 
     //-----------------------------------------------------------------------
@@ -974,7 +990,8 @@ public final class OffsetTime
             return (R) getOffset();
         } else if (query == TemporalQueries.localTime()) {
             return (R) time;
-        } else if (query == TemporalQueries.chronology() || query == TemporalQueries.localDate() || query == TemporalQueries.zoneId()) {
+        } else if (query == TemporalQueries.chronology() || query == TemporalQueries.localDate()
+                || query == TemporalQueries.zoneId()) {
             return null;
         }
         return Temporal.super.query(query);

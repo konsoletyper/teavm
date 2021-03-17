@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -34,7 +49,6 @@ package org.threeten.bp.chrono;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Objects;
-
 import org.threeten.bp.Clock;
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.LocalDate;
@@ -351,10 +365,10 @@ public final class JapaneseDate
      */
     @Override
     public boolean isSupported(TemporalField field) {
-        if (field == ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH ||
-                field == ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR ||
-                field == ChronoField.ALIGNED_WEEK_OF_MONTH ||
-                field == ChronoField.ALIGNED_WEEK_OF_YEAR) {
+        if (field == ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH
+                || field == ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR
+                || field == ChronoField.ALIGNED_WEEK_OF_MONTH
+                || field == ChronoField.ALIGNED_WEEK_OF_YEAR) {
             return false;
         }
         return super.isSupported(field);
@@ -522,13 +536,13 @@ public final class JapaneseDate
     }
 
     private JapaneseDate with(LocalDate newDate) {
-        return (newDate.equals(isoDate) ? this : new JapaneseDate(newDate));
+        return newDate.equals(isoDate) ? this : new JapaneseDate(newDate);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public final ChronoLocalDateTime<JapaneseDate> atTime(LocalTime localTime) {
-        return (ChronoLocalDateTime<JapaneseDate>)super.atTime(localTime);
+    public ChronoLocalDateTime<JapaneseDate> atTime(LocalTime localTime) {
+        return (ChronoLocalDateTime<JapaneseDate>) super.atTime(localTime);
     }
 
     @Override

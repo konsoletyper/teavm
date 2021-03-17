@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -34,7 +49,6 @@ package org.threeten.bp.format;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
-
 import org.threeten.bp.temporal.TemporalField;
 
 /**
@@ -50,7 +64,7 @@ import org.threeten.bp.temporal.TemporalField;
  */
 public abstract class DateTimeTextProvider {
 
-    private static DateTimeTextProvider MUTABLE_PROVIDER;
+    private static DateTimeTextProvider mutableProvider;
 
     /**
      * Gets the provider.
@@ -71,10 +85,10 @@ public abstract class DateTimeTextProvider {
      * @throws IllegalStateException if initialization has already occurred or another provider has been set
      */
     public static void setInitializer(DateTimeTextProvider provider) {
-        if (MUTABLE_PROVIDER != null) {
+        if (mutableProvider != null) {
             throw new IllegalStateException("Provider was already set, possibly with a default during initialization");
         }
-        MUTABLE_PROVIDER = provider;
+        mutableProvider = provider;
     }
 
     //-----------------------------------------------------------------------
@@ -120,8 +134,8 @@ public abstract class DateTimeTextProvider {
         // initialize the provider
         static DateTimeTextProvider initialize() {
             // Set the default initializer if none has been provided yet
-            MUTABLE_PROVIDER = new SimpleDateTimeTextProvider();
-            return MUTABLE_PROVIDER;
+            mutableProvider = new SimpleDateTimeTextProvider();
+            return mutableProvider;
         }
     }
 

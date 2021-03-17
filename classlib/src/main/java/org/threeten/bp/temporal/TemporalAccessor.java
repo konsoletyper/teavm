@@ -239,7 +239,8 @@ public interface TemporalAccessor {
      * @throws ArithmeticException if numeric overflow occurs
      */
     default <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQueries.zoneId() || query == TemporalQueries.chronology() || query == TemporalQueries.precision()) {
+        if (query == TemporalQueries.zoneId() || query == TemporalQueries.chronology()
+                || query == TemporalQueries.precision()) {
             return null;
         }
         return query.queryFrom(this);

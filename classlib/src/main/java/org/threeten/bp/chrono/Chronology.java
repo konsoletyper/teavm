@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -39,7 +54,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
-
 import org.threeten.bp.Clock;
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.Instant;
@@ -161,7 +175,7 @@ public abstract class Chronology implements Comparable<Chronology> {
     public static Chronology from(TemporalAccessor temporal) {
         Objects.requireNonNull(temporal, "temporal");
         Chronology obj = temporal.query(TemporalQueries.chronology());
-        return (obj != null ? obj : IsoChronology.INSTANCE);
+        return obj != null ? obj : IsoChronology.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -315,8 +329,9 @@ public abstract class Chronology implements Comparable<Chronology> {
     <D extends ChronoLocalDate> D ensureChronoLocalDate(Temporal temporal) {
         @SuppressWarnings("unchecked")
         D other = (D) temporal;
-        if (this.equals(other.getChronology()) == false) {
-            throw new ClassCastException("Chrono mismatch, expected: " + getId() + ", actual: " + other.getChronology().getId());
+        if (!this.equals(other.getChronology())) {
+            throw new ClassCastException("Chrono mismatch, expected: " + getId() + ", actual: "
+                    + other.getChronology().getId());
         }
         return other;
     }
@@ -332,7 +347,7 @@ public abstract class Chronology implements Comparable<Chronology> {
     <D extends ChronoLocalDate> ChronoLocalDateTimeImpl<D> ensureChronoLocalDateTime(Temporal temporal) {
         @SuppressWarnings("unchecked")
         ChronoLocalDateTimeImpl<D> other = (ChronoLocalDateTimeImpl<D>) temporal;
-        if (this.equals(other.toLocalDate().getChronology()) == false) {
+        if (!this.equals(other.toLocalDate().getChronology())) {
             throw new ClassCastException("Chrono mismatch, required: " + getId()
                     + ", supplied: " + other.toLocalDate().getChronology().getId());
         }
@@ -347,10 +362,11 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @throws ClassCastException if the date-time cannot be cast to ChronoZonedDateTimeImpl
      *  or the chronology is not equal this Chrono
      */
+    @SuppressWarnings("checkstyle:SimplifyBooleanExpression")
     <D extends ChronoLocalDate> ChronoZonedDateTimeImpl<D> ensureChronoZonedDateTime(Temporal temporal) {
         @SuppressWarnings("unchecked")
         ChronoZonedDateTimeImpl<D> other = (ChronoZonedDateTimeImpl<D>) temporal;
-        if (this.equals(other.toLocalDate().getChronology()) == false) {
+        if (!this.equals(other.toLocalDate().getChronology())) {
             throw new ClassCastException("Chrono mismatch, required: " + getId()
                     + ", supplied: " + other.toLocalDate().getChronology().getId());
         }
@@ -536,7 +552,8 @@ public abstract class Chronology implements Comparable<Chronology> {
             ChronoLocalDate date = date(temporal);
             return date.atTime(LocalTime.from(temporal));
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain ChronoLocalDateTime from TemporalAccessor: " + temporal.getClass(), ex);
+            throw new DateTimeException("Unable to obtain ChronoLocalDateTime from TemporalAccessor: "
+                    + temporal.getClass(), ex);
         }
     }
 
@@ -567,7 +584,8 @@ public abstract class Chronology implements Comparable<Chronology> {
                 return ChronoZonedDateTimeImpl.ofBest(cldtImpl, zone, null);
             }
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain ChronoZonedDateTime from TemporalAccessor: " + temporal.getClass(), ex);
+            throw new DateTimeException("Unable to obtain ChronoZonedDateTime from TemporalAccessor: "
+                    + temporal.getClass(), ex);
         }
     }
 
@@ -582,8 +600,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @throws DateTimeException if the result exceeds the supported range
      */
     public ChronoZonedDateTime<?> zonedDateTime(Instant instant, ZoneId zone) {
-        ChronoZonedDateTime<? extends ChronoLocalDate> result = ChronoZonedDateTimeImpl.ofInstant(this, instant, zone);
-        return result;
+        return ChronoZonedDateTimeImpl.ofInstant(this, instant, zone);
     }
 
     //-----------------------------------------------------------------------
@@ -760,8 +777,9 @@ public abstract class Chronology implements Comparable<Chronology> {
      */
     void updateResolveMap(Map<TemporalField, Long> fieldValues, ChronoField field, long value) {
         Long current = fieldValues.get(field);
-        if (current != null && current.longValue() != value) {
-            throw new DateTimeException("Invalid state, field: " + field + " " + current + " conflicts with " + field + " " + value);
+        if (current != null && current != value) {
+            throw new DateTimeException("Invalid state, field: " + field + " " + current + " conflicts with "
+                    + field + " " + value);
         }
         fieldValues.put(field, value);
     }
@@ -829,5 +847,4 @@ public abstract class Chronology implements Comparable<Chronology> {
     public String toString() {
         return getId();
     }
-
 }

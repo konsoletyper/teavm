@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -49,14 +64,12 @@ import static org.threeten.bp.temporal.ChronoField.NANO_OF_SECOND;
 import static org.threeten.bp.temporal.ChronoField.OFFSET_SECONDS;
 import static org.threeten.bp.temporal.ChronoField.SECOND_OF_DAY;
 import static org.threeten.bp.temporal.ChronoField.SECOND_OF_MINUTE;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.Instant;
 import org.threeten.bp.LocalDate;
@@ -165,8 +178,9 @@ public final class DateTimeBuilder
     DateTimeBuilder addFieldValue(TemporalField field, long value) {
         Objects.requireNonNull(field, "field");
         Long old = getFieldValue0(field);  // check first for better error message
-        if (old != null && old.longValue() != value) {
-            throw new DateTimeException("Conflict found: " + field + " " + old + " differs from " + field + " " + value + ": " + this);
+        if (old != null && old != value) {
+            throw new DateTimeException("Conflict found: " + field + " " + old + " differs from " + field + " "
+                    + value + ": " + this);
         }
         return putFieldValue0(field, value);
     }
@@ -211,7 +225,7 @@ public final class DateTimeBuilder
         }
         resolveTimeInferZeroes(resolverStyle);
         crossCheck();
-        if (excessDays != null && excessDays.isZero() == false && date != null && time != null) {
+        if (excessDays != null && !excessDays.isZero() && date != null && time != null) {
             date = date.plus(excessDays);
             excessDays = Period.ZERO;
         }
@@ -232,8 +246,9 @@ public final class DateTimeBuilder
                         ChronoZonedDateTime<?> czdt = (ChronoZonedDateTime<?>) resolvedObject;
                         if (zone == null) {
                             zone = czdt.getZone();
-                        } else if (zone.equals(czdt.getZone()) == false) {
-                            throw new DateTimeException("ChronoZonedDateTime must use the effective parsed zone: " + zone);
+                        } else if (!zone.equals(czdt.getZone())) {
+                            throw new DateTimeException("ChronoZonedDateTime must use the effective parsed zone: "
+                                    + zone);
                         }
                         resolvedObject = czdt.toLocalDateTime();
                     }
@@ -255,7 +270,7 @@ public final class DateTimeBuilder
                         continue outer;  // have to restart to avoid concurrent modification
                     }
                     throw new DateTimeException("Unknown type: " + resolvedObject.getClass().getName());
-                } else if (fieldValues.containsKey(targetField) == false) {
+                } else if (!fieldValues.containsKey(targetField)) {
                     changes++;
                     continue outer;  // have to restart to avoid concurrent modification
                 }
@@ -269,25 +284,25 @@ public final class DateTimeBuilder
     }
 
     private void resolveMakeChanges(TemporalField targetField, ChronoLocalDate date) {
-        if (chrono.equals(date.getChronology()) == false) {
+        if (!chrono.equals(date.getChronology())) {
             throw new DateTimeException("ChronoLocalDate must use the effective parsed chronology: " + chrono);
         }
         long epochDay = date.toEpochDay();
         Long old = fieldValues.put(ChronoField.EPOCH_DAY, epochDay);
-        if (old != null && old.longValue() != epochDay) {
-            throw new DateTimeException("Conflict found: " + LocalDate.ofEpochDay(old) +
-                    " differs from " + LocalDate.ofEpochDay(epochDay) +
-                    " while resolving  " + targetField);
+        if (old != null && old != epochDay) {
+            throw new DateTimeException("Conflict found: " + LocalDate.ofEpochDay(old)
+                    + " differs from " + LocalDate.ofEpochDay(epochDay)
+                    + " while resolving  " + targetField);
         }
     }
 
     private void resolveMakeChanges(TemporalField targetField, LocalTime time) {
         long nanOfDay = time.toNanoOfDay();
         Long old = fieldValues.put(ChronoField.NANO_OF_DAY, nanOfDay);
-        if (old != null && old.longValue() != nanOfDay) {
-            throw new DateTimeException("Conflict found: " + LocalTime.ofNanoOfDay(old) +
-                    " differs from " + time +
-                    " while resolving  " + targetField);
+        if (old != null && old != nanOfDay) {
+            throw new DateTimeException("Conflict found: " + LocalTime.ofNanoOfDay(old)
+                    + " differs from " + time
+                    + " while resolving  " + targetField);
         }
     }
 
@@ -297,7 +312,6 @@ public final class DateTimeBuilder
         } else {
             if (fieldValues.containsKey(EPOCH_DAY)) {
                 checkDate(LocalDate.ofEpochDay(fieldValues.remove(EPOCH_DAY)));
-                return;
             }
         }
     }
@@ -316,7 +330,8 @@ public final class DateTimeBuilder
                         }
                         Long val2 = fieldValues.get(field);
                         if (val1 != val2) {
-                            throw new DateTimeException("Conflict found: Field " + field + " " + val1 + " differs from " + field + " " + val2 + " derived from " + date);
+                            throw new DateTimeException("Conflict found: Field " + field + " " + val1
+                                    + " differs from " + field + " " + val2 + " derived from " + date);
                         }
                     }
                 }
@@ -465,11 +480,11 @@ public final class DateTimeBuilder
         }
         if (resolverStyle != ResolverStyle.LENIENT) {
             if (hod != null) {
-                if (resolverStyle == ResolverStyle.SMART &&
-                                hod.longValue() == 24 && 
-                                (moh == null || moh.longValue() == 0) && 
-                                (som == null || som.longValue() == 0) && 
-                                (nos == null || nos.longValue() == 0)) {
+                if (resolverStyle == ResolverStyle.SMART
+                        && hod == 24
+                        && (moh == null || moh == 0)
+                        && (som == null || som == 0)
+                        && (nos == null || nos == 0)) {
                     hod = 0L;
                     excessDays = Period.ofDays(1);
                 }
@@ -556,7 +571,7 @@ public final class DateTimeBuilder
         } else {
             resolveMakeChanges(INSTANT_SECONDS, zdt.toLocalDate());
         }
-        addFieldValue(SECOND_OF_DAY, (long) zdt.toLocalTime().toSecondOfDay());
+        addFieldValue(SECOND_OF_DAY, zdt.toLocalTime().toSecondOfDay());
     }
 
     //-----------------------------------------------------------------------
@@ -586,8 +601,8 @@ public final class DateTimeBuilder
                     continue;
                 }
                 if (temporalValue != value) {
-                    throw new DateTimeException("Cross check failed: " +
-                            field + " " + temporalValue + " vs " + field + " " + value);
+                    throw new DateTimeException("Cross check failed: "
+                            + field + " " + temporalValue + " vs " + field + " " + value);
                 }
                 it.remove();
             }
@@ -595,10 +610,10 @@ public final class DateTimeBuilder
     }
 
     private void resolveFractional() {
-        if (time == null &&
-                (fieldValues.containsKey(INSTANT_SECONDS) ||
-                    fieldValues.containsKey(SECOND_OF_DAY) ||
-                    fieldValues.containsKey(SECOND_OF_MINUTE))) {
+        if (time == null
+                && (fieldValues.containsKey(INSTANT_SECONDS)
+                    || fieldValues.containsKey(SECOND_OF_DAY)
+                    || fieldValues.containsKey(SECOND_OF_MINUTE))) {
             if (fieldValues.containsKey(NANO_OF_SECOND)) {
                 long nos = fieldValues.get(NANO_OF_SECOND);
                 fieldValues.put(MICRO_OF_SECOND, nos / 1000);
@@ -647,9 +662,9 @@ public final class DateTimeBuilder
         if (field == null) {
             return false;
         }
-        return fieldValues.containsKey(field) ||
-                (date != null && date.isSupported(field)) ||
-                (time != null && time.isSupported(field));
+        return fieldValues.containsKey(field)
+                || (date != null && date.isSupported(field))
+                || (time != null && time.isSupported(field));
     }
 
     @Override

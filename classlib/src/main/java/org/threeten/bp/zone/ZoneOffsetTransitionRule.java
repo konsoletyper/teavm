@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -33,9 +48,7 @@ package org.threeten.bp.zone;
 
 import static org.threeten.bp.temporal.TemporalAdjusters.nextOrSame;
 import static org.threeten.bp.temporal.TemporalAdjusters.previousOrSame;
-
 import java.io.Serializable;
-
 import java.util.Objects;
 import org.threeten.bp.DayOfWeek;
 import org.threeten.bp.LocalDate;
@@ -150,12 +163,14 @@ public final class ZoneOffsetTransitionRule implements Serializable {
         Objects.requireNonNull(offsetBefore, "offsetBefore");
         Objects.requireNonNull(offsetAfter, "offsetAfter");
         if (dayOfMonthIndicator < -28 || dayOfMonthIndicator > 31 || dayOfMonthIndicator == 0) {
-            throw new IllegalArgumentException("Day of month indicator must be between -28 and 31 inclusive excluding zero");
+            throw new IllegalArgumentException("Day of month indicator must be between -28 and 31"
+                    + " inclusive excluding zero");
         }
-        if (timeEndOfDay && time.equals(LocalTime.MIDNIGHT) == false) {
+        if (timeEndOfDay && !time.equals(LocalTime.MIDNIGHT)) {
             throw new IllegalArgumentException("Time must be midnight when end of day flag is true");
         }
-        return new ZoneOffsetTransitionRule(month, dayOfMonthIndicator, dayOfWeek, time, timeEndOfDay ? 1 : 0, timeDefnition, standardOffset, offsetBefore, offsetAfter);
+        return new ZoneOffsetTransitionRule(month, dayOfMonthIndicator, dayOfWeek, time, timeEndOfDay ? 1 : 0,
+                timeDefnition, standardOffset, offsetBefore, offsetAfter);
     }
 
     /**
@@ -354,13 +369,13 @@ public final class ZoneOffsetTransitionRule implements Serializable {
         }
         if (otherRule instanceof ZoneOffsetTransitionRule) {
             ZoneOffsetTransitionRule other = (ZoneOffsetTransitionRule) otherRule;
-            return month == other.month && dom == other.dom && dow == other.dow &&
-                timeDefinition == other.timeDefinition &&
-                adjustDays == other.adjustDays &&
-                time.equals(other.time) &&
-                standardOffset.equals(other.standardOffset) &&
-                offsetBefore.equals(other.offsetBefore) &&
-                offsetAfter.equals(other.offsetAfter);
+            return month == other.month && dom == other.dom && dow == other.dow
+                    && timeDefinition == other.timeDefinition
+                    && adjustDays == other.adjustDays
+                    && time.equals(other.time)
+                    && standardOffset.equals(other.standardOffset)
+                    && offsetBefore.equals(other.offsetBefore)
+                    && offsetAfter.equals(other.offsetAfter);
         }
         return false;
     }
@@ -372,11 +387,10 @@ public final class ZoneOffsetTransitionRule implements Serializable {
      */
     @Override
     public int hashCode() {
-        int hash = ((time.toSecondOfDay() + adjustDays) << 15) +
-                (month.ordinal() << 11) + ((dom + 32) << 5) +
-                ((dow == null ? 7 : dow.ordinal()) << 2) + (timeDefinition.ordinal());
-        return hash ^ standardOffset.hashCode() ^
-                offsetBefore.hashCode() ^ offsetAfter.hashCode();
+        int hash = ((time.toSecondOfDay() + adjustDays) << 15)
+                + (month.ordinal() << 11) + ((dom + 32) << 5)
+                + ((dow == null ? 7 : dow.ordinal()) << 2) + (timeDefinition.ordinal());
+        return hash ^ standardOffset.hashCode() ^ offsetBefore.hashCode() ^ offsetAfter.hashCode();
     }
 
     //-----------------------------------------------------------------------
@@ -395,7 +409,8 @@ public final class ZoneOffsetTransitionRule implements Serializable {
             if (dom == -1) {
                 buf.append(dow.name()).append(" on or before last day of ").append(month.name());
             } else if (dom < 0) {
-                buf.append(dow.name()).append(" on or before last day minus ").append(-dom - 1).append(" of ").append(month.name());
+                buf.append(dow.name()).append(" on or before last day minus ").append(-dom - 1)
+                        .append(" of ").append(month.name());
             } else {
                 buf.append(dow.name()).append(" on or after ").append(month.name()).append(' ').append(dom);
             }
@@ -436,7 +451,7 @@ public final class ZoneOffsetTransitionRule implements Serializable {
      * <li>Relative to the wall offset (what you would see on a clock on the wall)</li>
      * </ul><p>
      */
-    public static enum TimeDefinition {
+    public enum TimeDefinition {
         /** The local date-time is expressed in terms of the UTC offset. */
         UTC,
         /** The local date-time is expressed in terms of the wall offset. */

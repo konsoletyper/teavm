@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -39,10 +54,8 @@ import static org.threeten.bp.temporal.ChronoUnit.DECADES;
 import static org.threeten.bp.temporal.ChronoUnit.ERAS;
 import static org.threeten.bp.temporal.ChronoUnit.MILLENNIA;
 import static org.threeten.bp.temporal.ChronoUnit.YEARS;
-
 import java.io.Serializable;
 import java.util.Objects;
-
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.chrono.IsoChronology;
 import org.threeten.bp.format.DateTimeFormatter;
@@ -358,7 +371,7 @@ public final class Year
     @Override
     public ValueRange range(TemporalField field) {
         if (field == YEAR_OF_ERA) {
-            return (year <= 0 ? ValueRange.of(1, MAX_VALUE + 1) : ValueRange.of(1, MAX_VALUE));
+            return year <= 0 ? ValueRange.of(1, MAX_VALUE + 1) : ValueRange.of(1, MAX_VALUE);
         }
         return Temporal.super.range(field);
     }
@@ -417,9 +430,9 @@ public final class Year
     public long getLong(TemporalField field) {
         if (field instanceof ChronoField) {
             switch ((ChronoField) field) {
-                case YEAR_OF_ERA: return (year < 1 ? 1 - year : year);
+                case YEAR_OF_ERA: return year < 1 ? 1 - year : year;
                 case YEAR: return year;
-                case ERA: return (year < 1 ? 0 : 1);
+                case ERA: return year < 1 ? 0 : 1;
             }
             throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
@@ -543,7 +556,7 @@ public final class Year
             switch (f) {
                 case YEAR_OF_ERA: return Year.of((int) (year < 1 ? 1 - newValue : newValue));
                 case YEAR: return Year.of((int) newValue);
-                case ERA: return (getLong(ERA) == newValue ? this : Year.of(1 - year));
+                case ERA: return getLong(ERA) == newValue ? this : Year.of(1 - year);
             }
             throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
@@ -637,7 +650,9 @@ public final class Year
      */
     @Override
     public Year minus(long amountToSubtract, TemporalUnit unit) {
-        return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit) : plus(-amountToSubtract, unit));
+        return amountToSubtract == Long.MIN_VALUE
+                ? plus(Long.MAX_VALUE, unit).plus(1, unit)
+                : plus(-amountToSubtract, unit);
     }
 
     /**
@@ -650,7 +665,9 @@ public final class Year
      * @throws DateTimeException if the result exceeds the supported year range
      */
     public Year minusYears(long yearsToSubtract) {
-        return (yearsToSubtract == Long.MIN_VALUE ? plusYears(Long.MAX_VALUE).plusYears(1) : plusYears(-yearsToSubtract));
+        return yearsToSubtract == Long.MIN_VALUE
+                ? plusYears(Long.MAX_VALUE).plusYears(1)
+                : plusYears(-yearsToSubtract);
     }
 
     //-----------------------------------------------------------------------
@@ -679,8 +696,9 @@ public final class Year
             return (R) IsoChronology.INSTANCE;
         } else if (query == TemporalQueries.precision()) {
             return (R) YEARS;
-        } else if (query == TemporalQueries.localDate() || query == TemporalQueries.localTime() ||
-                query == TemporalQueries.zone() || query == TemporalQueries.zoneId() || query == TemporalQueries.offset()) {
+        } else if (query == TemporalQueries.localDate() || query == TemporalQueries.localTime()
+                || query == TemporalQueries.zone() || query == TemporalQueries.zoneId()
+                || query == TemporalQueries.offset()) {
             return null;
         }
         return Temporal.super.query(query);
@@ -714,7 +732,7 @@ public final class Year
      */
     @Override
     public Temporal adjustInto(Temporal temporal) {
-        if (Chronology.from(temporal).equals(IsoChronology.INSTANCE) == false) {
+        if (!Chronology.from(temporal).equals(IsoChronology.INSTANCE)) {
             throw new DateTimeException("Adjustment only supported on ISO date-time");
         }
         return temporal.with(YEAR, year);
@@ -859,6 +877,7 @@ public final class Year
      * @param other  the other year to compare to, not null
      * @return the comparator value, negative if less, positive if greater
      */
+    @Override
     public int compareTo(Year other) {
         return year - other.year;
     }

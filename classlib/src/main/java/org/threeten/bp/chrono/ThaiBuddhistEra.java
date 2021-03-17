@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -32,9 +47,7 @@
 package org.threeten.bp.chrono;
 
 import static org.threeten.bp.temporal.ChronoField.ERA;
-
 import java.util.Locale;
-
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.format.DateTimeFormatterBuilder;
 import org.threeten.bp.format.TextStyle;
@@ -79,7 +92,6 @@ public enum ThaiBuddhistEra implements Era {
      *
      * @param thaiBuddhistEra  the era to represent, from 0 to 1
      * @return the BuddhistEra singleton, never null
-     * @throws IllegalCalendarFieldValueException if the era is invalid
      */
     public static ThaiBuddhistEra of(int thaiBuddhistEra) {
         switch (thaiBuddhistEra) {
@@ -155,9 +167,9 @@ public enum ThaiBuddhistEra implements Era {
         if (query == TemporalQueries.precision()) {
             return (R) ChronoUnit.ERAS;
         }
-        if (query == TemporalQueries.chronology() || query == TemporalQueries.zone() ||
-                query == TemporalQueries.zoneId() || query == TemporalQueries.offset() ||
-                query == TemporalQueries.localDate() || query == TemporalQueries.localTime()) {
+        if (query == TemporalQueries.chronology() || query == TemporalQueries.zone()
+                || query == TemporalQueries.zoneId() || query == TemporalQueries.offset()
+                || query == TemporalQueries.localDate() || query == TemporalQueries.localTime()) {
             return null;
         }
         return query.queryFrom(this);

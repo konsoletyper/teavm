@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -34,7 +49,6 @@ package org.threeten.bp.temporal;
 import static org.threeten.bp.temporal.ChronoField.EPOCH_DAY;
 import static org.threeten.bp.temporal.ChronoField.NANO_OF_DAY;
 import static org.threeten.bp.temporal.ChronoField.OFFSET_SECONDS;
-
 import org.threeten.bp.LocalDate;
 import org.threeten.bp.LocalTime;
 import org.threeten.bp.OffsetDateTime;
@@ -117,7 +131,7 @@ public final class TemporalQueries {
      *
      * @return a query that can obtain the zone ID of a temporal, not null
      */
-    public static final TemporalQuery<ZoneId> zoneId() {
+    public static TemporalQuery<ZoneId> zoneId() {
         return ZONE_ID;
     }
     static final TemporalQuery<ZoneId> ZONE_ID = new TemporalQuery<ZoneId>() {
@@ -162,7 +176,7 @@ public final class TemporalQueries {
      *
      * @return a query that can obtain the chronology of a temporal, not null
      */
-    public static final TemporalQuery<Chronology> chronology() {
+    public static TemporalQuery<Chronology> chronology() {
         return CHRONO;
     }
     static final TemporalQuery<Chronology> CHRONO = new TemporalQuery<Chronology>() {
@@ -205,7 +219,7 @@ public final class TemporalQueries {
      *
      * @return a query that can obtain the precision of a temporal, not null
      */
-    public static final TemporalQuery<TemporalUnit> precision() {
+    public static TemporalQuery<TemporalUnit> precision() {
         return PRECISION;
     }
     static final TemporalQuery<TemporalUnit> PRECISION = new TemporalQuery<TemporalUnit>() {
@@ -236,14 +250,14 @@ public final class TemporalQueries {
      *
      * @return a query that can obtain the zone ID or offset of a temporal, not null
      */
-    public static final TemporalQuery<ZoneId> zone() {
+    public static TemporalQuery<ZoneId> zone() {
         return ZONE;
     }
     static final TemporalQuery<ZoneId> ZONE = new TemporalQuery<ZoneId>() {
         @Override
         public ZoneId queryFrom(TemporalAccessor temporal) {
             ZoneId zone = temporal.query(ZONE_ID);
-            return (zone != null ? zone : temporal.query(OFFSET));
+            return zone != null ? zone : temporal.query(OFFSET);
         }
     };
 
@@ -259,17 +273,14 @@ public final class TemporalQueries {
      *
      * @return a query that can obtain the offset of a temporal, not null
      */
-    public static final TemporalQuery<ZoneOffset> offset() {
+    public static TemporalQuery<ZoneOffset> offset() {
         return OFFSET;
     }
-    static final TemporalQuery<ZoneOffset> OFFSET = new TemporalQuery<ZoneOffset>() {
-        @Override
-        public ZoneOffset queryFrom(TemporalAccessor temporal) {
-            if (temporal.isSupported(OFFSET_SECONDS)) {
-                return ZoneOffset.ofTotalSeconds(temporal.get(OFFSET_SECONDS));
-            }
-            return null;
+    static final TemporalQuery<ZoneOffset> OFFSET = temporal -> {
+        if (temporal.isSupported(OFFSET_SECONDS)) {
+            return ZoneOffset.ofTotalSeconds(temporal.get(OFFSET_SECONDS));
         }
+        return null;
     };
 
     /**
@@ -284,17 +295,14 @@ public final class TemporalQueries {
      *
      * @return a query that can obtain the date of a temporal, not null
      */
-    public static final TemporalQuery<LocalDate> localDate() {
+    public static TemporalQuery<LocalDate> localDate() {
         return LOCAL_DATE;
     }
-    static final TemporalQuery<LocalDate> LOCAL_DATE = new TemporalQuery<LocalDate>() {
-        @Override
-        public LocalDate queryFrom(TemporalAccessor temporal) {
-            if (temporal.isSupported(EPOCH_DAY)) {
-                return LocalDate.ofEpochDay(temporal.getLong(EPOCH_DAY));
-            }
-            return null;
+    static final TemporalQuery<LocalDate> LOCAL_DATE = temporal -> {
+        if (temporal.isSupported(EPOCH_DAY)) {
+            return LocalDate.ofEpochDay(temporal.getLong(EPOCH_DAY));
         }
+        return null;
     };
 
     /**
@@ -309,17 +317,14 @@ public final class TemporalQueries {
      *
      * @return a query that can obtain the date of a temporal, not null
      */
-    public static final TemporalQuery<LocalTime> localTime() {
+    public static TemporalQuery<LocalTime> localTime() {
         return LOCAL_TIME;
     }
-    static final TemporalQuery<LocalTime> LOCAL_TIME = new TemporalQuery<LocalTime>() {
-        @Override
-        public LocalTime queryFrom(TemporalAccessor temporal) {
-            if (temporal.isSupported(NANO_OF_DAY)) {
-                return LocalTime.ofNanoOfDay(temporal.getLong(NANO_OF_DAY));
-            }
-            return null;
+    static final TemporalQuery<LocalTime> LOCAL_TIME = temporal -> {
+        if (temporal.isSupported(NANO_OF_DAY)) {
+            return LocalTime.ofNanoOfDay(temporal.getLong(NANO_OF_DAY));
         }
+        return null;
     };
 
 }

@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -48,7 +63,6 @@ import static org.threeten.bp.temporal.ChronoUnit.DAYS;
 import static org.threeten.bp.temporal.ChronoUnit.MONTHS;
 import static org.threeten.bp.temporal.ChronoUnit.WEEKS;
 import static org.threeten.bp.temporal.TemporalAdjusters.nextOrSame;
-
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -57,7 +71,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-
 import org.threeten.bp.Clock;
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.DayOfWeek;
@@ -141,7 +154,8 @@ public final class JapaneseChronology extends Chronology implements Serializable
         ERA_SHORT_NAMES.put(TARGET_LANGUAGE, new String[]{"Unknown", "\u6176", "\u660e", "\u5927", "\u662d", "\u5e73"});
         ERA_FULL_NAMES.put(FALLBACK_LANGUAGE, new String[]{"Unknown", "Keio", "Meiji", "Taisho", "Showa", "Heisei"});
         ERA_FULL_NAMES.put(TARGET_LANGUAGE,
-                new String[]{"Unknown", "\u6176\u5fdc", "\u660e\u6cbb", "\u5927\u6b63", "\u662d\u548c", "\u5e73\u6210"});
+                new String[]{"Unknown", "\u6176\u5fdc", "\u660e\u6cbb", "\u5927\u6b63", "\u662d\u548c",
+                        "\u5e73\u6210"});
     }
 
     //-----------------------------------------------------------------------
@@ -195,7 +209,7 @@ public final class JapaneseChronology extends Chronology implements Serializable
     //-----------------------------------------------------------------------
     @Override  // override with covariant return type
     public JapaneseDate date(Era era, int yearOfEra, int month, int dayOfMonth) {
-        if (era instanceof JapaneseEra == false) {
+        if (!(era instanceof JapaneseEra)) {
             throw new ClassCastException("Era must be JapaneseEra");
         }
         return JapaneseDate.of((JapaneseEra) era, yearOfEra, month, dayOfMonth);
@@ -230,7 +244,7 @@ public final class JapaneseChronology extends Chronology implements Serializable
      */
     @Override
     public JapaneseDate dateYearDay(Era era, int yearOfEra, int dayOfYear) {
-        if (era instanceof JapaneseEra == false) {
+        if (!(era instanceof JapaneseEra)) {
             throw new ClassCastException("Era must be JapaneseEra");
         }
         return JapaneseDate.ofYearDay((JapaneseEra) era, yearOfEra, dayOfYear);
@@ -322,7 +336,7 @@ public final class JapaneseChronology extends Chronology implements Serializable
 
     @Override
     public int prolepticYear(Era era, int yearOfEra) {
-        if (era instanceof JapaneseEra == false) {
+        if (!(era instanceof JapaneseEra)) {
             throw new ClassCastException("Era must be JapaneseEra");
         }
         JapaneseEra jera = (JapaneseEra) era;
@@ -399,7 +413,7 @@ public final class JapaneseChronology extends Chronology implements Serializable
             }
             case MONTH_OF_YEAR:
                 return ValueRange.of(jcal.getMinimum(Calendar.MONTH) + 1, jcal.getGreatestMinimum(Calendar.MONTH) + 1,
-                                             jcal.getLeastMaximum(Calendar.MONTH) + 1, jcal.getMaximum(Calendar.MONTH) + 1);
+                        jcal.getLeastMaximum(Calendar.MONTH) + 1, jcal.getMaximum(Calendar.MONTH) + 1);
             case DAY_OF_YEAR: {
                 JapaneseEra[] eras = JapaneseEra.values();
                 int min = 366;
@@ -438,8 +452,8 @@ public final class JapaneseChronology extends Chronology implements Serializable
         }
         Long yoeLong = fieldValues.get(YEAR_OF_ERA);
         if (yoeLong != null) {
-            int yoe= range(YEAR_OF_ERA).checkValidIntValue(yoeLong, YEAR_OF_ERA);
-            if (era == null && resolverStyle != ResolverStyle.STRICT && fieldValues.containsKey(YEAR) == false) {
+            int yoe = range(YEAR_OF_ERA).checkValidIntValue(yoeLong, YEAR_OF_ERA);
+            if (era == null && resolverStyle != ResolverStyle.STRICT && !fieldValues.containsKey(YEAR)) {
                 List<Era> eras = eras();
                 era = (JapaneseEra) eras.get(eras.size() - 1);
             }
@@ -466,8 +480,10 @@ public final class JapaneseChronology extends Chronology implements Serializable
                         long days = Jdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_MONTH), 1);
                         return date(y, 1, 1).plusMonths(months).plusDays(days);
                     } else {
-                        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
-                        int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH), DAY_OF_MONTH);
+                        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR),
+                                MONTH_OF_YEAR);
+                        int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH),
+                                DAY_OF_MONTH);
                         if (resolverStyle == ResolverStyle.SMART && dom > 28) {
                             dom = Math.min(dom, date(y, moy, 1).lengthOfMonth());
                         }
@@ -485,7 +501,8 @@ public final class JapaneseChronology extends Chronology implements Serializable
                         }
                         int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
                         int aw = ALIGNED_WEEK_OF_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH));
-                        int ad = ALIGNED_DAY_OF_WEEK_IN_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH));
+                        int ad = ALIGNED_DAY_OF_WEEK_IN_MONTH.checkValidIntValue(
+                                fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH));
                         JapaneseDate date = date(y, moy, 1).plus((aw - 1) * 7 + (ad - 1), DAYS);
                         if (resolverStyle == ResolverStyle.STRICT && date.get(MONTH_OF_YEAR) != moy) {
                             throw new DateTimeException("Strict mode rejected date parsed to a different month");
@@ -529,7 +546,8 @@ public final class JapaneseChronology extends Chronology implements Serializable
                         return date(y, 1, 1).plus(weeks, WEEKS).plus(days, DAYS);
                     }
                     int aw = ALIGNED_WEEK_OF_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR));
-                    int ad = ALIGNED_DAY_OF_WEEK_IN_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR));
+                    int ad = ALIGNED_DAY_OF_WEEK_IN_YEAR.checkValidIntValue(
+                            fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR));
                     JapaneseDate date = date(y, 1, 1).plusDays((aw - 1) * 7 + (ad - 1));
                     if (resolverStyle == ResolverStyle.STRICT && date.get(YEAR) != y) {
                         throw new DateTimeException("Strict mode rejected date parsed to a different year");
@@ -556,7 +574,8 @@ public final class JapaneseChronology extends Chronology implements Serializable
         return null;
     }
 
-    private JapaneseDate resolveEYMD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle, JapaneseEra era, int yoe) {
+    private JapaneseDate resolveEYMD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle,
+            JapaneseEra era, int yoe) {
         if (resolverStyle == ResolverStyle.LENIENT) {
             int y = era.startDate().getYear() + yoe - 1;
             long months = Jdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
@@ -588,7 +607,8 @@ public final class JapaneseChronology extends Chronology implements Serializable
         return date(era, yoe, moy, dom);
     }
 
-    private JapaneseDate resolveEYD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle, JapaneseEra era, int yoe) {
+    private JapaneseDate resolveEYD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle,
+            JapaneseEra era, int yoe) {
         if (resolverStyle == ResolverStyle.LENIENT) {
             int y = era.startDate().getYear() + yoe - 1;
             long days = Jdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_YEAR), 1);

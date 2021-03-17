@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -34,11 +49,9 @@ package org.threeten.bp;
 import static org.threeten.bp.temporal.ChronoField.INSTANT_SECONDS;
 import static org.threeten.bp.temporal.ChronoField.NANO_OF_SECOND;
 import static org.threeten.bp.temporal.ChronoField.OFFSET_SECONDS;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
-
 import org.threeten.bp.chrono.ChronoZonedDateTime;
 import org.threeten.bp.format.DateTimeFormatter;
 import org.threeten.bp.format.DateTimeParseException;
@@ -397,7 +410,8 @@ public final class ZonedDateTime
      */
     private static ZonedDateTime create(long epochSecond, int nanoOfSecond, ZoneId zone) {
         ZoneRules rules = zone.getRules();
-        Instant instant = Instant.ofEpochSecond(epochSecond, nanoOfSecond);  // TODO: rules should be queryable by epochSeconds
+        // TODO: rules should be queryable by epochSeconds
+        Instant instant = Instant.ofEpochSecond(epochSecond, nanoOfSecond);
         ZoneOffset offset = rules.getOffset(instant);
         LocalDateTime ldt = LocalDateTime.ofEpochSecond(epochSecond, nanoOfSecond, offset);
         return new ZonedDateTime(ldt, offset, zone);
@@ -422,17 +436,17 @@ public final class ZonedDateTime
         Objects.requireNonNull(offset, "offset");
         Objects.requireNonNull(zone, "zone");
         ZoneRules rules = zone.getRules();
-        if (rules.isValidOffset(localDateTime, offset) == false) {
+        if (!rules.isValidOffset(localDateTime, offset)) {
             ZoneOffsetTransition trans = rules.getTransition(localDateTime);
             if (trans != null && trans.isGap()) {
                 // error message says daylight savings for simplicity
                 // even though there are other kinds of gaps
-                throw new DateTimeException("LocalDateTime '" + localDateTime +
-                        "' does not exist in zone '" + zone +
-                        "' due to a gap in the local time-line, typically caused by daylight savings");
+                throw new DateTimeException("LocalDateTime '" + localDateTime
+                        + "' does not exist in zone '" + zone
+                        + "' due to a gap in the local time-line, typically caused by daylight savings");
             }
-            throw new DateTimeException("ZoneOffset '" + offset + "' is not valid for LocalDateTime '" +
-                    localDateTime + "' in zone '" + zone + "'");
+            throw new DateTimeException("ZoneOffset '" + offset + "' is not valid for LocalDateTime '"
+                    + localDateTime + "' in zone '" + zone + "'");
         }
         return new ZonedDateTime(localDateTime, offset, zone);
     }
@@ -462,7 +476,7 @@ public final class ZonedDateTime
         Objects.requireNonNull(localDateTime, "localDateTime");
         Objects.requireNonNull(offset, "offset");
         Objects.requireNonNull(zone, "zone");
-        if (zone instanceof ZoneOffset && offset.equals(zone) == false) {
+        if (zone instanceof ZoneOffset && !offset.equals(zone)) {
             throw new IllegalArgumentException("ZoneId must match ZoneOffset");
         }
         return new ZonedDateTime(localDateTime, offset, zone);
@@ -506,8 +520,8 @@ public final class ZonedDateTime
             LocalDateTime ldt = LocalDateTime.from(temporal);
             return of(ldt, zone);
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain ZonedDateTime from TemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName());
+            throw new DateTimeException("Unable to obtain ZonedDateTime from TemporalAccessor: "
+                    + temporal + ", type " + temporal.getClass().getName());
         }
     }
 
@@ -585,7 +599,7 @@ public final class ZonedDateTime
      * @return the zoned date-time, not null
      */
     private ZonedDateTime resolveOffset(ZoneOffset offset) {
-        if (offset.equals(this.offset) == false && zone.getRules().isValidOffset(dateTime, offset)) {
+        if (!offset.equals(this.offset) && zone.getRules().isValidOffset(dateTime, offset)) {
             return new ZonedDateTime(dateTime, offset, zone);
         }
         return this;
@@ -794,7 +808,7 @@ public final class ZonedDateTime
         ZoneOffsetTransition trans = getZone().getRules().getTransition(dateTime);
         if (trans != null && trans.isOverlap()) {
             ZoneOffset earlierOffset = trans.getOffsetBefore();
-            if (earlierOffset.equals(offset) == false) {
+            if (!earlierOffset.equals(offset)) {
                 return new ZonedDateTime(dateTime, earlierOffset, zone);
             }
         }
@@ -822,7 +836,7 @@ public final class ZonedDateTime
         ZoneOffsetTransition trans = getZone().getRules().getTransition(toLocalDateTime());
         if (trans != null) {
             ZoneOffset laterOffset = trans.getOffsetAfter();
-            if (laterOffset.equals(offset) == false) {
+            if (!laterOffset.equals(offset)) {
                 return new ZonedDateTime(dateTime, laterOffset, zone);
             }
         }
@@ -891,8 +905,7 @@ public final class ZonedDateTime
     @Override
     public ZonedDateTime withZoneSameInstant(ZoneId zone) {
         Objects.requireNonNull(zone, "zone");
-        return this.zone.equals(zone) ? this :
-            create(dateTime.toEpochSecond(offset), dateTime.getNano(), zone);
+        return this.zone.equals(zone) ? this : create(dateTime.toEpochSecond(offset), dateTime.getNano(), zone);
     }
 
     /**
@@ -1676,7 +1689,9 @@ public final class ZonedDateTime
      */
     @Override
     public ZonedDateTime minus(long amountToSubtract, TemporalUnit unit) {
-        return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit) : plus(-amountToSubtract, unit));
+        return amountToSubtract == Long.MIN_VALUE
+                ? plus(Long.MAX_VALUE, unit).plus(1, unit)
+                : plus(-amountToSubtract, unit);
     }
 
     //-----------------------------------------------------------------------
@@ -1699,7 +1714,7 @@ public final class ZonedDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public ZonedDateTime minusYears(long years) {
-        return (years == Long.MIN_VALUE ? plusYears(Long.MAX_VALUE).plusYears(1) : plusYears(-years));
+        return years == Long.MIN_VALUE ? plusYears(Long.MAX_VALUE).plusYears(1) : plusYears(-years);
     }
 
     /**
@@ -1721,7 +1736,7 @@ public final class ZonedDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public ZonedDateTime minusMonths(long months) {
-        return (months == Long.MIN_VALUE ? plusMonths(Long.MAX_VALUE).plusMonths(1) : plusMonths(-months));
+        return months == Long.MIN_VALUE ? plusMonths(Long.MAX_VALUE).plusMonths(1) : plusMonths(-months);
     }
 
     /**
@@ -1743,7 +1758,9 @@ public final class ZonedDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public ZonedDateTime minusWeeks(long weeks) {
-        return (weeks == Long.MIN_VALUE ? plusWeeks(Long.MAX_VALUE).plusWeeks(1) : plusWeeks(-weeks));
+        return weeks == Long.MIN_VALUE
+                ? plusWeeks(Long.MAX_VALUE).plusWeeks(1)
+                : plusWeeks(-weeks);
     }
 
     /**
@@ -1765,7 +1782,9 @@ public final class ZonedDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public ZonedDateTime minusDays(long days) {
-        return (days == Long.MIN_VALUE ? plusDays(Long.MAX_VALUE).plusDays(1) : plusDays(-days));
+        return days == Long.MIN_VALUE
+                ? plusDays(Long.MAX_VALUE).plusDays(1)
+                : plusDays(-days);
     }
 
     //-----------------------------------------------------------------------
@@ -1794,7 +1813,9 @@ public final class ZonedDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public ZonedDateTime minusHours(long hours) {
-        return (hours == Long.MIN_VALUE ? plusHours(Long.MAX_VALUE).plusHours(1) : plusHours(-hours));
+        return hours == Long.MIN_VALUE
+                ? plusHours(Long.MAX_VALUE).plusHours(1)
+                : plusHours(-hours);
     }
 
     /**
@@ -1812,7 +1833,9 @@ public final class ZonedDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public ZonedDateTime minusMinutes(long minutes) {
-        return (minutes == Long.MIN_VALUE ? plusMinutes(Long.MAX_VALUE).plusMinutes(1) : plusMinutes(-minutes));
+        return minutes == Long.MIN_VALUE
+                ? plusMinutes(Long.MAX_VALUE).plusMinutes(1)
+                : plusMinutes(-minutes);
     }
 
     /**
@@ -1830,7 +1853,9 @@ public final class ZonedDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public ZonedDateTime minusSeconds(long seconds) {
-        return (seconds == Long.MIN_VALUE ? plusSeconds(Long.MAX_VALUE).plusSeconds(1) : plusSeconds(-seconds));
+        return seconds == Long.MIN_VALUE
+                ? plusSeconds(Long.MAX_VALUE).plusSeconds(1)
+                : plusSeconds(-seconds);
     }
 
     /**
@@ -1848,7 +1873,9 @@ public final class ZonedDateTime
      * @throws DateTimeException if the result exceeds the supported date range
      */
     public ZonedDateTime minusNanos(long nanos) {
-        return (nanos == Long.MIN_VALUE ? plusNanos(Long.MAX_VALUE).plusNanos(1) : plusNanos(-nanos));
+        return nanos == Long.MIN_VALUE
+                ? plusNanos(Long.MAX_VALUE).plusNanos(1)
+                : plusNanos(-nanos);
     }
 
     //-----------------------------------------------------------------------
@@ -2024,9 +2051,9 @@ public final class ZonedDateTime
         }
         if (obj instanceof ZonedDateTime) {
             ZonedDateTime other = (ZonedDateTime) obj;
-            return dateTime.equals(other.dateTime) &&
-                offset.equals(other.offset) &&
-                zone.equals(other.zone);
+            return dateTime.equals(other.dateTime)
+                    && offset.equals(other.offset)
+                    && zone.equals(other.zone);
         }
         return false;
     }
@@ -2075,6 +2102,4 @@ public final class ZonedDateTime
     public String format(DateTimeFormatter formatter) {
         return super.format(formatter);
     }
-
-
 }

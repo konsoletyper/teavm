@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -43,11 +58,9 @@ import static org.threeten.bp.temporal.ChronoUnit.FOREVER;
 import static org.threeten.bp.temporal.ChronoUnit.MONTHS;
 import static org.threeten.bp.temporal.ChronoUnit.WEEKS;
 import static org.threeten.bp.temporal.ChronoUnit.YEARS;
-
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-
 import org.threeten.bp.Duration;
 import org.threeten.bp.LocalDate;
 import org.threeten.bp.chrono.Chronology;
@@ -223,18 +236,18 @@ public final class IsoFields {
             }
             @Override
             public boolean isSupportedBy(TemporalAccessor temporal) {
-                return temporal.isSupported(DAY_OF_YEAR) && temporal.isSupported(MONTH_OF_YEAR) &&
-                        temporal.isSupported(YEAR) && isIso(temporal);
+                return temporal.isSupported(DAY_OF_YEAR) && temporal.isSupported(MONTH_OF_YEAR)
+                        && temporal.isSupported(YEAR) && isIso(temporal);
             }
             @Override
             public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
-                if (temporal.isSupported(this) == false) {
+                if (!temporal.isSupported(this)) {
                     throw new UnsupportedTemporalTypeException("Unsupported field: DayOfQuarter");
                 }
                 long qoy = temporal.getLong(QUARTER_OF_YEAR);
                 if (qoy == 1) {
                     long year = temporal.getLong(YEAR);
-                    return (IsoChronology.INSTANCE.isLeapYear(year) ? ValueRange.of(1, 91) : ValueRange.of(1, 90));
+                    return IsoChronology.INSTANCE.isLeapYear(year) ? ValueRange.of(1, 91) : ValueRange.of(1, 90);
                 } else if (qoy == 2) {
                     return ValueRange.of(1, 91);
                 } else if (qoy == 3 || qoy == 4) {
@@ -244,7 +257,7 @@ public final class IsoFields {
             }
             @Override
             public long getFrom(TemporalAccessor temporal) {
-                if (temporal.isSupported(this) == false) {
+                if (!temporal.isSupported(this)) {
                     throw new UnsupportedTemporalTypeException("Unsupported field: DayOfQuarter");
                 }
                 int doy = temporal.get(DAY_OF_YEAR);
@@ -280,7 +293,7 @@ public final class IsoFields {
                     if (resolverStyle == ResolverStyle.STRICT) {
                         int max = 92;
                         if (qoy == 1) {
-                            max = (IsoChronology.INSTANCE.isLeapYear(y) ? 91 : 90);
+                            max = IsoChronology.INSTANCE.isLeapYear(y) ? 91 : 90;
                         } else if (qoy == 2) {
                             max = 91;
                         }
@@ -323,11 +336,11 @@ public final class IsoFields {
             }
             @Override
             public long getFrom(TemporalAccessor temporal) {
-                if (temporal.isSupported(this) == false) {
+                if (!temporal.isSupported(this)) {
                     throw new UnsupportedTemporalTypeException("Unsupported field: QuarterOfYear");
                 }
                 long moy = temporal.getLong(MONTH_OF_YEAR);
-                return ((moy + 2) / 3);
+                return (moy + 2) / 3;
             }
             @SuppressWarnings("unchecked")
             @Override
@@ -366,14 +379,14 @@ public final class IsoFields {
             }
             @Override
             public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
-                if (temporal.isSupported(this) == false) {
+                if (!temporal.isSupported(this)) {
                     throw new UnsupportedTemporalTypeException("Unsupported field: WeekOfWeekBasedYear");
                 }
                 return getWeekRange(LocalDate.from(temporal));
             }
             @Override
             public long getFrom(TemporalAccessor temporal) {
-                if (temporal.isSupported(this) == false) {
+                if (!temporal.isSupported(this)) {
                     throw new UnsupportedTemporalTypeException("Unsupported field: WeekOfWeekBasedYear");
                 }
                 return getWeek(LocalDate.from(temporal));
@@ -450,7 +463,7 @@ public final class IsoFields {
             }
             @Override
             public long getFrom(TemporalAccessor temporal) {
-                if (temporal.isSupported(this) == false) {
+                if (!temporal.isSupported(this)) {
                     throw new UnsupportedTemporalTypeException("Unsupported field: WeekBasedYear");
                 }
                 return getWeekBasedYear(LocalDate.from(temporal));
@@ -458,7 +471,7 @@ public final class IsoFields {
             @SuppressWarnings("unchecked")
             @Override
             public <R extends Temporal> R adjustInto(R temporal, long newValue) {
-                if (isSupportedBy(temporal) == false) {
+                if (!isSupportedBy(temporal)) {
                     throw new UnsupportedTemporalTypeException("Unsupported field: WeekBasedYear");
                 }
                 int newWby = range().checkValidIntValue(newValue, WEEK_BASED_YEAR);  // strict check
@@ -532,7 +545,7 @@ public final class IsoFields {
             }
             int week = ((doy0 - firstMonDoy0) / 7) + 1;
             if (week == 53) {
-                if ((firstMonDoy0 == -3 || (firstMonDoy0 == -2 && date.isLeapYear())) == false) {
+                if (!(firstMonDoy0 == -3 || (firstMonDoy0 == -2 && date.isLeapYear()))) {
                     week = 1;
                 }
             }
@@ -602,7 +615,7 @@ public final class IsoFields {
         @SuppressWarnings("unchecked")
         @Override
         public <R extends Temporal> R addTo(R temporal, long periodToAdd) {
-            switch(this) {
+            switch (this) {
                 case WEEK_BASED_YEARS:
                     long added = Jdk8Methods.safeAdd(temporal.get(WEEK_BASED_YEAR), periodToAdd);
                     return (R) temporal.with(WEEK_BASED_YEAR, added);
@@ -616,9 +629,10 @@ public final class IsoFields {
 
         @Override
         public long between(Temporal temporal1, Temporal temporal2) {
-            switch(this) {
+            switch (this) {
                 case WEEK_BASED_YEARS:
-                    return Jdk8Methods.safeSubtract(temporal2.getLong(WEEK_BASED_YEAR), temporal1.getLong(WEEK_BASED_YEAR));
+                    return Jdk8Methods.safeSubtract(temporal2.getLong(WEEK_BASED_YEAR),
+                            temporal1.getLong(WEEK_BASED_YEAR));
                 case QUARTER_YEARS:
                     return temporal1.until(temporal2, MONTHS) / 3;
                 default:

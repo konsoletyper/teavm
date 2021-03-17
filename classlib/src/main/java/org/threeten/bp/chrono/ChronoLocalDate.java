@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -37,7 +52,6 @@ import static org.threeten.bp.temporal.ChronoField.ERA;
 import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
 import static org.threeten.bp.temporal.ChronoField.YEAR;
 import static org.threeten.bp.temporal.ChronoField.YEAR_OF_ERA;
-
 import java.util.Comparator;
 import java.util.Objects;
 import org.threeten.bp.DateTimeException;
@@ -338,7 +352,7 @@ public abstract class ChronoLocalDate
      * @return the length of the year in days
      */
     public int lengthOfYear() {
-        return (isLeapYear() ? 366 : 365);
+        return isLeapYear() ? 366 : 365;
     }
 
     @Override
@@ -395,8 +409,8 @@ public abstract class ChronoLocalDate
             return (R) ChronoUnit.DAYS;
         } else if (query == TemporalQueries.localDate()) {
             return (R) LocalDate.ofEpochDay(toEpochDay());
-        } else if (query == TemporalQueries.localTime() || query == TemporalQueries.zone() ||
-                query == TemporalQueries.zoneId() || query == TemporalQueries.offset()) {
+        } else if (query == TemporalQueries.localTime() || query == TemporalQueries.zone()
+                || query == TemporalQueries.zoneId() || query == TemporalQueries.offset()) {
             return null;
         }
         return Temporal.super.query(query);

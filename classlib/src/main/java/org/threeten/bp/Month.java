@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -33,9 +48,7 @@ package org.threeten.bp;
 
 import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
 import static org.threeten.bp.temporal.ChronoUnit.MONTHS;
-
 import java.util.Locale;
-
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.chrono.IsoChronology;
 import org.threeten.bp.format.DateTimeFormatterBuilder;
@@ -190,13 +203,13 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
             return (Month) temporal;
         }
         try {
-            if (IsoChronology.INSTANCE.equals(Chronology.from(temporal)) == false) {
+            if (!IsoChronology.INSTANCE.equals(Chronology.from(temporal))) {
                 temporal = LocalDate.from(temporal);
             }
             return of(temporal.get(MONTH_OF_YEAR));
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain Month from TemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName(), ex);
+            throw new DateTimeException("Unable to obtain Month from TemporalAccessor: " + temporal
+                    + ", type " + temporal.getClass().getName(), ex);
         }
     }
 
@@ -400,7 +413,7 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
     public int length(boolean leapYear) {
         switch (this) {
             case FEBRUARY:
-                return (leapYear ? 29 : 28);
+                return leapYear ? 29 : 28;
             case APRIL:
             case JUNE:
             case SEPTEMBER:
@@ -540,8 +553,9 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
             return (R) IsoChronology.INSTANCE;
         } else if (query == TemporalQueries.precision()) {
             return (R) MONTHS;
-        } else if (query == TemporalQueries.localDate() || query == TemporalQueries.localTime() ||
-                query == TemporalQueries.zone() || query == TemporalQueries.zoneId() || query == TemporalQueries.offset()) {
+        } else if (query == TemporalQueries.localDate() || query == TemporalQueries.localTime()
+                || query == TemporalQueries.zone() || query == TemporalQueries.zoneId()
+                || query == TemporalQueries.offset()) {
             return null;
         }
         return query.queryFrom(this);
@@ -584,7 +598,7 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
      */
     @Override
     public Temporal adjustInto(Temporal temporal) {
-        if (Chronology.from(temporal).equals(IsoChronology.INSTANCE) == false) {
+        if (!Chronology.from(temporal).equals(IsoChronology.INSTANCE)) {
             throw new DateTimeException("Adjustment only supported on ISO date-time");
         }
         return temporal.with(MONTH_OF_YEAR, getValue());

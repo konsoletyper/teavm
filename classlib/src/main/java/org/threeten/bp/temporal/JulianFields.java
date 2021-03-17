@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -34,7 +49,6 @@ package org.threeten.bp.temporal;
 import static org.threeten.bp.temporal.ChronoField.EPOCH_DAY;
 import static org.threeten.bp.temporal.ChronoUnit.DAYS;
 import static org.threeten.bp.temporal.ChronoUnit.FOREVER;
-
 import java.util.Locale;
 import java.util.Map;
 
@@ -173,7 +187,7 @@ public final class JulianFields {
         private final ValueRange range;
         private final long offset;
 
-        private Field(String name, TemporalUnit baseUnit, TemporalUnit rangeUnit, long offset) {
+        Field(String name, TemporalUnit baseUnit, TemporalUnit rangeUnit, long offset) {
             this.name = name;
             this.baseUnit = baseUnit;
             this.rangeUnit = rangeUnit;
@@ -215,7 +229,7 @@ public final class JulianFields {
 
         @Override
         public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
-            if (isSupportedBy(temporal) == false) {
+            if (!isSupportedBy(temporal)) {
                 throw new UnsupportedTemporalTypeException("Unsupported field: " + this);
             }
             return range();
@@ -229,7 +243,7 @@ public final class JulianFields {
         @SuppressWarnings("unchecked")
         @Override
         public <R extends Temporal> R adjustInto(R dateTime, long newValue) {
-            if (range().isValidValue(newValue) == false) {
+            if (!range().isValidValue(newValue)) {
                 throw new DateTimeException("Invalid value: " + name + " " + newValue);
             }
             return (R) dateTime.with(EPOCH_DAY, Jdk8Methods.safeSubtract(newValue, offset));
@@ -244,7 +258,7 @@ public final class JulianFields {
         //-----------------------------------------------------------------------
         @Override
         public TemporalAccessor resolve(Map<TemporalField, Long> fieldValues,
-                        TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
+                TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
             long value = fieldValues.remove(this);
             Chronology chrono = Chronology.from(partialTemporal);
             return chrono.dateEpochDay(Jdk8Methods.safeSubtract(value, offset));

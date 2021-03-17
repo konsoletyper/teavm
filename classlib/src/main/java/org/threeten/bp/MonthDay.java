@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -33,10 +48,8 @@ package org.threeten.bp;
 
 import static org.threeten.bp.temporal.ChronoField.DAY_OF_MONTH;
 import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
-
 import java.io.Serializable;
 import java.util.Objects;
-
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.chrono.IsoChronology;
 import org.threeten.bp.format.DateTimeFormatter;
@@ -170,8 +183,8 @@ public final class MonthDay
         Objects.requireNonNull(month, "month");
         DAY_OF_MONTH.checkValidValue(dayOfMonth);
         if (dayOfMonth > month.maxLength()) {
-            throw new DateTimeException("Illegal value for DayOfMonth field, value " + dayOfMonth +
-                    " is not valid for month " + month.name());
+            throw new DateTimeException("Illegal value for DayOfMonth field, value " + dayOfMonth
+                    + " is not valid for month " + month.name());
         }
         return new MonthDay(month.getValue(), dayOfMonth);
     }
@@ -219,13 +232,13 @@ public final class MonthDay
             return (MonthDay) temporal;
         }
         try {
-            if (IsoChronology.INSTANCE.equals(Chronology.from(temporal)) == false) {
+            if (!IsoChronology.INSTANCE.equals(Chronology.from(temporal))) {
                 temporal = LocalDate.from(temporal);
             }
             return of(temporal.get(MONTH_OF_YEAR), temporal.get(DAY_OF_MONTH));
         } catch (DateTimeException ex) {
-            throw new DateTimeException("Unable to obtain MonthDay from TemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName());
+            throw new DateTimeException("Unable to obtain MonthDay from TemporalAccessor: "
+                    + temporal + ", type " + temporal.getClass().getName());
         }
     }
 
@@ -453,7 +466,7 @@ public final class MonthDay
      * @see Year#isValidMonthDay(MonthDay)
      */
     public boolean isValidYear(int year) {
-        return (day == 29 && month == 2 && Year.isLeap(year) == false) == false;
+        return !(day == 29 && month == 2 && !Year.isLeap(year));
     }
 
     //-----------------------------------------------------------------------
@@ -572,7 +585,7 @@ public final class MonthDay
      */
     @Override
     public Temporal adjustInto(Temporal temporal) {
-        if (Chronology.from(temporal).equals(IsoChronology.INSTANCE) == false) {
+        if (!Chronology.from(temporal).equals(IsoChronology.INSTANCE)) {
             throw new DateTimeException("Adjustment only supported on ISO date-time");
         }
         temporal = temporal.with(MONTH_OF_YEAR, month);
@@ -608,10 +621,11 @@ public final class MonthDay
      * @param other  the other month-day to compare to, not null
      * @return the comparator value, negative if less, positive if greater
      */
+    @Override
     public int compareTo(MonthDay other) {
-        int cmp = (month - other.month);
+        int cmp = month - other.month;
         if (cmp == 0) {
-            cmp = (day - other.day);
+            cmp = day - other.day;
         }
         return cmp;
     }

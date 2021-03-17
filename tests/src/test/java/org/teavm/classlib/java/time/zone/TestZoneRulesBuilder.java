@@ -65,9 +65,7 @@ import static org.threeten.bp.Month.SEPTEMBER;
 import static org.threeten.bp.zone.ZoneOffsetTransitionRule.TimeDefinition.STANDARD;
 import static org.threeten.bp.zone.ZoneOffsetTransitionRule.TimeDefinition.UTC;
 import static org.threeten.bp.zone.ZoneOffsetTransitionRule.TimeDefinition.WALL;
-
 import java.util.List;
-
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.WholeClassCompilation;
@@ -103,13 +101,13 @@ public class TestZoneRulesBuilder {
     //-----------------------------------------------------------------------
     // toRules()
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=IllegalStateException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void test_toRules_noWindows() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.toRules("Europe/London");
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_toRules_null() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_2_30);
@@ -369,7 +367,8 @@ public class TestZoneRulesBuilder {
         assertOffsetInfo(test, DATE_TIME_LAST, plus2);
 
         assertGap(test, 2010, 9, 10, 12, 0, plus2, plus3);  // jump forward from 12:00 to 13:00 on Tue 10th Sep
-        assertOverlap(test, 2010, 9, 10, 23, 0, plus3, plus2);  // overlaps from Wed 11th Sep 00:00 back to Tue 10th Sep 23:00
+        // overlaps from Wed 11th Sep 00:00 back to Tue 10th Sep 23:00
+        assertOverlap(test, 2010, 9, 10, 23, 0, plus3, plus2);
     }
 
     @Test
@@ -387,7 +386,8 @@ public class TestZoneRulesBuilder {
         assertOffsetInfo(test, DATE_TIME_LAST, plus2);
 
         assertGap(test, 2010, 9, 28, 0, 0, plus2, plus3);  // jump forward from 00:00 to 01:00 on Tue 28th Sep
-        assertOverlap(test, 2010, 9, 29, 23, 0, plus3, plus2);  // overlaps from Thu 30th Sep 00:00 back to Wed 29th Sep 23:00
+        // overlaps from Thu 30th Sep 00:00 back to Wed 29th Sep 23:00
+        assertOverlap(test, 2010, 9, 29, 23, 0, plus3, plus2);
     }
 
     //-----------------------------------------------------------------------
@@ -475,7 +475,8 @@ public class TestZoneRulesBuilder {
         assertOffsetInfo(test, DATE_TIME_LAST, plus2);
 
         assertGap(test, 2010, 9, 10, 0, 0, plus2, plus3);  // jump forward from 00:00 to 01:00 on Fri 10th Sep
-        assertOverlap(test, 2010, 9, 30, 23, 0, plus3, plus2);  // overlaps from Fri 1st Oct 00:00 back to Thu 30th Sep 23:00 (!!!)
+        // overlaps from Fri 1st Oct 00:00 back to Thu 30th Sep 23:00 (!!!)
+        assertOverlap(test, 2010, 9, 30, 23, 0, plus3, plus2);
     }
 
     @Test
@@ -748,19 +749,19 @@ public class TestZoneRulesBuilder {
         assertOffsetInfo(test, DATE_TIME_2008_07_01, OFFSET_1);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_addWindow_nullOffset() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindow((ZoneOffset) null, dateTime(2008, 6, 30, 0, 0), STANDARD);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_addWindow_nullTime() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindow(OFFSET_1, (LocalDateTime) null, STANDARD);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_addWindow_nullTimeDefinition() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindow(OFFSET_1, dateTime(2008, 6, 30, 0, 0), (TimeDefinition) null);
@@ -795,7 +796,7 @@ public class TestZoneRulesBuilder {
         assertOverlap(test, 2008, 10, 26, 0, 20, OFFSET_2_30, OFFSET_1);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_addWindowForever_nullOffset() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever((ZoneOffset) null);
@@ -828,13 +829,13 @@ public class TestZoneRulesBuilder {
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_2_30);
     }
 
-    @Test(expectedExceptions=IllegalStateException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void test_setFixedSavingsToWindow_noWindow() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.setFixedSavingsToWindow(PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=IllegalStateException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void test_setFixedSavingsToWindow_cannotMixSavingsWithRule() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
@@ -842,7 +843,7 @@ public class TestZoneRulesBuilder {
         b.setFixedSavingsToWindow(PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=IllegalStateException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void test_setFixedSavingsToWindow_cannotMixSavingsWithLastRule() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
@@ -919,13 +920,13 @@ public class TestZoneRulesBuilder {
         assertOffsetInfo(test, dateTime(2002, 7, 1, 0, 0), OFFSET_1);
     }
 
-    @Test(expectedExceptions=IllegalStateException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void test_addRuleToWindow_noWindow() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=IllegalStateException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void test_addRuleToWindow_cannotMixRuleWithSavings() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
@@ -933,67 +934,68 @@ public class TestZoneRulesBuilder {
         b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_addRuleToWindow_illegalYear1() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(Year.MIN_VALUE - 1, 2008, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_addRuleToWindow_illegalYear2() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, Year.MIN_VALUE - 1, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void test_addRuleToWindow_illegalDayOfMonth_tooSmall() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, 2008, MARCH, -29, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void test_addRuleToWindow_illegalDayOfMonth_zero() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, 2008, MARCH, 0, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void test_addRuleToWindow_illegalDayOfMonth_tooLarge() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, 2008, MARCH, 32, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_addRuleToWindow_nullMonth() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, Year.MAX_VALUE, (Month) null, 31, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_addRuleToWindow_nullTime() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, (LocalTime) null, false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void test_addRuleToWindow_illegalEndOfDayTime() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, 2008, MARCH, 1, SUNDAY, time(1, 0), true, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_addRuleToWindow_nullTimeDefinition() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, (TimeDefinition) null, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, (TimeDefinition) null,
+                PERIOD_1HOUR30MIN);
     }
 
     //-----------------------------------------------------------------------
@@ -1016,14 +1018,14 @@ public class TestZoneRulesBuilder {
         assertOffsetInfo(test, dateTime(2001, 7, 1, 0, 0), OFFSET_1);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_addRuleToWindow_singleYearObject_nullTime() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow((LocalDateTime) null, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_addRuleToWindow_singleYearObject_nullTimeDefinition() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
@@ -1050,13 +1052,13 @@ public class TestZoneRulesBuilder {
         assertOffsetInfo(test, dateTime(2001, 7, 1, 0, 0), OFFSET_1);
     }
 
-    @Test(expectedExceptions=IllegalStateException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void test_addRuleToWindow_singleYear_noWindow() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addRuleToWindow(2000, MARCH, 31, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=IllegalStateException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void test_addRuleToWindow_singleYear_cannotMixRuleWithSavings() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
@@ -1064,49 +1066,49 @@ public class TestZoneRulesBuilder {
         b.addRuleToWindow(2000, MARCH, 31, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_addRuleToWindow_singleYear_illegalYear() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(Year.MIN_VALUE - 1, MARCH, 31, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void test_addRuleToWindow_singleYear_illegalDayOfMonth_tooSmall() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, MARCH, -29, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void test_addRuleToWindow_singleYear_illegalDayOfMonth_zero() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, MARCH, 0, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void test_addRuleToWindow_singleYear_illegalDayOfMonth_tooLarge() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, MARCH, 32, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_addRuleToWindow_singleYear_nullMonth() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, (Month) null, 31, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_addRuleToWindow_singleYear_nullTime() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, MARCH, 31, (LocalTime) null, false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expectedExceptions = NullPointerException.class)
     public void test_addRuleToWindow_singleYear_nullTimeDefinition() {
         ZoneRulesBuilder b = new ZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
@@ -1114,7 +1116,8 @@ public class TestZoneRulesBuilder {
     }
 
     //-----------------------------------------------------------------------
-    private static void assertGap(ZoneRules test, int y, int m, int d, int hr, int min, ZoneOffset before, ZoneOffset after) {
+    private static void assertGap(ZoneRules test, int y, int m, int d, int hr, int min, ZoneOffset before,
+            ZoneOffset after) {
         LocalDateTime dt = dateTime(y, m, d, hr, min);
         ZoneOffsetTransition zot = test.getTransition(dt);
         assertNotNull(zot);
@@ -1123,7 +1126,8 @@ public class TestZoneRulesBuilder {
         assertEquals(zot.getOffsetAfter(), after);
     }
 
-    private static void assertOverlap(ZoneRules test, int y, int m, int d, int hr, int min, ZoneOffset before, ZoneOffset after) {
+    private static void assertOverlap(ZoneRules test, int y, int m, int d, int hr, int min, ZoneOffset before,
+            ZoneOffset after) {
         LocalDateTime dt = dateTime(y, m, d, hr, min);
         ZoneOffsetTransition zot = test.getTransition(dt);
         assertNotNull(zot);

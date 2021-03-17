@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -40,7 +55,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
-
 import org.threeten.bp.format.DateTimeFormatterBuilder;
 import org.threeten.bp.format.TextStyle;
 import org.threeten.bp.temporal.TemporalAccessor;
@@ -275,7 +289,7 @@ public abstract class ZoneId implements Serializable {
         Objects.requireNonNull(zoneId, "zoneId");
         Objects.requireNonNull(aliasMap, "aliasMap");
         String id = aliasMap.get(zoneId);
-        id = (id != null ? id : zoneId);
+        id = id != null ? id : zoneId;
         return of(id);
     }
 
@@ -333,8 +347,8 @@ public abstract class ZoneId implements Serializable {
         if (zoneId.equals("UTC") || zoneId.equals("GMT") || zoneId.equals("UT")) {
             return new ZoneRegion(zoneId, ZoneOffset.UTC.getRules());
         }
-        if (zoneId.startsWith("UTC+") || zoneId.startsWith("GMT+") ||
-                zoneId.startsWith("UTC-") || zoneId.startsWith("GMT-")) {
+        if (zoneId.startsWith("UTC+") || zoneId.startsWith("GMT+")
+                || zoneId.startsWith("UTC-") || zoneId.startsWith("GMT-")) {
             ZoneOffset offset = ZoneOffset.of(zoneId.substring(3));
             if (offset.getTotalSeconds() == 0) {
                 return new ZoneRegion(zoneId.substring(0, 3), offset.getRules());
@@ -399,8 +413,8 @@ public abstract class ZoneId implements Serializable {
     public static ZoneId from(TemporalAccessor temporal) {
         ZoneId obj = temporal.query(TemporalQueries.zone());
         if (obj == null) {
-            throw new DateTimeException("Unable to obtain ZoneId from TemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName());
+            throw new DateTimeException("Unable to obtain ZoneId from TemporalAccessor: "
+                    + temporal + ", type " + temporal.getClass().getName());
         }
         return obj;
     }

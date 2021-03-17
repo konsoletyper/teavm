@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -33,7 +48,6 @@ package org.threeten.bp;
 
 import java.io.Serializable;
 import java.util.Objects;
-
 import java.util.regex.Pattern;
 import org.threeten.bp.zone.ZoneRules;
 import org.threeten.bp.zone.ZoneRulesException;
@@ -96,8 +110,8 @@ final class ZoneRegion extends ZoneId implements Serializable {
         if (zoneId.equals("UTC") || zoneId.equals("GMT") || zoneId.equals("UT")) {
             return new ZoneRegion(zoneId, ZoneOffset.UTC.getRules());
         }
-        if (zoneId.startsWith("UTC+") || zoneId.startsWith("GMT+") ||
-                zoneId.startsWith("UTC-") || zoneId.startsWith("GMT-")) {
+        if (zoneId.startsWith("UTC+") || zoneId.startsWith("GMT+")
+                || zoneId.startsWith("UTC-") || zoneId.startsWith("GMT-")) {
             ZoneOffset offset = ZoneOffset.of(zoneId.substring(3));
             if (offset.getTotalSeconds() == 0) {
                 return new ZoneRegion(zoneId.substring(0, 3), offset.getRules());
@@ -165,6 +179,6 @@ final class ZoneRegion extends ZoneId implements Serializable {
     public ZoneRules getRules() {
         // additional query for group provider when null allows for possibility
         // that the provider was added after the ZoneId was created
-        return (rules != null ? rules : ZoneRulesProvider.getRules(id, false));
+        return rules != null ? rules : ZoneRulesProvider.getRules(id, false);
     }
 }

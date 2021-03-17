@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -32,11 +47,9 @@
 package org.threeten.bp.chrono;
 
 import static org.threeten.bp.temporal.ChronoUnit.SECONDS;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
-
 import org.threeten.bp.Instant;
 import org.threeten.bp.LocalDateTime;
 import org.threeten.bp.ZoneId;
@@ -127,7 +140,8 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
      * @param zone  the zone identifier, not null
      * @return the zoned date-time, not null
      */
-    static <R extends ChronoLocalDate> ChronoZonedDateTimeImpl<R> ofInstant(Chronology chrono, Instant instant, ZoneId zone) {
+    static <R extends ChronoLocalDate> ChronoZonedDateTimeImpl<R> ofInstant(Chronology chrono, Instant instant,
+            ZoneId zone) {
         ZoneRules rules = zone.getRules();
         ZoneOffset offset = rules.getOffset(instant);
         Objects.requireNonNull(offset, "offset");  // protect against bad ZoneRules
@@ -171,6 +185,7 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
         return unit != null && unit.isSupportedBy(this);
     }
 
+    @Override
     public ZoneOffset getOffset() {
         return offset;
     }
@@ -180,8 +195,8 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
         ZoneOffsetTransition trans = getZone().getRules().getTransition(LocalDateTime.from(this));
         if (trans != null && trans.isOverlap()) {
             ZoneOffset earlierOffset = trans.getOffsetBefore();
-            if (earlierOffset.equals(offset) == false) {
-                return new ChronoZonedDateTimeImpl<D>(dateTime, earlierOffset, zone);
+            if (!earlierOffset.equals(offset)) {
+                return new ChronoZonedDateTimeImpl<>(dateTime, earlierOffset, zone);
             }
         }
         return this;
@@ -192,7 +207,7 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
         ZoneOffsetTransition trans = getZone().getRules().getTransition(LocalDateTime.from(this));
         if (trans != null) {
             ZoneOffset offset = trans.getOffsetAfter();
-            if (offset.equals(getOffset()) == false) {
+            if (!offset.equals(getOffset())) {
                 return new ChronoZonedDateTimeImpl<>(dateTime, offset, zone);
             }
         }
@@ -205,10 +220,12 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
         return dateTime;
     }
 
+    @Override
     public ZoneId getZone() {
         return zone;
     }
 
+    @Override
     public ChronoZonedDateTime<D> withZoneSameLocal(ZoneId zone) {
         return ofBest(dateTime, zone, offset);
     }
@@ -248,7 +265,8 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
         if (unit instanceof ChronoUnit) {
             return with(dateTime.plus(amountToAdd, unit));
         }
-        return toLocalDate().getChronology().ensureChronoZonedDateTime(unit.addTo(this, amountToAdd));   /// TODO: Generics replacement Risk!
+        /// TODO: Generics replacement Risk!
+        return toLocalDate().getChronology().ensureChronoZonedDateTime(unit.addTo(this, amountToAdd));
     }
 
     //-----------------------------------------------------------------------

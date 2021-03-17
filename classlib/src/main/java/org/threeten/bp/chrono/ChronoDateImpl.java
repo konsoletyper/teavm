@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -32,7 +47,6 @@
 package org.threeten.bp.chrono;
 
 import java.io.Serializable;
-
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.LocalDate;
 import org.threeten.bp.LocalTime;
@@ -98,7 +112,7 @@ import org.threeten.bp.temporal.TemporalUnit;
  * {@code Chronology} must be registered as a Service implementing the {@code Chronology} interface
  * in the {@code META-INF/Services} file as per the specification of {@link java.util.ServiceLoader}.
  * The subclass must function according to the {@code Chronology} class description and must provide its
- * {@link Chronology#getID calendar name} and
+ * {@link Chronology#getId()}  calendar name} and
  * {@link Chronology#getCalendarType() calendar type}. </p>
  *
  * <h3>Specification for implementors</h3>
@@ -132,7 +146,8 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
                 case DECADES: return plusYears(Jdk8Methods.safeMultiply(amountToAdd, 10));
                 case CENTURIES: return plusYears(Jdk8Methods.safeMultiply(amountToAdd, 100));
                 case MILLENNIA: return plusYears(Jdk8Methods.safeMultiply(amountToAdd, 1000));
-//                case ERAS: throw new DateTimeException("Unable to add era, standard calendar system only has one era");
+//                case ERAS: throw new DateTimeException("Unable to add era,
+//                standard calendar system only has one era");
 //                case FOREVER: return (period == 0 ? this : (period > 0 ? LocalDate.MAX_DATE : LocalDate.MIN_DATE));
             }
             throw new DateTimeException(unit + " not valid for chronology " + getChronology().getId());
@@ -223,7 +238,9 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
      * @throws DateTimeException if the result exceeds the supported date range
      */
     ChronoDateImpl<D> minusYears(long yearsToSubtract) {
-        return (yearsToSubtract == Long.MIN_VALUE ? plusYears(Long.MAX_VALUE).plusYears(1) : plusYears(-yearsToSubtract));
+        return yearsToSubtract == Long.MIN_VALUE
+                ? plusYears(Long.MAX_VALUE).plusYears(1)
+                : plusYears(-yearsToSubtract);
     }
 
     /**
@@ -243,7 +260,9 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
      * @throws DateTimeException if the result exceeds the supported date range
      */
     ChronoDateImpl<D> minusMonths(long monthsToSubtract) {
-        return (monthsToSubtract == Long.MIN_VALUE ? plusMonths(Long.MAX_VALUE).plusMonths(1) : plusMonths(-monthsToSubtract));
+        return monthsToSubtract == Long.MIN_VALUE
+                ? plusMonths(Long.MAX_VALUE).plusMonths(1)
+                : plusMonths(-monthsToSubtract);
     }
 
     /**
@@ -262,7 +281,9 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
      * @throws DateTimeException if the result exceeds the supported date range
      */
     ChronoDateImpl<D> minusWeeks(long weeksToSubtract) {
-        return (weeksToSubtract == Long.MIN_VALUE ? plusWeeks(Long.MAX_VALUE).plusWeeks(1) : plusWeeks(-weeksToSubtract));
+        return weeksToSubtract == Long.MIN_VALUE
+                ? plusWeeks(Long.MAX_VALUE).plusWeeks(1)
+                : plusWeeks(-weeksToSubtract);
     }
 
     /**
@@ -279,7 +300,9 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
      * @throws DateTimeException if the result exceeds the supported date range
      */
     ChronoDateImpl<D> minusDays(long daysToSubtract) {
-        return (daysToSubtract == Long.MIN_VALUE ? plusDays(Long.MAX_VALUE).plusDays(1) : plusDays(-daysToSubtract));
+        return daysToSubtract == Long.MIN_VALUE
+                ? plusDays(Long.MAX_VALUE).plusDays(1)
+                : plusDays(-daysToSubtract);
     }
 
     @Override
