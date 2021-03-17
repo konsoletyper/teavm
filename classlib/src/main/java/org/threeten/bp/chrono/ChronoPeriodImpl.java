@@ -39,6 +39,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.jdk8.Jdk8Methods;
@@ -152,7 +153,7 @@ final class ChronoPeriodImpl
 
     @Override
     public Temporal addTo(Temporal temporal) {
-        Jdk8Methods.requireNonNull(temporal, "temporal");
+        Objects.requireNonNull(temporal, "temporal");
         Chronology temporalChrono = temporal.query(TemporalQueries.chronology());
         if (temporalChrono != null && chronology.equals(temporalChrono) == false) {
             throw new DateTimeException("Invalid chronology, required: " + chronology.getId() + ", but was: " + temporalChrono.getId());
@@ -171,7 +172,7 @@ final class ChronoPeriodImpl
 
     @Override
     public Temporal subtractFrom(Temporal temporal) {
-        Jdk8Methods.requireNonNull(temporal, "temporal");
+        Objects.requireNonNull(temporal, "temporal");
         Chronology temporalChrono = temporal.query(TemporalQueries.chronology());
         if (temporalChrono != null && chronology.equals(temporalChrono) == false) {
             throw new DateTimeException("Invalid chronology, required: " + chronology.getId() + ", but was: " + temporalChrono.getId());

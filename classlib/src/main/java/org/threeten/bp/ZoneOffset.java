@@ -41,8 +41,8 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.Temporal;
 import org.threeten.bp.temporal.TemporalAccessor;
@@ -89,16 +89,6 @@ import org.threeten.bp.zone.ZoneRules;
 public final class ZoneOffset
         extends ZoneId
         implements TemporalAccessor, TemporalAdjuster, Comparable<ZoneOffset>, Serializable {
-
-    /**
-     * Simulate JDK 8 method reference ZoneOffset::from.
-     */
-    public static final TemporalQuery<ZoneOffset> FROM = new TemporalQuery<ZoneOffset>() {
-        @Override
-        public ZoneOffset queryFrom(TemporalAccessor temporal) {
-            return ZoneOffset.from(temporal);
-        }
-    };
 
     /** Cache of time-zone offset by offset in seconds. */
     private static final Map<Integer, ZoneOffset> SECONDS_CACHE = new HashMap<>();
@@ -180,7 +170,7 @@ public final class ZoneOffset
      * @throws DateTimeException if the offset ID is invalid
      */
     public static ZoneOffset of(String offsetId) {
-        Jdk8Methods.requireNonNull(offsetId, "offsetId");
+        Objects.requireNonNull(offsetId, "offsetId");
         // "Z" is always in the cache
         ZoneOffset offset = ID_CACHE.get(offsetId);
         if (offset != null) {

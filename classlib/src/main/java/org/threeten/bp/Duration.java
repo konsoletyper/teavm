@@ -51,6 +51,7 @@ import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -295,7 +296,7 @@ public final class Duration
      * @throws ArithmeticException if a numeric overflow occurs
      */
     public static Duration from(TemporalAmount amount) {
-        Jdk8Methods.requireNonNull(amount, "amount");
+        Objects.requireNonNull(amount, "amount");
         Duration duration = ZERO;
         for (TemporalUnit unit : amount.getUnits()) {
             duration = duration.plus(amount.get(unit), unit);
@@ -338,9 +339,7 @@ public final class Duration
                     Temporal adjustedEnd = endExclusive.with(NANO_OF_SECOND, startNos);
                     secs = startInclusive.until(adjustedEnd, SECONDS);;
                 }
-            } catch (DateTimeException ex2) {
-                // ignore and only use seconds
-            } catch (ArithmeticException ex2) {
+            } catch (DateTimeException | ArithmeticException ex2) {
                 // ignore and only use seconds
             }
         }
@@ -393,7 +392,7 @@ public final class Duration
      * @throws DateTimeParseException if the text cannot be parsed to a duration
      */
     public static Duration parse(CharSequence text) {
-        Jdk8Methods.requireNonNull(text, "text");
+        Objects.requireNonNull(text, "text");
         Matcher matcher = PATTERN.matcher(text);
         if (matcher.matches()) {
             // check for letter T but no time sections
@@ -433,10 +432,8 @@ public final class Duration
             }
             long val = Long.parseLong(parsed);
             return Jdk8Methods.safeMultiply(val, multiplier);
-        } catch (NumberFormatException ex) {
-            throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Duration: " + errorText, text, 0).initCause(ex);
-        } catch (ArithmeticException ex) {
-            throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Duration: " + errorText, text, 0).initCause(ex);
+        } catch (NumberFormatException | ArithmeticException ex) {
+            throw new DateTimeParseException("Text cannot be parsed to a Duration: " + errorText, text, 0, ex);
         }
     }
 
@@ -448,10 +445,8 @@ public final class Duration
         try {
             parsed = (parsed + "000000000").substring(0, 9);
             return Integer.parseInt(parsed) * negate;
-        } catch (NumberFormatException ex) {
-            throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Duration: fraction", text, 0).initCause(ex);
-        } catch (ArithmeticException ex) {
-            throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Duration: fraction", text, 0).initCause(ex);
+        } catch (NumberFormatException | ArithmeticException ex) {
+            throw new DateTimeParseException("Text cannot be parsed to a Duration: fraction", text, 0, ex);
         }
     }
 
@@ -633,7 +628,7 @@ public final class Duration
      * @throws ArithmeticException if numeric overflow occurs
      */
     public Duration plus(long amountToAdd, TemporalUnit unit) {
-        Jdk8Methods.requireNonNull(unit, "unit");
+        Objects.requireNonNull(unit, "unit");
         if (unit == DAYS) {
             return plus(Jdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_DAY), 0);
         }
@@ -1131,7 +1126,7 @@ public final class Duration
      */
     @Override
     public int compareTo(Duration otherDuration) {
-        int cmp = Jdk8Methods.compareLongs(seconds, otherDuration.seconds);
+        int cmp = Long.compare(seconds, otherDuration.seconds);
         if (cmp != 0) {
             return cmp;
         }

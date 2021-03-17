@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.threeten.bp.chrono.ChronoLocalDate;
 import org.threeten.bp.chrono.Era;
@@ -111,15 +112,6 @@ public final class LocalDate
      * This could be used by an application as a "far future" date.
      */
     public static final LocalDate MAX = LocalDate.of(Year.MAX_VALUE, 12, 31);
-    /**
-     * Simulate JDK 8 method reference LocalDate::from.
-     */
-    public static final TemporalQuery<LocalDate> FROM = new TemporalQuery<LocalDate>() {
-        @Override
-        public LocalDate queryFrom(TemporalAccessor temporal) {
-            return LocalDate.from(temporal);
-        }
-    };
 
     /**
      * Serialization version.
@@ -192,7 +184,7 @@ public final class LocalDate
      * @return the current date, not null
      */
     public static LocalDate now(Clock clock) {
-        Jdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         final Instant now = clock.instant();  // called once
         ZoneOffset offset = clock.getZone().getRules().getOffset(now);
         long epochSec = now.getEpochSecond() + offset.getTotalSeconds();  // overflow caught later
@@ -215,7 +207,7 @@ public final class LocalDate
      */
     public static LocalDate of(int year, Month month, int dayOfMonth) {
         YEAR.checkValidValue(year);
-        Jdk8Methods.requireNonNull(month, "month");
+        Objects.requireNonNull(month, "month");
         DAY_OF_MONTH.checkValidValue(dayOfMonth);
         return create(year, month, dayOfMonth);
     }
@@ -363,8 +355,8 @@ public final class LocalDate
      * @throws DateTimeParseException if the text cannot be parsed
      */
     public static LocalDate parse(CharSequence text, DateTimeFormatter formatter) {
-        Jdk8Methods.requireNonNull(formatter, "formatter");
-        return formatter.parse(text, LocalDate.FROM);
+        Objects.requireNonNull(formatter, "formatter");
+        return formatter.parse(text, LocalDate::from);
     }
 
     //-----------------------------------------------------------------------
@@ -1615,7 +1607,7 @@ public final class LocalDate
      * @return the zoned date-time formed from this date and the earliest valid time for the zone, not null
      */
     public ZonedDateTime atStartOfDay(ZoneId zone) {
-        Jdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(zone, "zone");
         // need to handle case where there is a gap from 11:30 to 00:30
         // standard ZDT factory would result in 01:00 rather than 00:30
         LocalDateTime ldt = atTime(LocalTime.MIDNIGHT);

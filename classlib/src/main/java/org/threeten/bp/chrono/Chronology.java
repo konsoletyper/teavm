@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 
@@ -53,8 +54,6 @@ import org.threeten.bp.ZoneId;
 import org.threeten.bp.format.DateTimeFormatterBuilder;
 import org.threeten.bp.format.ResolverStyle;
 import org.threeten.bp.format.TextStyle;
-import org.threeten.bp.jdk8.DefaultInterfaceTemporalAccessor;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.Temporal;
 import org.threeten.bp.temporal.TemporalAccessor;
@@ -139,16 +138,6 @@ import org.threeten.bp.temporal.ValueRange;
 public abstract class Chronology implements Comparable<Chronology> {
 
     /**
-     * Simulate JDK 8 method reference Chronology::from.
-     */
-    public static final TemporalQuery<Chronology> FROM = new TemporalQuery<Chronology>() {
-        @Override
-        public Chronology queryFrom(TemporalAccessor temporal) {
-            return Chronology.from(temporal);
-        }
-    };
-
-    /**
      * Map of available calendars by ID.
      */
     private static final Map<String, Chronology> CHRONOS_BY_ID = new HashMap<>();
@@ -175,7 +164,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @throws DateTimeException if unable to convert to an {@code Chronology}
      */
     public static Chronology from(TemporalAccessor temporal) {
-        Jdk8Methods.requireNonNull(temporal, "temporal");
+        Objects.requireNonNull(temporal, "temporal");
         Chronology obj = temporal.query(TemporalQueries.chronology());
         return (obj != null ? obj : IsoChronology.INSTANCE);
     }
@@ -223,7 +212,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      */
     public static Chronology ofLocale(Locale locale) {
         init();
-        Jdk8Methods.requireNonNull(locale, "locale");
+        Objects.requireNonNull(locale, "locale");
         String type = "iso";
         if (locale.equals(JapaneseChronology.LOCALE)) {
             type = "japanese";
@@ -281,7 +270,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      */
     public static Set<Chronology> getAvailableChronologies() {
         init();
-        return new HashSet<Chronology>(CHRONOS_BY_ID.values());
+        return new HashSet<>(CHRONOS_BY_ID.values());
     }
 
     private static void init() {
@@ -528,7 +517,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @throws DateTimeException if unable to create the date
      */
     public ChronoLocalDate dateNow(Clock clock) {
-        Jdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         return date(LocalDate.now(clock));
     }
 
@@ -725,24 +714,25 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the text value of the chronology, not null
      */
     public String getDisplayName(TextStyle style, Locale locale) {
-        return new DateTimeFormatterBuilder().appendChronologyText(style).toFormatter(locale).format(new DefaultInterfaceTemporalAccessor() {
-            @Override
-            public boolean isSupported(TemporalField field) {
-                return false;
-            }
-            @Override
-            public long getLong(TemporalField field) {
-                throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
-            }
-            @SuppressWarnings("unchecked")
-            @Override
-            public <R> R query(TemporalQuery<R> query) {
-                if (query == TemporalQueries.chronology()) {
-                    return (R) Chronology.this;
-                }
-                return super.query(query);
-            }
-        });
+        return new DateTimeFormatterBuilder().appendChronologyText(style).toFormatter(locale).format(
+                new TemporalAccessor() {
+                    @Override
+                    public boolean isSupported(TemporalField field) {
+                        return false;
+                    }
+                    @Override
+                    public long getLong(TemporalField field) {
+                        throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+                    }
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public <R> R query(TemporalQuery<R> query) {
+                        if (query == TemporalQueries.chronology()) {
+                            return (R) Chronology.this;
+                        }
+                        return TemporalAccessor.super.query(query);
+                    }
+                });
     }
 
     //-----------------------------------------------------------------------

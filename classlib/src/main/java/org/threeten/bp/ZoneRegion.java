@@ -37,9 +37,9 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.util.regex.Pattern;
+import java.util.Objects;
 
-import org.threeten.bp.jdk8.Jdk8Methods;
+import java.util.regex.Pattern;
 import org.threeten.bp.zone.ZoneRules;
 import org.threeten.bp.zone.ZoneRulesException;
 import org.threeten.bp.zone.ZoneRulesProvider;
@@ -133,8 +133,8 @@ final class ZoneRegion extends ZoneId implements Serializable {
      * @throws DateTimeException if checking availability and the ID cannot be found
      */
     static ZoneRegion ofId(String zoneId, boolean checkAvailable) {
-        Jdk8Methods.requireNonNull(zoneId, "zoneId");
-        if (zoneId.length() < 2 || PATTERN.matcher(zoneId).matches() == false) {
+        Objects.requireNonNull(zoneId, "zoneId");
+        if (zoneId.length() < 2 || !PATTERN.matcher(zoneId).matches()) {
             throw new DateTimeException("Invalid ID for region-based ZoneId, invalid format: " + zoneId);
         }
         ZoneRules rules = null;

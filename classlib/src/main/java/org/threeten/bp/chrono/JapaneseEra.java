@@ -38,11 +38,10 @@ import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Objects;
 
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.LocalDate;
-import org.threeten.bp.jdk8.DefaultInterfaceEra;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.TemporalField;
 import org.threeten.bp.temporal.ValueRange;
@@ -62,8 +61,7 @@ import org.threeten.bp.temporal.ValueRange;
  * This class is immutable and thread-safe.
  */
 public final class JapaneseEra
-        extends DefaultInterfaceEra
-        implements Serializable {
+        implements Era, Serializable {
 
     // The offset value to 0-based index from the era value.
     // i.e., getValue() + ERA_OFFSET == 0-based index; except that -999 is mapped to zero
@@ -180,8 +178,8 @@ public final class JapaneseEra
         if (known.length > 5) {
             throw new DateTimeException("Only one additional Japanese era can be added");
         }
-        Jdk8Methods.requireNonNull(since, "since");
-        Jdk8Methods.requireNonNull(name, "name");
+        Objects.requireNonNull(since, "since");
+        Objects.requireNonNull(name, "name");
         if (!since.isAfter(REIWA.since)) {
             throw new DateTimeException("Invalid since date for additional Japanese era, must be after Reiwa");
         }
@@ -222,7 +220,7 @@ public final class JapaneseEra
      * @throws IllegalArgumentException if there is not JapaneseEra with the specified name
      */
     public static JapaneseEra valueOf(String japaneseEra) {
-        Jdk8Methods.requireNonNull(japaneseEra, "japaneseEra");
+        Objects.requireNonNull(japaneseEra, "japaneseEra");
         JapaneseEra[] known = KNOWN_ERAS;
         for (JapaneseEra era : known) {
             if (japaneseEra.equals(era.name)) {
@@ -320,7 +318,7 @@ public final class JapaneseEra
         if (field == ChronoField.ERA) {
             return JapaneseChronology.INSTANCE.range(ChronoField.ERA);
         }
-        return super.range(field);
+        return Era.super.range(field);
     }
 
     //-----------------------------------------------------------------------

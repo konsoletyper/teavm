@@ -65,11 +65,8 @@ final class SimpleDateTimeTextProvider extends DateTimeTextProvider {
      // TODO: Better implementation based on CLDR
 
     /** Comparator. */
-    private static final Comparator<Entry<String, Long>> COMPARATOR = new Comparator<Entry<String, Long>>() {
-        @Override
-        public int compare(Entry<String, Long> obj1, Entry<String, Long> obj2) {
-            return obj2.getKey().length() - obj1.getKey().length();  // longest to shortest
-        }
+    private static final Comparator<Entry<String, Long>> COMPARATOR = (obj1, obj2) -> {
+        return obj2.getKey().length() - obj1.getKey().length();  // longest to shortest
     };
 
     /** Cache. */

@@ -46,11 +46,10 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.threeten.bp.format.DateTimeFormatter;
 import org.threeten.bp.format.DateTimeParseException;
-import org.threeten.bp.jdk8.DefaultInterfaceTemporalAccessor;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.ChronoUnit;
 import org.threeten.bp.temporal.Temporal;
@@ -86,8 +85,7 @@ import org.threeten.bp.temporal.ValueRange;
  * This class is immutable and thread-safe.
  */
 public final class LocalTime
-        extends DefaultInterfaceTemporalAccessor
-        implements Temporal, TemporalAdjuster, Comparable<LocalTime>, Serializable {
+        implements Temporal, TemporalAdjuster, Comparable<LocalTime>, Serializable, TemporalAccessor {
 
     /**
      * The minimum supported {@code LocalTime}, '00:00'.
@@ -244,7 +242,7 @@ public final class LocalTime
      * @return the current time, not null
      */
     public static LocalTime now(Clock clock) {
-        Jdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         // inline OffsetTime factory to avoid creating object and InstantProvider checks
         final Instant now = clock.instant();  // called once
         ZoneOffset offset = clock.getZone().getRules().getOffset(now);
@@ -433,7 +431,7 @@ public final class LocalTime
      * @throws DateTimeParseException if the text cannot be parsed
      */
     public static LocalTime parse(CharSequence text, DateTimeFormatter formatter) {
-        Jdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.parse(text, LocalTime.FROM);
     }
 
@@ -548,7 +546,7 @@ public final class LocalTime
      */
     @Override  // override for Javadoc
     public ValueRange range(TemporalField field) {
-        return super.range(field);
+        return Temporal.super.range(field);
     }
 
     /**
@@ -580,7 +578,7 @@ public final class LocalTime
         if (field instanceof ChronoField) {
             return get0(field);
         }
-        return super.get(field);
+        return Temporal.super.get(field);
     }
 
     /**
@@ -1373,13 +1371,13 @@ public final class LocalTime
      */
     @Override
     public int compareTo(LocalTime other) {
-        int cmp = Jdk8Methods.compareInts(hour, other.hour);
+        int cmp = Integer.compare(hour, other.hour);
         if (cmp == 0) {
-            cmp = Jdk8Methods.compareInts(minute, other.minute);
+            cmp = Integer.compare(minute, other.minute);
             if (cmp == 0) {
-                cmp = Jdk8Methods.compareInts(second, other.second);
+                cmp = Integer.compare(second, other.second);
                 if (cmp == 0) {
-                    cmp = Jdk8Methods.compareInts(nano, other.nano);
+                    cmp = Integer.compare(nano, other.nano);
                 }
             }
         }
@@ -1484,7 +1482,7 @@ public final class LocalTime
                 } else if (nanoValue % 1000 == 0) {
                     buf.append(Integer.toString((nanoValue / 1000) + 1000000).substring(1));
                 } else {
-                    buf.append(Integer.toString((nanoValue) + 1000000000).substring(1));
+                    buf.append(Integer.toString(nanoValue + 1000000000).substring(1));
                 }
             }
         }
@@ -1502,7 +1500,7 @@ public final class LocalTime
      * @throws DateTimeException if an error occurs during printing
      */
     public String format(DateTimeFormatter formatter) {
-        Jdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.format(this);
     }
 

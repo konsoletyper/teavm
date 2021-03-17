@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Calendar;
+import java.util.Objects;
 
 import org.threeten.bp.Clock;
 import org.threeten.bp.DateTimeException;
@@ -48,7 +49,6 @@ import org.threeten.bp.LocalDate;
 import org.threeten.bp.LocalTime;
 import org.threeten.bp.Period;
 import org.threeten.bp.ZoneId;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.TemporalAccessor;
 import org.threeten.bp.temporal.TemporalAdjuster;
@@ -181,7 +181,7 @@ public final class JapaneseDate
      *  or if the day-of-month is invalid for the month-year
      */
     public static JapaneseDate of(JapaneseEra era, int yearOfEra, int month, int dayOfMonth) {
-        Jdk8Methods.requireNonNull(era, "era");
+        Objects.requireNonNull(era, "era");
         if (yearOfEra < 1) {
             throw new DateTimeException("Invalid YearOfEra: " + yearOfEra);
         }
@@ -211,7 +211,7 @@ public final class JapaneseDate
      *  or if the day-of-year is invalid for the year
      */
     static JapaneseDate ofYearDay(JapaneseEra era, int yearOfEra, int dayOfYear) {
-        Jdk8Methods.requireNonNull(era, "era");
+        Objects.requireNonNull(era, "era");
         if (yearOfEra < 1) {
             throw new DateTimeException("Invalid YearOfEra: " + yearOfEra);
         }

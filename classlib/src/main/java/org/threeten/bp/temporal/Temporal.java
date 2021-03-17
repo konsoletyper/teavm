@@ -150,7 +150,9 @@ public interface Temporal extends TemporalAccessor {
      * @throws DateTimeException if unable to make the adjustment
      * @throws ArithmeticException if numeric overflow occurs
      */
-    Temporal with(TemporalAdjuster adjuster);
+    default Temporal with(TemporalAdjuster adjuster) {
+        return adjuster.adjustInto(this);
+    }
 
     /**
      * Returns an object of the same type as this object with the specified field altered.
@@ -213,7 +215,9 @@ public interface Temporal extends TemporalAccessor {
      * @throws DateTimeException if the addition cannot be made
      * @throws ArithmeticException if numeric overflow occurs
      */
-    Temporal plus(TemporalAmount amount);
+    default Temporal plus(TemporalAmount amount) {
+        return amount.addTo(this);
+    }
 
     /**
      * Returns an object of the same type as this object with the specified period added.
@@ -280,7 +284,9 @@ public interface Temporal extends TemporalAccessor {
      * @throws DateTimeException if the subtraction cannot be made
      * @throws ArithmeticException if numeric overflow occurs
      */
-    Temporal minus(TemporalAmount amount);
+    default Temporal minus(TemporalAmount amount) {
+        return amount.subtractFrom(this);
+    }
 
     /**
      * Returns an object of the same type as this object with the specified period subtracted.
@@ -311,7 +317,11 @@ public interface Temporal extends TemporalAccessor {
      * @throws DateTimeException if the unit cannot be subtracted
      * @throws ArithmeticException if numeric overflow occurs
      */
-    Temporal minus(long amountToSubtract, TemporalUnit unit);
+    default Temporal minus(long amountToSubtract, TemporalUnit unit) {
+        return amountToSubtract == Long.MIN_VALUE
+                ? plus(Long.MAX_VALUE, unit).plus(1, unit)
+                : plus(-amountToSubtract, unit);
+    }
 
     //-----------------------------------------------------------------------
     /**

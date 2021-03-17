@@ -47,7 +47,7 @@ import static org.threeten.bp.temporal.ChronoUnit.YEARS;
 
 import java.util.Locale;
 import java.util.Map;
-
+import java.util.Objects;
 import org.threeten.bp.DayOfWeek;
 import org.threeten.bp.Instant;
 import org.threeten.bp.Year;
@@ -55,7 +55,6 @@ import org.threeten.bp.ZoneOffset;
 import org.threeten.bp.chrono.ChronoLocalDate;
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.format.ResolverStyle;
-import org.threeten.bp.jdk8.Jdk8Methods;
 
 /**
  * A standard set of fields.
@@ -600,7 +599,7 @@ public enum ChronoField implements TemporalField {
 
     @Override
     public String getDisplayName(Locale locale) {
-        Jdk8Methods.requireNonNull(locale, "locale");
+        Objects.requireNonNull(locale, "locale");
         return toString();
     }
 

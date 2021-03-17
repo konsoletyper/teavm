@@ -40,14 +40,13 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.chrono.IsoChronology;
 import org.threeten.bp.format.DateTimeFormatter;
 import org.threeten.bp.format.DateTimeFormatterBuilder;
 import org.threeten.bp.format.DateTimeParseException;
-import org.threeten.bp.jdk8.DefaultInterfaceTemporalAccessor;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.Temporal;
 import org.threeten.bp.temporal.TemporalAccessor;
@@ -88,23 +87,7 @@ import org.threeten.bp.temporal.ValueRange;
  * This class is immutable and thread-safe.
  */
 public final class MonthDay
-        extends DefaultInterfaceTemporalAccessor
         implements TemporalAccessor, TemporalAdjuster, Comparable<MonthDay>, Serializable {
-
-    /**
-     * Simulate JDK 8 method reference MonthDay::from.
-     */
-    public static final TemporalQuery<MonthDay> FROM = new TemporalQuery<MonthDay>() {
-        @Override
-        public MonthDay queryFrom(TemporalAccessor temporal) {
-            return MonthDay.from(temporal);
-        }
-    };
-
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -939150713474957432L;
     /**
      * Parser.
      */
@@ -189,7 +172,7 @@ public final class MonthDay
      * @throws DateTimeException if the day-of-month is invalid for the month
      */
     public static MonthDay of(Month month, int dayOfMonth) {
-        Jdk8Methods.requireNonNull(month, "month");
+        Objects.requireNonNull(month, "month");
         DAY_OF_MONTH.checkValidValue(dayOfMonth);
         if (dayOfMonth > month.maxLength()) {
             throw new DateTimeException("Illegal value for DayOfMonth field, value " + dayOfMonth +
@@ -277,8 +260,8 @@ public final class MonthDay
      * @throws DateTimeParseException if the text cannot be parsed
      */
     public static MonthDay parse(CharSequence text, DateTimeFormatter formatter) {
-        Jdk8Methods.requireNonNull(formatter, "formatter");
-        return formatter.parse(text, MonthDay.FROM);
+        Objects.requireNonNull(formatter, "formatter");
+        return formatter.parse(text, MonthDay::from);
     }
 
     //-----------------------------------------------------------------------
@@ -356,7 +339,7 @@ public final class MonthDay
         } else if (field == DAY_OF_MONTH) {
             return ValueRange.of(1, getMonth().minLength(), getMonth().maxLength());
         }
-        return super.range(field);
+        return TemporalAccessor.super.range(field);
     }
 
     /**
@@ -509,7 +492,7 @@ public final class MonthDay
     * @return a {@code MonthDay} based on this month-day with the requested month, not null
     */
     public MonthDay with(Month month) {
-        Jdk8Methods.requireNonNull(month, "month");
+        Objects.requireNonNull(month, "month");
         if (month.getValue() == this.month) {
             return this;
         }
@@ -562,7 +545,7 @@ public final class MonthDay
         if (query == TemporalQueries.chronology()) {
             return (R) IsoChronology.INSTANCE;
         }
-        return super.query(query);
+        return TemporalAccessor.super.query(query);
     }
 
     /**
@@ -716,7 +699,7 @@ public final class MonthDay
      * @throws DateTimeException if an error occurs during printing
      */
     public String format(DateTimeFormatter formatter) {
-        Jdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.format(this);
     }
 

@@ -37,9 +37,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-
-import org.threeten.bp.jdk8.Jdk8Methods;
 
 /**
  * Localized symbols used in date and time formatting.
@@ -113,7 +112,7 @@ public final class DecimalStyle {
      * @return the info, not null
      */
     public static DecimalStyle of(Locale locale) {
-        Jdk8Methods.requireNonNull(locale, "locale");
+        Objects.requireNonNull(locale, "locale");
         DecimalStyle info = CACHE.get(locale);
         if (info == null) {
             info = create(locale);

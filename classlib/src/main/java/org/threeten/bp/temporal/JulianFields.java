@@ -38,6 +38,7 @@ import static org.threeten.bp.temporal.ChronoUnit.FOREVER;
 import java.util.Locale;
 import java.util.Map;
 
+import java.util.Objects;
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.format.ResolverStyle;
@@ -148,7 +149,7 @@ public final class JulianFields {
     /**
      * Hidden implementation.
      */
-    private static enum Field implements TemporalField {
+    private enum Field implements TemporalField {
         /**
          * Julian Day field.
          */
@@ -236,7 +237,7 @@ public final class JulianFields {
 
         @Override
         public String getDisplayName(Locale locale) {
-            Jdk8Methods.requireNonNull(locale, "locale");
+            Objects.requireNonNull(locale, "locale");
             return toString();
         }
 
@@ -254,6 +255,8 @@ public final class JulianFields {
         public String toString() {
             return name;
         }
+    }
 
+    private JulianFields() {
     }
 }

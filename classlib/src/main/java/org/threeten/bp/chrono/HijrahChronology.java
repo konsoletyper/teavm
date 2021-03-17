@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import org.threeten.bp.Clock;
 import org.threeten.bp.DateTimeException;
@@ -322,7 +323,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
 
     @Override  // override with covariant return type
     public HijrahDate dateNow(Clock clock) {
-        Jdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         return (HijrahDate) super.dateNow(clock);
     }
 
@@ -354,7 +355,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
 
     @Override
     public List<Era> eras() {
-        return Arrays.<Era>asList(HijrahEra.values());
+        return Arrays.asList(HijrahEra.values());
     }
 
     //-----------------------------------------------------------------------

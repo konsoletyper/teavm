@@ -39,6 +39,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
+import java.util.Objects;
 import org.threeten.bp.DayOfWeek;
 import org.threeten.bp.LocalDate;
 import org.threeten.bp.LocalDateTime;
@@ -149,12 +150,12 @@ public final class ZoneOffsetTransitionRule implements Serializable {
             ZoneOffset standardOffset,
             ZoneOffset offsetBefore,
             ZoneOffset offsetAfter) {
-        Jdk8Methods.requireNonNull(month, "month");
-        Jdk8Methods.requireNonNull(time, "time");
-        Jdk8Methods.requireNonNull(timeDefnition, "timeDefnition");
-        Jdk8Methods.requireNonNull(standardOffset, "standardOffset");
-        Jdk8Methods.requireNonNull(offsetBefore, "offsetBefore");
-        Jdk8Methods.requireNonNull(offsetAfter, "offsetAfter");
+        Objects.requireNonNull(month, "month");
+        Objects.requireNonNull(time, "time");
+        Objects.requireNonNull(timeDefnition, "timeDefnition");
+        Objects.requireNonNull(standardOffset, "standardOffset");
+        Objects.requireNonNull(offsetBefore, "offsetBefore");
+        Objects.requireNonNull(offsetAfter, "offsetAfter");
         if (dayOfMonthIndicator < -28 || dayOfMonthIndicator > 31 || dayOfMonthIndicator == 0) {
             throw new IllegalArgumentException("Day of month indicator must be between -28 and 31 inclusive excluding zero");
         }

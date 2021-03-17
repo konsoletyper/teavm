@@ -121,7 +121,15 @@ public interface TemporalAccessor {
      * @return the range of valid values for the field, not null
      * @throws DateTimeException if the range for the field cannot be obtained
      */
-    ValueRange range(TemporalField field);
+    default ValueRange range(TemporalField field) {
+        if (field instanceof ChronoField) {
+            if (isSupported(field)) {
+                return field.range();
+            }
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        }
+        return field.rangeRefinedBy(this);
+    }
 
     /**
      * Gets the value of the specified field as an {@code int}.
@@ -150,7 +158,9 @@ public interface TemporalAccessor {
      * @throws DateTimeException if the value is outside the range of valid values for the field
      * @throws ArithmeticException if numeric overflow occurs
      */
-    int get(TemporalField field);
+    default int get(TemporalField field) {
+        return range(field).checkValidIntValue(getLong(field), field);
+    }
 
     /**
      * Gets the value of the specified field as a {@code long}.
@@ -213,6 +223,10 @@ public interface TemporalAccessor {
      * @throws DateTimeException if unable to query
      * @throws ArithmeticException if numeric overflow occurs
      */
-    <R> R query(TemporalQuery<R> query);
-
+    default <R> R query(TemporalQuery<R> query) {
+        if (query == TemporalQueries.zoneId() || query == TemporalQueries.chronology() || query == TemporalQueries.precision()) {
+            return null;
+        }
+        return query.queryFrom(this);
+    }
 }

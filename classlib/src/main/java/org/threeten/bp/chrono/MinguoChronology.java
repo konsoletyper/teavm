@@ -54,6 +54,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import org.threeten.bp.Clock;
 import org.threeten.bp.DateTimeException;
@@ -223,7 +224,7 @@ public final class MinguoChronology extends Chronology implements Serializable {
 
     @Override  // override with covariant return type
     public MinguoDate dateNow(Clock clock) {
-        Jdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         return (MinguoDate) super.dateNow(clock);
     }
 

@@ -40,12 +40,12 @@ import java.io.ObjectOutput;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 
 import org.threeten.bp.Instant;
 import org.threeten.bp.LocalDateTime;
 import org.threeten.bp.ZoneId;
 import org.threeten.bp.ZoneOffset;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.ChronoUnit;
 import org.threeten.bp.temporal.Temporal;
@@ -103,10 +103,10 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
      */
     static <R extends ChronoLocalDate> ChronoZonedDateTime<R> ofBest(
             ChronoLocalDateTimeImpl<R> localDateTime, ZoneId zone, ZoneOffset preferredOffset) {
-        Jdk8Methods.requireNonNull(localDateTime, "localDateTime");
-        Jdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(localDateTime, "localDateTime");
+        Objects.requireNonNull(zone, "zone");
         if (zone instanceof ZoneOffset) {
-            return new ChronoZonedDateTimeImpl<R>(localDateTime, (ZoneOffset) zone, zone);
+            return new ChronoZonedDateTimeImpl<>(localDateTime, (ZoneOffset) zone, zone);
         }
         ZoneRules rules = zone.getRules();
         LocalDateTime isoLDT = LocalDateTime.from(localDateTime);
@@ -125,8 +125,8 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
                 offset = validOffsets.get(0);
             }
         }
-        Jdk8Methods.requireNonNull(offset, "offset");  // protect against bad ZoneRules
-        return new ChronoZonedDateTimeImpl<R>(localDateTime, offset, zone);
+        Objects.requireNonNull(offset, "offset");  // protect against bad ZoneRules
+        return new ChronoZonedDateTimeImpl<>(localDateTime, offset, zone);
     }
 
     /**
@@ -140,11 +140,11 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
     static <R extends ChronoLocalDate> ChronoZonedDateTimeImpl<R> ofInstant(Chronology chrono, Instant instant, ZoneId zone) {
         ZoneRules rules = zone.getRules();
         ZoneOffset offset = rules.getOffset(instant);
-        Jdk8Methods.requireNonNull(offset, "offset");  // protect against bad ZoneRules
+        Objects.requireNonNull(offset, "offset");  // protect against bad ZoneRules
         LocalDateTime ldt = LocalDateTime.ofEpochSecond(instant.getEpochSecond(), instant.getNano(), offset);
         @SuppressWarnings("unchecked")
         ChronoLocalDateTimeImpl<R> cldt = (ChronoLocalDateTimeImpl<R>) chrono.localDateTime(ldt);
-        return new ChronoZonedDateTimeImpl<R>(cldt, offset, zone);
+        return new ChronoZonedDateTimeImpl<>(cldt, offset, zone);
     }
 
     /**
@@ -167,9 +167,9 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
      * @param zone  the zone ID, not null
      */
     private ChronoZonedDateTimeImpl(ChronoLocalDateTimeImpl<D> dateTime, ZoneOffset offset, ZoneId zone) {
-        this.dateTime = Jdk8Methods.requireNonNull(dateTime, "dateTime");
-        this.offset = Jdk8Methods.requireNonNull(offset, "offset");
-        this.zone = Jdk8Methods.requireNonNull(zone, "zone");
+        this.dateTime = Objects.requireNonNull(dateTime, "dateTime");
+        this.offset = Objects.requireNonNull(offset, "offset");
+        this.zone = Objects.requireNonNull(zone, "zone");
     }
 
     //-----------------------------------------------------------------------
@@ -203,7 +203,7 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
         if (trans != null) {
             ZoneOffset offset = trans.getOffsetAfter();
             if (offset.equals(getOffset()) == false) {
-                return new ChronoZonedDateTimeImpl<D>(dateTime, offset, zone);
+                return new ChronoZonedDateTimeImpl<>(dateTime, offset, zone);
             }
         }
         return this;
@@ -225,7 +225,7 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
 
     @Override
     public ChronoZonedDateTime<D> withZoneSameInstant(ZoneId zone) {
-        Jdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(zone, "zone");
         return this.zone.equals(zone) ? this : create(dateTime.toInstant(offset), zone);
     }
 

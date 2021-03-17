@@ -39,6 +39,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -216,7 +217,7 @@ public final class Period
                 throw new DateTimeException("Period requires ISO chronology: " + amount);
             }
         }
-        Jdk8Methods.requireNonNull(amount, "amount");
+        Objects.requireNonNull(amount, "amount");
         int years = 0;
         int months = 0;
         int days = 0;
@@ -300,7 +301,7 @@ public final class Period
      * @throws DateTimeParseException if the text cannot be parsed to a period
      */
     public static Period parse(CharSequence text) {
-        Jdk8Methods.requireNonNull(text, "text");
+        Objects.requireNonNull(text, "text");
         Matcher matcher = PATTERN.matcher(text);
         if (matcher.matches()) {
             int negate = ("-".equals(matcher.group(1)) ? -1 : 1);
@@ -379,7 +380,7 @@ public final class Period
     //-----------------------------------------------------------------------
     @Override
     public List<TemporalUnit> getUnits() {
-        return Collections.<TemporalUnit>unmodifiableList(Arrays.asList(YEARS, MONTHS, DAYS));
+        return Collections.unmodifiableList(Arrays.asList(YEARS, MONTHS, DAYS));
     }
 
     @Override
@@ -796,7 +797,7 @@ public final class Period
      */
     @Override
     public Temporal addTo(Temporal temporal) {
-        Jdk8Methods.requireNonNull(temporal, "temporal");
+        Objects.requireNonNull(temporal, "temporal");
         if (years != 0) {
             if (months != 0) {
                 temporal = temporal.plus(toTotalMonths(), MONTHS);
@@ -846,7 +847,7 @@ public final class Period
      */
     @Override
     public Temporal subtractFrom(Temporal temporal) {
-        Jdk8Methods.requireNonNull(temporal, "temporal");
+        Objects.requireNonNull(temporal, "temporal");
         if (years != 0) {
             if (months != 0) {
                 temporal = temporal.minus(toTotalMonths(), MONTHS);

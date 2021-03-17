@@ -40,6 +40,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.threeten.bp.Clock;
 import org.threeten.bp.DateTimeException;
@@ -47,7 +48,6 @@ import org.threeten.bp.LocalDate;
 import org.threeten.bp.LocalTime;
 import org.threeten.bp.Period;
 import org.threeten.bp.ZoneId;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.TemporalAccessor;
 import org.threeten.bp.temporal.TemporalAdjuster;
@@ -175,7 +175,7 @@ public final class ThaiBuddhistDate
      * @param isoDate  the standard local date, validated not null
      */
     ThaiBuddhistDate(LocalDate date) {
-        Jdk8Methods.requireNonNull(date, "date");
+        Objects.requireNonNull(date, "date");
         this.isoDate = date;
     }
 

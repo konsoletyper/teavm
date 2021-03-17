@@ -39,13 +39,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
 import org.threeten.bp.format.DateTimeFormatterBuilder;
 import org.threeten.bp.format.TextStyle;
-import org.threeten.bp.jdk8.DefaultInterfaceTemporalAccessor;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.TemporalAccessor;
 import org.threeten.bp.temporal.TemporalField;
 import org.threeten.bp.temporal.TemporalQueries;
@@ -279,8 +278,8 @@ public abstract class ZoneId implements Serializable {
      * @throws ZoneRulesException if the zone ID is a region ID that cannot be found
      */
     public static ZoneId of(String zoneId, Map<String, String> aliasMap) {
-        Jdk8Methods.requireNonNull(zoneId, "zoneId");
-        Jdk8Methods.requireNonNull(aliasMap, "aliasMap");
+        Objects.requireNonNull(zoneId, "zoneId");
+        Objects.requireNonNull(aliasMap, "aliasMap");
         String id = aliasMap.get(zoneId);
         id = (id != null ? id : zoneId);
         return of(id);
@@ -327,7 +326,7 @@ public abstract class ZoneId implements Serializable {
      * @throws ZoneRulesException if the zone ID is a region ID that cannot be found
      */
     public static ZoneId of(String zoneId) {
-        Jdk8Methods.requireNonNull(zoneId, "zoneId");
+        Objects.requireNonNull(zoneId, "zoneId");
         if (zoneId.equals("Z")) {
             return ZoneOffset.UTC;
         }
@@ -372,8 +371,8 @@ public abstract class ZoneId implements Serializable {
      *     "GMT", "UTC", or "UT", or ""
      */
     public static ZoneId ofOffset(String prefix, ZoneOffset offset) {
-        Jdk8Methods.requireNonNull(prefix, "prefix");
-        Jdk8Methods.requireNonNull(offset, "offset");
+        Objects.requireNonNull(prefix, "prefix");
+        Objects.requireNonNull(offset, "offset");
         if (prefix.length() == 0) {
             return offset;
         }
@@ -472,7 +471,7 @@ public abstract class ZoneId implements Serializable {
      * @return the text value of the zone, not null
      */
     public String getDisplayName(TextStyle style, Locale locale) {
-        return new DateTimeFormatterBuilder().appendZoneText(style).toFormatter(locale).format(new DefaultInterfaceTemporalAccessor() {
+        return new DateTimeFormatterBuilder().appendZoneText(style).toFormatter(locale).format(new TemporalAccessor() {
             @Override
             public boolean isSupported(TemporalField field) {
                 return false;
@@ -487,7 +486,7 @@ public abstract class ZoneId implements Serializable {
                 if (query == TemporalQueries.zoneId()) {
                     return (R) ZoneId.this;
                 }
-                return super.query(query);
+                return TemporalAccessor.super.query(query);
             }
         });
     }

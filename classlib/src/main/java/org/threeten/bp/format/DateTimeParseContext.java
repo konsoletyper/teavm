@@ -36,14 +36,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import org.threeten.bp.Period;
 import org.threeten.bp.ZoneId;
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.chrono.IsoChronology;
 import org.threeten.bp.format.DateTimeFormatterBuilder.ReducedPrinterParser;
-import org.threeten.bp.jdk8.DefaultInterfaceTemporalAccessor;
 import org.threeten.bp.jdk8.Jdk8Methods;
+import org.threeten.bp.temporal.TemporalAccessor;
 import org.threeten.bp.temporal.TemporalField;
 import org.threeten.bp.temporal.TemporalQueries;
 import org.threeten.bp.temporal.TemporalQuery;
@@ -64,7 +65,7 @@ import org.threeten.bp.temporal.UnsupportedTemporalTypeException;
  * Usage of the class is thread-safe within standard parsing as a new instance of this class
  * is automatically created for each parse and parsing is single-threaded
  */
-final class DateTimeParseContext {
+public final class DateTimeParseContext {
 
     /**
      * The locale, not null.
@@ -110,7 +111,7 @@ final class DateTimeParseContext {
     }
 
     // for testing
-    DateTimeParseContext(Locale locale, DecimalStyle symbols, Chronology chronology) {
+    public DateTimeParseContext(Locale locale, DecimalStyle symbols, Chronology chronology) {
         super();
         this.locale = locale;
         this.symbols = symbols;
@@ -341,7 +342,7 @@ final class DateTimeParseContext {
      * @return the new position
      */
     int setParsedField(TemporalField field, long value, int errorPos, int successPos) {
-        Jdk8Methods.requireNonNull(field, "field");
+        Objects.requireNonNull(field, "field");
         Long old = currentParsed().fieldValues.put(field, value);
         return (old != null && old.longValue() != value) ? ~errorPos : successPos;
     }
@@ -355,7 +356,7 @@ final class DateTimeParseContext {
      * @param chrono  the parsed chronology, not null
      */
     void setParsed(Chronology chrono) {
-        Jdk8Methods.requireNonNull(chrono, "chrono");
+        Objects.requireNonNull(chrono, "chrono");
         Parsed currentParsed = currentParsed();
         currentParsed.chrono = chrono;
         if (currentParsed.callbacks != null) {
@@ -385,7 +386,7 @@ final class DateTimeParseContext {
      * @param zone  the parsed zone, not null
      */
     void setParsed(ZoneId zone) {
-        Jdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(zone, "zone");
         currentParsed().zone = zone;
     }
 
@@ -422,10 +423,10 @@ final class DateTimeParseContext {
     /**
      * Temporary store of parsed data.
      */
-    final class Parsed extends DefaultInterfaceTemporalAccessor {
+    final class Parsed implements TemporalAccessor {
         Chronology chrono = null;
         ZoneId zone = null;
-        final Map<TemporalField, Long> fieldValues = new HashMap<TemporalField, Long>();
+        final Map<TemporalField, Long> fieldValues = new HashMap<>();
         boolean leapSecond;
         Period excessDays = Period.ZERO;
         List<Object[]> callbacks;
@@ -472,7 +473,7 @@ final class DateTimeParseContext {
             if (query == TemporalQueries.zoneId() || query == TemporalQueries.zone()) {
                 return (R) zone;
             }
-            return super.query(query);
+            return TemporalAccessor.super.query(query);
         }
 
         /**
@@ -513,7 +514,7 @@ final class DateTimeParseContext {
      * @param locale  the locale, not null
      */
     void setLocale(Locale locale) {
-        Jdk8Methods.requireNonNull(locale, "locale");
+        Objects.requireNonNull(locale, "locale");
         this.locale = locale;
     }
 

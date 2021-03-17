@@ -46,6 +46,7 @@ import static org.threeten.bp.temporal.ChronoUnit.YEARS;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import org.threeten.bp.Duration;
 import org.threeten.bp.LocalDate;
@@ -202,7 +203,7 @@ public final class IsoFields {
     /**
      * Implementation of the field.
      */
-    private static enum Field implements TemporalField {
+    private enum Field implements TemporalField {
         DAY_OF_QUARTER {
             @Override
             public String toString() {
@@ -351,7 +352,7 @@ public final class IsoFields {
             }
             @Override
             public String getDisplayName(Locale locale) {
-                Jdk8Methods.requireNonNull(locale, "locale");
+                Objects.requireNonNull(locale, "locale");
                 return "Week";
             }
 
@@ -476,7 +477,7 @@ public final class IsoFields {
 
         @Override
         public String getDisplayName(Locale locale) {
-            Jdk8Methods.requireNonNull(locale, "locale");
+            Objects.requireNonNull(locale, "locale");
             return toString();
         }
 
@@ -561,7 +562,7 @@ public final class IsoFields {
     /**
      * Implementation of the period unit.
      */
-    private static enum Unit implements TemporalUnit {
+    private enum Unit implements TemporalUnit {
         WEEK_BASED_YEARS("WeekBasedYears", Duration.ofSeconds(31556952L)),
         QUARTER_YEARS("QuarterYears", Duration.ofSeconds(31556952L / 4));
 

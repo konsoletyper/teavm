@@ -42,11 +42,11 @@ import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 
 import org.threeten.bp.chrono.ChronoZonedDateTime;
 import org.threeten.bp.format.DateTimeFormatter;
 import org.threeten.bp.format.DateTimeParseException;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.ChronoUnit;
 import org.threeten.bp.temporal.Temporal;
@@ -124,21 +124,6 @@ public final class ZonedDateTime
         implements Temporal, Serializable {
 
     /**
-     * Simulate JDK 8 method reference ZonedDateTime::from.
-     */
-    public static final TemporalQuery<ZonedDateTime> FROM = new TemporalQuery<ZonedDateTime>() {
-        @Override
-        public ZonedDateTime queryFrom(TemporalAccessor temporal) {
-            return ZonedDateTime.from(temporal);
-        }
-    };
-
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = -6260982410461394882L;
-
-    /**
      * The local date-time.
      */
     private final LocalDateTime dateTime;
@@ -198,7 +183,7 @@ public final class ZonedDateTime
      * @return the current date-time, not null
      */
     public static ZonedDateTime now(Clock clock) {
-        Jdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         final Instant now = clock.instant();  // called once
         return ofInstant(now, clock.getZone());
     }
@@ -333,8 +318,8 @@ public final class ZonedDateTime
      * @return the zoned date-time, not null
      */
     public static ZonedDateTime ofLocal(LocalDateTime localDateTime, ZoneId zone, ZoneOffset preferredOffset) {
-        Jdk8Methods.requireNonNull(localDateTime, "localDateTime");
-        Jdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(localDateTime, "localDateTime");
+        Objects.requireNonNull(zone, "zone");
         if (zone instanceof ZoneOffset) {
             return new ZonedDateTime(localDateTime, (ZoneOffset) zone, zone);
         }
@@ -351,7 +336,7 @@ public final class ZonedDateTime
             if (preferredOffset != null && validOffsets.contains(preferredOffset)) {
                 offset = preferredOffset;
             } else {
-                offset = Jdk8Methods.requireNonNull(validOffsets.get(0), "offset");  // protect against bad ZoneRules
+                offset = Objects.requireNonNull(validOffsets.get(0), "offset");  // protect against bad ZoneRules
             }
         }
         return new ZonedDateTime(localDateTime, offset, zone);
@@ -373,8 +358,8 @@ public final class ZonedDateTime
      * @throws DateTimeException if the result exceeds the supported range
      */
     public static ZonedDateTime ofInstant(Instant instant, ZoneId zone) {
-        Jdk8Methods.requireNonNull(instant, "instant");
-        Jdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(instant, "instant");
+        Objects.requireNonNull(zone, "zone");
         return create(instant.getEpochSecond(), instant.getNano(), zone);
     }
 
@@ -399,9 +384,9 @@ public final class ZonedDateTime
      * @return the zoned date-time, not null
      */
     public static ZonedDateTime ofInstant(LocalDateTime localDateTime, ZoneOffset offset, ZoneId zone) {
-        Jdk8Methods.requireNonNull(localDateTime, "localDateTime");
-        Jdk8Methods.requireNonNull(offset, "offset");
-        Jdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(localDateTime, "localDateTime");
+        Objects.requireNonNull(offset, "offset");
+        Objects.requireNonNull(zone, "zone");
         return create(localDateTime.toEpochSecond(offset), localDateTime.getNano(), zone);
     }
 
@@ -438,9 +423,9 @@ public final class ZonedDateTime
      * @return the zoned date-time, not null
      */
     public static ZonedDateTime ofStrict(LocalDateTime localDateTime, ZoneOffset offset, ZoneId zone) {
-        Jdk8Methods.requireNonNull(localDateTime, "localDateTime");
-        Jdk8Methods.requireNonNull(offset, "offset");
-        Jdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(localDateTime, "localDateTime");
+        Objects.requireNonNull(offset, "offset");
+        Objects.requireNonNull(zone, "zone");
         ZoneRules rules = zone.getRules();
         if (rules.isValidOffset(localDateTime, offset) == false) {
             ZoneOffsetTransition trans = rules.getTransition(localDateTime);
@@ -479,9 +464,9 @@ public final class ZonedDateTime
      * @return the zoned date-time, not null
      */
     private static ZonedDateTime ofLenient(LocalDateTime localDateTime, ZoneOffset offset, ZoneId zone) {
-        Jdk8Methods.requireNonNull(localDateTime, "localDateTime");
-        Jdk8Methods.requireNonNull(offset, "offset");
-        Jdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(localDateTime, "localDateTime");
+        Objects.requireNonNull(offset, "offset");
+        Objects.requireNonNull(zone, "zone");
         if (zone instanceof ZoneOffset && offset.equals(zone) == false) {
             throw new IllegalArgumentException("ZoneId must match ZoneOffset");
         }
@@ -558,8 +543,8 @@ public final class ZonedDateTime
      * @throws DateTimeParseException if the text cannot be parsed
      */
     public static ZonedDateTime parse(CharSequence text, DateTimeFormatter formatter) {
-        Jdk8Methods.requireNonNull(formatter, "formatter");
-        return formatter.parse(text, ZonedDateTime.FROM);
+        Objects.requireNonNull(formatter, "formatter");
+        return formatter.parse(text, ZonedDateTime::from);
     }
 
     //-----------------------------------------------------------------------
@@ -887,7 +872,7 @@ public final class ZonedDateTime
      */
     @Override
     public ZonedDateTime withZoneSameLocal(ZoneId zone) {
-        Jdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(zone, "zone");
         return this.zone.equals(zone) ? this : ofLocal(dateTime, zone, offset);
     }
 
@@ -910,7 +895,7 @@ public final class ZonedDateTime
      */
     @Override
     public ZonedDateTime withZoneSameInstant(ZoneId zone) {
-        Jdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(zone, "zone");
         return this.zone.equals(zone) ? this :
             create(dateTime.toEpochSecond(offset), dateTime.getNano(), zone);
     }

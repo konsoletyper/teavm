@@ -54,6 +54,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import org.threeten.bp.DateTimeException;
@@ -68,7 +69,6 @@ import org.threeten.bp.chrono.ChronoLocalDateTime;
 import org.threeten.bp.chrono.ChronoZonedDateTime;
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.chrono.IsoChronology;
-import org.threeten.bp.jdk8.DefaultInterfaceTemporalAccessor;
 import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.TemporalAccessor;
@@ -92,14 +92,13 @@ import org.threeten.bp.temporal.TemporalQuery;
  * This class is mutable and not thread-safe.
  * It should only be used from a single thread.
  */
-final class DateTimeBuilder
-        extends DefaultInterfaceTemporalAccessor
+public final class DateTimeBuilder
         implements TemporalAccessor, Cloneable {
 
     /**
      * The map of other fields.
      */
-    final Map<TemporalField, Long> fieldValues = new HashMap<TemporalField, Long>();
+    final Map<TemporalField, Long> fieldValues = new HashMap<>();
     /**
      * The chronology.
      */
@@ -164,7 +163,7 @@ final class DateTimeBuilder
      * @throws DateTimeException if the field is already present with a different value
      */
     DateTimeBuilder addFieldValue(TemporalField field, long value) {
-        Jdk8Methods.requireNonNull(field, "field");
+        Objects.requireNonNull(field, "field");
         Long old = getFieldValue0(field);  // check first for better error message
         if (old != null && old.longValue() != value) {
             throw new DateTimeException("Conflict found: " + field + " " + old + " differs from " + field + " " + value + ": " + this);
@@ -655,7 +654,7 @@ final class DateTimeBuilder
 
     @Override
     public long getLong(TemporalField field) {
-        Jdk8Methods.requireNonNull(field, "field");
+        Objects.requireNonNull(field, "field");
         Long value = getFieldValue0(field);
         if (value == null) {
             if (date != null && date.isSupported(field)) {

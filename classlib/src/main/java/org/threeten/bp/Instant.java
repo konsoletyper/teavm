@@ -47,10 +47,10 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.threeten.bp.format.DateTimeFormatter;
 import org.threeten.bp.format.DateTimeParseException;
-import org.threeten.bp.jdk8.DefaultInterfaceTemporalAccessor;
 import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.ChronoUnit;
@@ -155,8 +155,7 @@ import org.threeten.bp.temporal.ValueRange;
  * This class is immutable and thread-safe.
  */
 public final class Instant
-        extends DefaultInterfaceTemporalAccessor
-        implements Temporal, TemporalAdjuster, Comparable<Instant>, Serializable {
+        implements Temporal, TemporalAdjuster, Comparable<Instant>, Serializable, TemporalAccessor {
 
     /**
      * Constant for the 1970-01-01T00:00:00Z epoch instant.
@@ -257,7 +256,7 @@ public final class Instant
      * @return the current instant, not null
      */
     public static Instant now(Clock clock) {
-        Jdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         return clock.instant();
     }
 
@@ -459,7 +458,7 @@ public final class Instant
      */
     @Override  // override for Javadoc
     public ValueRange range(TemporalField field) {
-        return super.range(field);
+        return Temporal.super.range(field);
     }
 
     /**
@@ -1084,7 +1083,7 @@ public final class Instant
      */
     @Override
     public int compareTo(Instant otherInstant) {
-        int cmp = Jdk8Methods.compareLongs(seconds, otherInstant.seconds);
+        int cmp = Long.compare(seconds, otherInstant.seconds);
         if (cmp != 0) {
             return cmp;
         }

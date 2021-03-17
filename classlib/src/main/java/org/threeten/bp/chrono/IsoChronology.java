@@ -51,6 +51,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import org.threeten.bp.Clock;
 import org.threeten.bp.DateTimeException;
@@ -328,7 +329,7 @@ public final class IsoChronology extends Chronology implements Serializable {
      */
     @Override  // override with covariant return type
     public LocalDate dateNow(Clock clock) {
-        Jdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         return date(LocalDate.now(clock));
     }
 
@@ -440,7 +441,7 @@ public final class IsoChronology extends Chronology implements Serializable {
                         long months = Jdk8Methods.safeSubtract(moy, 1);
                         long days = Jdk8Methods.safeSubtract(dom, 1);
                         return LocalDate.of(y, 1, 1).plusMonths(months).plusDays(days);
-                    } else if (resolverStyle == ResolverStyle.SMART){
+                    } else if (resolverStyle == ResolverStyle.SMART) {
                         DAY_OF_MONTH.checkValidValue(dom);
                         if (moy == 4 || moy == 6 || moy == 9 || moy == 11) {
                             dom = Math.min(dom, 30);

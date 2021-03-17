@@ -32,9 +32,9 @@
 package org.threeten.bp.chrono;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.threeten.bp.DateTimeException;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoUnit;
 import org.threeten.bp.temporal.Temporal;
 import org.threeten.bp.temporal.TemporalAmount;
@@ -86,8 +86,8 @@ public abstract class ChronoPeriod
      * @see ChronoLocalDate#until(ChronoLocalDate)
      */
     public static ChronoPeriod between(ChronoLocalDate startDateInclusive, ChronoLocalDate endDateExclusive) {
-        Jdk8Methods.requireNonNull(startDateInclusive, "startDateInclusive");
-        Jdk8Methods.requireNonNull(endDateExclusive, "endDateExclusive");
+        Objects.requireNonNull(startDateInclusive, "startDateInclusive");
+        Objects.requireNonNull(endDateExclusive, "endDateExclusive");
         return startDateInclusive.until(endDateExclusive);
     }
 

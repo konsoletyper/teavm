@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.threeten.bp.LocalTime;
 import org.threeten.bp.ZoneId;
@@ -150,8 +151,8 @@ final class ChronoLocalDateTimeImpl<D extends ChronoLocalDate>
      * @param time  the time part of the date-time, not null
      */
     private ChronoLocalDateTimeImpl(D date, LocalTime time) {
-        Jdk8Methods.requireNonNull(date, "date");
-        Jdk8Methods.requireNonNull(time, "time");
+        Objects.requireNonNull(date, "date");
+        Objects.requireNonNull(time, "time");
         this.date = date;
         this.time = time;
     }

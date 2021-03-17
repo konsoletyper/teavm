@@ -35,6 +35,7 @@ import static org.threeten.bp.temporal.ChronoField.EPOCH_DAY;
 import static org.threeten.bp.temporal.ChronoField.INSTANT_SECONDS;
 
 import java.util.Locale;
+import java.util.Objects;
 
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.Instant;
@@ -43,8 +44,6 @@ import org.threeten.bp.ZoneOffset;
 import org.threeten.bp.chrono.ChronoLocalDate;
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.chrono.IsoChronology;
-import org.threeten.bp.jdk8.DefaultInterfaceTemporalAccessor;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.TemporalAccessor;
 import org.threeten.bp.temporal.TemporalField;
@@ -62,7 +61,7 @@ import org.threeten.bp.temporal.ValueRange;
  * Usage of the class is thread-safe within standard printing as the framework creates
  * a new instance of the class for each print and printing is single-threaded.
  */
-final class DateTimePrintContext {
+public final class DateTimePrintContext {
 
     /**
      * The temporal being output.
@@ -95,7 +94,7 @@ final class DateTimePrintContext {
     }
 
     // for testing
-    DateTimePrintContext(TemporalAccessor temporal, Locale locale, DecimalStyle symbols) {
+    public DateTimePrintContext(TemporalAccessor temporal, Locale locale, DecimalStyle symbols) {
         this.temporal = temporal;
         this.locale = locale;
         this.symbols = symbols;
@@ -112,10 +111,10 @@ final class DateTimePrintContext {
         // ensure minimal change
         Chronology temporalChrono = temporal.query(TemporalQueries.chronology());
         ZoneId temporalZone = temporal.query(TemporalQueries.zoneId());
-        if (Jdk8Methods.equals(temporalChrono, overrideChrono)) {
+        if (Objects.equals(temporalChrono, overrideChrono)) {
             overrideChrono = null;
         }
-        if (Jdk8Methods.equals(temporalZone, overrideZone)) {
+        if (Objects.equals(temporalZone, overrideZone)) {
             overrideZone = null;
         }
         if (overrideChrono == null && overrideZone == null) {
@@ -158,7 +157,7 @@ final class DateTimePrintContext {
         }
 
         // need class here to handle non-standard cases
-        return new DefaultInterfaceTemporalAccessor() {
+        return new TemporalAccessor() {
             @Override
             public boolean isSupported(TemporalField field) {
                 if (effectiveDate != null && field.isDateBased()) {
@@ -299,7 +298,7 @@ final class DateTimePrintContext {
      * @param temporal  the date-time object, not null
      */
     void setDateTime(TemporalAccessor temporal) {
-        Jdk8Methods.requireNonNull(temporal, "temporal");
+        Objects.requireNonNull(temporal, "temporal");
         this.temporal = temporal;
     }
 
@@ -312,7 +311,7 @@ final class DateTimePrintContext {
      * @param locale  the locale, not null
      */
     void setLocale(Locale locale) {
-        Jdk8Methods.requireNonNull(locale, "locale");
+        Objects.requireNonNull(locale, "locale");
         this.locale = locale;
     }
 

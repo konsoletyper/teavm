@@ -50,6 +50,7 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.StringTokenizer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -502,7 +503,7 @@ public final class HijrahDate
      * @throws InvalidCalendarFieldException if the day-of-month is invalid for the month-year
      */
     static HijrahDate of(HijrahEra era, int yearOfEra, int monthOfYear, int dayOfMonth) {
-        Jdk8Methods.requireNonNull(era, "era");
+        Objects.requireNonNull(era, "era");
         checkValidYearOfEra(yearOfEra);
         checkValidMonth(monthOfYear);
         checkValidDayOfMonth(dayOfMonth);
@@ -725,7 +726,7 @@ public final class HijrahDate
     //-------------------------------------------------------------------------
     @Override
     @SuppressWarnings("unchecked")
-    public final ChronoLocalDateTime<HijrahDate> atTime(LocalTime localTime) {
+    public ChronoLocalDateTime<HijrahDate> atTime(LocalTime localTime) {
         return (ChronoLocalDateTime<HijrahDate>) super.atTime(localTime);
     }
 
@@ -921,6 +922,7 @@ public final class HijrahDate
 
         try {
             day = ADJUSTED_CYCLES[cycleNumber];
+            // TODO remove catching AIOOBE (and other usages)
         } catch (ArrayIndexOutOfBoundsException e) {
             day = null;
         }
@@ -1673,7 +1675,7 @@ public final class HijrahDate
      * @throws IOException for zip/jar file handling exception.
      */
     private static InputStream getConfigFileInputStream() throws IOException {
-
+        // TODO: eliminate this
         String fileName = System
                 .getProperty("org.threeten.bp.i18n.HijrahDate.deviationConfigFile");
 

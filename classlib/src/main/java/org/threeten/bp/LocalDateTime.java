@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.threeten.bp.chrono.ChronoLocalDateTime;
 import org.threeten.bp.format.DateTimeFormatter;
@@ -112,20 +113,6 @@ public final class LocalDateTime
      * This could be used by an application as a "far future" date-time.
      */
     public static final LocalDateTime MAX = LocalDateTime.of(LocalDate.MAX, LocalTime.MAX);
-    /**
-     * Simulate JDK 8 method reference LocalDateTime::from.
-     */
-    public static final TemporalQuery<LocalDateTime> FROM = new TemporalQuery<LocalDateTime>() {
-        @Override
-        public LocalDateTime queryFrom(TemporalAccessor temporal) {
-            return LocalDateTime.from(temporal);
-        }
-    };
-
-    /**
-     * Serialization version.
-     */
-    private static final long serialVersionUID = 6207766400415563566L;
 
     /**
      * The date part.
@@ -179,7 +166,7 @@ public final class LocalDateTime
      * @return the current date-time, not null
      */
     public static LocalDateTime now(Clock clock) {
-        Jdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         final Instant now = clock.instant();  // called once
         ZoneOffset offset = clock.getZone().getRules().getOffset(now);
         return ofEpochSecond(now.getEpochSecond(), now.getNano(), offset);
@@ -331,8 +318,8 @@ public final class LocalDateTime
      * @return the local date-time, not null
      */
     public static LocalDateTime of(LocalDate date, LocalTime time) {
-        Jdk8Methods.requireNonNull(date, "date");
-        Jdk8Methods.requireNonNull(time, "time");
+        Objects.requireNonNull(date, "date");
+        Objects.requireNonNull(time, "time");
         return new LocalDateTime(date, time);
     }
 
@@ -351,8 +338,8 @@ public final class LocalDateTime
      * @throws DateTimeException if the result exceeds the supported range
      */
     public static LocalDateTime ofInstant(Instant instant, ZoneId zone) {
-        Jdk8Methods.requireNonNull(instant, "instant");
-        Jdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(instant, "instant");
+        Objects.requireNonNull(zone, "zone");
         ZoneRules rules = zone.getRules();
         ZoneOffset offset = rules.getOffset(instant);
         return ofEpochSecond(instant.getEpochSecond(), instant.getNano(), offset);
@@ -373,7 +360,7 @@ public final class LocalDateTime
      * @throws DateTimeException if the result exceeds the supported range
      */
     public static LocalDateTime ofEpochSecond(long epochSecond, int nanoOfSecond, ZoneOffset offset) {
-        Jdk8Methods.requireNonNull(offset, "offset");
+        Objects.requireNonNull(offset, "offset");
         long localSecond = epochSecond + offset.getTotalSeconds();  // overflow caught later
         long localEpochDay = Jdk8Methods.floorDiv(localSecond, SECONDS_PER_DAY);
         int secsOfDay = Jdk8Methods.floorMod(localSecond, SECONDS_PER_DAY);
@@ -440,8 +427,8 @@ public final class LocalDateTime
      * @throws DateTimeParseException if the text cannot be parsed
      */
     public static LocalDateTime parse(CharSequence text, DateTimeFormatter formatter) {
-        Jdk8Methods.requireNonNull(formatter, "formatter");
-        return formatter.parse(text, LocalDateTime.FROM);
+        Objects.requireNonNull(formatter, "formatter");
+        return formatter.parse(text, LocalDateTime::from);
     }
 
     //-----------------------------------------------------------------------
