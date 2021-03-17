@@ -49,6 +49,8 @@ public class RuntimeRenderer {
             "setStackTrace", StackTraceElement[].class, void.class);
     private static final MethodReference AIOOBE_INIT_METHOD = new MethodReference(ArrayIndexOutOfBoundsException.class,
             "<init>", void.class);
+    private static final MethodReference CCE_INIT_METHOD = new MethodReference(ClassCastException.class,
+            "<init>", void.class);
 
     private final ClassReaderSource classSource;
     private final SourceWriter writer;
@@ -73,6 +75,7 @@ public class RuntimeRenderer {
             renderCreateStackTraceElement();
             renderSetStackTrace();
             renderThrowAIOOBE();
+            renderThrowCCE();
         } catch (IOException e) {
             throw new RenderingException("IO error", e);
         }
@@ -262,6 +265,20 @@ public class RuntimeRenderer {
             MethodReader method = cls.getMethod(AIOOBE_INIT_METHOD.getDescriptor());
             if (method != null && !method.hasModifier(ElementModifier.ABSTRACT)) {
                 writer.append("$rt_throw(").appendInit(AIOOBE_INIT_METHOD).append("());").softNewLine();
+            }
+        }
+
+        writer.outdent().append("}").newLine();
+    }
+
+    private void renderThrowCCE() throws IOException {
+        writer.append("function $rt_throwCCE()").ws().append("{").indent().softNewLine();
+
+        ClassReader cls = classSource.get(CCE_INIT_METHOD.getClassName());
+        if (cls != null) {
+            MethodReader method = cls.getMethod(CCE_INIT_METHOD.getDescriptor());
+            if (method != null && !method.hasModifier(ElementModifier.ABSTRACT)) {
+                writer.append("$rt_throw(").appendInit(CCE_INIT_METHOD).append("());").softNewLine();
             }
         }
 

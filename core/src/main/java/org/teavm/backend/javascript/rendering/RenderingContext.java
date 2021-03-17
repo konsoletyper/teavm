@@ -65,12 +65,14 @@ public class RenderingContext {
     private boolean minifying;
     private ClassInitializerInfo classInitializerInfo;
     private TextLocation lastEmittedLocation = TextLocation.EMPTY;
+    private boolean strict;
 
     public RenderingContext(DebugInformationEmitter debugEmitter,
             ClassReaderSource initialClassSource, ListableClassReaderSource classSource,
             ClassLoader classLoader, ServiceRepository services, Properties properties,
             NamingStrategy naming, DependencyInfo dependencyInfo,
-            Predicate<MethodReference> virtualPredicate, ClassInitializerInfo classInitializerInfo) {
+            Predicate<MethodReference> virtualPredicate, ClassInitializerInfo classInitializerInfo,
+            boolean strict) {
         this.debugEmitter = debugEmitter;
         this.initialClassSource = initialClassSource;
         this.classSource = classSource;
@@ -81,6 +83,7 @@ public class RenderingContext {
         this.dependencyInfo = dependencyInfo;
         this.virtualPredicate = virtualPredicate;
         this.classInitializerInfo = classInitializerInfo;
+        this.strict = strict;
     }
 
     public ClassReaderSource getInitialClassSource() {
@@ -397,6 +400,10 @@ public class RenderingContext {
             injectorMap.put(ref, holder);
         }
         return holder.injector;
+    }
+
+    public boolean isStrict() {
+        return strict;
     }
 
     @PlatformMarker

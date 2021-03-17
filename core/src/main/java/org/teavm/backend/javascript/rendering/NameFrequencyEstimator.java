@@ -22,6 +22,7 @@ import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.BoundCheckExpr;
+import org.teavm.ast.CastExpr;
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InitClassStatement;
 import org.teavm.ast.InstanceOfExpr;
@@ -69,13 +70,16 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
     private boolean async;
     private final Set<MethodReference> injectedMethods;
     private final Set<MethodReference> asyncFamilyMethods;
+    private final boolean strict;
 
     NameFrequencyEstimator(NameFrequencyConsumer consumer, ClassReaderSource classSource,
-            Set<MethodReference> injectedMethods, Set<MethodReference> asyncFamilyMethods) {
+            Set<MethodReference> injectedMethods, Set<MethodReference> asyncFamilyMethods,
+            boolean strict) {
         this.consumer = consumer;
         this.classSource = classSource;
         this.injectedMethods = injectedMethods;
         this.asyncFamilyMethods = asyncFamilyMethods;
+        this.strict = strict;
     }
 
     public void estimate(PreparedClass cls) {
@@ -470,15 +474,31 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
     public void visit(InstanceOfExpr expr) {
         super.visit(expr);
         visitType(expr.getType());
-        if (expr.getType() instanceof ValueType.Object) {
-            String clsName = ((ValueType.Object) expr.getType()).getClassName();
-            ClassReader cls = classSource.get(clsName);
-            if (cls == null || cls.hasModifier(ElementModifier.INTERFACE)) {
-                consumer.consumeFunction("$rt_isInstance");
-            }
-        } else {
+        if (!isClass(expr.getType())) {
             consumer.consumeFunction("$rt_isInstance");
         }
+    }
+
+    @Override
+    public void visit(CastExpr expr) {
+        super.visit(expr);
+        if (strict) {
+            visitType(expr.getTarget());
+            if (isClass(expr.getTarget())) {
+                consumer.consumeFunction("$rt_castToClass");
+            } else {
+                consumer.consumeFunction("$rt_castToInterface");
+            }
+        }
+    }
+
+    private boolean isClass(ValueType type) {
+        if (!(type instanceof ValueType.Object)) {
+            return false;
+        }
+        String className = ((ValueType.Object) type).getClassName();
+        ClassReader cls = classSource.get(className);
+        return cls != null && !cls.hasModifier(ElementModifier.INTERFACE);
     }
 
     @Override

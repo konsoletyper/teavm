@@ -30,6 +30,9 @@ import org.teavm.model.Instruction;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.ValueType;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 
@@ -41,6 +44,8 @@ public class Devirtualization {
     private Set<? extends MethodReference> readonlyVirtualMethods = Collections.unmodifiableSet(virtualMethods);
     private int virtualCallSites;
     private int directCallSites;
+    private int remainingCasts;
+    private int eliminatedCasts;
 
     public Devirtualization(DependencyInfo dependency, ClassHierarchy hierarchy) {
         this.dependency = dependency;
@@ -53,6 +58,14 @@ public class Devirtualization {
 
     public int getDirectCallSites() {
         return directCallSites;
+    }
+
+    public int getRemainingCasts() {
+        return remainingCasts;
+    }
+
+    public int getEliminatedCasts() {
+        return eliminatedCasts;
     }
 
     public void apply(MethodHolder method) {
@@ -69,50 +82,10 @@ public class Devirtualization {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block) {
-                if (!(insn instanceof InvokeInstruction)) {
-                    continue;
-                }
-                InvokeInstruction invoke = (InvokeInstruction) insn;
-                if (invoke.getType() != InvocationType.VIRTUAL) {
-                    continue;
-                }
-                ValueDependencyInfo var = methodDep.getVariable(invoke.getInstance().getIndex());
-                Set<MethodReference> implementations = getImplementations(var.getTypes(),
-                        invoke.getMethod());
-                if (implementations.size() == 1) {
-                    MethodReference resolvedImplementaiton = implementations.iterator().next();
-                    if (shouldLog) {
-                        System.out.print("DIRECT CALL " + invoke.getMethod() + " resolved to "
-                                + resolvedImplementaiton.getClassName());
-                        if (insn.getLocation() != null) {
-                            System.out.print(" at " + insn.getLocation().getFileName() + ":"
-                                    + insn.getLocation().getLine());
-                        }
-                        System.out.println();
-                    }
-                    invoke.setType(InvocationType.SPECIAL);
-                    invoke.setMethod(resolvedImplementaiton);
-                    directCallSites++;
-                } else {
-                    virtualMethods.addAll(implementations);
-                    if (shouldLog) {
-                        System.out.print("VIRTUAL CALL " + invoke.getMethod() + " resolved to [");
-                        boolean first = true;
-                        for (MethodReference impl : implementations) {
-                            if (!first) {
-                                System.out.print(", ");
-                            }
-                            first = false;
-                            System.out.print(impl.getClassName());
-                        }
-                        System.out.print("]");
-                        if (insn.getLocation() != null) {
-                            System.out.print(" at " + insn.getLocation().getFileName() + ":"
-                                    + insn.getLocation().getLine());
-                        }
-                        System.out.println();
-                    }
-                    virtualCallSites++;
+                if (insn instanceof InvokeInstruction) {
+                    applyToInvoke(methodDep, (InvokeInstruction) insn);
+                } else if (insn instanceof CastInstruction) {
+                    applyToCast(methodDep, (CastInstruction) insn);
                 }
             }
         }
@@ -120,6 +93,104 @@ public class Devirtualization {
         if (shouldLog) {
             System.out.println("DEVIRTUALIZATION complete for " + method.getReference());
         }
+    }
+
+    private void applyToInvoke(MethodDependencyInfo methodDep, InvokeInstruction invoke) {
+        if (invoke.getType() != InvocationType.VIRTUAL) {
+            return;
+        }
+        ValueDependencyInfo var = methodDep.getVariable(invoke.getInstance().getIndex());
+        Set<MethodReference> implementations = getImplementations(var.getTypes(),
+                invoke.getMethod());
+        if (implementations.size() == 1) {
+            MethodReference resolvedImplementaiton = implementations.iterator().next();
+            if (shouldLog) {
+                System.out.print("DIRECT CALL " + invoke.getMethod() + " resolved to "
+                        + resolvedImplementaiton.getClassName());
+                if (invoke.getLocation() != null) {
+                    System.out.print(" at " + invoke.getLocation().getFileName() + ":"
+                            + invoke.getLocation().getLine());
+                }
+                System.out.println();
+            }
+            invoke.setType(InvocationType.SPECIAL);
+            invoke.setMethod(resolvedImplementaiton);
+            directCallSites++;
+        } else {
+            virtualMethods.addAll(implementations);
+            if (shouldLog) {
+                System.out.print("VIRTUAL CALL " + invoke.getMethod() + " resolved to [");
+                boolean first = true;
+                for (MethodReference impl : implementations) {
+                    if (!first) {
+                        System.out.print(", ");
+                    }
+                    first = false;
+                    System.out.print(impl.getClassName());
+                }
+                System.out.print("]");
+                if (invoke.getLocation() != null) {
+                    System.out.print(" at " + invoke.getLocation().getFileName() + ":"
+                            + invoke.getLocation().getLine());
+                }
+                System.out.println();
+            }
+            virtualCallSites++;
+        }
+    }
+
+    private void applyToCast(MethodDependencyInfo methodDep, CastInstruction cast) {
+        ValueDependencyInfo var = methodDep.getVariable(cast.getValue().getIndex());
+        boolean canFail = false;
+        String failType = null;
+        for (String type : var.getTypes()) {
+            if (castCanFail(type, cast.getTargetType())) {
+                failType = type;
+                canFail = true;
+            }
+        }
+
+        if (canFail) {
+            if (shouldLog) {
+                System.out.print("REMAINING CAST to " + cast.getTargetType() + " (example is " + failType + ")");
+                if (cast.getLocation() != null) {
+                    System.out.print(" at " + cast.getLocation().getFileName() + ":"
+                            + cast.getLocation().getLine());
+                }
+                System.out.println();
+            }
+            remainingCasts++;
+        } else {
+            if (shouldLog) {
+                System.out.print("ELIMINATED CAST to " + cast.getTargetType());
+                if (cast.getLocation() != null) {
+                    System.out.print(" at " + cast.getLocation().getFileName() + ":"
+                            + cast.getLocation().getLine());
+                }
+                System.out.println();
+            }
+            AssignInstruction assign = new AssignInstruction();
+            assign.setAssignee(cast.getValue());
+            assign.setReceiver(cast.getReceiver());
+            assign.setLocation(cast.getLocation());
+            cast.replace(assign);
+            eliminatedCasts++;
+        }
+    }
+
+    private boolean castCanFail(String type, ValueType target) {
+        if (type.startsWith("[")) {
+            ValueType valueType = ValueType.parse(type);
+            if (hierarchy.isSuperType(target, valueType, false)) {
+                return false;
+            }
+        } else if (target instanceof ValueType.Object) {
+            String targetClassName = ((ValueType.Object) target).getClassName();
+            if (hierarchy.isSuperType(targetClassName, type, false)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private Set<MethodReference> getImplementations(String[] classNames, MethodReference ref) {

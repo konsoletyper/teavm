@@ -261,6 +261,7 @@ public class Renderer implements RenderingManager {
                 "$rt_createLongArrayFromData", "$rt_createBooleanArray", "$rt_createByteArray",
                 "$rt_createShortArray", "$rt_createCharArray", "$rt_createIntArray", "$rt_createLongArray",
                 "$rt_createFloatArray", "$rt_createDoubleArray", "$rt_compare",
+                "$rt_castToClass", "$rt_castToInterface",
                 "Long_toNumber", "Long_fromInt", "Long_fromNumber", "Long_create", "Long_ZERO",
                 "Long_hi", "Long_lo");
     }
@@ -287,7 +288,7 @@ public class Renderer implements RenderingManager {
         if (minifying) {
             NamingOrderer orderer = new NamingOrderer();
             NameFrequencyEstimator estimator = new NameFrequencyEstimator(orderer, classSource, asyncMethods,
-                    asyncFamilyMethods);
+                    asyncFamilyMethods, context.isStrict());
             for (PreparedClass cls : classes) {
                 estimator.estimate(cls);
             }

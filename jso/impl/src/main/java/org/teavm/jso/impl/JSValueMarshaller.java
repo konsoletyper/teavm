@@ -33,7 +33,6 @@ import org.teavm.model.ReferenceCache;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
-import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
@@ -290,14 +289,7 @@ class JSValueMarshaller {
             } else if (className.equals("java.lang.String")) {
                 return unwrap(var, "unwrapString", JSMethods.JS_OBJECT, stringType, location.getSourceLocation());
             } else if (typeHelper.isJavaScriptClass(className)) {
-                Variable result = program.createVariable();
-                CastInstruction castInsn = new CastInstruction();
-                castInsn.setReceiver(result);
-                castInsn.setValue(var);
-                castInsn.setTargetType(type);
-                castInsn.setLocation(location.getSourceLocation());
-                replacement.add(castInsn);
-                return result;
+                return var;
             }
         } else if (type instanceof ValueType.Array) {
             return unwrapArray(location, var, (ValueType.Array) type);
@@ -313,14 +305,6 @@ class JSValueMarshaller {
             ++degree;
             itemType = ((ValueType.Array) itemType).getItemType();
         }
-
-        CastInstruction castInsn = new CastInstruction();
-        castInsn.setValue(var);
-        castInsn.setTargetType(ValueType.parse(JSArrayReader.class));
-        var = program.createVariable();
-        castInsn.setReceiver(var);
-        castInsn.setLocation(location.getSourceLocation());
-        replacement.add(castInsn);
 
         var = degree == 1
                 ? unwrapSingleDimensionArray(location, var, itemType)
@@ -477,16 +461,6 @@ class JSValueMarshaller {
 
     private Variable unwrap(Variable var, String methodName, ValueType argType, ValueType resultType,
             TextLocation location) {
-        if (!argType.isObject(JSObject.class.getName())) {
-            Variable castValue = program.createVariable();
-            CastInstruction castInsn = new CastInstruction();
-            castInsn.setValue(var);
-            castInsn.setReceiver(castValue);
-            castInsn.setLocation(location);
-            castInsn.setTargetType(argType);
-            replacement.add(castInsn);
-            var = castValue;
-        }
         Variable result = program.createVariable();
         InvokeInstruction insn = new InvokeInstruction();
         insn.setMethod(referenceCache.getCached(referenceCache.getCached(new MethodReference(

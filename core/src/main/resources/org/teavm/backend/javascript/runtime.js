@@ -44,6 +44,18 @@ function $rt_isAssignable(from, to) {
     }
     return false;
 }
+function $rt_castToInterface(obj, cls) {
+    if (obj !== null && !$rt_isInstance(obj, cls)) {
+        $rt_throwCCE();
+    }
+    return obj;
+}
+function $rt_castToClass(obj, cls) {
+    if (obj !== null && !(obj instanceof cls)) {
+        $rt_throwCCE();
+    }
+    return obj;
+}
 Array.prototype.fill = Array.prototype.fill || function(value,start,end) {
     var len = this.length;
     if (!len) return this;

@@ -247,7 +247,12 @@ class JSClassProcessor {
         }
         ClassReader targetClass = classSource.get(targetClassName);
         if (targetClass.getAnnotations().get(JSFunctor.class.getName()) == null) {
-            return false;
+            AssignInstruction assign = new AssignInstruction();
+            assign.setLocation(location.getSourceLocation());
+            assign.setAssignee(cast.getValue());
+            assign.setReceiver(cast.getReceiver());
+            replacement.add(assign);
+            return true;
         }
 
         Variable result = marshaller.unwrapFunctor(location, cast.getValue(), targetClass);

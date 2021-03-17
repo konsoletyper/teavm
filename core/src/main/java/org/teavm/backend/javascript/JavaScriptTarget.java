@@ -284,6 +284,11 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                     NullPointerException.class, "<init>", void.class));
             exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NullPointerException.class.getName()));
             exceptionCons.use();
+
+            exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
+                    ClassCastException.class, "<init>", void.class));
+            exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(ClassCastException.class.getName()));
+            exceptionCons.use();
         }
 
         if (stackTraceIncluded) {
@@ -370,7 +375,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                 controller.getUnprocessedClassSource(), classes,
                 controller.getClassLoader(), controller.getServices(), controller.getProperties(), naming,
                 controller.getDependencyInfo(), m -> isVirtual(virtualMethodContributorContext, m),
-                controller.getClassInitializerInfo());
+                controller.getClassInitializerInfo(), strict);
         renderingContext.setMinifying(obfuscated);
         Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
                 controller.getDiagnostics(), renderingContext);

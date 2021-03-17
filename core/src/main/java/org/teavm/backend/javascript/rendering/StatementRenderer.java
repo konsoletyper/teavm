@@ -915,7 +915,41 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(CastExpr expr) {
-        expr.getValue().acceptVisitor(this);
+        if (context.isStrict()) {
+            try {
+                if (expr.getLocation() != null) {
+                    pushLocation(expr.getLocation());
+                }
+
+                if (isClass(expr.getTarget(), context.getClassSource())) {
+                    writer.appendFunction("$rt_castToClass");
+                } else {
+                    writer.appendFunction("$rt_castToInterface");
+                }
+                writer.append("(");
+                precedence = Precedence.min();
+                expr.getValue().acceptVisitor(this);
+                writer.append(",").ws();
+                context.typeToClsString(writer, expr.getTarget());
+                writer.append(")");
+                if (expr.getLocation() != null) {
+                    popLocation();
+                }
+            } catch (IOException e) {
+                throw new RenderingException("IO error occurred", e);
+            }
+        } else {
+            expr.getValue().acceptVisitor(this);
+        }
+    }
+
+    static boolean isClass(ValueType type, ClassReaderSource classSource) {
+        if (!(type instanceof ValueType.Object)) {
+            return false;
+        }
+        String className = ((ValueType.Object) type).getClassName();
+        ClassReader cls = classSource.get(className);
+        return cls != null && !cls.hasModifier(ElementModifier.INTERFACE);
     }
 
     @Override
@@ -1475,32 +1509,26 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            if (expr.getType() instanceof ValueType.Object) {
-                String clsName = ((ValueType.Object) expr.getType()).getClassName();
-                ClassReader cls = classSource.get(clsName);
-                if (cls != null && !cls.hasModifier(ElementModifier.INTERFACE)) {
-                    boolean needsParentheses = Precedence.COMPARISON.ordinal() < precedence.ordinal();
-                    if (needsParentheses) {
-                        writer.append('(');
-                    }
-                    precedence = Precedence.CONDITIONAL.next();
-                    expr.getExpr().acceptVisitor(this);
-                    writer.append(" instanceof ").appendClass(clsName);
-                    if (needsParentheses) {
-                        writer.append(')');
-                    }
-                    if (expr.getLocation() != null) {
-                        popLocation();
-                    }
-                    return;
+            if (isClass(expr.getType(), context.getClassSource())) {
+                boolean needsParentheses = Precedence.COMPARISON.ordinal() < precedence.ordinal();
+                if (needsParentheses) {
+                    writer.append('(');
                 }
+                precedence = Precedence.CONDITIONAL.next();
+                expr.getExpr().acceptVisitor(this);
+                writer.append(" instanceof ");
+                context.typeToClsString(writer, expr.getType());
+                if (needsParentheses) {
+                    writer.append(')');
+                }
+            } else {
+                writer.appendFunction("$rt_isInstance").append("(");
+                precedence = Precedence.min();
+                expr.getExpr().acceptVisitor(this);
+                writer.append(",").ws();
+                context.typeToClsString(writer, expr.getType());
+                writer.append(")");
             }
-            writer.appendFunction("$rt_isInstance").append("(");
-            precedence = Precedence.min();
-            expr.getExpr().acceptVisitor(this);
-            writer.append(",").ws();
-            context.typeToClsString(writer, expr.getType());
-            writer.append(")");
             if (expr.getLocation() != null) {
                 popLocation();
             }

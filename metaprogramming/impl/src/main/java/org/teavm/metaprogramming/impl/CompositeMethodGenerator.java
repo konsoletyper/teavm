@@ -1084,7 +1084,7 @@ public class CompositeMethodGenerator {
 
         private Variable unwrapArray(ValueType type, Variable array) {
             CastInstruction cast = new CastInstruction();
-            cast.setTargetType(ValueType.arrayOf(type));
+            cast.setTargetType(type);
             cast.setValue(array);
             cast.setReceiver(program.createVariable());
             add(cast);
