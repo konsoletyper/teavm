@@ -50,19 +50,12 @@ import static org.threeten.bp.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH;
 import static org.threeten.bp.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR;
 import static org.threeten.bp.temporal.ChronoField.ALIGNED_WEEK_OF_MONTH;
 import static org.threeten.bp.temporal.ChronoField.ALIGNED_WEEK_OF_YEAR;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.StringTokenizer;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import org.threeten.bp.Clock;
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.DayOfWeek;
@@ -208,7 +201,7 @@ public final class HijrahDate
         355
         };
 
-   /**
+    /**
      * Position of day-of-month. This value is used to get the min/max value
      * from an array.
      */
@@ -374,12 +367,6 @@ public final class HijrahDate
         ADJUSTED_MAX_VALUES = new Integer[MAX_VALUES.length];
         for (int i = 0; i < MAX_VALUES.length; i++) {
             ADJUSTED_MAX_VALUES[i] = MAX_VALUES[i];
-        }
-        try {
-            readDeviationConfig();
-        } catch (IOException | ParseException e) {
-            // do nothing. Ignore deviation config.
-            // e.printStackTrace();
         }
     }
     /**
@@ -1493,45 +1480,6 @@ public final class HijrahDate
     }
 
     /**
-     * Read hijrah_deviation.cfg file. The config file contains the deviation data with
-     * following format.
-     *
-     * StartYear/StartMonth(0-based)-EndYear/EndMonth(0-based):Deviation day (1,
-     * 2, -1, or -2)
-     *
-     * Line separator or ";" is used for the separator of each deviation data.
-     *
-     * Here is the example.
-     *
-     * 1429/0-1429/1:1
-     * 1429/2-1429/7:1;1429/6-1429/11:1
-     * 1429/11-9999/11:1
-     *
-     * @throws IOException for zip/jar file handling exception.
-     * @throws ParseException if the format of the configuration file is wrong.
-     */
-    private static void readDeviationConfig() throws IOException, ParseException {
-        InputStream is = getConfigFileInputStream();
-        if (is != null) {
-            BufferedReader br = null;
-            try {
-                br = new BufferedReader(new InputStreamReader(is));
-                String line = "";
-                int num = 0;
-                while ((line = br.readLine()) != null) {
-                    num++;
-                    line = line.trim();
-                    parseLine(line, num);
-                }
-            } finally {
-                if (br != null) {
-                    br.close();
-                }
-            }
-        }
-    }
-
-    /**
      * Parse each deviation element.
      *
      * @param line  a line to parse
@@ -1631,110 +1579,6 @@ public final class HijrahDate
                 throw new ParseException("Offset has incorrect format at line "
                         + num + ".", num);
             }
-        }
-    }
-
-    /**
-     * Return InputStream for deviation configuration file.
-     * The default location of the deviation file is:
-     * <pre>
-     *   $CLASSPATH/org/threeten/bp/chrono
-     * </pre>
-     * And the default file name is:
-     * <pre>
-     *   hijrah_deviation.cfg
-     * </pre>
-     * The default location and file name can be overriden by setting
-     * following two Java's system property.
-     * <pre>
-     *   Location: org.threeten.bp.i18n.HijrahDate.deviationConfigDir
-     *   File name: org.threeten.bp.i18n.HijrahDate.deviationConfigFile
-     * </pre>
-     * Regarding the file format, see readDeviationConfig() method for details.
-     *
-     * @return InputStream for file reading exception.
-     * @throws IOException for zip/jar file handling exception.
-     */
-    private static InputStream getConfigFileInputStream() throws IOException {
-        // TODO: eliminate this
-        String fileName = System
-                .getProperty("org.threeten.bp.i18n.HijrahDate.deviationConfigFile");
-
-        if (fileName == null) {
-            fileName = DEFAULT_CONFIG_FILENAME;
-        }
-
-        String dir = System
-                .getProperty("org.threeten.bp.i18n.HijrahDate.deviationConfigDir");
-
-        if (dir != null) {
-            if (!(dir.length() == 0 && dir.endsWith(System
-                    .getProperty("file.separator")))) {
-                dir = dir + System.getProperty("file.separator");
-            }
-            File file = new File(dir + FILE_SEP + fileName);
-            if (file.exists()) {
-                try {
-                    return new FileInputStream(file);
-                } catch (IOException ioe) {
-                    throw ioe;
-                }
-            } else {
-                return null;
-            }
-        } else {
-            String classPath = System.getProperty("java.class.path");
-            StringTokenizer st = new StringTokenizer(classPath, PATH_SEP);
-            while (st.hasMoreTokens()) {
-                String path = st.nextToken();
-                File file = new File(path);
-                if (file.exists()) {
-                    if (file.isDirectory()) {
-                        File f = new File(
-                                path + FILE_SEP + DEFAULT_CONFIG_PATH, fileName);
-                        if (f.exists()) {
-                            try {
-                                return new FileInputStream(path + FILE_SEP
-                                        + DEFAULT_CONFIG_PATH + FILE_SEP
-                                        + fileName);
-                            } catch (IOException ioe) {
-                                throw ioe;
-                            }
-                        }
-                    } else {
-                        ZipFile zip;
-                        try {
-                            zip = new ZipFile(file);
-                        } catch (IOException ioe) {
-                            zip = null;
-                        }
-
-                        if (zip != null) {
-                            String targetFile = DEFAULT_CONFIG_PATH + FILE_SEP
-                                    + fileName;
-                            ZipEntry entry = zip.getEntry(targetFile);
-
-                            if (entry == null) {
-                                if (FILE_SEP == '/') {
-                                    targetFile = targetFile.replace('/', '\\');
-                                } else if (FILE_SEP == '\\') {
-                                    targetFile = targetFile.replace('\\', '/');
-                                }
-                                entry = zip.getEntry(targetFile);
-                            }
-
-                            if (entry != null) {
-                                try {
-                                    return zip.getInputStream(entry);
-                                } catch (IOException ioe) {
-                                    throw ioe;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return null;
         }
     }
 }
