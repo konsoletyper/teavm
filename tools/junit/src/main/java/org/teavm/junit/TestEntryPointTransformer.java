@@ -281,7 +281,7 @@ abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaV
         MethodHolder constructor = new MethodHolder("<init>", testMethod.getSignature());
         cls.addMethod(constructor);
         ProgramEmitter pe = ProgramEmitter.create(constructor, hierarchy);
-        pe.invoke(Object.class, "<init>", void.class);
+        pe.var(0, ValueType.object(cls.getName())).invokeSpecial(Object.class, "<init>");
         ValueEmitter self = pe.var(0, ValueType.object(cls.getName()));
         for (int i = 0; i < testMethod.parameterCount(); ++i) {
             FieldHolder paramField = new FieldHolder("param_" + i);
