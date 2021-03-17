@@ -836,6 +836,18 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                         precedence = Precedence.min();
                         expr.getOperand().acceptVisitor(this);
                         writer.append(')');
+                    } else if (expr.getType() == OperationType.INT) {
+                        if (outerPrecedence.ordinal() > Precedence.BITWISE_OR.ordinal()) {
+                            writer.append('(');
+                        }
+                        writer.append(" -");
+                        precedence = Precedence.UNARY;
+                        expr.getOperand().acceptVisitor(this);
+                        writer.ws().append("|").ws();
+                        writer.append("0");
+                        if (outerPrecedence.ordinal() > Precedence.BITWISE_OR.ordinal()) {
+                            writer.append(')');
+                        }
                     } else {
                         if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
                             writer.append('(');
