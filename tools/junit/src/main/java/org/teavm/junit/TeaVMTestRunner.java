@@ -1066,7 +1066,10 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     }
 
     private boolean isIgnored(Method method) {
-        return getAnnotation(method, JUNIT4_IGNORE) != null || getAnnotation(method, TESTNG_IGNORE) != null;
+        return getAnnotation(method, JUNIT4_IGNORE) != null
+                || getAnnotation(method, TESTNG_IGNORE) != null
+                || getClassAnnotation(method, JUNIT4_IGNORE) != null
+                || getClassAnnotation(method, TESTNG_IGNORE) != null;
     }
 
     private AnnotationHolder getAnnotation(Method method, String name) {
@@ -1089,6 +1092,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         }
         return cls.getAnnotations().get(name);
     }
+
 
     private <T extends TeaVMTarget> CompileResult compile(TeaVMTestConfiguration<T> configuration,
             Supplier<T> targetSupplier, String entryPoint, File path, String extension,
