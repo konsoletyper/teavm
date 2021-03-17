@@ -48,11 +48,6 @@ package org.teavm.classlib.java.time.zone;
 
 import static org.testng.Assert.assertEquals;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -98,21 +93,6 @@ public class TestFixedZoneRules {
     //-----------------------------------------------------------------------
     // Basics
     //-----------------------------------------------------------------------
-    @Test(dataProvider = "rules")
-    public void test_serialization(ZoneRules test, ZoneOffset expectedOffset) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(baos);
-        out.writeObject(test);
-        baos.close();
-        byte[] bytes = baos.toByteArray();
-
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        ObjectInputStream in = new ObjectInputStream(bais);
-        ZoneRules result = (ZoneRules) in.readObject();
-
-        assertEquals(result, test);
-        assertEquals(result.getClass(), test.getClass());
-    }
 
     //-----------------------------------------------------------------------
     // basics

@@ -67,12 +67,15 @@ import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.WholeClassCompilation;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Ignore;
 import org.testng.annotations.Test;
 
 /**
  * Test.
  */
+// TODO: looks like all of these tests don't work on JVM
 @Test
+@Ignore
 @RunWith(TeaVMTestRunner.class)
 @WholeClassCompilation
 public class TestHijrahChronology {

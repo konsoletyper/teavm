@@ -61,6 +61,7 @@ import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.BeforeMethod;
@@ -463,6 +464,8 @@ public class TestDateTimeFormatterBuilder {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     @Test
+    @SkipJVM
+    // TODO: crashes on JVM due (possible) bug
     public void test_padNext_1arg() throws Exception {
         builder.appendValue(MONTH_OF_YEAR).padNext(2).appendValue(DAY_OF_MONTH).appendValue(DAY_OF_WEEK);
         DateTimeFormatter f = builder.toFormatter();
@@ -476,6 +479,8 @@ public class TestDateTimeFormatterBuilder {
 
     //-----------------------------------------------------------------------
     @Test
+    @SkipJVM
+    // TODO: crashes on JVM due (possible) bug
     public void test_padNext_2arg_dash() throws Exception {
         builder.appendValue(MONTH_OF_YEAR).padNext(2, '-').appendValue(DAY_OF_MONTH).appendValue(DAY_OF_WEEK);
         DateTimeFormatter f = builder.toFormatter();

@@ -85,6 +85,7 @@ import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Ignore;
 import org.testng.annotations.Test;
 
 /**
@@ -1059,6 +1060,8 @@ public class TestDateTimeFormatters {
     }
 
     @Test
+    @Ignore
+    // This does not work on JVM
     public void test_parse_weekDate_largeYear() {
         TemporalAccessor parsed = DateTimeFormatter.ISO_WEEK_DATE.parseUnresolved("+123456-W04-5",
                 new ParsePosition(0));

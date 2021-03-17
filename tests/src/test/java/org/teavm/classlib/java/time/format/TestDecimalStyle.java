@@ -53,6 +53,8 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMProperties;
+import org.teavm.junit.TeaVMProperty;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.Test;
@@ -63,6 +65,7 @@ import org.testng.annotations.Test;
 @Test
 @RunWith(TeaVMTestRunner.class)
 @WholeClassCompilation
+@TeaVMProperties(@TeaVMProperty(key = "java.util.Locale.available", value = "en, en_US"))
 public class TestDecimalStyle {
 
     @Test

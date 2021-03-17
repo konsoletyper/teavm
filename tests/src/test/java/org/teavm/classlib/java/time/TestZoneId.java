@@ -72,6 +72,7 @@ import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Ignore;
 import org.testng.annotations.Test;
 
 /**
@@ -148,7 +149,9 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getId(), TimeZone.getDefault().getID());
     }
 
+    // TODO: support SimpleTimeZone and unignore
     @Test(expectedExceptions = DateTimeException.class)
+    @Ignore
     public void test_systemDefault_unableToConvert_badFormat() {
         TimeZone current = TimeZone.getDefault();
         try {
@@ -159,7 +162,9 @@ public class TestZoneId extends AbstractTest {
         }
     }
 
+    // TODO: support SimpleTimeZone and unignore
     @Test(expectedExceptions = ZoneRulesException.class)
+    @Ignore
     public void test_systemDefault_unableToConvert_unknownId() {
         TimeZone current = TimeZone.getDefault();
         try {
@@ -266,7 +271,9 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test, offset);
     }
 
+    // TODO: JVM returns "Coordinated Universal Time" here
     @Test(dataProvider = "String_Fixed")
+    @Ignore
     public void test_of_string_FixedUTC(String input, String id) {
         ZoneId test = ZoneId.of("UTC" + input);
         assertEquals(test.getId(), "UTC" + id);
@@ -277,7 +284,9 @@ public class TestZoneId extends AbstractTest {
         checkOffset(test.getRules(), createLDT(2008, 6, 30), offset, 1);
     }
 
+    // TODO: JVM returns "Greenwich Mean Time" here
     @Test(dataProvider = "String_Fixed")
+    @Ignore
     public void test_of_string_FixedGMT(String input, String id) {
         ZoneId test = ZoneId.of("GMT" + input);
         assertEquals(test.getId(), "GMT" + id);
