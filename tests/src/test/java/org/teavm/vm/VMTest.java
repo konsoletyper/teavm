@@ -433,14 +433,14 @@ public class VMTest {
 
         public synchronized void doWait() {
             new Thread(() -> {
-                synchronized (AsyncClinitClass.this) {
+                synchronized (this) {
                     notify();
                 }
             }).start();
 
             try {
                 Thread.sleep(1);
-                synchronized (AsyncClinitClass.this) {
+                synchronized (this) {
                     wait();
                 }
             } catch (InterruptedException ie) {
