@@ -744,6 +744,12 @@ function Long(lo, hi) {
 Long.prototype.__teavm_class__ = function() {
     return "long";
 };
+function Long_isPositive(a) {
+    return (a.hi & 0x80000000) === 0;
+}
+function Long_isNegative(a) {
+    return (a.hi & 0x80000000) !== 0;
+}
 
 var Long_MAX_NORMAL = 1 << 18;
 var Long_ZERO;
@@ -754,14 +760,6 @@ var Long_toNumber;
 var Long_hi;
 var Long_lo;
 if (typeof BigInt !== "function") {
-    function Long_isPositive(a) {
-        return (a.hi & 0x80000000) === 0;
-    }
-
-    function Long_isNegative(a) {
-        return (a.hi & 0x80000000) !== 0;
-    }
-
     Long.prototype.toString = function() {
         var result = [];
         var n = this;
