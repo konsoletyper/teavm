@@ -1410,15 +1410,15 @@ public final class LocalDateTime
         if ((hours | minutes | seconds | nanos) == 0) {
             return with(newDate, time);
         }
-        long totDays = nanos / NANOS_PER_DAY +             //   max/24*60*60*1B
-                seconds / SECONDS_PER_DAY +                //   max/24*60*60
-                minutes / MINUTES_PER_DAY +                //   max/24*60
-                hours / HOURS_PER_DAY;                     //   max/24
+        long totDays = nanos / NANOS_PER_DAY               //   max/24*60*60*1B
+                + seconds / SECONDS_PER_DAY                //   max/24*60*60
+                + minutes / MINUTES_PER_DAY                //   max/24*60
+                + hours / HOURS_PER_DAY;                   //   max/24
         totDays *= sign;                                   // total max*0.4237...
-        long totNanos = nanos % NANOS_PER_DAY +                    //   max  86400000000000
-                (seconds % SECONDS_PER_DAY) * NANOS_PER_SECOND +   //   max  86400000000000
-                (minutes % MINUTES_PER_DAY) * NANOS_PER_MINUTE +   //   max  86400000000000
-                (hours % HOURS_PER_DAY) * NANOS_PER_HOUR;          //   max  86400000000000
+        long totNanos = nanos % NANOS_PER_DAY                      //   max  86400000000000
+                + (seconds % SECONDS_PER_DAY) * NANOS_PER_SECOND   //   max  86400000000000
+                + (minutes % MINUTES_PER_DAY) * NANOS_PER_MINUTE   //   max  86400000000000
+                + (hours % HOURS_PER_DAY) * NANOS_PER_HOUR;        //   max  86400000000000
         long curNoD = time.toNanoOfDay();                       //   max  86400000000000
         totNanos = totNanos * sign + curNoD;                    // total 432000000000000
         totDays += Jdk8Methods.floorDiv(totNanos, NANOS_PER_DAY);

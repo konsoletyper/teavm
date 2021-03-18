@@ -47,7 +47,6 @@
 package org.teavm.classlib.java.time;
 
 import static org.testng.Assert.assertEquals;
-
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;

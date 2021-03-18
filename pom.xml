@@ -105,6 +105,7 @@
     <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
     <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
     <wagon-ftp.version>3.4.3</wagon-ftp.version>
+    <checkstyle.version>8.41</checkstyle.version>
 
     <teavm.test.incremental>false</teavm.test.incremental>
     <teavm.test.threads>1</teavm.test.threads>
@@ -337,6 +338,13 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
           <version>${maven-checkstyle-plugin.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>${checkstyle.version}</version>
+            </dependency>
+          </dependencies>
           <executions>
             <execution>
               <id>validate</id>

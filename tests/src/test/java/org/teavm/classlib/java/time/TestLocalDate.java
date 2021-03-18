@@ -521,7 +521,7 @@ public class TestLocalDate extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider = "sampleBadParse", expectedExceptions = {DateTimeParseException.class})
+    @Test(dataProvider = "sampleBadParse", expectedExceptions = DateTimeParseException.class)
     public void factory_parse_invalidText(String unparsable) {
         LocalDate.parse(unparsable);
     }
@@ -1069,7 +1069,7 @@ public class TestLocalDate extends AbstractDateTimeTest {
         assertEquals(test, LocalDate.of((int) (-40L + months / 12), 6 + (int) (months % 12), 1));
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_plusMonths_long_invalidTooLarge() {
         LocalDate.of(Year.MAX_VALUE, 12, 1).plusMonths(1);
     }
@@ -1086,7 +1086,7 @@ public class TestLocalDate extends AbstractDateTimeTest {
         test.plusMonths(Long.MIN_VALUE);
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_plusMonths_long_invalidTooSmall() {
         LocalDate.of(Year.MIN_VALUE, 1, 1).plusMonths(-1);
     }
@@ -1147,22 +1147,22 @@ public class TestLocalDate extends AbstractDateTimeTest {
         assertEquals(t, expected);
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_plusWeeks_invalidTooLarge() {
         LocalDate.of(Year.MAX_VALUE, 12, 25).plusWeeks(1);
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_plusWeeks_invalidTooSmall() {
         LocalDate.of(Year.MIN_VALUE, 1, 7).plusWeeks(-1);
     }
 
-    @Test(expectedExceptions = {ArithmeticException.class})
+    @Test(expectedExceptions = ArithmeticException.class)
     public void test_plusWeeks_invalidMaxMinusMax() {
         LocalDate.of(Year.MAX_VALUE, 12, 25).plusWeeks(Long.MAX_VALUE);
     }
 
-    @Test(expectedExceptions = {ArithmeticException.class})
+    @Test(expectedExceptions = ArithmeticException.class)
     public void test_plusWeeks_invalidMaxMinusMin() {
         LocalDate.of(Year.MAX_VALUE, 12, 25).plusWeeks(Long.MIN_VALUE);
     }
@@ -1223,12 +1223,12 @@ public class TestLocalDate extends AbstractDateTimeTest {
         assertEquals(t, expected);
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_plusDays_invalidTooLarge() {
         LocalDate.of(Year.MAX_VALUE, 12, 31).plusDays(1);
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_plusDays_invalidTooSmall() {
         LocalDate.of(Year.MIN_VALUE, 1, 1).plusDays(-1);
     }
@@ -1424,7 +1424,7 @@ public class TestLocalDate extends AbstractDateTimeTest {
         assertEquals(test, LocalDate.of((int) (40L - months / 12), 6 - (int) (months % 12), 1));
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_minusMonths_long_invalidTooLarge() {
         LocalDate.of(Year.MAX_VALUE, 12, 1).minusMonths(-1);
     }
@@ -1441,7 +1441,7 @@ public class TestLocalDate extends AbstractDateTimeTest {
         test.minusMonths(Long.MIN_VALUE);
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_minusMonths_long_invalidTooSmall() {
         LocalDate.of(Year.MIN_VALUE, 1, 1).minusMonths(1);
     }
@@ -1502,22 +1502,22 @@ public class TestLocalDate extends AbstractDateTimeTest {
         assertEquals(t, expected);
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_minusWeeks_invalidTooLarge() {
         LocalDate.of(Year.MAX_VALUE, 12, 25).minusWeeks(-1);
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_minusWeeks_invalidTooSmall() {
         LocalDate.of(Year.MIN_VALUE, 1, 7).minusWeeks(1);
     }
 
-    @Test(expectedExceptions = {ArithmeticException.class})
+    @Test(expectedExceptions = ArithmeticException.class)
     public void test_minusWeeks_invalidMaxMinusMax() {
         LocalDate.of(Year.MAX_VALUE, 12, 25).minusWeeks(Long.MAX_VALUE);
     }
 
-    @Test(expectedExceptions = {ArithmeticException.class})
+    @Test(expectedExceptions = ArithmeticException.class)
     public void test_minusWeeks_invalidMaxMinusMin() {
         LocalDate.of(Year.MAX_VALUE, 12, 25).minusWeeks(Long.MIN_VALUE);
     }
@@ -1578,12 +1578,12 @@ public class TestLocalDate extends AbstractDateTimeTest {
         assertEquals(t, expected);
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_minusDays_invalidTooLarge() {
         LocalDate.of(Year.MAX_VALUE, 12, 31).minusDays(-1);
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_minusDays_invalidTooSmall() {
         LocalDate.of(Year.MIN_VALUE, 1, 1).minusDays(1);
     }

@@ -47,7 +47,6 @@
 package org.teavm.classlib.java.time;
 
 import static org.testng.Assert.assertEquals;
-
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.WholeClassCompilation;

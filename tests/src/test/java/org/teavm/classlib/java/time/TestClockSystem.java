@@ -49,7 +49,6 @@ package org.teavm.classlib.java.time;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.fail;
-
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;

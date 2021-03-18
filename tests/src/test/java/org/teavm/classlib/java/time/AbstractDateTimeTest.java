@@ -48,12 +48,10 @@ package org.teavm.classlib.java.time;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
-
 import java.time.DateTimeException;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.util.List;
-
 import org.testng.annotations.Test;
 
 /**

@@ -22,9 +22,9 @@ public final class JSON {
     private JSON() {
     }
 
-    @JSBody(params = { "object" }, script = "return JSON.stringify(object);")
+    @JSBody(params = "object", script = "return JSON.stringify(object);")
     public static native String stringify(JSObject object);
 
-    @JSBody(params = { "string" }, script = "return JSON.parse(string);")
+    @JSBody(params = "string", script = "return JSON.parse(string);")
     public static native JSObject parse(String string);
 }

@@ -52,7 +52,6 @@ import static java.time.DayOfWeek.WEDNESDAY;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
-
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -69,7 +68,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.WholeClassCompilation;

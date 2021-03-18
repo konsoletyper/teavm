@@ -516,7 +516,7 @@ public class TestLocalTime extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider = "sampleBadParse", expectedExceptions = {DateTimeParseException.class})
+    @Test(dataProvider = "sampleBadParse", expectedExceptions = DateTimeParseException.class)
     public void factory_parse_invalidText(String unparsable) {
         LocalTime.parse(unparsable);
     }
@@ -538,7 +538,7 @@ public class TestLocalTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------s
-    @Test(expectedExceptions = {NullPointerException.class})
+    @Test(expectedExceptions = NullPointerException.class)
     public void factory_parse_nullTest() {
         LocalTime.parse(null);
     }
@@ -961,7 +961,7 @@ public class TestLocalTime extends AbstractDateTimeTest {
         };
     }
 
-    @Test(groups = {"tck"}, dataProvider = "truncatedToValid")
+    @Test(groups = "tck", dataProvider = "truncatedToValid")
     public void test_truncatedTo_valid(LocalTime input, TemporalUnit unit, LocalTime expected) {
         assertEquals(input.truncatedTo(unit), expected);
     }
@@ -976,12 +976,12 @@ public class TestLocalTime extends AbstractDateTimeTest {
         };
     }
 
-    @Test(groups = {"tck"}, dataProvider = "truncatedToInvalid", expectedExceptions = DateTimeException.class)
+    @Test(groups = "tck", dataProvider = "truncatedToInvalid", expectedExceptions = DateTimeException.class)
     public void test_truncatedTo_invalid(LocalTime input, TemporalUnit unit) {
         input.truncatedTo(unit);
     }
 
-    @Test(expectedExceptions = NullPointerException.class, groups = {"tck"})
+    @Test(expectedExceptions = NullPointerException.class, groups = "tck")
     public void test_truncatedTo_null() {
         test12x30x40x987654321.truncatedTo(null);
     }

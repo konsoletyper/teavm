@@ -47,7 +47,6 @@
 package org.teavm.classlib.java.time.temporal;
 
 import static org.testng.Assert.assertEquals;
-
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
 import java.time.temporal.JulianFields;

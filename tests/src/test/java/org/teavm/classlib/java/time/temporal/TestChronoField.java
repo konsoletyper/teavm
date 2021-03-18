@@ -47,7 +47,6 @@
 package org.teavm.classlib.java.time.temporal;
 
 import static org.testng.Assert.assertEquals;
-
 import java.time.temporal.ChronoField;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;

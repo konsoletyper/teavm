@@ -243,6 +243,7 @@ public class BrowserRunStrategy implements TestRunStrategy {
                                 resp.getOutputStream().flush();
                                 return;
                             }
+                            break;
                         }
                         case "/client.js":
                         case "/frame.js":
@@ -255,6 +256,7 @@ public class BrowserRunStrategy implements TestRunStrategy {
                                 resp.getOutputStream().flush();
                                 return;
                             }
+                            break;
                         }
                     }
                     if (path.startsWith("/tests/")) {

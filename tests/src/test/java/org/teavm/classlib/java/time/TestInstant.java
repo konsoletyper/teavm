@@ -1177,13 +1177,13 @@ public class TestInstant extends AbstractDateTimeTest {
         assertEquals(i.getNano(), expectedNanoOfSecond);
     }
 
-    @Test(expectedExceptions = {ArithmeticException.class})
+    @Test(expectedExceptions = ArithmeticException.class)
     public void minusSeconds_long_overflowTooBig() {
         Instant i = Instant.ofEpochSecond(1, 0);
         i.minusSeconds(Long.MIN_VALUE + 1);
     }
 
-    @Test(expectedExceptions = {ArithmeticException.class})
+    @Test(expectedExceptions = ArithmeticException.class)
     public void minusSeconds_long_overflowTooSmall() {
         Instant i = Instant.ofEpochSecond(-2, 0);
         i.minusSeconds(Long.MAX_VALUE);

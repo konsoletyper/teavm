@@ -48,7 +48,6 @@ package org.teavm.classlib.java.time.temporal;
 
 import static java.time.temporal.ChronoUnit.MONTHS;
 import static java.time.temporal.ChronoUnit.WEEKS;
-
 import java.time.DateTimeException;
 import java.time.format.ResolverStyle;
 import java.time.temporal.Temporal;

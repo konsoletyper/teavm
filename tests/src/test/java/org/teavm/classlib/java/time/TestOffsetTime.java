@@ -406,23 +406,23 @@ public class TestOffsetTime extends AbstractDateTimeTest {
         };
     }
 
-    @Test(dataProvider = "sampleBadParse", expectedExceptions = {DateTimeParseException.class})
+    @Test(dataProvider = "sampleBadParse", expectedExceptions = DateTimeParseException.class)
     public void factory_parse_invalidText(String unparsable) {
         OffsetTime.parse(unparsable);
     }
 
     //-----------------------------------------------------------------------s
-    @Test(expectedExceptions = {DateTimeParseException.class})
+    @Test(expectedExceptions = DateTimeParseException.class)
     public void factory_parse_illegalHour() {
         OffsetTime.parse("25:00+01:00");
     }
 
-    @Test(expectedExceptions = {DateTimeParseException.class})
+    @Test(expectedExceptions = DateTimeParseException.class)
     public void factory_parse_illegalMinute() {
         OffsetTime.parse("12:60+01:00");
     }
 
-    @Test(expectedExceptions = {DateTimeParseException.class})
+    @Test(expectedExceptions = DateTimeParseException.class)
     public void factory_parse_illegalSecond() {
         OffsetTime.parse("12:12:60+01:00");
     }

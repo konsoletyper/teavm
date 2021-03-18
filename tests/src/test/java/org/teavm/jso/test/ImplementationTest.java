@@ -45,7 +45,7 @@ public class ImplementationTest {
         assertEquals(1, instance.counter);
     }
 
-    @JSBody(params = { "a" }, script = "console.log(a, a);")
+    @JSBody(params = "a", script = "console.log(a, a);")
     private static native void wrongInlineCandidate(JSObject a);
 
     static class ForInliningTest implements JSObject {

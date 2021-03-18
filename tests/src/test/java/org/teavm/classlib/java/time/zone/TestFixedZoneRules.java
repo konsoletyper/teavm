@@ -47,7 +47,6 @@
 package org.teavm.classlib.java.time.zone;
 
 import static org.testng.Assert.assertEquals;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;

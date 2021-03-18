@@ -105,7 +105,7 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
     @JSBody(params = { "handler", "delay" }, script = "return setTimeout(handler, delay);")
     public static native int setTimeout(TimerHandler handler, double delay);
 
-    @JSBody(params = { "timeoutId" }, script = "clearTimeout(timeoutId);")
+    @JSBody(params = "timeoutId", script = "clearTimeout(timeoutId);")
     public static native void clearTimeout(int timeoutId);
 
     @JSBody(params = { "handler", "delay" }, script = "return setInterval(handler, delay);")
@@ -114,13 +114,13 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
     @JSBody(params = { "handler", "delay" }, script = "return setInterval(handler, delay);")
     public static native int setInterval(TimerHandler handler, double delay);
 
-    @JSBody(params = { "timeoutId" }, script = "clearInterval(timeoutId);")
+    @JSBody(params = "timeoutId", script = "clearInterval(timeoutId);")
     public static native void clearInterval(int timeoutId);
 
-    @JSBody(params = { "callback" }, script = "return requestAnimationFrame(callback);")
+    @JSBody(params = "callback", script = "return requestAnimationFrame(callback);")
     public static native int requestAnimationFrame(AnimationFrameCallback callback);
 
-    @JSBody(params = { "requestId" }, script = "cancelAnimationFrame(requestId);")
+    @JSBody(params = "requestId", script = "cancelAnimationFrame(requestId);")
     public static native void cancelAnimationFrame(int requestId);
 
     public abstract void blur();

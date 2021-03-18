@@ -90,19 +90,19 @@ public class JavaScriptBodyTest {
     @JavaScriptBody(args = {}, body = "return 23;")
     private native int simpleNativeMethod();
 
-    @JavaScriptBody(args = { "value" }, body = "return value;")
+    @JavaScriptBody(args = "value", body = "return value;")
     private native Object returnValuePassed(Object value);
 
-    @JavaScriptBody(args = { "obj" }, body = "window._global_ = obj;")
+    @JavaScriptBody(args = "obj", body = "window._global_ = obj;")
     private native void storeObject(Object obj);
 
     @JavaScriptBody(args = {}, body = "return window._global_;")
     private native Object retrieveObject();
 
-    @JavaScriptBody(args = { "callback" }, body = "return callback.@org.teavm.html4j.test.A::foo()()", javacall = true)
+    @JavaScriptBody(args = "callback", body = "return callback.@org.teavm.html4j.test.A::foo()()", javacall = true)
     private native int invokeCallback(A callback);
 
-    @JavaScriptBody(args = { "callback" }, body = ""
+    @JavaScriptBody(args = "callback", body = ""
             + "return callback."
                 + "@org.teavm.html4j.test.B::bar("
                 + "Lorg/teavm/html4j/test/A;)(_global_)",
@@ -113,7 +113,7 @@ public class JavaScriptBodyTest {
         return a.foo();
     }
 
-    @JavaScriptBody(args = { "a" }, body = "return "
+    @JavaScriptBody(args = "a", body = "return "
             + "@org.teavm.html4j.test.JavaScriptBodyTest::staticCallback("
             + "Lorg/teavm/html4j/test/A;)(a)", javacall = true)
     private native int invokeStaticCallback(A a);

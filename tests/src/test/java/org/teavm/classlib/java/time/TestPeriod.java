@@ -48,7 +48,6 @@ package org.teavm.classlib.java.time;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
-
 import java.time.LocalDate;
 import java.time.Period;
 import org.junit.runner.RunWith;

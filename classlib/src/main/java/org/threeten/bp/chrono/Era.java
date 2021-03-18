@@ -48,7 +48,6 @@ package org.threeten.bp.chrono;
 
 import static org.threeten.bp.temporal.ChronoField.ERA;
 import java.util.Locale;
-
 import org.threeten.bp.format.DateTimeFormatterBuilder;
 import org.threeten.bp.format.TextStyle;
 import org.threeten.bp.temporal.ChronoField;

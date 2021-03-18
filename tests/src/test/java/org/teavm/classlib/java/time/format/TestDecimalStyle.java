@@ -47,11 +47,9 @@
 package org.teavm.classlib.java.time.format;
 
 import static org.testng.Assert.assertEquals;
-
 import java.time.format.DecimalStyle;
 import java.util.Locale;
 import java.util.Set;
-
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMProperties;
 import org.teavm.junit.TeaVMProperty;

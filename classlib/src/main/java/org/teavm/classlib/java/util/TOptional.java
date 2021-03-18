@@ -21,7 +21,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-
 import org.teavm.classlib.java.util.stream.TStream;
 
 public final class TOptional<T> {

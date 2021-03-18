@@ -622,7 +622,7 @@ public class TestYearMonth extends AbstractDateTimeTest {
         assertEquals(test.plusMonths(months), YearMonth.of((int) (-40L + months / 12), 6 + (int) (months % 12)));
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_plusMonths_long_invalidTooLarge() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
         test.plusMonths(1);
@@ -640,7 +640,7 @@ public class TestYearMonth extends AbstractDateTimeTest {
         test.plusMonths(Long.MIN_VALUE);
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_plusMonths_long_invalidTooSmall() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 1);
         test.plusMonths(-1);
@@ -737,7 +737,7 @@ public class TestYearMonth extends AbstractDateTimeTest {
         assertEquals(test.minusMonths(months), YearMonth.of((int) (40L - months / 12), 6 - (int) (months % 12)));
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_minusMonths_long_invalidTooLarge() {
         YearMonth test = YearMonth.of(Year.MAX_VALUE, 12);
         test.minusMonths(-1);
@@ -755,7 +755,7 @@ public class TestYearMonth extends AbstractDateTimeTest {
         test.minusMonths(Long.MIN_VALUE);
     }
 
-    @Test(expectedExceptions = {DateTimeException.class})
+    @Test(expectedExceptions = DateTimeException.class)
     public void test_minusMonths_long_invalidTooSmall() {
         YearMonth test = YearMonth.of(Year.MIN_VALUE, 1);
         test.minusMonths(1);
