@@ -41,7 +41,7 @@ public class TimeZoneGenerator implements MetadataGenerator {
                     if (entry == null) {
                         break;
                     }
-                    switch (entry.getName().substring(("tzdata" + TIMEZONE_DB_VERSION + "/").length())) {
+                    switch (entry.getName()) {
                         case "africa":
                         case "antarctica":
                         case "asia":
