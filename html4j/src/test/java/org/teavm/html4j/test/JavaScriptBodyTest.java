@@ -17,12 +17,12 @@ package org.teavm.html4j.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import net.java.html.js.JavaScriptBody;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
@@ -30,7 +30,6 @@ import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
-@Ignore
 public class JavaScriptBodyTest {
     @Test
     public void readResource() throws IOException {
@@ -63,8 +62,9 @@ public class JavaScriptBodyTest {
     @Test
     public void dependencyPropagatedThroughArray() {
         storeObject(new Object[] { new AImpl() });
-        A[] array = (A[]) retrieveObject();
-        assertEquals(23, array[0].foo());
+        Object[] array = (Object[]) retrieveObject();
+        assertTrue(array[0] instanceof A);
+        assertEquals(23, ((A) array[0]).foo());
     }
 
     @Test
