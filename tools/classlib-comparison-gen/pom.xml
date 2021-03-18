@@ -21,7 +21,7 @@
     <groupId>org.teavm</groupId>
     <artifactId>teavm</artifactId>
     <version>0.7.0-SNAPSHOT</version>
-    <relativePath>../..</relativePath>
+    <relativePath>../../pom.xml</relativePath>
   </parent>
   <artifactId>teavm-classlib-comparison-gen</artifactId>
 
