@@ -21,6 +21,7 @@ import net.java.html.json.tests.KnockoutTest;
 import net.java.html.json.tests.MinesTest;
 import net.java.html.json.tests.OperationsTest;
 import net.java.html.json.tests.WebSocketTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
@@ -34,6 +35,7 @@ import org.teavm.junit.WholeClassCompilation;
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
 @WholeClassCompilation
+@Ignore
 public class KnockoutTCKTest {
     private final ConvertTypesTest convertTypesTest = new ConvertTypesTest();
     private final JSONTest jsonTest = new JSONTest();
