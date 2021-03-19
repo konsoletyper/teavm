@@ -697,7 +697,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             return false;
         }
         optimization.unwrappedArrayVariable = ((VariableExpr) assign.getLeftValue()).getIndex();
-        if (writeFrequencies[optimization.unwrappedArrayVariable] != 1) {
+        if (writeFrequencies[optimization.unwrappedArrayVariable] != 1
+                || preservedVars[optimization.unwrappedArrayVariable]
+                || readFrequencies[optimization.unwrappedArrayVariable] != optimization.arraySize) {
             return false;
         }
 
