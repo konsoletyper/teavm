@@ -40,6 +40,7 @@ import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.generate.WasmDependencyListener;
 import org.teavm.backend.wasm.generate.WasmGenerationContext;
 import org.teavm.backend.wasm.generate.WasmGenerator;
+import org.teavm.backend.wasm.generate.WasmInteropFunctionGenerator;
 import org.teavm.backend.wasm.generate.WasmNameProvider;
 import org.teavm.backend.wasm.generate.WasmSpecialFunctionGenerator;
 import org.teavm.backend.wasm.generate.WasmStringPool;
@@ -341,6 +342,9 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
         dependencyAnalyzer.linkField(new FieldReference("java.lang.Object", "monitor"));
 
+        dependencyAnalyzer.linkMethod(new MethodReference(String.class, "allocate", int.class, String.class))
+                .use();
+
         ClassDependency runtimeClassDep = dependencyAnalyzer.linkClass(RuntimeClass.class.getName());
         ClassDependency runtimeObjectDep = dependencyAnalyzer.linkClass(RuntimeObject.class.getName());
         ClassDependency runtimeArrayDep = dependencyAnalyzer.linkClass(RuntimeArray.class.getName());
@@ -431,6 +435,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator, binaryWriter);
 
         generateMethods(classes, context, generator, classGenerator, binaryWriter, module);
+        new WasmInteropFunctionGenerator(classGenerator).generateFunctions(module);
         exceptionHandlingIntrinsic.postProcess(CallSiteDescriptor.extract(classes, classes.getClassNames()));
         generateIsSupertypeFunctions(tagRegistry, module, classGenerator);
         classGenerator.postProcess();
@@ -454,6 +459,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         generateInitFunction(classes, initFunction, names, binaryWriter.getAddress());
         module.add(initFunction);
         module.setStartFunction(initFunction);
+
 
         for (TeaVMEntryPoint entryPoint : controller.getEntryPoints().values()) {
             String mangledName = names.forMethod(entryPoint.getMethod());

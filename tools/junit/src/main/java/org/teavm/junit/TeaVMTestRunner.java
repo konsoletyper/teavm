@@ -104,6 +104,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     static final String TESTNG_PROVIDER = "org.testng.annotations.DataProvider";
     private static final String PATH_PARAM = "teavm.junit.target";
     private static final String JS_RUNNER = "teavm.junit.js.runner";
+    private static final String WASM_RUNNER = "teavm.junit.wasm.runner";
     private static final String THREAD_COUNT = "teavm.junit.threads";
     private static final String JS_ENABLED = "teavm.junit.js";
     static final String JS_DECODE_STACK = "teavm.junit.js.decodeStack";
@@ -190,6 +191,25 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         String cCommand = System.getProperty(C_COMPILER);
         if (cCommand != null) {
             runners.get(RunKind.C).strategy = new CRunStrategy(cCommand);
+        }
+
+        runStrategyName = System.getProperty(WASM_RUNNER);
+        if (runStrategyName != null) {
+            TestRunStrategy wasmRunStrategy;
+            switch (runStrategyName) {
+                case "browser":
+                    wasmRunStrategy = new BrowserRunStrategy(outputDir, "WASM", this::customBrowser);
+                    break;
+                case "browser-chrome":
+                    wasmRunStrategy = new BrowserRunStrategy(outputDir, "WASM", this::chromeBrowser);
+                    break;
+                case "browser-firefox":
+                    wasmRunStrategy = new BrowserRunStrategy(outputDir, "WASM", this::firefoxBrowser);
+                    break;
+                default:
+                    throw new InitializationError("Unknown run strategy: " + runStrategyName);
+            }
+            runners.get(RunKind.WASM).strategy = wasmRunStrategy;
         }
     }
 
@@ -479,6 +499,14 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             File testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), false, ".wasm");
             runs.add(createTestRun(configuration, testPath, child, RunKind.WASM, reference.toString(),
                     notifier, onSuccess));
+            File htmlPath = getOutputFile(outputPathForMethod, "test-wasm", configuration.getSuffix(), false, ".html");
+            properties.put("SCRIPT", "../" + testPath.getName() + "-runtime.js");
+            properties.put("IDENTIFIER", reference.toString());
+            try {
+                resourceToFile("teavm-run-test-wasm.html", htmlPath, properties);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         for (TeaVMTestConfiguration<CTarget> configuration : getCConfigurations()) {
@@ -526,6 +554,18 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 TestRun run = prepareRun(configuration, child, compileResult, notifier, RunKind.WASM, onSuccess);
                 if (run != null) {
                     runs.add(run);
+
+                    File testPath = getOutputFile(outputPath, "test", configuration.getSuffix(), false,
+                            ".wasm-runtime.js");
+                    File htmlPath = getOutputFile(outputPath, "test", configuration.getSuffix(), false, ".html");
+                    properties.put("SCRIPT", testPath.getName());
+                    properties.put("IDENTIFIER", "");
+
+                    try {
+                        resourceToFile("teavm-run-test-wasm.html", htmlPath, properties);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         } catch (Throwable e) {

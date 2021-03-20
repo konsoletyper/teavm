@@ -114,6 +114,14 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         this(sb.buffer, 0, sb.length());
     }
 
+    private TString(int length) {
+        this.characters = new char[length];
+    }
+
+    private static TString allocate(int size) {
+        return new TString(size);
+    }
+
     @Override
     public char charAt(int index) {
         if (index < 0 || index >= characters.length) {

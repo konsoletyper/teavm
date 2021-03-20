@@ -32,7 +32,7 @@ window.addEventListener("message", event => {
         case "WASM":
             const runtimeFile = request.file + "-runtime.js";
             appendFiles([runtimeFile], 0, () => {
-                launchWasmTest(request.file, equest.argument, response => {
+                launchWasmTest(request.file, request.argument, response => {
                     event.source.postMessage(response, "*");
                 });
             }, error => {
@@ -112,7 +112,7 @@ function launchWasmTest(path, argument, callback) {
         }
     }
 
-    TeaVM.wasm.run(path, {
+    TeaVM.wasm.load(path, {
         installImports: function(o) {
             o.teavm.putwchar = putwchar;
         },
@@ -122,7 +122,18 @@ function launchWasmTest(path, argument, callback) {
                 errorMessage: err.message + '\n' + err.stack
             }));
         }
-    });
+    }).then(teavm => {
+        teavm.main(argument ? [argument] : []);
+    })
+    .then(() => {
+        callback(wrapResponse({ status: "OK" }));
+    })
+    .catch(err => {
+        callback(wrapResponse({
+            status: "failed",
+            errorMessage: err.message + '\n' + err.stack
+        }));
+    })
 }
 
 function start() {
