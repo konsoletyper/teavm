@@ -701,7 +701,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
         StringBuilder sb = new StringBuilder();
         if (expression.isImported()) {
-            sb.append(!function.getImportModule().isEmpty()
+            sb.append(function.getImportModule() != null && !function.getImportModule().isEmpty()
                     ? function.getImportModule() + "_" + function.getImportName()
                     : function.getImportName());
         } else {

@@ -27,9 +27,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
 import org.teavm.backend.lowlevel.dependency.StringsDependencyListener;
@@ -69,8 +71,10 @@ import org.teavm.backend.wasm.intrinsics.RuntimeClassIntrinsic;
 import org.teavm.backend.wasm.intrinsics.ShadowStackIntrinsic;
 import org.teavm.backend.wasm.intrinsics.StructureIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmHeapIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicFactory;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicFactoryContext;
+import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.backend.wasm.intrinsics.WasmRuntimeIntrinsic;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -92,6 +96,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
+import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.backend.wasm.optimization.UnusedFunctionElimination;
 import org.teavm.backend.wasm.render.WasmBinaryRenderer;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
@@ -150,7 +155,9 @@ import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.runtime.Allocator;
+import org.teavm.runtime.EventQueue;
 import org.teavm.runtime.ExceptionHandling;
+import org.teavm.runtime.Fiber;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
@@ -354,6 +361,22 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             }
         }
 
+        dependencyAnalyzer.linkMethod(new MethodReference(Fiber.class, "isResuming", boolean.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(Fiber.class, "isSuspending", boolean.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(Fiber.class, "current", Fiber.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(Fiber.class, "startMain", String[].class, void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(EventQueue.class, "processSingle", void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(EventQueue.class, "isStopped", boolean.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(Thread.class, "setCurrentThread", Thread.class,
+                void.class)).use();
+
+        ClassReader fiberClass = dependencyAnalyzer.getClassSource().get(Fiber.class.getName());
+        for (MethodReader method : fiberClass.getMethods()) {
+            if (method.getName().startsWith("pop") || method.getName().equals("push")) {
+                dependencyAnalyzer.linkMethod(method.getReference()).use();
+            }
+        }
+
         dependencyAnalyzer.addDependencyListener(new StringsDependencyListener());
     }
 
@@ -417,6 +440,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             context.addIntrinsic(new MemoryTraceIntrinsic());
         }
         context.addIntrinsic(new WasmHeapIntrinsic());
+        context.addIntrinsic(new FiberIntrinsic());
 
         IntrinsicFactoryContext intrinsicFactoryContext = new IntrinsicFactoryContext();
         for (WasmIntrinsicFactory additionalIntrinsicFactory : additionalIntrinsics) {
@@ -459,15 +483,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         generateInitFunction(classes, initFunction, names, binaryWriter.getAddress());
         module.add(initFunction);
         module.setStartFunction(initFunction);
-
-
-        for (TeaVMEntryPoint entryPoint : controller.getEntryPoints().values()) {
-            String mangledName = names.forMethod(entryPoint.getMethod());
-            WasmFunction function = module.getFunctions().get(mangledName);
-            if (function != null) {
-                function.setExportName(entryPoint.getPublicName());
-            }
-        }
+        module.add(createStartFunction(names));
 
         for (String functionName : classGenerator.getFunctionTable()) {
             WasmFunction function = module.getFunctions().get(functionName);
@@ -501,6 +517,22 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
 
         emitRuntime(buildTarget, getBaseName(outputName) + ".wasm-runtime.js");
+    }
+
+    private WasmFunction createStartFunction(NameProvider names) {
+        WasmFunction function = new WasmFunction("teavm_start");
+        function.setExportName("start");
+        function.getParameters().add(WasmType.INT32);
+
+        WasmLocal local = new WasmLocal(WasmType.INT32, "args");
+        function.add(local);
+
+        WasmCall call = new WasmCall(names.forMethod(new MethodReference(Fiber.class, "startMain", String[].class,
+                void.class)));
+        call.getArguments().add(new WasmGetLocal(local));
+        function.getBody().add(call);
+
+        return function;
     }
 
     private class IntrinsicFactoryContext implements WasmIntrinsicFactoryContext {
@@ -965,6 +997,55 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         @Override
         public ClassReaderSource getClassSource() {
             return classSource;
+        }
+    }
+
+
+    class FiberIntrinsic implements WasmIntrinsic {
+        @Override
+        public boolean isApplicable(MethodReference methodReference) {
+            if (!methodReference.getClassName().equals(Fiber.class.getName())) {
+                return false;
+            }
+            switch (methodReference.getName()) {
+                case "runMain":
+                case "setCurrentThread":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        @Override
+        public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
+            switch (invocation.getMethod().getName()) {
+                case "runMain": {
+                    Iterator<? extends TeaVMEntryPoint> entryPointIter = controller.getEntryPoints().values()
+                            .iterator();
+                    if (entryPointIter.hasNext()) {
+                        TeaVMEntryPoint entryPoint = entryPointIter.next();
+                        String name = manager.getNames().forMethod(entryPoint.getMethod());
+                        WasmCall call = new WasmCall(name);
+                        call.getArguments().add(manager.generate(invocation.getArguments().get(0)));
+                        call.setLocation(invocation.getLocation());
+                        return call;
+                    } else {
+                        WasmUnreachable unreachable = new WasmUnreachable();
+                        unreachable.setLocation(invocation.getLocation());
+                        return unreachable;
+                    }
+                }
+                case "setCurrentThread": {
+                    String name = manager.getNames().forMethod(new MethodReference(Thread.class,
+                            "setCurrentThread", Thread.class, void.class));
+                    WasmCall call = new WasmCall(name);
+                    call.getArguments().add(manager.generate(invocation.getArguments().get(0)));
+                    call.setLocation(invocation.getLocation());
+                    return call;
+                }
+                default:
+                    throw new IllegalArgumentException();
+            }
         }
     }
 }

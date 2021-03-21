@@ -500,7 +500,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             runs.add(createTestRun(configuration, testPath, child, RunKind.WASM, reference.toString(),
                     notifier, onSuccess));
             File htmlPath = getOutputFile(outputPathForMethod, "test-wasm", configuration.getSuffix(), false, ".html");
-            properties.put("SCRIPT", "../" + testPath.getName() + "-runtime.js");
+            properties.put("SCRIPT", "../" + testPath.getName());
             properties.put("IDENTIFIER", reference.toString());
             try {
                 resourceToFile("teavm-run-test-wasm.html", htmlPath, properties);
@@ -555,8 +555,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 if (run != null) {
                     runs.add(run);
 
-                    File testPath = getOutputFile(outputPath, "test", configuration.getSuffix(), false,
-                            ".wasm-runtime.js");
+                    File testPath = getOutputFile(outputPath, "test", configuration.getSuffix(), false, ".wasm");
                     File htmlPath = getOutputFile(outputPath, "test", configuration.getSuffix(), false, ".html");
                     properties.put("SCRIPT", testPath.getName());
                     properties.put("IDENTIFIER", "");
