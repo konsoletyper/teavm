@@ -694,4 +694,20 @@ public class TreeMapTest {
             assertEquals(101, tm.size());
         }
     }
+
+    @Test
+    public void submap() {
+        TreeMap<Integer, Integer> map = new TreeMap<>();
+        map.put(1, 1);
+        map.put(3, 15);
+        map.put(4, 20);
+        map.put(6, 13);
+        map.put(10, 119);
+
+        assertEquals("{}", map.subMap(0, 0).toString());
+        assertEquals("{}", map.subMap(7, 9).toString());
+        assertEquals("{3=15, 4=20, 6=13}", map.subMap(3, 9).toString());
+        assertEquals("{10=119}", map.subMap(10, 29).toString());
+        assertEquals("{}", map.subMap(29, 100).toString());
+    }
 }

@@ -56,6 +56,10 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         length = value.length();
     }
 
+    public TAbstractStringBuilder append(Object obj) {
+        return append(String.valueOf(obj));
+    }
+
     protected TAbstractStringBuilder append(String string) {
         return insert(length, string);
     }

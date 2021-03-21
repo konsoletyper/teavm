@@ -47,11 +47,10 @@ public class ScalaHacks implements ClassHolderTransformer {
                 transformProperties(cls);
                 break;
             default:
-            {
                 if (cls.getName().endsWith(SCALA_INTERNAL_CLASS_MARKER)) {
                     checkAndRemoveExportAnnotation(cls);
                 }
-            } break;
+                break;
         }
     }
 

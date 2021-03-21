@@ -17,6 +17,7 @@ package org.teavm.html4j.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,8 +62,9 @@ public class JavaScriptBodyTest {
     @Test
     public void dependencyPropagatedThroughArray() {
         storeObject(new Object[] { new AImpl() });
-        A[] array = (A[]) retrieveObject();
-        assertEquals(23, array[0].foo());
+        Object[] array = (Object[]) retrieveObject();
+        assertTrue(array[0] instanceof A);
+        assertEquals(23, ((A) array[0]).foo());
     }
 
     @Test
@@ -88,19 +90,19 @@ public class JavaScriptBodyTest {
     @JavaScriptBody(args = {}, body = "return 23;")
     private native int simpleNativeMethod();
 
-    @JavaScriptBody(args = { "value" }, body = "return value;")
+    @JavaScriptBody(args = "value", body = "return value;")
     private native Object returnValuePassed(Object value);
 
-    @JavaScriptBody(args = { "obj" }, body = "window._global_ = obj;")
+    @JavaScriptBody(args = "obj", body = "window._global_ = obj;")
     private native void storeObject(Object obj);
 
     @JavaScriptBody(args = {}, body = "return window._global_;")
     private native Object retrieveObject();
 
-    @JavaScriptBody(args = { "callback" }, body = "return callback.@org.teavm.html4j.test.A::foo()()", javacall = true)
+    @JavaScriptBody(args = "callback", body = "return callback.@org.teavm.html4j.test.A::foo()()", javacall = true)
     private native int invokeCallback(A callback);
 
-    @JavaScriptBody(args = { "callback" }, body = ""
+    @JavaScriptBody(args = "callback", body = ""
             + "return callback."
                 + "@org.teavm.html4j.test.B::bar("
                 + "Lorg/teavm/html4j/test/A;)(_global_)",
@@ -111,7 +113,7 @@ public class JavaScriptBodyTest {
         return a.foo();
     }
 
-    @JavaScriptBody(args = { "a" }, body = "return "
+    @JavaScriptBody(args = "a", body = "return "
             + "@org.teavm.html4j.test.JavaScriptBodyTest::staticCallback("
             + "Lorg/teavm/html4j/test/A;)(a)", javacall = true)
     private native int invokeStaticCallback(A a);

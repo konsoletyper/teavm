@@ -220,6 +220,7 @@ class DependencyGraphBuilder {
 
         @Override
         public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
+            super.cast(receiver, value, targetType);
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
             ClassReaderSource classSource = dependencyAnalyzer.getClassSource();
@@ -253,6 +254,7 @@ class DependencyGraphBuilder {
                 valueNode.connect(receiverNode);
             }
         }
+
         @Override
         public void exit(VariableReader valueToReturn) {
             if (valueToReturn != null) {

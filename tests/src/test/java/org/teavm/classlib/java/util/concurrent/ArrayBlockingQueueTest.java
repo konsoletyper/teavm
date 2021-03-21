@@ -102,7 +102,7 @@ public class ArrayBlockingQueueTest {
         long start = System.currentTimeMillis();
         queue.put(3);
         long end = System.currentTimeMillis();
-        assertTrue(start + 50 < end && start + 250 > end);
+        assertTrue("Wait time " + (end - start), start + 50 < end && start + 5000 > end);
 
         assertEquals(3, queue.remove().intValue());
     }
@@ -127,7 +127,7 @@ public class ArrayBlockingQueueTest {
         long end = System.currentTimeMillis();
         int b = queue.take();
 
-        assertTrue(start + 100 < end && start + 500 > end);
+        assertTrue("Wait time " + (end - start), start + 100 < end && start + 5000 > end);
         assertEquals(1, a);
         assertEquals(2, b);
     }

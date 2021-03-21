@@ -34,6 +34,14 @@ class CRunStrategy implements TestRunStrategy {
     }
 
     @Override
+    public void beforeAll() {
+    }
+
+    @Override
+    public void afterAll() {
+    }
+
+    @Override
     public void beforeThread() {
     }
 

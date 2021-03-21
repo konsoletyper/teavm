@@ -16,6 +16,12 @@
 
 var TeaVM = TeaVM || {};
 TeaVM.wasm = function() {
+    class JavaError extends Error {
+        constructor(message) {
+            super(message)
+        }
+    }
+
     let lineBuffer = "";
     function putwchar(charCode) {
         if (charCode === 10) {
@@ -87,7 +93,38 @@ TeaVM.wasm = function() {
         };
     }
 
-    function run(path, options) {
+    function createTeaVM(instance) {
+        let teavm = {
+            memory: instance.exports.memory,
+            instance,
+            catchException: instance.exports.teavm_catchException
+        }
+
+        for (const name of ["allocateString", "stringData", "allocateObjectArray", "allocateStringArray",
+            "allocateByteArray", "allocateShortArray", "allocateCharArray", "allocateIntArray",
+            "allocateLongArray", "allocateFloatArray", "allocateDoubleArray",
+            "objectArrayData", "byteArrayData", "shortArrayData", "charArrayData", "intArrayData",
+            "longArrayData", "floatArrayData", "doubleArrayData", "arrayLength"]) {
+            teavm[name] = wrapExport(instance.exports["teavm_" + name], instance);
+        }
+
+        teavm.main = createMain(teavm, instance.exports.main);
+
+        return teavm;
+    }
+
+    function wrapExport(fn, instance) {
+        return function() {
+            let result = fn.apply(this, arguments);
+            let ex = instance.exports.teavm_catchException();
+            if (ex !== 0) {
+                throw new JavaError("Uncaught exception occurred in java");
+            }
+            return result;
+        }
+    }
+
+    function load(path, options) {
         if (!options) {
             options = {};
         }
@@ -105,23 +142,49 @@ TeaVM.wasm = function() {
         xhr.responseType = "arraybuffer";
         xhr.open("GET", path);
 
-        xhr.onload = function() {
-            let response = xhr.response;
-            if (!response) {
-                return;
-            }
+        return new Promise((resolve, reject) => {
+            xhr.onload = () => {
+                let response = xhr.response;
+                if (!response) {
+                    return;
+                }
 
-            WebAssembly.instantiate(response, importObj).then(function(resultObject) {
-                importObj.teavm.logString.memory = resultObject.instance.exports.memory;
-                resultObject.instance.exports.main();
-                callback(resultObject);
-            }).catch(function(error) {
-                console.log("Error loading WebAssembly %o", error);
-                errorCallback(error);
-            });
-        };
-        xhr.send();
+                WebAssembly.instantiate(response, importObj).then(resultObject => {
+                    importObj.teavm.logString.memory = resultObject.instance.exports.memory;
+                    let teavm = createTeaVM(resultObject.instance);
+                    teavm.main = createMain(teavm, wrapExport, resultObject.instance.exports.main);
+                    resolve(teavm);
+                }).catch(error => {
+                    reject(error);
+                });
+            };
+            xhr.send();
+        });
     }
 
-    return { importDefaults: importDefaults, run: run };
+    function createMain(teavm, mainFunction) {
+        return function(args) {
+            if (typeof args === "undefined") {
+                args = [];
+            }
+            return new Promise(resolve => {
+                let javaArgs = teavm.allocateStringArray(mainArgs.length);
+                let javaArgsData = new Uint32Array(teavm.memory, teavm.objectArrayData(javaArgs), args.length);
+                for (let i = 0; i < mainArgs.length; ++i) {
+                    let arg = args[i];
+                    let javaArg = teavm.allocateString(arg.length);
+                    let javaArgAddress = teavm.objectArrayData(teavm.stringData(javaArg));
+                    let javaArgData = new Uint16Array(teavm.memory, javaArgAddress, arg.length);
+                    for (let j = 0; j < arg.length; ++j) {
+                        javaArgData[j] = arg.charCodeAt(j);
+                    }
+                    javaArgsData[i] = javaArg;
+                }
+
+                resolve(wrapExport(mainFunction, teavm.instance)(javaArgs));
+            });
+        }
+    }
+
+    return { JavaError, importDefaults, load, wrapExport, createTeaVM, createMain };
 }();

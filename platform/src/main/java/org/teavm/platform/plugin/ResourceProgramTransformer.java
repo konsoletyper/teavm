@@ -35,6 +35,7 @@ class ResourceProgramTransformer {
             Object.class, String[].class);
     private static final MethodReference GET_PROPERTY = new MethodReference(ResourceAccessor.class, "getProperty",
             Object.class, String.class, Object.class);
+    private static final ValueType RESOURCE = ValueType.parse(Resource.class);
 
     private ClassHierarchy hierarchy;
     private Program program;
@@ -58,6 +59,15 @@ class ResourceProgramTransformer {
                 if (replacement != null) {
                     insn.insertNextAll(replacement);
                     insn.delete();
+                }
+            } else if (insn instanceof CastInstruction) {
+                CastInstruction cast = (CastInstruction) insn;
+                if (hierarchy.isSuperType(RESOURCE, cast.getTargetType(), false)) {
+                    AssignInstruction assign = new AssignInstruction();
+                    assign.setReceiver(cast.getReceiver());
+                    assign.setAssignee(cast.getValue());
+                    assign.setLocation(cast.getLocation());
+                    insn.replace(assign);
                 }
             }
         }
@@ -171,13 +181,7 @@ class ResourceProgramTransformer {
                     return instructions;
                 }
                 default: {
-                    Variable resultVar = insn.getProgram().createVariable();
-                    getProperty(insn, property, instructions, resultVar);
-                    CastInstruction castInsn = new CastInstruction();
-                    castInsn.setReceiver(insn.getReceiver());
-                    castInsn.setTargetType(type);
-                    castInsn.setValue(resultVar);
-                    instructions.add(castInsn);
+                    getProperty(insn, property, instructions, insn.getReceiver());
                     return instructions;
                 }
             }

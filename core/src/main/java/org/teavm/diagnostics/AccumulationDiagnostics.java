@@ -35,7 +35,7 @@ public class AccumulationDiagnostics implements Diagnostics, ProblemProvider {
 
     @Override
     public void warning(CallLocation location, String error, Object... params) {
-        Problem problem = new Problem(ProblemSeverity.ERROR, location, error, params);
+        Problem problem = new Problem(ProblemSeverity.WARNING, location, error, params);
         problems.add(problem);
     }
 

@@ -46,6 +46,9 @@ abstract class TDateFormatElement {
 
     static int whichMatches(String text, TParsePosition position, String[] patterns) {
         for (int i = 0; i < patterns.length; ++i) {
+            if (patterns[i] == null) {
+                continue;
+            }
             if (matches(text, position.getIndex(), patterns[i])) {
                 position.setIndex(position.getIndex() + patterns[i].length());
                 return i;
@@ -117,7 +120,7 @@ abstract class TDateFormatElement {
 
         @Override
         public void format(TCalendar date, StringBuffer buffer) {
-            int weekday = date.get(TCalendar.DAY_OF_WEEK) - 1;
+            int weekday = date.get(TCalendar.DAY_OF_WEEK);
             buffer.append(abbreviated ? shortWeeks[weekday] : weeks[weekday]);
         }
 

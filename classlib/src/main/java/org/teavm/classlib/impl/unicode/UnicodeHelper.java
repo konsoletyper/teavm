@@ -16,7 +16,6 @@
 package org.teavm.classlib.impl.unicode;
 
 import java.util.Arrays;
-
 import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
 

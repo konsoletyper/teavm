@@ -17,8 +17,10 @@ package org.teavm.classlib.java.util;
 
 import java.io.Serializable;
 import java.util.AbstractSet;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Objects;
 
 public abstract class TEnumSet<E extends Enum<E>> extends AbstractSet<E> implements Cloneable, Serializable {
     public static <E extends Enum<E>> TEnumSet<E> noneOf(Class<E> elementType) {
@@ -28,9 +30,7 @@ public abstract class TEnumSet<E extends Enum<E>> extends AbstractSet<E> impleme
     public static <E extends Enum<E>> TEnumSet<E> allOf(Class<E> elementType) {
         int count = TGenericEnumSet.getConstants(elementType).length;
         int[] bits = new int[((count - 1) / 32) + 1];
-        for (int i = 0; i < bits.length; ++i) {
-            bits[i] = ~0;
-        }
+        Arrays.fill(bits, ~0);
         zeroHighBits(bits, count);
         return new TGenericEnumSet<>(elementType, bits);
     }
@@ -49,7 +49,6 @@ public abstract class TEnumSet<E extends Enum<E>> extends AbstractSet<E> impleme
                 throw new IllegalArgumentException();
             }
             E first = iter.next();
-            @SuppressWarnings("unchecked")
             TEnumSet<E> result = noneOf(first.getDeclaringClass());
             result.add(first);
             while (iter.hasNext()) {
@@ -125,7 +124,28 @@ public abstract class TEnumSet<E extends Enum<E>> extends AbstractSet<E> impleme
         return copyOf(this);
     }
 
-    abstract void fastAdd(E t);
+    public static <E extends Enum<E>> TEnumSet<E> range(E from, E to) {
+        Objects.requireNonNull(from);
+        Objects.requireNonNull(to);
+
+        int fromIndex = from.ordinal();
+        int toIndex = to.ordinal();
+        if (fromIndex > toIndex) {
+            throw new IllegalArgumentException();
+        }
+
+        TEnumSet<E> result = TEnumSet.noneOf(from.getDeclaringClass());
+        for (int i = fromIndex; i <= toIndex; ++i) {
+            result.fastAdd(i);
+        }
+        return result;
+    }
+
+    void fastAdd(E t) {
+        fastAdd(t.ordinal());
+    }
+
+    abstract void fastAdd(int n);
 
     private static void zeroHighBits(int[] bits, int count) {
         bits[bits.length - 1] &= (~0) >>> (32 - count % 32);

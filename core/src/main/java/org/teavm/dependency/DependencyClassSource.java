@@ -140,5 +140,10 @@ class DependencyClassSource implements ClassHolderSource {
         public boolean isStrict() {
             return strict;
         }
+
+        @Override
+        public void submit(ClassHolder cls) {
+            DependencyClassSource.this.submit(cls);
+        }
     };
 }

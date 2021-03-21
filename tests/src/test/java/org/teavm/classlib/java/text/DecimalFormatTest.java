@@ -165,7 +165,7 @@ public class DecimalFormatTest {
         format = createFormat("00000000000000000000000000.0");
         assertEquals("00000000000000000000000023.0", format.format(23));
         assertEquals("00002300000000000000000000.0", format.format(23E20));
-        assertEquals("23000000000000000000000000.0", format.format(23E24));
+        assertEquals("24000000000000000000000000.0", format.format(24E24));
 
         format = createFormat("0.00000000000000000000000000");
         assertEquals("23.00000000000000000000000000", format.format(23));
@@ -173,6 +173,9 @@ public class DecimalFormatTest {
         assertEquals("0.00230000000000000000000000", format.format(0.0023));
         assertEquals("0.00000000000000000000230000", format.format(23E-22));
         assertEquals("0.00000000000000000000000023", format.format(23E-26));
+
+        assertEquals("1", createFormat("#.##").format(0.9977993000000007d));
+        assertEquals("1", createFormat("#.##").format(0.997799f));
     }
 
     @Test
@@ -328,7 +331,7 @@ public class DecimalFormatTest {
         assertEquals("23.0", format.format(23));
         assertEquals("2,300.0", format.format(2300));
         assertEquals("2,300,000,000,000,000,000,000.0", format.format(23E20));
-        assertEquals("23,000,000,000,000,000,000,000,000.0", format.format(23E24));
+        assertEquals("24,000,000,000,000,000,000,000,000.0", format.format(24E24));
 
         format = createFormat("000,000,000,000,000,000,000");
         assertEquals("000,000,000,000,000,000,023", format.format(23));
@@ -381,6 +384,9 @@ public class DecimalFormatTest {
         assertEquals("1.23E2", format.format(123));
         assertEquals("1.234E3", format.format(1234));
         assertEquals("1.234E4", format.format(12345));
+
+        //assertEquals("1.23E4", createFormat("#.##E0").format(12345));
+        assertEquals("1E5", createFormat("#.##E0").format(99999));
     }
 
     @Test

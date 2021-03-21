@@ -19,12 +19,14 @@ import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
 import org.teavm.classlib.impl.tz.DateTimeZoneBuilder.DSTZone;
 import org.teavm.classlib.impl.tz.DateTimeZoneBuilder.PrecalculatedZone;
+import org.teavm.classlib.impl.tz.DateTimeZoneBuilder.RuleBasedZone;
 
 public abstract class StorableDateTimeZone extends DateTimeZone {
     public static final int PRECALCULATED = 0;
     public static final int FIXED = 1;
     public static final int DST = 3;
     public static final int ALIAS = 4;
+    public static final int RULE_BASED = 5;
 
     public StorableDateTimeZone(String id) {
         super(id);
@@ -34,9 +36,9 @@ public abstract class StorableDateTimeZone extends DateTimeZone {
 
     public static void writeTime(StringBuilder sb, long time) {
         if (time % 1800_000 == 0) {
-            Base46.encode(sb, (int) ((time / 1800_000) << 1));
+            Base46.encode(sb, (time / 1800_000) << 1);
         } else {
-            Base46.encode(sb, (int) (((time / 60_000) << 1) | 1));
+            Base46.encode(sb, (time << 1) | 1);
         }
     }
 
@@ -45,7 +47,7 @@ public abstract class StorableDateTimeZone extends DateTimeZone {
         if ((value & 1) == 0) {
             return (value >> 1) * 1800_000;
         } else {
-            return (value >> 1) * 60_000;
+            return value >> 1;
         }
     }
 
@@ -53,7 +55,7 @@ public abstract class StorableDateTimeZone extends DateTimeZone {
         if (time % 1800_000 == 0) {
             Base46.encodeUnsigned(sb, (int) ((time / 1800_000) << 1));
         } else {
-            Base46.encodeUnsigned(sb, (int) (((time / 60_000) << 1) | 1));
+            Base46.encodeUnsigned(sb, (int) ((time << 1) | 1));
         }
     }
 
@@ -62,7 +64,7 @@ public abstract class StorableDateTimeZone extends DateTimeZone {
         if ((value & 1) == 0) {
             return (value >>> 1) * 1800_000;
         } else {
-            return (value >>> 1) * 60_000;
+            return value >>> 1;
         }
     }
 
@@ -124,6 +126,8 @@ public abstract class StorableDateTimeZone extends DateTimeZone {
                 return DSTZone.readZone(id, flow);
             case FIXED:
                 return FixedDateTimeZone.readZone(id, flow);
+            case RULE_BASED:
+                return RuleBasedZone.readZone(id, flow);
             default:
                 throw new IllegalArgumentException("Unknown zone type: " + type);
         }

@@ -111,9 +111,9 @@ public class LinkedHashMapTest {
         assertNull("Empty LinkedHashMap access", empty.get("nothing"));
         empty.put("something", "here");
 
-        //CHECKSTYLE:OFF
+        //CHECKSTYLE.OFF:StringLiteralEquality
         assertTrue("cannot get element", empty.get("something") == "here");
-        //CHECKSTYLE:ON
+        //CHECKSTYLE.ON:StringLiteralEquality
     }
 
     @Test
@@ -131,9 +131,9 @@ public class LinkedHashMapTest {
         assertNull("Empty hashtable access", empty.get("nothing"));
         empty.put("something", "here");
 
-        //CHECKSTYLE:OFF
+        //CHECKSTYLE.OFF:StringLiteralEquality
         assertTrue("cannot get element", empty.get("something") == "here");
-        // CHECKSTYLE: ON
+        //CHECKSTYLE.ON:StringLiteralEquality
     }
 
     @Test
@@ -549,5 +549,15 @@ public class LinkedHashMapTest {
             assertTrue("Returned incorrect entry set", jj.intValue() == i * 2);
         }
         assertTrue("Entries left to iterate on", !it2.hasNext());
+    }
+
+    @Test
+    public void test_to_String() {
+        LinkedHashMap lhm = new LinkedHashMap();
+        lhm.put("A", lhm);
+        lhm.put("B", "C");
+
+        assertEquals("{A=(this Map), B=C}", lhm.toString());
+        assertEquals("{}", new LinkedHashMap().toString());
     }
 }

@@ -19,16 +19,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import java.lang.reflect.Method;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.netbeans.html.json.tck.JavaScriptTCK;
 import org.netbeans.html.json.tck.KOTest;
+import org.teavm.junit.SkipJVM;
+import org.teavm.junit.TeaVMTestRunner;
 
 /**
  *
  * @author Jaroslav Tulach
  */
+@RunWith(TeaVMTestRunner.class)
+@SkipJVM
 public class JavaScriptTCKCheckTest extends JavaScriptTCK {
     @Test
-    public void allJavaScriptBodyTestMethodsOverriden() throws Exception {
+    public void allJavaScriptBodyTestMethodsOverridden() throws Exception {
         for (Class<?> c : testClasses()) {
             if (c.getName().contains("GC")) {
                 continue;

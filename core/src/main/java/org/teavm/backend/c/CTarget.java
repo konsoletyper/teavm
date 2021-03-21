@@ -609,6 +609,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         if (!incremental) {
             headerWriter.println("extern TeaVM_String* teavm_stringPool[];");
             headerWriter.println("#define TEAVM_GET_STRING(i) teavm_stringPool[i]");
+            headerWriter.println("#define TEAVM_GET_STRING_ADDRESS(i) (teavm_stringPool + i)");
 
             includes.includePath("strings.h");
             includes.includePath("stringhash.h");

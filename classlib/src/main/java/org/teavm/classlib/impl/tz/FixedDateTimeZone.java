@@ -15,6 +15,9 @@
  */
 package org.teavm.classlib.impl.tz;
 
+import java.time.ZoneOffset;
+import java.time.zone.ZoneRules;
+import java.util.Collections;
 import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
 
@@ -77,5 +80,20 @@ public final class FixedDateTimeZone extends StorableDateTimeZone {
         int wallOffset = (int) readTime(flow);
         int standardOffset = (int) readTime(flow);
         return new FixedDateTimeZone(id, wallOffset, standardOffset);
+    }
+
+    @Override
+    public ZoneRules asZoneRules() {
+        if (iWallOffset == iStandardOffset) {
+            return ZoneRules.of(ZoneOffset.ofTotalSeconds(iStandardOffset / 1000));
+        } else {
+            return ZoneRules.of(
+                    ZoneOffset.ofTotalSeconds(iStandardOffset / 1000),
+                    ZoneOffset.ofTotalSeconds(iWallOffset / 1000),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    Collections.emptyList()
+            );
+        }
     }
 }

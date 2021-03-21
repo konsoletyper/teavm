@@ -44,6 +44,18 @@ function $rt_isAssignable(from, to) {
     }
     return false;
 }
+function $rt_castToInterface(obj, cls) {
+    if (obj !== null && !$rt_isInstance(obj, cls)) {
+        $rt_throwCCE();
+    }
+    return obj;
+}
+function $rt_castToClass(obj, cls) {
+    if (obj !== null && !(obj instanceof cls)) {
+        $rt_throwCCE();
+    }
+    return obj;
+}
 Array.prototype.fill = Array.prototype.fill || function(value,start,end) {
     var len = this.length;
     if (!len) return this;
@@ -74,17 +86,30 @@ function $rt_wrapArray(cls, data) {
 function $rt_createUnfilledArray(cls, sz) {
     return new $rt_array(cls, new Array(sz));
 }
-function $rt_createLongArray(sz) {
-    var data = new Array(sz);
-    var arr = new $rt_array($rt_longcls(), data);
-    data.fill(Long_ZERO);
-    return arr;
-}
-function $rt_createLongArrayFromData(init) {
-    return new $rt_array($rt_longcls(), init);
-}
 function $rt_createNumericArray(cls, nativeArray) {
     return new $rt_array(cls, nativeArray);
+}
+var $rt_createLongArray;
+var $rt_createLongArrayFromData;
+if (typeof BigInt64Array !== 'function') {
+    $rt_createLongArray = function(sz) {
+        var data = new Array(sz);
+        var arr = new $rt_array($rt_longcls(), data);
+        data.fill(Long_ZERO);
+        return arr;
+    }
+    $rt_createLongArrayFromData = function(init) {
+        return new $rt_array($rt_longcls(), init);
+    }
+} else {
+    $rt_createLongArray = function (sz) {
+        return $rt_createNumericArray($rt_longcls(), new BigInt64Array(sz));
+    }
+    $rt_createLongArrayFromData = function(data) {
+        var buffer = new BigInt64Array(data.length);
+        buffer.set(data);
+        return $rt_createNumericArray($rt_longcls(), buffer);
+    }
 }
 function $rt_createCharArray(sz) {
     return $rt_createNumericArray($rt_charcls(), new Uint16Array(sz));
@@ -272,7 +297,7 @@ function $rt_exception(ex) {
 function $rt_fillStack(err, ex) {
     if (typeof $rt_decodeStack === "function" && err.stack) {
         var stack = $rt_decodeStack(err.stack);
-        var javaStack = $rt_createArray($rt_objcls(), stack.length);
+        var javaStack = $rt_createArray($rt_stecls(), stack.length);
         var elem;
         var noStack = false;
         for (var i = 0; i < stack.length; ++i) {
@@ -630,15 +655,29 @@ function $rt_eraseClinit(target) {
 
 var $rt_numberConversionView = new DataView(new ArrayBuffer(8));
 
-function $rt_doubleToLongBits(n) {
-    $rt_numberConversionView.setFloat64(0, n, true);
-    return new Long($rt_numberConversionView.getInt32(0, true), $rt_numberConversionView.getInt32(4, true));
+var $rt_doubleToLongBits;
+var $rt_longBitsToDouble;
+if (typeof BigInt !== 'function') {
+    $rt_doubleToLongBits = function(n) {
+        $rt_numberConversionView.setFloat64(0, n, true);
+        return new Long($rt_numberConversionView.getInt32(0, true), $rt_numberConversionView.getInt32(4, true));
+    }
+    $rt_longBitsToDouble = function(n) {
+        $rt_numberConversionView.setInt32(0, n.lo, true);
+        $rt_numberConversionView.setInt32(4, n.hi, true);
+        return $rt_numberConversionView.getFloat64(0, true);
+    }
+} else {
+    $rt_doubleToLongBits = function(n) {
+        $rt_numberConversionView.setFloat64(0, n, true);
+        return $rt_numberConversionView.getBigInt64(0, true);
+    }
+    $rt_longBitsToDouble = function(n) {
+        $rt_numberConversionView.setBigInt64(0, n, true);
+        return $rt_numberConversionView.getFloat64(0, true);
+    }
 }
-function $rt_longBitsToDouble(n) {
-    $rt_numberConversionView.setInt32(0, n.lo, true);
-    $rt_numberConversionView.setInt32(4, n.hi, true);
-    return $rt_numberConversionView.getFloat64(0, true);
-}
+
 function $rt_floatToIntBits(n) {
     $rt_numberConversionView.setFloat32(0, n);
     return $rt_numberConversionView.getInt32(0);
@@ -697,6 +736,7 @@ function $dbg_class(obj) {
     }
     return clsName;
 }
+
 function Long(lo, hi) {
     this.lo = lo | 0;
     this.hi = hi | 0;
@@ -704,39 +744,85 @@ function Long(lo, hi) {
 Long.prototype.__teavm_class__ = function() {
     return "long";
 };
-Long.prototype.toString = function() {
-    var result = [];
-    var n = this;
-    var positive = Long_isPositive(n);
-    if (!positive) {
-        n = Long_neg(n);
-    }
-    var radix = new Long(10, 0);
-    do {
-        var divRem = Long_divRem(n, radix);
-        result.push(String.fromCharCode(48 + divRem[1].lo));
-        n = divRem[0];
-    } while (n.lo !== 0 || n.hi !== 0);
-    result = result.reverse().join('');
-    return positive ? result : "-" + result;
-};
-Long.prototype.valueOf = function() {
-    return Long_toNumber(this);
-};
-var Long_ZERO = new Long(0, 0);
+function Long_isPositive(a) {
+    return (a.hi & 0x80000000) === 0;
+}
+function Long_isNegative(a) {
+    return (a.hi & 0x80000000) !== 0;
+}
+
 var Long_MAX_NORMAL = 1 << 18;
-function Long_fromInt(val) {
-    return new Long(val, (-(val < 0)) | 0);
-}
-function Long_fromNumber(val) {
-    if (val >= 0) {
-        return new Long(val | 0, (val / 0x100000000) | 0);
-    } else {
-        return Long_neg(new Long(-val | 0, (-val / 0x100000000) | 0));
+var Long_ZERO;
+var Long_create;
+var Long_fromInt;
+var Long_fromNumber;
+var Long_toNumber;
+var Long_hi;
+var Long_lo;
+if (typeof BigInt !== "function") {
+    Long.prototype.toString = function() {
+        var result = [];
+        var n = this;
+        var positive = Long_isPositive(n);
+        if (!positive) {
+            n = Long_neg(n);
+        }
+        var radix = new Long(10, 0);
+        do {
+            var divRem = Long_divRem(n, radix);
+            result.push(String.fromCharCode(48 + divRem[1].lo));
+            n = divRem[0];
+        } while (n.lo !== 0 || n.hi !== 0);
+        result = result.reverse().join('');
+        return positive ? result : "-" + result;
+    };
+    Long.prototype.valueOf = function() {
+        return Long_toNumber(this);
+    };
+
+    Long_ZERO = new Long(0, 0);
+    Long_fromInt = function(val) {
+        return new Long(val, (-(val < 0)) | 0);
     }
-}
-function Long_toNumber(val) {
-    return 0x100000000 * val.hi + (val.lo >>> 0);
+    Long_fromNumber = function(val) {
+        if (val >= 0) {
+            return new Long(val | 0, (val / 0x100000000) | 0);
+        } else {
+            return Long_neg(new Long(-val | 0, (-val / 0x100000000) | 0));
+        }
+    }
+    Long_create = function(lo, hi) {
+        return new Long(lo, hi);
+    }
+    Long_toNumber = function(val) {
+        return 0x100000000 * val.hi + (val.lo >>> 0);
+    }
+    Long_hi = function(val) {
+        return val.hi;
+    }
+    Long_lo = function(val) {
+        return val.lo;
+    }
+} else {
+    Long_ZERO = BigInt(0);
+    Long_create = function(lo, hi) {
+        return BigInt.asIntN(64, BigInt(lo) | (BigInt(hi) << BigInt(32)));
+    }
+    Long_fromInt = function(val) {
+        return BigInt(val);
+    }
+    Long_fromNumber = function(val) {
+        return BigInt(val >= 0 ? Math.floor(val) : Math.ceil(val));
+    }
+    Long_toNumber = function(val) {
+        return Number(val);
+    }
+    Long_hi = function(val) {
+        return Number(BigInt.asIntN(64, val >> BigInt(32))) | 0;
+    }
+    Long_lo = function(val) {
+        return Number(BigInt.asIntN(32, val)) | 0;
+    }
 }
 var $rt_imul = Math.imul || function(a, b) {
     var ah = (a >>> 16) & 0xFFFF;

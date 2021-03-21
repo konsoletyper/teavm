@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -261,7 +262,9 @@ public class Renderer implements RenderingManager {
                 "$rt_createLongArrayFromData", "$rt_createBooleanArray", "$rt_createByteArray",
                 "$rt_createShortArray", "$rt_createCharArray", "$rt_createIntArray", "$rt_createLongArray",
                 "$rt_createFloatArray", "$rt_createDoubleArray", "$rt_compare",
-                "Long_toNumber", "Long_fromInt", "Long_fromNumber", "Long", "Long_ZERO");
+                "$rt_castToClass", "$rt_castToInterface",
+                "Long_toNumber", "Long_fromInt", "Long_fromNumber", "Long_create", "Long_ZERO",
+                "Long_hi", "Long_lo");
     }
 
     public void renderLongRuntimeAliases() throws IOException {
@@ -286,7 +289,7 @@ public class Renderer implements RenderingManager {
         if (minifying) {
             NamingOrderer orderer = new NamingOrderer();
             NameFrequencyEstimator estimator = new NameFrequencyEstimator(orderer, classSource, asyncMethods,
-                    asyncFamilyMethods);
+                    asyncFamilyMethods, context.isStrict());
             for (PreparedClass cls : classes) {
                 estimator.estimate(cls);
             }
@@ -619,16 +622,16 @@ public class Renderer implements RenderingManager {
             }
             writer.append(',').ws();
 
-            List<MethodReference> virtualMethods = new ArrayList<>();
+            Map<MethodDescriptor, MethodReference> virtualMethods = new LinkedHashMap<>();
+            collectMethodsToCopyFromInterfaces(classSource.get(cls.getName()), virtualMethods);
             for (PreparedMethod method : cls.getMethods()) {
                 if (!method.methodHolder.getModifiers().contains(ElementModifier.STATIC)
                         && method.methodHolder.getLevel() != AccessLevel.PRIVATE) {
-                    virtualMethods.add(method.reference);
+                    virtualMethods.put(method.reference.getDescriptor(), method.reference);
                 }
             }
-            collectMethodsToCopyFromInterfaces(classSource.get(cls.getName()), virtualMethods);
 
-            renderVirtualDeclarations(virtualMethods);
+            renderVirtualDeclarations(virtualMethods.values());
             debugEmitter.emitClass(null);
         }
         writer.append("]);").newLine();
@@ -700,7 +703,7 @@ public class Renderer implements RenderingManager {
         }
     }
 
-    private void collectMethodsToCopyFromInterfaces(ClassReader cls, List<MethodReference> targetList) {
+    private void collectMethodsToCopyFromInterfaces(ClassReader cls, Map<MethodDescriptor, MethodReference> target) {
         Set<MethodDescriptor> implementedMethods = new HashSet<>();
         ClassReader superclass = cls;
         while (superclass != null) {
@@ -715,33 +718,38 @@ public class Renderer implements RenderingManager {
         }
 
         Set<String> visitedClasses = new HashSet<>();
-        for (String ifaceName : cls.getInterfaces()) {
-            ClassReader iface = classSource.get(ifaceName);
-            if (iface != null) {
-                collectMethodsToCopyFromInterfacesImpl(iface, targetList, implementedMethods, visitedClasses);
+        superclass = cls;
+        while (superclass != null) {
+            for (String ifaceName : superclass.getInterfaces()) {
+                ClassReader iface = classSource.get(ifaceName);
+                if (iface != null) {
+                    collectMethodsToCopyFromInterfacesImpl(iface, target, implementedMethods, visitedClasses);
+                }
             }
+            superclass = superclass.getParent() != null ? classSource.get(superclass.getParent()) : null;
         }
     }
 
-    private void collectMethodsToCopyFromInterfacesImpl(ClassReader cls, List<MethodReference> targetList,
-            Set<MethodDescriptor> visited, Set<String> visitedClasses) {
+    private void collectMethodsToCopyFromInterfacesImpl(ClassReader cls, Map<MethodDescriptor, MethodReference> target,
+            Set<MethodDescriptor> implementedMethods, Set<String> visitedClasses) {
         if (!visitedClasses.add(cls.getName())) {
             return;
+        }
+
+        for (String ifaceName : cls.getInterfaces()) {
+            ClassReader iface = classSource.get(ifaceName);
+            if (iface != null) {
+                collectMethodsToCopyFromInterfacesImpl(iface, target, implementedMethods, visitedClasses);
+            }
         }
 
         for (MethodReader method : cls.getMethods()) {
             if (!method.hasModifier(ElementModifier.STATIC)
                     && !method.hasModifier(ElementModifier.ABSTRACT)) {
-                if (visited.add(method.getDescriptor())) {
-                    targetList.add(method.getReference());
+                MethodDescriptor descriptor = method.getDescriptor();
+                if (!implementedMethods.contains(descriptor)) {
+                    target.put(descriptor, method.getReference());
                 }
-            }
-        }
-
-        for (String ifaceName : cls.getInterfaces()) {
-            ClassReader iface = classSource.get(ifaceName);
-            if (iface != null) {
-                collectMethodsToCopyFromInterfacesImpl(iface, targetList, visited, visitedClasses);
             }
         }
     }

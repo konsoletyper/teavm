@@ -26,6 +26,7 @@ import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryOperation;
 import org.teavm.ast.BoundCheckExpr;
 import org.teavm.ast.BreakStatement;
+import org.teavm.ast.CastExpr;
 import org.teavm.ast.ContinueStatement;
 import org.teavm.ast.Expr;
 import org.teavm.ast.InitClassStatement;
@@ -208,7 +209,11 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(CastInstruction insn) {
-        assign(Expr.var(insn.getValue().getIndex()), insn.getReceiver());
+        CastExpr expr = new CastExpr();
+        expr.setLocation(insn.getLocation());
+        expr.setValue(Expr.var(insn.getValue().getIndex()));
+        expr.setTarget(insn.getTargetType());
+        assign(expr, insn.getReceiver());
     }
 
     @Override

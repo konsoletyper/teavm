@@ -42,6 +42,14 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
     private int runs;
 
     @Override
+    public void beforeAll() {
+    }
+
+    @Override
+    public void afterAll() {
+    }
+
+    @Override
     public void beforeThread() {
         init();
     }

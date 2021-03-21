@@ -58,13 +58,7 @@ class VirtualCallConsumer implements DependencyConsumer {
         knownTypes.set(type.index);
 
         String className = type.getName();
-        /*
-        if (DependencyAnalyzer.shouldLog) {
-            System.out.println("Virtual call of " + methodDesc + " detected on " + node.getTag() + ". "
-                    + "Target class is " + className);
-        }
 
-         */
         if (className.startsWith("[")) {
             className = "java.lang.Object";
         }

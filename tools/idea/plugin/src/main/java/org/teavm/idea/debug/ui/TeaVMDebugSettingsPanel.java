@@ -18,18 +18,18 @@ package org.teavm.idea.debug.ui;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
+import com.intellij.util.ui.JBUI;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
 import org.teavm.idea.debug.TeaVMDebugConfiguration;
 
 class TeaVMDebugSettingsPanel extends JPanel {
     private final JBTextField portField = new JBTextField();
 
     public TeaVMDebugSettingsPanel() {
-        setBorder(new EmptyBorder(10, 10, 10, 10));
+        setBorder(JBUI.Borders.empty(10));
 
         GridBagConstraints labelConstraints = new GridBagConstraints();
         labelConstraints.anchor = GridBagConstraints.BASELINE_LEADING;

@@ -9,7 +9,9 @@
 <script type="text/javascript">
     main(["${IDENTIFIER}"], function(result) {
         var message = result instanceof Error ? buildErrorMessage(result) : "OK";
-        document.body.appendChild(document.createTextNode(message))
+        var pre = document.createElement("pre");
+        document.body.appendChild(pre);
+        pre.appendChild(document.createTextNode(message));
     });
 
     function buildErrorMessage(e) {

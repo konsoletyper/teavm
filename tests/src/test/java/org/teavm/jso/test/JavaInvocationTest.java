@@ -36,7 +36,7 @@ public class JavaInvocationTest {
         assertEquals(7, Num.create(5).add(Num.create(2)).value());
     }
 
-    @JSBody(params = { "a" }, script = "return javaMethods.get('org.teavm.jso.test.JavaInvocationTest.sum(II)I')"
+    @JSBody(params = "a", script = "return javaMethods.get('org.teavm.jso.test.JavaInvocationTest.sum(II)I')"
             + ".invoke(a, 2);")
     private static native int staticInvocation(int a);
 

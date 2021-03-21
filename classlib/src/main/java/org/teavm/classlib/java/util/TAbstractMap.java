@@ -266,6 +266,28 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
     }
 
     @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append('{');
+        TIterator<TMap.Entry<K, V>> iter = entrySet().iterator();
+        if (iter.hasNext()) {
+            TMap.Entry<K, V> e = iter.next();
+            sb.append(e.getKey() == this ? "(this Map)" : e.getKey());
+            sb.append('=');
+            sb.append(e.getValue() == this ? "(this Map)" : e.getValue());
+        }
+        while (iter.hasNext()) {
+            sb.append(", ");
+            TMap.Entry<K, V> e = iter.next();
+            sb.append(e.getKey() == this ? "(this Map)" : e.getKey());
+            sb.append('=');
+            sb.append(e.getValue() == this ? "(this Map)" : e.getValue());
+        }
+        sb.append('}');
+        return sb.toString();
+    }
+
+    @Override
     protected Object clone() throws TCloneNotSupportedException {
         TAbstractMap<?, ?> copy = (TAbstractMap<?, ?>) super.clone();
         copy.cachedKeySet = null;

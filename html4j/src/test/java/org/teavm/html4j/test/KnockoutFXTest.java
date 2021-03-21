@@ -37,13 +37,11 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
-import org.teavm.junit.WholeClassCompilation;
 
 /**
  *
  * @author Jaroslav Tulach <jtulach@netbeans.org>
  */
-@WholeClassCompilation
 public final class KnockoutFXTest extends KnockoutTCK implements Transfer, WSTransfer<WSImpl> {
     private KO4J ko4j = new KO4J();
     private final Map<String, Request> urlMap = new HashMap<>();

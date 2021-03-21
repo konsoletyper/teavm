@@ -837,7 +837,8 @@ public class ClassGenerator {
 
         String metadataName = nameOfType(type);
         String nameRef = metadataName != null
-                ? "(TeaVM_Object**) &TEAVM_GET_STRING(" + context.getStringPool().getStringIndex(metadataName) + ")"
+                ? "(TeaVM_Object**) TEAVM_GET_STRING_ADDRESS("
+                + context.getStringPool().getStringIndex(metadataName) + ")"
                 : "NULL";
         String superTypeFunction = context.getNames().forSupertypeFunction(type);
 
@@ -854,7 +855,7 @@ public class ClassGenerator {
             simpleName = "NULL";
         } else {
             int simpleNameIndex = context.getStringPool().getStringIndex(simpleName);
-            simpleName = "(TeaVM_Object**) &TEAVM_GET_STRING(" + simpleNameIndex + ")";
+            simpleName = "(TeaVM_Object**) TEAVM_GET_STRING_ADDRESS(" + simpleNameIndex + ")";
         }
 
         includes.includePath("strings.h");

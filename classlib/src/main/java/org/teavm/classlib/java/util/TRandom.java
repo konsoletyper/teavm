@@ -68,6 +68,9 @@ public class TRandom extends TObject implements TSerializable {
     }
 
     public int nextInt(int n) {
+        if (n <= 0) {
+            throw new IllegalArgumentException();
+        }
         return (int) (nextDouble() * n);
     }
 

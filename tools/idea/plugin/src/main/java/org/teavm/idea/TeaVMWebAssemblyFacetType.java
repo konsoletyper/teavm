@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class TeaVMWebAssemblyFacetType extends FacetType<TeaVMFacet, TeaVMFacetConfiguration> {
     public static final FacetTypeId<TeaVMFacet> TYPE_ID = new FacetTypeId<>("teavm-wasm");
-    private static final Icon icon = IconLoader.getIcon("/teavm-16.png");
+    private static final Icon icon = IconLoader.findIcon("/teavm-16.png");
 
     public TeaVMWebAssemblyFacetType() {
         super(TYPE_ID, "teavm-wasm", "TeaVM (WebAssembly)");

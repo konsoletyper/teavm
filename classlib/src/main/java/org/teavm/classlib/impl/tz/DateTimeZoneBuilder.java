@@ -15,6 +15,14 @@
  */
 package org.teavm.classlib.impl.tz;
 
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.ZoneOffset;
+import java.time.zone.ZoneOffsetTransition;
+import java.time.zone.ZoneOffsetTransitionRule;
+import java.time.zone.ZoneRules;
 import java.util.*;
 import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
@@ -193,9 +201,10 @@ public class DateTimeZoneBuilder {
         int saveMillis = 0;
 
         int ruleSetCount = iRuleSets.size();
+        GregorianCalendar calendar = new GregorianCalendar(getGMT());
         for (int i = 0; i < ruleSetCount; i++) {
             RuleSet rs = iRuleSets.get(i);
-            Transition next = rs.firstTransition(millis);
+            Transition next = rs.firstTransition(millis, calendar);
             if (next == null) {
                 continue;
             }
@@ -206,7 +215,7 @@ public class DateTimeZoneBuilder {
             // Copy it since we're going to destroy it.
             rs = new RuleSet(rs);
 
-            while ((next = rs.nextTransition(millis, saveMillis)) != null) {
+            while ((next = rs.nextTransition(millis, saveMillis, calendar)) != null) {
                 if (addTransition(transitions, next)) {
                     if (tailZone != null) {
                         // Got the extra transition before DSTZone.
@@ -305,20 +314,52 @@ public class DateTimeZoneBuilder {
         }
 
         public void write(StringBuilder sb) {
-            sb.append(iMode);
+            int flags = 0;
+            if (iAdvance) {
+                flags |= 1;
+            }
+            if (iDayOfWeek != 0) {
+                flags |= 2;
+            }
+            switch (iMode) {
+                case 'w':
+                    flags |= 4;
+                    break;
+                case 's':
+                    flags |= 8;
+                    break;
+            }
+            Base46.encodeUnsigned(sb, flags);
             Base46.encodeUnsigned(sb, iMonthOfYear);
-            Base46.encodeUnsigned(sb, iDayOfMonth);
-            Base46.encode(sb, iDayOfWeek);
-            sb.append(iAdvance ? 'y' : 'n');
+            Base46.encode(sb, iDayOfMonth);
+            if (iDayOfWeek != 0) {
+                Base46.encode(sb, iDayOfWeek);
+            }
             StorableDateTimeZone.writeUnsignedTime(sb, iMillisOfDay);
         }
 
         public static OfYear read(CharFlow flow) {
-            char mode = flow.characters[flow.pointer++];
+            int flags = Base46.decodeUnsigned(flow);
+            boolean advance = (flags & 1) != 0;
+            boolean hasDayOfWeek = (flags & 2) != 0;
+
+            int modeBits = (flags >>> 2) & 3;
+            char mode;
+            switch (modeBits) {
+                case 1:
+                    mode = 'w';
+                    break;
+                case 2:
+                    mode = 's';
+                    break;
+                default:
+                    mode = 'u';
+                    break;
+            }
+
             int monthOfYear = Base46.decodeUnsigned(flow);
-            int dayOfMonth = Base46.decodeUnsigned(flow);
-            int dayOfWeek = Base46.decode(flow);
-            boolean advance = flow.characters[flow.pointer++] == 'y';
+            int dayOfMonth = Base46.decode(flow);
+            int dayOfWeek = hasDayOfWeek ? Base46.decode(flow) : 0;
             int millisOfDay = (int) StorableDateTimeZone.readUnsignedTime(flow);
             return new OfYear(mode, monthOfYear, dayOfMonth, dayOfWeek, advance, millisOfDay);
         }
@@ -358,7 +399,7 @@ public class DateTimeZoneBuilder {
         /**
          * @param standardOffset standard offset just before next recurrence
          */
-        public long next(long instant, int standardOffset, int saveMillis) {
+        public long next(long instant, int standardOffset, int saveMillis, GregorianCalendar calendar) {
             int offset;
             if (iMode == 'w') {
                 offset = standardOffset + saveMillis;
@@ -371,7 +412,6 @@ public class DateTimeZoneBuilder {
             // Convert from UTC to local time.
             instant += offset;
 
-            GregorianCalendar calendar = new GregorianCalendar(getGMT());
             calendar.setTimeInMillis(instant);
             calendar.set(Calendar.MONTH, iMonthOfYear - 1);
             calendar.set(Calendar.DATE, 1);
@@ -505,7 +545,7 @@ public class DateTimeZoneBuilder {
      */
     static final class Recurrence {
         final OfYear iOfYear;
-        final int iSaveMillis;
+        int iSaveMillis;
 
         Recurrence(OfYear ofYear, int saveMillis) {
             iOfYear = ofYear;
@@ -519,8 +559,8 @@ public class DateTimeZoneBuilder {
         /**
          * @param standardOffset standard offset just before next recurrence
          */
-        public long next(long instant, int standardOffset, int saveMillis) {
-            return iOfYear.next(instant, standardOffset, saveMillis);
+        public long next(long instant, int standardOffset, int saveMillis, GregorianCalendar calendar) {
+            return iOfYear.next(instant, standardOffset, saveMillis, calendar);
         }
 
         /**
@@ -578,8 +618,7 @@ public class DateTimeZoneBuilder {
             return iRecurrence.getSaveMillis();
         }
 
-        public long next(final long instant, int standardOffset, int saveMillis) {
-            Calendar calendar = Calendar.getInstance(getGMT());
+        public long next(final long instant, int standardOffset, int saveMillis, GregorianCalendar calendar) {
             final int wallOffset = standardOffset + saveMillis;
             long testInstant = instant;
 
@@ -589,6 +628,10 @@ public class DateTimeZoneBuilder {
             } else {
                 calendar.setTimeInMillis(instant + wallOffset);
                 year = calendar.get(Calendar.YEAR);
+            }
+
+            if (year > iToYear) {
+                return instant;
             }
 
             if (year < iFromYear) {
@@ -601,7 +644,7 @@ public class DateTimeZoneBuilder {
                 testInstant -= 1;
             }
 
-            long next = iRecurrence.next(testInstant, standardOffset, saveMillis);
+            long next = iRecurrence.next(testInstant, standardOffset, saveMillis, calendar);
 
             if (next > instant) {
                 calendar.setTimeInMillis(next + wallOffset);
@@ -662,7 +705,8 @@ public class DateTimeZoneBuilder {
             if (other == null) {
                 return true;
             }
-            return iMillis > other.iMillis && iWallOffset != other.iWallOffset;
+            return iMillis > other.iMillis
+                    && (iWallOffset != other.iWallOffset || iStandardOffset != other.iStandardOffset);
         }
     }
 
@@ -737,7 +781,7 @@ public class DateTimeZoneBuilder {
          *
          * @param firstMillis millis of first transition
          */
-        public Transition firstTransition(final long firstMillis) {
+        public Transition firstTransition(final long firstMillis, GregorianCalendar calendar) {
             if (iInitialNameKey != null) {
                 // Initial zone info explicitly set, so don't search the rules.
                 return new Transition(firstMillis, iStandardOffset + iInitialSaveMillis, iStandardOffset);
@@ -755,7 +799,7 @@ public class DateTimeZoneBuilder {
             Transition first = null;
 
             Transition next;
-            while ((next = nextTransition(millis, saveMillis)) != null) {
+            while ((next = nextTransition(millis, saveMillis, calendar)) != null) {
                 millis = next.getMillis();
 
                 if (millis == firstMillis) {
@@ -768,7 +812,7 @@ public class DateTimeZoneBuilder {
                         // Find first rule without savings. This way a more
                         // accurate nameKey is found even though no rule
                         // extends to the RuleSet's lower limit.
-                        for (Rule rule : copy) {
+                        for (Rule rule : iRules) {
                             if (rule.getSaveMillis() == 0) {
                                 first = new Transition(firstMillis, rule, iStandardOffset);
                                 break;
@@ -806,15 +850,20 @@ public class DateTimeZoneBuilder {
          *
          * @param saveMillis savings before next transition
          */
-        public Transition nextTransition(final long instant, final int saveMillis) {
+        public Transition nextTransition(long instant, int saveMillis, GregorianCalendar calendar) {
             // Find next matching rule.
             Rule nextRule = null;
             long nextMillis = Long.MAX_VALUE;
+            int nextYear = Integer.MAX_VALUE;
 
             Iterator<Rule> it = iRules.iterator();
             while (it.hasNext()) {
                 Rule rule = it.next();
-                long next = rule.next(instant, iStandardOffset, saveMillis);
+                if (rule.iFromYear > nextYear) {
+                    continue;
+                }
+
+                long next = rule.next(instant, iStandardOffset, saveMillis, calendar);
                 if (next <= instant) {
                     it.remove();
                     continue;
@@ -825,6 +874,7 @@ public class DateTimeZoneBuilder {
                     // Found a better match.
                     nextRule = rule;
                     nextMillis = next;
+                    nextYear = calendar.get(Calendar.YEAR);
                 }
             }
 
@@ -833,16 +883,14 @@ public class DateTimeZoneBuilder {
             }
 
             // Stop precalculating if year reaches some arbitrary limit.
-            Calendar c = Calendar.getInstance(getGMT());
-            c.setTimeInMillis(nextMillis);
-            if (c.get(Calendar.YEAR) >= YEAR_LIMIT) {
+            calendar.setTimeInMillis(nextMillis);
+            if (calendar.get(Calendar.YEAR) >= YEAR_LIMIT) {
                 return null;
             }
 
             // Check if upper limit reached or passed.
             if (iUpperYear < Integer.MAX_VALUE) {
-                long upperMillis =
-                    iUpperOfYear.setInstant(iUpperYear, iStandardOffset, saveMillis);
+                long upperMillis = iUpperOfYear.setInstant(iUpperYear, iStandardOffset, saveMillis);
                 if (nextMillis >= upperMillis) {
                     // At or after upper limit.
                     return null;
@@ -890,6 +938,7 @@ public class DateTimeZoneBuilder {
         final int iStandardOffset;
         final Recurrence iStartRecurrence;
         final Recurrence iEndRecurrence;
+        final GregorianCalendar calendar = new GregorianCalendar(getGMT());
 
         DSTZone(String id, int standardOffset, Recurrence startRecurrence, Recurrence endRecurrence) {
             super(id);
@@ -923,7 +972,7 @@ public class DateTimeZoneBuilder {
             long end;
 
             try {
-                start = startRecurrence.next(instant, standardOffset, endRecurrence.getSaveMillis());
+                start = startRecurrence.next(instant, standardOffset, endRecurrence.getSaveMillis(), calendar);
                 if (instant > 0 && start < 0) {
                     // Overflowed.
                     start = instant;
@@ -934,7 +983,7 @@ public class DateTimeZoneBuilder {
             }
 
             try {
-                end = endRecurrence.next(instant, standardOffset, startRecurrence.getSaveMillis());
+                end = endRecurrence.next(instant, standardOffset, startRecurrence.getSaveMillis(), calendar);
                 if (instant > 0 && end < 0) {
                     // Overflowed.
                     end = instant;
@@ -994,14 +1043,14 @@ public class DateTimeZoneBuilder {
             long end;
 
             try {
-                start = startRecurrence.next(instant, standardOffset, endRecurrence.getSaveMillis());
+                start = startRecurrence.next(instant, standardOffset, endRecurrence.getSaveMillis(), calendar);
             } catch (IllegalArgumentException | ArithmeticException e) {
                 // Overflowed.
                 start = instant;
             }
 
             try {
-                end = endRecurrence.next(instant, standardOffset, startRecurrence.getSaveMillis());
+                end = endRecurrence.next(instant, standardOffset, startRecurrence.getSaveMillis(), calendar);
             } catch (IllegalArgumentException | ArithmeticException e) {
                 // Overflowed.
                 end = instant;
@@ -1023,6 +1072,11 @@ public class DateTimeZoneBuilder {
             Recurrence startRecurrence = Recurrence.read(flow);
             Recurrence endRecurrence = Recurrence.read(flow);
             return new DSTZone(id, standardOffset, startRecurrence, endRecurrence);
+        }
+
+        @Override
+        public ZoneRules asZoneRules() {
+            return null;
         }
     }
 
@@ -1092,17 +1146,38 @@ public class DateTimeZoneBuilder {
                 ++start;
             }
 
+            if (start > 1) {
+                --start;
+                iTransitions[start] = iTransitions[0];
+                iWallOffsets[start] = iWallOffsets[0];
+                iStandardOffsets[start] = iStandardOffsets[0];
+            }
+
             Base46.encodeUnsigned(sb, PRECALCULATED);
-            Base46.encodeUnsigned(sb, iTransitions.length - start);
+
+            int lengthEncoded = (iTransitions.length - start) << 1;
+            if (iTransitions[start] == Long.MIN_VALUE) {
+                lengthEncoded |= 1;
+            }
+            Base46.encodeUnsigned(sb, lengthEncoded);
 
             long[] transitions = iTransitions.clone();
             for (int i = 0; i < transitions.length; ++i) {
                 transitions[i] = (transitions[i] / 60_000) * 60_000;
             }
 
-            writeTime(sb, transitions[start]);
-            for (int i = start + 1; i < transitions.length; ++i) {
-                writeTime(sb, transitions[i] - transitions[i - 1] - (365 * 3600 * 1000 / 2));
+            if (iTransitions[start] == Long.MIN_VALUE) {
+                if (start + 1 < transitions.length) {
+                    writeTime(sb, transitions[start + 1]);
+                    for (int i = start + 2; i < transitions.length; ++i) {
+                        writeTime(sb, transitions[i] - transitions[i - 1] - (365 * 3600 * 1000 / 2));
+                    }
+                }
+            } else {
+                writeTime(sb, transitions[start]);
+                for (int i = start + 1; i < transitions.length; ++i) {
+                    writeTime(sb, transitions[i] - transitions[i - 1] - (365 * 3600 * 1000 / 2));
+                }
             }
 
             writeTimeArray(sb, Arrays.copyOfRange(iWallOffsets, start, transitions.length));
@@ -1118,13 +1193,25 @@ public class DateTimeZoneBuilder {
 
         public static StorableDateTimeZone readZone(String id, CharFlow flow) {
             int length = Base46.decodeUnsigned(flow);
+            boolean firstLongIsMin = (length & 1) != 0;
+            length >>>= 1;
             long[] transitions = new long[length];
             int[] wallOffsets = new int[length];
             int[] standardOffsets = new int[length];
 
-            transitions[0] = readTime(flow);
-            for (int i = 1; i < length; ++i) {
-                transitions[i] = transitions[i - 1] + readTime(flow) + 365 * 3600 * 1000 / 2;
+            if (firstLongIsMin) {
+                transitions[0] = Long.MIN_VALUE;
+                if (transitions.length > 1) {
+                    transitions[1] = readTime(flow);
+                    for (int i = 2; i < length; ++i) {
+                        transitions[i] = transitions[i - 1] + readTime(flow) + 365 * 3600 * 1000 / 2;
+                    }
+                }
+            } else {
+                transitions[0] = readTime(flow);
+                for (int i = 1; i < length; ++i) {
+                    transitions[i] = transitions[i - 1] + readTime(flow) + 365 * 3600 * 1000 / 2;
+                }
             }
 
             readTimeArray(flow, wallOffsets);
@@ -1275,6 +1362,294 @@ public class DateTimeZoneBuilder {
             }
 
             return false;
+        }
+
+        @Override
+        public ZoneRules asZoneRules() {
+            List<ZoneOffsetTransition> standardTransitions = new ArrayList<>();
+            List<ZoneOffsetTransition> transitions = new ArrayList<>();
+            ZoneOffset firstStandardOffset = ZoneOffset.ofTotalSeconds(iStandardOffsets[0] / 1000);
+            ZoneOffset firstOffset = ZoneOffset.ofTotalSeconds(iWallOffsets[0] / 1000);
+            ZoneOffset lastStandardOffset = firstStandardOffset;
+            ZoneOffset lastOffset = firstOffset;
+            long time = Long.MIN_VALUE;
+
+            for (int i = 1; i < iTransitions.length; ++i) {
+                time = iTransitions[i];
+                LocalDateTime transitionTime = LocalDateTime.ofEpochSecond(time / 1000, 0, ZoneOffset.UTC);
+                if (iStandardOffsets[i] != iStandardOffsets[i - 1]) {
+                    int offsetInSeconds = iStandardOffsets[i] / 1000;
+                    int lastOffsetInSeconds = lastStandardOffset.getTotalSeconds();
+                    ZoneOffset offset = ZoneOffset.ofTotalSeconds(offsetInSeconds);
+                    standardTransitions.add(ZoneOffsetTransition.of(transitionTime.plusSeconds(lastOffsetInSeconds),
+                            lastStandardOffset, offset));
+                    lastStandardOffset = offset;
+                }
+                if (iWallOffsets[i] != iWallOffsets[i - 1]) {
+                    ZoneOffset offset = ZoneOffset.ofTotalSeconds(iWallOffsets[i] / 1000);
+                    int lastOffsetInSeconds = lastOffset.getTotalSeconds();
+                    transitions.add(ZoneOffsetTransition.of(transitionTime.plusSeconds(lastOffsetInSeconds),
+                            lastOffset, offset));
+                    lastOffset = offset;
+                }
+            }
+
+            List<ZoneOffsetTransitionRule> lastRules;
+            if (iTailZone != null) {
+                if (time != Long.MIN_VALUE) {
+                    int count = 0;
+                    while (count < 2) {
+                        time = iTailZone.nextTransition(time);
+                        LocalDateTime transitionTime = LocalDateTime.ofEpochSecond(time / 1000, 0, ZoneOffset.UTC);
+                        int newOffset = iTailZone.getOffset(time) / 1000;
+                        if (newOffset != lastOffset.getTotalSeconds()) {
+                            transitions.add(ZoneOffsetTransition.of(
+                                    transitionTime.plusSeconds(lastOffset.getTotalSeconds()),
+                                    lastOffset, ZoneOffset.ofTotalSeconds(newOffset)
+                            ));
+                            count++;
+                            lastOffset = ZoneOffset.ofTotalSeconds(newOffset);
+                        }
+                    }
+                }
+
+                ZoneOffset tailStandardOffset = ZoneOffset.ofTotalSeconds(iTailZone.iStandardOffset / 1000);
+                ZoneOffset startRecurrenceOffset = ZoneOffset.ofTotalSeconds(
+                        (iTailZone.iStandardOffset + iTailZone.iStartRecurrence.iSaveMillis) / 1000);
+                ZoneOffset endRecurrenceOffset = ZoneOffset.ofTotalSeconds(
+                        (iTailZone.iStandardOffset + iTailZone.iEndRecurrence.iSaveMillis) / 1000);
+                ZoneOffsetTransitionRule firstRule = createRule(iTailZone.iStartRecurrence.iOfYear, tailStandardOffset,
+                        endRecurrenceOffset, startRecurrenceOffset);
+                ZoneOffsetTransitionRule lastRule = createRule(iTailZone.iEndRecurrence.iOfYear, tailStandardOffset,
+                        startRecurrenceOffset, endRecurrenceOffset);
+                lastRules = Arrays.asList(firstRule, lastRule);
+            } else {
+                lastRules = Collections.emptyList();
+            }
+
+            return ZoneRules.of(firstStandardOffset, firstOffset, standardTransitions, transitions, lastRules);
+        }
+
+        private ZoneOffsetTransitionRule createRule(OfYear ofYear, ZoneOffset standardOffset,
+                ZoneOffset offsetBefore, ZoneOffset offsetAfter) {
+            int millisOfDay = ofYear.iMillisOfDay;
+            boolean midnight = false;
+            if (millisOfDay == 24 * 60 * 60 * 1000) {
+                millisOfDay = 0;
+                midnight = true;
+            }
+
+            ZoneOffsetTransitionRule.TimeDefinition mode;
+            switch (ofYear.iMode) {
+                case 'u':
+                    mode = ZoneOffsetTransitionRule.TimeDefinition.UTC;
+                    break;
+                case 'w':
+                    mode = ZoneOffsetTransitionRule.TimeDefinition.WALL;
+                    break;
+                case 's':
+                    mode = ZoneOffsetTransitionRule.TimeDefinition.STANDARD;
+                    break;
+                default:
+                    throw new IllegalArgumentException();
+            }
+
+            Month month = Month.of(ofYear.iMonthOfYear);
+            int dayOfMonthIndicator = ofYear.iDayOfMonth;
+            if (dayOfMonthIndicator < 0) {
+                if (month != Month.FEBRUARY) {
+                    dayOfMonthIndicator = month.maxLength() - 6;
+                }
+            }
+
+            return ZoneOffsetTransitionRule.of(
+                    month,
+                    dayOfMonthIndicator,
+                    ofYear.iDayOfWeek != 0 ? DayOfWeek.of(ofYear.iDayOfWeek) : null,
+                    LocalTime.ofSecondOfDay(millisOfDay / 1000),
+                    midnight,
+                    mode,
+                    standardOffset,
+                    offsetBefore,
+                    offsetAfter
+            );
+        }
+    }
+
+    static final class RuleBasedZone extends StorableDateTimeZone {
+        private DateTimeZoneBuilder builder;
+        private DateTimeZone zone;
+
+        RuleBasedZone(String id, DateTimeZoneBuilder builder) {
+            super(id);
+            this.builder = builder;
+        }
+
+        private void initZone() {
+            if (zone == null) {
+                zone = builder.toDateTimeZone(getID(), true);
+            }
+        }
+
+        @Override
+        public int getOffset(long instant) {
+            initZone();
+            return zone.getOffset(instant);
+        }
+
+        @Override
+        public int getStandardOffset(long instant) {
+            initZone();
+            return zone.getStandardOffset(instant);
+        }
+
+        @Override
+        public boolean isFixed() {
+            initZone();
+            return zone.isFixed();
+        }
+
+        @Override
+        public long nextTransition(long instant) {
+            initZone();
+            return zone.nextTransition(instant);
+        }
+
+        @Override
+        public long previousTransition(long instant) {
+            initZone();
+            return zone.previousTransition(instant);
+        }
+
+        @Override
+        public void write(StringBuilder sb) {
+            Base46.encodeUnsigned(sb, RULE_BASED);
+            Base46.encodeUnsigned(sb, builder.iRuleSets.size());
+            int currentYear = Integer.MIN_VALUE;
+            int fromYear = currentYear;
+            for (RuleSet rs : builder.iRuleSets) {
+                writeTime(sb, rs.iInitialSaveMillis);
+                writeTime(sb, rs.iStandardOffset);
+                List<Rule> rules = filterRules(fromYear, rs.iUpperYear, rs.iRules);
+                Base46.encodeUnsigned(sb, (rules.size() << 1) | (rs.iInitialNameKey != null ? 1 : 0));
+                for (Rule rule : rules) {
+                    if (currentYear == Integer.MIN_VALUE) {
+                        Base46.encode(sb, rule.getFromYear());
+                    } else {
+                        Base46.encode(sb, rule.getFromYear() - currentYear);
+                    }
+                    currentYear = rule.getFromYear();
+                    if (rule.getToYear() != Integer.MAX_VALUE) {
+                        int yearDelta = rule.getToYear() - currentYear;
+                        if (yearDelta < 0) {
+                            yearDelta = (-yearDelta - 1) << 1 | 1;
+                        } else {
+                            yearDelta = yearDelta << 1;
+                        }
+                        Base46.encodeUnsigned(sb, yearDelta + 1);
+                        currentYear = rule.getToYear();
+                    } else {
+                        Base46.encodeUnsigned(sb, 0);
+                    }
+                    rule.iRecurrence.write(sb);
+                }
+                if (rs.iUpperYear == Integer.MAX_VALUE) {
+                    Base46.encodeUnsigned(sb, 0);
+                } else {
+                    int encodedYear;
+                    if (currentYear == Integer.MIN_VALUE) {
+                        encodedYear = rs.iUpperYear;
+                    } else {
+                        encodedYear = rs.iUpperYear - currentYear;
+                    }
+                    encodedYear = encodedYear < 0 ? ((-encodedYear - 1) << 1) | 1 : encodedYear << 1;
+                    Base46.encodeUnsigned(sb, encodedYear + 1);
+                    rs.iUpperOfYear.write(sb);
+                    currentYear = rs.iUpperYear;
+                }
+                fromYear = rs.iUpperYear;
+            }
+        }
+
+        public static StorableDateTimeZone readZone(String id, CharFlow flow) {
+            DateTimeZoneBuilder builder = new DateTimeZoneBuilder();
+            int ruleSetCount = Base46.decodeUnsigned(flow);
+            int currentYear = Integer.MIN_VALUE;
+            for (int i = 0; i < ruleSetCount; ++i) {
+                RuleSet rs = new RuleSet();
+                rs.iInitialSaveMillis = (int) readTime(flow);
+                rs.iStandardOffset = (int) readTime(flow);
+                int ruleCount = Base46.decodeUnsigned(flow);
+                if ((ruleCount & 1) != 0) {
+                    rs.iInitialNameKey = "*";
+                }
+                ruleCount >>>= 1;
+                for (int j = 0; j < ruleCount; ++j) {
+                    int fromYear = Base46.decode(flow);
+                    if (currentYear != Integer.MIN_VALUE) {
+                        fromYear += currentYear;
+                    }
+                    currentYear = fromYear;
+                    int toYear = Base46.decodeUnsigned(flow);
+                    if (toYear == 0) {
+                        toYear = Integer.MAX_VALUE;
+                    } else {
+                        toYear--;
+                        toYear = (toYear & 1) == 0 ? toYear >>> 1 : -(toYear >>> 1) - 1;
+                        if (currentYear != Integer.MIN_VALUE) {
+                            toYear += currentYear;
+                        }
+                        currentYear = toYear;
+                    }
+                    Recurrence recurrence = Recurrence.read(flow);
+                    rs.iRules.add(new Rule(recurrence, fromYear, toYear));
+                }
+                int year = Base46.decodeUnsigned(flow);
+                if (year == 0) {
+                    rs.iUpperYear = Integer.MAX_VALUE;
+                } else {
+                    year--;
+                    if ((year & 1) == 0) {
+                        year >>>= 1;
+                    } else {
+                        year = -(year >>> 1) - 1;
+                    }
+                    if (currentYear != Integer.MIN_VALUE) {
+                        year += currentYear;
+                    }
+                    rs.iUpperYear = year;
+                    rs.iUpperOfYear = OfYear.read(flow);
+                    currentYear = year;
+                }
+                builder.iRuleSets.add(rs);
+            }
+
+            return new RuleBasedZone(id, builder);
+        }
+
+        private List<Rule> filterRules(int fromYear, int toYear, List<Rule> rules) {
+            List<Rule> filtered = new ArrayList<>();
+            if (fromYear != Integer.MIN_VALUE) {
+                int bestYear = Integer.MIN_VALUE;
+                for (Rule rule : rules) {
+                    if (rule.getToYear() < fromYear && rule.getToYear() > bestYear) {
+                        bestYear = rule.getToYear();
+                    }
+                }
+                fromYear = bestYear;
+            }
+            for (Rule rule : rules) {
+                if (rule.getToYear() >= fromYear && rule.getFromYear() <= toYear) {
+                    filtered.add(rule);
+                }
+            }
+            return filtered;
+        }
+
+        @Override
+        public ZoneRules asZoneRules() {
+            initZone();
+            return zone.asZoneRules();
         }
     }
 }

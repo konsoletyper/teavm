@@ -21,9 +21,9 @@
     <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
   </head>
   <body>
-    <script type="text/javascript" src="test.wasm-runtime.js"></script>
+    <script type="text/javascript" src="${SCRIPT}"></script>
     <script type="text/javascript">
-        TeaVM.wasm.run("test.wasm");
+        TeaVM.wasm.load("test.wasm").then(teavm => teavm.main(["${IDENTIFIER}"]));
     </script>
   </body>
 </html>

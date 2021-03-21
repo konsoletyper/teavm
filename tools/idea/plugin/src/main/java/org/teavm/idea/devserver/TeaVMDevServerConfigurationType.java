@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 public class TeaVMDevServerConfigurationType extends ConfigurationTypeBase {
     public TeaVMDevServerConfigurationType() {
         super("TeaVMDevServerConfiguration", "TeaVM development server", "TeaVM development server"
-                + "agent", IconLoader.getIcon("/teavm-16.png"));
+                + "agent", IconLoader.findIcon("/teavm-16.png"));
     }
 
     private final ConfigurationFactory factory = new ConfigurationFactory(this) {

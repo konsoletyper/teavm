@@ -48,6 +48,14 @@ public interface MouseEventTarget extends EventTarget {
         removeEventListener("mouseup", listener);
     }
 
+    default void listenMouseMove(EventListener<MouseEvent> listener) {
+        addEventListener("mousemove", listener);
+    }
+
+    default void neglectMouseMove(EventListener<MouseEvent> listener) {
+        removeEventListener("mousemove", listener);
+    }
+
     default void listenMouseOver(EventListener<MouseEvent> listener) {
         addEventListener("mouseover", listener);
     }
@@ -64,7 +72,7 @@ public interface MouseEventTarget extends EventTarget {
         removeEventListener("mouseenter", listener);
     }
 
-    default void listenMouseLeaeve(EventListener<MouseEvent> listener) {
+    default void listenMouseLeave(EventListener<MouseEvent> listener) {
         addEventListener("mouseleave", listener);
     }
 

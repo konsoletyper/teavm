@@ -27,7 +27,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         int height = 1;
         int size = 1;
 
-        public TreeNode(K key) {
+        TreeNode(K key) {
             super(key, null);
         }
 
@@ -548,7 +548,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         return copy;
     }
 
-    private static class EntrySet<K, V> extends TAbstractSet<Entry<K, V>> {
+    static class EntrySet<K, V> extends TAbstractSet<Entry<K, V>> {
         private int modCount = -1;
         private TTreeMap<K, V> owner;
         private K from;
@@ -560,7 +560,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         private int cachedSize;
         private boolean reverse;
 
-        public EntrySet(TTreeMap<K, V> owner, K from, boolean fromIncluded, boolean fromChecked,
+         EntrySet(TTreeMap<K, V> owner, K from, boolean fromIncluded, boolean fromChecked,
                 K to, boolean toIncluded, boolean toChecked, boolean reverse) {
             this.owner = owner;
             this.from = from;
@@ -615,13 +615,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             } else {
                 fromPath = owner.pathToFirst(false);
             }
-            TreeNode<K, V> toEntry;
-            if (toChecked) {
-                toEntry = toIncluded ? owner.findExactOrNext(to, true) : owner.findNext(to, true);
-            } else {
-                toEntry = owner.firstNode(true);
-            }
-            return new EntryIterator<>(owner, fromPath, toEntry, false);
+            return new EntryIterator<>(owner, fromPath, to, toChecked, toIncluded, false);
         }
 
         private TIterator<Entry<K, V>> descendingIterator() {
@@ -631,13 +625,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             } else {
                 toPath = owner.pathToFirst(true);
             }
-            TreeNode<K, V> fromEntry;
-            if (fromChecked) {
-                fromEntry = fromIncluded ? owner.findExactOrNext(to, false) : owner.findNext(to, false);
-            } else {
-                fromEntry = owner.firstNode(false);
-            }
-            return new EntryIterator<>(owner, toPath, fromEntry, true);
+            return new EntryIterator<>(owner, toPath, from, fromIncluded, fromChecked, true);
         }
 
         @Override
@@ -671,22 +659,28 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
     }
 
-    private static class EntryIterator<K, V> implements TIterator<Entry<K, V>> {
+    static class EntryIterator<K, V> implements TIterator<Entry<K, V>> {
         private int modCount;
         private TTreeMap<K, V> owner;
         private TreeNode<K, V>[] path;
         private TreeNode<K, V> last;
-        private TreeNode<K, V> to;
+        private K to;
+        private boolean toChecked;
+        private boolean toIncluded;
         private int depth;
         private boolean reverse;
 
-        public EntryIterator(TTreeMap<K, V> owner, TreeNode<K, V>[] path, TreeNode<K, V> to, boolean reverse) {
+        EntryIterator(TTreeMap<K, V> owner, TreeNode<K, V>[] path, K to, boolean toChecked, boolean toIncluded,
+                boolean reverse) {
             this.owner = owner;
             modCount = owner.modCount;
             this.path = TArrays.copyOf(path, owner.root == null ? 0 : owner.root.height);
             depth = path.length;
             this.to = to;
+            this.toChecked = toChecked;
+            this.toIncluded = toIncluded;
             this.reverse = reverse;
+            checkFinished();
         }
 
         @Override
@@ -712,10 +706,28 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                     node = node.forward(reverse);
                 }
             }
-            if (last == to) {
-                depth = 0;
-            }
+
+            checkFinished();
             return last;
+        }
+
+        private void checkFinished() {
+            if (!toChecked || depth == 0) {
+                return;
+            }
+            int cmp = owner.comparator.compare(path[depth - 1].getKey(), to);
+            if (reverse) {
+                cmp = -cmp;
+            }
+            if (toIncluded) {
+                if (cmp > 0) {
+                    depth = 0;
+                }
+            }  else {
+                if (cmp >= 0) {
+                    depth = 0;
+                }
+            }
         }
 
         @Override
@@ -732,7 +744,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
     }
 
-    private static class MapView<K, V> extends TAbstractMap<K, V> implements TNavigableMap<K, V>, TSerializable {
+    static class MapView<K, V> extends TAbstractMap<K, V> implements TNavigableMap<K, V>, TSerializable {
         private int modCount = -1;
         private int cachedSize;
         private TTreeMap<K, V> owner;
@@ -746,7 +758,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         private boolean reverse;
         private NavigableKeySet<K, V> cachedNavigableKeySet;
 
-        public MapView(TTreeMap<K, V> owner, K from, boolean fromIncluded, boolean fromChecked,
+        MapView(TTreeMap<K, V> owner, K from, boolean fromIncluded, boolean fromChecked,
                 K to, boolean toIncluded, boolean toChecked, boolean reverse) {
             this.owner = owner;
             this.from = from;
@@ -1079,10 +1091,10 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
     }
 
-    private static class NavigableKeySet<K, V> extends TAbstractSet<K> implements TNavigableSet<K> {
+    static class NavigableKeySet<K, V> extends TAbstractSet<K> implements TNavigableSet<K> {
         private TNavigableMap<K, V> map;
 
-        public NavigableKeySet(TNavigableMap<K, V> map) {
+        NavigableKeySet(TNavigableMap<K, V> map) {
             this.map = map;
         }
 

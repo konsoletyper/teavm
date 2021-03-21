@@ -30,7 +30,7 @@ import org.teavm.platform.metadata.MetadataGeneratorContext;
 import org.teavm.platform.metadata.ResourceMap;
 
 public class TimeZoneGenerator implements MetadataGenerator {
-    public static final String TIMEZONE_DB_VERSION = "2019b";
+    public static final String TIMEZONE_DB_VERSION = "2021a";
     public static final String TIMEZONE_DB_PATH = "org/teavm/classlib/impl/tz/tzdata" + TIMEZONE_DB_VERSION + ".zip";
 
     public static void compile(ZoneInfoCompiler compiler, ClassLoader classLoader) {
@@ -41,7 +41,7 @@ public class TimeZoneGenerator implements MetadataGenerator {
                     if (entry == null) {
                         break;
                     }
-                    switch (entry.getName().substring(("tzdata" + TIMEZONE_DB_VERSION + "/").length())) {
+                    switch (entry.getName()) {
                         case "africa":
                         case "antarctica":
                         case "asia":

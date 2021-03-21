@@ -228,6 +228,14 @@ abstract class AbstractInstructionAnalyzer extends AbstractInstructionReader {
     }
 
     @Override
+    public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
+        String className = extractClassName(targetType);
+        if (className != null) {
+            getAnalyzer().linkClass(className);
+        }
+    }
+
+    @Override
     public void initClass(String className) {
         getAnalyzer().linkClass(className).initClass(getCallLocation());
     }

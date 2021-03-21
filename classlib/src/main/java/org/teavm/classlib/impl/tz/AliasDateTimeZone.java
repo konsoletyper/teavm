@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.impl.tz;
 
+import java.time.zone.ZoneRules;
 import org.teavm.classlib.impl.Base46;
 
 public class AliasDateTimeZone extends StorableDateTimeZone {
@@ -54,5 +55,10 @@ public class AliasDateTimeZone extends StorableDateTimeZone {
     public void write(StringBuilder sb) {
         Base46.encodeUnsigned(sb, ALIAS);
         sb.append(innerZone.getID());
+    }
+
+    @Override
+    public ZoneRules asZoneRules() {
+        return innerZone.asZoneRules();
     }
 }

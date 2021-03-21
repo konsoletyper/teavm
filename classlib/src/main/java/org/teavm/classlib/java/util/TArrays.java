@@ -977,6 +977,9 @@ public class TArrays extends TObject {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }
+        if (fromIndex == toIndex) {
+            return -1;
+        }
         int l = fromIndex;
         int u = toIndex - 1;
         while (true) {
@@ -1005,6 +1008,9 @@ public class TArrays extends TObject {
     public static int binarySearch(long[] a, int fromIndex, int toIndex, long key) {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
+        }
+        if (fromIndex == toIndex) {
+            return -1;
         }
         int l = fromIndex;
         int u = toIndex - 1;
@@ -1035,6 +1041,9 @@ public class TArrays extends TObject {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }
+        if (fromIndex == toIndex) {
+            return -1;
+        }
         int l = fromIndex;
         int u = toIndex - 1;
         while (true) {
@@ -1063,6 +1072,9 @@ public class TArrays extends TObject {
     public static int binarySearch(char[] a, int fromIndex, int toIndex, char key) {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
+        }
+        if (fromIndex == toIndex) {
+            return -1;
         }
         int l = fromIndex;
         int u = toIndex - 1;
@@ -1093,6 +1105,9 @@ public class TArrays extends TObject {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }
+        if (fromIndex == toIndex) {
+            return -1;
+        }
         int l = fromIndex;
         int u = toIndex - 1;
         while (true) {
@@ -1122,6 +1137,9 @@ public class TArrays extends TObject {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }
+        if (fromIndex == toIndex) {
+            return -1;
+        }
         int l = fromIndex;
         int u = toIndex - 1;
         while (true) {
@@ -1150,6 +1168,9 @@ public class TArrays extends TObject {
     public static int binarySearch(float[] a, int fromIndex, int toIndex, float key) {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
+        }
+        if (fromIndex == toIndex) {
+            return -1;
         }
         int l = fromIndex;
         int u = toIndex - 1;
@@ -1187,6 +1208,9 @@ public class TArrays extends TObject {
     public static <T> int binarySearch(T[] a, int fromIndex, int toIndex, T key, TComparator<? super T> c) {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
+        }
+        if (fromIndex == toIndex) {
+            return -1;
         }
         int l = fromIndex;
         int u = toIndex - 1;

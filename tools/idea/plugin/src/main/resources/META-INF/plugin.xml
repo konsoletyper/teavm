@@ -1,6 +1,6 @@
 <idea-plugin>
   <id>org.teavm.idea</id>
-  <name>TeaVM IDEA plugin</name>
+  <name>TeaVM IDEA Integration</name>
   <version>${project.version}</version>
   <vendor email="info@teavm.org" url="http://teavm.org">TeaVM community</vendor>
 

@@ -225,7 +225,7 @@ public class WasmCRenderer {
         renderFunctionModifiers(sb, function);
         sb.append(WasmCRenderingVisitor.mapType(function.getResult())).append(' ');
         if (function.getImportName() != null) {
-            sb.append(!function.getImportModule().isEmpty()
+            sb.append(function.getImportModule() != null && !function.getImportModule().isEmpty()
                     ? function.getImportModule() + "_" + function.getImportName()
                     : function.getImportName());
         } else {

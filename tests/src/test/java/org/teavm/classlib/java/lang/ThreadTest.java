@@ -51,9 +51,10 @@ public class ThreadTest {
             Thread.sleep(5000);
             fail("Exception expected");
         } catch (InterruptedException e) {
+            long end = System.currentTimeMillis();
             assertEquals(Thread.currentThread(), mainThread);
             assertFalse(mainThread.isInterrupted());
-            assertTrue(System.currentTimeMillis() - start < 500);
+            assertTrue("Wait time " + (end - start), end - start < 5000);
         }
     }
 

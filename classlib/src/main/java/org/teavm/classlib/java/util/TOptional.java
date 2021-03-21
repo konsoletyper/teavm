@@ -15,12 +15,12 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-
 import org.teavm.classlib.java.util.stream.TStream;
 
 public final class TOptional<T> {
@@ -90,6 +90,15 @@ public final class TOptional<T> {
         return value != null ? mapper.apply(value) : (TOptional<U>) this;
     }
 
+    @SuppressWarnings("unchecked")
+    public TOptional<T> or(Supplier<? extends TOptional<? extends T>> supplier) {
+        if (value != null) {
+            return this;
+        } else {
+            return Objects.requireNonNull((TOptional<T>) supplier.get());
+        }
+    }
+
     public T orElse(T other) {
         return value != null ? value : other;
     }
@@ -98,9 +107,24 @@ public final class TOptional<T> {
         return value != null ? value : other.get();
     }
 
+    public void ifPresentOrElse(Consumer<? super T> action, Runnable emptyAction) {
+        if (value != null) {
+            action.accept(value);
+        } else {
+            emptyAction.run();
+        }
+    }
+
     public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
         if (value == null) {
             throw exceptionSupplier.get();
+        }
+        return value;
+    }
+
+    public T orElseThrow() {
+        if (value == null) {
+            throw new NoSuchElementException();
         }
         return value;
     }

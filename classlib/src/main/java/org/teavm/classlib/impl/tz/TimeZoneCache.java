@@ -60,7 +60,7 @@ public class TimeZoneCache {
             String data = aliasLine.substring(index + 1);
             CharFlow flow = new CharFlow(data.toCharArray());
             Base46.decode(flow);
-            result.put(id, result.get(data.substring(flow.pointer)));
+            result.put(id, new AliasDateTimeZone(id, result.get(data.substring(flow.pointer))));
         }
         return result;
     }

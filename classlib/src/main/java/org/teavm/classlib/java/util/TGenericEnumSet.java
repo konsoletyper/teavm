@@ -143,8 +143,7 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
     }
 
     @Override
-    void fastAdd(E t) {
-        int n = t.ordinal();
+    void fastAdd(int n) {
         int bitNumber = n / 32;
         bits[bitNumber] |= 1 << (n % 32);
     }

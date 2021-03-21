@@ -433,14 +433,14 @@ public class VMTest {
 
         public synchronized void doWait() {
             new Thread(() -> {
-                synchronized (AsyncClinitClass.this) {
+                synchronized (this) {
                     notify();
                 }
             }).start();
 
             try {
                 Thread.sleep(1);
-                synchronized (AsyncClinitClass.this) {
+                synchronized (this) {
                     wait();
                 }
             } catch (InterruptedException ie) {
@@ -491,8 +491,20 @@ public class VMTest {
 
     @Test
     public void indirectDefaultMethod() {
-        PathJoint o = new PathJoint();
-        assertEquals("SecondPath.foo", o.foo());
+        StringBuilder sb = new StringBuilder();
+        for (FirstPath o : new FirstPath[] { new PathJoint(), new FirstPathOptimizationPrevention() }) {
+            sb.append(o.foo()).append(";");
+        }
+        assertEquals("SecondPath.foo;FirstPath.foo;", sb.toString());
+    }
+
+    @Test
+    public void indirectDefaultMethodSubclass() {
+        StringBuilder sb = new StringBuilder();
+        for (FirstPath o : new FirstPath[] { new PathJointSubclass(), new FirstPathOptimizationPrevention() }) {
+            sb.append(o.foo()).append(";");
+        }
+        assertEquals("SecondPath.foo;FirstPath.foo;", sb.toString());
     }
 
     interface FirstPath {
@@ -509,6 +521,13 @@ public class VMTest {
     }
 
     class PathJoint implements FirstPath, SecondPath {
+    }
+
+    class PathJointSubclass extends PathJoint implements FirstPath {
+    }
+
+    class FirstPathOptimizationPrevention implements FirstPath {
+        // Used to ensure that the implementation of FirstPath.foo() is not optimized away by TeaVM.
     }
 
     @Test

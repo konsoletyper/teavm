@@ -161,7 +161,8 @@ public class AsyncMethodFinder {
         }
 
         if (!hasAsyncMethods && methodRef.getClassName().equals("java.lang.Object")
-                && (methodRef.getName().equals("monitorEnter") || methodRef.getName().equals("monitorExit"))) {
+                && (methodRef.getName().equals("monitorEnter") || methodRef.getName().equals("monitorExit"))
+                && methodRef.parameterCount() == 0) {
             return;
         }
         for (CallSite callSite : node.getCallerCallSites()) {

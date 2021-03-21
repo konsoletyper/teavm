@@ -11,7 +11,7 @@
     <option name="MAIN_CLASS_NAME" value="" />
     <option name="METHOD_NAME" value="" />
     <option name="TEST_OBJECT" value="package" />
-    <option name="VM_PARAMETERS" value="-ea -Dteavm.junit.target=target/js-tests -Dteavm.junit.threads=1 -Dteavm.junit.minified=true -Dteavm.junit.optimized=true" />
+    <option name="VM_PARAMETERS" value="-ea -Dteavm.junit.target=target/js-tests -Dteavm.junit.threads=3 -Dteavm.junit.minified=false -Dteavm.junit.optimized=false -Dteavm.junit.js.runner=browser-chrome -Dteavm.junit.js.decodeStack=true" />
     <option name="PARAMETERS" value="" />
     <option name="WORKING_DIRECTORY" value="$MODULE_DIR$" />
     <dir value="$USER_HOME$/idea-debug/teavm/tests/src/test/java" />

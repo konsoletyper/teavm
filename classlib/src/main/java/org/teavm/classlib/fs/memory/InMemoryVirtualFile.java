@@ -63,6 +63,8 @@ public class InMemoryVirtualFile extends AbstractInMemoryVirtualFile {
             {
                 if (append) {
                     pos = size;
+                } else if (writable) {
+                    size = 0;
                 }
             }
 

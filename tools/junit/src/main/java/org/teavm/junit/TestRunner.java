@@ -37,6 +37,11 @@ class TestRunner {
 
     public void init() {
         latch = new CountDownLatch(numThreads);
+        strategy.beforeAll();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            strategy.afterAll();
+        }));
+
         for (int i = 0; i < numThreads; ++i) {
             Thread thread = new Thread(() -> {
                 strategy.beforeThread();

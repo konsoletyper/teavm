@@ -20,15 +20,20 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import java.lang.reflect.Method;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.netbeans.html.json.tck.KOTest;
+import org.teavm.junit.SkipJVM;
+import org.teavm.junit.TeaVMTestRunner;
 
 /**
  *
  * @author Jaroslav Tulach
  */
+@RunWith(TeaVMTestRunner.class)
+@SkipJVM
 public class KnockoutTCKCheckTest {
     @Test
-    public void allKnockoutTestMethodsOverriden() throws Exception {
+    public void allKnockoutTestMethodsOverridden() {
         for (Class<?> c : KnockoutFXTest.allTestClasses()) {
             if (c.getName().contains("GC")) {
                 continue;

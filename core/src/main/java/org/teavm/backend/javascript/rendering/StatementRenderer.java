@@ -836,6 +836,18 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                         precedence = Precedence.min();
                         expr.getOperand().acceptVisitor(this);
                         writer.append(')');
+                    } else if (expr.getType() == OperationType.INT) {
+                        if (outerPrecedence.ordinal() > Precedence.BITWISE_OR.ordinal()) {
+                            writer.append('(');
+                        }
+                        writer.append(" -");
+                        precedence = Precedence.UNARY;
+                        expr.getOperand().acceptVisitor(this);
+                        writer.ws().append("|").ws();
+                        writer.append("0");
+                        if (outerPrecedence.ordinal() > Precedence.BITWISE_OR.ordinal()) {
+                            writer.append(')');
+                        }
                     } else {
                         if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
                             writer.append('(');
@@ -903,7 +915,41 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(CastExpr expr) {
-        expr.getValue().acceptVisitor(this);
+        if (context.isStrict()) {
+            try {
+                if (expr.getLocation() != null) {
+                    pushLocation(expr.getLocation());
+                }
+
+                if (isClass(expr.getTarget(), context.getClassSource())) {
+                    writer.appendFunction("$rt_castToClass");
+                } else {
+                    writer.appendFunction("$rt_castToInterface");
+                }
+                writer.append("(");
+                precedence = Precedence.min();
+                expr.getValue().acceptVisitor(this);
+                writer.append(",").ws();
+                context.typeToClsString(writer, expr.getTarget());
+                writer.append(")");
+                if (expr.getLocation() != null) {
+                    popLocation();
+                }
+            } catch (IOException e) {
+                throw new RenderingException("IO error occurred", e);
+            }
+        } else {
+            expr.getValue().acceptVisitor(this);
+        }
+    }
+
+    static boolean isClass(ValueType type, ClassReaderSource classSource) {
+        if (!(type instanceof ValueType.Object)) {
+            return false;
+        }
+        String className = ((ValueType.Object) type).getClassName();
+        ClassReader cls = classSource.get(className);
+        return cls != null && !cls.hasModifier(ElementModifier.INTERFACE);
     }
 
     @Override
@@ -929,11 +975,13 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                             precedence = Precedence.MEMBER_ACCESS;
                             Expr longShifted = extractLongRightShiftedBy32(expr.getValue());
                             if (longShifted != null) {
+                                writer.appendFunction("Long_hi").append("(");
                                 longShifted.acceptVisitor(this);
-                                writer.append(".hi");
+                                writer.append(")");
                             } else {
+                                writer.appendFunction("Long_lo").append("(");
                                 expr.getValue().acceptVisitor(this);
-                                writer.append(".lo");
+                                writer.append(")");
                             }
                             break;
                         case FLOAT:
@@ -1461,32 +1509,26 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            if (expr.getType() instanceof ValueType.Object) {
-                String clsName = ((ValueType.Object) expr.getType()).getClassName();
-                ClassReader cls = classSource.get(clsName);
-                if (cls != null && !cls.hasModifier(ElementModifier.INTERFACE)) {
-                    boolean needsParentheses = Precedence.COMPARISON.ordinal() < precedence.ordinal();
-                    if (needsParentheses) {
-                        writer.append('(');
-                    }
-                    precedence = Precedence.CONDITIONAL.next();
-                    expr.getExpr().acceptVisitor(this);
-                    writer.append(" instanceof ").appendClass(clsName);
-                    if (needsParentheses) {
-                        writer.append(')');
-                    }
-                    if (expr.getLocation() != null) {
-                        popLocation();
-                    }
-                    return;
+            if (isClass(expr.getType(), context.getClassSource())) {
+                boolean needsParentheses = Precedence.COMPARISON.ordinal() < precedence.ordinal();
+                if (needsParentheses) {
+                    writer.append('(');
                 }
+                precedence = Precedence.CONDITIONAL.next();
+                expr.getExpr().acceptVisitor(this);
+                writer.append(" instanceof ");
+                context.typeToClsString(writer, expr.getType());
+                if (needsParentheses) {
+                    writer.append(')');
+                }
+            } else {
+                writer.appendFunction("$rt_isInstance").append("(");
+                precedence = Precedence.min();
+                expr.getExpr().acceptVisitor(this);
+                writer.append(",").ws();
+                context.typeToClsString(writer, expr.getType());
+                writer.append(")");
             }
-            writer.appendFunction("$rt_isInstance").append("(");
-            precedence = Precedence.min();
-            expr.getExpr().acceptVisitor(this);
-            writer.append(",").ws();
-            context.typeToClsString(writer, expr.getType());
-            writer.append(")");
             if (expr.getLocation() != null) {
                 popLocation();
             }

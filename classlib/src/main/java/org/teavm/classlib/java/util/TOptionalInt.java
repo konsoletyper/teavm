@@ -19,6 +19,7 @@ import java.util.NoSuchElementException;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
+import org.teavm.classlib.java.util.stream.TIntStream;
 
 public class TOptionalInt {
     private static TOptionalInt emptyInstance;
@@ -51,6 +52,10 @@ public class TOptionalInt {
         return this != emptyInstance;
     }
 
+    public boolean isEmpty() {
+        return this == emptyInstance;
+    }
+
     public void ifPresent(IntConsumer consumer) {
         if (this != emptyInstance) {
             consumer.accept(value);
@@ -65,11 +70,34 @@ public class TOptionalInt {
         return this != emptyInstance ? value : other.getAsInt();
     }
 
+    public void ifPresentOrElse(IntConsumer action, Runnable emptyAction) {
+        if (this == emptyInstance) {
+            emptyAction.run();
+        } else {
+            action.accept(value);
+        }
+    }
+
     public <X extends Throwable> int orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
-        if (!isPresent()) {
+        if (this == emptyInstance) {
             throw exceptionSupplier.get();
         }
         return value;
+    }
+
+    public int orElseThrow() {
+        if (this == emptyInstance) {
+            throw new NoSuchElementException();
+        }
+        return value;
+    }
+
+    public TIntStream stream() {
+        if (this == emptyInstance) {
+            return TIntStream.empty();
+        } else {
+            return TIntStream.of(value);
+        }
     }
 
     @Override
@@ -77,7 +105,7 @@ public class TOptionalInt {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof TOptionalInt)) {
+        if (this == emptyInstance || obj == emptyInstance || !(obj instanceof TOptionalInt)) {
             return false;
         }
 

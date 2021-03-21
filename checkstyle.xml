@@ -1,9 +1,16 @@
 <!DOCTYPE module PUBLIC "-//Puppy Crawl//DTD Check Configuration 1.2//EN"
     "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
 <module name="Checker">
-  <module name="SuppressionCommentFilter"/>
+  <property name="fileExtensions" value="java"/>
+  <module name="LineLength">
+    <property name="max" value="120"/>
+  </module>
   <module name="TreeWalker">
-    <module name="FileContentsHolder"/>
+    <module name="SuppressionCommentFilter">
+      <property name="offCommentFormat" value="CHECKSTYLE.OFF\: ?([\w\|]+)"/>
+      <property name="onCommentFormat" value="CHECKSTYLE.ON\: ?([\w\|]+)"/>
+      <property name="checkFormat" value="$1"/>
+    </module>
     <module name="AnnotationUseStyle"/>
     <module name="MissingOverride">
       <property name="javaFiveCompatibility" value="true"/>
@@ -59,9 +66,6 @@
     <module name="ParameterName"/>
     <module name="StaticVariableName"/>
     <module name="TypeName"/>
-    <module name="LineLength">
-      <property name="max" value="120"/>
-    </module>
     <module name="GenericWhitespace"/>
     <module name="EmptyForInitializerPad"/>
     <module name="EmptyForIteratorPad"/>
