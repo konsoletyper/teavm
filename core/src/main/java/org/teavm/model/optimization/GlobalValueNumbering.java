@@ -549,6 +549,7 @@ public class GlobalValueNumbering implements MethodOptimization {
             if (namesPreserved) {
                 if (insn.getReceiver().getDebugName() != null && insn.getAssignee().getDebugName() != null) {
                     if (!insn.getAssignee().getDebugName().equals(insn.getReceiver().getDebugName())) {
+                        insn.setAssignee(program.variableAt(replaceMap[insn.getAssignee().getIndex()]));
                         return;
                     }
                 }
