@@ -330,7 +330,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     @Override
     public void analyzeBeforeOptimizations(ListableClassReaderSource classSource) {
-        AsyncMethodFinder asyncFinder = new AsyncMethodFinder(controller.getDependencyInfo().getCallGraph());
+        AsyncMethodFinder asyncFinder = new AsyncMethodFinder(controller.getDependencyInfo().getCallGraph(),
+                controller.getDependencyInfo());
         asyncFinder.find(classSource);
         asyncMethods = new HashSet<>(asyncFinder.getAsyncMethods());
         asyncMethods.addAll(asyncFinder.getAsyncFamilyMethods());

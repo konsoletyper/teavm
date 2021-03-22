@@ -25,6 +25,7 @@ import java.util.Set;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.CallGraphNode;
 import org.teavm.callgraph.CallSite;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.interop.Async;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
@@ -39,6 +40,7 @@ import org.teavm.runtime.Fiber;
 
 public class AsyncMethodFinder {
     private Set<MethodReference> asyncMethods = new HashSet<>();
+    private DependencyInfo dependency;
     private Map<MethodReference, Boolean> asyncFamilyMethods = new HashMap<>();
     private Set<MethodReference> readonlyAsyncMethods = Collections.unmodifiableSet(asyncMethods);
     private Set<MethodReference> readonlyAsyncFamilyMethods = Collections.unmodifiableSet(asyncFamilyMethods.keySet());
@@ -46,8 +48,9 @@ public class AsyncMethodFinder {
     private ListableClassReaderSource classSource;
     private boolean hasAsyncMethods;
 
-    public AsyncMethodFinder(CallGraph callGraph) {
+    public AsyncMethodFinder(CallGraph callGraph, DependencyInfo dependency) {
         this.callGraph = callGraph;
+        this.dependency = dependency;
     }
 
     public Set<MethodReference> getAsyncMethods() {
@@ -64,7 +67,8 @@ public class AsyncMethodFinder {
         for (String clsName : classSource.getClassNames()) {
             ClassReader cls = classSource.get(clsName);
             for (MethodReader method : cls.getMethods()) {
-                if (asyncMethods.contains(method.getReference())) {
+                if (!dependency.getReachableMethods().contains(method.getReference())
+                        || asyncMethods.contains(method.getReference())) {
                     continue;
                 }
                 if (method.getAnnotations().get(Async.class.getName()) != null) {
@@ -76,7 +80,8 @@ public class AsyncMethodFinder {
             for (String clsName : classSource.getClassNames()) {
                 ClassReader cls = classSource.get(clsName);
                 for (MethodReader method : cls.getMethods()) {
-                    if (asyncMethods.contains(method.getReference()) || method.getProgram() == null) {
+                    if (!dependency.getReachableMethods().contains(method.getReference())
+                            || asyncMethods.contains(method.getReference()) || method.getProgram() == null) {
                         continue;
                     }
                     if (hasMonitor(method)) {
@@ -115,9 +120,9 @@ public class AsyncMethodFinder {
                 }
             }
         }
-        ClassReader cls = classSource.get("java.lang.Thread");
-        MethodReader method = cls != null ? cls.getMethod(new MethodDescriptor("start", void.class)) : null;
-        return result && method != null;
+        boolean hasThreads = dependency.getReachableMethods().contains(new MethodReference(
+                Thread.class, "start", void.class));
+        return result && hasThreads;
     }
 
     public boolean hasAsyncMethods() {
@@ -161,8 +166,7 @@ public class AsyncMethodFinder {
         }
 
         if (!hasAsyncMethods && methodRef.getClassName().equals("java.lang.Object")
-                && (methodRef.getName().equals("monitorEnter") || methodRef.getName().equals("monitorExit"))
-                && methodRef.parameterCount() == 0) {
+                && (methodRef.getName().equals("monitorEnter") || methodRef.getName().equals("monitorExit"))) {
             return;
         }
         for (CallSite callSite : node.getCallerCallSites()) {
