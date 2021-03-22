@@ -670,10 +670,17 @@ if (typeof BigInt !== 'function') {
 } else {
     $rt_doubleToLongBits = function(n) {
         $rt_numberConversionView.setFloat64(0, n, true);
-        return $rt_numberConversionView.getBigInt64(0, true);
+        // For compatibility with Safari
+        var lo = $rt_numberConversionView.getInt32(0, true);
+        var hi = $rt_numberConversionView.getInt32(4, true);
+        return BigInt.asIntN(64, BigInt.asUintN(32, BigInt(lo)) | (BigInt(hi) << BigInt(32)));
     }
     $rt_longBitsToDouble = function(n) {
-        $rt_numberConversionView.setBigInt64(0, n, true);
+        // For compatibility with Safari
+        var hi = Number(BigInt.asIntN(32, n >> BigInt(32)));
+        var lo = Number(BigInt.asIntN(32, n & BigInt(0xFFFFFFFF)));
+        $rt_numberConversionView.setInt32(0, lo, true);
+        $rt_numberConversionView.setInt32(4, hi, true);
         return $rt_numberConversionView.getFloat64(0, true);
     }
 }
@@ -806,7 +813,7 @@ if (typeof BigInt !== "function") {
 } else {
     Long_ZERO = BigInt(0);
     Long_create = function(lo, hi) {
-        return BigInt.asIntN(64, BigInt(lo) | (BigInt(hi) << BigInt(32)));
+        return BigInt.asIntN(64, BigInt.asUintN(32, BigInt(lo)) | (BigInt(hi) << BigInt(32)));
     }
     Long_fromInt = function(val) {
         return BigInt(val);
