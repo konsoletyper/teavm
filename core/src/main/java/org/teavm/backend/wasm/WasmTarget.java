@@ -160,6 +160,7 @@ import org.teavm.runtime.Allocator;
 import org.teavm.runtime.EventQueue;
 import org.teavm.runtime.ExceptionHandling;
 import org.teavm.runtime.Fiber;
+import org.teavm.runtime.GC;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
@@ -590,8 +591,18 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 new WasmInt32Constant(heapAddress), new WasmInt32Constant(minHeapSize),
                 new WasmInt32Constant(maxHeapSize), new WasmInt32Constant(WasmHeap.DEFAULT_STACK_SIZE)));
 
+        for (Class<?> javaCls : new Class<?>[] { GC.class }) {
+            ClassReader cls = classes.get(javaCls.getName());
+            MethodReader clinit = cls.getMethod(new MethodDescriptor("<clinit>", void.class));
+            if (clinit == null) {
+                continue;
+            }
+            initFunction.getBody().add(new WasmCall(names.forClassInitializer(cls.getName())));
+        }
+
         for (String className : classes.getClassNames()) {
-            if (className.equals(WasmRuntime.class.getName()) || className.equals(WasmHeap.class.getName())) {
+            if (className.equals(WasmRuntime.class.getName()) || className.equals(WasmHeap.class.getName())
+                    || className.equals(GC.class.getName())) {
                 continue;
             }
             ClassReader cls = classes.get(className);
