@@ -37,6 +37,7 @@ import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
 import org.teavm.backend.lowlevel.dependency.StringsDependencyListener;
 import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.lowlevel.generate.NameProviderWithSpecialNames;
+import org.teavm.backend.lowlevel.transform.CoroutineTransformation;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.generate.WasmDependencyListener;
@@ -154,6 +155,7 @@ import org.teavm.model.optimization.InliningFilterFactory;
 import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.model.transformation.NullCheckInsertion;
+import org.teavm.model.util.AsyncMethodFinder;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.EventQueue;
 import org.teavm.runtime.ExceptionHandling;
@@ -194,6 +196,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     private int minHeapSize = 2 * 1024 * 1024;
     private int maxHeapSize = 128 * 1024 * 1024;
     private boolean obfuscated;
+    private Set<MethodReference> asyncMethods;
+    private boolean hasThreads;
 
     @Override
     public void setController(TeaVMTargetController controller) {
@@ -381,6 +385,16 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     }
 
     @Override
+    public void analyzeBeforeOptimizations(ListableClassReaderSource classSource) {
+        AsyncMethodFinder asyncFinder = new AsyncMethodFinder(controller.getDependencyInfo().getCallGraph(),
+                controller.getDependencyInfo());
+        asyncFinder.find(classSource);
+        asyncMethods = new HashSet<>(asyncFinder.getAsyncMethods());
+        asyncMethods.addAll(asyncFinder.getAsyncFamilyMethods());
+        hasThreads = asyncFinder.hasAsyncMethods();
+    }
+
+    @Override
     public void beforeOptimizations(Program program, MethodReader method) {
         nullCheckInsertion.transformProgram(program, method.getReference());
         boundCheckInsertion.transformProgram(program, method.getReference());
@@ -390,6 +404,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     public void afterOptimizations(Program program, MethodReader method) {
         classInitializerEliminator.apply(program);
         classInitializerTransformer.transform(program);
+        new CoroutineTransformation(controller.getUnprocessedClassSource(), asyncMethods, hasThreads)
+                .apply(program, method.getReference());
         checkTransformation.apply(program, method.getResultType());
         shadowStackTransformer.apply(program, method);
         writeBarrierInsertion.apply(program);
@@ -456,7 +472,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 classGenerator, stringPool, obfuscated);
         context.addIntrinsic(exceptionHandlingIntrinsic);
 
-        WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator, binaryWriter);
+        WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator, binaryWriter,
+                asyncMethods::contains);
 
         generateMethods(classes, context, generator, classGenerator, binaryWriter, module);
         new WasmInteropFunctionGenerator(classGenerator).generateFunctions(module);
