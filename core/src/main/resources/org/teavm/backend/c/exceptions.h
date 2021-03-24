@@ -16,18 +16,18 @@
             jmp_buf* teavm_oldTryBuffer = teavm_shadowStack.header.jmpTarget; \
             teavm_shadowStack.header.jmpTarget = &teavm_tryBuffer; \
             int teavm_exceptionHandler = setjmp(teavm_tryBuffer); \
-            switch (teavm_exceptionHandler) { \
-                case 0: {
+            if (teavm_exceptionHandler == 0) {
     #define TEAVM_CATCH \
-                    break; \
-                } \
-                default: { \
-                    longjmp(*teavm_oldTryBuffer, teavm_exceptionHandler); \
-                    break; \
-                }
+                teavm_shadowStack.header.jmpTarget = teavm_oldTryBuffer; \
+            } else { \
+                teavm_shadowStack.header.jmpTarget = teavm_oldTryBuffer; \
+                switch (teavm_exceptionHandler) {
     #define TEAVM_END_TRY \
+                    default: \
+                        longjmp(*teavm_oldTryBuffer, teavm_exceptionHandler); \
+                        break; \
+                } \
             } \
-            teavm_shadowStack.header.jmpTarget = teavm_oldTryBuffer; \
         } while (0);
 
     #define TEAVM_JUMP_TO_FRAME(frame, id) \
