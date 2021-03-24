@@ -67,12 +67,14 @@ class CRunStrategy implements TestRunStrategy {
             List<String> runtimeOutput = new ArrayList<>();
             List<String> stdout = new ArrayList<>();
             outputFile.setExecutable(true);
-            List<String> runCommand = new ArrayList<>();
-            runCommand.add(outputFile.getPath());
-            if (run.getArgument() != null) {
-                runCommand.add(run.getArgument());
+            synchronized (this) {
+                List<String> runCommand = new ArrayList<>();
+                runCommand.add(outputFile.getPath());
+                if (run.getArgument() != null) {
+                    runCommand.add(run.getArgument());
+                }
+                runProcess(new ProcessBuilder(runCommand.toArray(new String[0])).start(), runtimeOutput, stdout);
             }
-            runProcess(new ProcessBuilder(runCommand.toArray(new String[0])).start(), runtimeOutput, stdout);
             if (!stdout.isEmpty() && stdout.get(stdout.size() - 1).equals("SUCCESS")) {
                 writeLines(runtimeOutput);
                 run.getCallback().complete();
