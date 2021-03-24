@@ -63,6 +63,7 @@ import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTable;
 import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.model.instructions.AbstractInstructionVisitor;
+import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
@@ -188,6 +189,11 @@ public class ClassGenerator {
         @Override
         public void visit(IsInstanceInstruction insn) {
             addType(insn.getType());
+        }
+
+        @Override
+        public void visit(CastInstruction insn) {
+            addType(insn.getTargetType());
         }
 
         @Override
