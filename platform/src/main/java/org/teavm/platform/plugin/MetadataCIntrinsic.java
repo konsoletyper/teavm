@@ -204,7 +204,7 @@ class MetadataCIntrinsic implements Generator {
                 int hashCode = key.hashCode();
                 int collisionRatio = 0;
                 while (true) {
-                    int index = mod(hashCode++, table.length);
+                    int index = Integer.remainderUnsigned(hashCode++, table.length);
                     if (table[index] == null) {
                         table[index] = key;
                         break;
@@ -247,14 +247,6 @@ class MetadataCIntrinsic implements Generator {
 
         context.writerBefore().println().outdent().println("}");
         context.writerBefore().outdent().print("}");
-    }
-
-    private static int mod(int a, int b) {
-        a %= b;
-        if (a < 0) {
-            a += b;
-        }
-        return a;
     }
 
     class MethodGenerator {

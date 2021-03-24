@@ -19,6 +19,10 @@ int32_t teavm_hashCode(TeaVM_String* string) {
 }
 
 int32_t teavm_equals(TeaVM_String* first, TeaVM_String* second) {
+    if (first == second) {
+        return 1;
+    }
+
     if (first->characters->size != second->characters->size) {
         return 0;
     }
