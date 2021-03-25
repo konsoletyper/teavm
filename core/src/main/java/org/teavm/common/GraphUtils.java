@@ -307,7 +307,11 @@ public final class GraphUtils {
     }
 
     public static DominatorTree buildDominatorTree(Graph graph) {
-        DominatorTreeBuilder builder = new DominatorTreeBuilder(graph);
+        return buildDominatorTree(graph, 0);
+    }
+
+    public static DominatorTree buildDominatorTree(Graph graph, int start) {
+        DominatorTreeBuilder builder = new DominatorTreeBuilder(graph, start);
         builder.build();
         return new DefaultDominatorTree(builder.dominators, builder.vertices);
     }

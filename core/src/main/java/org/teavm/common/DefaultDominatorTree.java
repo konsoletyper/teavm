@@ -15,6 +15,8 @@
  */
 package org.teavm.common;
 
+import java.util.Arrays;
+
 class DefaultDominatorTree implements DominatorTree {
     private LCATree lcaTree;
     private int[] indexes;
@@ -24,7 +26,7 @@ class DefaultDominatorTree implements DominatorTree {
         lcaTree = new LCATree(dominators.length + 1);
         indexes = new int[dominators.length + 1];
         nodes = new int[dominators.length + 1];
-        indexes[0] = -1;
+        Arrays.fill(nodes, -1);
         for (int i = 0; i < dominators.length; ++i) {
             int v = vertices[i];
             if (v < 0) {
@@ -58,9 +60,6 @@ class DefaultDominatorTree implements DominatorTree {
 
     @Override
     public int immediateDominatorOf(int a) {
-        if (a == 0) {
-            return -1;
-        }
         int result = lcaTree.parentOf(indexes[a + 1]);
         return result >= 0 ? nodes[result] : -1;
     }
