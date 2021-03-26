@@ -17,6 +17,7 @@ package org.teavm.model;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -353,6 +354,11 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
                 throw new IndexOutOfBoundsException();
             }
             return tryCatchBlocks.get(index);
+        }
+
+        @Override
+        public Iterator<TryCatchBlock> iterator() {
+            return tryCatchBlocks == null ? Collections.emptyIterator() : tryCatchBlocks.iterator();
         }
 
         @Override

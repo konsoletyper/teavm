@@ -52,9 +52,10 @@ public final class ProgramUtils {
     }
 
     public static Graph buildControlFlowGraph(Program program) {
-        GraphBuilder graphBuilder = new GraphBuilder(program.basicBlockCount());
+        final int c = program.basicBlockCount();
+        GraphBuilder graphBuilder = new GraphBuilder(c);
         TransitionExtractor transitionExtractor = new TransitionExtractor();
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
+        for (int i = 0; i < c; ++i) {
             BasicBlock block = program.basicBlockAt(i);
             Instruction insn = block.getLastInstruction();
             if (insn != null) {
