@@ -15,15 +15,15 @@
  */
 package org.teavm.common;
 
+import com.carrotsearch.hppc.IntArrayList;
 import com.carrotsearch.hppc.IntHashSet;
-import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MutableDirectedGraph implements Graph {
-    private List<IntSet> successors = new ArrayList<>();
-    private List<IntSet> predecessors = new ArrayList<>();
+    private List<NodeSet> successors = new ArrayList<>();
+    private List<NodeSet> predecessors = new ArrayList<>();
 
     public MutableDirectedGraph() {
     }
@@ -36,16 +36,27 @@ public class MutableDirectedGraph implements Graph {
                 addEdge(i, data[j]);
             }
         }
+        while (successors.size() < graph.size()) {
+            successors.add(new NodeSet());
+            predecessors.add(new NodeSet());
+        }
     }
 
     public Graph copyToImmutable() {
         GraphBuilder builder = new GraphBuilder(successors.size());
         for (int i = 0; i < successors.size(); ++i) {
-            for (IntCursor cursor : successors.get(i)) {
-                builder.addEdge(i, cursor.value);
+            for (IntCursor successor : successors.get(i).list) {
+                builder.addEdge(i, successor.value);
             }
         }
         return builder.build();
+    }
+
+    public int addNode() {
+        int index = successors.size();
+        successors.add(new NodeSet());
+        predecessors.add(new NodeSet());
+        return index;
     }
 
     @Override
@@ -56,41 +67,62 @@ public class MutableDirectedGraph implements Graph {
     public void addEdge(int from, int to) {
         int max = Math.max(from, to);
         while (max >= successors.size()) {
-            successors.add(new IntHashSet(1));
-            predecessors.add(new IntHashSet(1));
+            successors.add(new NodeSet());
+            predecessors.add(new NodeSet());
         }
-        successors.get(from).add(to);
-        predecessors.get(to).add(from);
+
+        NodeSet successorNodes = successors.get(from);
+        if (successorNodes.set.add(to)) {
+            successorNodes.list.add(to);
+            NodeSet predecessorNodes = predecessors.get(to);
+            predecessorNodes.set.add(from);
+            predecessorNodes.list.add(from);
+        }
     }
 
     public void deleteEdge(int from, int to) {
         if (from >= successors.size() || to >= successors.size()) {
             return;
         }
-        successors.get(from).removeAll(to);
-        predecessors.get(to).removeAll(from);
+
+        NodeSet successorNodes = successors.get(from);
+        if (successorNodes.set.removeAll(to) > 0) {
+            successorNodes.list.removeAll(to);
+            NodeSet predecessorNodes = predecessors.get(to);
+            predecessorNodes.set.removeAll(from);
+            predecessorNodes.list.removeAll(from);
+        }
     }
 
     public void detachNode(int node) {
-        for (IntCursor succ : successors.get(node)) {
-            predecessors.get(succ.value).removeAll(node);
+        for (IntCursor succ : successors.get(node).list) {
+            NodeSet predecessorNodes = predecessors.get(succ.value);
+            predecessorNodes.set.removeAll(node);
+            predecessorNodes.list.removeAll(node);
         }
-        for (IntCursor pred : predecessors.get(node)) {
-            successors.get(pred.value).removeAll(node);
+        for (IntCursor pred : predecessors.get(node).list) {
+            NodeSet successorNodes = successors.get(pred.value);
+            successorNodes.set.removeAll(node);
+            successorNodes.list.removeAll(node);
         }
-        predecessors.get(node).clear();
-        successors.get(node).clear();
+
+        NodeSet predecessorNodes = predecessors.get(node);
+        predecessorNodes.list.clear();
+        predecessorNodes.set.clear();
+        NodeSet successorNodes = successors.get(node);
+        successorNodes.list.clear();
+        predecessorNodes.list.clear();
     }
 
     @Override
     public int[] incomingEdges(int node) {
-        return predecessors.get(node).toArray();
+        return predecessors.get(node).list.toArray();
     }
 
     @Override
     public int copyIncomingEdges(int node, int[] target) {
         int index = 0;
-        for (IntCursor cursor : predecessors.get(node)) {
+        for (IntCursor cursor : predecessors.get(node).list) {
             target[index++] = cursor.value;
         }
         return index;
@@ -98,13 +130,13 @@ public class MutableDirectedGraph implements Graph {
 
     @Override
     public int[] outgoingEdges(int node) {
-        return successors.get(node).toArray();
+        return successors.get(node).list.toArray();
     }
 
     @Override
     public int copyOutgoingEdges(int node, int[] target) {
         int index = 0;
-        for (IntCursor cursor : successors.get(node)) {
+        for (IntCursor cursor : successors.get(node).list) {
             target[index++] = cursor.value;
         }
         return index;
@@ -112,11 +144,21 @@ public class MutableDirectedGraph implements Graph {
 
     @Override
     public int incomingEdgesCount(int node) {
-        return predecessors.get(node).size();
+        return predecessors.get(node).list.size();
     }
 
     @Override
     public int outgoingEdgesCount(int node) {
-        return successors.get(node).size();
+        return successors.get(node).list.size();
+    }
+
+    @Override
+    public String toString() {
+        return GraphUtils.printToDot(this);
+    }
+
+    static class NodeSet {
+        IntHashSet set = new IntHashSet(1);
+        IntArrayList list = new IntArrayList(1);
     }
 }
