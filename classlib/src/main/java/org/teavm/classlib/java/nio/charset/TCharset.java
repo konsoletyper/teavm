@@ -18,7 +18,6 @@ package org.teavm.classlib.java.nio.charset;
 import java.util.*;
 import org.teavm.classlib.java.nio.TByteBuffer;
 import org.teavm.classlib.java.nio.TCharBuffer;
-import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
 public abstract class TCharset implements Comparable<TCharset> {
     private String canonicalName;
@@ -143,7 +142,12 @@ public abstract class TCharset implements Comparable<TCharset> {
         private static final Map<String, TCharset> value = new HashMap<>();
 
         static {
-            value.put("UTF-8", new TUTF8Charset());
+            TCharset[] charsets = { TStandardCharsets.UTF_8, TStandardCharsets.US_ASCII,
+                    TStandardCharsets.ISO_8859_1, TStandardCharsets.UTF_16, TStandardCharsets.UTF_16BE,
+                    TStandardCharsets.UTF_16LE };
+            for (TCharset charset : charsets) {
+                value.put(charset.name(), charset);
+            }
         }
     }
 }

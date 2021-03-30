@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
+import java.util.Objects;
+
 public class TCoderResult {
     public static final TCoderResult UNDERFLOW = new TCoderResult((byte) 0, 0);
     public static final TCoderResult OVERFLOW = new TCoderResult((byte) 1, 0);
@@ -89,5 +91,22 @@ public class TCoderResult {
             default:
                 throw new AssertionError();
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        TCoderResult that = (TCoderResult) o;
+        return kind == that.kind && length == that.length;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(kind, length);
     }
 }

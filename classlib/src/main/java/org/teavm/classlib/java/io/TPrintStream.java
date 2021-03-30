@@ -48,7 +48,7 @@ public class TPrintStream extends TFilterOutputStream {
     public TPrintStream(TOutputStream out, boolean autoFlush) {
         super(out);
         this.autoFlush = autoFlush;
-        this.charset = new TUTF8Charset();
+        this.charset = TUTF8Charset.INSTANCE;
     }
 
     public TPrintStream(TOutputStream out) {

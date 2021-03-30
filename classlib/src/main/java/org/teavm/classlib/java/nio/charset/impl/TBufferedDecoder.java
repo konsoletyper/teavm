@@ -22,6 +22,9 @@ import org.teavm.classlib.java.nio.charset.TCharsetDecoder;
 import org.teavm.classlib.java.nio.charset.TCoderResult;
 
 public abstract class TBufferedDecoder extends TCharsetDecoder {
+    private byte[] inArray = new byte[512];
+    private char[] outArray = new char[512];
+
     public TBufferedDecoder(TCharset cs, float averageCharsPerByte, float maxCharsPerByte) {
         super(cs, averageCharsPerByte, maxCharsPerByte);
     }
@@ -29,12 +32,11 @@ public abstract class TBufferedDecoder extends TCharsetDecoder {
     @Override
     protected TCoderResult decodeLoop(TByteBuffer in, TCharBuffer out) {
         // Use intermediate array to batch buffer operations
-        int outPos = 0;
-        byte[] inArray = new byte[Math.min(in.remaining(), 512)];
+        byte[] inArray = this.inArray;
         int inPos = 0;
         int inSize = 0;
-        char[] outArray = new char[Math.min(out.remaining(), 512)];
-        TCoderResult result = null;
+        char[] outArray = this.outArray;
+        TCoderResult result;
 
         while (true) {
             // If there were remaining bytes in input buffer, copy them to the beginning of input array
@@ -55,7 +57,7 @@ public abstract class TBufferedDecoder extends TCharsetDecoder {
             }
 
             // Perform iteration
-            outPos = 0;
+            int outPos = 0;
             int outSize = Math.min(out.remaining(), outArray.length);
             Controller controller = new Controller(in, out);
             result = arrayDecode(inArray, inPos, inSize, outArray, outPos, outSize, controller);

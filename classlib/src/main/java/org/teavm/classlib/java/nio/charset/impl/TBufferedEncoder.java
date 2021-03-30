@@ -22,6 +22,9 @@ import org.teavm.classlib.java.nio.charset.TCharsetEncoder;
 import org.teavm.classlib.java.nio.charset.TCoderResult;
 
 public abstract class TBufferedEncoder extends TCharsetEncoder {
+    private char[] inArray = new char[512];
+    private byte[] outArray = new byte[512];
+
     public TBufferedEncoder(TCharset cs, float averageBytesPerChar, float maxBytesPerChar, byte[] replacement) {
         super(cs, averageBytesPerChar, maxBytesPerChar, replacement);
     }
@@ -33,12 +36,11 @@ public abstract class TBufferedEncoder extends TCharsetEncoder {
     @Override
     protected TCoderResult encodeLoop(TCharBuffer in, TByteBuffer out) {
         // Use intermediate array to batch buffer operations
-        int outPos = 0;
-        char[] inArray = new char[Math.min(in.remaining(), 512)];
+        char[] inArray = this.inArray;
         int inPos = 0;
         int inSize = 0;
-        byte[] outArray = new byte[Math.min(out.remaining(), 512)];
-        TCoderResult result = null;
+        byte[] outArray = this.outArray;
+        TCoderResult result;
 
         while (true) {
             // If there were remaining bytes in input buffer, copy them to the beginning of input array
@@ -59,15 +61,19 @@ public abstract class TBufferedEncoder extends TCharsetEncoder {
             }
 
             // Perform iteration
-            outPos = 0;
+            int outPos = 0;
             int outSize = Math.min(out.remaining(), outArray.length);
             Controller controller = new Controller(in, out);
             result = arrayEncode(inArray, inPos, inSize, outArray, outPos, outSize, controller);
             inPos = controller.inPosition;
-            if (result == null && outPos == controller.outPosition) {
-                result = TCoderResult.UNDERFLOW;
-            }
             outPos = controller.outPosition;
+            if (result == null) {
+                if (!in.hasRemaining() && inPos >= inSize) {
+                    result = TCoderResult.UNDERFLOW;
+                } else if (!out.hasRemaining() && inPos >= inSize) {
+                    result = TCoderResult.OVERFLOW;
+                }
+            }
 
             // Write any output characters to out buffer
             out.put(outArray, 0, outPos);

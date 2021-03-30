@@ -34,7 +34,7 @@ public class TUTF8Decoder extends TBufferedDecoder {
             } else if ((b & 0xE0) == 0xC0) {
                 if (inPos >= inSize) {
                     --inPos;
-                    if (!controller.hasMoreInput()) {
+                    if (!controller.hasMoreInput(2)) {
                         result = TCoderResult.UNDERFLOW;
                     }
                     break;
@@ -49,7 +49,7 @@ public class TUTF8Decoder extends TBufferedDecoder {
             } else if ((b & 0xF0) == 0xE0) {
                 if (inPos + 2 > inSize) {
                     --inPos;
-                    if (!controller.hasMoreInput()) {
+                    if (!controller.hasMoreInput(3)) {
                         result = TCoderResult.UNDERFLOW;
                     }
                     break;
@@ -71,7 +71,7 @@ public class TUTF8Decoder extends TBufferedDecoder {
             } else if ((b & 0xF8) == 0xF0) {
                 if (inPos + 3 > inSize) {
                     --inPos;
-                    if (!controller.hasMoreInput()) {
+                    if (!controller.hasMoreInput(4)) {
                         result = TCoderResult.UNDERFLOW;
                     }
                     break;

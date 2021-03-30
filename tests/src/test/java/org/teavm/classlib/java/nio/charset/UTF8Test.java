@@ -17,13 +17,11 @@ package org.teavm.classlib.java.nio.charset;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,54 +31,8 @@ import org.teavm.junit.WholeClassCompilation;
 @RunWith(TeaVMTestRunner.class)
 @WholeClassCompilation
 public class UTF8Test {
-    private static char[] hexDigits = "0123456789ABCDEF".toCharArray();
-    // Fragment from "The Idiot" by F. Dostoevsky
-    private String text =
-            "" + "Здесь в моем объяснении я отмечаю все эти цифры и числа. Мне, конечно, всё равно будет, но теперь "
-                    + "(и, может быть, только в эту минуту) я желаю, чтобы те, которые будут судить мой поступок, "
-                    + "могли ясно "
-                    + "видеть, из какой логической цепи выводов вышло мое „последнее убеждение“. Я написал сейчас "
-                    + "выше, что "
-                    + "окончательная решимость, которой недоставало мне для исполнения моего „последнего убеждения“, "
-                    + "произошла "
-                    + "во мне, кажется, вовсе не из логического вывода, а от какого-то странного толчка, от одного "
-                    + "странного " + "обстоятельства, может быть вовсе не связанного ничем с ходом дела. "
-                    + "Дней десять назад зашел ко мне Рогожин, "
-                    + "по одному своему делу, о котором здесь лишнее распространяться. Я никогда не видал Рогожина "
-                    + "прежде, "
-                    + "но слышал о нем очень многое. Я дал ему все нужные справки, и он скоро ушел, а так как он и "
-                    + "приходил "
-                    + "только за справками, то тем бы дело между нами и кончилось. Но он слишком заинтересовал меня, "
-                    + "и весь этот день я был под влиянием странных мыслей, так что решился пойти к нему на другой "
-                    + "день сам, "
-                    + "отдать визит. Рогожин был мне очевидно не рад и даже „деликатно“ намекнул, что нам нечего "
-                    + "продолжать " + "знакомство; но все-таки я провел очень любопытный час, как, вероятно, и он. "
-                    + "Между нами был такой контраст, "
-                    + "который не мог не сказаться нам обоим, особенно мне: я был человек, уже сосчитавший дни свои, "
-                    + "а он - "
-                    + "живущий самою полною, непосредственною жизнью, настоящею минутой, без всякой заботы о "
-                    + "„последних“ "
-                    + "выводах, цифрах или о чем бы то ни было, не касающемся того, на чем... на чем... ну хоть на "
-                    + "чем он " + "помешан; пусть простит мне это выражение господин Рогожин, пожалуй хоть как плохому "
-                    + "литератору, не "
-                    + "умевшему выразить свою мысль. Несмотря на всю его нелюбезность, мне показалось, что он человек"
-                    + " с умом и "
-                    + "может многое понимать, хотя его мало что интересует из постороннего. Я не намекал ему о моем "
-                    + "„последнем " + "убеждении“, но мне почему-то показалось, что он, слушая меня, угадал его. "
-                    + "Он промолчал, он ужасно молчалив. "
-                    + "Я намекнул ему, уходя, что, несмотря на всю между нами разницу и на все противоположности, - "
-                    + "les extrémités se touchent 1 (я растолковал ему это по-русски), так что, может быть, он и сам "
-                    + "вовсе не "
-                    + "так далек от моего „последнего убеждения“, как кажется. На это он ответил мне очень угрюмою и "
-                    + "кислою " + "гримасой, встал, сам сыскал мне мою фуражку, сделав вид, будто бы я сам ухожу, и "
-                    + "просто-запросто вывел "
-                    + "меня из своего мрачного дома под видом того, что провожает меня из учтивости. Дом его поразил "
-                    + "меня; " + "похож на кладбище, а ему, кажется, нравится, что, впрочем, понятно: такая полная, "
-                    + "непосредственная "
-                    + "жизнь, которою он живет, слишком полна сама по себе, чтобы нуждаться в обстановке.";
     private String hex = ""
-            +
-            "D097D0B4D0B5D181D18C20D0B220D0BCD0BED0B5D0BC20D0BED0B1D18AD18FD181D0BDD0B5D0BDD0B8D0B820D18F20D0BED"
+            + "D097D0B4D0B5D181D18C20D0B220D0BCD0BED0B5D0BC20D0BED0B1D18AD18FD181D0BDD0B5D0BDD0B8D0B820D18F20D0BED"
             + "182D0BCD0B5D187D0B0D18E20D0B2D181D0B520D18DD182D0B820D186D0B8D184D180D18B20D0B820D187D0B8D181D0BBD"
             + "0B02E20D09CD0BDD0B52C20D0BAD0BED0BDD0B5D187D0BDD0BE2C20D0B2D181D19120D180D0B0D0B2D0BDD0BE20D0B1D18"
             + "3D0B4D0B5D1822C20D0BDD0BE20D182D0B5D0BFD0B5D180D18C2028D0B82C20D0BCD0BED0B6D0B5D18220D0B1D18BD182D"
@@ -210,7 +162,7 @@ public class UTF8Test {
 
     @Test
     public void replaceMalformedSurrogatePair() {
-        Charset charset = Charset.forName("UTF-8");
+        Charset charset = StandardCharsets.UTF_8;
         ByteBuffer buffer = charset.encode("a\uD800\uD800b");
         byte[] result = new byte[buffer.remaining()];
         buffer.get(result);
@@ -218,8 +170,21 @@ public class UTF8Test {
     }
 
     @Test
+    public void malformedSurrogatePair() {
+        Charset charset = StandardCharsets.UTF_8;
+        byte[] result = new byte[100];
+        CharBuffer input = CharBuffer.wrap("a\uD800\uD800b");
+        ByteBuffer output = ByteBuffer.wrap(result);
+        CoderResult coderResult = charset.newEncoder().encode(input, output, true);
+        assertEquals(CoderResult.malformedForLength(1), coderResult);
+        result = Arrays.copyOf(result, output.position());
+        assertArrayEquals(new byte[] { 97 }, result);
+        assertEquals(1, input.position());
+    }
+
+    @Test
     public void encodeSurrogate() {
-        Charset charset = Charset.forName("UTF-8");
+        Charset charset = StandardCharsets.UTF_8;
         ByteBuffer buffer = charset.encode("a\uD800\uDC00b");
         byte[] result = new byte[buffer.remaining()];
         buffer.get(result);
@@ -228,7 +193,7 @@ public class UTF8Test {
 
     @Test
     public void encodeSupplementary() {
-        Charset charset = Charset.forName("UTF-8");
+        Charset charset = StandardCharsets.UTF_8;
         StringBuilder sb = new StringBuilder();
         sb.appendCodePoint(0xfedcb);
         ByteBuffer buffer = charset.encode(sb.toString());
@@ -239,7 +204,7 @@ public class UTF8Test {
 
     @Test
     public void replaceMalformedFirstByte() {
-        Charset charset = Charset.forName("UTF-8");
+        Charset charset = StandardCharsets.UTF_8;
         CharBuffer buffer = charset.decode(ByteBuffer.wrap(new byte[] { 97, (byte) 0xFF, 98 }));
         char[] result = new char[buffer.remaining()];
         buffer.get(result);
@@ -248,7 +213,7 @@ public class UTF8Test {
 
     @Test
     public void replaceMalformedMidByte() {
-        Charset charset = Charset.forName("UTF-8");
+        Charset charset = StandardCharsets.UTF_8;
         CharBuffer buffer = charset.decode(ByteBuffer.wrap(new byte[] { 97, (byte) 0xC0, 98, 98 }));
         char[] result = new char[buffer.remaining()];
         buffer.get(result);
@@ -265,115 +230,17 @@ public class UTF8Test {
             bytes[i++] = -78;
             bytes[i++] = -69;
         }
-        Charset charset = Charset.forName("UTF-8");
+        Charset charset = StandardCharsets.UTF_8;
         CharBuffer buffer = charset.decode(ByteBuffer.wrap(bytes));
         assertEquals('\uD8BB', buffer.get(8190));
         assertEquals('\uDCBB', buffer.get(8191));
     }
 
     private void runEncode(int inSize, int outSize) {
-        char[] input = text.toCharArray();
-        byte[] output = new byte[16384];
-        int inPos = 0;
-        int outPos = 0;
-        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-        CoderResult result = CoderResult.UNDERFLOW;
-
-        while (true) {
-            int inLen = Math.min(inSize, input.length - inPos);
-            CharBuffer in = CharBuffer.wrap(input, inPos, inLen);
-            int outLen = Math.min(outSize, output.length - outPos);
-            ByteBuffer out = ByteBuffer.wrap(output, outPos, outLen);
-            result = encoder.encode(in, out, inPos + inLen >= input.length);
-            inPos = in.position();
-            outPos = out.position();
-            if (result.isError() || inPos >= input.length) {
-                break;
-            }
-        }
-
-        assertTrue("Should be UNDERFLOW after encoding", result.isUnderflow());
-
-        while (true) {
-            int outLen = Math.min(outSize, output.length - outPos);
-            ByteBuffer out = ByteBuffer.wrap(output, outPos, outLen);
-            result = encoder.flush(out);
-            outPos = out.position();
-            if (result.isUnderflow()) {
-                break;
-            }
-        }
-
-        assertTrue("Should be UNDERFLOW after flushing", result.isUnderflow());
-        output = Arrays.copyOf(output, outPos);
-        assertEquals(hex, bytesToHex(output));
+        CharsetTestCommon.runEncode(hex, CharsetTestCommon.text, StandardCharsets.UTF_8, inSize, outSize);
     }
 
     private void runDecode(int inSize, int outSize) {
-        byte[] input = hexToBytes(hex);
-        char[] output = new char[16384];
-        int inPos = 0;
-        int outPos = 0;
-        CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
-        CoderResult result = CoderResult.UNDERFLOW;
-
-        while (true) {
-            int inLen = Math.min(inSize, input.length - inPos);
-            ByteBuffer in = ByteBuffer.wrap(input, inPos, inLen);
-            int outLen = Math.min(outSize, output.length - outPos);
-            CharBuffer out = CharBuffer.wrap(output, outPos, outLen);
-            result = decoder.decode(in, out, inPos + inLen >= input.length);
-            inPos = in.position();
-            outPos = out.position();
-            if (result.isError() || inPos >= input.length) {
-                break;
-            }
-        }
-
-        assertTrue("Should be UNDERFLOW after encoding", result.isUnderflow());
-
-        while (true) {
-            int outLen = Math.min(outSize, output.length - outPos);
-            CharBuffer out = CharBuffer.wrap(output, outPos, outLen);
-            result = decoder.flush(out);
-            outPos = out.position();
-            if (result.isUnderflow()) {
-                break;
-            }
-        }
-
-        assertTrue("Should be UNDERFLOW after flushing", result.isUnderflow());
-        output = Arrays.copyOf(output, outPos);
-        assertEquals(text, new String(output));
-    }
-
-    private String bytesToHex(byte[] bytes) {
-        char[] result = new char[bytes.length * 2];
-        int j = 0;
-        for (int i = 0; i < bytes.length; ++i) {
-            int b = bytes[i] & 0xFF;
-            result[j++] = hexDigits[b >> 4];
-            result[j++] = hexDigits[b & 0xF];
-        }
-        return new String(result);
-    }
-
-    private byte[] hexToBytes(String hex) {
-        char[] chars = hex.toCharArray();
-        byte[] result = new byte[chars.length / 2];
-        int j = 0;
-        for (int i = 0; i < chars.length; i += 2) {
-            char hi = chars[i];
-            char lo = chars[i + 1];
-            result[j++] = (byte) ((digit(hi) << 4) | digit(lo));
-        }
-        return result;
-    }
-
-    private static int digit(char c) {
-        if (c >= '0' && c <= '9') {
-            return c - '0';
-        }
-        return c - 'A' + 10;
+        CharsetTestCommon.runDecode(hex, CharsetTestCommon.text, StandardCharsets.UTF_8, inSize, outSize);
     }
 }

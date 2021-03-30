@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2021 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,11 +19,9 @@ import org.teavm.classlib.java.nio.charset.TCharset;
 import org.teavm.classlib.java.nio.charset.TCharsetDecoder;
 import org.teavm.classlib.java.nio.charset.TCharsetEncoder;
 
-public class TUTF8Charset extends TCharset {
-    public static final TUTF8Charset INSTANCE = new TUTF8Charset();
-
-    private TUTF8Charset() {
-        super("UTF-8", new String[0]);
+public class TAsciiCharset extends TCharset {
+    public TAsciiCharset() {
+        super("US-ASCII", new String[0]);
     }
 
     @Override
@@ -33,11 +31,11 @@ public class TUTF8Charset extends TCharset {
 
     @Override
     public TCharsetDecoder newDecoder() {
-        return new TUTF8Decoder(this);
+        return new TAsciiDecoder(this);
     }
 
     @Override
     public TCharsetEncoder newEncoder() {
-        return new TUTF8Encoder(this);
+        return new TAsciiEncoder(this);
     }
 }

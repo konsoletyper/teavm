@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2021 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,28 +16,25 @@
 package org.teavm.classlib.java.nio.charset.impl;
 
 import org.teavm.classlib.java.nio.charset.TCharset;
-import org.teavm.classlib.java.nio.charset.TCharsetDecoder;
-import org.teavm.classlib.java.nio.charset.TCharsetEncoder;
+import org.teavm.classlib.java.nio.charset.TCoderResult;
 
-public class TUTF8Charset extends TCharset {
-    public static final TUTF8Charset INSTANCE = new TUTF8Charset();
-
-    private TUTF8Charset() {
-        super("UTF-8", new String[0]);
+public class TIso8859Decoder extends TBufferedDecoder {
+    public TIso8859Decoder(TCharset cs) {
+        super(cs, 1, 1);
     }
 
     @Override
-    public boolean contains(TCharset cs) {
-        return cs == this;
-    }
+    protected TCoderResult arrayDecode(byte[] inArray, int inPos, int inSize, char[] outArray, int outPos, int outSize,
+            Controller controller) {
+        TCoderResult result = null;
+        while (inPos < inSize && outPos < outSize) {
+            int b = inArray[inPos++] & 0xFf;
+            outArray[outPos++] = (char) b;
+        }
 
-    @Override
-    public TCharsetDecoder newDecoder() {
-        return new TUTF8Decoder(this);
-    }
+        controller.setInPosition(inPos);
+        controller.setOutPosition(outPos);
 
-    @Override
-    public TCharsetEncoder newEncoder() {
-        return new TUTF8Encoder(this);
+        return result;
     }
 }

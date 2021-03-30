@@ -33,7 +33,7 @@ public class TOutputStreamWriter extends TWriter {
     private boolean closed;
 
     public TOutputStreamWriter(TOutputStream out) {
-        this(nullCheck(out), new TUTF8Charset());
+        this(nullCheck(out), TUTF8Charset.INSTANCE);
     }
 
     public TOutputStreamWriter(TOutputStream out, final String enc) throws TUnsupportedEncodingException {
