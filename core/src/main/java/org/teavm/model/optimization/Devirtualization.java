@@ -141,6 +141,9 @@ public class Devirtualization {
 
     private void applyToCast(MethodDependencyInfo methodDep, CastInstruction cast) {
         ValueDependencyInfo var = methodDep.getVariable(cast.getValue().getIndex());
+        if (var == null) {
+            return;
+        }
         boolean canFail = false;
         String failType = null;
         for (String type : var.getTypes()) {
