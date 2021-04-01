@@ -1479,7 +1479,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 }
             } else {
                 writer.append("$rt_createMultiArray(");
-                context.typeToClsString(writer, expr.getType());
+                context.typeToClsString(writer, type);
                 writer.append(",").ws();
             }
             writer.append("[");
