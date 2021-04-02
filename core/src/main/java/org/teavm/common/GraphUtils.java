@@ -343,7 +343,7 @@ public final class GraphUtils {
                     stack[top++] = node;
                     for (int successor : graph.outgoingEdges(node)) {
                         if (state[successor] == 0) {
-                            stack[top++] = node;
+                            stack[top++] = successor;
                         }
                     }
                     break;

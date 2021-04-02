@@ -65,6 +65,9 @@ public class AliasAnalysis {
     private DfgBuildVisitor prepare(Program program, MethodDescriptor methodDescriptor) {
         DfgBuildVisitor visitor = new DfgBuildVisitor(program.variableCount());
 
+        visitor.queue.addLast(0);
+        visitor.queue.addLast(0);
+
         for (int i = 1; i <= methodDescriptor.parameterCount(); ++i) {
             if (methodDescriptor.parameterType(i - 1) instanceof ValueType.Object) {
                 visitor.queue.addLast(i);

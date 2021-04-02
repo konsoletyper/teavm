@@ -502,7 +502,7 @@ public class Inlining {
 
         @Override
         public ProgramReader getProgram(MethodReference method) {
-            ClassReader cls = dependencyInfo.getClassSource().get(method.getClassName());
+            ClassReader cls = classes.get(method.getClassName());
             if (cls == null) {
                 return null;
             }
