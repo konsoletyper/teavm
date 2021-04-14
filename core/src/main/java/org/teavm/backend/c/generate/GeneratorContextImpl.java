@@ -17,6 +17,7 @@ package org.teavm.backend.c.generate;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.teavm.backend.c.generators.GeneratorContext;
 import org.teavm.backend.lowlevel.generate.NameProvider;
@@ -24,6 +25,9 @@ import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
+import org.teavm.model.lowlevel.CallSiteDescriptor;
+import org.teavm.model.lowlevel.CallSiteLocation;
+import org.teavm.model.lowlevel.ExceptionHandlerDescriptor;
 
 class GeneratorContextImpl implements GeneratorContext {
     private GenerationContext context;
@@ -33,15 +37,20 @@ class GeneratorContextImpl implements GeneratorContext {
     private CodeWriter writerAfter;
     private IncludeManager includes;
     private List<FileGeneratorImpl> fileGenerators = new ArrayList<>();
+    private List<CallSiteDescriptor> callSites;
+    private boolean longjmp;
 
     public GeneratorContextImpl(ClassGenerationContext classContext, CodeWriter bodyWriter,
-            CodeWriter writerBefore, CodeWriter writerAfter, IncludeManager includes) {
+            CodeWriter writerBefore, CodeWriter writerAfter, IncludeManager includes,
+            List<CallSiteDescriptor> callSites, boolean longjmp) {
         this.context = classContext.getContext();
         this.classContext = classContext;
         this.bodyWriter = bodyWriter;
         this.writerBefore = writerBefore;
         this.writerAfter = writerAfter;
         this.includes = includes;
+        this.callSites = callSites;
+        this.longjmp = longjmp;
     }
 
     @Override
@@ -124,6 +133,20 @@ class GeneratorContextImpl implements GeneratorContext {
         StringBuilder sb = new StringBuilder();
         ClassGenerator.escape(name, sb);
         return sb.toString();
+    }
+
+    @Override
+    public CallSiteDescriptor createCallSite(CallSiteLocation[] locations,
+            ExceptionHandlerDescriptor[] exceptionHandlers) {
+        CallSiteDescriptor callSite = new CallSiteDescriptor(callSites.size(), locations);
+        callSite.getHandlers().addAll(Arrays.asList(exceptionHandlers));
+        callSites.add(callSite);
+        return callSite;
+    }
+
+    @Override
+    public boolean usesLongjmp() {
+        return longjmp;
     }
 
     void flush() throws IOException {

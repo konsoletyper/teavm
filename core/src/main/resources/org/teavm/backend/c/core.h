@@ -22,6 +22,8 @@ typedef struct TeaVM_Array {
     int32_t size;
 } TeaVM_Array;
 
+struct TeaVM_Services;
+
 typedef struct TeaVM_Class {
     TeaVM_Object parent;
     int32_t size;
@@ -44,11 +46,22 @@ typedef struct TeaVM_Class {
     TeaVM_Object** simpleName;
     TeaVM_Object* simpleNameCache;
     TeaVM_Object* canonicalName;
+    struct TeaVM_Services* services;
     #if TEAVM_HEAP_DUMP
         TeaVM_FieldDescriptors* fieldDescriptors;
         TeaVM_StaticFieldDescriptors* staticFieldDescriptors;
     #endif
 } TeaVM_Class;
+
+typedef struct TeaVM_Service {
+    TeaVM_Class* cls;
+    void (*constructor)(void*);
+} TeaVM_Service;
+
+typedef struct TeaVM_Services {
+    int32_t size;
+    TeaVM_Service entries[1];
+} TeaVM_Services;
 
 typedef struct TeaVM_String {
     TeaVM_Object parent;

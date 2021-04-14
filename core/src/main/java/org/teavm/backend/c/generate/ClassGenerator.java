@@ -1272,7 +1272,7 @@ public class ClassGenerator {
         codeWriter.outdent().println("}");
 
         GeneratorContextImpl generatorContext = new GeneratorContextImpl(codeGenerator.getClassContext(),
-                bodyWriter, writerBefore, codeWriter, includes);
+                bodyWriter, writerBefore, codeWriter, includes, callSites, context.isLongjmp());
         generator.generate(generatorContext, methodRef);
         try {
             generatorContext.flush();

@@ -67,14 +67,21 @@ public class JCLPlugin implements TeaVMPlugin {
         host.add(new ObfuscationHacks());
 
         if (!isBootstrap()) {
-            ServiceLoaderSupport serviceLoaderSupp = new ServiceLoaderSupport(host.getClassLoader());
-            host.add(serviceLoaderSupp);
+            ServiceLoaderSupport serviceLoaderSupport = new ServiceLoaderSupport(host.getClassLoader());
+            host.add(serviceLoaderSupport);
+            host.registerService(ServiceLoaderInformation.class, serviceLoaderSupport);
             MethodReference loadServicesMethod = new MethodReference(ServiceLoader.class, "loadServices",
                     PlatformClass.class, Object[].class);
+
             TeaVMJavaScriptHost jsExtension = host.getExtension(TeaVMJavaScriptHost.class);
             if (jsExtension != null) {
-                jsExtension.add(loadServicesMethod, serviceLoaderSupp);
+                jsExtension.add(loadServicesMethod, new ServiceLoaderJSSupport());
                 jsExtension.addVirtualMethods(new AnnotationVirtualMethods());
+            }
+
+            TeaVMCHost cHost = host.getExtension(TeaVMCHost.class);
+            if (cHost != null) {
+                cHost.addGenerator(new ServiceLoaderCSupport());
             }
         }
 

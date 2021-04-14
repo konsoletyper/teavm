@@ -122,7 +122,10 @@ public final class ExceptionHandling {
         if (stackFrame == null) {
             stackFrame = ShadowStack.getStackTop();
             while (stackFrame != null) {
-                ShadowStack.setExceptionHandlerId(stackFrame, ShadowStack.getCallSiteId(stackFrame) + 1);
+                int callSiteId = ShadowStack.getCallSiteId(stackFrame);
+                if (callSiteId >= 0) {
+                    ShadowStack.setExceptionHandlerId(stackFrame, callSiteId + 1);
+                }
                 stackFrame = ShadowStack.getNextStackFrame(stackFrame);
             }
             printStack();
