@@ -108,13 +108,17 @@ public final class ExceptionHandling {
                 while (handler != null) {
                     if (handler.exceptionClass == null || handler.exceptionClass.isSupertypeOf.apply(exceptionClass)) {
                         handlerId = handler.id;
-                        ShadowStack.setExceptionHandlerId(stackFrame, handler.id);
+                        if (!isJumpSupported()) {
+                            ShadowStack.setExceptionHandlerId(stackFrame, handlerId);
+                        }
                         break stackLoop;
                     }
                     handler = handler.next;
                 }
 
-                ShadowStack.setExceptionHandlerId(stackFrame, callSiteId - 1);
+                if (!isJumpSupported()) {
+                    ShadowStack.setExceptionHandlerId(stackFrame, callSiteId - 1);
+                }
             }
             stackFrame = ShadowStack.getNextStackFrame(stackFrame);
         }
