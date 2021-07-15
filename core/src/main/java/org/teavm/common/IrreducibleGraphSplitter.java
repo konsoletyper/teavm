@@ -105,7 +105,7 @@ class IrreducibleGraphSplitter {
         this.domNodes = domGraph;
     }
 
-    // n-th element of output array (levels) will contain length of the path from root to node node N
+    // n-th element of output array (levels) will contain length of the path from root to node N
     // (paper calls this 'level').
     private void buildLevels() {
         int size = cfg.size();
@@ -113,7 +113,7 @@ class IrreducibleGraphSplitter {
         Arrays.fill(levels, -1);
         levels[0] = 0;
         for (int i = 1; i < size; ++i) {
-            if (levels[i] >= 0) {
+            if (levels[i] >= 0 || idom[i] < 0) {
                 continue;
             }
 
