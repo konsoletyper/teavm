@@ -15,10 +15,12 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.text.DoubleAnalyzer;
 import org.teavm.classlib.impl.text.FloatAnalyzer;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.util.TArrays;
+import org.teavm.jso.JSBody;
 
 class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequence {
     static class Constants {
@@ -350,6 +352,11 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             return this;
         }
 
+        if (PlatformDetector.isJavaScript()) {
+            insertDoubleJS(target, value);
+            return this;
+        }
+
         DoubleAnalyzer.Result number = Constants.doubleAnalysisResult;
         DoubleAnalyzer.analyze(value, number);
         long mantissa = number.mantissa;
@@ -440,6 +447,73 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             buffer[target++] = (char) ('0' + exp % 10);
         }
         return this;
+    }
+
+    @JSBody(params = "b", script = "return b.toString();")
+    private static native String doubleToStringJS(double b);
+
+    private void insertDoubleJS(int target, double value) {
+        if (value < 0) {
+            insert(target, '-');
+            target++;
+            value = -value;
+        }
+        String jsString = doubleToStringJS(value);
+        int indexOfDot = jsString.indexOf('.');
+        int indexOfE = jsString.indexOf('e');
+        if (value < 0.001) {
+            if (indexOfE >= 0) {
+                insert(target, jsString.replace("e+", "E"));
+            } else {
+                int firstNonZero = 2;
+                while (jsString.charAt(firstNonZero) == '0') {
+                    firstNonZero++;
+                }
+                insert(target++, jsString.charAt(firstNonZero));
+                insert(target++, '.');
+                for (int i = firstNonZero + 1; i < jsString.length(); i++) {
+                    insert(target++, jsString.charAt(i));
+                }
+                insert(target++, 'E');
+                insert(target++, '-');
+                insert(target, firstNonZero - 2);
+            }
+        } else if (value >= 10_000_000) {
+            if (indexOfE >= 0) {
+                insert(target, jsString.replace('e', 'E'));
+            } else {
+                if (indexOfDot >= 0) {
+                    insert(target++, jsString.charAt(0));
+                    insert(target++, '.');
+                    for (int i = 1; i < jsString.length(); i++) {
+                        if (i == indexOfDot) {
+                            continue;
+                        }
+                        insert(target++, jsString.charAt(i));
+                    }
+                    insert(target++, 'E');
+                    insert(target, indexOfDot - 2);
+                } else {
+                    int lastNonZero = jsString.length() - 1;
+                    while (jsString.charAt(lastNonZero) == '0') {
+                        lastNonZero--;
+                    }
+                    insert(target++, jsString.charAt(0));
+                    insert(target++, '.');
+                    for (int i = 1; i <= lastNonZero; i++) {
+                        insert(target++, jsString.charAt(i));
+                    }
+                    insert(target++, 'E');
+                    insert(target, jsString.length() - 1);
+                }
+            }
+        } else {
+            insert(target, jsString);
+            if (indexOfDot < 0) {
+                insert(target + jsString.length(), '.');
+                insert(target + jsString.length() + 1, '0');
+            }
+        }
     }
 
     private static int trailingDecimalZeros(int n) {
