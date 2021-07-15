@@ -15,7 +15,9 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.java.io.TSerializable;
@@ -653,11 +655,47 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return TPattern.matches(regex, this.toString());
     }
 
+    private String[] simpleSplit(char ch, int limit) {
+        int offset = 0;
+        int position = 0;
+        List<String> list = new ArrayList<>();
+        while (position < characters.length && (limit <= 0 || list.size() < limit - 1)) {
+            if (characters[position] == ch) {
+                list.add(substring(offset, position).toString());
+                offset = position + 1;
+            }
+            position++;
+        }
+
+        list.add(substring(offset, characters.length).toString());
+
+        if (limit == 0) {
+            while (list.size() > 0 && list.get(list.size() - 1).length() == 0) {
+                list.remove(list.size() - 1);
+            }
+        }
+        return list.toArray(new String[0]);
+    }
+
     public String[] split(String regex) {
+        if (regex.length() == 1) {
+            char letter = regex.charAt(0);
+            if (letter != '\\' && letter != '.' && letter != '(' && letter != ')' && letter != '*'
+                    && letter != '+' && letter != '|' && letter != '$' && letter != '^') {
+                return simpleSplit(letter, 0);
+            }
+        }
         return TPattern.compile(regex).split(this.toString());
     }
 
     public String[] split(String regex, int limit) {
+        if (regex.length() == 1) {
+            char letter = regex.charAt(0);
+            if (letter != '\\' && letter != '.' && letter != '(' && letter != ')' && letter != '*'
+                    && letter != '+' && letter != '|' && letter != '$' && letter != '^') {
+                return simpleSplit(letter, limit);
+            }
+        }
         return TPattern.compile(regex).split(this.toString(), limit);
     }
 

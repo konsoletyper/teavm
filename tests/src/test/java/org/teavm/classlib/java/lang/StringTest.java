@@ -82,6 +82,27 @@ public class StringTest {
     }
 
     @Test
+    public void testSimpleSplit() {
+        String[] common = "a,b,c".split(",");
+        assertEquals(3, common.length);
+        String[] first = ",abc,d".split(",");
+        assertEquals("", first[0]);
+        assertEquals("abc", first[1]);
+        assertEquals("d", first[2]);
+        assertEquals(first.length, 3);
+        String[] last = "abc,d,".split(",");
+        assertEquals("d", last[1]);
+        assertEquals(last.length, 2);
+        String[] no = "a,b,c".split("d");
+        assertEquals(1, no.length);
+        assertEquals("a,b,c", no[0]);
+        String[] limited = "a,b,c".split(",", 2);
+        assertEquals(2, limited.length);
+        assertEquals("a", limited[0]);
+        assertEquals("b,c", limited[1]);
+    }
+
+    @Test
     public void comparesToPrecedingStrings() {
         assertTrue("abc".compareTo("abbc") > 0);
     }
