@@ -71,6 +71,7 @@ public class ClassInference {
     private ClassHierarchy hierarchy;
     private SubclassListProvider subclassListProvider;
     private Graph assignmentGraph;
+    private Graph arrayDataAssignmentGraph;
     private Graph cloneGraph;
     private Graph arrayGraph;
     private Graph itemGraph;
@@ -218,6 +219,17 @@ public class ClassInference {
         casts = visitor.casts.toArray(new ValueCast[0]);
         exceptions = visitor.exceptions.getAll();
         virtualCallSites = visitor.virtualCallSites.toArray(new VirtualCallSite[0]);
+
+        GraphBuilder arrayAssignmentGraphBuilder = new GraphBuilder(assignmentGraph.size());
+        for (int i = 0; i < assignmentGraph.size(); ++i) {
+            for (int j : assignmentGraph.outgoingEdges(i)) {
+                arrayAssignmentGraphBuilder.addEdge(i, j);
+            }
+        }
+        for (ValueCast cast : casts) {
+            arrayAssignmentGraphBuilder.addEdge(cast.fromVariable, cast.toVariable);
+        }
+        arrayDataAssignmentGraph = arrayAssignmentGraphBuilder.build();
     }
 
     private void buildPropagationGraph() {
@@ -259,7 +271,7 @@ public class ClassInference {
             }
 
             if (degree > 0) {
-                for (int predecessor : assignmentGraph.incomingEdges(variable)) {
+                for (int predecessor : arrayDataAssignmentGraph.incomingEdges(variable)) {
                     int predecessorEntry = packNodeAndDegree(predecessor, degree);
                     graphBuilder.addEdge(predecessorEntry, entry);
                     graphBuilder.addEdge(entry, predecessorEntry);
@@ -280,8 +292,13 @@ public class ClassInference {
                     }
                 }
 
-                for (int successor : assignmentGraph.outgoingEdges(variable)) {
-                    graphBuilder.addEdge(packNodeAndDegree(successor, degree), entry);
+                for (int successor : arrayDataAssignmentGraph.outgoingEdges(variable)) {
+                    int successorEntry = packNodeAndDegree(successor, degree);
+                    graphBuilder.addEdge(successorEntry, entry);
+                    graphBuilder.addEdge(entry, successorEntry);
+                    if (!visited[successorEntry]) {
+                        stack.push(successorEntry);
+                    }
                 }
             }
 
