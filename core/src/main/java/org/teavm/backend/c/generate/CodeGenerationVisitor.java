@@ -1058,8 +1058,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     public void visit(CastExpr expr) {
         if (expr.getTarget() instanceof ValueType.Object) {
             String className = ((ValueType.Object) expr.getTarget()).getClassName();
-            if (context.getCharacteristics().isStructure(className)
-                    || className.equals(Address.class.getName())) {
+            if (!context.getCharacteristics().isManaged(className)) {
                 expr.getValue().acceptVisitor(this);
                 return;
             }
