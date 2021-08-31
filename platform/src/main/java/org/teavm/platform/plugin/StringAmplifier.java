@@ -25,4 +25,8 @@ final class StringAmplifier {
     @PluggableDependency(StringAmplifierDependencyPlugin.class)
     @Unmanaged
     static native String amplify(String string);
+
+    @PluggableDependency(StringAmplifierDependencyPlugin.class)
+    @Unmanaged
+    static native String[] amplifyArray(String[] strings);
 }

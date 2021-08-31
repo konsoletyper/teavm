@@ -28,6 +28,7 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.platform.metadata.Resource;
+import org.teavm.platform.metadata.ResourceMap;
 
 public class StringAmplifierTransformer implements ClassHolderTransformer {
     @Override
@@ -54,7 +55,21 @@ public class StringAmplifierTransformer implements ClassHolderTransformer {
                 MethodReference method = invoke.getMethod();
                 String owningClass = method.getClassName();
                 if (hierarchy.isSuperType(Resource.class.getName(), owningClass, false)) {
-                    if (method.getReturnType().isObject(String.class)) {
+                    if (method.getClassName().equals(ResourceMap.class.getName())) {
+                        if (method.getName().equals("keys")) {
+                            Variable var = program.createVariable();
+                            InvokeInstruction amplifyInstruction = new InvokeInstruction();
+                            amplifyInstruction.setMethod(new MethodReference(StringAmplifier.class, "amplifyArray",
+                                    String[].class, String[].class));
+                            amplifyInstruction.setType(InvocationType.SPECIAL);
+                            amplifyInstruction.setArguments(var);
+                            amplifyInstruction.setReceiver(invoke.getReceiver());
+                            amplifyInstruction.setLocation(invoke.getLocation());
+
+                            invoke.setReceiver(var);
+                            invoke.insertNext(amplifyInstruction);
+                        }
+                    } else if (method.getReturnType().isObject(String.class)) {
                         Variable var = program.createVariable();
                         InvokeInstruction amplifyInstruction = new InvokeInstruction();
                         amplifyInstruction.setMethod(new MethodReference(StringAmplifier.class, "amplify",

@@ -22,6 +22,11 @@ import org.teavm.dependency.MethodDependency;
 public class StringAmplifierDependencyPlugin implements DependencyPlugin {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
-        method.getResult().propagate(agent.getType("java.lang.String"));
+        if (method.getMethod().getName().equals("amplify")) {
+            method.getResult().propagate(agent.getType("java.lang.String"));
+        } else {
+            method.getResult().propagate(agent.getType("[Ljava/lang/String;"));
+            method.getResult().getArrayItem().propagate(agent.getType("java.lang.String"));
+        }
     }
 }
