@@ -13,30 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.newir.expr;
+package org.teavm.newir.interpreter;
 
-public final class IrParameterExpr extends IrExpr {
-    private IrParameter parameter;
+public abstract class Instruction {
+    public abstract void exec(InterpreterContext context);
 
-    public IrParameterExpr(IrParameter parameter) {
-        this.parameter = parameter;
-    }
-
-    public IrParameter getParameter() {
-        return parameter;
-    }
-
-    public void setParameter(IrParameter parameter) {
-        this.parameter = parameter;
-    }
-
-    @Override
-    public IrType getType() {
-        return parameter.getType();
-    }
-
-    @Override
-    public void acceptVisitor(IrExprVisitor visitor) {
-        visitor.visit(this);
-    }
+    public abstract void print(InstructionPrinter p);
 }

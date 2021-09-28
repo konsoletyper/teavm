@@ -298,11 +298,16 @@ public final class IrExprBuilder {
         IrBlockExpr elseBlock = new IrBlockExpr();
         boolean ordered = false;
         IrConditionalExpr expr = new IrConditionalExpr(condition, thenBlock, elseBlock);
+
         IrExpr lastCondBackup = lastExpr;
+        lastExpr = condition;
         thenDo.run();
+        expr.setThenExpr(lastExpr);
         ordered |= lastExpr != lastCondBackup;
-        lastExpr = lastCondBackup;
+
+        lastExpr = condition;
         elseDo.run();
+        expr.setElseExpr(lastExpr);
         ordered |= lastExpr != lastCondBackup;
         if (ordered) {
             lastExpr = expr;
@@ -312,7 +317,7 @@ public final class IrExprBuilder {
 
     public static IrExpr ifCond(IrExpr condition, Runnable thenDo) {
         checkInFunctionBuilder();
-        return ifCond(condition, thenDo, () -> {});
+        return ifCond(condition, thenDo, () -> { });
     }
 
     public static IrExpr exitFunction(IrExpr value) {

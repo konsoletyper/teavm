@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 konsoletyper.
+ *  Copyright 2021 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,30 +13,31 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.newir.expr;
+package org.teavm.newir.interpreter.instructions;
 
-public final class IrParameterExpr extends IrExpr {
-    private IrParameter parameter;
+import org.teavm.newir.interpreter.InstructionPrinter;
+import org.teavm.newir.interpreter.InterpreterContext;
 
-    public IrParameterExpr(IrParameter parameter) {
-        this.parameter = parameter;
+class Goto extends Jump {
+    Goto() {
     }
 
-    public IrParameter getParameter() {
-        return parameter;
-    }
-
-    public void setParameter(IrParameter parameter) {
-        this.parameter = parameter;
+    Goto(int target) {
+        this.target = target;
     }
 
     @Override
-    public IrType getType() {
-        return parameter.getType();
+    public void setTarget(int target) {
+        this.target = target;
     }
 
     @Override
-    public void acceptVisitor(IrExprVisitor visitor) {
-        visitor.visit(this);
+    public void exec(InterpreterContext context) {
+        context.ptr = target;
+    }
+
+    @Override
+    public void print(InstructionPrinter p) {
+        p.opcode("goto").label(target);
     }
 }

@@ -17,16 +17,20 @@ package org.teavm.newir.interpreter;
 
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
+import java.io.PrintWriter;
+import java.util.List;
 import org.teavm.newir.expr.IrFunction;
 import org.teavm.newir.expr.IrParameter;
 import org.teavm.newir.expr.IrVariable;
+import org.teavm.newir.interpreter.instructions.Instructions;
 
 public class Interpreter {
-    private ExprInterpreterContext ctx;
-    InterpreterInstruction[] instructions;
+    private ObjectIntMap<IrParameter> parameterMap;
+    private InterpreterContext ctx;
+    private Instruction[] instructions;
 
     public Interpreter(IrFunction function) {
-        ObjectIntMap<IrParameter> parameterMap = new ObjectIntHashMap<>();
+        parameterMap = new ObjectIntHashMap<>();
         ObjectIntMap<IrVariable> variableMap = new ObjectIntHashMap<>();
         int intIndex = 0;
         int longIndex = 0;
@@ -83,22 +87,25 @@ public class Interpreter {
         InterpreterBuilderVisitor visitor = new InterpreterBuilderVisitor(intIndex, longIndex, floatIndex,
                 doubleIndex, objectIndex, parameterMap, variableMap);
         function.getBody().acceptVisitor(visitor);
+        visitor.builder.add(Instructions.stop());
 
-        ctx = new ExprInterpreterContext(intIndex, longIndex, floatIndex, doubleIndex, objectIndex);
-        instructions = visitor.instructions.toArray(new InterpreterInstruction[0]);
+        ctx = new InterpreterContext(visitor.getMaxIntIndex(), visitor.getMaxLongIndex(), visitor.getMaxFloatIndex(),
+                visitor.getMaxDoubleIndex(), visitor.getMaxObjectIndex());
+        List<Instruction> instructionList = visitor.getInstructions();
+        PrintWriter writer = new PrintWriter(System.out);
+        new InstructionPrinter().write(writer, instructionList);
+        writer.flush();
+        instructions = instructionList.toArray(new Instruction[0]);
     }
 
-    Interpreter(int intValueCount, int longValueCount, int floatValueCount, int doubleValueCount,
-            int objectValueCount, InterpreterInstruction[] instructions) {
-        ctx = new ExprInterpreterContext(intValueCount, longValueCount, floatValueCount, doubleValueCount,
-                objectValueCount);
-        this.instructions = instructions;
+    public void setIntParameter(IrParameter parameter, int value) {
+        ctx.iv[parameterMap.get(parameter)] = value;
     }
 
     public void run() {
-        ctx.resume();
         while (!ctx.stopped) {
-            instructions[ctx.ptr].accept(ctx);
+            instructions[ctx.ptr].exec(ctx);
         }
+        ctx.reset();
     }
 }

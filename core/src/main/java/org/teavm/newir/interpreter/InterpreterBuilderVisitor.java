@@ -15,14 +15,20 @@
  */
 package org.teavm.newir.interpreter;
 
+import static org.teavm.newir.interpreter.instructions.Instructions.directJump;
+import static org.teavm.newir.interpreter.instructions.Instructions.dmov;
+import static org.teavm.newir.interpreter.instructions.Instructions.fmov;
+import static org.teavm.newir.interpreter.instructions.Instructions.icst;
+import static org.teavm.newir.interpreter.instructions.Instructions.imov;
+import static org.teavm.newir.interpreter.instructions.Instructions.jumpIfFalse;
+import static org.teavm.newir.interpreter.instructions.Instructions.jumpIfTrue;
+import static org.teavm.newir.interpreter.instructions.Instructions.lmov;
+import static org.teavm.newir.interpreter.instructions.Instructions.omov;
 import com.carrotsearch.hppc.IntStack;
 import com.carrotsearch.hppc.ObjectHashSet;
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import com.carrotsearch.hppc.ObjectSet;
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,9 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.IntConsumer;
-import org.teavm.model.FieldReference;
-import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 import org.teavm.newir.expr.IrArrayElementExpr;
 import org.teavm.newir.expr.IrBinaryExpr;
 import org.teavm.newir.expr.IrBlockExpr;
@@ -77,10 +80,13 @@ import org.teavm.newir.expr.IrTypeKind;
 import org.teavm.newir.expr.IrUnaryExpr;
 import org.teavm.newir.expr.IrVariable;
 import org.teavm.newir.expr.IrVariableExpr;
+import org.teavm.newir.interpreter.instructions.ArithmeticInstructions;
+import org.teavm.newir.interpreter.instructions.Instructions;
+import org.teavm.newir.interpreter.instructions.JavaInstructions;
 
 public class InterpreterBuilderVisitor implements IrExprVisitor {
     public int resultSlot;
-    public final List<InterpreterInstruction> instructions = new ArrayList<>();
+    public final ProgramBuilder builder = new ProgramBuilder();
 
     private int maxIntIndex;
     private int maxLongIndex;
@@ -99,7 +105,7 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
     private ObjectIntMap<IrVariable> variableSlots;
     private IntConsumer whenTrue;
     private IntConsumer whenFalse;
-    private int suggestedJumpPtr;
+    private int suggestedJumpLabel;
     private IntConsumer suggestedJump;
     private IntStack freeIntSlots = new IntStack();
     private IntStack freeLongSlots = new IntStack();
@@ -123,6 +129,30 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
         maxObjectIndex = objectIndex;
         this.parameterSlots = parameterSlots;
         this.variableSlots = variableSlots;
+    }
+
+    public int getMaxIntIndex() {
+        return maxIntIndex;
+    }
+
+    public int getMaxLongIndex() {
+        return maxLongIndex;
+    }
+
+    public int getMaxFloatIndex() {
+        return maxFloatIndex;
+    }
+
+    public int getMaxDoubleIndex() {
+        return maxDoubleIndex;
+    }
+
+    public int getMaxObjectIndex() {
+        return maxObjectIndex;
+    }
+
+    public List<Instruction> getInstructions() {
+        return builder.instructions;
     }
 
     @Override
@@ -149,7 +179,7 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
         blockBreaks.remove(expr);
 
         for (IntConsumer blockBreak : thisBlockBreaks) {
-            blockBreak.accept(instructions.size());
+            blockBreak.accept(builder.label());
         }
 
         resultSlot = -1;
@@ -165,14 +195,10 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
             return;
         }
 
-        IntConsumer jump;
-        if (suggestedJump != null && suggestedJumpPtr == instructions.size()) {
-            jump = suggestedJump;
-        } else {
-            InterpreterInstruction.Goto gotoInsn = new InterpreterInstruction.Goto();
-            instructions.add(gotoInsn);
-            jump = gotoInsn::setTarget;
-        }
+        IntConsumer jump = suggestedJump != null && suggestedJumpLabel == builder.label()
+                ? suggestedJump
+                : builder.addJump(directJump());
+
         blockBreaks.get(expr.getBlock()).add(jump);
         resultSlot = -1;
     }
@@ -185,16 +211,16 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
         expr.getPreheader().acceptVisitor(this);
 
-        int headerPtr = instructions.size();
-        loopHeaders.put(expr, headerPtr);
+        int headerLabel = builder.label();
+        loopHeaders.put(expr, headerLabel);
         List<IntConsumer> thisLoopBreaks = new ArrayList<>();
         loopBreaks.put(expr, thisLoopBreaks);
 
         expr.getBody().acceptVisitor(this);
-        instructions.add(new InterpreterInstruction.Goto(headerPtr));
+        builder.addJump(directJump(headerLabel));
 
         for (IntConsumer breakConsumer : thisLoopBreaks) {
-            breakConsumer.accept(instructions.size());
+            breakConsumer.accept(builder.label());
         }
 
         loopHeaders.remove(expr);
@@ -204,6 +230,7 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
     @Override
     public void visit(IrLoopHeaderExpr expr) {
+        checkDone(expr);
     }
 
     @Override
@@ -212,14 +239,10 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
             return;
         }
 
-        IntConsumer jump;
-        if (suggestedJump != null && suggestedJumpPtr == instructions.size()) {
-            jump = suggestedJump;
-        } else {
-            InterpreterInstruction.Goto gotoInsn = new InterpreterInstruction.Goto();
-            instructions.add(gotoInsn);
-            jump = gotoInsn::setTarget;
-        }
+        IntConsumer jump = suggestedJump != null && suggestedJumpLabel == builder.label()
+                ? suggestedJump
+                : builder.addJump(directJump());
+
         loopBreaks.get(expr.getLoop()).add(jump);
         resultSlot = -1;
     }
@@ -230,10 +253,10 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
             return;
         }
         int header = loopHeaders.get(expr.getLoop());
-        if (suggestedJump != null && suggestedJumpPtr == instructions.size()) {
+        if (suggestedJump != null && suggestedJumpLabel == builder.label()) {
             suggestedJump.accept(header);
         } else {
-            instructions.add(new InterpreterInstruction.Goto(header));
+            builder.addJump(directJump(header));
         }
         resultSlot = -1;
     }
@@ -254,39 +277,45 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
         alloc(expr.getCondition());
         expr.getCondition().acceptVisitor(this);
-        release(expr.getCondition());
         requestJumps(expr.getCondition());
         IntConsumer trueJump = whenTrue;
         IntConsumer falseJump = whenFalse;
 
-        InterpreterInstruction.Goto jumpAfterCondition;
-
-        int thenPtr = instructions.size();
-        int suggestedJumpPtrBackup = suggestedJumpPtr;
+        int thenLabel = builder.label();
+        int suggestedJumpPtrBackup = suggestedJumpLabel;
         IntConsumer suggestedJumpBackup = suggestedJump;
         suggestedJump = trueJump;
-        suggestedJumpPtr = instructions.size();
+        suggestedJumpLabel = builder.label();
         alloc(expr.getThenExpr());
         forceResultSlot(expr.getThenExpr(), slot);
         expr.getThenExpr().acceptVisitor(this);
         release(expr.getThenExpr());
 
-        if (instructions.size() > thenPtr && expr.getThenExpr().getType().getKind() != IrTypeKind.UNREACHABLE) {
-            jumpAfterCondition = new InterpreterInstruction.Goto();
-            instructions.add(jumpAfterCondition);
-        }
+        IntConsumer jumpAfterCondition = builder.label() != thenLabel
+                && expr.getThenExpr().getType().getKind() != IrTypeKind.UNREACHABLE
+                ? builder.addJump(directJump()) : null;
 
-        if (instructions.size() == thenPtr) {
+        if (builder.label() == thenLabel) {
             suggestedJump = falseJump;
-            suggestedJumpPtr = instructions.size();
+            suggestedJumpLabel = builder.label();
+        } else {
+            falseJump.accept(builder.label());
         }
         alloc(expr.getElseExpr());
         forceResultSlot(expr.getThenExpr(), slot);
         expr.getElseExpr().acceptVisitor(this);
         release(expr.getElseExpr());
 
+        if (jumpAfterCondition != null) {
+            jumpAfterCondition.accept(builder.label());
+        } else if (builder.label() == thenLabel) {
+            falseJump.accept(builder.label());
+        }
+
         suggestedJump = suggestedJumpBackup;
-        suggestedJumpPtr = suggestedJumpPtrBackup;
+        suggestedJumpLabel = suggestedJumpPtrBackup;
+
+        release(expr.getCondition());
         resultSlot = slot;
     }
 
@@ -314,128 +343,129 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
         switch (expr.getOperation()) {
             case IADD:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] + ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::iadd);
                 break;
             case LADD:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.lv[a] + ctx.lv[b]));
+                simpleBinary(expr, ArithmeticInstructions::ladd);
                 break;
             case FADD:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.fv[a] + ctx.fv[b]));
+                simpleBinary(expr, ArithmeticInstructions::fadd);
                 break;
             case DADD:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.dv[a] + ctx.dv[b]));
+                simpleBinary(expr, ArithmeticInstructions::dadd);
                 break;
 
             case ISUB:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] - ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::isub);
                 break;
             case LSUB:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.lv[a] - ctx.lv[b]));
+                simpleBinary(expr, ArithmeticInstructions::lsub);
                 break;
             case FSUB:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.fv[a] - ctx.fv[b]));
+                simpleBinary(expr, ArithmeticInstructions::fsub);
                 break;
             case DSUB:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.dv[a] - ctx.dv[b]));
+                simpleBinary(expr, ArithmeticInstructions::dsub);
+                break;
 
             case IMUL:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] * ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::imul);
                 break;
             case LMUL:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.lv[a] * ctx.lv[b]));
+                simpleBinary(expr, ArithmeticInstructions::lmul);
                 break;
             case FMUL:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.fv[a] * ctx.fv[b]));
+                simpleBinary(expr, ArithmeticInstructions::fmul);
                 break;
             case DMUL:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.dv[a] * ctx.dv[b]));
+                simpleBinary(expr, ArithmeticInstructions::dmul);
                 break;
 
             case IDIV:
             case IDIV_SAFE:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] / ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::idiv);
                 break;
             case LDIV:
             case LDIV_SAFE:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.lv[a] / ctx.lv[b]));
+                simpleBinary(expr, ArithmeticInstructions::ldiv);
                 break;
             case FDIV:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.fv[a] / ctx.fv[b]));
+                simpleBinary(expr, ArithmeticInstructions::fdiv);
                 break;
             case DDIV:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.dv[a] / ctx.dv[b]));
+                simpleBinary(expr, ArithmeticInstructions::ddiv);
                 break;
 
             case IREM:
             case IREM_SAFE:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] % ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::irem);
                 break;
             case LREM:
             case LREM_SAFE:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.lv[a] % ctx.lv[b]));
+                simpleBinary(expr, ArithmeticInstructions::lrem);
                 break;
             case FREM:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.fv[a] % ctx.fv[b]));
+                simpleBinary(expr, ArithmeticInstructions::frem);
                 break;
             case DREM:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.dv[a] % ctx.dv[b]));
+                simpleBinary(expr, ArithmeticInstructions::drem);
                 break;
 
             case IAND:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] & ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::iand);
                 break;
             case LAND:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.lv[a] & ctx.lv[b]));
+                simpleBinary(expr, ArithmeticInstructions::land);
                 break;
 
             case IOR:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] | ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::ior);
                 break;
             case LOR:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.lv[a] | ctx.lv[b]));
+                simpleBinary(expr, ArithmeticInstructions::lor);
                 break;
 
             case IXOR:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] ^ ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::ixor);
                 break;
             case LXOR:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.lv[a] ^ ctx.lv[b]));
+                simpleBinary(expr, ArithmeticInstructions::lxor);
                 break;
 
             case IEQ:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] == ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::ieq);
                 break;
             case INE:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] != ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::ine);
                 break;
             case ILT:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] < ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::ilt);
                 break;
             case ILE:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] <= ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::ile);
                 break;
             case IGT:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] > ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::igt);
                 break;
             case IGE:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.iv[a] >= ctx.iv[b]));
+                simpleBinary(expr, ArithmeticInstructions::ige);
                 break;
 
             case REF_EQ:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.ov[a] == ctx.ov[b]));
+                simpleBinary(expr, ArithmeticInstructions::oeq);
                 break;
             case REF_NE:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, ctx.ov[a] != ctx.ov[b]));
+                simpleBinary(expr, ArithmeticInstructions::one);
                 break;
 
             case LCMP:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, Long.compare(ctx.lv[a], ctx.lv[b])));
+                simpleBinary(expr, ArithmeticInstructions::lcmp);
                 break;
             case FCMP:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, Float.compare(ctx.fv[a], ctx.fv[b])));
+                simpleBinary(expr, ArithmeticInstructions::fcmp);
                 break;
             case DCMP:
-                simpleBinary(expr, (a, b, r) -> ctx -> ctx.emit(r, Double.compare(ctx.dv[a], ctx.dv[b])));
+                simpleBinary(expr, ArithmeticInstructions::dcmp);
                 break;
 
             case LOGICAL_AND:
@@ -448,7 +478,7 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
         }
     }
 
-    private void simpleBinary(IrBinaryExpr expr, BinaryExprInterpreterFactory factory) {
+    private void simpleBinary(IrBinaryExpr expr, BinaryInstructionFactory factory) {
         alloc(expr.getFirst());
         alloc(expr.getSecond());
         expr.getFirst().acceptVisitor(this);
@@ -461,7 +491,7 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
         int r = resultSlot(expr);
         this.resultSlot = r;
         if (r > 0) {
-            instructions.add(factory.create(a, b, r));
+            builder.add(factory.create(r, a, b));
         }
     }
 
@@ -470,7 +500,7 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
         requestJumps(expr.getFirst());
         release(expr.getFirst());
 
-        whenTrue.accept(instructions.size());
+        whenTrue.accept(builder.label());
         IntConsumer firstWhenFalse = whenFalse;
 
         alloc(expr.getSecond());
@@ -484,8 +514,9 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
             firstWhenFalse.accept(ptr);
             secondWhenFalse.accept(ptr);
         };
+        int label = builder.label();
         whenTrue = ptr -> {
-            firstWhenFalse.accept(instructions.size());
+            firstWhenFalse.accept(label);
             secondWhenTrue.accept(ptr);
         };
         saveBooleanIfNecessary(expr);
@@ -498,24 +529,22 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
     private void requestJumps(IrExpr expr) {
         expr.acceptVisitor(this);
         if (whenTrue == null) {
-            int slot = resultSlot(expr);
-            int ptr = instructions.size();
-            instructions.add(null);
-            whenTrue = targetPtr -> instructions.set(ptr, new InterpreterInstruction.JumpIfTrue(slot, targetPtr));
-            whenFalse = targetPtr -> instructions.set(ptr, new InterpreterInstruction.JumpIfFalse(slot, targetPtr));
+            int condition = resultSlot;
+            int label = builder.emptySlot();
+            whenTrue = targetLabel -> builder.putInSlot(label, jumpIfTrue(targetLabel, condition));
+            whenFalse = targetLabel -> builder.putInSlot(label, jumpIfFalse(targetLabel, condition));
         }
     }
 
     private void saveBooleanIfNecessary(IrExpr expr) {
         if (pendingConsumers.getOrDefault(expr, 0) != 1) {
             int slot = resultSlot(expr);
-            whenTrue.accept(instructions.size());
-            instructions.add(ctx -> ctx.iv[slot] = 1);
-            InterpreterInstruction.Goto gotoInsn = new InterpreterInstruction.Goto();
-            instructions.add(gotoInsn);
-            whenFalse.accept(instructions.size());
-            instructions.add(ctx -> ctx.iv[slot] = 0);
-            gotoInsn.setTarget(instructions.size());
+            whenTrue.accept(builder.label());
+            builder.add(icst(slot, 1));
+            IntConsumer gotoInsn = builder.addJump(directJump());
+            whenFalse.accept(builder.label());
+            builder.add(icst(slot, 0));
+            gotoInsn.accept(builder.label());
         }
     }
 
@@ -576,11 +605,9 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
         }
 
         int[] arguments = new int[expr.getInputCount() - firstArg];
-        ValueType[] argumentTypes = new ValueType[expr.getInputCount() - firstArg];
         for (int i = firstArg; i < expr.getInputCount(); ++i) {
             expr.getInput(i).acceptVisitor(this);
             arguments[i - firstArg] = resultSlot;
-            argumentTypes[i - firstArg] = expr.getMethod().parameterType(i - firstArg);
         }
 
         for (int i = 0; i < expr.getInputCount(); ++i) {
@@ -589,49 +616,8 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
         int slot = resultSlot(expr);
 
-        ValueType type = expr.getMethod().getReturnType();
-        Method method = getMethod(expr.getMethod());
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                    instructions.add(ctx -> {
-                        ctx.emit(slot, (boolean) ctx.invoke(method, instance, arguments, argumentTypes));
-                    });
-                    break;
-                case CHARACTER:
-                    instructions.add(ctx -> {
-                        ctx.emit(slot, (char) ctx.invoke(method, instance, arguments, argumentTypes));
-                    });
-                    break;
-                case BYTE:
-                case SHORT:
-                case INTEGER:
-                    instructions.add(ctx -> {
-                        ctx.emit(slot, ((Number) ctx.invoke(method, instance, arguments, argumentTypes)).intValue());
-                    });
-                    break;
-                case LONG:
-                    instructions.add(ctx -> {
-                        ctx.emit(slot, ((Number) ctx.invoke(method, instance, arguments, argumentTypes)).longValue());
-                    });
-                    break;
-                case FLOAT:
-                    instructions.add(ctx -> {
-                        ctx.emit(slot, ((Number) ctx.invoke(method, instance, arguments, argumentTypes)).floatValue());
-                    });
-                    break;
-                case DOUBLE:
-                    instructions.add(ctx -> {
-                        ctx.emit(slot, ((Number) ctx.invoke(method, instance, arguments, argumentTypes))
-                                .doubleValue());
-                    });
-                    break;
-            }
-        } else {
-            instructions.add(ctx -> {
-                ctx.emit(slot, ctx.invoke(method, instance, arguments, argumentTypes));
-            });
-        }
+        builder.add(JavaInstructions.call(slot, expr.getMethod(), instance, arguments));
+
         resultSlot = slot;
     }
 
@@ -646,77 +632,8 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
         release(expr.getArgument());
         int objectSlot = resultSlot;
 
-        Field field = getField(expr.getField());
         int slot = resultSlot(expr);
-        ValueType type = expr.getFieldType();
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                    instructions.add(ctx -> {
-                        try {
-                            ctx.emit(slot, (boolean) field.get(ctx.ov[objectSlot]));
-                        } catch (IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    });
-                    break;
-                case CHARACTER:
-                    instructions.add(ctx -> {
-                        try {
-                            ctx.emit(slot, (char) field.get(ctx.ov[objectSlot]));
-                        } catch (IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    });
-                    break;
-                case BYTE:
-                case SHORT:
-                case INTEGER:
-                    instructions.add(ctx -> {
-                        try {
-                            ctx.emit(slot, ((Number) field.get(ctx.ov[objectSlot])).intValue());
-                        } catch (IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    });
-                    break;
-                case LONG:
-                    instructions.add(ctx -> {
-                        try {
-                            ctx.emit(slot, ((Number) field.get(ctx.ov[objectSlot])).longValue());
-                        } catch (IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    });
-                    break;
-                case FLOAT:
-                    instructions.add(ctx -> {
-                        try {
-                            ctx.emit(slot, ((Number) field.get(ctx.ov[objectSlot])).floatValue());
-                        } catch (IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    });
-                    break;
-                case DOUBLE:
-                    instructions.add(ctx -> {
-                        try {
-                            ctx.emit(slot, ((Number) field.get(ctx.ov[objectSlot])).doubleValue());
-                        } catch (IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    });
-                    break;
-            }
-        } else {
-            instructions.add(ctx -> {
-                try {
-                    ctx.emit(slot, field.get(ctx.ov[objectSlot]));
-                } catch (IllegalAccessException e) {
-                    throw new IllegalStateException(e);
-                }
-            });
-        }
+        builder.add(JavaInstructions.getField(slot, expr.getField(), expr.getFieldType(), objectSlot));
         resultSlot = slot;
     }
 
@@ -726,151 +643,11 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
             return;
         }
 
-        Field field = getField(expr.getField());
         int slot = resultSlot(expr);
-        ValueType type = expr.getFieldType();
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                    instructions.add(ctx -> {
-                        try {
-                            ctx.emit(slot, (boolean) field.get(null));
-                        } catch (IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    });
-                    break;
-                case CHARACTER:
-                    instructions.add(ctx -> {
-                        try {
-                            ctx.emit(slot, (char) field.get(null));
-                        } catch (IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    });
-                    break;
-                case BYTE:
-                case SHORT:
-                case INTEGER:
-                    instructions.add(ctx -> {
-                        try {
-                            ctx.emit(slot, ((Number) field.get(null)).intValue());
-                        } catch (IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    });
-                    break;
-                case LONG:
-                    instructions.add(ctx -> {
-                        try {
-                            ctx.emit(slot, ((Number) field.get(null)).longValue());
-                        } catch (IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    });
-                    break;
-                case FLOAT:
-                    instructions.add(ctx -> {
-                        try {
-                            ctx.emit(slot, ((Number) field.get(null)).floatValue());
-                        } catch (IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    });
-                    break;
-                case DOUBLE:
-                    instructions.add(ctx -> {
-                        try {
-                            ctx.emit(slot, ((Number) field.get(null)).doubleValue());
-                        } catch (IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    });
-                    break;
-            }
-        } else {
-            instructions.add(ctx -> {
-                try {
-                    ctx.emit(slot, field.get(null));
-                } catch (IllegalAccessException e) {
-                    throw new IllegalStateException(e);
-                }
-            });
-        }
+        builder.add(JavaInstructions.getField(slot, expr.getField(), expr.getFieldType(), -1));
         resultSlot = slot;
     }
 
-    private Field getField(FieldReference ref) {
-        Class<?> cls;
-        try {
-            cls = Class.forName(ref.getClassName());
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Class not found " + ref.getClassName(), e);
-        }
-        Field field;
-        try {
-            field = cls.getField(ref.getFieldName());
-        } catch (NoSuchFieldException e) {
-            throw new IllegalStateException("Field not found: " + ref.getFieldName(), e);
-        }
-        return field;
-    }
-
-    private Method getMethod(MethodReference ref) {
-        Class<?> cls;
-        try {
-            cls = Class.forName(ref.getClassName());
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Class not found " + ref.getClassName(), e);
-        }
-        Class<?>[] parameterTypes = new Class[ref.parameterCount()];
-        for (int i = 0; i < parameterTypes.length; ++i) {
-            parameterTypes[i] = valueTypeToClass(ref.parameterType(i));
-        }
-        try {
-            return cls.getMethod(ref.getName(), parameterTypes);
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    private Class<?> valueTypeToClass(ValueType type) {
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                    return boolean.class;
-                case BYTE:
-                    return byte.class;
-                case SHORT:
-                    return short.class;
-                case CHARACTER:
-                    return char.class;
-                case INTEGER:
-                    return int.class;
-                case LONG:
-                    return long.class;
-                case FLOAT:
-                    return float.class;
-                case DOUBLE:
-                    return double.class;
-                default:
-                    throw new IllegalArgumentException();
-            }
-        } else if (type instanceof ValueType.Void) {
-            return void.class;
-        } else if (type instanceof ValueType.Array) {
-            Class<?> itemClass = valueTypeToClass(((ValueType.Array) type).getItemType());
-            return Array.newInstance(itemClass, 0).getClass();
-        } else if (type instanceof ValueType.Object) {
-            try {
-                return Class.forName(((ValueType.Object) type).getClassName());
-            } catch (ClassNotFoundException e) {
-                throw new IllegalArgumentException(e);
-            }
-        } else {
-            throw new IllegalArgumentException();
-        }
-    }
 
     @Override
     public void visit(IrSetFieldExpr expr) {
@@ -904,6 +681,10 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
     @Override
     public void visit(IrSetVariableExpr expr) {
+        if (checkDone(expr)) {
+            return;
+        }
+
         alloc(expr.getArgument());
         expr.getArgument().acceptVisitor(this);
         int valueSlot = resultSlot;
@@ -917,7 +698,12 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
     @Override
     public void visit(IrIntConstantExpr expr) {
-
+        if (checkDone(expr)) {
+            return;
+        }
+        int slot = resultSlot(expr);
+        builder.add(Instructions.icst(slot, expr.getValue()));
+        resultSlot = slot;
     }
 
     @Override
@@ -1015,19 +801,19 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
             case BYTE:
             case SHORT:
             case INT:
-                instructions.add(ctx -> ctx.emit(to, ctx.iv[from]));
+                builder.add(imov(to, from));
                 break;
             case LONG:
-                instructions.add(ctx -> ctx.emit(to, ctx.lv[from]));
+                builder.add(lmov(to, from));
                 break;
             case FLOAT:
-                instructions.add(ctx -> ctx.emit(to, ctx.fv[from]));
+                builder.add(fmov(to, from));
                 break;
             case DOUBLE:
-                instructions.add(ctx -> ctx.emit(to, ctx.dv[from]));
+                builder.add(dmov(to, from));
                 break;
             case OBJECT:
-                instructions.add(ctx -> ctx.emit(to, ctx.ov[from]));
+                builder.add(omov(to, from));
                 break;
             default:
                 break;
@@ -1116,7 +902,7 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
         return false;
     }
 
-    interface BinaryExprInterpreterFactory {
-        InterpreterInstruction create(int a, int b, int r);
+    interface BinaryInstructionFactory {
+        Instruction create(int a, int b, int r);
     }
 }

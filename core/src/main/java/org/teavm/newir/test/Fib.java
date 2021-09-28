@@ -32,7 +32,10 @@ import org.teavm.newir.expr.IrType;
 import org.teavm.newir.expr.IrVariable;
 import org.teavm.newir.interpreter.Interpreter;
 
-public class Fib {
+public final class Fib {
+    private Fib() {
+    }
+
     public static IrFunction createFibonacci() {
         return function(new IrType[] { IrType.INT }, parameters -> {
             IrVariable a = intVar();
@@ -48,6 +51,7 @@ public class Fib {
                 set(c, add(get(a), get(b)));
                 set(a, get(b));
                 set(b, get(c));
+                set(i, add(get(i), 1));
                 IrExpr out = get(System.class, "out", PrintStream.class);
                 callVirtual(new MethodReference(PrintStream.class, "println", int.class, void.class), out, get(c));
             });
@@ -55,7 +59,9 @@ public class Fib {
     }
 
     public static void main(String[] args) {
-        Interpreter interpreter = new Interpreter(createFibonacci());
+        IrFunction fib = createFibonacci();
+        Interpreter interpreter = new Interpreter(fib);
+        interpreter.setIntParameter(fib.getParameter(0), 5);
         interpreter.run();
     }
 }

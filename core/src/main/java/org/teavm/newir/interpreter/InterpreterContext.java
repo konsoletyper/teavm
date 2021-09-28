@@ -21,7 +21,7 @@ import java.util.Arrays;
 import org.teavm.model.ValueType;
 import org.teavm.newir.expr.IrBinaryExpr;
 
-public class ExprInterpreterContext {
+public class InterpreterContext {
     public final int[] iv;
     public final long[] lv;
     public final float[] fv;
@@ -30,7 +30,7 @@ public class ExprInterpreterContext {
     public int ptr;
     public boolean stopped;
 
-    ExprInterpreterContext(
+    InterpreterContext(
             int intValueCount,
             int longValueCount,
             int floatValueCount,
@@ -44,7 +44,7 @@ public class ExprInterpreterContext {
         ov = new Object[objectValueCount];
     }
 
-    void resume() {
+    void reset() {
         Arrays.fill(iv, 0);
         Arrays.fill(lv, 0);
         Arrays.fill(fv, 0);
@@ -85,45 +85,5 @@ public class ExprInterpreterContext {
 
     Object objOrNull(int index) {
         return index >= 0 ? ov[index] : null;
-    }
-
-    Object getValue(int slot, ValueType type) {
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                    return iv[slot] != 0;
-                case BYTE:
-                    return (byte) iv[slot];
-                case SHORT:
-                    return (short) iv[slot];
-                case CHARACTER:
-                    return (char) iv[slot];
-                case INTEGER:
-                    return iv[slot];
-                case LONG:
-                    return lv[slot];
-                case FLOAT:
-                    return fv[slot];
-                case DOUBLE:
-                    return dv[slot];
-            }
-        }
-        return ov[slot];
-    }
-
-    Object[] mapArguments(int[] arguments, ValueType[] types) {
-        Object[] result = new Object[arguments.length];
-        for (int i = 0; i < arguments.length; ++i) {
-            result[i] = getValue(arguments[i], types[i]);
-        }
-        return result;
-    }
-
-    Object invoke(Method method, int instance, int[] arguments, ValueType[] types) {
-        try {
-            return method.invoke(instance, mapArguments(arguments, types));
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new IllegalStateException(e);
-        }
     }
 }
