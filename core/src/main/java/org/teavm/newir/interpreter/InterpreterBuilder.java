@@ -18,17 +18,14 @@ package org.teavm.newir.interpreter;
 import static org.teavm.newir.interpreter.instructions.Instructions.directJump;
 import static org.teavm.newir.interpreter.instructions.Instructions.dmov;
 import static org.teavm.newir.interpreter.instructions.Instructions.fmov;
-import static org.teavm.newir.interpreter.instructions.Instructions.icst;
 import static org.teavm.newir.interpreter.instructions.Instructions.imov;
 import static org.teavm.newir.interpreter.instructions.Instructions.jumpIfFalse;
 import static org.teavm.newir.interpreter.instructions.Instructions.jumpIfTrue;
 import static org.teavm.newir.interpreter.instructions.Instructions.lmov;
 import static org.teavm.newir.interpreter.instructions.Instructions.omov;
 import com.carrotsearch.hppc.IntStack;
-import com.carrotsearch.hppc.ObjectHashSet;
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
-import com.carrotsearch.hppc.ObjectSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.IntConsumer;
+import org.teavm.newir.analysis.ExprConsumerCount;
 import org.teavm.newir.expr.IrArrayElementExpr;
 import org.teavm.newir.expr.IrBinaryExpr;
 import org.teavm.newir.expr.IrBlockExpr;
@@ -84,7 +82,7 @@ import org.teavm.newir.interpreter.instructions.ArithmeticInstructions;
 import org.teavm.newir.interpreter.instructions.Instructions;
 import org.teavm.newir.interpreter.instructions.JavaInstructions;
 
-public class InterpreterBuilderVisitor implements IrExprVisitor {
+public class InterpreterBuilder implements IrExprVisitor {
     public int resultSlot;
     public final ProgramBuilder builder = new ProgramBuilder();
 
@@ -96,8 +94,7 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
     private ObjectIntMap<IrExpr> pendingConsumers = new ObjectIntHashMap<>();
     private ObjectIntMap<IrExpr> exprSlots = new ObjectIntHashMap<>();
-    private Set<IrExpr> borrowedSlots = new HashSet<>();
-    private ObjectSet<IrExpr> done = new ObjectHashSet<>();
+    private Set<IrExpr> visited = new HashSet<>();
     private Map<IrLoopExpr, List<IntConsumer>> loopBreaks = new HashMap<>();
     private ObjectIntMap<IrLoopExpr> loopHeaders = new ObjectIntHashMap<>();
     private Map<IrBlockExpr, List<IntConsumer>> blockBreaks = new HashMap<>();
@@ -112,15 +109,17 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
     private IntStack freeFloatSlots = new IntStack();
     private IntStack freeDoubleSlots = new IntStack();
     private IntStack freeObjectSlots = new IntStack();
+    private ExprConsumerCount consumerCount;
 
-    public InterpreterBuilderVisitor(
+    public InterpreterBuilder(
             int intIndex,
             int longIndex,
             int floatIndex,
             int doubleIndex,
             int objectIndex,
             ObjectIntMap<IrParameter> parameterSlots,
-            ObjectIntMap<IrVariable> variableSlots
+            ObjectIntMap<IrVariable> variableSlots,
+            ExprConsumerCount consumerCount
     ) {
         maxIntIndex = intIndex;
         maxLongIndex = longIndex;
@@ -129,6 +128,144 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
         maxObjectIndex = objectIndex;
         this.parameterSlots = parameterSlots;
         this.variableSlots = variableSlots;
+        this.consumerCount = consumerCount;
+    }
+
+    public int build(IrExpr expr) {
+        int result = exprSlots.getOrDefault(expr, -1);
+        int remaining = consumerCount.decAndGet(expr);
+        int ignoreCount = consumerCount.getIgnored(expr);
+
+        if (result < 0) {
+            if (result == -2) {
+                throw new IllegalStateException("Cycle found in IR");
+            }
+            exprSlots.put(expr, -2);
+
+            int resultSlotBackup = resultSlot;
+            if (remaining >= ignoreCount) {
+                result = getSlotFromPool(expr);
+                resultSlot = result;
+            } else {
+                throw new IllegalStateException();
+            }
+            expr.acceptVisitor(this);
+            resultSlot = resultSlotBackup;
+            if (remaining > 0) {
+                exprSlots.put(expr, result);
+            }
+        }
+
+        if (remaining == ignoreCount) {
+            returnSlotToPool(expr, exprSlots.get(expr));
+        }
+        if (remaining == 0) {
+            exprSlots.remove(expr);
+        }
+
+        return result;
+    }
+
+    private void buildIgnoring(IrExpr expr) {
+        int result = exprSlots.getOrDefault(expr, -1);
+        int remaining = consumerCount.decAndGet(expr);
+        int ignoreCount = consumerCount.getIgnored(expr);
+
+        if (result < 0) {
+            if (result == -2) {
+                throw new IllegalStateException("Cycle found in IR");
+            }
+            exprSlots.put(expr, -2);
+
+            int resultSlotBackup = resultSlot;
+            resultSlot = -1;
+            expr.acceptVisitor(this);
+            resultSlot = resultSlotBackup;
+            if (remaining > 0) {
+                exprSlots.put(expr, remaining >= ignoreCount ? getSlotFromPool(expr) : 0);
+            }
+        }
+
+        if (remaining == ignoreCount) {
+            returnSlotToPool(expr, exprSlots.get(expr));
+        }
+        if (remaining == 0) {
+            exprSlots.remove(expr);
+        }
+    }
+
+    public void buildTo(IrExpr expr, int result) {
+        int actualSlot = exprSlots.getOrDefault(expr, -1);
+        int remaining = consumerCount.decAndGet(expr);
+
+        if (actualSlot >= 0) {
+            if (actualSlot != result) {
+                move(expr.getType(), actualSlot, result);
+            }
+        } else {
+            if (actualSlot == -2) {
+                throw new IllegalStateException("Cycle found in IR");
+            }
+            exprSlots.put(expr, -2);
+            int resultSlotBackup = resultSlot;
+            resultSlot = result;
+            expr.acceptVisitor(this);
+            resultSlot = resultSlotBackup;
+            if (remaining > 0) {
+                exprSlots.put(expr, result);
+            }
+        }
+
+        if (remaining == 0) {
+            exprSlots.remove(expr);
+        }
+    }
+
+    private int getSlotFromPool(IrExpr expr) {
+        switch (expr.getType().getKind()) {
+            case BOOLEAN:
+            case BYTE:
+            case SHORT:
+            case CHAR:
+            case INT:
+                return freeIntSlots.isEmpty() ? maxIntIndex++ : freeIntSlots.pop();
+            case LONG:
+                return freeLongSlots.isEmpty() ? maxLongIndex++ : freeLongSlots.pop();
+            case FLOAT:
+                return freeFloatSlots.isEmpty() ? maxFloatIndex++ : freeFloatSlots.pop();
+            case DOUBLE:
+                return freeDoubleSlots.isEmpty() ? maxDoubleIndex : freeDoubleSlots.pop();
+            default:
+                return 0;
+        }
+    }
+
+    private void returnSlotToPool(IrExpr expr, int slot) {
+        switch (expr.getType().getKind()) {
+            case BOOLEAN:
+            case BYTE:
+            case SHORT:
+            case CHAR:
+            case INT:
+                freeIntSlots.add(slot);
+                break;
+            case LONG:
+                freeLongSlots.add(slot);
+                break;
+            case FLOAT:
+                freeFloatSlots.add(slot);
+                break;
+            case DOUBLE:
+                freeDoubleSlots.add(slot);
+                break;
+            case OBJECT:
+                freeObjectSlots.add(slot);
+                break;
+            case UNREACHABLE:
+            case VOID:
+            case TUPLE:
+                break;
+        }
     }
 
     public int getMaxIntIndex() {
@@ -157,66 +294,41 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
     @Override
     public void visit(IrSequenceExpr expr) {
-        if (checkDone(expr)) {
-            return;
-        }
-
-        alloc(expr.getSecond());
-        expr.getFirst().acceptVisitor(this);
-        expr.getSecond().acceptVisitor(this);
-        release(expr.getSecond());
+        buildIgnoring(expr.getFirst());
+        build(expr.getSecond());
     }
 
     @Override
     public void visit(IrBlockExpr expr) {
-        if (checkDone(expr)) {
-            return;
-        }
-
         List<IntConsumer> thisBlockBreaks = new ArrayList<>();
         blockBreaks.put(expr, thisBlockBreaks);
-        expr.getBody().acceptVisitor(this);
+        buildTo(expr.getBody(), resultSlot);
         blockBreaks.remove(expr);
 
         for (IntConsumer blockBreak : thisBlockBreaks) {
             blockBreak.accept(builder.label());
         }
-
-        resultSlot = -1;
     }
 
     @Override
     public void visit(IrExitBlockExpr expr) {
-        if (checkDone(expr)) {
-            return;
-        }
-
-        if (checkDone(expr)) {
-            return;
-        }
-
         IntConsumer jump = suggestedJump != null && suggestedJumpLabel == builder.label()
                 ? suggestedJump
                 : builder.addJump(directJump());
 
         blockBreaks.get(expr.getBlock()).add(jump);
-        resultSlot = -1;
     }
 
     @Override
     public void visit(IrLoopExpr expr) {
-        if (checkDone(expr)) {
-            return;
-        }
-
-        expr.getPreheader().acceptVisitor(this);
+        build(expr.getPreheader());
 
         int headerLabel = builder.label();
         loopHeaders.put(expr, headerLabel);
         List<IntConsumer> thisLoopBreaks = new ArrayList<>();
         loopBreaks.put(expr, thisLoopBreaks);
 
-        expr.getBody().acceptVisitor(this);
+        build(expr.getBody());
         builder.addJump(directJump(headerLabel));
 
         for (IntConsumer breakConsumer : thisLoopBreaks) {
@@ -225,58 +337,41 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
         loopHeaders.remove(expr);
         loopBreaks.remove(expr);
-        resultSlot = -1;
     }
 
     @Override
     public void visit(IrLoopHeaderExpr expr) {
-        checkDone(expr);
     }
 
     @Override
     public void visit(IrExitLoopExpr expr) {
-        if (checkDone(expr)) {
-            return;
-        }
-
         IntConsumer jump = suggestedJump != null && suggestedJumpLabel == builder.label()
                 ? suggestedJump
                 : builder.addJump(directJump());
 
         loopBreaks.get(expr.getLoop()).add(jump);
-        resultSlot = -1;
     }
 
     @Override
     public void visit(IrContinueLoopExpr expr) {
-        if (checkDone(expr)) {
-            return;
-        }
         int header = loopHeaders.get(expr.getLoop());
         if (suggestedJump != null && suggestedJumpLabel == builder.label()) {
             suggestedJump.accept(header);
         } else {
             builder.addJump(directJump(header));
         }
-        resultSlot = -1;
     }
 
     @Override
     public void visit(IrTupleExpr expr) {
-
     }
 
     @Override
     public void visit(IrTupleComponentExpr expr) {
-
     }
 
     @Override
     public void visit(IrConditionalExpr expr) {
-        int slot = resultSlot(expr);
-
-        alloc(expr.getCondition());
-        expr.getCondition().acceptVisitor(this);
         requestJumps(expr.getCondition());
         IntConsumer trueJump = whenTrue;
         IntConsumer falseJump = whenFalse;
@@ -286,10 +381,7 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
         IntConsumer suggestedJumpBackup = suggestedJump;
         suggestedJump = trueJump;
         suggestedJumpLabel = builder.label();
-        alloc(expr.getThenExpr());
-        forceResultSlot(expr.getThenExpr(), slot);
-        expr.getThenExpr().acceptVisitor(this);
-        release(expr.getThenExpr());
+        buildTo(expr.getThenExpr(), resultSlot);
 
         IntConsumer jumpAfterCondition = builder.label() != thenLabel
                 && expr.getThenExpr().getType().getKind() != IrTypeKind.UNREACHABLE
@@ -301,10 +393,7 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
         } else {
             falseJump.accept(builder.label());
         }
-        alloc(expr.getElseExpr());
-        forceResultSlot(expr.getThenExpr(), slot);
-        expr.getElseExpr().acceptVisitor(this);
-        release(expr.getElseExpr());
+        buildTo(expr.getThenExpr(), resultSlot);
 
         if (jumpAfterCondition != null) {
             jumpAfterCondition.accept(builder.label());
@@ -314,9 +403,6 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
         suggestedJump = suggestedJumpBackup;
         suggestedJumpLabel = suggestedJumpPtrBackup;
-
-        release(expr.getCondition());
-        resultSlot = slot;
     }
 
     @Override
@@ -326,10 +412,6 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
     @Override
     public void visit(IrUnaryExpr expr) {
-        if (checkDone(expr)) {
-            return;
-        }
-
         switch (expr.getOperation()) {
 
         }
@@ -337,10 +419,6 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
     @Override
     public void visit(IrBinaryExpr expr) {
-        if (checkDone(expr)) {
-            return;
-        }
-
         switch (expr.getOperation()) {
             case IADD:
                 simpleBinary(expr, ArithmeticInstructions::iadd);
@@ -479,33 +557,18 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
     }
 
     private void simpleBinary(IrBinaryExpr expr, BinaryInstructionFactory factory) {
-        alloc(expr.getFirst());
-        alloc(expr.getSecond());
-        expr.getFirst().acceptVisitor(this);
-        int a = resultSlot;
-        expr.getSecond().acceptVisitor(this);
-        int b = resultSlot;
-        release(expr.getSecond());
-        release(expr.getFirst());
-
-        int r = resultSlot(expr);
-        this.resultSlot = r;
-        if (r > 0) {
-            builder.add(factory.create(r, a, b));
+        int a = build(expr.getFirst());
+        int b = build(expr.getSecond());
+        if (resultSlot > 0) {
+            builder.add(factory.create(resultSlot, a, b));
         }
     }
 
     private void logicalAnd(IrBinaryExpr expr) {
-        alloc(expr.getFirst());
         requestJumps(expr.getFirst());
-        release(expr.getFirst());
 
         whenTrue.accept(builder.label());
         IntConsumer firstWhenFalse = whenFalse;
-
-        alloc(expr.getSecond());
-        saveBooleanIfNecessary(expr.getSecond());
-        release(expr.getSecond());
 
         IntConsumer secondWhenTrue = whenTrue;
         IntConsumer secondWhenFalse = whenFalse;
@@ -519,7 +582,6 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
             firstWhenFalse.accept(label);
             secondWhenTrue.accept(ptr);
         };
-        saveBooleanIfNecessary(expr);
     }
 
     private void logicalOr(IrBinaryExpr expr) {
@@ -527,24 +589,11 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
     }
 
     private void requestJumps(IrExpr expr) {
-        expr.acceptVisitor(this);
+        int condition = build(expr);
         if (whenTrue == null) {
-            int condition = resultSlot;
             int label = builder.emptySlot();
             whenTrue = targetLabel -> builder.putInSlot(label, jumpIfTrue(targetLabel, condition));
             whenFalse = targetLabel -> builder.putInSlot(label, jumpIfFalse(targetLabel, condition));
-        }
-    }
-
-    private void saveBooleanIfNecessary(IrExpr expr) {
-        if (pendingConsumers.getOrDefault(expr, 0) != 1) {
-            int slot = resultSlot(expr);
-            whenTrue.accept(builder.label());
-            builder.add(icst(slot, 1));
-            IntConsumer gotoInsn = builder.addJump(directJump());
-            whenFalse.accept(builder.label());
-            builder.add(icst(slot, 0));
-            gotoInsn.accept(builder.label());
         }
     }
 
@@ -585,20 +634,11 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
     @Override
     public void visit(IrCallExpr expr) {
-        if (checkDone(expr)) {
-            return;
-        }
-
-        for (int i = 0; i < expr.getInputCount(); ++i) {
-            alloc(expr.getInput(i));
-        }
-
         int firstArg;
         int instance;
         if (expr.getCallType() != IrCallType.STATIC) {
             firstArg = 1;
-            expr.getInput(0).acceptVisitor(this);
-            instance = resultSlot;
+            instance = build(expr.getInput(0));
         } else {
             firstArg = 0;
             instance = -1;
@@ -606,48 +646,26 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
         int[] arguments = new int[expr.getInputCount() - firstArg];
         for (int i = firstArg; i < expr.getInputCount(); ++i) {
-            expr.getInput(i).acceptVisitor(this);
-            arguments[i - firstArg] = resultSlot;
+            arguments[i - firstArg] = build(expr.getInput(i));
         }
 
-        for (int i = 0; i < expr.getInputCount(); ++i) {
-            release(expr.getInput(i));
-        }
-
-        int slot = resultSlot(expr);
-
-        builder.add(JavaInstructions.call(slot, expr.getMethod(), instance, arguments));
-
-        resultSlot = slot;
+        builder.add(JavaInstructions.call(resultSlot, expr.getMethod(), instance, arguments));
     }
 
     @Override
     public void visit(IrGetFieldExpr expr) {
-        if (checkDone(expr)) {
-            return;
+        int objectSlot = build(expr.getArgument());
+        if (resultSlot >= 0) {
+            builder.add(JavaInstructions.getField(resultSlot, expr.getField(), expr.getFieldType(), objectSlot));
         }
-
-        alloc(expr.getArgument());
-        expr.getArgument().acceptVisitor(this);
-        release(expr.getArgument());
-        int objectSlot = resultSlot;
-
-        int slot = resultSlot(expr);
-        builder.add(JavaInstructions.getField(slot, expr.getField(), expr.getFieldType(), objectSlot));
-        resultSlot = slot;
     }
 
     @Override
     public void visit(IrGetStaticFieldExpr expr) {
-        if (checkDone(expr)) {
-            return;
+        if (resultSlot >= 0) {
+            builder.add(JavaInstructions.getField(resultSlot, expr.getField(), expr.getFieldType(), -1));
         }
-
-        int slot = resultSlot(expr);
-        builder.add(JavaInstructions.getField(slot, expr.getField(), expr.getFieldType(), -1));
-        resultSlot = slot;
     }
-
 
     @Override
     public void visit(IrSetFieldExpr expr) {
@@ -681,44 +699,39 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
 
     @Override
     public void visit(IrSetVariableExpr expr) {
-        if (checkDone(expr)) {
-            return;
-        }
-
-        alloc(expr.getArgument());
-        expr.getArgument().acceptVisitor(this);
-        int valueSlot = resultSlot;
+        int valueSlot = build(expr.getArgument());
         int targetSlot = variableSlots.get(expr.getVariable());
         if (valueSlot >= 0) {
             move(expr.getVariable().getType(), valueSlot, targetSlot);
         }
-        release(expr.getArgument());
-        resultSlot = -1;
     }
 
     @Override
     public void visit(IrIntConstantExpr expr) {
-        if (checkDone(expr)) {
-            return;
+        if (resultSlot >= 0) {
+            builder.add(Instructions.icst(resultSlot, expr.getValue()));
         }
-        int slot = resultSlot(expr);
-        builder.add(Instructions.icst(slot, expr.getValue()));
-        resultSlot = slot;
     }
 
     @Override
     public void visit(IrLongConstantExpr expr) {
-
+        if (resultSlot >= 0) {
+            builder.add(Instructions.lcst(resultSlot, expr.getValue()));
+        }
     }
 
     @Override
     public void visit(IrFloatConstantExpr expr) {
-
+        if (resultSlot >= 0) {
+            builder.add(Instructions.fcst(resultSlot, expr.getValue()));
+        }
     }
 
     @Override
     public void visit(IrDoubleConstantExpr expr) {
-
+        if (resultSlot >= 0) {
+            builder.add(Instructions.dcst(resultSlot, expr.getValue()));
+        }
     }
 
     @Override
@@ -734,62 +747,6 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
     @Override
     public void visit(IrSetArrayElementExpr expr) {
 
-    }
-
-    private void alloc(IrExpr expr) {
-        pendingConsumers.put(expr, pendingConsumers.getOrDefault(expr, 0) + 1);
-    }
-
-    private void release(IrExpr expr) {
-        int newCount = pendingConsumers.getOrDefault(expr, 0) - 1;
-        if (newCount == 0) {
-            pendingConsumers.remove(expr);
-            int slot = exprSlots.getOrDefault(expr, -1);
-            if (slot >= 0 && borrowedSlots.remove(expr)) {
-                exprSlots.remove(expr);
-                switch (expr.getType().getKind()) {
-                    case BOOLEAN:
-                    case BYTE:
-                    case SHORT:
-                    case CHAR:
-                    case INT:
-                        freeIntSlots.add(slot);
-                        break;
-                    case LONG:
-                        freeLongSlots.add(slot);
-                        break;
-                    case FLOAT:
-                        freeFloatSlots.add(slot);
-                        break;
-                    case DOUBLE:
-                        freeDoubleSlots.add(slot);
-                        break;
-                    case OBJECT:
-                        freeObjectSlots.add(slot);
-                        break;
-                    case UNREACHABLE:
-                    case VOID:
-                    case TUPLE:
-                        break;
-                }
-            }
-        } else {
-            pendingConsumers.put(expr, newCount);
-        }
-    }
-
-    private int resultSlot(IrExpr expr) {
-        return resultSlot(expr, -1);
-    }
-
-    private void forceResultSlot(IrExpr expr, int slot) {
-        if (slot == -1) {
-            return;
-        }
-        int actual = resultSlot(expr, slot);
-        if (actual != -1 && actual != slot) {
-            move(expr.getType(), actual, slot);
-        }
     }
 
     private void move(IrType type, int from, int to) {
@@ -818,88 +775,6 @@ public class InterpreterBuilderVisitor implements IrExprVisitor {
             default:
                 break;
         }
-    }
-
-    private int resultSlot(IrExpr expr, int suggested) {
-        if (pendingConsumers.getOrDefault(expr, 0) == 0) {
-            return -1;
-        }
-        int slot = exprSlots.getOrDefault(expr, -1);
-        if (slot < 0) {
-            switch (expr.getType().getKind()) {
-                case BOOLEAN:
-                case BYTE:
-                case SHORT:
-                case CHAR:
-                case INT: {
-                    if (suggested >= 0) {
-                        slot = suggested;
-                        borrowedSlots.add(expr);
-                    } else if (freeIntSlots.isEmpty()) {
-                        slot = maxIntIndex++;
-                    } else {
-                        slot = freeIntSlots.pop();
-                    }
-                    break;
-                }
-                case LONG:
-                    if (suggested >= 0) {
-                        slot = suggested;
-                        borrowedSlots.add(expr);
-                    } else if (freeLongSlots.isEmpty()) {
-                        slot = maxLongIndex++;
-                    } else {
-                        slot = freeLongSlots.pop();
-                    }
-                    break;
-                case FLOAT:
-                    if (suggested >= 0) {
-                        slot = suggested;
-                        borrowedSlots.add(expr);
-                    } else if (freeFloatSlots.isEmpty()) {
-                        slot = maxFloatIndex++;
-                    } else {
-                        slot = freeFloatSlots.pop();
-                    }
-                    break;
-                case DOUBLE:
-                    if (suggested >= 0) {
-                        slot = suggested;
-                        borrowedSlots.add(expr);
-                    } else if (freeDoubleSlots.isEmpty()) {
-                        slot = maxDoubleIndex++;
-                    } else {
-                        slot = freeDoubleSlots.pop();
-                    }
-                    break;
-                case OBJECT:
-                    if (suggested >= 0) {
-                        slot = suggested;
-                    } else if (freeObjectSlots.isEmpty()) {
-                        slot = maxObjectIndex++;
-                    } else {
-                        slot = freeObjectSlots.pop();
-                    }
-                    break;
-                case UNREACHABLE:
-                case VOID:
-                case TUPLE:
-                    break;
-            }
-            if (slot >= 0) {
-                exprSlots.put(expr, slot);
-            }
-        }
-        return slot;
-    }
-
-    private boolean checkDone(IrExpr expr) {
-        if (done.contains(expr)) {
-            resultSlot = resultSlot(expr);
-            return true;
-        }
-        done.add(expr);
-        return false;
     }
 
     interface BinaryInstructionFactory {

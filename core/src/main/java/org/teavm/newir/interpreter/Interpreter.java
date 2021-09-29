@@ -19,6 +19,7 @@ import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.io.PrintWriter;
 import java.util.List;
+import org.teavm.newir.analysis.ExprConsumerCount;
 import org.teavm.newir.expr.IrFunction;
 import org.teavm.newir.expr.IrParameter;
 import org.teavm.newir.expr.IrVariable;
@@ -84,9 +85,11 @@ public class Interpreter {
             }
         }
 
-        InterpreterBuilderVisitor visitor = new InterpreterBuilderVisitor(intIndex, longIndex, floatIndex,
-                doubleIndex, objectIndex, parameterMap, variableMap);
-        function.getBody().acceptVisitor(visitor);
+        ExprConsumerCount consumerCount = new ExprConsumerCount();
+        function.getBody().acceptVisitor(consumerCount);
+        InterpreterBuilder visitor = new InterpreterBuilder(intIndex, longIndex, floatIndex,
+                doubleIndex, objectIndex, parameterMap, variableMap, consumerCount);
+        visitor.build(function.getBody());
         visitor.builder.add(Instructions.stop());
 
         ctx = new InterpreterContext(visitor.getMaxIntIndex(), visitor.getMaxLongIndex(), visitor.getMaxFloatIndex(),

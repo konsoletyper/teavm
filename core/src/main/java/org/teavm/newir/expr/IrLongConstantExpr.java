@@ -22,6 +22,10 @@ public final class IrLongConstantExpr extends IrExpr {
         this.value = value;
     }
 
+    public long getValue() {
+        return value;
+    }
+
     @Override
     public IrType getType() {
         return IrType.LONG;
