@@ -92,9 +92,7 @@ public class InterpreterBuilder implements IrExprVisitor {
     private int maxDoubleIndex;
     private int maxObjectIndex;
 
-    private ObjectIntMap<IrExpr> pendingConsumers = new ObjectIntHashMap<>();
     private ObjectIntMap<IrExpr> exprSlots = new ObjectIntHashMap<>();
-    private Set<IrExpr> visited = new HashSet<>();
     private Map<IrLoopExpr, List<IntConsumer>> loopBreaks = new HashMap<>();
     private ObjectIntMap<IrLoopExpr> loopHeaders = new ObjectIntHashMap<>();
     private Map<IrBlockExpr, List<IntConsumer>> blockBreaks = new HashMap<>();
@@ -135,6 +133,7 @@ public class InterpreterBuilder implements IrExprVisitor {
         int result = exprSlots.getOrDefault(expr, -1);
         int remaining = consumerCount.decAndGet(expr);
         int ignoreCount = consumerCount.getIgnored(expr);
+        boolean wasInPool;
 
         if (result < 0) {
             if (result == -2) {
@@ -157,7 +156,7 @@ public class InterpreterBuilder implements IrExprVisitor {
         }
 
         if (remaining == ignoreCount) {
-            returnSlotToPool(expr, exprSlots.get(expr));
+            returnSlotToPool(expr, result);
         }
         if (remaining == 0) {
             exprSlots.remove(expr);
@@ -182,12 +181,13 @@ public class InterpreterBuilder implements IrExprVisitor {
             expr.acceptVisitor(this);
             resultSlot = resultSlotBackup;
             if (remaining > 0) {
-                exprSlots.put(expr, remaining >= ignoreCount ? getSlotFromPool(expr) : 0);
+                result = remaining >= ignoreCount ? getSlotFromPool(expr) : null;
+                exprSlots.put(expr, result);
             }
         }
 
         if (remaining == ignoreCount) {
-            returnSlotToPool(expr, exprSlots.get(expr));
+            returnSlotToPool(expr, resultSlot);
         }
         if (remaining == 0) {
             exprSlots.remove(expr);
@@ -393,7 +393,7 @@ public class InterpreterBuilder implements IrExprVisitor {
         } else {
             falseJump.accept(builder.label());
         }
-        buildTo(expr.getThenExpr(), resultSlot);
+        buildTo(expr.getElseExpr(), resultSlot);
 
         if (jumpAfterCondition != null) {
             jumpAfterCondition.accept(builder.label());
@@ -699,11 +699,8 @@ public class InterpreterBuilder implements IrExprVisitor {
 
     @Override
     public void visit(IrSetVariableExpr expr) {
-        int valueSlot = build(expr.getArgument());
         int targetSlot = variableSlots.get(expr.getVariable());
-        if (valueSlot >= 0) {
-            move(expr.getVariable().getType(), valueSlot, targetSlot);
-        }
+        buildTo(expr.getArgument(), targetSlot);
     }
 
     @Override

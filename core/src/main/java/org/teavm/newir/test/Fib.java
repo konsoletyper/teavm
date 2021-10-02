@@ -25,12 +25,14 @@ import static org.teavm.newir.builder.IrExprBuilder.intVar;
 import static org.teavm.newir.builder.IrExprBuilder.loop;
 import static org.teavm.newir.builder.IrExprBuilder.set;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import org.teavm.model.MethodReference;
 import org.teavm.newir.expr.IrExpr;
 import org.teavm.newir.expr.IrFunction;
 import org.teavm.newir.expr.IrType;
 import org.teavm.newir.expr.IrVariable;
 import org.teavm.newir.interpreter.Interpreter;
+import org.teavm.newir.util.IrExprPrinter;
 
 public final class Fib {
     private Fib() {
@@ -60,6 +62,10 @@ public final class Fib {
 
     public static void main(String[] args) {
         IrFunction fib = createFibonacci();
+        PrintWriter writer = new PrintWriter(System.out);
+        IrExprPrinter printer = new IrExprPrinter(writer);
+        printer.print(fib.getBody());
+        writer.flush();
         Interpreter interpreter = new Interpreter(fib);
         interpreter.setIntParameter(fib.getParameter(0), 5);
         interpreter.run();

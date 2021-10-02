@@ -54,6 +54,7 @@ public final class IrExprBuilder {
     private static IrFunction currentFunction;
     private static IrBlockExpr functionBlock;
     private static IrExpr lastExpr;
+    private static IrExpr lastReturnedExpr;
 
     private IrExprBuilder() {
     }
@@ -300,14 +301,16 @@ public final class IrExprBuilder {
         IrConditionalExpr expr = new IrConditionalExpr(condition, thenBlock, elseBlock);
 
         IrExpr lastCondBackup = lastExpr;
+        lastReturnedExpr = null;
         lastExpr = condition;
         thenDo.run();
-        expr.setThenExpr(lastExpr);
+        expr.setThenExpr(lastReturnedExpr != null ? lastReturnedExpr : IrExpr.VOID);
         ordered |= lastExpr != lastCondBackup;
 
+        lastReturnedExpr = null;
         lastExpr = condition;
         elseDo.run();
-        expr.setElseExpr(lastExpr);
+        expr.setElseExpr(lastReturnedExpr != null ? lastReturnedExpr : IrExpr.VOID);
         ordered |= lastExpr != lastCondBackup;
         if (ordered) {
             lastExpr = expr;
@@ -346,6 +349,7 @@ public final class IrExprBuilder {
                 for (int i = 0; i < expr.getInputCount(); ++i) {
                     if (expr.getInput(i) == lastExpr) {
                         lastExpr = expr;
+                        lastReturnedExpr = expr;
                         return expr;
                     }
                 }
@@ -353,6 +357,7 @@ public final class IrExprBuilder {
             } else {
                 lastExpr = expr;
             }
+            lastReturnedExpr = lastExpr;
             return lastExpr;
         } else {
             return expr;

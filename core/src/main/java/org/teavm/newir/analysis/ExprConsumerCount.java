@@ -64,9 +64,8 @@ public class ExprConsumerCount extends RecursiveIrExprVisitor {
     public void visit(IrUnaryExpr expr) {
         if (expr.getOperation() == IrUnaryOperation.IGNORE) {
             ignore(expr.getArgument());
-        } else {
-            super.visit(expr);
         }
+        visitDefault(expr);
     }
 
     private void ignore(IrExpr expr) {

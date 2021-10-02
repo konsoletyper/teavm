@@ -51,6 +51,11 @@ public class IrConditionalExpr extends IrExpr {
     }
 
     @Override
+    public int getInputCount() {
+        return 3;
+    }
+
+    @Override
     public IrExpr getInput(int index) {
         switch (index) {
             case 0:

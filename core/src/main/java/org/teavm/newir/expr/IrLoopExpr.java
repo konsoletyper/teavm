@@ -69,6 +69,7 @@ public final class IrLoopExpr extends IrExpr {
                 break;
             default:
                 super.setInput(index, value);
+                break;
         }
     }
 
