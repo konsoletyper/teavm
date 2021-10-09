@@ -13,13 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.newir.expr;
+package org.teavm.newir.type;
 
 public abstract class IrTupleType extends IrType {
     IrTupleType() {
     }
 
-    static IrTupleType of(IrType... components) {
+    public static IrTupleType of(IrType... components) {
         switch (components.length) {
             case 0:
                 throw new IllegalArgumentException("Should be at least 1 component");

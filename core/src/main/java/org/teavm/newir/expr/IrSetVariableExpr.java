@@ -15,6 +15,8 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrType;
+
 public final class IrSetVariableExpr extends IrSingeInputExpr {
     private IrVariable variable;
 
@@ -34,6 +36,16 @@ public final class IrSetVariableExpr extends IrSingeInputExpr {
     @Override
     public IrType getType() {
         return IrType.VOID;
+    }
+
+    @Override
+    public IrType getInputType(int index) {
+        return index == 0 ? variable.getType() : super.getInputType(index);
+    }
+
+    @Override
+    public boolean needsOrdering() {
+        return true;
     }
 
     @Override

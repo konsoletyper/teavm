@@ -13,10 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.newir.expr;
+package org.teavm.newir.decl;
 
-public enum IrCallType {
-    STATIC,
-    VIRTUAL,
-    SPECIAL
+public enum IrCallableType {
+    FUNCTION,
+    VIRTUAL_FUNCTION
 }

@@ -16,6 +16,8 @@
 package org.teavm.newir.expr;
 
 import java.util.Objects;
+import org.teavm.newir.type.IrTupleType;
+import org.teavm.newir.type.IrType;
 
 public abstract class IrTupleExpr extends IrExpr {
     IrTupleType typeCache;
@@ -50,6 +52,11 @@ public abstract class IrTupleExpr extends IrExpr {
             typeCache = IrTupleType.of(componentTypes);
         }
         return typeCache;
+    }
+
+    @Override
+    public IrType getInputType(int index) {
+        return getInput(index).getType();
     }
 
     @Override

@@ -15,8 +15,13 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrType;
+
 public abstract class IrExpr {
-    public static IrNullaryExpr VOID = new IrNullaryExpr(IrNullaryOperation.VOID);
+    public static IrOperationExpr VOID = IrOperationExpr.of(IrOperation.VOID);
+
+    IrExprTags.Tag tag;
+    private IrExpr previous;
 
     public int getInputCount() {
         return 0;
@@ -30,7 +35,46 @@ public abstract class IrExpr {
         throw new IndexOutOfBoundsException();
     }
 
+    public IrType getInputType(int index) {
+        throw new IndexOutOfBoundsException();
+    }
+
     public abstract IrType getType();
 
     public abstract void acceptVisitor(IrExprVisitor visitor);
+
+    public final int getDependencyCount() {
+        return getInputCount() + (needsOrdering() ? 1 : 0);
+    }
+
+    public final IrExpr getDependency(int index) {
+        if (needsOrdering()) {
+            return index == 0 ? getPrevious() : getInput(index - 1);
+        } else {
+            return getInput(index);
+        }
+    }
+
+    public final IrType getDependencyType(int index) {
+        if (needsOrdering()) {
+            return index == 0 ? IrType.ANY : getInputType(index - 1);
+        } else {
+            return getInputType(index);
+        }
+    }
+
+    public boolean needsOrdering() {
+        return false;
+    }
+
+    public final IrExpr getPrevious() {
+        return previous != null ? previous : IrExpr.VOID;
+    }
+
+    public final void setPrevious(IrExpr expr) {
+        if (!needsOrdering()) {
+            throw new UnsupportedOperationException();
+        }
+        previous = expr;
+    }
 }

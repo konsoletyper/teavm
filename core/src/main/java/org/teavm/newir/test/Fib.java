@@ -16,30 +16,31 @@
 package org.teavm.newir.test;
 
 import static org.teavm.newir.builder.IrExprBuilder.add;
-import static org.teavm.newir.builder.IrExprBuilder.callVirtual;
-import static org.teavm.newir.builder.IrExprBuilder.function;
+import static org.teavm.newir.builder.IrExprBuilder.call;
 import static org.teavm.newir.builder.IrExprBuilder.get;
 import static org.teavm.newir.builder.IrExprBuilder.greaterEq;
 import static org.teavm.newir.builder.IrExprBuilder.ifCond;
 import static org.teavm.newir.builder.IrExprBuilder.intVar;
 import static org.teavm.newir.builder.IrExprBuilder.loop;
 import static org.teavm.newir.builder.IrExprBuilder.set;
-import java.io.PrintStream;
 import java.io.PrintWriter;
-import org.teavm.model.MethodReference;
+import org.teavm.newir.builder.IrExprBuilder;
+import org.teavm.newir.decl.IrFunction;
 import org.teavm.newir.expr.IrExpr;
-import org.teavm.newir.expr.IrFunction;
-import org.teavm.newir.expr.IrType;
+import org.teavm.newir.expr.IrProgram;
 import org.teavm.newir.expr.IrVariable;
 import org.teavm.newir.interpreter.Interpreter;
+import org.teavm.newir.type.IrType;
 import org.teavm.newir.util.IrExprPrinter;
 
 public final class Fib {
+    private static IrFunction printFunction = new IrFunction(IrType.VOID, IrType.INT);
+
     private Fib() {
     }
 
-    public static IrFunction createFibonacci() {
-        return function(new IrType[] { IrType.INT }, parameters -> {
+    private static IrProgram createFibonacci() {
+        return IrExprBuilder.program(new IrType[] { IrType.INT }, parameters -> {
             IrVariable a = intVar();
             IrVariable b = intVar();
             IrVariable c = intVar();
@@ -54,20 +55,22 @@ public final class Fib {
                 set(a, get(b));
                 set(b, get(c));
                 set(i, add(get(i), 1));
-                IrExpr out = get(System.class, "out", PrintStream.class);
-                callVirtual(new MethodReference(PrintStream.class, "println", int.class, void.class), out, get(c));
+                call(printFunction, get(c));
             });
         });
     }
 
     public static void main(String[] args) {
-        IrFunction fib = createFibonacci();
+        IrProgram fib = createFibonacci();
         PrintWriter writer = new PrintWriter(System.out);
         IrExprPrinter printer = new IrExprPrinter(writer);
         printer.print(fib.getBody());
         writer.flush();
+
+        /*
         Interpreter interpreter = new Interpreter(fib);
         interpreter.setIntParameter(fib.getParameter(0), 5);
         interpreter.run();
+         */
     }
 }

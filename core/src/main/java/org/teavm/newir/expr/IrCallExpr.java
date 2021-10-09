@@ -15,48 +15,58 @@
  */
 package org.teavm.newir.expr;
 
-import org.teavm.model.MethodReference;
+import org.teavm.newir.type.IrType;
 
 public abstract class IrCallExpr extends IrExpr {
-    private MethodReference method;
-    private IrCallType callType;
+    private IrCallTarget<?> target;
 
-    IrCallExpr(MethodReference method, IrCallType callType) {
-        this.method = method;
-        this.callType = callType;
+    IrCallExpr(IrCallTarget<?> target) {
+        this.target = target;
     }
 
-    public static IrCallExpr of(MethodReference method, IrCallType callType, IrExpr... arguments) {
+    public static IrCallExpr of(IrCallTarget<?> target, IrExpr... arguments) {
+        if (target.getCallable().getParameterCount() != arguments.length) {
+            throw new IllegalArgumentException("Expected " + target.getCallable().getParameterCount()
+                    + " parameters but got " + arguments.length + " arguments");
+        }
         switch (arguments.length) {
             case 0:
-                return new Impl0(method, callType);
+                return new Impl0(target);
             case 1:
-                return new Impl1(method, callType, arguments[0]);
+                return new Impl1(target, arguments[0]);
             case 2:
-                return new Impl2(method, callType, arguments[0], arguments[1]);
+                return new Impl2(target, arguments[0], arguments[1]);
             case 3:
-                return new Impl3(method, callType, arguments[0], arguments[1], arguments[2]);
+                return new Impl3(target, arguments[0], arguments[1], arguments[2]);
             case 4:
-                return new Impl4(method, callType, arguments[0], arguments[1], arguments[2], arguments[3]);
+                return new Impl4(target, arguments[0], arguments[1], arguments[2], arguments[3]);
             default:
-                return new ImplN(method, callType, arguments.clone());
+                return new ImplN(target, arguments.clone());
         }
     }
 
-    public MethodReference getMethod() {
-        return method;
+    public IrCallTarget<?> getTarget() {
+        return target;
     }
 
-    public void setMethod(MethodReference method) {
-        this.method = method;
+    @Override
+    public IrType getType() {
+        return target.getCallable().getType();
     }
 
-    public IrCallType getCallType() {
-        return callType;
+    @Override
+    public IrType getInputType(int index) {
+        return target.getCallable().getParameterType(index);
     }
 
-    public void setCallType(IrCallType callType) {
-        this.callType = callType;
+    @Override
+    public int getInputCount() {
+        return target.getCallable().getParameterCount();
+    }
+
+    @Override
+    public boolean needsOrdering() {
+        return true;
     }
 
     @Override
@@ -64,27 +74,18 @@ public abstract class IrCallExpr extends IrExpr {
         visitor.visit(this);
     }
 
-    @Override
-    public IrType getType() {
-        return IrType.fromValueType(method.getReturnType());
-    }
-
     static final class Impl0 extends IrCallExpr {
-        Impl0(MethodReference method, IrCallType callType) {
-            super(method, callType);
+        Impl0(IrCallTarget<?> target) {
+            super(target);
         }
     }
 
     static final class Impl1 extends IrCallExpr {
         private IrExpr a1;
 
-        Impl1(MethodReference method, IrCallType callType, IrExpr a1) {
-            super(method, callType);
-        }
-
-        @Override
-        public int getInputCount() {
-            return 1;
+        Impl1(IrCallTarget<?> target, IrExpr a1) {
+            super(target);
+            this.a1 = a1;
         }
 
         @Override
@@ -106,15 +107,10 @@ public abstract class IrCallExpr extends IrExpr {
         private IrExpr a1;
         private IrExpr a2;
 
-        Impl2(MethodReference method, IrCallType callType, IrExpr a1, IrExpr a2) {
-            super(method, callType);
+        Impl2(IrCallTarget<?> target, IrExpr a1, IrExpr a2) {
+            super(target);
             this.a1 = a1;
             this.a2 = a2;
-        }
-
-        @Override
-        public int getInputCount() {
-            return 2;
         }
 
         @Override
@@ -150,8 +146,8 @@ public abstract class IrCallExpr extends IrExpr {
         private IrExpr a2;
         private IrExpr a3;
 
-        Impl3(MethodReference method, IrCallType callType, IrExpr a1, IrExpr a2, IrExpr a3) {
-            super(method, callType);
+        Impl3(IrCallTarget<?> target, IrExpr a1, IrExpr a2, IrExpr a3) {
+            super(target);
             this.a1 = a1;
             this.a2 = a2;
             this.a3 = a3;
@@ -201,8 +197,8 @@ public abstract class IrCallExpr extends IrExpr {
         private IrExpr a3;
         private IrExpr a4;
 
-        Impl4(MethodReference method, IrCallType callType, IrExpr a1, IrExpr a2, IrExpr a3, IrExpr a4) {
-            super(method, callType);
+        Impl4(IrCallTarget<?> target, IrExpr a1, IrExpr a2, IrExpr a3, IrExpr a4) {
+            super(target);
             this.a1 = a1;
             this.a2 = a2;
             this.a3 = a3;
@@ -255,8 +251,8 @@ public abstract class IrCallExpr extends IrExpr {
     static final class ImplN extends IrCallExpr {
         private final IrExpr[] arguments;
 
-        ImplN(MethodReference method, IrCallType callType, IrExpr[] arguments) {
-            super(method, callType);
+        ImplN(IrCallTarget<?> target, IrExpr[] arguments) {
+            super(target);
             this.arguments = arguments;
         }
 

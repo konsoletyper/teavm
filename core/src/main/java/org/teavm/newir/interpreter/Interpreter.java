@@ -20,7 +20,7 @@ import com.carrotsearch.hppc.ObjectIntMap;
 import java.io.PrintWriter;
 import java.util.List;
 import org.teavm.newir.analysis.ExprConsumerCount;
-import org.teavm.newir.expr.IrFunction;
+import org.teavm.newir.expr.IrProgram;
 import org.teavm.newir.expr.IrParameter;
 import org.teavm.newir.expr.IrVariable;
 import org.teavm.newir.interpreter.instructions.Instructions;
@@ -30,7 +30,11 @@ public class Interpreter {
     private InterpreterContext ctx;
     private Instruction[] instructions;
 
-    public Interpreter(IrFunction function) {
+    public Interpreter(IrProgram program) {
+        this(program, CallProvider.EMPTY);
+    }
+
+    public Interpreter(IrProgram program, CallProvider callProvider) {
         parameterMap = new ObjectIntHashMap<>();
         ObjectIntMap<IrVariable> variableMap = new ObjectIntHashMap<>();
         int intIndex = 0;
@@ -39,8 +43,8 @@ public class Interpreter {
         int doubleIndex = 0;
         int objectIndex = 0;
 
-        for (int i = 0; i < function.getParameterCount(); ++i) {
-            IrParameter parameter = function.getParameter(i);
+        for (int i = 0; i < program.getParameterCount(); ++i) {
+            IrParameter parameter = program.getParameter(i);
             switch (parameter.getType().getKind()) {
                 case BOOLEAN:
                 case BYTE:
@@ -62,7 +66,7 @@ public class Interpreter {
                     break;
             }
         }
-        for (IrVariable variable : function.getVariables()) {
+        for (IrVariable variable : program.getVariables()) {
             switch (variable.getType().getKind()) {
                 case BOOLEAN:
                 case BYTE:
@@ -86,10 +90,11 @@ public class Interpreter {
         }
 
         ExprConsumerCount consumerCount = new ExprConsumerCount();
-        function.getBody().acceptVisitor(consumerCount);
+        program.getBody().acceptVisitor(consumerCount);
         InterpreterBuilder visitor = new InterpreterBuilder(intIndex, longIndex, floatIndex,
                 doubleIndex, objectIndex, parameterMap, variableMap, consumerCount);
-        visitor.build(function.getBody());
+        visitor.setCallProvider(callProvider);
+        visitor.build(program.getBody());
         visitor.builder.add(Instructions.stop());
 
         ctx = new InterpreterContext(visitor.getMaxIntIndex(), visitor.getMaxLongIndex(), visitor.getMaxFloatIndex(),

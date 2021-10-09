@@ -15,37 +15,28 @@
  */
 package org.teavm.newir.expr;
 
-import org.teavm.model.FieldReference;
-import org.teavm.model.ValueType;
+import org.teavm.newir.decl.IrGlobal;
+import org.teavm.newir.type.IrType;
 
-public final class IrGetStaticFieldExpr extends IrExpr {
-    private FieldReference field;
-    private ValueType fieldType;
+public final class IrGetGlobalExpr extends IrExpr {
+    private IrGlobal variable;
 
-    public IrGetStaticFieldExpr(FieldReference field, ValueType fieldType) {
-        this.field = field;
-        this.fieldType = fieldType;
+    public IrGetGlobalExpr(IrGlobal variable) {
+        this.variable = variable;
     }
 
-    public FieldReference getField() {
-        return field;
+    public IrGlobal getVariable() {
+        return variable;
     }
 
-    public void setField(FieldReference field) {
-        this.field = field;
-    }
-
-    public ValueType getFieldType() {
-        return fieldType;
-    }
-
-    public void setFieldType(ValueType fieldType) {
-        this.fieldType = fieldType;
+    @Override
+    public boolean needsOrdering() {
+        return true;
     }
 
     @Override
     public IrType getType() {
-        return IrType.fromValueType(fieldType);
+        return variable.getType();
     }
 
     @Override

@@ -16,8 +16,6 @@
 package org.teavm.newir.expr;
 
 public interface IrExprVisitor {
-    void visit(IrSequenceExpr expr);
-
     void visit(IrBlockExpr expr);
 
     void visit(IrExitBlockExpr expr);
@@ -34,13 +32,9 @@ public interface IrExprVisitor {
 
     void visit(IrTupleComponentExpr expr);
 
+    void visit(IrOperationExpr expr);
+
     void visit(IrConditionalExpr expr);
-
-    void visit(IrNullaryExpr expr);
-
-    void visit(IrUnaryExpr expr);
-
-    void visit(IrBinaryExpr expr);
 
     void visit(IrArrayElementExpr expr);
 
@@ -50,11 +44,11 @@ public interface IrExprVisitor {
 
     void visit(IrTryCatchExpr expr);
 
+    void visit(IrTryCatchStartExpr expr);
+
     void visit(IrCaughtExceptionExpr expr);
 
     void visit(IrCaughtValueExpr expr);
-
-    void visit(IrBoundsCheckExpr expr);
 
     void visit(IrCastExpr expr);
 
@@ -64,11 +58,11 @@ public interface IrExprVisitor {
 
     void visit(IrGetFieldExpr expr);
 
-    void visit(IrGetStaticFieldExpr expr);
+    void visit(IrGetGlobalExpr expr);
 
     void visit(IrSetFieldExpr expr);
 
-    void visit(IrSetStaticFieldExpr expr);
+    void visit(IrSetGlobalExpr expr);
 
     void visit(IrNewObjectExpr expr);
 
@@ -76,7 +70,7 @@ public interface IrExprVisitor {
 
     void visit(IrParameterExpr expr);
 
-    void visit(IrVariableExpr expr);
+    void visit(IrGetVariableExpr expr);
 
     void visit(IrSetVariableExpr expr);
 

@@ -15,6 +15,8 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrType;
+
 public final class IrThrowExpr extends IrExpr {
     private IrExpr exception;
 
@@ -50,8 +52,18 @@ public final class IrThrowExpr extends IrExpr {
     }
 
     @Override
+    public IrType getInputType(int index) {
+        return index == 0 ? IrType.OBJECT : null;
+    }
+
+    @Override
     public IrType getType() {
         return IrType.UNREACHABLE;
+    }
+
+    @Override
+    public boolean needsOrdering() {
+        return true;
     }
 
     @Override

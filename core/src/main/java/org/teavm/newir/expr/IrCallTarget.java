@@ -15,17 +15,10 @@
  */
 package org.teavm.newir.expr;
 
-public enum IrTypeKind {
-    BOOLEAN,
-    BYTE,
-    SHORT,
-    CHAR,
-    INT,
-    LONG,
-    FLOAT,
-    DOUBLE,
-    OBJECT,
-    VOID,
-    UNREACHABLE,
-    TUPLE,
+import org.teavm.newir.decl.IrCallable;
+
+public abstract class IrCallTarget<T extends IrCallable<T>> {
+    public abstract T getCallable();
+
+    public abstract IrCallTargetType getType();
 }

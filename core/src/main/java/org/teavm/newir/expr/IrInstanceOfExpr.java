@@ -15,27 +15,33 @@
  */
 package org.teavm.newir.expr;
 
-import org.teavm.model.ValueType;
+import org.teavm.newir.decl.IrReferenceType;
+import org.teavm.newir.type.IrType;
 
 public final class IrInstanceOfExpr extends IrSingeInputExpr {
-    private ValueType checkedType;
+    private IrReferenceType checkedType;
 
-    public IrInstanceOfExpr(IrExpr argument, ValueType checkedType) {
+    public IrInstanceOfExpr(IrExpr argument, IrReferenceType checkedType) {
         super(argument);
         this.checkedType = checkedType;
     }
 
-    public ValueType getCheckedType() {
+    public IrReferenceType getCheckedType() {
         return checkedType;
     }
 
-    public void setCheckedType(ValueType checkedType) {
+    public void setCheckedType(IrReferenceType checkedType) {
         this.checkedType = checkedType;
     }
 
     @Override
     public IrType getType() {
         return IrType.BOOLEAN;
+    }
+
+    @Override
+    public IrType getInputType(int index) {
+        return index == 0 ? IrType.OBJECT : super.getInputType(index);
     }
 
     @Override

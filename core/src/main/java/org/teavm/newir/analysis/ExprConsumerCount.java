@@ -18,10 +18,9 @@ package org.teavm.newir.analysis;
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import org.teavm.newir.expr.IrExpr;
-import org.teavm.newir.expr.IrSequenceExpr;
-import org.teavm.newir.expr.IrUnaryExpr;
-import org.teavm.newir.expr.IrUnaryOperation;
-import org.teavm.newir.expr.RecursiveIrExprVisitor;
+import org.teavm.newir.expr.IrOperation;
+import org.teavm.newir.expr.IrOperationExpr;
+import org.teavm.newir.util.RecursiveIrExprVisitor;
 
 public class ExprConsumerCount extends RecursiveIrExprVisitor {
     private ObjectIntMap<IrExpr> countMap = new ObjectIntHashMap<>();
@@ -50,20 +49,14 @@ public class ExprConsumerCount extends RecursiveIrExprVisitor {
         int count = countMap.get(expr);
         countMap.put(expr, count + 1);
         if (count == 0) {
-            visitInputs(expr);
+            visitDependencies(expr);
         }
     }
 
     @Override
-    public void visit(IrSequenceExpr expr) {
-        ignore(expr.getFirst());
-        visitDefault(expr);
-    }
-
-    @Override
-    public void visit(IrUnaryExpr expr) {
-        if (expr.getOperation() == IrUnaryOperation.IGNORE) {
-            ignore(expr.getArgument());
+    public void visit(IrOperationExpr expr) {
+        if (expr.getOperation() == IrOperation.IGNORE) {
+            ignore(expr.getInput(0));
         }
         visitDefault(expr);
     }

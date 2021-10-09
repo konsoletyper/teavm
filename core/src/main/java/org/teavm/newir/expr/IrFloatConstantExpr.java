@@ -15,6 +15,8 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrType;
+
 public final class IrFloatConstantExpr extends IrExpr {
     private float value;
 

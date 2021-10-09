@@ -13,42 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.newir.expr;
+package org.teavm.newir.type;
 
-public enum IrUnaryOperation {
-    BOOLEAN_TO_INT,
-    BYTE_TO_INT,
-    SHORT_TO_INT,
-    CHAR_TO_INT,
-    INT_TO_BOOLEAN,
-    INT_TO_BYTE,
-    INT_TO_SHORT,
-    INT_TO_CHAR,
-    INT_TO_LONG,
-    INT_TO_FLOAT,
-    INT_TO_DOUBLE,
-    LONG_TO_INT,
-    LONG_TO_FLOAT,
-    LONG_TO_DOUBLE,
-    FLOAT_TO_INT,
-    FLOAT_TO_LONG,
-    FLOAT_TO_DOUBLE,
-    DOUBLE_TO_INT,
-    DOUBLE_TO_LONG,
-    DOUBLE_TO_FLOAT,
-
-    ARRAY_LENGTH,
-
-    IGNORE,
-
-    NULL_CHECK,
-    NOT,
-
-    IINV,
-    LINV,
-
-    INEG,
-    LNEG,
-    FNEG,
-    DNEG
+public enum IrTypeKind {
+    BOOLEAN,
+    BYTE,
+    SHORT,
+    CHAR,
+    INT,
+    LONG,
+    FLOAT,
+    DOUBLE,
+    OBJECT,
+    VOID,
+    UNREACHABLE,
+    ANY,
+    TUPLE,
 }

@@ -15,7 +15,7 @@
  */
 package org.teavm.newir.expr;
 
-public abstract class IrDoubleInputExpr extends IrExpr {
+abstract class IrDoubleInputExpr extends IrExpr {
     private IrExpr first;
     private IrExpr second;
 

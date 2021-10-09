@@ -17,13 +17,14 @@ package org.teavm.newir.expr;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.teavm.newir.type.IrType;
 
-public final class IrFunction {
+public final class IrProgram {
     private IrParameter[] parameters;
     private IrExpr body = IrExpr.VOID;
     private List<IrVariable> variables = new ArrayList<>();
 
-    public IrFunction(IrType... parameterTypes) {
+    public IrProgram(IrType... parameterTypes) {
         parameters = new IrParameter[parameterTypes.length];
         for (int i = 0; i < parameterTypes.length; ++i) {
             parameters[i] = new IrParameter(this, i, parameterTypes[i]);
@@ -53,7 +54,7 @@ public final class IrFunction {
     }
 
     public void removeVariable(IrVariable variable) {
-        if (variable.function != this) {
+        if (variable.program != this) {
             throw new IllegalArgumentException("Variable does not belong to function");
         }
         variables.remove(variable.index);
@@ -61,7 +62,7 @@ public final class IrFunction {
             variables.get(i).index = i;
         }
         variable.index = -1;
-        variable.function = null;
+        variable.program = null;
     }
 
     public Iterable<IrVariable> getVariables() {

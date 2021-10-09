@@ -18,52 +18,43 @@ package org.teavm.newir.util;
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Consumer;
-import org.teavm.newir.expr.IrBinaryExpr;
+import org.teavm.newir.decl.IrDeclaration;
+import org.teavm.newir.decl.IrFunction;
+import org.teavm.newir.decl.IrMethod;
 import org.teavm.newir.expr.IrBlockExpr;
 import org.teavm.newir.expr.IrCallExpr;
 import org.teavm.newir.expr.IrConditionalExpr;
 import org.teavm.newir.expr.IrExitLoopExpr;
 import org.teavm.newir.expr.IrExpr;
+import org.teavm.newir.expr.IrExprTags;
+import org.teavm.newir.expr.IrFunctionCallTarget;
 import org.teavm.newir.expr.IrGetFieldExpr;
-import org.teavm.newir.expr.IrGetStaticFieldExpr;
+import org.teavm.newir.expr.IrGetGlobalExpr;
+import org.teavm.newir.expr.IrGetVariableExpr;
 import org.teavm.newir.expr.IrIntConstantExpr;
 import org.teavm.newir.expr.IrLoopExpr;
-import org.teavm.newir.expr.IrNullaryExpr;
+import org.teavm.newir.expr.IrMethodCallTarget;
+import org.teavm.newir.expr.IrOperationExpr;
 import org.teavm.newir.expr.IrParameterExpr;
-import org.teavm.newir.expr.IrSequenceExpr;
 import org.teavm.newir.expr.IrSetVariableExpr;
-import org.teavm.newir.expr.IrUnaryExpr;
 import org.teavm.newir.expr.IrVariable;
-import org.teavm.newir.expr.IrVariableExpr;
-import org.teavm.newir.expr.RecursiveIrExprVisitor;
 
 public class IrExprPrinter extends RecursiveIrExprVisitor {
-    private Map<IrExpr, Node> nodes = new HashMap<>();
     private ObjectIntMap<IrVariable> vars = new ObjectIntHashMap<>();
     private int refGenerator;
     private PrintWriter writer;
     private Consumer<PrintWriter> exprPrinter;
-    private Node root;
+    private NameGenerator<IrFunction> functionNames = new NameGenerator<>(IrDeclaration::getNameHint);
+    private NameGenerator<IrMethod> methodNames = new NameGenerator<>(IrDeclaration::getNameHint);
+    private IrExprTags<Node> nodes = new IrExprTags<>();
 
     public IrExprPrinter(PrintWriter writer) {
         this.writer = writer;
     }
 
     public void print(IrExpr expr) {
-        printExpr(expr);
-        Node root = null;
-        Node node = this.root;
-        while (node != null) {
-            Node next = node.next;
-            node.next = root;
-            root = node;
-            node = next;
-        }
-
-        node = root;
+        Node node = printExpr(null, expr);
         while (node != null) {
             node.line.accept(writer);
             if (node.ref > 0) {
@@ -75,70 +66,86 @@ public class IrExprPrinter extends RecursiveIrExprVisitor {
             node = node.next;
         }
 
-        this.root = null;
-        nodes.clear();
+        nodes.cleanup();
         refGenerator = 0;
     }
 
-    private void printExpr(IrExpr expr) {
-        Node existing = nodes.get(expr);
-        if (existing != null && existing.line != null) {
-            if (existing.ref == 0) {
-                existing.ref = ++refGenerator;
+    private Node printExpr(Node last, IrExpr expr) {
+        while (true) {
+            Node node = nodes.get(expr);
+            if (node != null && node.line != null) {
+                if (node.ref == 0) {
+                    node.ref = ++refGenerator;
+                }
+                int refId = node.ref;
+
+                node = new Node();
+                node.line = w -> {
+                    w.print("[ref ");
+                    w.print(refId);
+                    w.print("]");
+                };
+                node.next = last;
+                last = node;
+                break;
             }
-            Node next = root;
-            root = new Node();
-            root.next = next;
-            root.line = w -> {
-                w.print("[ref ");
-                w.print(existing.ref);
+
+            if (node == null) {
+                node = new Node();
+                nodes.set(expr, node);
+            }
+
+            expr.acceptVisitor(this);
+            if (exprPrinter == null) {
+                exprPrinter = w -> w.print("unknown");
+            }
+            Consumer<PrintWriter> notWrapped = exprPrinter;
+            Consumer<PrintWriter> mainPrinter = w -> {
+                w.print("[");
+                notWrapped.accept(w);
                 w.print("]");
             };
-            return;
-        }
+            exprPrinter = null;
+            node.line = mainPrinter;
+            node.next = last;
+            last = node;
 
-        Node newRoot = existing != null ? existing : new Node();
-        nodes.put(expr, newRoot);
+            int inputCount = expr.getInputCount();
+            if (inputCount == 0) {
+                break;
+            }
 
-        expr.acceptVisitor(this);
-        if (exprPrinter == null) {
-            exprPrinter = w -> w.print("unknown");
-        }
-        Consumer<PrintWriter> notWrapped = exprPrinter;
-        Consumer<PrintWriter> mainPrinter = w -> {
-            w.print("[");
-            notWrapped.accept(w);
-            w.print("]");
-        };
-
-        int inputCount = expr.getInputCount();
-        if (inputCount > 0) {
-            printExpr(expr.getInput(0));
-            Node formerRoot = root;
             for (int i = 1; i < inputCount; ++i) {
-                printExpr(expr.getInput(i));
-                Node node = root;
-                node.line = prepend("  ├──", node.line);
-                node = node.next;
-                while (node != formerRoot) {
-                    node.line = prepend("  │  ", node.line);
-                    node = node.next;
+                if (i > 1) {
+                    node = new Node();
+                    node.line = w -> w.print("  │");
+                    node.next = last;
+                    last = node;
                 }
-                formerRoot = root;
+
+                Node next = printExpr(last, expr.getInput(i));
+                if (next != last) {
+                    node = next;
+                    while (node.next != last) {
+                        node.line = prepend("  │  ", node.line);
+                        node = node.next;
+                    }
+                    node.line = prepend("  ├──", node.line);
+                }
+                last = next;
             }
+
             if (inputCount == 1) {
-                Node emptyLine = new Node();
-                emptyLine.next = root;
-                emptyLine.line = w -> w.print("  │");
-                root = emptyLine;
+                node = new Node();
+                node.line = w -> w.print("  │");
+                node.next = last;
+                last = node;
             }
+
+            expr = expr.getInput(0);
         }
 
-        exprPrinter = null;
-        newRoot.next = root;
-        root = newRoot;
-        root.line = mainPrinter;
-        nodes.put(expr, root);
+        return last;
     }
 
     private Consumer<PrintWriter> prepend(String prefix, Consumer<PrintWriter> fragment) {
@@ -153,13 +160,21 @@ public class IrExprPrinter extends RecursiveIrExprVisitor {
     }
 
     @Override
-    public void visit(IrSequenceExpr expr) {
-        exprPrinter = w -> w.print(";");
-    }
-
-    @Override
     public void visit(IrCallExpr expr) {
-        exprPrinter = w -> w.append("call ").append(expr.getMethod().getName());
+        switch (expr.getTarget().getType()) {
+            case FUNCTION: {
+                IrFunction function = ((IrFunctionCallTarget) expr.getTarget()).getCallable();
+                String name = functionNames.getName(function);
+                exprPrinter = w -> w.append("call-function ").append(name);
+                break;
+            }
+            case METHOD: {
+                IrMethod method = ((IrMethodCallTarget) expr.getTarget()).getCallable();
+                String name = methodNames.getName(method);
+                exprPrinter = w -> w.append("call-method ").append(name);
+                break;
+            }
+        }
     }
 
     @Override
@@ -173,17 +188,7 @@ public class IrExprPrinter extends RecursiveIrExprVisitor {
     }
 
     @Override
-    public void visit(IrBinaryExpr expr) {
-        exprPrinter = w -> w.print(expr.getOperation().name());
-    }
-
-    @Override
-    public void visit(IrUnaryExpr expr) {
-        exprPrinter = w -> w.print(expr.getOperation().name());
-    }
-
-    @Override
-    public void visit(IrNullaryExpr expr) {
+    public void visit(IrOperationExpr expr) {
         exprPrinter = w -> w.print(expr.getOperation().name());
     }
 
@@ -196,7 +201,7 @@ public class IrExprPrinter extends RecursiveIrExprVisitor {
     }
 
     @Override
-    public void visit(IrVariableExpr expr) {
+    public void visit(IrGetVariableExpr expr) {
         int id = variableId(expr.getVariable());
         exprPrinter = w -> {
             w.print("var ");
@@ -223,18 +228,12 @@ public class IrExprPrinter extends RecursiveIrExprVisitor {
 
     @Override
     public void visit(IrGetFieldExpr expr) {
-        exprPrinter = w -> {
-            w.print("field ");
-            w.print(expr.getField().getFieldName());
-        };
+
     }
 
     @Override
-    public void visit(IrGetStaticFieldExpr expr) {
-        exprPrinter = w -> {
-            w.print("static field ");
-            w.print(expr.getField().getFieldName());
-        };
+    public void visit(IrGetGlobalExpr expr) {
+
     }
 
     @Override
@@ -255,7 +254,7 @@ public class IrExprPrinter extends RecursiveIrExprVisitor {
         Node node = nodes.get(expr);
         if (node == null) {
             node = new Node();
-            nodes.put(expr, node);
+            nodes.set(expr, node);
         }
         if (node.ref == 0) {
             node.ref = ++refGenerator;

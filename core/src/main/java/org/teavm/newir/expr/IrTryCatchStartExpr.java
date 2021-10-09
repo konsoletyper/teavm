@@ -15,35 +15,18 @@
  */
 package org.teavm.newir.expr;
 
-public final class IrBoundsCheckExpr extends IrDoubleInputExpr {
-    private boolean lower;
-    private boolean upper;
+import org.teavm.newir.type.IrType;
 
-    public IrBoundsCheckExpr(IrExpr first, IrExpr second, boolean lower, boolean upper) {
-        super(first, second);
-        this.lower = lower;
-        this.upper = upper;
-    }
+public class IrTryCatchStartExpr extends IrExpr {
+    private IrTryCatchExpr tryCatch;
 
-    public boolean isLower() {
-        return lower;
-    }
-
-    public void setLower(boolean lower) {
-        this.lower = lower;
-    }
-
-    public boolean isUpper() {
-        return upper;
-    }
-
-    public void setUpper(boolean upper) {
-        this.upper = upper;
+    IrTryCatchStartExpr(IrTryCatchExpr tryCatch) {
+        this.tryCatch = tryCatch;
     }
 
     @Override
     public IrType getType() {
-        return IrType.INT;
+        return IrType.VOID;
     }
 
     @Override

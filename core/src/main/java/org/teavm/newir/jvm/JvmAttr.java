@@ -13,13 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.newir.expr;
+package org.teavm.newir.jvm;
 
-public enum IrNullaryOperation {
-    NULL,
-    VOID,
-    UNREACHABLE,
-    THROW_NPE,
-    THROW_AIIOBE,
-    THROW_CCE
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReference;
+import org.teavm.newir.decl.IrAttribute;
+import org.teavm.newir.decl.IrClass;
+import org.teavm.newir.decl.IrMethod;
+
+public final class JvmAttr {
+    private JvmAttr() {
+    }
+
+    public static final IrAttribute<String, IrClass> CLASS_NAME = new IrAttribute<>(null);
+    public static final IrAttribute<MethodDescriptor, IrMethod> METHOD_DESC = new IrAttribute<>(null);
+    public static final IrAttribute<MethodReference, IrMethod> METHOD_REF = new IrAttribute<>(null);
 }

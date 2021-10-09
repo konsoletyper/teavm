@@ -15,30 +15,38 @@
  */
 package org.teavm.newir.expr;
 
-public final class IrNullaryExpr extends IrExpr {
-    private IrNullaryOperation operation;
+import org.teavm.newir.decl.IrGlobal;
+import org.teavm.newir.type.IrType;
 
-    public IrNullaryExpr(IrNullaryOperation operation) {
-        this.operation = operation;
+public final class IrSetGlobalExpr extends IrSingeInputExpr {
+    private IrGlobal global;
+
+    public IrSetGlobalExpr(IrExpr argument, IrGlobal global) {
+        super(argument);
+        this.global = global;
     }
 
-    public IrNullaryOperation getOperation() {
-        return operation;
+    public IrGlobal getGlobal() {
+        return global;
+    }
+
+    public void setGlobal(IrGlobal global) {
+        this.global = global;
     }
 
     @Override
     public IrType getType() {
-        switch (operation) {
-            case NULL:
-                return IrType.OBJECT;
-            case VOID:
-                return IrType.VOID;
-            case UNREACHABLE:
-            case THROW_NPE:
-            case THROW_AIIOBE:
-                return IrType.UNREACHABLE;
-        }
-        throw new IllegalStateException();
+        return IrType.VOID;
+    }
+
+    @Override
+    public IrType getInputType(int index) {
+        return index == 0 ? global.getType() : super.getInputType(index);
+    }
+
+    @Override
+    public boolean needsOrdering() {
+        return true;
     }
 
     @Override

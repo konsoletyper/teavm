@@ -15,6 +15,9 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrTupleType;
+import org.teavm.newir.type.IrType;
+
 public final class IrTupleComponentExpr extends IrSingeInputExpr {
     private int component;
 
@@ -34,6 +37,11 @@ public final class IrTupleComponentExpr extends IrSingeInputExpr {
     @Override
     public IrType getType() {
         return ((IrTupleType) getArgument().getType()).getComponent(component);
+    }
+
+    @Override
+    public IrType getInputType(int index) {
+        return index == 0 ? getArgument().getType() : super.getInputType(index);
     }
 
     @Override

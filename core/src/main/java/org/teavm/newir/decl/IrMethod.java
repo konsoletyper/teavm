@@ -13,39 +13,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.newir.expr;
+package org.teavm.newir.decl;
 
-abstract class IrSingeInputExpr extends IrExpr {
-    private IrExpr argument;
+import org.teavm.newir.type.IrType;
 
-    IrSingeInputExpr(IrExpr argument) {
-        this.argument = argument;
-    }
+public final class IrMethod extends IrCallable<IrMethod> {
+    private IrType[] parameterTypes;
 
-    public IrExpr getArgument() {
-        return argument;
-    }
-
-    public void setArgument(IrExpr argument) {
-        this.argument = argument;
+    public IrMethod(IrType type, IrType... parameterTypes) {
+        super(type);
+        this.parameterTypes = parameterTypes != null && parameterTypes.length > 0 ? parameterTypes.clone() : null;
     }
 
     @Override
-    public int getInputCount() {
-        return 1;
+    public int getParameterCount() {
+        return parameterTypes == null ? 1 : parameterTypes.length + 1;
     }
 
     @Override
-    public IrExpr getInput(int index) {
-        return index == 0 ? argument : super.getInput(index);
-    }
-
-    @Override
-    public void setInput(int index, IrExpr value) {
+    public IrType getParameterType(int index) {
         if (index == 0) {
-            argument = value;
+            return IrType.OBJECT;
         } else {
-            super.setInput(index, value);
+            if (parameterTypes == null) {
+                throw new IndexOutOfBoundsException();
+            }
+            return parameterTypes[index];
         }
     }
 }

@@ -15,6 +15,8 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrType;
+
 public final class IrExitBlockExpr extends IrSingeInputExpr {
     private IrBlockExpr block;
 
@@ -34,6 +36,11 @@ public final class IrExitBlockExpr extends IrSingeInputExpr {
     @Override
     public IrType getType() {
         return IrType.UNREACHABLE;
+    }
+
+    @Override
+    public boolean needsOrdering() {
+        return true;
     }
 
     @Override

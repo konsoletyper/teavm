@@ -15,38 +15,45 @@
  */
 package org.teavm.newir.expr;
 
-import org.teavm.model.FieldReference;
-import org.teavm.model.ValueType;
+import org.teavm.newir.decl.IrField;
+import org.teavm.newir.type.IrType;
 
 public final class IrSetFieldExpr extends IrDoubleInputExpr {
-    private FieldReference field;
-    private ValueType fieldType;
+    private IrField field;
 
-    public IrSetFieldExpr(IrExpr first, IrExpr second, FieldReference field, ValueType fieldType) {
+    public IrSetFieldExpr(IrExpr first, IrExpr second, IrField field) {
         super(first, second);
         this.field = field;
-        this.fieldType = fieldType;
     }
 
-    public FieldReference getField() {
+    public IrField getField() {
         return field;
     }
 
-    public void setField(FieldReference field) {
+    public void setField(IrField field) {
         this.field = field;
-    }
-
-    public ValueType getFieldType() {
-        return fieldType;
-    }
-
-    public void setFieldType(ValueType fieldType) {
-        this.fieldType = fieldType;
     }
 
     @Override
     public IrType getType() {
         return IrType.VOID;
+    }
+
+    @Override
+    public IrType getInputType(int index) {
+        switch (index) {
+            case 0:
+                return IrType.OBJECT;
+            case 1:
+                return field.getType();
+            default:
+                return super.getInputType(index);
+        }
+    }
+
+    @Override
+    public boolean needsOrdering() {
+        return true;
     }
 
     @Override

@@ -15,19 +15,21 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrType;
+
 public final class IrVariable {
-    IrFunction function;
+    IrProgram program;
     int index;
     private IrType type;
 
-    IrVariable(IrFunction function, int index, IrType type) {
-        this.function = function;
+    IrVariable(IrProgram program, int index, IrType type) {
+        this.program = program;
         this.index = index;
         this.type = type;
     }
 
-    public IrFunction getFunction() {
-        return function;
+    public IrProgram getProgram() {
+        return program;
     }
 
     public IrType getType() {

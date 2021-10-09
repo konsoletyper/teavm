@@ -13,21 +13,53 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.newir.expr;
+package org.teavm.newir.util;
+
+import org.teavm.newir.expr.IrArrayElementExpr;
+import org.teavm.newir.expr.IrBlockExpr;
+import org.teavm.newir.expr.IrCallExpr;
+import org.teavm.newir.expr.IrCastExpr;
+import org.teavm.newir.expr.IrCaughtExceptionExpr;
+import org.teavm.newir.expr.IrCaughtValueExpr;
+import org.teavm.newir.expr.IrConditionalExpr;
+import org.teavm.newir.expr.IrContinueLoopExpr;
+import org.teavm.newir.expr.IrDoubleConstantExpr;
+import org.teavm.newir.expr.IrExitBlockExpr;
+import org.teavm.newir.expr.IrExitLoopExpr;
+import org.teavm.newir.expr.IrExpr;
+import org.teavm.newir.expr.IrExprVisitor;
+import org.teavm.newir.expr.IrFloatConstantExpr;
+import org.teavm.newir.expr.IrGetFieldExpr;
+import org.teavm.newir.expr.IrGetGlobalExpr;
+import org.teavm.newir.expr.IrGetVariableExpr;
+import org.teavm.newir.expr.IrInstanceOfExpr;
+import org.teavm.newir.expr.IrIntConstantExpr;
+import org.teavm.newir.expr.IrLongConstantExpr;
+import org.teavm.newir.expr.IrLoopExpr;
+import org.teavm.newir.expr.IrLoopHeaderExpr;
+import org.teavm.newir.expr.IrNewArrayExpr;
+import org.teavm.newir.expr.IrNewObjectExpr;
+import org.teavm.newir.expr.IrOperationExpr;
+import org.teavm.newir.expr.IrParameterExpr;
+import org.teavm.newir.expr.IrSetArrayElementExpr;
+import org.teavm.newir.expr.IrSetFieldExpr;
+import org.teavm.newir.expr.IrSetGlobalExpr;
+import org.teavm.newir.expr.IrSetVariableExpr;
+import org.teavm.newir.expr.IrStringConstantExpr;
+import org.teavm.newir.expr.IrThrowExpr;
+import org.teavm.newir.expr.IrTryCatchExpr;
+import org.teavm.newir.expr.IrTryCatchStartExpr;
+import org.teavm.newir.expr.IrTupleComponentExpr;
+import org.teavm.newir.expr.IrTupleExpr;
 
 public class RecursiveIrExprVisitor implements IrExprVisitor {
-    protected final void visitInputs(IrExpr expr) {
-        for (int i = 0; i < expr.getInputCount(); ++i) {
-            expr.getInput(i).acceptVisitor(this);
+    protected final void visitDependencies(IrExpr expr) {
+        for (int i = 0; i < expr.getDependencyCount(); ++i) {
+            expr.getDependency(i).acceptVisitor(this);
         }
     }
 
     protected void visitDefault(IrExpr expr) {
-    }
-
-    @Override
-    public void visit(IrSequenceExpr expr) {
-        visitDefault(expr);
     }
 
     @Override
@@ -76,17 +108,7 @@ public class RecursiveIrExprVisitor implements IrExprVisitor {
     }
 
     @Override
-    public void visit(IrNullaryExpr expr) {
-        visitDefault(expr);
-    }
-
-    @Override
-    public void visit(IrUnaryExpr expr) {
-        visitDefault(expr);
-    }
-
-    @Override
-    public void visit(IrBinaryExpr expr) {
+    public void visit(IrOperationExpr expr) {
         visitDefault(expr);
     }
 
@@ -121,7 +143,7 @@ public class RecursiveIrExprVisitor implements IrExprVisitor {
     }
 
     @Override
-    public void visit(IrBoundsCheckExpr expr) {
+    public void visit(IrTryCatchStartExpr expr) {
         visitDefault(expr);
     }
 
@@ -146,7 +168,7 @@ public class RecursiveIrExprVisitor implements IrExprVisitor {
     }
 
     @Override
-    public void visit(IrGetStaticFieldExpr expr) {
+    public void visit(IrGetGlobalExpr expr) {
         visitDefault(expr);
     }
 
@@ -156,7 +178,7 @@ public class RecursiveIrExprVisitor implements IrExprVisitor {
     }
 
     @Override
-    public void visit(IrSetStaticFieldExpr expr) {
+    public void visit(IrSetGlobalExpr expr) {
         visitDefault(expr);
     }
 
@@ -176,7 +198,7 @@ public class RecursiveIrExprVisitor implements IrExprVisitor {
     }
 
     @Override
-    public void visit(IrVariableExpr expr) {
+    public void visit(IrGetVariableExpr expr) {
         visitDefault(expr);
     }
 

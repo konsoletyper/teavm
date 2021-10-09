@@ -15,6 +15,8 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrType;
+
 public final class IrBlockExpr extends IrExpr {
     private IrExpr body = IrExpr.VOID;
 
@@ -48,6 +50,11 @@ public final class IrBlockExpr extends IrExpr {
         } else {
             super.setInput(index, value);
         }
+    }
+
+    @Override
+    public IrType getInputType(int index) {
+        return index == 0 ? getType() : super.getInputType(index);
     }
 
     @Override

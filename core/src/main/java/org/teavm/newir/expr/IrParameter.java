@@ -15,18 +15,20 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrType;
+
 public final class IrParameter {
-    private final IrFunction function;
+    private final IrProgram function;
     private final int index;
     private IrType type;
 
-    IrParameter(IrFunction function, int index, IrType type) {
+    IrParameter(IrProgram function, int index, IrType type) {
         this.function = function;
         this.index = index;
         this.type = type;
     }
 
-    public IrFunction getFunction() {
+    public IrProgram getFunction() {
         return function;
     }
 

@@ -15,6 +15,8 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrType;
+
 public final class IrLoopHeaderExpr extends IrExpr {
     private final IrLoopExpr loop;
 

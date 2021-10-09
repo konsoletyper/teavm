@@ -15,6 +15,8 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrType;
+
 public final class IrContinueLoopExpr extends IrExpr {
     private IrLoopExpr loop;
 
@@ -33,6 +35,11 @@ public final class IrContinueLoopExpr extends IrExpr {
     @Override
     public IrType getType() {
         return IrType.UNREACHABLE;
+    }
+
+    @Override
+    public boolean needsOrdering() {
+        return true;
     }
 
     @Override

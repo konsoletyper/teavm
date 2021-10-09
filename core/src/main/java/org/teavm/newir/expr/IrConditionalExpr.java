@@ -15,6 +15,8 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrType;
+
 public class IrConditionalExpr extends IrExpr {
     private IrExpr condition;
     private IrExpr thenExpr;
@@ -88,6 +90,11 @@ public class IrConditionalExpr extends IrExpr {
 
     @Override
     public IrType getType() {
+        return thenExpr.getType();
+    }
+
+    @Override
+    public IrType getInputType(int index) {
         return thenExpr.getType();
     }
 

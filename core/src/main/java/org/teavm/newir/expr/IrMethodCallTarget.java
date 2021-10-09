@@ -15,28 +15,29 @@
  */
 package org.teavm.newir.expr;
 
-public final class IrVariableExpr extends IrExpr {
-    private IrVariable variable;
+import org.teavm.newir.decl.IrClass;
+import org.teavm.newir.decl.IrMethod;
 
-    public IrVariableExpr(IrVariable variable) {
-        this.variable = variable;
-    }
+public class IrMethodCallTarget extends IrCallTarget<IrMethod> {
+    private IrMethod method;
+    private IrClass targetClass;
 
-    public IrVariable getVariable() {
-        return variable;
-    }
-
-    public void setVariable(IrVariable variable) {
-        this.variable = variable;
+    public IrMethodCallTarget(IrMethod method, IrClass targetClass) {
+        this.method = method;
+        this.targetClass = targetClass;
     }
 
     @Override
-    public IrType getType() {
-        return variable.getType();
+    public IrMethod getCallable() {
+        return method;
+    }
+
+    public IrClass getTargetClass() {
+        return targetClass;
     }
 
     @Override
-    public void acceptVisitor(IrExprVisitor visitor) {
-        visitor.visit(this);
+    public IrCallTargetType getType() {
+        return IrCallTargetType.METHOD;
     }
 }

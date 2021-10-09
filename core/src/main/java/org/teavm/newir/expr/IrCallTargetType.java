@@ -15,18 +15,7 @@
  */
 package org.teavm.newir.expr;
 
-public final class IrSequenceExpr extends IrDoubleInputExpr {
-    public IrSequenceExpr(IrExpr first, IrExpr second) {
-        super(first, second);
-    }
-
-    @Override
-    public IrType getType() {
-        return getSecond().getType();
-    }
-
-    @Override
-    public void acceptVisitor(IrExprVisitor visitor) {
-        visitor.visit(this);
-    }
+public enum IrCallTargetType {
+    FUNCTION,
+    METHOD
 }

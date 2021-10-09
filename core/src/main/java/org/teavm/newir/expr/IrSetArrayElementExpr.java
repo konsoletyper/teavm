@@ -15,6 +15,8 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrType;
+
 public class IrSetArrayElementExpr extends IrExpr {
     private IrType elementType;
     private IrExpr array;
@@ -30,10 +32,6 @@ public class IrSetArrayElementExpr extends IrExpr {
 
     public IrType getElementType() {
         return elementType;
-    }
-
-    public void setElementType(IrType elementType) {
-        this.elementType = elementType;
     }
 
     public IrExpr getArray() {
@@ -99,6 +97,25 @@ public class IrSetArrayElementExpr extends IrExpr {
     @Override
     public IrType getType() {
         return elementType;
+    }
+
+    @Override
+    public IrType getInputType(int index) {
+        switch (index) {
+            case 0:
+                return IrType.OBJECT;
+            case 1:
+                return IrType.INT;
+            case 2:
+                return elementType;
+            default:
+                return super.getInputType(index);
+        }
+    }
+
+    @Override
+    public boolean needsOrdering() {
+        return true;
     }
 
     @Override

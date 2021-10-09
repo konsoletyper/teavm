@@ -15,26 +15,22 @@
  */
 package org.teavm.newir.expr;
 
-import org.teavm.newir.type.IrType;
+import org.teavm.newir.decl.IrFunction;
 
-public final class IrLongConstantExpr extends IrExpr {
-    private long value;
+public class IrFunctionCallTarget extends IrCallTarget<IrFunction> {
+    private final IrFunction function;
 
-    public IrLongConstantExpr(long value) {
-        this.value = value;
-    }
-
-    public long getValue() {
-        return value;
+    public IrFunctionCallTarget(IrFunction function) {
+        this.function = function;
     }
 
     @Override
-    public IrType getType() {
-        return IrType.LONG;
+    public IrFunction getCallable() {
+        return function;
     }
 
     @Override
-    public void acceptVisitor(IrExprVisitor visitor) {
-        visitor.visit(this);
+    public IrCallTargetType getType() {
+        return IrCallTargetType.FUNCTION;
     }
 }

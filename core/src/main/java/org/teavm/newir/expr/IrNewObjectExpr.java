@@ -15,19 +15,27 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.decl.IrClass;
+import org.teavm.newir.type.IrType;
+
 public final class IrNewObjectExpr extends IrExpr {
-    private String className;
+    private IrClass objectType;
 
-    public IrNewObjectExpr(String className) {
-        this.className = className;
+    public IrNewObjectExpr(IrClass objectType) {
+        this.objectType = objectType;
     }
 
-    public String getClassName() {
-        return className;
+    public IrClass getObjectType() {
+        return objectType;
     }
 
-    public void setClassName(String className) {
-        this.className = className;
+    public void setObjectType(IrClass objectType) {
+        this.objectType = objectType;
+    }
+
+    @Override
+    public boolean needsOrdering() {
+        return true;
     }
 
     @Override

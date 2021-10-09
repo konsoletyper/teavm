@@ -28,18 +28,13 @@ import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.IntConsumer;
 import org.teavm.newir.analysis.ExprConsumerCount;
 import org.teavm.newir.expr.IrArrayElementExpr;
-import org.teavm.newir.expr.IrBinaryExpr;
 import org.teavm.newir.expr.IrBlockExpr;
-import org.teavm.newir.expr.IrBoundsCheckExpr;
 import org.teavm.newir.expr.IrCallExpr;
-import org.teavm.newir.expr.IrCallType;
 import org.teavm.newir.expr.IrCastExpr;
 import org.teavm.newir.expr.IrCaughtExceptionExpr;
 import org.teavm.newir.expr.IrCaughtValueExpr;
@@ -52,7 +47,8 @@ import org.teavm.newir.expr.IrExpr;
 import org.teavm.newir.expr.IrExprVisitor;
 import org.teavm.newir.expr.IrFloatConstantExpr;
 import org.teavm.newir.expr.IrGetFieldExpr;
-import org.teavm.newir.expr.IrGetStaticFieldExpr;
+import org.teavm.newir.expr.IrGetGlobalExpr;
+import org.teavm.newir.expr.IrGetVariableExpr;
 import org.teavm.newir.expr.IrInstanceOfExpr;
 import org.teavm.newir.expr.IrIntConstantExpr;
 import org.teavm.newir.expr.IrLongConstantExpr;
@@ -60,27 +56,24 @@ import org.teavm.newir.expr.IrLoopExpr;
 import org.teavm.newir.expr.IrLoopHeaderExpr;
 import org.teavm.newir.expr.IrNewArrayExpr;
 import org.teavm.newir.expr.IrNewObjectExpr;
-import org.teavm.newir.expr.IrNullaryExpr;
+import org.teavm.newir.expr.IrOperationExpr;
 import org.teavm.newir.expr.IrParameter;
 import org.teavm.newir.expr.IrParameterExpr;
-import org.teavm.newir.expr.IrSequenceExpr;
 import org.teavm.newir.expr.IrSetArrayElementExpr;
 import org.teavm.newir.expr.IrSetFieldExpr;
-import org.teavm.newir.expr.IrSetStaticFieldExpr;
+import org.teavm.newir.expr.IrSetGlobalExpr;
 import org.teavm.newir.expr.IrSetVariableExpr;
 import org.teavm.newir.expr.IrStringConstantExpr;
 import org.teavm.newir.expr.IrThrowExpr;
 import org.teavm.newir.expr.IrTryCatchExpr;
+import org.teavm.newir.expr.IrTryCatchStartExpr;
 import org.teavm.newir.expr.IrTupleComponentExpr;
 import org.teavm.newir.expr.IrTupleExpr;
-import org.teavm.newir.expr.IrType;
-import org.teavm.newir.expr.IrTypeKind;
-import org.teavm.newir.expr.IrUnaryExpr;
 import org.teavm.newir.expr.IrVariable;
-import org.teavm.newir.expr.IrVariableExpr;
 import org.teavm.newir.interpreter.instructions.ArithmeticInstructions;
 import org.teavm.newir.interpreter.instructions.Instructions;
-import org.teavm.newir.interpreter.instructions.JavaInstructions;
+import org.teavm.newir.type.IrType;
+import org.teavm.newir.type.IrTypeKind;
 
 public class InterpreterBuilder implements IrExprVisitor {
     public int resultSlot;
@@ -108,6 +101,7 @@ public class InterpreterBuilder implements IrExprVisitor {
     private IntStack freeDoubleSlots = new IntStack();
     private IntStack freeObjectSlots = new IntStack();
     private ExprConsumerCount consumerCount;
+    private CallProvider callProvider = CallProvider.EMPTY;
 
     public InterpreterBuilder(
             int intIndex,
@@ -127,6 +121,10 @@ public class InterpreterBuilder implements IrExprVisitor {
         this.parameterSlots = parameterSlots;
         this.variableSlots = variableSlots;
         this.consumerCount = consumerCount;
+    }
+
+    void setCallProvider(CallProvider callProvider) {
+        this.callProvider = callProvider;
     }
 
     public int build(IrExpr expr) {
@@ -293,12 +291,6 @@ public class InterpreterBuilder implements IrExprVisitor {
     }
 
     @Override
-    public void visit(IrSequenceExpr expr) {
-        buildIgnoring(expr.getFirst());
-        build(expr.getSecond());
-    }
-
-    @Override
     public void visit(IrBlockExpr expr) {
         List<IntConsumer> thisBlockBreaks = new ArrayList<>();
         blockBreaks.put(expr, thisBlockBreaks);
@@ -406,19 +398,7 @@ public class InterpreterBuilder implements IrExprVisitor {
     }
 
     @Override
-    public void visit(IrNullaryExpr expr) {
-
-    }
-
-    @Override
-    public void visit(IrUnaryExpr expr) {
-        switch (expr.getOperation()) {
-
-        }
-    }
-
-    @Override
-    public void visit(IrBinaryExpr expr) {
+    public void visit(IrOperationExpr expr) {
         switch (expr.getOperation()) {
             case IADD:
                 simpleBinary(expr, ArithmeticInstructions::iadd);
@@ -460,11 +440,9 @@ public class InterpreterBuilder implements IrExprVisitor {
                 break;
 
             case IDIV:
-            case IDIV_SAFE:
                 simpleBinary(expr, ArithmeticInstructions::idiv);
                 break;
             case LDIV:
-            case LDIV_SAFE:
                 simpleBinary(expr, ArithmeticInstructions::ldiv);
                 break;
             case FDIV:
@@ -475,11 +453,9 @@ public class InterpreterBuilder implements IrExprVisitor {
                 break;
 
             case IREM:
-            case IREM_SAFE:
                 simpleBinary(expr, ArithmeticInstructions::irem);
                 break;
             case LREM:
-            case LREM_SAFE:
                 simpleBinary(expr, ArithmeticInstructions::lrem);
                 break;
             case FREM:
@@ -556,16 +532,16 @@ public class InterpreterBuilder implements IrExprVisitor {
         }
     }
 
-    private void simpleBinary(IrBinaryExpr expr, BinaryInstructionFactory factory) {
-        int a = build(expr.getFirst());
-        int b = build(expr.getSecond());
+    private void simpleBinary(IrOperationExpr expr, BinaryInstructionFactory factory) {
+        int a = build(expr.getInput(0));
+        int b = build(expr.getInput(1));
         if (resultSlot > 0) {
             builder.add(factory.create(resultSlot, a, b));
         }
     }
 
-    private void logicalAnd(IrBinaryExpr expr) {
-        requestJumps(expr.getFirst());
+    private void logicalAnd(IrExpr expr) {
+        requestJumps(expr.getInput(0));
 
         whenTrue.accept(builder.label());
         IntConsumer firstWhenFalse = whenFalse;
@@ -584,7 +560,7 @@ public class InterpreterBuilder implements IrExprVisitor {
         };
     }
 
-    private void logicalOr(IrBinaryExpr expr) {
+    private void logicalOr(IrOperationExpr expr) {
 
     }
 
@@ -618,8 +594,7 @@ public class InterpreterBuilder implements IrExprVisitor {
     }
 
     @Override
-    public void visit(IrBoundsCheckExpr expr) {
-
+    public void visit(IrTryCatchStartExpr expr) {
     }
 
     @Override
@@ -634,37 +609,18 @@ public class InterpreterBuilder implements IrExprVisitor {
 
     @Override
     public void visit(IrCallExpr expr) {
-        int firstArg;
-        int instance;
-        if (expr.getCallType() != IrCallType.STATIC) {
-            firstArg = 1;
-            instance = build(expr.getInput(0));
-        } else {
-            firstArg = 0;
-            instance = -1;
+        if (callProvider.supports(expr.getTarget())) {
+            callProvider.build(expr, builder);
+            return;
         }
-
-        int[] arguments = new int[expr.getInputCount() - firstArg];
-        for (int i = firstArg; i < expr.getInputCount(); ++i) {
-            arguments[i - firstArg] = build(expr.getInput(i));
-        }
-
-        builder.add(JavaInstructions.call(resultSlot, expr.getMethod(), instance, arguments));
     }
 
     @Override
     public void visit(IrGetFieldExpr expr) {
-        int objectSlot = build(expr.getArgument());
-        if (resultSlot >= 0) {
-            builder.add(JavaInstructions.getField(resultSlot, expr.getField(), expr.getFieldType(), objectSlot));
-        }
     }
 
     @Override
-    public void visit(IrGetStaticFieldExpr expr) {
-        if (resultSlot >= 0) {
-            builder.add(JavaInstructions.getField(resultSlot, expr.getField(), expr.getFieldType(), -1));
-        }
+    public void visit(IrGetGlobalExpr expr) {
     }
 
     @Override
@@ -673,7 +629,7 @@ public class InterpreterBuilder implements IrExprVisitor {
     }
 
     @Override
-    public void visit(IrSetStaticFieldExpr expr) {
+    public void visit(IrSetGlobalExpr expr) {
 
     }
 
@@ -693,7 +649,7 @@ public class InterpreterBuilder implements IrExprVisitor {
     }
 
     @Override
-    public void visit(IrVariableExpr expr) {
+    public void visit(IrGetVariableExpr expr) {
         resultSlot = variableSlots.get(expr.getVariable());
     }
 

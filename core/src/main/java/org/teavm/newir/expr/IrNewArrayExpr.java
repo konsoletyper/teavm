@@ -15,29 +15,31 @@
  */
 package org.teavm.newir.expr;
 
-import org.teavm.model.ValueType;
+import org.teavm.newir.decl.IrArrayType;
+import org.teavm.newir.type.IrType;
 
 public abstract class IrNewArrayExpr extends IrExpr {
-    private ValueType arrayType;
+    private IrArrayType arrayType;
 
-    public static IrNewArrayExpr of(ValueType arrayType, IrExpr size) {
+    public static IrNewArrayExpr of(IrArrayType arrayType, IrExpr size) {
         return new Impl1(arrayType, size);
     }
 
-    public static IrNewArrayExpr of(ValueType arrayType, IrExpr[] dimensions) {
+    public static IrNewArrayExpr of(IrArrayType arrayType, IrExpr[] dimensions) {
         return new ImplN(arrayType, dimensions.clone());
     }
 
-    IrNewArrayExpr(ValueType arrayType) {
+    IrNewArrayExpr(IrArrayType arrayType) {
         this.arrayType = arrayType;
     }
 
-    public ValueType getArrayType() {
+    public IrArrayType getArrayType() {
         return arrayType;
     }
 
-    public void setArrayType(ValueType arrayType) {
-        this.arrayType = arrayType;
+    @Override
+    public boolean needsOrdering() {
+        return true;
     }
 
     @Override
@@ -53,7 +55,7 @@ public abstract class IrNewArrayExpr extends IrExpr {
     static final class Impl1 extends IrNewArrayExpr {
         IrExpr a1;
 
-        Impl1(ValueType arrayType, IrExpr a1) {
+        Impl1(IrArrayType arrayType, IrExpr a1) {
             super(arrayType);
             this.a1 = a1;
         }
@@ -81,7 +83,7 @@ public abstract class IrNewArrayExpr extends IrExpr {
     static final class ImplN extends IrNewArrayExpr {
         IrExpr[] arguments;
 
-        ImplN(ValueType arrayType, IrExpr[] arguments) {
+        ImplN(IrArrayType arrayType, IrExpr[] arguments) {
             super(arrayType);
             this.arguments = arguments;
         }

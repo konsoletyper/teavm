@@ -13,28 +13,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.newir.expr;
+package org.teavm.newir.decl;
 
 import org.teavm.newir.type.IrType;
 
-public final class IrLongConstantExpr extends IrExpr {
-    private long value;
+public class IrReferenceArrayType extends IrArrayType {
+    private IrReferenceType elementType;
 
-    public IrLongConstantExpr(long value) {
-        this.value = value;
+    IrReferenceArrayType(IrReferenceType elementType) {
+        this.elementType = elementType;
     }
 
-    public long getValue() {
-        return value;
-    }
-
-    @Override
-    public IrType getType() {
-        return IrType.LONG;
+    public IrReferenceType getElementType() {
+        return elementType;
     }
 
     @Override
-    public void acceptVisitor(IrExprVisitor visitor) {
-        visitor.visit(this);
+    public IrType getElementExprType() {
+        return IrType.OBJECT;
+    }
+
+    @Override
+    public IrReferenceTypeKind getKind() {
+        return IrReferenceTypeKind.ARRAY;
     }
 }

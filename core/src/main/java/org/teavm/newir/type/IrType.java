@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.newir.expr;
+package org.teavm.newir.type;
 
 import org.teavm.model.ValueType;
 
@@ -29,6 +29,7 @@ public abstract class IrType {
     public static IrType OBJECT = new SimpleImpl(IrTypeKind.OBJECT);
     public static IrType VOID = new SimpleImpl(IrTypeKind.VOID);
     public static IrType UNREACHABLE = new SimpleImpl(IrTypeKind.UNREACHABLE);
+    public static IrType ANY = new SimpleImpl(IrTypeKind.ANY);
 
     public static IrTupleType tuple(IrType... components) {
         return IrTupleType.of(components);
@@ -37,7 +38,7 @@ public abstract class IrType {
     public abstract IrTypeKind getKind();
 
     public boolean isSubtypeOf(IrType type) {
-        return getKind() == IrTypeKind.UNREACHABLE || equals(type);
+        return getKind() == IrTypeKind.UNREACHABLE || type == ANY || equals(type);
     }
 
     public static IrType fromValueType(ValueType type) {

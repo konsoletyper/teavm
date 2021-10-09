@@ -17,18 +17,22 @@ package org.teavm.newir.expr;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.teavm.newir.decl.IrClass;
+import org.teavm.newir.type.IrType;
 
 public final class IrTryCatchExpr extends IrExpr {
+    private IrTryCatchStartExpr startExpr = new IrTryCatchStartExpr(this);
+    private IrCaughtExceptionExpr caughtExceptionExpr = new IrCaughtExceptionExpr(this);
     private IrExpr body = IrExpr.VOID;
     private IrExpr handler = IrExpr.VOID;
-    private String[] exceptionTypes;
+    private IrClass[] exceptionTypes;
     private List<IrCaughtValueExpr> caughtValues = new ArrayList<>();
 
-    public IrTryCatchExpr(String... exceptionTypes) {
+    public IrTryCatchExpr(IrClass... exceptionTypes) {
         this.exceptionTypes = exceptionTypes.clone();
     }
 
-    public String[] getExceptionTypes() {
+    public IrClass[] getExceptionTypes() {
         return exceptionTypes.clone();
     }
 
@@ -48,12 +52,20 @@ public final class IrTryCatchExpr extends IrExpr {
         this.handler = handler;
     }
 
+    public IrTryCatchStartExpr getStartExpr() {
+        return startExpr;
+    }
+
+    public IrCaughtExceptionExpr getCaughtExceptionExpr() {
+        return caughtExceptionExpr;
+    }
+
     public Iterable<IrCaughtValueExpr> getCaughtValues() {
         return caughtValues;
     }
 
-    public IrCaughtValueExpr addCaughtValue(IrExpr[] inputs) {
-        IrCaughtValueExpr caughtValue = new IrCaughtValueExpr(this, caughtValues.size(), inputs);
+    public IrCaughtValueExpr addCaughtValue(IrType type, IrExpr[] inputs) {
+        IrCaughtValueExpr caughtValue = new IrCaughtValueExpr(this, caughtValues.size(), type, inputs);
         caughtValues.add(caughtValue);
         return caughtValue;
     }
@@ -73,6 +85,49 @@ public final class IrTryCatchExpr extends IrExpr {
     @Override
     public IrType getType() {
         return body.getType();
+    }
+
+    @Override
+    public int getInputCount() {
+        return 2;
+    }
+
+    @Override
+    public IrExpr getInput(int index) {
+        switch (index) {
+            case 0:
+                return body;
+            case 1:
+                return handler;
+            default:
+                return super.getInput(index);
+        }
+    }
+
+    @Override
+    public void setInput(int index, IrExpr value) {
+        switch (index) {
+            case 0:
+                body = value;
+                break;
+            case 1:
+                handler = value;
+                break;
+            default:
+                super.setInput(index, value);
+                break;
+        }
+    }
+
+    @Override
+    public IrType getInputType(int index) {
+        switch (index) {
+            case 0:
+            case 1:
+                return body.getType();
+            default:
+                return super.getInputType(index);
+        }
     }
 
     @Override

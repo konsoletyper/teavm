@@ -16,14 +16,9 @@
 package org.teavm.newir.builder;
 
 import java.util.function.Consumer;
-import org.teavm.model.FieldReference;
-import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
-import org.teavm.newir.expr.IrBinaryExpr;
-import org.teavm.newir.expr.IrBinaryOperation;
+import org.teavm.newir.decl.IrFunction;
 import org.teavm.newir.expr.IrBlockExpr;
 import org.teavm.newir.expr.IrCallExpr;
-import org.teavm.newir.expr.IrCallType;
 import org.teavm.newir.expr.IrConditionalExpr;
 import org.teavm.newir.expr.IrContinueLoopExpr;
 import org.teavm.newir.expr.IrDoubleConstantExpr;
@@ -31,27 +26,22 @@ import org.teavm.newir.expr.IrExitBlockExpr;
 import org.teavm.newir.expr.IrExitLoopExpr;
 import org.teavm.newir.expr.IrExpr;
 import org.teavm.newir.expr.IrFloatConstantExpr;
-import org.teavm.newir.expr.IrFunction;
-import org.teavm.newir.expr.IrGetFieldExpr;
-import org.teavm.newir.expr.IrGetStaticFieldExpr;
+import org.teavm.newir.expr.IrGetVariableExpr;
 import org.teavm.newir.expr.IrIntConstantExpr;
 import org.teavm.newir.expr.IrLongConstantExpr;
 import org.teavm.newir.expr.IrLoopExpr;
-import org.teavm.newir.expr.IrNullaryExpr;
-import org.teavm.newir.expr.IrNullaryOperation;
+import org.teavm.newir.expr.IrOperation;
+import org.teavm.newir.expr.IrOperationExpr;
 import org.teavm.newir.expr.IrParameter;
 import org.teavm.newir.expr.IrParameterExpr;
-import org.teavm.newir.expr.IrSequenceExpr;
-import org.teavm.newir.expr.IrSetFieldExpr;
-import org.teavm.newir.expr.IrSetStaticFieldExpr;
+import org.teavm.newir.expr.IrProgram;
 import org.teavm.newir.expr.IrSetVariableExpr;
 import org.teavm.newir.expr.IrStringConstantExpr;
-import org.teavm.newir.expr.IrType;
 import org.teavm.newir.expr.IrVariable;
-import org.teavm.newir.expr.IrVariableExpr;
+import org.teavm.newir.type.IrType;
 
 public final class IrExprBuilder {
-    private static IrFunction currentFunction;
+    private static IrProgram currentFunction;
     private static IrBlockExpr functionBlock;
     private static IrExpr lastExpr;
     private static IrExpr lastReturnedExpr;
@@ -79,19 +69,19 @@ public final class IrExprBuilder {
         return new IrStringConstantExpr(value);
     }
 
-    public static IrNullaryExpr nullValue() {
-        return new IrNullaryExpr(IrNullaryOperation.NULL);
+    public static IrOperationExpr nullValue() {
+        return IrOperationExpr.of(IrOperation.NULL);
     }
 
-    public static IrFunction function(IrType... parameterTypes) {
-        return new IrFunction(parameterTypes);
+    public static IrProgram program(IrType... parameterTypes) {
+        return new IrProgram(parameterTypes);
     }
 
-    public static IrFunction function(IrType[] parameterTypes, Consumer<IrParameter[]> body) {
+    public static IrProgram program(IrType[] parameterTypes, Consumer<IrParameter[]> body) {
         if (currentFunction != null) {
             throw new IllegalStateException("Can't create function within function");
         }
-        IrFunction function = new IrFunction(parameterTypes);
+        IrProgram function = new IrProgram(parameterTypes);
         currentFunction = function;
         functionBlock = new IrBlockExpr();
         currentFunction.setBody(functionBlock);
@@ -140,7 +130,7 @@ public final class IrExprBuilder {
     }
 
     public static IrExpr get(IrVariable var) {
-        return new IrVariableExpr(var);
+        return new IrGetVariableExpr(var);
     }
 
     public static IrExpr get(IrParameter param) {
@@ -148,7 +138,7 @@ public final class IrExprBuilder {
     }
 
     public static IrExpr add(IrExpr a, IrExpr b) {
-        return new IrBinaryExpr(a, b, IrBinaryOperation.IADD);
+        return IrOperationExpr.of(IrOperation.IADD, a, b);
     }
 
     public static IrExpr add(IrExpr a, int b) {
@@ -156,31 +146,31 @@ public final class IrExprBuilder {
     }
 
     public static IrExpr add(IrExpr a, IrExpr b, IrExpr... remaining) {
-        IrExpr acc = new IrBinaryExpr(a, b, IrBinaryOperation.IADD);
+        IrExpr acc = IrOperationExpr.of(IrOperation.IADD, a, b);
         for (IrExpr r : remaining) {
-            acc = new IrBinaryExpr(acc, r, IrBinaryOperation.IADD);
+            acc = IrOperationExpr.of(IrOperation.IADD, acc, r);
         }
         return acc;
     }
 
     public static IrExpr sub(IrExpr a, IrExpr b) {
-        return new IrBinaryExpr(a, b, IrBinaryOperation.ISUB);
+        return IrOperationExpr.of(IrOperation.ISUB, a, b);
     }
 
     public static IrExpr mul(IrExpr a, IrExpr b) {
-        return new IrBinaryExpr(a, b, IrBinaryOperation.IMUL);
+        return IrOperationExpr.of(IrOperation.IMUL, a, b);
     }
 
     public static IrExpr div(IrExpr a, IrExpr b) {
-        return thenExpr(new IrBinaryExpr(a, b, IrBinaryOperation.IDIV));
+        return thenExpr(IrOperationExpr.of(IrOperation.IDIV, a, b));
     }
 
     public static IrExpr rem(IrExpr a, IrExpr b) {
-        return thenExpr(new IrBinaryExpr(a, b, IrBinaryOperation.IREM));
+        return thenExpr(IrOperationExpr.of(IrOperation.IREM, a, b));
     }
 
     public static IrExpr equal(IrExpr a, IrExpr b) {
-        return new IrBinaryExpr(a, b, IrBinaryOperation.IEQ);
+        return IrOperationExpr.of(IrOperation.IEQ, a, b);
     }
 
     public static IrExpr equal(IrExpr a, int b) {
@@ -188,7 +178,7 @@ public final class IrExprBuilder {
     }
 
     public static IrExpr notEqual(IrExpr a, IrExpr b) {
-        return new IrBinaryExpr(a, b, IrBinaryOperation.INE);
+        return IrOperationExpr.of(IrOperation.INE, a, b);
     }
 
     public static IrExpr notEqual(IrExpr a, int b) {
@@ -196,7 +186,7 @@ public final class IrExprBuilder {
     }
 
     public static IrExpr less(IrExpr a, IrExpr b) {
-        return new IrBinaryExpr(a, b, IrBinaryOperation.ILT);
+        return IrOperationExpr.of(IrOperation.ILT, a, b);
     }
 
     public static IrExpr less(IrExpr a, int b) {
@@ -204,7 +194,7 @@ public final class IrExprBuilder {
     }
 
     public static IrExpr lessEq(IrExpr a, IrExpr b) {
-        return new IrBinaryExpr(a, b, IrBinaryOperation.ILT);
+        return IrOperationExpr.of(IrOperation.ILE, a, b);
     }
 
     public static IrExpr lessEq(IrExpr a, int b) {
@@ -212,7 +202,7 @@ public final class IrExprBuilder {
     }
 
     public static IrExpr greater(IrExpr a, IrExpr b) {
-        return new IrBinaryExpr(a, b, IrBinaryOperation.IGT);
+        return IrOperationExpr.of(IrOperation.IGT, a, b);
     }
 
     public static IrExpr greater(IrExpr a, int b) {
@@ -220,47 +210,15 @@ public final class IrExprBuilder {
     }
 
     public static IrExpr greaterEq(IrExpr a, IrExpr b) {
-        return new IrBinaryExpr(a, b, IrBinaryOperation.IGE);
+        return IrOperationExpr.of(IrOperation.IGE, a, b);
     }
 
     public static IrExpr greaterEq(IrExpr a, int b) {
         return greaterEq(a, value(b));
     }
 
-    public static IrExpr get(IrExpr a, FieldReference field, ValueType type) {
-        return thenExpr(new IrGetFieldExpr(a, field, type));
-    }
-
-    public static IrExpr get(IrExpr a, Class<?> cls, String fieldName, Class<?> type) {
-        return get(a, new FieldReference(cls.getName(), fieldName), ValueType.parse(type));
-    }
-
-    public static IrExpr get(FieldReference field, ValueType type) {
-        return thenExpr(new IrGetStaticFieldExpr(field, type));
-    }
-
-    public static IrExpr get(Class<?> cls, String fieldName, Class<?> type) {
-        return get(new FieldReference(cls.getName(), fieldName), ValueType.parse(type));
-    }
-
-    public static IrExpr set(IrExpr a, FieldReference field, ValueType type, IrExpr value) {
-        return thenExpr(new IrSetFieldExpr(a, value, field, type));
-    }
-
-    public static IrExpr set(FieldReference field, ValueType type, IrExpr value) {
-        return thenExpr(new IrSetStaticFieldExpr(value, field, type));
-    }
-
-    public static IrExpr callStatic(MethodReference method, IrExpr... arguments) {
-        return thenExpr(IrCallExpr.of(method, IrCallType.STATIC, arguments));
-    }
-
-    public static IrExpr callVirtual(MethodReference method, IrExpr... arguments) {
-        return thenExpr(IrCallExpr.of(method, IrCallType.VIRTUAL, arguments));
-    }
-
-    public static IrExpr callSpecial(MethodReference method, IrExpr... arguments) {
-        return thenExpr(IrCallExpr.of(method, IrCallType.SPECIAL, arguments));
+    public static IrExpr call(IrFunction function, IrExpr... arguments) {
+        return thenExpr(IrCallExpr.of(function.getCallTarget(), arguments));
     }
 
     public static IrLoopExpr loop() {
@@ -353,7 +311,7 @@ public final class IrExprBuilder {
                         return expr;
                     }
                 }
-                lastExpr = new IrSequenceExpr(lastExpr, expr);
+                expr.setPrevious(lastExpr);
             } else {
                 lastExpr = expr;
             }

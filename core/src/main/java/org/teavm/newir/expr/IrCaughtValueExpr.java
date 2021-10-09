@@ -15,14 +15,18 @@
  */
 package org.teavm.newir.expr;
 
+import org.teavm.newir.type.IrType;
+
 public final class IrCaughtValueExpr extends IrExpr {
     IrTryCatchExpr tryCatchExpr;
     int index;
+    IrType type;
     private IrExpr[] inputs;
 
-    IrCaughtValueExpr(IrTryCatchExpr tryCatchExpr, int index, IrExpr[] inputs) {
+    IrCaughtValueExpr(IrTryCatchExpr tryCatchExpr, int index, IrType type, IrExpr[] inputs) {
         this.tryCatchExpr = tryCatchExpr;
         this.index = index;
+        this.type = type;
         this.inputs = inputs;
     }
 
@@ -48,6 +52,14 @@ public final class IrCaughtValueExpr extends IrExpr {
     @Override
     public IrType getType() {
         return inputs[0].getType();
+    }
+
+    @Override
+    public IrType getInputType(int index) {
+        if (index < 0 || index > inputs.length) {
+            return super.getInputType(index);
+        }
+        return type;
     }
 
     @Override

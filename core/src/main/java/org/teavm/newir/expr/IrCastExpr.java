@@ -15,27 +15,38 @@
  */
 package org.teavm.newir.expr;
 
-import org.teavm.model.ValueType;
+import org.teavm.newir.decl.IrReferenceType;
+import org.teavm.newir.type.IrType;
 
 public final class IrCastExpr extends IrSingeInputExpr {
-    private ValueType targetType;
+    private IrReferenceType targetType;
 
-    public IrCastExpr(IrExpr argument, ValueType targetType) {
+    public IrCastExpr(IrExpr argument, IrReferenceType targetType) {
         super(argument);
         this.targetType = targetType;
     }
 
-    public ValueType getTargetType() {
+    public IrReferenceType getTargetType() {
         return targetType;
     }
 
-    public void setTargetType(ValueType targetType) {
+    public void setTargetType(IrReferenceType targetType) {
         this.targetType = targetType;
     }
 
     @Override
     public IrType getType() {
-        return IrType.BOOLEAN;
+        return IrType.OBJECT;
+    }
+
+    @Override
+    public IrType getInputType(int index) {
+        return index == 0 ? IrType.OBJECT : super.getInputType(index);
+    }
+
+    @Override
+    public boolean needsOrdering() {
+        return true;
     }
 
     @Override

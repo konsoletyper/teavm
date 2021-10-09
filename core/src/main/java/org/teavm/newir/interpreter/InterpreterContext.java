@@ -15,11 +15,7 @@
  */
 package org.teavm.newir.interpreter;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Arrays;
-import org.teavm.model.ValueType;
-import org.teavm.newir.expr.IrBinaryExpr;
 
 public class InterpreterContext {
     public final int[] iv;

@@ -13,28 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.newir.expr;
+package org.teavm.newir.interpreter;
 
-import org.teavm.newir.type.IrType;
+import org.teavm.newir.expr.IrCallExpr;
+import org.teavm.newir.expr.IrCallTarget;
 
-public final class IrLongConstantExpr extends IrExpr {
-    private long value;
+public class CallProvider {
+    public static final CallProvider EMPTY = new CallProvider();
 
-    public IrLongConstantExpr(long value) {
-        this.value = value;
+    public boolean supports(IrCallTarget<?> target) {
+        return false;
     }
 
-    public long getValue() {
-        return value;
-    }
-
-    @Override
-    public IrType getType() {
-        return IrType.LONG;
-    }
-
-    @Override
-    public void acceptVisitor(IrExprVisitor visitor) {
-        visitor.visit(this);
+    public void build(IrCallExpr expr, ProgramBuilder builder) {
+        throw new IllegalArgumentException();
     }
 }
