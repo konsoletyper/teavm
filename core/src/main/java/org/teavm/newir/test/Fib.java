@@ -24,12 +24,14 @@ import static org.teavm.newir.builder.IrExprBuilder.intVar;
 import static org.teavm.newir.builder.IrExprBuilder.loop;
 import static org.teavm.newir.builder.IrExprBuilder.set;
 import java.io.PrintWriter;
+import java.util.Arrays;
+import org.teavm.newir.binary.IrPackedTree;
+import org.teavm.newir.binary.IrSerializer;
 import org.teavm.newir.builder.IrExprBuilder;
 import org.teavm.newir.decl.IrFunction;
 import org.teavm.newir.expr.IrExpr;
 import org.teavm.newir.expr.IrProgram;
 import org.teavm.newir.expr.IrVariable;
-import org.teavm.newir.interpreter.Interpreter;
 import org.teavm.newir.type.IrType;
 import org.teavm.newir.util.IrExprPrinter;
 
@@ -66,6 +68,11 @@ public final class Fib {
         IrExprPrinter printer = new IrExprPrinter(writer);
         printer.print(fib.getBody());
         writer.flush();
+
+        IrSerializer serializer = new IrSerializer();
+        IrPackedTree packed = serializer.serialize(fib.getBody());
+
+        System.err.println(Arrays.toString(packed.getData()));
 
         /*
         Interpreter interpreter = new Interpreter(fib);

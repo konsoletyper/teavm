@@ -121,7 +121,7 @@ public class IrOperationExpr extends IrExpr {
             switch (index) {
                 case 0:
                     return input1;
-                case 2:
+                case 1:
                     return input2;
                 default:
                     return super.getInput(index);

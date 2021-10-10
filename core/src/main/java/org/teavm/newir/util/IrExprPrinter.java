@@ -110,7 +110,7 @@ public class IrExprPrinter extends RecursiveIrExprVisitor {
             node.next = last;
             last = node;
 
-            int inputCount = expr.getInputCount();
+            int inputCount = expr.getDependencyCount();
             if (inputCount == 0) {
                 break;
             }
@@ -123,7 +123,7 @@ public class IrExprPrinter extends RecursiveIrExprVisitor {
                     last = node;
                 }
 
-                Node next = printExpr(last, expr.getInput(i));
+                Node next = printExpr(last, expr.getDependency(i));
                 if (next != last) {
                     node = next;
                     while (node.next != last) {
@@ -142,7 +142,7 @@ public class IrExprPrinter extends RecursiveIrExprVisitor {
                 last = node;
             }
 
-            expr = expr.getInput(0);
+            expr = expr.getDependency(0);
         }
 
         return last;

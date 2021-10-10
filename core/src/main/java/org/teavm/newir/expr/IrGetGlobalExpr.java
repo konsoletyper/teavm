@@ -19,14 +19,14 @@ import org.teavm.newir.decl.IrGlobal;
 import org.teavm.newir.type.IrType;
 
 public final class IrGetGlobalExpr extends IrExpr {
-    private IrGlobal variable;
+    private IrGlobal global;
 
-    public IrGetGlobalExpr(IrGlobal variable) {
-        this.variable = variable;
+    public IrGetGlobalExpr(IrGlobal global) {
+        this.global = global;
     }
 
-    public IrGlobal getVariable() {
-        return variable;
+    public IrGlobal getGlobal() {
+        return global;
     }
 
     @Override
@@ -36,7 +36,7 @@ public final class IrGetGlobalExpr extends IrExpr {
 
     @Override
     public IrType getType() {
-        return variable.getType();
+        return global.getType();
     }
 
     @Override

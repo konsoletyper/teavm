@@ -39,4 +39,8 @@ public final class IrVariable {
     public void setType(IrType type) {
         this.type = type;
     }
+
+    public int getIndex() {
+        return index;
+    }
 }

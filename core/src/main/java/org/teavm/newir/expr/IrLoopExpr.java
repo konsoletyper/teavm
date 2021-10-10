@@ -19,7 +19,6 @@ import org.teavm.newir.type.IrType;
 
 public final class IrLoopExpr extends IrExpr {
     private final IrLoopHeaderExpr header = new IrLoopHeaderExpr(this);
-    private IrType type = IrType.VOID;
     private IrExpr preheader = IrExpr.VOID;
     private IrExpr body = header;
 
@@ -77,20 +76,16 @@ public final class IrLoopExpr extends IrExpr {
 
     @Override
     public IrType getType() {
-        return type;
-    }
-
-    public void setType(IrType type) {
-        this.type = type;
+        return body.getType();
     }
 
     @Override
     public IrType getInputType(int index) {
         switch (index) {
             case 0:
-                return IrType.ANY;
+                return preheader.getType();
             case 1:
-                return type;
+                return body.getType();
             default:
                 return preheader.getType();
         }

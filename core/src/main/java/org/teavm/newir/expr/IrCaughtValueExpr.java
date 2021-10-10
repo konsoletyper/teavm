@@ -21,44 +21,23 @@ public final class IrCaughtValueExpr extends IrExpr {
     IrTryCatchExpr tryCatchExpr;
     int index;
     IrType type;
-    private IrExpr[] inputs;
 
-    IrCaughtValueExpr(IrTryCatchExpr tryCatchExpr, int index, IrType type, IrExpr[] inputs) {
+    IrCaughtValueExpr(IrTryCatchExpr tryCatchExpr, int index, IrType type) {
         this.tryCatchExpr = tryCatchExpr;
         this.index = index;
         this.type = type;
-        this.inputs = inputs;
     }
 
     public IrTryCatchExpr getTryCatch() {
         return tryCatchExpr;
     }
 
-    @Override
-    public int getInputCount() {
-        return inputs.length;
-    }
-
-    @Override
-    public IrExpr getInput(int index) {
-        return inputs[index];
-    }
-
-    @Override
-    public void setInput(int index, IrExpr value) {
-        inputs[index] = value;
+    public int getIndex() {
+        return index;
     }
 
     @Override
     public IrType getType() {
-        return inputs[0].getType();
-    }
-
-    @Override
-    public IrType getInputType(int index) {
-        if (index < 0 || index > inputs.length) {
-            return super.getInputType(index);
-        }
         return type;
     }
 

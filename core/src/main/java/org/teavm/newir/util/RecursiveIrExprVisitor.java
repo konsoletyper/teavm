@@ -42,6 +42,7 @@ import org.teavm.newir.expr.IrNewObjectExpr;
 import org.teavm.newir.expr.IrOperationExpr;
 import org.teavm.newir.expr.IrParameterExpr;
 import org.teavm.newir.expr.IrSetArrayElementExpr;
+import org.teavm.newir.expr.IrSetCaughtValueExpr;
 import org.teavm.newir.expr.IrSetFieldExpr;
 import org.teavm.newir.expr.IrSetGlobalExpr;
 import org.teavm.newir.expr.IrSetVariableExpr;
@@ -139,6 +140,11 @@ public class RecursiveIrExprVisitor implements IrExprVisitor {
 
     @Override
     public void visit(IrCaughtValueExpr expr) {
+        visitDefault(expr);
+    }
+
+    @Override
+    public void visit(IrSetCaughtValueExpr expr) {
         visitDefault(expr);
     }
 

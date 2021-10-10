@@ -36,6 +36,14 @@ public final class IrTryCatchExpr extends IrExpr {
         return exceptionTypes.clone();
     }
 
+    public int getExceptionTypesCount() {
+        return exceptionTypes.length;
+    }
+
+    public IrClass getExceptionType(int index) {
+        return exceptionTypes[index];
+    }
+
     public IrExpr getBody() {
         return body;
     }
@@ -64,8 +72,16 @@ public final class IrTryCatchExpr extends IrExpr {
         return caughtValues;
     }
 
-    public IrCaughtValueExpr addCaughtValue(IrType type, IrExpr[] inputs) {
-        IrCaughtValueExpr caughtValue = new IrCaughtValueExpr(this, caughtValues.size(), type, inputs);
+    public int getCaughtValuesCount() {
+        return caughtValues.size();
+    }
+
+    public IrCaughtValueExpr getCaughtValue(int index) {
+        return caughtValues.get(index);
+    }
+
+    public IrCaughtValueExpr addCaughtValue(IrType type) {
+        IrCaughtValueExpr caughtValue = new IrCaughtValueExpr(this, caughtValues.size(), type);
         caughtValues.add(caughtValue);
         return caughtValue;
     }
@@ -128,6 +144,11 @@ public final class IrTryCatchExpr extends IrExpr {
             default:
                 return super.getInputType(index);
         }
+    }
+
+    @Override
+    public boolean needsOrdering() {
+        return true;
     }
 
     @Override

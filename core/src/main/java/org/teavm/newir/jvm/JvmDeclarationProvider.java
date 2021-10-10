@@ -13,28 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.newir.expr;
+package org.teavm.newir.jvm;
 
-import org.teavm.newir.type.IrType;
+import org.teavm.newir.decl.IrClass;
 
-public class IrTryCatchStartExpr extends IrExpr {
-    private IrTryCatchExpr tryCatch;
-
-    IrTryCatchStartExpr(IrTryCatchExpr tryCatch) {
-        this.tryCatch = tryCatch;
-    }
-
-    public IrTryCatchExpr getTryCatch() {
-        return tryCatch;
-    }
-
-    @Override
-    public IrType getType() {
-        return IrType.VOID;
-    }
-
-    @Override
-    public void acceptVisitor(IrExprVisitor visitor) {
-        visitor.visit(this);
+public class JvmDeclarationProvider {
+    public IrClass getClass(String className) {
+        return null;
     }
 }

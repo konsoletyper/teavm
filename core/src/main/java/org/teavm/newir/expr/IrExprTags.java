@@ -37,6 +37,7 @@ public class IrExprTags<T> {
             if (defaultSupplier != null) {
                 value = defaultSupplier.apply(target);
                 tag = new Tag(this, target, first);
+                target.tag = tag;
                 tag.value = value;
                 first = tag;
             } else {
@@ -53,6 +54,7 @@ public class IrExprTags<T> {
         if (tag == null) {
             tag = new Tag(this, target, first);
             first = tag;
+            target.tag = tag;
         } else {
             checkOwner(tag);
         }

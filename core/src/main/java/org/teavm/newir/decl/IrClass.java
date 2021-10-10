@@ -20,14 +20,32 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import org.teavm.newir.type.IrType;
 
 public final class IrClass extends IrDeclaration<IrClass> {
     private IrClass superclass;
+    private IrClass[] interfaces;
     private Map<IrMethod, IrFunction> methods = new LinkedHashMap<>();
     private List<IrField> fields = new ArrayList<>();
     private IrFunction initializer;
     private IrObjectType type;
+    private Consumer<IrClass> contentInitializer;
+
+    public IrClass() {
+        this(null);
+    }
+
+    public IrClass(Consumer<IrClass> contentInitializer) {
+        this.contentInitializer = contentInitializer;
+    }
+
+    private void initialize() {
+        if (contentInitializer != null) {
+            contentInitializer.accept(this);
+            contentInitializer = null;
+        }
+    }
 
     public IrClass getSuperclass() {
         return superclass;
@@ -35,6 +53,21 @@ public final class IrClass extends IrDeclaration<IrClass> {
 
     public void setSuperclass(IrClass superclass) {
         this.superclass = superclass;
+    }
+
+    public int getInterfaceCount() {
+        return interfaces != null ? interfaces.length : 0;
+    }
+
+    public IrClass getInterface(int index) {
+        if (interfaces == null) {
+            throw new IndexOutOfBoundsException();
+        }
+        return interfaces[index];
+    }
+
+    public void setInterfaces(IrClass... interfaces) {
+        this.interfaces = interfaces.length == 0 ? null : interfaces.clone();
     }
 
     public IrFunction getInitializer() {
@@ -46,34 +79,44 @@ public final class IrClass extends IrDeclaration<IrClass> {
     }
 
     public IrFunction getMethodImplementation(IrMethod method) {
+        initialize();
         return methods.get(method);
     }
 
     public void setMethodImplementation(IrMethod method, IrFunction function) {
+        initialize();
         methods.put(method, function);
     }
 
     public void removeMethodImplementation(IrMethod method) {
+        initialize();
         methods.remove(method);
     }
 
     public boolean hasMethod(IrMethod method) {
+        initialize();
         return methods.containsKey(method);
     }
 
     public Collection<? extends IrMethod> getMethods() {
+        initialize();
         return methods.keySet();
     }
 
     public List<? extends IrField> getFields() {
+        initialize();
         return fields;
     }
 
     public IrField createField(IrType type) {
-        return new IrField(this, type);
+        initialize();
+        IrField field = new IrField(this, type);
+        fields.add(field);
+        return field;
     }
 
     public void removeField(IrField field) {
+        initialize();
         if (fields.remove(field)) {
             field.declaringClass = null;
         }

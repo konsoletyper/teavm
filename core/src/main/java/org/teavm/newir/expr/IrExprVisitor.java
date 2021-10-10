@@ -50,6 +50,8 @@ public interface IrExprVisitor {
 
     void visit(IrCaughtValueExpr expr);
 
+    void visit(IrSetCaughtValueExpr expr);
+
     void visit(IrCastExpr expr);
 
     void visit(IrInstanceOfExpr expr);

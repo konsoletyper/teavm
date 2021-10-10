@@ -17,12 +17,30 @@ package org.teavm.newir.expr;
 
 import org.teavm.newir.type.IrType;
 
-public final class IrBlockExpr extends IrExpr {
-    private IrExpr body = IrExpr.VOID;
+public class IrSetCaughtValueExpr extends IrExpr {
+    private IrCaughtValueExpr target;
+    private IrExpr value;
+
+    public IrSetCaughtValueExpr(IrCaughtValueExpr target, IrExpr value) {
+        this.target = target;
+        this.value = value;
+    }
+
+    public IrCaughtValueExpr getTarget() {
+        return target;
+    }
+
+    public IrExpr getValue() {
+        return value;
+    }
+
+    public void setValue(IrExpr value) {
+        this.value = value;
+    }
 
     @Override
     public IrType getType() {
-        return body.getType();
+        return IrType.VOID;
     }
 
     @Override
@@ -30,23 +48,15 @@ public final class IrBlockExpr extends IrExpr {
         return 1;
     }
 
-    public IrExpr getBody() {
-        return body;
-    }
-
-    public void setBody(IrExpr body) {
-        this.body = body;
-    }
-
     @Override
     public IrExpr getInput(int index) {
-        return index == 0 ? body : super.getInput(index);
+        return index == 0 ? value : super.getInput(index);
     }
 
     @Override
     public void setInput(int index, IrExpr value) {
         if (index == 0) {
-            body = value;
+            this.value = value;
         } else {
             super.setInput(index, value);
         }
@@ -54,7 +64,7 @@ public final class IrBlockExpr extends IrExpr {
 
     @Override
     public IrType getInputType(int index) {
-        return index == 0 ? getType() : super.getInputType(index);
+        return index == 0 ? target.getType() : super.getInputType(index);
     }
 
     @Override

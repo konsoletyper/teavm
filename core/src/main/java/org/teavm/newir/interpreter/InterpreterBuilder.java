@@ -60,6 +60,7 @@ import org.teavm.newir.expr.IrOperationExpr;
 import org.teavm.newir.expr.IrParameter;
 import org.teavm.newir.expr.IrParameterExpr;
 import org.teavm.newir.expr.IrSetArrayElementExpr;
+import org.teavm.newir.expr.IrSetCaughtValueExpr;
 import org.teavm.newir.expr.IrSetFieldExpr;
 import org.teavm.newir.expr.IrSetGlobalExpr;
 import org.teavm.newir.expr.IrSetVariableExpr;
@@ -689,6 +690,11 @@ public class InterpreterBuilder implements IrExprVisitor {
 
     @Override
     public void visit(IrStringConstantExpr expr) {
+
+    }
+
+    @Override
+    public void visit(IrSetCaughtValueExpr expr) {
 
     }
 
