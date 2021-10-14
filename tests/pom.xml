@@ -125,6 +125,8 @@
         </dependencies>
         <configuration>
           <argLine>-Xmx512m</argLine>
+          <forkCount>4</forkCount>
+          <reuseForks>true</reuseForks>
           <systemProperties>
             <teavm.junit.target>${project.build.directory}/js-tests</teavm.junit.target>
             <teavm.junit.minified>true</teavm.junit.minified>
