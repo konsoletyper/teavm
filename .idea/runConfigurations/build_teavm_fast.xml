@@ -1,32 +1,35 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="build-teavm-fast" type="MavenRunConfiguration" factoryName="Maven">
-    <MavenSettings>
-      <option name="myGeneralSettings" />
-      <option name="myRunnerSettings" />
-      <option name="myRunnerParameters">
-        <MavenRunnerParameters>
-          <option name="profiles">
-            <set />
-          </option>
-          <option name="goals">
-            <list>
-              <option value="-e" />
-              <option value="install" />
-              <option value="-DskipTests" />
-              <option value="-Dteavm.build.all=false" />
-              <option value="-Pwith-cli" />
-              <option value="-Dmaven.javadoc.skip=true" />
-            </list>
-          </option>
-          <option name="pomFileName" />
-          <option name="profilesMap">
-            <map />
-          </option>
-          <option name="resolveToWorkspace" value="false" />
-          <option name="workingDirPath" value="$PROJECT_DIR$" />
-        </MavenRunnerParameters>
+    <MavenRunConfigurationSettings>
+      <option name="alwaysUpdateSnapshots" value="false" />
+      <option name="checksumPolicy" />
+      <option name="commandLine" value="-e install -DskipTests -Dteavm.build.all=false -Pwith-cli -Dmaven.javadoc.skip=true" />
+      <option name="environment">
+        <map />
       </option>
-    </MavenSettings>
+      <option name="failureBehavior" />
+      <option name="jreName" />
+      <option name="localRepository" />
+      <option name="mavenHome" value="Bundled (Maven 3)" />
+      <option name="mavenProperties">
+        <map />
+      </option>
+      <option name="nonRecursive" value="false" />
+      <option name="outputLevel" />
+      <option name="passParentEnvs" value="true" />
+      <option name="printErrorStackTraces" value="false" />
+      <option name="profilesMap">
+        <map />
+      </option>
+      <option name="resolveToWorkspace" value="false" />
+      <option name="skipTests" value="false" />
+      <option name="threads" value="4" />
+      <option name="usePluginRegistry" value="false" />
+      <option name="userSettings" />
+      <option name="vmOptions" />
+      <option name="workOffline" value="false" />
+      <option name="workingDirectory" value="$PROJECT_DIR$" />
+    </MavenRunConfigurationSettings>
     <method v="2" />
   </configuration>
 </component>
