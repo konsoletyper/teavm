@@ -35,6 +35,11 @@ public class TeaVMDevServerConfigurationType extends ConfigurationTypeBase {
         public RunConfiguration createTemplateConfiguration(@NotNull Project project) {
             return new TeaVMDevServerConfiguration(new RunConfigurationModule(project), this);
         }
+
+        @Override
+        public String getId() {
+            return "TeaVMDevServerConfiguration";
+        }
     };
 
     @Override
