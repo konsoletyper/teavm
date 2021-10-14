@@ -76,6 +76,10 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
 
     @Override
     public int hashCode() {
+        return hashCode(value);
+    }
+
+    public static int hashCode(boolean value) {
         return value ? 1231 : 1237;
     }
 
@@ -90,5 +94,17 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
     public static boolean getBoolean(String key) {
         String stringValue = key != null ? TSystem.getProperty(key) : null;
         return stringValue != null && valueOf(stringValue).booleanValue();
+    }
+
+    public static boolean logicalAnd(boolean a, boolean b) {
+        return a & b;
+    }
+
+    public static boolean logicalOr(boolean a, boolean b) {
+        return a | b;
+    }
+
+    public static boolean logicalXor(boolean a, boolean b) {
+        return a ^ b;
     }
 }

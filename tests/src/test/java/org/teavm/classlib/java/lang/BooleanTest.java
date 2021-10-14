@@ -41,4 +41,28 @@ public class BooleanTest {
         assertFalse(Boolean.getBoolean("test.baz"));
         assertFalse(Boolean.getBoolean(null));
     }
+
+    @Test
+    public void logicalMethods() {
+        assertTrue(Boolean.logicalAnd(true, true));
+        assertFalse(Boolean.logicalAnd(false, true));
+        assertFalse(Boolean.logicalAnd(true, false));
+        assertFalse(Boolean.logicalAnd(false, false));
+
+        assertTrue(Boolean.logicalOr(true, true));
+        assertTrue(Boolean.logicalOr(false, true));
+        assertTrue(Boolean.logicalOr(true, false));
+        assertFalse(Boolean.logicalOr(false, false));
+
+        assertFalse(Boolean.logicalXor(true, true));
+        assertTrue(Boolean.logicalXor(false, true));
+        assertTrue(Boolean.logicalXor(true, false));
+        assertFalse(Boolean.logicalXor(false, false));
+    }
+
+    @Test
+    public void hashCodeTest() {
+        assertEquals(Boolean.hashCode(true), Boolean.TRUE.hashCode());
+        assertEquals(Boolean.hashCode(false), Boolean.FALSE.hashCode());
+    }
 }
