@@ -34,6 +34,11 @@ public class TeaVMDebugConfigurationType extends ConfigurationTypeBase {
         public RunConfiguration createTemplateConfiguration(@NotNull Project project) {
             return new TeaVMDebugConfiguration(project, this);
         }
+
+        @Override
+        public String getId() {
+            return "TeaVMDebugConfiguration";
+        }
     };
 
     @Override
