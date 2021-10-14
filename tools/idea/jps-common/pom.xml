@@ -36,6 +36,12 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-idea-artifacts</artifactId>
+      <version>${project.version}</version>
+      <type>pom</type>
+    </dependency>
+    <dependency>
       <groupId>org.teavm.idea</groupId>
       <artifactId>openapi</artifactId>
       <version>${idea.version}</version>
