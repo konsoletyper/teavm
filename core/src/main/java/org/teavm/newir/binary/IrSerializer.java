@@ -40,7 +40,6 @@ import org.teavm.newir.expr.IrDoubleConstantExpr;
 import org.teavm.newir.expr.IrExitBlockExpr;
 import org.teavm.newir.expr.IrExitLoopExpr;
 import org.teavm.newir.expr.IrExpr;
-import org.teavm.newir.expr.IrExprTags;
 import org.teavm.newir.expr.IrExprVisitor;
 import org.teavm.newir.expr.IrFloatConstantExpr;
 import org.teavm.newir.expr.IrGetFieldExpr;
@@ -65,6 +64,7 @@ import org.teavm.newir.expr.IrTryCatchStartExpr;
 import org.teavm.newir.expr.IrTupleComponentExpr;
 import org.teavm.newir.expr.IrTupleExpr;
 import org.teavm.newir.util.RecursiveIrExprVisitor;
+import org.teavm.newir.util.ScheduledIrExprTags;
 
 public class IrSerializer extends RecursiveIrExprVisitor {
     private byte[] output = new byte[128];
@@ -73,7 +73,7 @@ public class IrSerializer extends RecursiveIrExprVisitor {
     private int tryCatchLevel;
     private int blockLevel;
     private int loopLevel;
-    private IrExprTags<ExprData> tags = new IrExprTags<>(expr -> new ExprData());
+    private ScheduledIrExprTags<ExprData> tags = new ScheduledIrExprTags<>(expr -> new ExprData());
     private ObjectIntMap<String> stringIndexes = new ObjectIntHashMap<>();
     private List<String> strings = new ArrayList<>();
     private ObjectIntMap<IrFunction> functionIndexes = new ObjectIntHashMap<>();
@@ -88,7 +88,8 @@ public class IrSerializer extends RecursiveIrExprVisitor {
     private List<IrGlobal> globals = new ArrayList<>();
 
     public IrPackedTree serialize(IrExpr expr) {
-        serializeExpr(expr);
+        tags.fill(expr);
+        serializeExpr(tags.first(expr));
         IrPackedTree packedProgram = new IrPackedTree(Arrays.copyOf(output, pointer), strings.toArray(new String[0]),
                 functions.toArray(new IrFunction[0]), methods.toArray(new IrMethod[0]), fields.toArray(new IrField[0]),
                 classes.toArray(new IrClass[0]), globals.toArray(new IrGlobal[0]));
@@ -110,61 +111,54 @@ public class IrSerializer extends RecursiveIrExprVisitor {
     }
 
     private void serializeExpr(IrExpr expr) {
-        if (trySerializeExisting(expr)) {
-            return;
+        if (expr.getDependencyCount() > 0) {
+            IrExpr previous = expr.getDependency(0);
+            serializeExisting(previous);
         }
 
-        while (expr.getDependencyCount() > 0) {
-            IrExpr prev = expr.getDependency(0);
-            if (trySerializeExisting(prev)) {
-                break;
-            }
-            ExprData data = tags.get(prev);
-            data.next = expr;
-            expr = prev;
-        }
-
-        expr.acceptVisitor(enterVisitor);
-        while (true) {
-            ExprData data = tags.get(expr);
-            data.index = index;
-            expr.acceptVisitor(this);
-            index++;
-
-            expr = data.next;
-            if (expr == null) {
-                break;
-            }
+        while (expr != null) {
             expr.acceptVisitor(enterVisitor);
             for (int i = 1; i < expr.getDependencyCount(); ++i) {
-                serializeExpr(expr.getDependency(i));
+                serializeInput(expr.getDependency(i));
             }
+            tags.get(expr).index = index++;
+            expr.acceptVisitor(this);
+            expr = tags.next(expr);
         }
     }
 
-    private boolean trySerializeExisting(IrExpr expr) {
-        ExprData data = tags.get(expr);
-        if (data.index >= 0 && !data.noBackref) {
-            int diff = pointer - data.index;
-            switch (diff) {
-                case 1:
-                    writeSingleByte(Opcodes.BACK_REF_1);
-                    break;
-                case 2:
-                    writeSingleByte(Opcodes.BACK_REF_2);
-                    break;
-                case 3:
-                    writeSingleByte(Opcodes.BACK_REF_3);
-                    break;
-                default:
-                    writeSingleByte(Opcodes.BACK_REF);
-                    writeUnsignedInt(diff - 1);
-                    break;
-            }
-            data.index = index++;
-            return true;
+    private void serializeInput(IrExpr expr) {
+        if (tags.isLast(expr)) {
+            serializeExpr(tags.first(expr));
+        } else {
+            serializeExisting(expr);
         }
-        return false;
+    }
+
+    private void serializeExisting(IrExpr expr) {
+        ExprData data = tags.get(expr);
+        if (data.noBackref) {
+            index++;
+            expr.acceptVisitor(this);
+            return;
+        }
+        int diff = index - data.index;
+        switch (diff) {
+            case 1:
+                writeSingleByte(Opcodes.BACK_REF_1);
+                break;
+            case 2:
+                writeSingleByte(Opcodes.BACK_REF_2);
+                break;
+            case 3:
+                writeSingleByte(Opcodes.BACK_REF_3);
+                break;
+            default:
+                writeSingleByte(Opcodes.BACK_REF);
+                writeUnsignedInt(diff - 1);
+                break;
+        }
+        data.index = index++;
     }
 
     @Override
@@ -456,7 +450,7 @@ public class IrSerializer extends RecursiveIrExprVisitor {
 
     @Override
     public void visit(IrTryCatchStartExpr expr) {
-        int diff = tryCatchLevel - tags.get(expr.getTryCatch()).index;
+        int diff = tryCatchLevel - tags.get(expr.getTryCatch()).level;
         if (diff == 0) {
             writeSingleByte(Opcodes.TRY_CATCH_START_0);
         } else {
@@ -467,7 +461,7 @@ public class IrSerializer extends RecursiveIrExprVisitor {
 
     @Override
     public void visit(IrCaughtValueExpr expr) {
-        int diff = tryCatchLevel - tags.get(expr.getTryCatch()).index;
+        int diff = tryCatchLevel - tags.get(expr.getTryCatch()).level;
         if (diff == 0) {
             writeSingleByte(Opcodes.CAUGHT_VALUE_0);
         } else {
@@ -479,7 +473,7 @@ public class IrSerializer extends RecursiveIrExprVisitor {
 
     @Override
     public void visit(IrSetCaughtValueExpr expr) {
-        int diff = tryCatchLevel - tags.get(expr.getTarget().getTryCatch()).index;
+        int diff = tryCatchLevel - tags.get(expr.getTarget().getTryCatch()).level;
         if (diff == 0) {
             writeSingleByte(Opcodes.SET_CAUGHT_VALUE_0);
         } else {
@@ -491,7 +485,7 @@ public class IrSerializer extends RecursiveIrExprVisitor {
 
     @Override
     public void visit(IrCaughtExceptionExpr expr) {
-        int diff = tryCatchLevel - tags.get(expr.getTryCatch()).index;
+        int diff = tryCatchLevel - tags.get(expr.getTryCatch()).level;
         if (diff == 0) {
             writeSingleByte(Opcodes.CAUGHT_EXCEPTION_0);
         } else {
@@ -906,6 +900,5 @@ public class IrSerializer extends RecursiveIrExprVisitor {
         int index = -1;
         int level;
         boolean noBackref;
-        IrExpr next;
     }
 }

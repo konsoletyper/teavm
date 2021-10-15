@@ -130,7 +130,7 @@ public final class IrExprBuilder {
     }
 
     public static IrExpr get(IrVariable var) {
-        return new IrGetVariableExpr(var);
+        return thenExpr(new IrGetVariableExpr(var));
     }
 
     public static IrExpr get(IrParameter param) {
@@ -304,14 +304,8 @@ public final class IrExprBuilder {
     private static IrExpr thenExpr(IrExpr expr) {
         if (currentFunction != null) {
             if (lastExpr != null) {
-                for (int i = 0; i < expr.getInputCount(); ++i) {
-                    if (expr.getInput(i) == lastExpr) {
-                        lastExpr = expr;
-                        lastReturnedExpr = expr;
-                        return expr;
-                    }
-                }
                 expr.setPrevious(lastExpr);
+                lastExpr = expr;
             } else {
                 lastExpr = expr;
             }

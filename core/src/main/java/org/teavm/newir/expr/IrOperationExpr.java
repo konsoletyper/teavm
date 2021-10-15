@@ -141,10 +141,5 @@ public class IrOperationExpr extends IrExpr {
                     super.setInput(index, value);
             }
         }
-
-        @Override
-        public boolean needsOrdering() {
-            return true;
-        }
     }
 }
