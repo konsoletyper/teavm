@@ -20,17 +20,18 @@ import org.teavm.newir.decl.IrField;
 import org.teavm.newir.decl.IrFunction;
 import org.teavm.newir.decl.IrGlobal;
 import org.teavm.newir.decl.IrMethod;
+import org.teavm.newir.expr.IrExpr;
 
-public class IrPackedTree {
-    private byte[] data;
-    private String[] strings;
-    private IrFunction[] functions;
-    private IrMethod[] methods;
-    private IrField[] fields;
-    private IrClass[] classes;
-    private IrGlobal[] globals;
+public class IrPackedProgram {
+    byte[] data;
+    String[] strings;
+    IrFunction[] functions;
+    IrMethod[] methods;
+    IrField[] fields;
+    IrClass[] classes;
+    IrGlobal[] globals;
 
-    IrPackedTree(byte[] data, String[] strings, IrFunction[] functions, IrMethod[] methods,
+    public IrPackedProgram(byte[] data, String[] strings, IrFunction[] functions, IrMethod[] methods,
             IrField[] fields, IrClass[] classes, IrGlobal[] globals) {
         this.data = data;
         this.strings = strings;
@@ -39,6 +40,30 @@ public class IrPackedTree {
         this.fields = fields;
         this.classes = classes;
         this.globals = globals;
+    }
+
+    public String[] getStrings() {
+        return strings != null ? strings.clone() : new String[0];
+    }
+
+    public IrFunction[] getFunctions() {
+        return functions != null ? functions.clone() : new IrFunction[0];
+    }
+
+    public IrMethod[] getMethods() {
+        return methods != null ? methods.clone() : new IrMethod[0];
+    }
+
+    public IrField[] getFields() {
+        return fields != null ? fields.clone() : new IrField[0];
+    }
+
+    public IrClass[] getClasses() {
+        return classes != null ? classes.clone() : new IrClass[0];
+    }
+
+    public IrGlobal[] getGlobals() {
+        return globals != null ? globals.clone() : new IrGlobal[0];
     }
 
     public byte[] getData() {

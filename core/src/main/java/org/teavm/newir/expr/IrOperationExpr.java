@@ -29,7 +29,16 @@ public class IrOperationExpr extends IrExpr {
             throw new IllegalArgumentException("Operation " + operation.name() + " should take "
                     + operation.getOperandCount() + " inputs, no inputs given");
         }
-        return new Impl0(operation);
+        switch (operation) {
+            case VOID:
+                return IrExpr.VOID;
+            case START:
+                return IrExpr.START;
+            case NULL:
+                return IrExpr.NULL;
+            default:
+                return new Impl0(operation);
+        }
     }
 
     public static IrOperationExpr of(IrOperation operation, IrExpr a) {

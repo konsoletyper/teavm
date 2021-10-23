@@ -27,7 +27,6 @@ import org.teavm.newir.decl.IrMethod;
 import org.teavm.newir.expr.IrBlockExpr;
 import org.teavm.newir.expr.IrCallExpr;
 import org.teavm.newir.expr.IrConditionalExpr;
-import org.teavm.newir.expr.IrExitLoopExpr;
 import org.teavm.newir.expr.IrExpr;
 import org.teavm.newir.expr.IrFunctionCallTarget;
 import org.teavm.newir.expr.IrGetFieldExpr;
@@ -35,6 +34,7 @@ import org.teavm.newir.expr.IrGetGlobalExpr;
 import org.teavm.newir.expr.IrGetVariableExpr;
 import org.teavm.newir.expr.IrIntConstantExpr;
 import org.teavm.newir.expr.IrLoopExpr;
+import org.teavm.newir.expr.IrLoopHeaderExpr;
 import org.teavm.newir.expr.IrMethodCallTarget;
 import org.teavm.newir.expr.IrOperationExpr;
 import org.teavm.newir.expr.IrParameterExpr;
@@ -193,6 +193,7 @@ public class IrExprPrinter extends RecursiveIrExprVisitor {
         switch (expr.getOperation()) {
             case NULL:
             case VOID:
+            case START:
                 noBackref = true;
                 break;
             default:
@@ -202,6 +203,7 @@ public class IrExprPrinter extends RecursiveIrExprVisitor {
 
     @Override
     public void visit(IrIntConstantExpr expr) {
+        tags.get(expr).noBackref = true;
         exprPrinter = w -> {
             w.print("int ");
             w.print(expr.getValue());
@@ -255,6 +257,16 @@ public class IrExprPrinter extends RecursiveIrExprVisitor {
         targetLine.ref = 1;
         exprPrinter = w -> {
             w.print("exit loop ");
+            w.print(targetLine.ref);
+        };
+    }
+
+    @Override
+    public void visit(IrLoopHeaderExpr expr) {
+        Line targetLine = tags.get(expr.getLoop());
+        targetLine.ref = 1;
+        exprPrinter = w -> {
+            w.print("loop header ");
             w.print(targetLine.ref);
         };
     }

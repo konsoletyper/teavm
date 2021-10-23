@@ -24,8 +24,6 @@ public interface IrExprVisitor {
 
     void visit(IrLoopHeaderExpr expr);
 
-    void visit(IrExitLoopExpr expr);
-
     void visit(IrContinueLoopExpr expr);
 
     void visit(IrTupleExpr expr);

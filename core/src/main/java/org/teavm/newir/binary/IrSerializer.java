@@ -20,6 +20,7 @@ import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.IntFunction;
 import org.teavm.newir.decl.IrClass;
 import org.teavm.newir.decl.IrField;
 import org.teavm.newir.decl.IrFunction;
@@ -38,7 +39,6 @@ import org.teavm.newir.expr.IrConditionalExpr;
 import org.teavm.newir.expr.IrContinueLoopExpr;
 import org.teavm.newir.expr.IrDoubleConstantExpr;
 import org.teavm.newir.expr.IrExitBlockExpr;
-import org.teavm.newir.expr.IrExitLoopExpr;
 import org.teavm.newir.expr.IrExpr;
 import org.teavm.newir.expr.IrExprVisitor;
 import org.teavm.newir.expr.IrFloatConstantExpr;
@@ -52,7 +52,9 @@ import org.teavm.newir.expr.IrLoopExpr;
 import org.teavm.newir.expr.IrLoopHeaderExpr;
 import org.teavm.newir.expr.IrNewObjectExpr;
 import org.teavm.newir.expr.IrOperationExpr;
+import org.teavm.newir.expr.IrParameter;
 import org.teavm.newir.expr.IrParameterExpr;
+import org.teavm.newir.expr.IrProgram;
 import org.teavm.newir.expr.IrSetCaughtValueExpr;
 import org.teavm.newir.expr.IrSetFieldExpr;
 import org.teavm.newir.expr.IrSetGlobalExpr;
@@ -63,6 +65,9 @@ import org.teavm.newir.expr.IrTryCatchExpr;
 import org.teavm.newir.expr.IrTryCatchStartExpr;
 import org.teavm.newir.expr.IrTupleComponentExpr;
 import org.teavm.newir.expr.IrTupleExpr;
+import org.teavm.newir.expr.IrVariable;
+import org.teavm.newir.type.IrTupleType;
+import org.teavm.newir.type.IrType;
 import org.teavm.newir.util.RecursiveIrExprVisitor;
 import org.teavm.newir.util.ScheduledIrExprTags;
 
@@ -87,12 +92,19 @@ public class IrSerializer extends RecursiveIrExprVisitor {
     private ObjectIntMap<IrGlobal> globalIndexes = new ObjectIntHashMap<>();
     private List<IrGlobal> globals = new ArrayList<>();
 
-    public IrPackedTree serialize(IrExpr expr) {
-        tags.fill(expr);
-        serializeExpr(tags.first(expr));
-        IrPackedTree packedProgram = new IrPackedTree(Arrays.copyOf(output, pointer), strings.toArray(new String[0]),
-                functions.toArray(new IrFunction[0]), methods.toArray(new IrMethod[0]), fields.toArray(new IrField[0]),
-                classes.toArray(new IrClass[0]), globals.toArray(new IrGlobal[0]));
+    public IrPackedProgram serialize(IrProgram program) {
+        serializeProgram(program);
+        tags.fill(program.getBody());
+        serializeExpr(tags.first(program.getBody()));
+        IrPackedProgram packedProgram = new IrPackedProgram(
+                Arrays.copyOf(output, pointer),
+                toArrayOrNull(strings, String[]::new),
+                toArrayOrNull(functions, IrFunction[]::new),
+                toArrayOrNull(methods, IrMethod[]::new),
+                toArrayOrNull(fields, IrField[]::new),
+                toArrayOrNull(classes, IrClass[]::new),
+                toArrayOrNull(globals, IrGlobal[]::new)
+        );
         pointer = 0;
         stringIndexes.clear();
         functionIndexes.clear();
@@ -110,6 +122,22 @@ public class IrSerializer extends RecursiveIrExprVisitor {
         return packedProgram;
     }
 
+    private static <T> T[] toArrayOrNull(List<T> list, IntFunction<T[]> factory) {
+        return !list.isEmpty() ? list.toArray(factory.apply(list.size())) : null;
+    }
+
+    private void serializeProgram(IrProgram program) {
+        writeUnsignedInt(program.getParameterCount());
+        for (int i = 0; i < program.getParameterCount(); ++i) {
+            IrParameter parameter = program.getParameter(i);
+            writeType(parameter.getType());
+        }
+        for (int i = 0; i < program.getVariableCount(); ++i) {
+            IrVariable variable = program.getVariable(i);
+            writeType(variable.getType());
+        }
+    }
+
     private void serializeExpr(IrExpr expr) {
         if (expr.getDependencyCount() > 0) {
             IrExpr previous = expr.getDependency(0);
@@ -121,8 +149,8 @@ public class IrSerializer extends RecursiveIrExprVisitor {
             for (int i = 1; i < expr.getDependencyCount(); ++i) {
                 serializeInput(expr.getDependency(i));
             }
-            tags.get(expr).index = index++;
             expr.acceptVisitor(this);
+            tags.get(expr).index = index++;
             expr = tags.next(expr);
         }
     }
@@ -167,6 +195,10 @@ public class IrSerializer extends RecursiveIrExprVisitor {
         switch (expr.getOperation()) {
             case VOID:
                 writeSingleByte(Opcodes.VOID);
+                data.noBackref = true;
+                break;
+            case START:
+                writeSingleByte(Opcodes.START);
                 data.noBackref = true;
                 break;
             case NULL:
@@ -534,17 +566,6 @@ public class IrSerializer extends RecursiveIrExprVisitor {
     }
 
     @Override
-    public void visit(IrExitLoopExpr expr) {
-        int diff = loopLevel - tags.get(expr.getLoop()).level;
-        if (diff == 0) {
-            writeSingleByte(Opcodes.LOOP_EXIT_0);
-        } else {
-            writeSingleByte(Opcodes.LOOP_EXIT);
-            writeUnsignedInt(diff);
-        }
-    }
-
-    @Override
     public void visit(IrContinueLoopExpr expr) {
         int diff = loopLevel - tags.get(expr.getLoop()).level;
         if (diff == 0) {
@@ -580,15 +601,19 @@ public class IrSerializer extends RecursiveIrExprVisitor {
         switch (expr.getValue()) {
             case -1:
                 writeSingleByte(Opcodes.INT_CONST_M1);
+                tags.get(expr).noBackref = true;
                 break;
             case 0:
                 writeSingleByte(Opcodes.INT_CONST_0);
+                tags.get(expr).noBackref = true;
                 break;
             case 1:
                 writeSingleByte(Opcodes.INT_CONST_1);
+                tags.get(expr).noBackref = true;
                 break;
             case 2:
                 writeSingleByte(Opcodes.INT_CONST_2);
+                tags.get(expr).noBackref = true;
                 break;
             default:
                 writeSingleByte(Opcodes.INT_CONST);
@@ -603,15 +628,19 @@ public class IrSerializer extends RecursiveIrExprVisitor {
            switch ((int) expr.getValue()) {
                case -1:
                    writeSingleByte(Opcodes.LONG_CONST_M1);
+                   tags.get(expr).noBackref = true;
                    return;
                case 0:
                    writeSingleByte(Opcodes.LONG_CONST_0);
+                   tags.get(expr).noBackref = true;
                    return;
                case 1:
                    writeSingleByte(Opcodes.LONG_CONST_1);
+                   tags.get(expr).noBackref = true;
                    return;
                case 2:
                    writeSingleByte(Opcodes.LONG_CONST_2);
+                   tags.get(expr).noBackref = true;
                    return;
            }
         }
@@ -623,6 +652,7 @@ public class IrSerializer extends RecursiveIrExprVisitor {
     public void visit(IrFloatConstantExpr expr) {
         if (expr.getValue() == 0) {
             writeSingleByte(Opcodes.FLOAT_CONST_0);
+            tags.get(expr).noBackref = true;
         } else {
             writeSingleByte(Opcodes.FLOAT_CONST);
             writeUnsignedInt(Integer.reverse(Float.floatToIntBits(expr.getValue())));
@@ -633,6 +663,7 @@ public class IrSerializer extends RecursiveIrExprVisitor {
     public void visit(IrDoubleConstantExpr expr) {
         if (expr.getValue() == 0) {
             writeSingleByte(Opcodes.DOUBLE_CONST_0);
+            tags.get(expr).noBackref = true;
         } else {
             writeSingleByte(Opcodes.DOUBLE_CONST);
             writeUnsignedLong(Long.reverse(Double.doubleToLongBits(expr.getValue())));
@@ -711,6 +742,7 @@ public class IrSerializer extends RecursiveIrExprVisitor {
     public void visit(IrParameterExpr expr) {
         if (expr.getParameter().getIndex() < 4) {
             writeSingleByte((byte) (Opcodes.PARAMETER_0 + expr.getParameter().getIndex()));
+            tags.get(expr).noBackref = true;
         } else {
             writeSingleByte(Opcodes.PARAMETER);
             writeUnsignedInt(expr.getParameter().getIndex());
@@ -802,6 +834,58 @@ public class IrSerializer extends RecursiveIrExprVisitor {
             globalIndexes.put(global, index);
         }
         return index;
+    }
+
+    private void writeType(IrType type) {
+        switch (type.getKind()) {
+            case BOOLEAN:
+                writeUnsignedInt(Opcodes.TYPE_BOOLEAN);
+                break;
+            case BYTE:
+                writeUnsignedInt(Opcodes.TYPE_BYTE);
+                break;
+            case SHORT:
+                writeUnsignedInt(Opcodes.TYPE_SHORT);
+                break;
+            case CHAR:
+                writeUnsignedInt(Opcodes.TYPE_CHAR);
+                break;
+            case INT:
+                writeUnsignedInt(Opcodes.TYPE_INT);
+                break;
+            case LONG:
+                writeUnsignedInt(Opcodes.TYPE_LONG);
+                break;
+            case FLOAT:
+                writeUnsignedInt(Opcodes.TYPE_FLOAT);
+                break;
+            case DOUBLE:
+                writeUnsignedInt(Opcodes.TYPE_DOUBLE);
+                break;
+            case OBJECT:
+                writeUnsignedInt(Opcodes.TYPE_OBJECT);
+                break;
+            case VOID:
+                writeUnsignedInt(Opcodes.TYPE_VOID);
+                break;
+            case UNREACHABLE:
+                writeUnsignedInt(Opcodes.TYPE_UNREACHABLE);
+                break;
+            case ANY:
+                writeUnsignedInt(Opcodes.TYPE_ANY);
+                break;
+            case TUPLE: {
+                IrTupleType tuple = (IrTupleType) type;
+                int maxTupleComponents = Opcodes.TYPE_TUPLE - Opcodes.TYPE_TUPLE_1 + 1;
+                if (tuple.getComponentCount() > 0 && tuple.getComponentCount() < maxTupleComponents) {
+                    writeUnsignedInt(tuple.getComponentCount() - 1 + Opcodes.TYPE_TUPLE_1);
+                } else {
+                    writeUnsignedInt(Opcodes.TYPE_TUPLE);
+                    writeUnsignedInt(tuple.getComponentCount());
+                }
+                break;
+            }
+        }
     }
 
     private void writeReferenceType(IrReferenceType type) {

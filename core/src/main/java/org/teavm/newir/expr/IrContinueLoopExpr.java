@@ -17,10 +17,11 @@ package org.teavm.newir.expr;
 
 import org.teavm.newir.type.IrType;
 
-public final class IrContinueLoopExpr extends IrExpr {
+public final class IrContinueLoopExpr extends IrSingeInputExpr {
     private IrLoopExpr loop;
 
-    public IrContinueLoopExpr(IrLoopExpr loop) {
+    public IrContinueLoopExpr(IrExpr argument, IrLoopExpr loop) {
+        super(argument);
         this.loop = loop;
     }
 

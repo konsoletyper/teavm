@@ -21,6 +21,7 @@ import org.teavm.newir.type.IrType;
 public enum IrOperation {
     NULL(false, IrType.OBJECT),
     VOID(false, IrType.VOID),
+    START(false, IrType.VOID),
     UNREACHABLE(true, IrType.UNREACHABLE),
     THROW_NPE(true, IrType.UNREACHABLE),
     THROW_AIIOBE(true, IrType.UNREACHABLE),

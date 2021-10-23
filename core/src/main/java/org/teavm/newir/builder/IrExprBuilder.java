@@ -23,7 +23,6 @@ import org.teavm.newir.expr.IrConditionalExpr;
 import org.teavm.newir.expr.IrContinueLoopExpr;
 import org.teavm.newir.expr.IrDoubleConstantExpr;
 import org.teavm.newir.expr.IrExitBlockExpr;
-import org.teavm.newir.expr.IrExitLoopExpr;
 import org.teavm.newir.expr.IrExpr;
 import org.teavm.newir.expr.IrFloatConstantExpr;
 import org.teavm.newir.expr.IrGetVariableExpr;
@@ -84,7 +83,9 @@ public final class IrExprBuilder {
         IrProgram function = new IrProgram(parameterTypes);
         currentFunction = function;
         functionBlock = new IrBlockExpr();
+        functionBlock.setPrevious(IrExpr.START);
         currentFunction.setBody(functionBlock);
+        lastExpr = IrExpr.START;
         IrParameter[] parameters = new IrParameter[function.getParameterCount()];
         for (int i = 0; i < parameters.length; ++i) {
             parameters[i] = function.getParameter(i);

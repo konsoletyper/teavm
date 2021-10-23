@@ -26,7 +26,7 @@ public abstract class IrReferenceType {
     public static final IrReferenceType INT_ARRAY = new SimpleImpl(IrReferenceTypeKind.INT_ARRAY, IrType.INT);
     public static final IrReferenceType LONG_ARRAY = new SimpleImpl(IrReferenceTypeKind.LONG_ARRAY, IrType.LONG);
     public static final IrReferenceType FLOAT_ARRAY = new SimpleImpl(IrReferenceTypeKind.FLOAT_ARRAY, IrType.FLOAT);
-    private static final IrReferenceType DOUBLE_ARRAY = new SimpleImpl(IrReferenceTypeKind.DOUBLE_ARRAY, IrType.DOUBLE);
+    public static final IrReferenceType DOUBLE_ARRAY = new SimpleImpl(IrReferenceTypeKind.DOUBLE_ARRAY, IrType.DOUBLE);
 
     private IrReferenceArrayType arrayType;
 

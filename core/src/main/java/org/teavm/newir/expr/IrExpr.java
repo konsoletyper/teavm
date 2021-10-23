@@ -18,7 +18,9 @@ package org.teavm.newir.expr;
 import org.teavm.newir.type.IrType;
 
 public abstract class IrExpr {
-    public static IrOperationExpr VOID = IrOperationExpr.of(IrOperation.VOID);
+    public static IrOperationExpr VOID = new IrOperationExpr.Impl0(IrOperation.VOID);
+    public static IrOperationExpr START = new IrOperationExpr.Impl0(IrOperation.START);
+    public static IrOperationExpr NULL = new IrOperationExpr.Impl0(IrOperation.NULL);
 
     IrExprTags.Tag tag;
     private IrExpr previous;

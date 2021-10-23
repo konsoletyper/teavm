@@ -68,4 +68,12 @@ public final class IrProgram {
     public Iterable<IrVariable> getVariables() {
         return variables;
     }
+
+    public int getVariableCount() {
+        return variables.size();
+    }
+
+    public IrVariable getVariable(int index) {
+        return variables.get(index);
+    }
 }

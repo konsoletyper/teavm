@@ -25,7 +25,7 @@ import static org.teavm.newir.builder.IrExprBuilder.loop;
 import static org.teavm.newir.builder.IrExprBuilder.set;
 import java.io.PrintWriter;
 import java.util.Arrays;
-import org.teavm.newir.binary.IrPackedTree;
+import org.teavm.newir.binary.IrPackedProgram;
 import org.teavm.newir.binary.IrSerializer;
 import org.teavm.newir.builder.IrExprBuilder;
 import org.teavm.newir.decl.IrFunction;
@@ -70,7 +70,7 @@ public final class Fib {
         writer.flush();
 
         IrSerializer serializer = new IrSerializer();
-        IrPackedTree packed = serializer.serialize(fib.getBody());
+        IrPackedProgram packed = serializer.serialize(fib);
 
         System.err.println(Arrays.toString(packed.getData()));
 

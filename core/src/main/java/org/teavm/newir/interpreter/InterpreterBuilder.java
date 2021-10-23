@@ -42,7 +42,6 @@ import org.teavm.newir.expr.IrConditionalExpr;
 import org.teavm.newir.expr.IrContinueLoopExpr;
 import org.teavm.newir.expr.IrDoubleConstantExpr;
 import org.teavm.newir.expr.IrExitBlockExpr;
-import org.teavm.newir.expr.IrExitLoopExpr;
 import org.teavm.newir.expr.IrExpr;
 import org.teavm.newir.expr.IrExprVisitor;
 import org.teavm.newir.expr.IrFloatConstantExpr;
