@@ -15,8 +15,12 @@
  */
 package org.teavm.ast;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public abstract class Statement {
     public abstract void acceptVisitor(StatementVisitor visitor);
@@ -26,26 +30,57 @@ public abstract class Statement {
     }
 
     public static AssignmentStatement assign(Expr left, Expr right) {
-        AssignmentStatement stmt = new AssignmentStatement();
+        var stmt = new AssignmentStatement();
         stmt.setLeftValue(left);
         stmt.setRightValue(right);
         return stmt;
     }
 
+    public static AssignmentStatement statementExpr(Expr expr) {
+        var stmt = new AssignmentStatement();
+        stmt.setRightValue(expr);
+        return stmt;
+    }
+
     public static ReturnStatement exitFunction(Expr result) {
-        ReturnStatement stmt = new ReturnStatement();
+        var stmt = new ReturnStatement();
         stmt.setResult(result);
         return stmt;
     }
 
+    public static SequentialStatement sequence(Statement... statements) {
+        var seq = new SequentialStatement();
+        seq.getSequence().addAll(Arrays.asList(statements));
+        return seq;
+    }
+
+    public static BlockStatement block(Function<BlockStatement, Collection<Statement>> body) {
+        var statement = new BlockStatement();
+        statement.getBody().addAll(body.apply(statement));
+        return statement;
+    }
+
+    public static BreakStatement exitBlock(IdentifiedStatement identifiedStatement) {
+        var statement = new BreakStatement();
+        statement.setTarget(identifiedStatement);
+        return statement;
+    }
+
+    public static WhileStatement loopWhile(Expr condition, Function<WhileStatement, Collection<Statement>> body) {
+        var statement = new WhileStatement();
+        statement.setCondition(condition);
+        statement.getBody().addAll(body.apply(statement));
+        return statement;
+    }
+
     public static ThrowStatement raiseException(Expr exception) {
-        ThrowStatement stmt = new ThrowStatement();
+        var stmt = new ThrowStatement();
         stmt.setException(exception);
         return stmt;
     }
 
     public static Statement cond(Expr predicate, List<Statement> consequent, List<Statement> alternative) {
-        ConditionalStatement statement = new ConditionalStatement();
+        var statement = new ConditionalStatement();
         statement.setCondition(predicate);
         statement.getConsequent().addAll(consequent);
         statement.getAlternative().addAll(alternative);
@@ -57,8 +92,28 @@ public abstract class Statement {
     }
 
     public static InitClassStatement initClass(String className) {
-        InitClassStatement stmt = new InitClassStatement();
+        var stmt = new InitClassStatement();
         stmt.setClassName(className);
         return stmt;
+    }
+
+    public static SwitchStatement switchStatement(Expr condition, List<Statement> defaultClause,
+            SwitchClause... clauses) {
+        var statement = new SwitchStatement();
+        statement.setValue(condition);
+        statement.getDefaultClause().addAll(defaultClause);
+        statement.getClauses().addAll(List.of(clauses));
+        return statement;
+    }
+
+    public static SwitchClause switchClause(int[] conditions, Statement... statements) {
+        var clause = new SwitchClause();
+        clause.setConditions(conditions);
+        clause.getBody().addAll(List.of(statements));
+        return clause;
+    }
+
+    public static SwitchClause switchClause(int condition, Statement... statements) {
+        return switchClause(new int[] { condition }, statements);
     }
 }

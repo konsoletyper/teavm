@@ -21,7 +21,7 @@ import java.util.List;
 public class Program implements ProgramReader {
     private List<BasicBlock> basicBlocks = new ArrayList<>(2);
     private List<Variable> variables = new ArrayList<>();
-    private boolean packed;
+    private boolean packed = true;
     private int lastUsedRegister;
     private AnnotationContainer annotations = new AnnotationContainer();
 

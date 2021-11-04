@@ -72,6 +72,28 @@ public final class ProgramUtils {
         return graphBuilder.build();
     }
 
+    public static Graph buildControlFlowGraph2(Program program) {
+        var graphBuilder = new GraphBuilder(program.basicBlockCount() * 2);
+        var transitionExtractor = new TransitionExtractor();
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            graphBuilder.addEdge(i * 2, i * 2 + 1);
+            var block = program.basicBlockAt(i);
+            var insn = block.getLastInstruction();
+            if (insn != null) {
+                insn.acceptVisitor(transitionExtractor);
+                if (transitionExtractor.getTargets() != null) {
+                    for (var successor : transitionExtractor.getTargets()) {
+                        graphBuilder.addEdge(i * 2 + 1, successor.getIndex() * 2);
+                    }
+                }
+            }
+            for (var tryCatch : block.getTryCatchBlocks()) {
+                graphBuilder.addEdge(i * 2, tryCatch.getHandler().getIndex() * 2);
+            }
+        }
+        return graphBuilder.build();
+    }
+
     public static ControlFlowEntry[] getLocationCFG(Program program) {
         return new LocationGraphBuilder().build(program);
     }
