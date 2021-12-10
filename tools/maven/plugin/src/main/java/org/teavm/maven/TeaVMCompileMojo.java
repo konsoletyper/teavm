@@ -158,6 +158,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter(property = "teavm.heapDump", defaultValue = "false")
     private boolean heapDump;
 
+    @Parameter(property = "teavm.shortFileNames", defaultValue = "false")
+    private boolean shortFileNames;
+
     private void setupBuilder(BuildStrategy builder) throws MojoExecutionException {
         builder.setLog(new MavenTeaVMToolLog(getLog()));
         try {
@@ -182,6 +185,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setSourceFilesCopied(sourceFilesCopied);
             builder.setMinHeapSize(minHeapSize * 1024 * 1024);
             builder.setMaxHeapSize(maxHeapSize * 1024 * 1024);
+            builder.setShortFileNames(shortFileNames);
         } catch (RuntimeException e) {
             throw new MojoExecutionException("Unexpected error occurred", e);
         }

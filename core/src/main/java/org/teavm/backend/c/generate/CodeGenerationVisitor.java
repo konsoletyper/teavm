@@ -1565,9 +1565,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
         @Override
         public String escapeFileName(String name) {
-            StringBuilder sb = new StringBuilder();
-            ClassGenerator.escape(name, sb);
-            return sb.toString();
+            return context.getFileNames().escapeName(name);
         }
 
         @Override

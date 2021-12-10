@@ -68,6 +68,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private TeaVMProgressListener progressListener;
     private Properties properties = new Properties();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
+    private boolean shortFileNames;
 
     public InProcessBuildStrategy(ClassLoaderFactory classLoaderFactory) {
         this.classLoaderFactory = classLoaderFactory;
@@ -221,6 +222,11 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setShortFileNames(boolean shortFileNames) {
+        this.shortFileNames = shortFileNames;
+    }
+
+    @Override
     public BuildResult build() throws BuildException {
         TeaVMTool tool = new TeaVMTool();
         tool.setProgressListener(progressListener);
@@ -250,6 +256,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setMaxHeapSize(maxHeapSize);
         tool.setLongjmpSupported(longjmpSupported);
         tool.setHeapDump(heapDump);
+        tool.setShortFileNames(shortFileNames);
 
         tool.getProperties().putAll(properties);
 

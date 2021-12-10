@@ -34,6 +34,8 @@ import java.util.Properties;
 import java.util.Set;
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.c.generate.CNameProvider;
+import org.teavm.backend.c.generate.ShorteningFileNameProvider;
+import org.teavm.backend.c.generate.SimpleFileNameProvider;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
@@ -108,6 +110,7 @@ public class TeaVMTool {
     private ReferenceCache referenceCache;
     private boolean longjmpSupported = true;
     private boolean heapDump;
+    private boolean shortFileNames;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -261,6 +264,10 @@ public class TeaVMTool {
         this.heapDump = heapDump;
     }
 
+    public void setShortFileNames(boolean shortFileNames) {
+        this.shortFileNames = shortFileNames;
+    }
+
     public void setProgressListener(TeaVMProgressListener progressListener) {
         this.progressListener = progressListener;
     }
@@ -342,6 +349,9 @@ public class TeaVMTool {
         cTarget.setLongjmpUsed(longjmpSupported);
         cTarget.setHeapDump(heapDump);
         cTarget.setObfuscated(obfuscated);
+        cTarget.setFileNames(shortFileNames
+                ? new ShorteningFileNameProvider(new SimpleFileNameProvider())
+                : new SimpleFileNameProvider());
         return cTarget;
     }
 

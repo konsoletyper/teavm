@@ -121,7 +121,7 @@ class GeneratorContextImpl implements GeneratorContext {
     }
 
     private FileGenerator createFile(BufferedCodeWriter writer, String path) {
-        IncludeManager includes = new SimpleIncludeManager(writer);
+        IncludeManager includes = new SimpleIncludeManager(context.getFileNames(), writer);
         includes.init(path);
         FileGeneratorImpl generator = new FileGeneratorImpl(path, writer, includes);
         fileGenerators.add(generator);
@@ -130,9 +130,7 @@ class GeneratorContextImpl implements GeneratorContext {
 
     @Override
     public String escapeFileName(String name) {
-        StringBuilder sb = new StringBuilder();
-        ClassGenerator.escape(name, sb);
-        return sb.toString();
+        return context.getFileNames().escapeName(name);
     }
 
     @Override

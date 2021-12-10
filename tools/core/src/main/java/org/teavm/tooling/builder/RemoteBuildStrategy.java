@@ -196,6 +196,11 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setShortFileNames(boolean shortFileNames) {
+        request.shortFileNames = shortFileNames;
+    }
+
+    @Override
     public BuildResult build() throws BuildException {
         RemoteBuildResponse response;
         try {

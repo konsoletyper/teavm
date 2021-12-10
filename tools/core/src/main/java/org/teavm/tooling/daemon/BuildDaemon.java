@@ -163,6 +163,7 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
         tool.setMaxHeapSize(request.maxHeapSize);
         tool.setLongjmpSupported(request.longjmpSupported);
         tool.setHeapDump(request.heapDump);
+        tool.setShortFileNames(request.shortFileNames);
 
         for (String sourceDirectory : request.sourceDirectories) {
             tool.addSourceFileProvider(new DirectorySourceFileProvider(new File(sourceDirectory)));

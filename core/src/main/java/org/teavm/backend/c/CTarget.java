@@ -41,9 +41,11 @@ import org.teavm.backend.c.generate.ClassGenerationContext;
 import org.teavm.backend.c.generate.ClassGenerator;
 import org.teavm.backend.c.generate.CodeGenerationVisitor;
 import org.teavm.backend.c.generate.CodeWriter;
+import org.teavm.backend.c.generate.FileNameProvider;
 import org.teavm.backend.c.generate.GenerationContext;
 import org.teavm.backend.c.generate.IncludeManager;
 import org.teavm.backend.c.generate.OutputFileUtil;
+import org.teavm.backend.c.generate.SimpleFileNameProvider;
 import org.teavm.backend.c.generate.SimpleIncludeManager;
 import org.teavm.backend.c.generate.SimpleStringPool;
 import org.teavm.backend.c.generate.StringPoolGenerator;
@@ -154,6 +156,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private TeaVMTargetController controller;
     private NameProvider rawNameProvider;
+    private FileNameProvider fileNames = new SimpleFileNameProvider();
     private ClassInitializerEliminator classInitializerEliminator;
     private ClassInitializerTransformer classInitializerTransformer;
     private ShadowStackTransformer shadowStackTransformer;
@@ -212,6 +215,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     public void setObfuscated(boolean obfuscated) {
         this.obfuscated = obfuscated;
+    }
+
+    public void setFileNames(FileNameProvider fileNames) {
+        this.fileNames = fileNames;
     }
 
     @Override
@@ -402,8 +409,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         boolean vmAssertions = Boolean.parseBoolean(System.getProperty("teavm.c.vmAssertions", "false"));
         boolean gcStats = Boolean.parseBoolean(System.getProperty("teavm.c.gcStats", "false"));
         GenerationContext context = new GenerationContext(vtableProvider, characteristics,
-                controller.getDependencyInfo(), stringPool, nameProvider, controller.getDiagnostics(), classes,
-                intrinsics, generators, asyncMethods::contains, buildTarget,
+                controller.getDependencyInfo(), stringPool, nameProvider, fileNames,
+                controller.getDiagnostics(), classes, intrinsics, generators, asyncMethods::contains, buildTarget,
                 controller.getClassInitializerInfo(), incremental, longjmpUsed,
                 vmAssertions, vmAssertions || heapDump, obfuscated);
 
@@ -497,7 +504,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             if (cls != null) {
                 classGenerator.generateClass(writer, headerWriter, cls);
             }
-            String name = ClassGenerator.fileName(className);
+            String name = fileNames.fileName(className);
             OutputFileUtil.write(writer, name + ".c", buildTarget);
             OutputFileUtil.write(headerWriter, name + ".h", buildTarget);
             if (incremental) {
@@ -512,7 +519,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             BufferedCodeWriter writer = new BufferedCodeWriter(false);
             BufferedCodeWriter headerWriter = new BufferedCodeWriter(false);
             classGenerator.generateType(writer, headerWriter, type);
-            String name = ClassGenerator.fileName(type);
+            String name = fileNames.fileName(type);
             OutputFileUtil.write(writer, name + ".c", buildTarget);
             OutputFileUtil.write(headerWriter, name + ".h", buildTarget);
             if (incremental) {
@@ -525,7 +532,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             Collection<? extends String> classNames) throws IOException {
         BufferedCodeWriter writer = new BufferedCodeWriter(false);
 
-        IncludeManager includes = new SimpleIncludeManager(writer);
+        IncludeManager includes = new SimpleIncludeManager(context.getFileNames(), writer);
         includes.init("callsites.c");
 
         if (!incremental) {
@@ -600,7 +607,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateStrings(BuildTarget buildTarget, GenerationContext context) throws IOException {
         BufferedCodeWriter writer = new BufferedCodeWriter(false);
-        IncludeManager includes = new SimpleIncludeManager(writer);
+        IncludeManager includes = new SimpleIncludeManager(context.getFileNames(), writer);
         includes.init("strings.c");
         BufferedCodeWriter headerWriter = new BufferedCodeWriter(false);
 
@@ -664,7 +671,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     }
 
     private void generateSpecialFunctions(GenerationContext context, CodeWriter writer) {
-        IncludeManager includes = new SimpleIncludeManager(writer);
+        IncludeManager includes = new SimpleIncludeManager(context.getFileNames(), writer);
         includes.init("special.c");
         includes.includePath("core.h");
         includes.includePath("string.h");
@@ -731,7 +738,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private void generateMainFile(GenerationContext context, ListableClassHolderSource classes,
             List<? extends ValueType> types, BuildTarget buildTarget) throws IOException {
         BufferedCodeWriter writer = new BufferedCodeWriter(false);
-        IncludeManager includes = new SimpleIncludeManager(writer);
+        IncludeManager includes = new SimpleIncludeManager(fileNames, writer);
         includes.init("main.c");
         includes.includePath("runtime.h");
         includes.includePath("strings.h");
@@ -750,7 +757,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         writer.println("#define __USE_XOPEN");
         writer.println("#define _GNU_SOURCE");
 
-        IncludeManager includes = new SimpleIncludeManager(writer);
+        IncludeManager includes = new SimpleIncludeManager(fileNames, writer);
         includes.init("all.c");
         for (String file : allFiles) {
             includes.includePath(file);
@@ -787,10 +794,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         files.add("virtcall.c");
 
         for (String className : classes.getClassNames()) {
-            files.add(ClassGenerator.fileName(className) + ".c");
+            files.add(fileNames.fileName(className) + ".c");
         }
         for (ValueType type : types) {
-            files.add(ClassGenerator.fileName(type) + ".c");
+            files.add(fileNames.fileName(type) + ".c");
         }
 
         files.add("main.c");

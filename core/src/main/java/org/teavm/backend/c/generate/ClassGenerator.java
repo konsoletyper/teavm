@@ -208,7 +208,7 @@ public class ClassGenerator {
 
     public void generateClass(CodeWriter writer, CodeWriter headerWriter, ClassHolder cls) {
         ValueType type = ValueType.object(cls.getName());
-        init(writer, headerWriter, fileName(cls.getName()), type);
+        init(writer, headerWriter, context.getFileNames().fileName(cls.getName()), type);
 
         generateStringPoolDecl(type);
         generateClassStructure(cls);
@@ -228,7 +228,7 @@ public class ClassGenerator {
     }
 
     public void generateType(CodeWriter writer, CodeWriter headerWriter, ValueType type) {
-        init(writer, headerWriter, fileName(type), type);
+        init(writer, headerWriter, context.getFileNames().fileName(type), type);
         generateStringPoolDecl(type);
         includes.includeType(type);
         generateVirtualTable(type);
@@ -239,14 +239,14 @@ public class ClassGenerator {
         staticGcRoots = null;
         classLayout = null;
 
-        includes = new SimpleIncludeManager(writer);
+        includes = new SimpleIncludeManager(context.getFileNames(), writer);
         includes.init(fileName + ".c");
         prologueWriter = writer.fragment();
         codeWriter = writer.fragment();
         this.headerWriter = headerWriter;
 
         headerWriter.println("#pragma once");
-        headerIncludes = new SimpleIncludeManager(headerWriter);
+        headerIncludes = new SimpleIncludeManager(context.getFileNames(), headerWriter);
         headerIncludes.init(fileName + ".h");
         headerIncludes.includePath("runtime.h");
 
@@ -1436,105 +1436,6 @@ public class ClassGenerator {
             case DOUBLE:
                 generateIsSuperclassFunction("java.lang.Double");
                 break;
-        }
-    }
-
-    public static String fileName(ValueType type) {
-        StringBuilder sb = new StringBuilder();
-        fileNameRec(type, sb);
-        return sb.toString();
-    }
-
-    private static void fileNameRec(ValueType type, StringBuilder sb) {
-        if (type instanceof ValueType.Object) {
-            sb.append("classes/");
-            escape(((ValueType.Object) type).getClassName(), sb);
-        } else if (type instanceof ValueType.Array) {
-            sb.append("arrays/");
-            fileNameRec(((ValueType.Array) type).getItemType(), sb);
-        } else if (type instanceof ValueType.Primitive) {
-            sb.append("primitives/");
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                    sb.append("boolean");
-                    break;
-                case BYTE:
-                    sb.append("byte");
-                    break;
-                case SHORT:
-                    sb.append("short");
-                    break;
-                case CHARACTER:
-                    sb.append("char");
-                    break;
-                case INTEGER:
-                    sb.append("int");
-                    break;
-                case LONG:
-                    sb.append("long");
-                    break;
-                case FLOAT:
-                    sb.append("float");
-                    break;
-                case DOUBLE:
-                    sb.append("double");
-                    break;
-            }
-        } else if (type == ValueType.VOID) {
-            sb.append("primitives/void");
-        }
-    }
-
-    public static String fileName(String className) {
-        StringBuilder sb = new StringBuilder("classes/");
-        escape(className, sb);
-        return sb.toString();
-    }
-
-    static void escape(String className, StringBuilder sb) {
-        for (int i = 0; i < className.length(); ++i) {
-            char c = className.charAt(i);
-            switch (c) {
-                case '.':
-                    sb.append('/');
-                    break;
-                case '@':
-                    sb.append("@@");
-                    break;
-                case '/':
-                    sb.append("@s");
-                    break;
-                case '\\':
-                    sb.append("@b");
-                    break;
-                case ':':
-                    sb.append("@c");
-                    break;
-                case ';':
-                    sb.append("@e");
-                    break;
-                case '*':
-                    sb.append("@m");
-                    break;
-                case '"':
-                    sb.append("@q");
-                    break;
-                case '<':
-                    sb.append("@l");
-                    break;
-                case '>':
-                    sb.append("@g");
-                    break;
-                case '|':
-                    sb.append("@p");
-                    break;
-                case '$':
-                    sb.append("@d");
-                    break;
-                default:
-                    sb.append(c);
-                    break;
-            }
         }
     }
 }

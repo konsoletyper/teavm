@@ -20,10 +20,15 @@ import java.util.Set;
 import org.teavm.model.ValueType;
 
 public abstract class IncludeManager {
+    private FileNameProvider fileNames;
     private String currentFileName;
     private Set<String> includedFiles = new HashSet<>();
     private Set<String> includedClasses = new HashSet<>();
     private Set<ValueType> includedTypes = new HashSet<>();
+
+    public IncludeManager(FileNameProvider fileNames) {
+        this.fileNames = fileNames;
+    }
 
     public void init(String currentFileName) {
         this.currentFileName = currentFileName;
@@ -63,14 +68,14 @@ public abstract class IncludeManager {
         if (!includedClasses.add(className)) {
             return;
         }
-        includePath(ClassGenerator.fileName(className) + ".h");
+        includePath(fileNames.fileName(className) + ".h");
     }
 
     public void includeType(ValueType type) {
         if (!includedTypes.add(type)) {
             return;
         }
-        includePath(ClassGenerator.fileName(type) + ".h");
+        includePath(fileNames.fileName(type) + ".h");
     }
 
     public void includePath(String fileName) {
