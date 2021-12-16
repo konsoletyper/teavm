@@ -115,10 +115,19 @@ public final class GC {
             return;
         }
         collectGarbageImpl(size);
-        if (currentChunk.size != size && currentChunk.size <= size + MIN_CHUNK_SIZE && !getNextChunkIfPossible(size)) {
-            ExceptionHandling.printStack();
-            outOfMemory();
+        if (!hasAvailableMemory(size)) {
+            collectGarbageFullImpl(size);
+            if (!hasAvailableMemory(size)) {
+                ExceptionHandling.printStack();
+                outOfMemory();
+            }
         }
+    }
+
+    private static boolean hasAvailableMemory(int size) {
+        return currentChunk.size == size
+                || currentChunk.size > size + MIN_CHUNK_SIZE
+                || getNextChunkIfPossible(size);
     }
 
     private static boolean getNextChunkIfPossible(int size) {
