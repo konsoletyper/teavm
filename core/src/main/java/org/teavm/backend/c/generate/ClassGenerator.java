@@ -920,48 +920,52 @@ public class ClassGenerator {
         }
     }
 
-    private void generateHeapDumpMetadata(CodeWriter codeWriter, ClassReader cls, boolean initMethod,
+    private void generateHeapDumpMetadata(CodeWriter writer, ClassReader cls, boolean initMethod,
             int depth) {
         List<HeapDumpField> fields = getHeapDumpFields(cls);
         List<HeapDumpField> staticFields = getHeapDumpStaticFields(cls);
         if (staticFields.isEmpty() && fields.isEmpty()) {
             return;
         }
-        codeWriter.println().println("#if TEAVM_HEAP_DUMP").indent();
+        writer.println().println("#if TEAVM_HEAP_DUMP").indent();
         if (!fields.isEmpty()) {
+            String structDecl = "struct { uint32_t count; TeaVM_FieldDescriptor data[" + fields.size() + "]; }";
             if (initMethod) {
-                codeWriter.print("vt_" + depth + "->");
+                writer.print("static " + structDecl + " fieldDescriptors = ");
             } else {
-                codeWriter.println(",");
-                codeWriter.print(".");
+                writer.println(",");
+                writer.println(".fieldDescriptors = (TeaVM_FieldDescriptors*) &(" + structDecl + ") ");
             }
+            writer.println("{").indent();
 
-            codeWriter.println("fieldDescriptors = (TeaVM_FieldDescriptors*) "
-                    + "&(struct { uint32_t count; TeaVM_FieldDescriptor data["
-                    + fields.size() + "]; }) {").indent();
-            generateHeapDumpFields(codeWriter, fields);
-            codeWriter.outdent().print("}");
+            generateHeapDumpFields(writer, fields);
+            writer.outdent().print("}");
+
             if (initMethod) {
-                codeWriter.println(";");
+                writer.println(";");
+                writer.println("vt_" + depth + "->fieldDescriptors = (TeaVM_FieldDescriptors*) &fieldDescriptors;");
             }
         }
         if (!staticFields.isEmpty()) {
+            String structDecl = "struct { uint32_t count; TeaVM_StaticFieldDescriptor data["
+                    + staticFields.size() + "]; }";
             if (initMethod) {
-                codeWriter.print("vt_" + depth + "->");
+                writer.print("static " + structDecl + " staticFieldDescriptors = ");
             } else {
-                codeWriter.println(",");
-                codeWriter.print(".");
+                writer.println(",");
+                writer.println(".staticFieldDescriptors = (TeaVM_StaticFieldDescriptors*) &(" + structDecl + ") ");
             }
-            codeWriter.println("staticFieldDescriptors = (TeaVM_StaticFieldDescriptors*) "
-                    + "&(struct { uint32_t count; TeaVM_StaticFieldDescriptor data["
-                    + staticFields.size() + "]; }) {").indent();
-            generateHeapDumpFields(codeWriter, staticFields);
-            codeWriter.outdent().print("}");
+            writer.println("{").indent();
+            generateHeapDumpFields(writer, staticFields);
+            writer.outdent().print("}");
+
             if (initMethod) {
-                codeWriter.println(";");
+                writer.println(";");
+                writer.print("vt_" + depth + "->staticFieldDescriptors = "
+                        + "(TeaVM_StaticFieldDescriptors*) &staticFieldDescriptors;");
             }
         }
-        codeWriter.println().outdent().println("#endif");
+        writer.println().outdent().println("#endif");
     }
 
     private void generateHeapDumpFields(CodeWriter codeWriter, List<HeapDumpField> fields) {
