@@ -81,6 +81,6 @@ public abstract class TEnum<E extends TEnum<E>> extends TObject implements TComp
                 return constant;
             }
         }
-        throw new TIllegalArgumentException("Enum " + enumType + " does not have the " + name + "constant");
+        throw new TIllegalArgumentException("Enum " + enumType + " does not have the " + name + " constant");
     }
 }
