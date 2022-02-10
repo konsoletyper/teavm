@@ -312,10 +312,12 @@ public class CodeServlet extends HttpServlet {
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }
-            if (req.getMethod().equals("GET") && path.startsWith(pathToFile) && path.length() > pathToFile.length()) {
+            if ((req.getMethod().equals("GET") || req.getMethod().equals("OPTIONS"))
+                    && path.startsWith(pathToFile) && path.length() > pathToFile.length()) {
+                boolean hasBody = req.getMethod().equals("GET");
                 String fileName = path.substring(pathToFile.length());
                 if (fileName.startsWith("src/")) {
-                    if (serveSourceFile(fileName.substring("src/".length()), resp)) {
+                    if (serveSourceFile(fileName.substring("src/".length()), req, resp, hasBody)) {
                         log.debug("File " + path + " served as source file");
                         return;
                     }
@@ -326,7 +328,7 @@ public class CodeServlet extends HttpServlet {
                         }
                     }
                 } else if (path.equals(deobfuscatorPath)) {
-                    serveDeobfuscator(resp);
+                    serveDeobfuscator(req, resp, hasBody);
                     return;
                 } else {
                     byte[] fileContent;
@@ -336,17 +338,21 @@ public class CodeServlet extends HttpServlet {
                         firstTime = this.firstTime;
                     }
                     if (fileContent != null) {
-                        resp.setStatus(HttpServletResponse.SC_OK);
+                        resp.setStatus(hasBody ? HttpServletResponse.SC_OK : HttpServletResponse.SC_NO_CONTENT);
                         resp.setCharacterEncoding("UTF-8");
-                        resp.setHeader("Access-Control-Allow-Origin", "*");
-                        resp.setContentType(chooseContentType(fileName));
-                        noCache(resp);
-                        resp.getOutputStream().write(fileContent);
+                        allowOrigin(req, resp);
+                        if (!hasBody) {
+                            resp.setHeader("Access-Control-Allow-Methods", "GET");
+                        } else {
+                            resp.setContentType(chooseContentType(fileName));
+                            noCache(resp);
+                            resp.getOutputStream().write(fileContent);
+                        }
                         resp.getOutputStream().flush();
                         log.debug("File " + path + " served as generated file");
                         return;
                     } else if (fileName.equals(this.fileName) && indicator && firstTime) {
-                        serveBootFile(resp);
+                        serveBootFile(req, resp, hasBody);
                         return;
                     }
                 }
@@ -378,14 +384,20 @@ public class CodeServlet extends HttpServlet {
         }
     }
 
-    private void serveDeobfuscator(HttpServletResponse resp) throws IOException {
+    private void serveDeobfuscator(HttpServletRequest req, HttpServletResponse resp, boolean hasBody)
+            throws IOException {
         ClassLoader loader = CodeServlet.class.getClassLoader();
-        resp.setStatus(HttpServletResponse.SC_OK);
-        resp.setCharacterEncoding("UTF-8");
-        resp.setContentType("application/javascript");
-        noCache(resp);
-        try (InputStream input = loader.getResourceAsStream("teavm/devserver/deobfuscator.js")) {
-            IOUtils.copy(input, resp.getOutputStream());
+        resp.setStatus(hasBody ? HttpServletResponse.SC_OK : HttpServletResponse.SC_NO_CONTENT);
+        allowOrigin(req, resp);
+        if (!hasBody) {
+            resp.setHeader("Access-Control-Allow-Methods", "GET");
+        } else {
+            resp.setCharacterEncoding("UTF-8");
+            resp.setContentType("application/javascript");
+            noCache(resp);
+            try (InputStream input = loader.getResourceAsStream("teavm/devserver/deobfuscator.js")) {
+                IOUtils.copy(input, resp.getOutputStream());
+            }
         }
         resp.getOutputStream().flush();
     }
@@ -620,17 +632,23 @@ public class CodeServlet extends HttpServlet {
         buildThread = thread;
     }
 
-    private boolean serveSourceFile(String fileName, HttpServletResponse resp) throws IOException {
+    private boolean serveSourceFile(String fileName, HttpServletRequest req, HttpServletResponse resp,
+            boolean hasBody) throws IOException {
         try (InputStream stream = sourceFileCache.computeIfAbsent(fileName, this::findSourceFile).get()) {
             if (stream == null) {
                 return false;
             }
 
-            resp.setStatus(HttpServletResponse.SC_OK);
+            resp.setStatus(hasBody ? HttpServletResponse.SC_OK : HttpServletResponse.SC_NO_CONTENT);
             resp.setCharacterEncoding("UTF-8");
-            resp.setContentType("text/plain");
-            noCache(resp);
-            IOUtils.copy(stream, resp.getOutputStream());
+            allowOrigin(req, resp);
+            if (!hasBody) {
+                resp.setHeader("Access-Control-Allow-Methods", "GET");
+            } else {
+                resp.setContentType("text/plain");
+                noCache(resp);
+                IOUtils.copy(stream, resp.getOutputStream());
+            }
             resp.getOutputStream().flush();
             return true;
         }
@@ -688,12 +706,18 @@ public class CodeServlet extends HttpServlet {
         }
     }
 
-    private void serveBootFile(HttpServletResponse resp) throws IOException {
-        resp.setStatus(HttpServletResponse.SC_OK);
+    private void serveBootFile(HttpServletRequest req, HttpServletResponse resp, boolean hasBody) throws IOException {
+        resp.setStatus(hasBody ? HttpServletResponse.SC_OK : HttpServletResponse.SC_NO_CONTENT);
         resp.setCharacterEncoding("UTF-8");
-        resp.setContentType("text/plain");
-        resp.getWriter().write("function main() { }\n");
-        resp.getWriter().write(getIndicatorScript(true));
+        allowOrigin(req, resp);
+        if (!hasBody) {
+            resp.setHeader("Access-Control-Allow-Methods", "GET");
+        } else {
+            resp.setContentType("text/plain");
+            noCache(resp);
+            resp.getWriter().write("function main() { }\n");
+            resp.getWriter().write(getIndicatorScript(true));
+        }
         resp.getWriter().flush();
         log.debug("Served boot file");
     }
@@ -1116,5 +1140,17 @@ public class CodeServlet extends HttpServlet {
 
     static void noCache(HttpServletResponse response) {
         response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    }
+
+    static void allowOrigin(HttpServletRequest req, HttpServletResponse resp) {
+        String origin = req.getHeader("Origin");
+        if (origin != null) {
+            resp.setHeader("Access-Control-Allow-Origin", origin);
+            resp.setHeader("Vary", "Origin");
+        } else {
+            resp.setHeader("Access-Control-Allow-Origin", "*");
+        }
+        resp.setHeader("Access-Control-Allow-Credentials", "true");
+        resp.setHeader("Access-Control-Allow-Private-Network", "true");
     }
 }
