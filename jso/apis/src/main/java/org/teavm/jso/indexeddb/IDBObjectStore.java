@@ -36,7 +36,7 @@ public abstract class IDBObjectStore implements JSObject, IDBCursorSource {
         }
     }
 
-    @JSBody(script = "return this;")
+    @JSBody(params = "obj", script = "return obj;")
     private native String[] unwrapStringArray(JSObject obj);
 
     @JSProperty
