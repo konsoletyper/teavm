@@ -28,7 +28,7 @@ public abstract class IDBFactory implements JSObject {
 
     public static IDBFactory getInstance() {
         IDBFactory factory = getInstanceImpl();
-        if (!factory.isUndefined()) {
+        if (factory.isUndefined()) {
             throw new IllegalStateException("IndexedDB is not supported in this browser");
         }
         return factory;
