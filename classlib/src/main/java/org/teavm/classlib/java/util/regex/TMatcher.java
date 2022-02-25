@@ -700,6 +700,7 @@ public final class TMatcher implements TMatchResult {
         this.rightBound = string.length();
         matchResult = new TMatchResultImpl(cs, leftBound, rightBound, pat.groupCount(), pat.compCount(),
                 pat.consCount());
+        matchResult.useAnchoringBounds(true);
     }
 
     @Override

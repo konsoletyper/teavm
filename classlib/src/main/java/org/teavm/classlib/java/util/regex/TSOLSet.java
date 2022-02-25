@@ -47,8 +47,7 @@ final class TSOLSet extends TAbstractSet {
     public int matches(int strIndex, CharSequence testString,
             TMatchResultImpl matchResult) {
         if (strIndex == 0
-                || (matchResult.hasAnchoringBounds() && strIndex == matchResult
-                        .getLeftBound())) {
+                || (matchResult.hasAnchoringBounds() && strIndex == matchResult.getLeftBound())) {
             return next.matches(strIndex, testString, matchResult);
         }
         return -1;
