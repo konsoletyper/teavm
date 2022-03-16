@@ -23,6 +23,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -30,9 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
-import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.backend.javascript.spi.Generator;
-import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.classlib.ServiceLoaderFilter;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
@@ -42,7 +41,7 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
-public class ServiceLoaderSupport extends AbstractDependencyListener implements Generator {
+public class ServiceLoaderSupport extends AbstractDependencyListener implements ServiceLoaderInformation {
     private static final MethodReference LOAD_METHOD = new MethodReference(ServiceLoader.class, "load", Class.class,
             ServiceLoader.class);
     private static final MethodDescriptor INIT_METHOD = new MethodDescriptor("<init>", void.class);
@@ -54,40 +53,17 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
     }
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        writer.append("if (!").appendClass("java.util.ServiceLoader").append(".$$services$$) {").indent()
-                .softNewLine();
-        writer.appendClass("java.util.ServiceLoader").append(".$$services$$ = true;").softNewLine();
-        for (Map.Entry<String, List<String>> entry : serviceMap.entrySet()) {
-            writer.appendClass(entry.getKey()).append(".$$serviceList$$ = [");
-            List<String> implementations = entry.getValue();
-            boolean first = true;
-            for (String implName : implementations) {
-                if (context.getClassSource().getClassNames().contains(implName)) {
-                    if (!first) {
-                        writer.append(", ");
-                    }
-                    first = false;
-                    writer.append("[").appendClass(implName).append(", ").appendMethodBody(
-                            new MethodReference(implName, INIT_METHOD))
-                            .append("]");
-                }
-            }
-            writer.append("];").softNewLine();
+    public Collection<? extends String> serviceTypes() {
+        return serviceMap.keySet();
+    }
+
+    @Override
+    public Collection<? extends String> serviceImplementations(String type) {
+        Collection<? extends String> result = serviceMap.get(type);
+        if (result == null) {
+            result = Collections.emptyList();
         }
-        writer.outdent().append("}").softNewLine();
-        String param = context.getParameterName(1);
-        writer.append("var cls = " + param + ";").softNewLine();
-        writer.append("if (!cls.$$serviceList$$) {").indent().softNewLine();
-        writer.append("return $rt_createArray($rt_objcls(), 0);").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.append("var result = $rt_createArray($rt_objcls(), cls.$$serviceList$$.length);").softNewLine();
-        writer.append("for (var i = 0; i < result.data.length; ++i) {").indent().softNewLine();
-        writer.append("var serviceDesc = cls.$$serviceList$$[i];").softNewLine();
-        writer.append("result.data[i] = new serviceDesc[0]();").softNewLine();
-        writer.append("serviceDesc[1](result.data[i]);").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.append("return result;").softNewLine();
+        return result;
     }
 
     @Override

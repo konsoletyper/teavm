@@ -126,6 +126,14 @@ import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.ShadowStack;
 
 class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
+    private static final MethodReference MONITOR_ENTER_SYNC = new MethodReference(Object.class,
+            "monitorEnterSync", Object.class, void.class);
+    private static final MethodReference MONITOR_EXIT_SYNC = new MethodReference(Object.class,
+            "monitorExitSync", Object.class, void.class);
+    private static final MethodReference MONITOR_ENTER = new MethodReference(Object.class,
+            "monitorEnter", Object.class, void.class);
+    private static final MethodReference MONITOR_EXIT = new MethodReference(Object.class,
+            "monitorExit", Object.class, void.class);
     private static final int SWITCH_TABLE_THRESHOLD = 256;
     private WasmGenerationContext context;
     private WasmClassGenerator classGenerator;
@@ -140,10 +148,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private List<Deque<WasmLocal>> temporaryVariablesByType = new ArrayList<>();
     private WasmLocal stackVariable;
     private BinaryWriter binaryWriter;
+    private boolean async;
     WasmExpression result;
 
     WasmGenerationVisitor(WasmGenerationContext context, WasmClassGenerator classGenerator,
-            BinaryWriter binaryWriter, WasmFunction function, int firstVariable) {
+            BinaryWriter binaryWriter, WasmFunction function, int firstVariable, boolean async) {
         this.context = context;
         this.classGenerator = classGenerator;
         this.binaryWriter = binaryWriter;
@@ -154,6 +163,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             temporaryVariablesByType.add(new ArrayDeque<>());
         }
         typeInference = new WasmTypeInference(context);
+        this.async = async;
     }
 
     private void accept(Expr expr) {
@@ -1420,12 +1430,20 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(MonitorEnterStatement statement) {
-        result = emptyStatement(statement.getLocation());
+        WasmCall call = new WasmCall(context.names.forMethod(async ? MONITOR_ENTER : MONITOR_ENTER_SYNC));
+        call.setLocation(statement.getLocation());
+        statement.getObjectRef().acceptVisitor(this);
+        call.getArguments().add(result);
+        result = call;
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
-        result = emptyStatement(statement.getLocation());
+        WasmCall call = new WasmCall(context.names.forMethod(async ? MONITOR_EXIT : MONITOR_EXIT_SYNC));
+        call.setLocation(statement.getLocation());
+        statement.getObjectRef().acceptVisitor(this);
+        call.getArguments().add(result);
+        result = call;
     }
 
     @Override

@@ -20,6 +20,7 @@ public class TShort extends TNumber implements TComparable<TShort> {
     public static final short MAX_VALUE = 32767;
     public static final Class<Short> TYPE = short.class;
     public static final int SIZE = 16;
+    public static final int BYTES = 2;
     private short value;
 
     public TShort(short value) {
@@ -75,6 +76,10 @@ public class TShort extends TNumber implements TComparable<TShort> {
 
     @Override
     public int hashCode() {
+        return hashCode(value);
+    }
+
+    public static int hashCode(short value) {
         return value;
     }
 
@@ -82,9 +87,21 @@ public class TShort extends TNumber implements TComparable<TShort> {
         return a - b;
     }
 
+    public static int compareUnsigned(short a, short b) {
+        return (a & 0xFFFF) - (b & 0xFFFF);
+    }
+
     @Override
     public int compareTo(TShort other) {
         return compare(value, other.value);
+    }
+
+    public static int toUnsignedInt(short value) {
+        return value & 0xFFFF;
+    }
+
+    public static long toUnsignedLong(short value) {
+        return value & 0xFFFF;
     }
 
     public static short parseShort(String s, int radix) throws TNumberFormatException {

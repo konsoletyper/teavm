@@ -37,6 +37,29 @@
         <activeByDefault>true</activeByDefault>
       </activation>
 
+      <dependencies>
+        <dependency>
+          <groupId>org.teavm</groupId>
+          <artifactId>teavm-tooling</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.teavm</groupId>
+          <artifactId>teavm-devserver</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.teavm</groupId>
+          <artifactId>teavm-classlib</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.teavm</groupId>
+          <artifactId>teavm-chrome-rdp</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+
       <build>
         <plugins>
           <plugin>

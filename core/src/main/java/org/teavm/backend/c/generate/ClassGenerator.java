@@ -63,6 +63,7 @@ import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTable;
 import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.model.instructions.AbstractInstructionVisitor;
+import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
@@ -191,6 +192,11 @@ public class ClassGenerator {
         }
 
         @Override
+        public void visit(CastInstruction insn) {
+            addType(insn.getTargetType());
+        }
+
+        @Override
         public void visit(ConstructMultiArrayInstruction insn) {
             ValueType type = insn.getItemType();
             for (int i = 0; i < insn.getDimensions().size(); ++i) {
@@ -202,7 +208,7 @@ public class ClassGenerator {
 
     public void generateClass(CodeWriter writer, CodeWriter headerWriter, ClassHolder cls) {
         ValueType type = ValueType.object(cls.getName());
-        init(writer, headerWriter, fileName(cls.getName()), type);
+        init(writer, headerWriter, context.getFileNames().fileName(cls.getName()), type);
 
         generateStringPoolDecl(type);
         generateClassStructure(cls);
@@ -222,7 +228,7 @@ public class ClassGenerator {
     }
 
     public void generateType(CodeWriter writer, CodeWriter headerWriter, ValueType type) {
-        init(writer, headerWriter, fileName(type), type);
+        init(writer, headerWriter, context.getFileNames().fileName(type), type);
         generateStringPoolDecl(type);
         includes.includeType(type);
         generateVirtualTable(type);
@@ -233,14 +239,14 @@ public class ClassGenerator {
         staticGcRoots = null;
         classLayout = null;
 
-        includes = new SimpleIncludeManager(writer);
+        includes = new SimpleIncludeManager(context.getFileNames(), writer);
         includes.init(fileName + ".c");
         prologueWriter = writer.fragment();
         codeWriter = writer.fragment();
         this.headerWriter = headerWriter;
 
         headerWriter.println("#pragma once");
-        headerIncludes = new SimpleIncludeManager(headerWriter);
+        headerIncludes = new SimpleIncludeManager(context.getFileNames(), headerWriter);
         headerIncludes.init(fileName + ".h");
         headerIncludes.includePath("runtime.h");
 
@@ -914,48 +920,52 @@ public class ClassGenerator {
         }
     }
 
-    private void generateHeapDumpMetadata(CodeWriter codeWriter, ClassReader cls, boolean initMethod,
+    private void generateHeapDumpMetadata(CodeWriter writer, ClassReader cls, boolean initMethod,
             int depth) {
         List<HeapDumpField> fields = getHeapDumpFields(cls);
         List<HeapDumpField> staticFields = getHeapDumpStaticFields(cls);
         if (staticFields.isEmpty() && fields.isEmpty()) {
             return;
         }
-        codeWriter.println().println("#if TEAVM_HEAP_DUMP").indent();
+        writer.println().println("#if TEAVM_HEAP_DUMP").indent();
         if (!fields.isEmpty()) {
+            String structDecl = "struct { uint32_t count; TeaVM_FieldDescriptor data[" + fields.size() + "]; }";
             if (initMethod) {
-                codeWriter.print("vt_" + depth + "->");
+                writer.print("static " + structDecl + " fieldDescriptors = ");
             } else {
-                codeWriter.println(",");
-                codeWriter.print(".");
+                writer.println(",");
+                writer.println(".fieldDescriptors = (TeaVM_FieldDescriptors*) &(" + structDecl + ") ");
             }
+            writer.println("{").indent();
 
-            codeWriter.println("fieldDescriptors = (TeaVM_FieldDescriptors*) "
-                    + "&(struct { uint32_t count; TeaVM_FieldDescriptor data["
-                    + fields.size() + "]; }) {").indent();
-            generateHeapDumpFields(codeWriter, fields);
-            codeWriter.outdent().print("}");
+            generateHeapDumpFields(writer, fields);
+            writer.outdent().print("}");
+
             if (initMethod) {
-                codeWriter.println(";");
+                writer.println(";");
+                writer.println("vt_" + depth + "->fieldDescriptors = (TeaVM_FieldDescriptors*) &fieldDescriptors;");
             }
         }
         if (!staticFields.isEmpty()) {
+            String structDecl = "struct { uint32_t count; TeaVM_StaticFieldDescriptor data["
+                    + staticFields.size() + "]; }";
             if (initMethod) {
-                codeWriter.print("vt_" + depth + "->");
+                writer.print("static " + structDecl + " staticFieldDescriptors = ");
             } else {
-                codeWriter.println(",");
-                codeWriter.print(".");
+                writer.println(",");
+                writer.println(".staticFieldDescriptors = (TeaVM_StaticFieldDescriptors*) &(" + structDecl + ") ");
             }
-            codeWriter.println("staticFieldDescriptors = (TeaVM_StaticFieldDescriptors*) "
-                    + "&(struct { uint32_t count; TeaVM_StaticFieldDescriptor data["
-                    + staticFields.size() + "]; }) {").indent();
-            generateHeapDumpFields(codeWriter, staticFields);
-            codeWriter.outdent().print("}");
+            writer.println("{").indent();
+            generateHeapDumpFields(writer, staticFields);
+            writer.outdent().print("}");
+
             if (initMethod) {
-                codeWriter.println(";");
+                writer.println(";");
+                writer.print("vt_" + depth + "->staticFieldDescriptors = "
+                        + "(TeaVM_StaticFieldDescriptors*) &staticFieldDescriptors;");
             }
         }
-        codeWriter.println().outdent().println("#endif");
+        writer.println().outdent().println("#endif");
     }
 
     private void generateHeapDumpFields(CodeWriter codeWriter, List<HeapDumpField> fields) {
@@ -1266,7 +1276,7 @@ public class ClassGenerator {
         codeWriter.outdent().println("}");
 
         GeneratorContextImpl generatorContext = new GeneratorContextImpl(codeGenerator.getClassContext(),
-                bodyWriter, writerBefore, codeWriter, includes);
+                bodyWriter, writerBefore, codeWriter, includes, callSites, context.isLongjmp());
         generator.generate(generatorContext, methodRef);
         try {
             generatorContext.flush();
@@ -1430,105 +1440,6 @@ public class ClassGenerator {
             case DOUBLE:
                 generateIsSuperclassFunction("java.lang.Double");
                 break;
-        }
-    }
-
-    public static String fileName(ValueType type) {
-        StringBuilder sb = new StringBuilder();
-        fileNameRec(type, sb);
-        return sb.toString();
-    }
-
-    private static void fileNameRec(ValueType type, StringBuilder sb) {
-        if (type instanceof ValueType.Object) {
-            sb.append("classes/");
-            escape(((ValueType.Object) type).getClassName(), sb);
-        } else if (type instanceof ValueType.Array) {
-            sb.append("arrays/");
-            fileNameRec(((ValueType.Array) type).getItemType(), sb);
-        } else if (type instanceof ValueType.Primitive) {
-            sb.append("primitives/");
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                    sb.append("boolean");
-                    break;
-                case BYTE:
-                    sb.append("byte");
-                    break;
-                case SHORT:
-                    sb.append("short");
-                    break;
-                case CHARACTER:
-                    sb.append("char");
-                    break;
-                case INTEGER:
-                    sb.append("int");
-                    break;
-                case LONG:
-                    sb.append("long");
-                    break;
-                case FLOAT:
-                    sb.append("float");
-                    break;
-                case DOUBLE:
-                    sb.append("double");
-                    break;
-            }
-        } else if (type == ValueType.VOID) {
-            sb.append("primitives/void");
-        }
-    }
-
-    public static String fileName(String className) {
-        StringBuilder sb = new StringBuilder("classes/");
-        escape(className, sb);
-        return sb.toString();
-    }
-
-    static void escape(String className, StringBuilder sb) {
-        for (int i = 0; i < className.length(); ++i) {
-            char c = className.charAt(i);
-            switch (c) {
-                case '.':
-                    sb.append('/');
-                    break;
-                case '@':
-                    sb.append("@@");
-                    break;
-                case '/':
-                    sb.append("@s");
-                    break;
-                case '\\':
-                    sb.append("@b");
-                    break;
-                case ':':
-                    sb.append("@c");
-                    break;
-                case ';':
-                    sb.append("@e");
-                    break;
-                case '*':
-                    sb.append("@m");
-                    break;
-                case '"':
-                    sb.append("@q");
-                    break;
-                case '<':
-                    sb.append("@l");
-                    break;
-                case '>':
-                    sb.append("@g");
-                    break;
-                case '|':
-                    sb.append("@p");
-                    break;
-                case '$':
-                    sb.append("@d");
-                    break;
-                default:
-                    sb.append(c);
-                    break;
-            }
         }
     }
 }

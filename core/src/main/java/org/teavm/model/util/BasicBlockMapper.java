@@ -42,16 +42,20 @@ public class BasicBlockMapper extends AbstractInstructionVisitor {
     }
 
     public void transform(BasicBlock block) {
-        Instruction lastInsn = block.getLastInstruction();
-        if (lastInsn != null) {
-            lastInsn.acceptVisitor(this);
-        }
-
+        transformWithoutPhis(block);
         for (Phi phi : block.getPhis()) {
             for (Incoming incoming : phi.getIncomings()) {
                 incoming.setSource(map(incoming.getSource()));
             }
         }
+    }
+
+    public void transformWithoutPhis(BasicBlock block) {
+        Instruction lastInsn = block.getLastInstruction();
+        if (lastInsn != null) {
+            lastInsn.acceptVisitor(this);
+        }
+
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
             tryCatch.setHandler(map(tryCatch.getHandler()));
         }

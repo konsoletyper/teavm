@@ -15,11 +15,19 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
+import org.teavm.classlib.java.nio.charset.impl.TAsciiCharset;
+import org.teavm.classlib.java.nio.charset.impl.TIso8859Charset;
+import org.teavm.classlib.java.nio.charset.impl.TUTF16Charset;
 import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
 public final class TStandardCharsets {
     private TStandardCharsets() {
     }
 
-    public static final TCharset UTF_8 = new TUTF8Charset();
+    public static final TCharset UTF_8 = TUTF8Charset.INSTANCE;
+    public static final TCharset US_ASCII = new TAsciiCharset();
+    public static final TCharset ISO_8859_1 = new TIso8859Charset();
+    public static final TCharset UTF_16 = new TUTF16Charset("UTF-16", true, false);
+    public static final TCharset UTF_16BE = new TUTF16Charset("UTF-16BE", false, false);
+    public static final TCharset UTF_16LE = new TUTF16Charset("UTF-16LE", false, true);
 }

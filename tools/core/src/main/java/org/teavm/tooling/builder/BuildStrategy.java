@@ -82,5 +82,7 @@ public interface BuildStrategy {
 
     void setHeapDump(boolean heapDump);
 
+    void setShortFileNames(boolean shortFileNames);
+
     BuildResult build() throws BuildException;
 }

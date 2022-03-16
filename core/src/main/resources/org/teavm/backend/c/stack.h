@@ -35,13 +35,20 @@ typedef struct TeaVM_CallSite {
     TeaVM_CallSiteLocation* location;
 } TeaVM_CallSite;
 
+#if TEAVM_USE_SETJMP
+    typedef struct TeaVM_LongjmpDesc {
+        jmp_buf buffer;
+        struct TeaVM_LongjmpDesc* previous;
+    } TeaVM_LongjmpDesc;
+#endif
+
 typedef struct TeaVM_StackFrame {
     struct TeaVM_StackFrame* next;
     #if TEAVM_INCREMENTAL
         TeaVM_CallSite* callSites;
     #endif
     #if TEAVM_USE_SETJMP
-        jmp_buf* jmpTarget;
+        TeaVM_LongjmpDesc* jmpTarget;
     #endif
     int32_t size;
     int32_t callSiteId;

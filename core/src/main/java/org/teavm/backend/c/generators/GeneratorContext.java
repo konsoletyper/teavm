@@ -24,6 +24,9 @@ import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
+import org.teavm.model.lowlevel.CallSiteDescriptor;
+import org.teavm.model.lowlevel.CallSiteLocation;
+import org.teavm.model.lowlevel.ExceptionHandlerDescriptor;
 
 public interface GeneratorContext {
     CodeWriter writer();
@@ -53,4 +56,8 @@ public interface GeneratorContext {
     String escapeFileName(String name);
 
     void importMethod(MethodReference method, boolean isStatic);
+
+    boolean usesLongjmp();
+
+    CallSiteDescriptor createCallSite(CallSiteLocation[] locations, ExceptionHandlerDescriptor[] exceptionHandlers);
 }

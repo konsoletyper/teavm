@@ -72,7 +72,7 @@ public final class TURL implements Serializable {
             throw new TMalformedURLException(e.toString());
         }
         int startIPv6Addr = spec.indexOf('[');
-        if (index >= 0) {
+        if (index > 0) {
             if (startIPv6Addr == -1 || index < startIPv6Addr) {
                 protocol = spec.substring(0, index);
                 // According to RFC 2396 scheme part should match

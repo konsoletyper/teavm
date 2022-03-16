@@ -23,11 +23,11 @@ import java.net.URLClassLoader;
 import java.util.Arrays;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.PosixParser;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.ConsoleTeaVMToolLog;
 import org.teavm.tooling.TeaVMProblemRenderer;
@@ -54,107 +54,107 @@ public final class TeaVMRunner {
         setupOptions();
     }
 
-    @SuppressWarnings("static-access")
     private static void setupOptions() {
-        options.addOption(OptionBuilder
-                .withArgName("target")
+        options.addOption(Option.builder("t")
+                .argName("target")
                 .hasArg()
-                .withDescription("target type (javascript/js, webassembly/wasm, C)")
-                .create('t'));
-        options.addOption(OptionBuilder
-                .withArgName("directory")
+                .desc("target type (javascript/js, webassembly/wasm, C)")
+                .build());
+        options.addOption(Option.builder("d")
+                .argName("directory")
                 .hasArg()
-                .withDescription("a directory where to put generated files (current directory by default)")
-                .withLongOpt("targetdir")
-                .create('d'));
-        options.addOption(OptionBuilder
-                .withArgName("file")
+                .desc("a directory where to put generated files (current directory by default)")
+                .longOpt("targetdir")
+                .build());
+        options.addOption(Option.builder("f")
+                .argName("file")
                 .hasArg()
-                .withDescription("a file where to put decompiled classes (classes.js by default)")
-                .withLongOpt("targetfile")
-                .create('f'));
-        options.addOption(OptionBuilder
-                .withDescription("causes TeaVM to generate minimized JavaScript file")
-                .withLongOpt("minify")
-                .create("m"));
-        options.addOption(OptionBuilder
-                .withDescription("causes TeaVM to produce code that is as close to Java semantics as possible "
+                .desc("a file where to put decompiled classes (classes.js by default)")
+                .longOpt("targetfile")
+                .build());
+        options.addOption(Option.builder("m")
+                .desc("causes TeaVM to generate minimized JavaScript file")
+                .longOpt("minify")
+                .build());
+        options.addOption(Option.builder()
+                .longOpt("strict")
+                .desc("causes TeaVM to produce code that is as close to Java semantics as possible "
                         + "(in cost of performance)")
-                .create("strict"));
-        options.addOption(OptionBuilder
-                .withDescription("optimization level (1-3)")
+                .build());
+        options.addOption(Option.builder("O")
+                .desc("optimization level (1-3)")
                 .hasArg()
-                .withArgName("number")
-                .create("O"));
-        options.addOption(OptionBuilder
-                .withDescription("Generate debug information")
-                .withLongOpt("debug")
-                .create('g'));
-        options.addOption(OptionBuilder
-                .withDescription("Generate source maps")
-                .withLongOpt("sourcemaps")
-                .create('G'));
-        options.addOption(OptionBuilder
-                .withDescription("Incremental build")
-                .withLongOpt("incremental")
-                .create('i'));
-        options.addOption(OptionBuilder
-                .withArgName("directory")
+                .argName("number")
+                .build());
+        options.addOption(Option.builder("g")
+                .desc("Generate debug information")
+                .longOpt("debug")
+                .build());
+        options.addOption(Option.builder("G")
+                .desc("Generate source maps")
+                .longOpt("sourcemaps")
+                .build());
+        options.addOption(Option.builder("i")
+                .desc("Incremental build")
+                .longOpt("incremental")
+                .build());
+        options.addOption(Option.builder("c")
+                .argName("directory")
                 .hasArg()
-                .withDescription("Incremental build cache directory")
-                .withLongOpt("cachedir")
-                .create('c'));
-        options.addOption(OptionBuilder
-                .withDescription("Wait for command after compilation, in order to enable hot recompilation")
-                .withLongOpt("wait")
-                .create('w'));
-        options.addOption(OptionBuilder
-                .withArgName("classpath")
+                .desc("Incremental build cache directory")
+                .longOpt("cachedir")
+                .build());
+        options.addOption(Option.builder("w")
+                .desc("Wait for command after compilation, in order to enable hot recompilation")
+                .longOpt("wait")
+                .build());
+        options.addOption(Option.builder("p")
+                .argName("classpath")
                 .hasArgs()
-                .withDescription("Additional classpath that will be reloaded by TeaVM each time in wait mode")
-                .withLongOpt("classpath")
-                .create('p'));
-        options.addOption(OptionBuilder
-                .withArgName("class name")
+                .desc("Additional classpath that will be reloaded by TeaVM each time in wait mode")
+                .longOpt("classpath")
+                .build());
+        options.addOption(Option.builder()
+                .argName("class name")
                 .hasArgs()
-                .withDescription("Tell optimizer to not remove class, so that it can be found by Class.forName")
-                .withLongOpt("preserve-class")
-                .create());
-        options.addOption(OptionBuilder
-                .withLongOpt("wasm-version")
-                .withArgName("version")
+                .desc("Tell optimizer to not remove class, so that it can be found by Class.forName")
+                .longOpt("preserve-class")
+                .build());
+        options.addOption(Option.builder()
+                .longOpt("wasm-version")
+                .argName("version")
                 .hasArg()
-                .withDescription("WebAssembly binary version (currently, only 1 is supported)")
-                .create());
-        options.addOption(OptionBuilder
-                .withLongOpt("entry-point")
-                .withArgName("name")
+                .desc("WebAssembly binary version (currently, only 1 is supported)")
+                .build());
+        options.addOption(Option.builder("e")
+                .longOpt("entry-point")
+                .argName("name")
                 .hasArg()
-                .withDescription("Entry point name in target language (main by default)")
-                .create("e"));
-        options.addOption(OptionBuilder
-                .withLongOpt("min-heap")
-                .withArgName("size")
+                .desc("Entry point name in target language (main by default)")
+                .build());
+        options.addOption(Option.builder()
+                .longOpt("min-heap")
+                .argName("size")
                 .hasArg()
-                .withDescription("Minimum heap size in megabytes (for C and WebAssembly)")
-                .create());
-        options.addOption(OptionBuilder
-                .withLongOpt("max-heap")
-                .withArgName("size")
+                .desc("Minimum heap size in megabytes (for C and WebAssembly)")
+                .build());
+        options.addOption(Option.builder()
+                .longOpt("max-heap")
+                .argName("size")
                 .hasArg()
-                .withDescription("Maximum heap size in megabytes (for C and WebAssembly)")
-                .create());
-        options.addOption(OptionBuilder
-                .withLongOpt("max-toplevel-names")
-                .withArgName("number")
+                .desc("Maximum heap size in megabytes (for C and WebAssembly)")
+                .build());
+        options.addOption(Option.builder()
+                .longOpt("max-toplevel-names")
+                .argName("number")
                 .hasArg()
-                .withDescription("Maximum number of names kept in top-level scope ("
+                .desc("Maximum number of names kept in top-level scope ("
                         + "other will be put in a separate object. 10000 by default.")
-                .create());
-        options.addOption(OptionBuilder
-                .withLongOpt("no-longjmp")
-                .withDescription("Don't use setjmp/longjmp functions to emulate exceptions (C target)")
-                .create());
+                .build());
+        options.addOption(Option.builder()
+                .longOpt("no-longjmp")
+                .desc("Don't use setjmp/longjmp functions to emulate exceptions (C target)")
+                .build());
     }
 
     private TeaVMRunner(CommandLine commandLine) {
@@ -166,7 +166,7 @@ public final class TeaVMRunner {
             printUsage();
             return;
         }
-        CommandLineParser parser = new PosixParser();
+        CommandLineParser parser = new DefaultParser();
         CommandLine commandLine;
         try {
             commandLine = parser.parse(options, args);

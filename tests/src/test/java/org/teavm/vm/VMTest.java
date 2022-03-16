@@ -579,4 +579,16 @@ public class VMTest {
             array.wait(1);
         }
     }
+
+    @Test
+    public void castMultiArray() {
+        Object o = new String[0][0];
+        assertEquals(0, ((String[][]) o).length);
+        o = new String[0][];
+        assertEquals(0, ((String[][]) o).length);
+        o = new int[0][0];
+        assertEquals(0, ((int[][]) o).length);
+        o = new int[0][];
+        assertEquals(0, ((int[][]) o).length);
+    }
 }

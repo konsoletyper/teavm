@@ -23,7 +23,8 @@ public class SimpleIncludeManager extends IncludeManager {
     private CodeWriter writer;
     private CodeWriter emptyLine;
 
-    public SimpleIncludeManager(CodeWriter writer) {
+    public SimpleIncludeManager(FileNameProvider fileNames, CodeWriter writer) {
+        super(fileNames);
         this.writer = writer.fragment();
         emptyLine = writer.fragment();
     }

@@ -52,7 +52,7 @@ class TMultiLineEOLSet extends TAbstractSet {
     @Override
     public int matches(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         int strDif = matchResult.hasAnchoringBounds()
-                ? matchResult.getLeftBound() - strIndex
+                ? matchResult.getRightBound() - strIndex
                 : testString.length() - strIndex;
         char ch1;
         char ch2;

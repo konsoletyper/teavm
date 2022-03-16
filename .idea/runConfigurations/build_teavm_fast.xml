@@ -16,6 +16,7 @@
               <option value="-Dteavm.build.all=false" />
               <option value="-Pwith-cli" />
               <option value="-Dmaven.javadoc.skip=true" />
+              <option value="-T4" />
             </list>
           </option>
           <option name="pomFileName" />

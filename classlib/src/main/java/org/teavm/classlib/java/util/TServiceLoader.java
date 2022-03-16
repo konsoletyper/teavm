@@ -18,11 +18,6 @@ package org.teavm.classlib.java.util;
 import org.teavm.classlib.java.lang.*;
 import org.teavm.platform.PlatformClass;
 
-/**
- *
- * @author Alexey Andreev
- * @param <S>
- */
 public final class TServiceLoader<S> extends TObject implements TIterable<S> {
     private Object[] services;
 
@@ -50,7 +45,7 @@ public final class TServiceLoader<S> extends TObject implements TIterable<S> {
     }
 
     public static <S> TServiceLoader<S> load(TClass<S> service) {
-        return new TServiceLoader<>(loadServices(service.getPlatformClass()));
+        return new TServiceLoader<>(doLoadServices(service.getPlatformClass()));
     }
 
     public static <S> TServiceLoader<S> load(TClass<S> service, @SuppressWarnings("unused") TClassLoader loader) {
@@ -61,7 +56,15 @@ public final class TServiceLoader<S> extends TObject implements TIterable<S> {
         return load(service);
     }
 
-    private static native <T> T[] loadServices(PlatformClass cls);
+    private static Object[] doLoadServices(PlatformClass cls) {
+        Object[] result = loadServices(cls);
+        if (result == null) {
+            result = new Object[0];
+        }
+        return result;
+    }
+
+    private static native Object[] loadServices(PlatformClass cls);
 
     public void reload() {
         // Do nothing, services are bound at build time

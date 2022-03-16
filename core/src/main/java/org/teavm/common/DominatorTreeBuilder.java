@@ -32,20 +32,23 @@ class DominatorTreeBuilder {
     private IntegerArray[] bucket;
     private int[] path;
     private int effectiveSize;
+    private int start;
 
-    public DominatorTreeBuilder(Graph graph) {
+    DominatorTreeBuilder(Graph graph, int start) {
         this.graph = graph;
+        this.start = start;
         semidominators = new int[graph.size()];
         vertices = new int[graph.size()];
         parents = new int[graph.size()];
         dominators = new int[graph.size()];
+        Arrays.fill(dominators, -1);
         ancestors = new int[graph.size()];
         labels = new int[graph.size()];
         path = new int[graph.size()];
         bucket = new IntegerArray[graph.size()];
     }
 
-    public void build() {
+    void build() {
         for (int i = 0; i < labels.length; ++i) {
             labels[i] = i;
         }
@@ -56,10 +59,12 @@ class DominatorTreeBuilder {
             if (parents[w] < 0) {
                 continue;
             }
-            for (int v : graph.incomingEdges(w)) {
-                int u = eval(v);
-                if (semidominators[u] >= 0) {
-                    semidominators[w] = Math.min(semidominators[w], semidominators[u]);
+            if (w != start) {
+                for (int v : graph.incomingEdges(w)) {
+                    int u = eval(v);
+                    if (semidominators[u] >= 0) {
+                        semidominators[w] = Math.min(semidominators[w], semidominators[u]);
+                    }
                 }
             }
             addToBucket(vertices[semidominators[w]], w);
@@ -70,7 +75,7 @@ class DominatorTreeBuilder {
             }
             bucket[w] = null;
         }
-        for (int i = 0; i < graph.size(); ++i) {
+        for (int i = 0; i < effectiveSize; ++i) {
             int w = vertices[i];
             if (w < 0 || parents[w] < 0) {
                 continue;
@@ -79,6 +84,7 @@ class DominatorTreeBuilder {
                 dominators[w] = dominators[dominators[w]];
             }
         }
+        dominators[start] = -1;
     }
 
     private void addToBucket(int v, int w) {
@@ -126,18 +132,15 @@ class DominatorTreeBuilder {
         Arrays.fill(semidominators, -1);
         Arrays.fill(vertices, -1);
         IntegerStack stack = new IntegerStack(graph.size());
-        for (int i = graph.size() - 1; i >= 0; --i) {
-            if (graph.incomingEdgesCount(i) == 0) {
-                stack.push(i);
-                parents[i] = -1;
-            }
-        }
+        stack.push(start);
+        Arrays.fill(parents, -1);
         int i = 0;
         while (!stack.isEmpty()) {
             int v = stack.pop();
             if (semidominators[v] >= 0) {
                 continue;
             }
+            dominators[v] = start;
             // We don't need vertex index after its dominator has computed.
             semidominators[v] = i;
             vertices[i++] = v;
@@ -149,5 +152,6 @@ class DominatorTreeBuilder {
             }
         }
         effectiveSize = i;
+        dominators[start] = start;
     }
 }

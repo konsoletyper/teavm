@@ -38,6 +38,7 @@ public class GenerationContext {
     private DependencyInfo dependencies;
     private StringPool stringPool;
     private NameProvider names;
+    private FileNameProvider fileNames;
     private Diagnostics diagnostics;
     private ClassReaderSource classSource;
     private List<Intrinsic> intrinsics;
@@ -53,9 +54,9 @@ public class GenerationContext {
     private boolean obfuscated;
 
     public GenerationContext(VirtualTableProvider virtualTableProvider, Characteristics characteristics,
-            DependencyInfo dependencies, StringPool stringPool, NameProvider names, Diagnostics diagnostics,
-            ClassReaderSource classSource, List<Intrinsic> intrinsics, List<Generator> generators,
-            Predicate<MethodReference> asyncMethods, BuildTarget buildTarget,
+            DependencyInfo dependencies, StringPool stringPool, NameProvider names, FileNameProvider fileNames,
+            Diagnostics diagnostics, ClassReaderSource classSource, List<Intrinsic> intrinsics,
+            List<Generator> generators, Predicate<MethodReference> asyncMethods, BuildTarget buildTarget,
             ClassInitializerInfo classInitializerInfo, boolean incremental, boolean longjmp, boolean vmAssertions,
             boolean heapDump, boolean obfuscated) {
         this.virtualTableProvider = virtualTableProvider;
@@ -63,6 +64,7 @@ public class GenerationContext {
         this.dependencies = dependencies;
         this.stringPool = stringPool;
         this.names = names;
+        this.fileNames = fileNames;
         this.diagnostics = diagnostics;
         this.classSource = classSource;
         this.intrinsics = new ArrayList<>(intrinsics);
@@ -103,6 +105,10 @@ public class GenerationContext {
 
     public NameProvider getNames() {
         return names;
+    }
+
+    public FileNameProvider getFileNames() {
+        return fileNames;
     }
 
     public Diagnostics getDiagnostics() {

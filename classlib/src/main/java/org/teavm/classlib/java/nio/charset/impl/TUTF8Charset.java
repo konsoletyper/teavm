@@ -20,7 +20,9 @@ import org.teavm.classlib.java.nio.charset.TCharsetDecoder;
 import org.teavm.classlib.java.nio.charset.TCharsetEncoder;
 
 public class TUTF8Charset extends TCharset {
-    public TUTF8Charset() {
+    public static final TUTF8Charset INSTANCE = new TUTF8Charset();
+
+    private TUTF8Charset() {
         super("UTF-8", new String[0]);
     }
 

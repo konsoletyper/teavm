@@ -50,4 +50,5 @@ public class RemoteBuildRequest implements Serializable {
     public int maxHeapSize;
     public boolean longjmpSupported;
     public boolean heapDump;
+    public boolean shortFileNames;
 }

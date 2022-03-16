@@ -15,8 +15,10 @@
  */
 package org.teavm.backend.lowlevel.transform;
 
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntIntHashMap;
 import com.carrotsearch.hppc.IntIntMap;
+import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -31,6 +33,7 @@ import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
@@ -120,8 +123,8 @@ public class CoroutineTransformation {
             processBlock(program.basicBlockAt(i));
         }
         splitter.fixProgram();
-        new PhiUpdater().updatePhis(program, methodReference.parameterCount() + 1);
         processIrreducibleCfg();
+        new PhiUpdater().updatePhis(program, methodReference.parameterCount() + 1);
     }
 
     private void createSplitPrologue() {
@@ -483,14 +486,17 @@ public class CoroutineTransformation {
         public int[] split(int[] domain, int[] nodes) {
             int[] copies = new int[nodes.length];
             IntIntMap map = new IntIntHashMap();
+            IntSet nodeSet = IntHashSet.from(nodes);
+            List<List<Incoming>> outputs = ProgramUtils.getPhiOutputs(program);
             for (int i = 0; i < nodes.length; ++i) {
                 int node = nodes[i];
                 BasicBlock block = program.basicBlockAt(node);
                 BasicBlock blockCopy = program.createBasicBlock();
                 ProgramUtils.copyBasicBlock(block, blockCopy);
                 copies[i] = blockCopy.getIndex();
-                map.put(nodes[i], copies[i] + 1);
+                map.put(node, copies[i] + 1);
             }
+
             BasicBlockMapper copyBlockMapper = new BasicBlockMapper((int block) -> {
                 int mappedIndex = map.get(block);
                 return mappedIndex == 0 ? block : mappedIndex - 1;
@@ -499,8 +505,22 @@ public class CoroutineTransformation {
                 copyBlockMapper.transform(program.basicBlockAt(copy));
             }
             for (int domainNode : domain) {
-                copyBlockMapper.transform(program.basicBlockAt(domainNode));
+                copyBlockMapper.transformWithoutPhis(program.basicBlockAt(domainNode));
             }
+
+            for (int i = 0; i < nodes.length; ++i) {
+                int node = nodes[i];
+                BasicBlock blockCopy = program.basicBlockAt(copies[i]);
+                for (Incoming output : outputs.get(node)) {
+                    if (!nodeSet.contains(output.getPhi().getBasicBlock().getIndex())) {
+                        Incoming outputCopy = new Incoming();
+                        outputCopy.setSource(blockCopy);
+                        outputCopy.setValue(output.getValue());
+                        output.getPhi().getIncomings().add(outputCopy);
+                    }
+                }
+            }
+
             return copies;
         }
     }

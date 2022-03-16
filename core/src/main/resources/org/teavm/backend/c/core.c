@@ -70,6 +70,7 @@ void teavm_initClasses() {
     int32_t classHeader = TEAVM_PACK_CLASS(teavm_classClass) | (int32_t) INT32_C(0x80000000);
     for (int i = 0; i < teavm_classReferencesCount; ++i) {
         teavm_classReferences[i]->parent.header = classHeader;
+        teavm_classReferences[i]->services = NULL;
     }
 }
 

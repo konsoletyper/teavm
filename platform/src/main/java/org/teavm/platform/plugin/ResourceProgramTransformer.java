@@ -61,15 +61,28 @@ class ResourceProgramTransformer {
                     insn.delete();
                 }
             } else if (insn instanceof CastInstruction) {
-                CastInstruction cast = (CastInstruction) insn;
-                if (hierarchy.isSuperType(RESOURCE, cast.getTargetType(), false)) {
-                    AssignInstruction assign = new AssignInstruction();
-                    assign.setReceiver(cast.getReceiver());
-                    assign.setAssignee(cast.getValue());
-                    assign.setLocation(cast.getLocation());
-                    insn.replace(assign);
+                removeCastToResource((CastInstruction) insn);
+            }
+        }
+    }
+
+    void removeCasts() {
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction insn : block) {
+                if (insn instanceof CastInstruction) {
+                    removeCastToResource((CastInstruction) insn);
                 }
             }
+        }
+    }
+
+    private void removeCastToResource(CastInstruction cast) {
+        if (hierarchy.isSuperType(RESOURCE, cast.getTargetType(), false)) {
+            AssignInstruction assign = new AssignInstruction();
+            assign.setReceiver(cast.getReceiver());
+            assign.setAssignee(cast.getValue());
+            assign.setLocation(cast.getLocation());
+            cast.replace(assign);
         }
     }
 

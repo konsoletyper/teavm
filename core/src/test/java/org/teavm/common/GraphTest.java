@@ -151,7 +151,7 @@ public class GraphTest {
 
         assertTrue("Should be irreducible", GraphUtils.isIrreducible(graph));
         assertFalse("Should be reducible", GraphUtils.isIrreducible(result));
-        assertTrue("Should be equialent", isEquialent(backend, graph));
+        assertTrue("Should be equivalent", isEquivalent(backend, graph));
     }
 
     @Test
@@ -171,7 +171,7 @@ public class GraphTest {
 
         assertTrue("Should be irreducible", GraphUtils.isIrreducible(graph));
         assertFalse("Should be reducible", GraphUtils.isIrreducible(result));
-        assertTrue("Should be equivalent", isEquialent(backend, graph));
+        assertTrue("Should be equivalent", isEquivalent(backend, graph));
     }
 
     @Test
@@ -203,10 +203,137 @@ public class GraphTest {
 
         assertTrue("Should be irreducible", GraphUtils.isIrreducible(graph));
         assertFalse("Should be reducible", GraphUtils.isIrreducible(result));
-        assertTrue("Should be equivalent", isEquialent(backend, graph));
+        assertTrue("Should be equivalent", isEquivalent(backend, graph));
     }
 
-    private boolean isEquialent(DefaultGraphSplittingBackend backend, Graph proto) {
+    @Test
+    public void irreducibleGraphSplit4() {
+        GraphBuilder builder = new GraphBuilder();
+
+        builder.addEdge(0, 1);
+        builder.addEdge(0, 2);
+        builder.addEdge(0, 4);
+        builder.addEdge(1, 2);
+        builder.addEdge(2, 3);
+        builder.addEdge(3, 4);
+        builder.addEdge(4, 1);
+
+        Graph graph = builder.build();
+        DefaultGraphSplittingBackend backend = new DefaultGraphSplittingBackend(graph);
+        int[] weights = new int[graph.size()];
+        Arrays.fill(weights, 1);
+        GraphUtils.splitIrreducibleGraph(graph, weights, backend);
+        Graph result = backend.getGraph();
+
+        assertTrue("Should be irreducible", GraphUtils.isIrreducible(graph));
+        assertFalse("Should be reducible", GraphUtils.isIrreducible(result));
+        assertTrue("Should be equivalent", isEquivalent(backend, graph));
+    }
+
+    @Test
+    public void irreducibleGraphSplit5() {
+        GraphBuilder builder = new GraphBuilder();
+
+        addEdges(builder, 0, 1);
+        addEdges(builder, 1, 2, 3);
+        addEdges(builder, 2, 5);
+        addEdges(builder, 3, 2, 4);
+        addEdges(builder, 4, 5);
+        addEdges(builder, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22);
+        addEdges(builder, 6, 69, 70);
+        addEdges(builder, 7, 69);
+        addEdges(builder, 8, 32);
+        addEdges(builder, 9, 63);
+        addEdges(builder, 10, 61);
+        addEdges(builder, 11, 59);
+        addEdges(builder, 12, 57);
+        addEdges(builder, 13, 55);
+        addEdges(builder, 14, 53);
+        addEdges(builder, 15, 42);
+        addEdges(builder, 16, 44);
+        addEdges(builder, 17, 46);
+        addEdges(builder, 18, 48);
+        addEdges(builder, 19, 50);
+        addEdges(builder, 20, 65);
+        addEdges(builder, 21, 67);
+        addEdges(builder, 23, 24, 25);
+        addEdges(builder, 24, 67, 68);
+        addEdges(builder, 25, 26, 27);
+        addEdges(builder, 26, 28, 29);
+        addEdges(builder, 28, 30, 31);
+        addEdges(builder, 30, 65, 66);
+        addEdges(builder, 31, 32, 33);
+        addEdges(builder, 32, 34, 35, 36, 37, 38, 39, 40, 41);
+        addEdges(builder, 34, 63, 64);
+        addEdges(builder, 35, 61, 62);
+        addEdges(builder, 36, 59, 60);
+        addEdges(builder, 37, 57, 58);
+        addEdges(builder, 38, 55, 56);
+        addEdges(builder, 39, 53, 54);
+        addEdges(builder, 40, 42, 43);
+        addEdges(builder, 42, 44, 45);
+        addEdges(builder, 44, 46, 47);
+        addEdges(builder, 46, 48, 49);
+        addEdges(builder, 48, 50, 51);
+        addEdges(builder, 50, 52);
+        addEdges(builder, 52, 23);
+        addEdges(builder, 53, 52);
+        addEdges(builder, 55, 52);
+        addEdges(builder, 57, 52);
+        addEdges(builder, 59, 52);
+        addEdges(builder, 61, 52);
+        addEdges(builder, 63, 52);
+        addEdges(builder, 65, 52);
+        addEdges(builder, 69, 23);
+
+        Graph graph = builder.build();
+        DefaultGraphSplittingBackend backend = new DefaultGraphSplittingBackend(graph);
+        int[] weights = new int[graph.size()];
+        Arrays.fill(weights, 1);
+        GraphUtils.splitIrreducibleGraph(graph, weights, backend);
+        Graph result = backend.getGraph();
+
+        assertTrue("Should be irreducible", GraphUtils.isIrreducible(graph));
+        assertFalse("Should be reducible", GraphUtils.isIrreducible(result));
+        assertTrue("Should be equivalent", isEquivalent(backend, graph));
+    }
+
+    @Test
+    public void irreducibleGraphSplit6() {
+        GraphBuilder builder = new GraphBuilder();
+        addEdges(builder, 0, 1, 3, 6, 9);
+        addEdges(builder, 1, 2);
+        addEdges(builder, 2, 3);
+        addEdges(builder, 3, 4);
+        addEdges(builder, 4, 5, 8);
+        addEdges(builder, 5, 6);
+        addEdges(builder, 6, 7);
+        addEdges(builder, 7, 11);
+        addEdges(builder, 8, 9);
+        addEdges(builder, 9, 10);
+        addEdges(builder, 10, 11);
+        addEdges(builder, 11, 12);
+        addEdges(builder, 12, 1);
+
+        Graph graph = builder.build();
+        DefaultGraphSplittingBackend backend = new DefaultGraphSplittingBackend(graph);
+        int[] weights = new int[graph.size()];
+        Arrays.fill(weights, 1);
+        GraphUtils.splitIrreducibleGraph(graph, weights, backend);
+        Graph result = backend.getGraph();
+
+        assertTrue("Should be irreducible", GraphUtils.isIrreducible(graph));
+        assertFalse("Should be reducible", GraphUtils.isIrreducible(result));
+        assertTrue("Should be equivalent", isEquivalent(backend, graph));
+    }
+    
+    private static void addEdges(GraphBuilder builder, int from, int... to) {
+        for (int target : to) {
+            builder.addEdge(from, target);
+        }
+    }
+
+    private boolean isEquivalent(DefaultGraphSplittingBackend backend, Graph proto) {
         Graph graph = backend.getGraph();
         for (int node = 0; node < graph.size(); ++node) {
             int nodeProto = backend.prototype(node);

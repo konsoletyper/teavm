@@ -151,6 +151,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     private ObjectIntMap<IdentifiedStatement> labelMap = new ObjectIntHashMap<>();
     private Set<IdentifiedStatement> usedAsBreakTarget = new HashSet<>();
     private Set<IdentifiedStatement> usedAsContinueTarget = new HashSet<>();
+    private Map<IdentifiedStatement, Integer> tryDepthByStatements = new HashMap<>();
+    private int tryDepth;
 
     static {
         BUFFER_TYPES.put(ByteBuffer.class.getName(), "int8_t");
@@ -1056,8 +1058,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     public void visit(CastExpr expr) {
         if (expr.getTarget() instanceof ValueType.Object) {
             String className = ((ValueType.Object) expr.getTarget()).getClassName();
-            if (context.getCharacteristics().isStructure(className)
-                    || className.equals(Address.class.getName())) {
+            if (!context.getCharacteristics().isManaged(className)) {
                 expr.getValue().acceptVisitor(this);
                 return;
             }
@@ -1197,8 +1198,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         IdentifiedStatement oldDefaultBreakTarget = defaultBreakTarget;
         defaultBreakTarget = statement;
 
-        int statementId = labelMap.size() + 1;
-        labelMap.put(statement, statementId);
+        int statementId = registerIdentifiedStatement(statement);
 
         pushLocation(statement.getValue().getLocation());
         writer.print("switch (");
@@ -1243,8 +1243,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         defaultBreakTarget = statement;
         defaultContinueTarget = statement;
 
-        int statementId = labelMap.size() + 1;
-        labelMap.put(statement, statementId);
+        int statementId = registerIdentifiedStatement(statement);
 
         writer.print("while (");
         if (statement.getCondition() != null) {
@@ -1276,8 +1275,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(BlockStatement statement) {
-        int statementId = labelMap.size() + 1;
-        labelMap.put(statement, statementId);
+        int statementId = registerIdentifiedStatement(statement);
 
         visitMany(statement.getBody());
 
@@ -1293,8 +1291,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         if (target == null) {
             target = defaultBreakTarget;
         }
-        int id = labelMap.get(target);
-        writer.println("goto teavm_label_" + id + ";");
+        jumpToTarget(target, "teavm_label_");
         usedAsBreakTarget.add(target);
         popLocation(statement.getLocation());
     }
@@ -1306,10 +1303,26 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         if (target == null) {
             target = defaultContinueTarget;
         }
-        int id = labelMap.get(target);
-        writer.println("goto teavm_cnt_" + id + ";");
+        jumpToTarget(target, "teavm_cnt_");
         usedAsContinueTarget.add(target);
         popLocation(statement.getLocation());
+    }
+
+    private int registerIdentifiedStatement(IdentifiedStatement statement) {
+        tryDepthByStatements.put(statement, tryDepth);
+        int statementId = labelMap.size() + 1;
+        labelMap.put(statement, statementId);
+        return statementId;
+    }
+
+    private void jumpToTarget(IdentifiedStatement target, String prefix) {
+        int targetDepth = tryDepthByStatements.get(target);
+        while (targetDepth < tryDepth) {
+            targetDepth++;
+            writer.println("TEAVM_RESTORE_JUMP_BUFFER;");
+        }
+        int id = labelMap.get(target);
+        writer.println("goto " + prefix + id + ";");
     }
 
     @Override
@@ -1398,7 +1411,10 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         }
 
         writer.println("TEAVM_TRY").indent();
+        tryDepth++;
         visitMany(statement.getProtectedBody());
+        tryDepth--;
+        handlers.subList(firstId, handlers.size()).clear();
         writer.outdent().println("TEAVM_CATCH").indent();
 
         for (int i = tryCatchStatements.size() - 1; i >= 0; --i) {
@@ -1420,8 +1436,6 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             writer.println("break;");
             writer.outdent().println("}");
         }
-
-        handlers.subList(firstId, handlers.size()).clear();
 
         writer.outdent().println("TEAVM_END_TRY");
     }
@@ -1551,9 +1565,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
         @Override
         public String escapeFileName(String name) {
-            StringBuilder sb = new StringBuilder();
-            ClassGenerator.escape(name, sb);
-            return sb.toString();
+            return context.getFileNames().escapeName(name);
         }
 
         @Override

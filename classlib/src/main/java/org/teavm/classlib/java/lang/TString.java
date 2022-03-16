@@ -68,7 +68,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString(byte[] bytes, int offset, int length) {
-        initWithBytes(bytes, offset, length, new TUTF8Charset());
+        initWithBytes(bytes, offset, length, TUTF8Charset.INSTANCE);
     }
 
     public TString(byte[] bytes) {
@@ -574,7 +574,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public byte[] getBytes() {
-        return getBytes(new TUTF8Charset());
+        return getBytes(TUTF8Charset.INSTANCE);
     }
 
     public byte[] getBytes(TCharset charset) {

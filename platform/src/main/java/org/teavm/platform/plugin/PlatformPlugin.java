@@ -95,6 +95,7 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
 
             TeaVMCHost cHost = host.getExtension(TeaVMCHost.class);
             if (cHost != null) {
+                host.add(new ResourceCTransformer());
                 MetadataCIntrinsic metadataCIntrinsic = new MetadataCIntrinsic();
                 cHost.addGenerator(ctx -> {
                     metadataCIntrinsic.init(ctx.getClassSource(), ctx.getClassLoader(),

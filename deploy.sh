@@ -52,14 +52,14 @@ function deploy_teavm {
     -DgenerateBackupPoms=false \
     || { echo 'Setting version' ; return 1; }
 
-  mvn -e -V deploy \
+  mvn -T $TEAVM_DEPLOY_THREADS -e -V deploy \
    --settings ../deploy-settings.xml \
    -P with-idea -P with-cli -P deploy-to-teavm \
    -Dmaven.repo.local=`pwd`/../build-cache/maven-repository \
    -Dteavm.build.all=false \
    -Dteavm.junit.optimized=false \
    -Dteavm.junit.js.decodeStack=false \
-   -Dteavm.junit.threads=4 \
+   -Dteavm.junit.threads=$TEAVM_DEPLOY_TEST_THREADS \
    -Dteavm.junit.js.runner=browser-chrome \
    || { echo 'Deploy failed' ; return 1; }
 

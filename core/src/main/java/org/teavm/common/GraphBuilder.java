@@ -151,24 +151,7 @@ public class GraphBuilder {
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("digraph {\n");
-
-            for (int i = 0; i < size(); ++i) {
-                if (outgoingEdgesCount(i) > 0) {
-                    sb.append("  ").append(i).append(" -> { ");
-                    int[] outgoingEdges = outgoingEdges(i);
-                    sb.append(outgoingEdges[0]);
-                    for (int j = 1; j < outgoingEdges.length; ++j) {
-                        sb.append(", ").append(outgoingEdges[j]);
-                    }
-                    sb.append(" }\n");
-                }
-            }
-
-            sb.append("}");
-
-            return sb.toString();
+            return GraphUtils.printToDot(this);
         }
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generate;
 
+import java.util.function.Predicate;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.VariableNode;
 import org.teavm.ast.decompilation.Decompiler;
@@ -40,15 +41,18 @@ public class WasmGenerator {
     private WasmClassGenerator classGenerator;
     private BinaryWriter binaryWriter;
     private NameProvider names;
+    private Predicate<MethodReference> asyncMethods;
 
     public WasmGenerator(Decompiler decompiler, ClassHolderSource classSource,
-            WasmGenerationContext context, WasmClassGenerator classGenerator, BinaryWriter binaryWriter) {
+            WasmGenerationContext context, WasmClassGenerator classGenerator, BinaryWriter binaryWriter,
+            Predicate<MethodReference> asyncMethods) {
         this.decompiler = decompiler;
         this.classSource = classSource;
         this.context = context;
         this.classGenerator = classGenerator;
         this.binaryWriter = binaryWriter;
         names = classGenerator.names;
+        this.asyncMethods = asyncMethods;
     }
 
     public WasmFunction generateDefinition(MethodReference methodReference) {
@@ -85,7 +89,7 @@ public class WasmGenerator {
         }
 
         WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, classGenerator, binaryWriter, function,
-                firstVariable);
+                firstVariable, asyncMethods.test(methodReference));
         methodAst.getBody().acceptVisitor(visitor);
         if (visitor.result instanceof WasmBlock) {
             ((WasmBlock) visitor.result).setType(function.getResult());

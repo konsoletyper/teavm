@@ -45,7 +45,7 @@ public class TInputStreamReader extends TReader {
     }
 
     public TInputStreamReader(TInputStream in) {
-        this(in, new TUTF8Charset());
+        this(in, TUTF8Charset.INSTANCE);
     }
 
     public TInputStreamReader(TInputStream in, TCharsetDecoder decoder) {

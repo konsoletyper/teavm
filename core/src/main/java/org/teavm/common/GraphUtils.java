@@ -126,11 +126,11 @@ public final class GraphUtils {
         }
     }
 
-    private static class FilteredGraph implements Graph {
+    static class FilteredGraph implements Graph {
         final Graph innerGraph;
         final IntPredicate filter;
 
-        public FilteredGraph(Graph innerGraph, IntPredicate filter) {
+        FilteredGraph(Graph innerGraph, IntPredicate filter) {
             this.innerGraph = innerGraph;
             this.filter = filter;
         }
@@ -197,6 +197,11 @@ public final class GraphUtils {
         @Override
         public int outgoingEdgesCount(int node) {
             return outgoingEdges(node).length;
+        }
+
+        @Override
+        public String toString() {
+            return GraphUtils.printToDot(this);
         }
     }
 
@@ -302,7 +307,11 @@ public final class GraphUtils {
     }
 
     public static DominatorTree buildDominatorTree(Graph graph) {
-        DominatorTreeBuilder builder = new DominatorTreeBuilder(graph);
+        return buildDominatorTree(graph, 0);
+    }
+
+    public static DominatorTree buildDominatorTree(Graph graph, int start) {
+        DominatorTreeBuilder builder = new DominatorTreeBuilder(graph, start);
         builder.build();
         return new DefaultDominatorTree(builder.dominators, builder.vertices);
     }
@@ -334,7 +343,7 @@ public final class GraphUtils {
                     stack[top++] = node;
                     for (int successor : graph.outgoingEdges(node)) {
                         if (state[successor] == 0) {
-                            stack[top++] = node;
+                            stack[top++] = successor;
                         }
                     }
                     break;
@@ -349,7 +358,7 @@ public final class GraphUtils {
     }
 
     public static void splitIrreducibleGraph(Graph graph, int[] weights, GraphSplittingBackend backend) {
-        new IrreducibleGraphConverter().convertToReducible(graph, weights, backend);
+        new IrreducibleGraphSplitter(backend, graph, weights).splitLoops();
     }
 
     public static int[][] findDominanceFrontiers(Graph cfg, DominatorTree domTree) {

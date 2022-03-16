@@ -20,6 +20,7 @@ public class TByte extends TNumber implements TComparable<TByte> {
     public static final byte MAX_VALUE = 127;
     public static final Class<Byte> TYPE = byte.class;
     public static final int SIZE = 8;
+    public static final int BYTES = 1;
     private byte value;
 
     public TByte(byte value) {
@@ -76,6 +77,10 @@ public class TByte extends TNumber implements TComparable<TByte> {
 
     @Override
     public int hashCode() {
+        return hashCode(value);
+    }
+
+    public static int hashCode(byte value) {
         return value;
     }
 
@@ -83,9 +88,21 @@ public class TByte extends TNumber implements TComparable<TByte> {
         return a - b;
     }
 
+    public static int compareUnsigned(byte a, byte b) {
+        return (a & 255) - (b & 255);
+    }
+
     @Override
     public int compareTo(TByte other) {
         return compare(value, other.value);
+    }
+
+    public static int toUnsignedInt(byte value) {
+        return value & 255;
+    }
+
+    public static long toUnsignedLong(byte value) {
+        return value & 255L;
     }
 
     public static byte parseByte(String s) throws TNumberFormatException {

@@ -18,11 +18,11 @@ package org.teavm.cli;
 import java.util.Arrays;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.PosixParser;
 import org.teavm.devserver.DevServer;
 import org.teavm.tooling.ConsoleTeaVMToolLog;
 
@@ -35,66 +35,65 @@ public final class TeaVMDevServerRunner {
         setupOptions();
     }
 
-    @SuppressWarnings("AccessStaticViaInstance")
     private static void setupOptions() {
-        options.addOption(OptionBuilder
-                .withArgName("directory")
+        options.addOption(Option.builder("d")
+                .argName("directory")
                 .hasArg()
-                .withDescription("a directory, relative to server's root, which serves generated files")
-                .withLongOpt("targetdir")
-                .create('d'));
-        options.addOption(OptionBuilder
-                .withArgName("file")
+                .desc("a directory, relative to server's root, which serves generated files")
+                .longOpt("targetdir")
+                .build());
+        options.addOption(Option.builder("f")
+                .argName("file")
                 .hasArg()
-                .withDescription("a file where to put decompiled classes (classes.js by default)")
-                .withLongOpt("targetfile")
-                .create('f'));
-        options.addOption(OptionBuilder
-                .withArgName("classpath")
+                .desc("a file where to put decompiled classes (classes.js by default)")
+                .longOpt("targetfile")
+                .build());
+        options.addOption(Option.builder("p")
+                .argName("classpath")
                 .hasArgs()
-                .withDescription("classpath element (either directory or jar file)")
-                .withLongOpt("classpath")
-                .create('p'));
-        options.addOption(OptionBuilder
-                .withArgName("sourcepath")
+                .desc("classpath element (either directory or jar file)")
+                .longOpt("classpath")
+                .build());
+        options.addOption(Option.builder("s")
+                .argName("sourcepath")
                 .hasArg()
-                .withDescription("source path (either directory or jar file which contains source code)")
-                .withLongOpt("sourcepath")
-                .create('s'));
-        options.addOption(OptionBuilder
-                .withArgName("number")
+                .desc("source path (either directory or jar file which contains source code)")
+                .longOpt("sourcepath")
+                .build());
+        options.addOption(Option.builder()
+                .argName("number")
                 .hasArg()
-                .withDescription("port (default is 9090)")
-                .withLongOpt("port")
-                .create());
-        options.addOption(OptionBuilder
-                .withDescription("display indicator on web page")
-                .withLongOpt("indicator")
-                .create('i'));
-        options.addOption(OptionBuilder
-                .withDescription("deobfuscate stack traces")
-                .withLongOpt("deobfuscate-stack")
-                .create());
-        options.addOption(OptionBuilder
-                .withDescription("automatically reload page when compilation completes")
-                .withLongOpt("auto-reload")
-                .create());
-        options.addOption(OptionBuilder
-                .withDescription("display more messages on server log")
-                .withLongOpt("verbose")
-                .create('v'));
-        options.addOption(OptionBuilder
-                .withArgName("URL")
+                .desc("port (default is 9090)")
+                .longOpt("port")
+                .build());
+        options.addOption(Option.builder("i")
+                .desc("display indicator on web page")
+                .longOpt("indicator")
+                .build());
+        options.addOption(Option.builder()
+                .desc("deobfuscate stack traces")
+                .longOpt("deobfuscate-stack")
+                .build());
+        options.addOption(Option.builder()
+                .desc("automatically reload page when compilation completes")
+                .longOpt("auto-reload")
+                .build());
+        options.addOption(Option.builder("v")
+                .desc("display more messages on server log")
+                .longOpt("verbose")
+                .build());
+        options.addOption(Option.builder()
+                .argName("URL")
                 .hasArg()
-                .withDescription("delegate requests to URL")
-                .withLongOpt("proxy-url")
-                .create());
-        options.addOption(OptionBuilder
-                .withArgName("path")
+                .desc("delegate requests to URL")
+                .longOpt("proxy-url")
+                .build());
+        options.addOption(Option.builder()
+                .argName("path")
                 .hasArg()
-                .withDescription("delegate requests from path")
-                .withLongOpt("proxy-path")
-                .create());
+                .desc("delegate requests from path")
+                .longOpt("proxy-path")
+                .build());
     }
 
     private TeaVMDevServerRunner(CommandLine commandLine) {
@@ -107,7 +106,7 @@ public final class TeaVMDevServerRunner {
             printUsage();
             return;
         }
-        CommandLineParser parser = new PosixParser();
+        CommandLineParser parser = new DefaultParser();
         CommandLine commandLine;
         try {
             commandLine = parser.parse(options, args);

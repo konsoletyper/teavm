@@ -29,7 +29,7 @@ TeaVM_Array* teavm_resourceMapKeys(TeaVM_ResourceMap *map) {
     void** data = TEAVM_ARRAY_DATA(array, void*);
     for (int32_t i = 0; i < map->size; ++i) {
         if (map->entries[i].key != NULL) {
-            data[index++] = map->entries[i].key;
+            data[index++] = *map->entries[i].key;
         }
     }
 
