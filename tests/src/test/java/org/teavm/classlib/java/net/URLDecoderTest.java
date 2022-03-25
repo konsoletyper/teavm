@@ -32,12 +32,6 @@ import org.teavm.junit.WholeClassCompilation;
 public class URLDecoderTest {
 
     @Test
-    public void test_Constructor() {
-        URLDecoder ud = new URLDecoder();
-        assertNotNull("Constructor failed.", ud);
-    }
-
-    @Test
     public void test_decodeLjava_lang_String() {
         final String url = "http://localhost.";
         final String url2 = "telnet://justWantToHaveFun.com:400";
