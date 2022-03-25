@@ -141,7 +141,7 @@ public class MissingItemsProcessor {
 
     private boolean checkClass(TextLocation location, String className) {
         if (!reachableClasses.contains(className)) {
-            return false;
+            return true;
         }
 
         if (!dependencyInfo.getClass(className).isMissing()) {
