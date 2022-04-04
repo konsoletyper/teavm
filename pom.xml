@@ -128,7 +128,6 @@
     <module>tools/chrome-rdp</module>
     <module>tools/junit</module>
     <module>tools/devserver</module>
-    <module>tests</module>
     <module>extras-slf4j</module>
     <module>metaprogramming/impl</module>
   </modules>
@@ -395,6 +394,16 @@
       </activation>
       <modules>
         <module>samples</module>
+      </modules>
+    </profile>
+
+    <profile>
+      <id>with-tests</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <modules>
+        <module>tests</module>
       </modules>
     </profile>
 
