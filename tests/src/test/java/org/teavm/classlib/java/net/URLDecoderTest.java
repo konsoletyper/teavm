@@ -16,7 +16,6 @@
 
 package org.teavm.classlib.java.net;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.UnsupportedEncodingException;
