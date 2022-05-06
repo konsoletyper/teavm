@@ -30,6 +30,8 @@ public abstract class TResourceBundle {
 
     private Locale locale;
 
+    private String name;
+
     static class MissingBundle extends TResourceBundle {
         @Override
         public Enumeration<String> getKeys() {
@@ -116,6 +118,14 @@ public abstract class TResourceBundle {
 
     public Locale getLocale() {
         return locale;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getBaseBundleName() {
+        return name;
     }
 
     public final Object getObject(String key) {
