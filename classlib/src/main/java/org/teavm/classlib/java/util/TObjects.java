@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.function.Supplier;
 import org.teavm.classlib.java.lang.TObject;
 
 public final class TObjects extends TObject {
@@ -50,6 +51,16 @@ public final class TObjects extends TObject {
             throw new NullPointerException(message);
         }
         return obj;
+    }
+
+    public static <T> T requireNonNullElse(T obj, T defaultObj) {
+        return (obj != null) ? obj : requireNonNull(defaultObj, "defaultObj");
+    }
+
+    public static <T> T requireNonNullElseGet(T obj, Supplier<? extends T> supplier) {
+        return (obj != null)
+                ? obj
+                : requireNonNull(requireNonNull(supplier, "supplier").get(), "supplier.get()");
     }
 
     public static boolean nonNull(Object obj) {
