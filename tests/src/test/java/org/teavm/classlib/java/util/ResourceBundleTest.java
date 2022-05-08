@@ -72,6 +72,19 @@ public class ResourceBundleTest {
 
     }
 
+    @Test
+    public void simpleBundle() {
+        ResourceBundle bundle = ResourceBundle.getBundle("testBundle", Locale.ENGLISH);
+        assertEquals("testBundle", bundle.getBaseBundleName());
+        assertEquals("Test passed", bundle.getString("a"));
+        try {
+            bundle.getString("b");
+            fail("MissingResourceException not thrown");
+        } catch (MissingResourceException e) {
+            assertEquals("b", e.getKey());
+        }
+    }
+
     /*
      * the class and constructor must be public so ResourceBundle has the
      * possibility to instantiate
