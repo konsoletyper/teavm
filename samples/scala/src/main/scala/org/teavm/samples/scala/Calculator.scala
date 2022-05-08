@@ -52,7 +52,7 @@ object Calculator {
 
   def keyword(str: String) = s(str) ~ ws >> { case (s, _) => s }
 
-  def ws = s(" ").* >> (_ => Unit)
+  def ws = s(" ").* >> (_ => ())
 }
 
 sealed abstract class Expr
