@@ -32,32 +32,34 @@ public class ShorteningFileNameProvider implements FileNameProvider {
 
     @Override
     public String fileName(String className) {
-        return unique(shorten(nameProvider.fileName(className)));
+        return process(nameProvider.fileName(className));
     }
 
     @Override
     public String fileName(ValueType type) {
-        return unique(shorten(nameProvider.fileName(type)));
+        return process(nameProvider.fileName(type));
     }
 
     @Override
     public String escapeName(String name) {
-        return unique(shorten(nameProvider.escapeName(name)));
+        return process(nameProvider.escapeName(name));
+    }
+
+    private String process(String name) {
+        return names.computeIfAbsent(name, n -> unique(shorten(n)));
     }
 
     private String unique(String name) {
-        return names.computeIfAbsent(name, n -> {
-            if (usedNames.add(n)) {
-                return n;
+        if (usedNames.add(name)) {
+            return name;
+        }
+        int suffix = 1;
+        while (true) {
+            String candidate = name + "_" + suffix++;
+            if (usedNames.add(candidate)) {
+                return candidate;
             }
-            int suffix = 1;
-            while (true) {
-                String candidate = n + "_" + suffix++;
-                if (usedNames.add(candidate)) {
-                    return candidate;
-                }
-            }
-        });
+        }
     }
 
     private static String shorten(String name) {
