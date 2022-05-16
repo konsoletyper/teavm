@@ -54,7 +54,7 @@ function deploy_teavm {
 
   mvn -T $TEAVM_DEPLOY_THREADS -e -V deploy \
    --settings ../deploy-settings.xml \
-   -P with-idea -P with-cli -P deploy-to-teavm \
+   -P with-idea -P with-cli -P deploy-to-teavm -P with-tests \
    -Dmaven.repo.local=`pwd`/../build-cache/maven-repository \
    -Dteavm.build.all=false \
    -Dteavm.junit.optimized=false \
