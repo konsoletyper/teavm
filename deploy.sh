@@ -52,16 +52,24 @@ function deploy_teavm {
     -DgenerateBackupPoms=false \
     || { echo 'Setting version' ; return 1; }
 
-  mvn -T $TEAVM_DEPLOY_THREADS -e -V deploy \
+  mvn -T $TEAVM_DEPLOY_THREADS -e -V install \
    --settings ../deploy-settings.xml \
    -P with-idea -P with-cli -P deploy-to-teavm -P with-tests \
    -Dmaven.repo.local=`pwd`/../build-cache/maven-repository \
    -Dteavm.build.all=false \
-   -Dteavm.junit.optimized=false \
+   -Dteavm.junit.optimized=true \
    -Dteavm.junit.js.decodeStack=false \
    -Dteavm.junit.threads=$TEAVM_DEPLOY_TEST_THREADS \
    -Dteavm.junit.js.runner=browser-chrome \
-   || { echo 'Deploy failed' ; return 1; }
+   || { echo 'Build failed' ; return 1; }
+
+   mvn -T $TEAVM_DEPLOY_THREADS -e -V deploy \
+      --settings ../deploy-settings.xml \
+      -P with-idea -P with-cli -P deploy-to-teavm \
+      -Dmaven.repo.local=`pwd`/../build-cache/maven-repository \
+      -Dteavm.build.all=false \
+      -DskipTests \
+      || { echo 'Deploy failed' ; return 1; }
 
  cat <<EOF >idea-repository.xml
 <?xml version="1.0" encoding="UTF-8"?>
