@@ -467,6 +467,14 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         target.setController(targetController);
 
+        for (String className : classSet.getClassNames()) {
+            ClassHolder cls = classSet.get(className);
+            for (MethodHolder method : cls.getMethods()) {
+                if (method.getProgram() != null) {
+                    target.beforeInlining(method.getProgram(), method);
+                }
+            }
+        }
         inline(classSet);
         if (wasCancelled()) {
             return null;
@@ -979,6 +987,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                         missingItemsProcessor.processMethod(method.getReference(), program);
                         linker.link(method, program);
                         clinitInsertion.apply(method, program);
+                        target.beforeInlining(program, method);
                         program = optimizeMethodCacheMiss(method, program);
                         Program finalProgram = program;
                         programCache.store(method.getReference(), finalProgram,

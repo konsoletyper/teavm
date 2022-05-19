@@ -40,6 +40,9 @@ public interface TeaVMTarget {
 
     void contributeDependencies(DependencyAnalyzer dependencyAnalyzer);
 
+    default void beforeInlining(Program program, MethodReader method) {
+    }
+
     default void analyzeBeforeOptimizations(ListableClassReaderSource classSource) {
     }
 

@@ -119,6 +119,19 @@ public final class VariableEscapeAnalyzer {
             if (insn.getArray() != null) {
                 escaping[insn.getArray().getIndex()] = true;
             }
+            if (insn.getReceiver() != null) {
+                escaping[insn.getReceiver().getIndex()] = true;
+            }
+        }
+
+        @Override
+        public void visit(NullCheckInstruction insn) {
+            if (insn.getValue() != null) {
+                escaping[insn.getValue().getIndex()] = true;
+            }
+            if (insn.getReceiver() != null) {
+                escaping[insn.getReceiver().getIndex()] = true;
+            }
         }
     }
 }
