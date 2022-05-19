@@ -56,7 +56,10 @@ public class MissingItemsProcessor {
     public void processClass(ClassHolder cls) {
         for (MethodHolder method : cls.getMethods()) {
             if (reachableMethods.contains(method.getReference()) && method.getProgram() != null) {
-                processMethod(method);
+                MethodDependencyInfo methodDep = dependencyInfo.getMethod(method.getReference());
+                if (methodDep != null && methodDep.isUsed()) {
+                    processMethod(method);
+                }
             }
         }
     }
