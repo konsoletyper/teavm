@@ -40,6 +40,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
     private final Map<String, String> functionAliases = new HashMap<>();
     private final Map<String, ScopedName> classInitAliases = new HashMap<>();
     private String scopeName;
+    private String sharedScopeName;
 
     public DefaultNamingStrategy(AliasProvider aliasProvider, ClassReaderSource classSource) {
         this.aliasProvider = aliasProvider;
@@ -128,6 +129,14 @@ public class DefaultNamingStrategy implements NamingStrategy {
             scopeName = aliasProvider.getScopeAlias();
         }
         return scopeName;
+    }
+
+    @Override
+    public String getSharedScopeName() {
+        if (sharedScopeName == null) {
+            sharedScopeName = aliasProvider.getSharedScopeAlias();
+        }
+        return sharedScopeName;
     }
 
     private MethodReference getRealMethod(MethodReference methodRef) {

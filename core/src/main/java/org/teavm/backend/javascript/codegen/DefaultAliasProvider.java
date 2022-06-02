@@ -33,7 +33,7 @@ public class DefaultAliasProvider implements AliasProvider {
     private final Set<String> knownScopedAliases = new HashSet<>(200, 0.5f);
     private final ObjectIntMap<String> knowScopedAliasesCounter = new ObjectIntHashMap<>();
     private final Set<String> knownVirtualAliases = new HashSet<>(200, 0.5f);
-    private final ObjectIntMap<String> knowVirtualAliasesCounter = new ObjectIntHashMap<>();
+    private final ObjectIntMap<String> knownVirtualAliasesCounter = new ObjectIntHashMap<>();
 
     public DefaultAliasProvider(int topLevelAliasLimit) {
         this.topLevelAliasLimit = topLevelAliasLimit;
@@ -91,7 +91,7 @@ public class DefaultAliasProvider implements AliasProvider {
                 alias = "$" + alias;
                 break;
         }
-        return makeUnique(knownVirtualAliases, knowVirtualAliasesCounter, alias);
+        return makeUnique(knownVirtualAliases, knownVirtualAliasesCounter, alias);
     }
 
     @Override
@@ -111,7 +111,7 @@ public class DefaultAliasProvider implements AliasProvider {
 
     @Override
     public String getFieldAlias(FieldReference field) {
-        return makeUnique(knownVirtualAliases, knowVirtualAliasesCounter, "$" + field.getFieldName());
+        return makeUnique(knownVirtualAliases, knownVirtualAliasesCounter, "$" + field.getFieldName());
     }
 
     @Override
@@ -132,6 +132,11 @@ public class DefaultAliasProvider implements AliasProvider {
     @Override
     public String getScopeAlias() {
         return makeUnique(knownAliases, knowAliasesCounter, "$java");
+    }
+
+    @Override
+    public String getSharedScopeAlias() {
+        return makeUnique(knownAliases, knowAliasesCounter, "$shared");
     }
 
     private ScopedName makeUniqueTopLevel(String suggested) {

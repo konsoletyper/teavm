@@ -16,12 +16,19 @@
 package org.teavm.backend.javascript.codegen;
 
 import java.util.*;
+import org.teavm.backend.javascript.splitting.RegionAnalyzer;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 public class NamingOrderer implements NameFrequencyConsumer {
     private Map<String, Entry> entries = new HashMap<>();
+    private Entry sharedScopeEntry = new Entry();
+    private RegionAnalyzer regionAnalyzer;
+
+    public NamingOrderer(RegionAnalyzer regionAnalyzer) {
+        this.regionAnalyzer = regionAnalyzer;
+    }
 
     @Override
     public void consume(MethodReference method) {
@@ -34,7 +41,6 @@ public class NamingOrderer implements NameFrequencyConsumer {
         }
         entry.frequency++;
     }
-
 
     @Override
     public void consumeInit(MethodReference method) {
@@ -108,8 +114,26 @@ public class NamingOrderer implements NameFrequencyConsumer {
         entry.frequency++;
     }
 
+    private void trySharedScope(MethodReference method) {
+        RegionAnalyzer.NodeInfo info = regionAnalyzer.getNodeInfo(method);
+        if (info != null && info.isShared()) {
+            addSharedScope();
+        }
+    }
+
+    private void addSharedScope() {
+        if (sharedScopeEntry == null) {
+            sharedScopeEntry = new Entry();
+            sharedScopeEntry.operation = naming -> naming.getSharedScopeName();
+        }
+        sharedScopeEntry.frequency++;
+    }
+
     public void apply(NamingStrategy naming) {
         List<Entry> entryList = new ArrayList<>(entries.values());
+        if (sharedScopeEntry != null) {
+            entryList.add(sharedScopeEntry);
+        }
         Collections.sort(entryList, (o1, o2) -> Integer.compare(o2.frequency, o1.frequency));
         for (Entry entry : entryList) {
             entry.operation.perform(naming);

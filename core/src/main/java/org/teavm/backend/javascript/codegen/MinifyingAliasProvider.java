@@ -89,6 +89,15 @@ public class MinifyingAliasProvider implements AliasProvider {
         return result;
     }
 
+    @Override
+    public String getSharedScopeAlias() {
+        String result;
+        do {
+            result = RenderingUtil.indexToId(lastSuffix++, startLetters);
+        } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
+        return result;
+    }
+
     private ScopedName createTopLevelName() {
         if (usedAliases.size() < topLevelAliasLimit) {
             String result;

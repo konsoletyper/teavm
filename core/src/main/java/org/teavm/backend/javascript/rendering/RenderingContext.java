@@ -66,13 +66,14 @@ public class RenderingContext {
     private ClassInitializerInfo classInitializerInfo;
     private TextLocation lastEmittedLocation = TextLocation.EMPTY;
     private boolean strict;
+    private RenderingFilter filter;
 
     public RenderingContext(DebugInformationEmitter debugEmitter,
             ClassReaderSource initialClassSource, ListableClassReaderSource classSource,
             ClassLoader classLoader, ServiceRepository services, Properties properties,
             NamingStrategy naming, DependencyInfo dependencyInfo,
             Predicate<MethodReference> virtualPredicate, ClassInitializerInfo classInitializerInfo,
-            boolean strict) {
+            boolean strict, RenderingFilter filter) {
         this.debugEmitter = debugEmitter;
         this.initialClassSource = initialClassSource;
         this.classSource = classSource;
@@ -84,6 +85,11 @@ public class RenderingContext {
         this.virtualPredicate = virtualPredicate;
         this.classInitializerInfo = classInitializerInfo;
         this.strict = strict;
+        this.filter = filter;
+    }
+
+    public RenderingFilter getFilter() {
+        return filter;
     }
 
     public ClassReaderSource getInitialClassSource() {

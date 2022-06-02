@@ -43,6 +43,7 @@ import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.decompile.PreparedClass;
 import org.teavm.backend.javascript.decompile.PreparedMethod;
 import org.teavm.backend.javascript.spi.GeneratorContext;
+import org.teavm.backend.javascript.splitting.RegionAnalyzer;
 import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
@@ -65,7 +66,7 @@ import org.teavm.vm.TeaVMProgressFeedback;
 
 public class Renderer implements RenderingManager {
     private final NamingStrategy naming;
-    private final SourceWriter writer;
+    private SourceWriter writer;
     private final ListableClassReaderSource classSource;
     private final ClassLoader classLoader;
     private boolean minifying;
@@ -87,10 +88,9 @@ public class Renderer implements RenderingManager {
     private boolean longLibraryUsed;
     private boolean threadLibraryUsed;
 
-    public Renderer(SourceWriter writer, Set<MethodReference> asyncMethods, Set<MethodReference> asyncFamilyMethods,
+    public Renderer(Set<MethodReference> asyncMethods, Set<MethodReference> asyncFamilyMethods,
             Diagnostics diagnostics, RenderingContext context) {
         this.naming = context.getNaming();
-        this.writer = writer;
         this.classSource = context.getClassSource();
         this.classLoader = context.getClassLoader();
         this.services = context.getServices();
@@ -285,9 +285,9 @@ public class Renderer implements RenderingManager {
         writer.newLine();
     }
 
-    public void prepare(List<PreparedClass> classes) {
+    public void prepare(List<PreparedClass> classes, RegionAnalyzer regionAnalyzer) {
         if (minifying) {
-            NamingOrderer orderer = new NamingOrderer();
+            NamingOrderer orderer = new NamingOrderer(regionAnalyzer);
             NameFrequencyEstimator estimator = new NameFrequencyEstimator(orderer, classSource, asyncMethods,
                     asyncFamilyMethods, context.isStrict());
             for (PreparedClass cls : classes) {
@@ -296,6 +296,10 @@ public class Renderer implements RenderingManager {
             naming.getScopeName();
             orderer.apply(naming);
         }
+    }
+
+    public void setWriter(SourceWriter writer) {
+        this.writer = writer;
     }
 
     public boolean render(List<PreparedClass> classes) throws RenderingException {
@@ -309,7 +313,9 @@ public class Renderer implements RenderingManager {
         int index = 0;
         for (PreparedClass cls : classes) {
             int start = writer.getOffset();
-            renderDeclaration(cls);
+            if (!context.getFilter().isExternal(cls.getName())) {
+                renderDeclaration(cls);
+            }
             renderMethodBodies(cls);
             appendClassSize(cls.getName(), writer.getOffset() - start);
             if (progressConsumer.apply(1000 * ++index / classes.size()) == TeaVMProgressFeedback.CANCEL) {
@@ -324,20 +330,31 @@ public class Renderer implements RenderingManager {
         ScopedName jsName = naming.getNameFor(cls.getName());
         debugEmitter.addClass(jsName.value, cls.getName(), cls.getParentName());
         try {
-            List<FieldHolder> nonStaticFields = new ArrayList<>();
-            List<FieldHolder> staticFields = new ArrayList<>();
+            List<FieldHolder> instanceFields = new ArrayList<>();
             for (FieldHolder field : cls.getClassHolder().getFields()) {
-                if (field.getModifiers().contains(ElementModifier.STATIC)) {
-                    staticFields.add(field);
-                } else {
-                    nonStaticFields.add(field);
+                if (!field.getModifiers().contains(ElementModifier.STATIC)) {
+                    instanceFields.add(field);
                 }
             }
 
-            if (nonStaticFields.isEmpty() && !cls.getClassHolder().getName().equals("java.lang.Object")) {
+            if (instanceFields.isEmpty() && !cls.getClassHolder().getName().equals("java.lang.Object")) {
                 renderShortClassFunctionDeclaration(cls, jsName);
             } else {
-                renderFullClassFunctionDeclaration(cls, jsName, nonStaticFields);
+                renderFullClassFunctionDeclaration(cls, jsName, instanceFields);
+            }
+        } catch (IOException e) {
+            throw new RenderingException("IO error occurred", e);
+        }
+    }
+
+    private void renderStaticFields(PreparedClass cls) throws RenderingException {
+        try {
+            List<FieldHolder> staticFields = new ArrayList<>();
+            for (FieldHolder field : cls.getClassHolder().getFields()) {
+                if (field.getModifiers().contains(ElementModifier.STATIC)
+                        && !context.getFilter().isExternal(field.getReference())) {
+                    staticFields.add(field);
+                }
             }
 
             for (FieldHolder field : staticFields) {
@@ -345,7 +362,7 @@ public class Renderer implements RenderingManager {
                 if (value == null) {
                     value = getDefaultValue(field.getType());
                 }
-                FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
+                FieldReference fieldRef = field.getReference();
                 if (value instanceof String) {
                     context.lookupString((String) value);
                     postponedFieldInitializers.add(new PostponedFieldInitializer(fieldRef, (String) value));
@@ -353,10 +370,18 @@ public class Renderer implements RenderingManager {
                 }
 
                 ScopedName fieldName = naming.getFullNameFor(fieldRef);
-                if (fieldName.scoped) {
+                if (context.getFilter().isShared(fieldRef)) {
+                    writer.append(naming.getSharedScopeName()).append(".");
+                    if (fieldName.scoped) {
+                        writer.append(naming.getScopeName()).append(".");
+                    }
                     writer.append(naming.getScopeName()).append(".");
                 } else {
-                    writer.append("var ");
+                    if (fieldName.scoped) {
+                        writer.append(naming.getScopeName()).append(".");
+                    } else {
+                        writer.append("var ");
+                    }
                 }
                 writer.append(fieldName.value).ws().append("=").ws();
                 context.constantToString(writer, value);
@@ -370,7 +395,8 @@ public class Renderer implements RenderingManager {
     private void renderFullClassFunctionDeclaration(PreparedClass cls, ScopedName jsName,
             List<FieldHolder> nonStaticFields) throws IOException {
         boolean thisAliased = false;
-        renderFunctionDeclaration(jsName);
+        boolean shared = context.getFilter().isShared(cls.getName());
+        renderFunctionDeclaration(shared, jsName);
         writer.append("()").ws().append("{").indent().softNewLine();
         if (nonStaticFields.size() > 1) {
             thisAliased = true;
@@ -378,6 +404,9 @@ public class Renderer implements RenderingManager {
         }
         if (!cls.getClassHolder().getModifiers().contains(ElementModifier.INTERFACE)
                 && cls.getParentName() != null) {
+            if (context.getFilter().isShared(cls.getParentName())) {
+                writer.append(naming.getSharedScopeName());
+            }
             writer.appendClass(cls.getParentName()).append(".call(").append(thisAliased ? "a" : "this")
                     .append(");").softNewLine();
         }
@@ -387,8 +416,7 @@ public class Renderer implements RenderingManager {
                 value = getDefaultValue(field.getType());
             }
             FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
-            writer.append(thisAliased ? "a" : "this").append(".").appendField(fieldRef).ws()
-                    .append("=").ws();
+            writer.append(thisAliased ? "a" : "this").append(".").appendField(fieldRef).ws().append("=").ws();
             context.constantToString(writer, value);
             writer.append(";").softNewLine();
             debugEmitter.addField(field.getName(), naming.getNameFor(fieldRef));
@@ -406,15 +434,26 @@ public class Renderer implements RenderingManager {
     }
 
     private void renderShortClassFunctionDeclaration(PreparedClass cls, ScopedName jsName) throws IOException {
-        if (jsName.scoped) {
-            writer.append(naming.getScopeName()).append(".");
+        boolean shared = context.getFilter().isShared(cls.getName());
+        if (shared) {
+            writer.append(naming.getSharedScopeName()).append(".");
+            if (jsName.scoped) {
+                writer.append(naming.getScopeName()).append(".");
+            }
         } else {
-            writer.append("var ");
+            if (jsName.scoped) {
+                writer.append(naming.getScopeName()).append(".");
+            } else {
+                writer.append("var ");
+            }
         }
         writer.append(jsName.value).ws().append("=").ws().appendFunction("$rt_classWithoutFields").append("(");
         if (cls.getClassHolder().hasModifier(ElementModifier.INTERFACE)) {
             writer.append("0");
         } else if (!cls.getParentName().equals("java.lang.Object")) {
+            if (context.getFilter().isShared(cls.getParentName())) {
+                writer.append(naming.getSharedScopeName()).append(".");
+            }
             writer.appendClass(cls.getParentName());
         }
         writer.append(");").newLine();
@@ -425,7 +464,8 @@ public class Renderer implements RenderingManager {
         try {
             MethodReader clinit = classSource.get(cls.getName()).getMethod(CLINIT_METHOD);
 
-            if (clinit != null && context.isDynamicInitializer(cls.getName())) {
+            if (clinit != null && context.isDynamicInitializer(cls.getName())
+                    && !context.getFilter().isExternal(cls.getName())) {
                 renderCallClinit(clinit, cls);
             }
             if (!cls.getClassHolder().hasModifier(ElementModifier.INTERFACE)
@@ -440,7 +480,9 @@ public class Renderer implements RenderingManager {
             }
 
             for (PreparedMethod method : cls.getMethods()) {
-                renderBody(method);
+                if (!context.getFilter().isExternal(method.reference)) {
+                    renderBody(method);
+                }
             }
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
@@ -459,8 +501,9 @@ public class Renderer implements RenderingManager {
             writer.append("var ").append(clinitCalled).ws().append("=").ws().append("false;").softNewLine();
         }
 
+        boolean isShared = context.getFilter().isShared(cls.getName());
         ScopedName name = naming.getNameForClassInit(cls.getName());
-        renderFunctionDeclaration(name);
+        renderFunctionDeclaration(isShared, name);
         writer.append("()").ws().append("{").softNewLine().indent();
 
         if (isAsync) {
@@ -927,13 +970,21 @@ public class Renderer implements RenderingManager {
         return body instanceof ReturnStatement && ((ReturnStatement) body).getResult() == null;
     }
 
-    private void renderFunctionDeclaration(ScopedName name) throws IOException {
-        if (name.scoped) {
-            writer.append(naming.getScopeName()).append(".").append(name.value).ws().append("=").ws();
-        }
-        writer.append("function");
-        if (!name.scoped) {
-            writer.append(" ").append(name.value);
+    private void renderFunctionDeclaration(boolean shared, ScopedName name) throws IOException {
+        if (shared) {
+            writer.append(naming.getSharedScopeName()).append(".");
+            if (name.scoped) {
+                writer.append(naming.getScopeName()).append(".");
+            }
+            writer.append(name.value).ws().append("=").ws().append("function");
+        } else {
+            if (name.scoped) {
+                writer.append(naming.getScopeName()).append(".").append(name.value).ws().append("=").ws();
+            }
+            writer.append("function");
+            if (!name.scoped) {
+                writer.append(" ").append(name.value);
+            }
         }
     }
 

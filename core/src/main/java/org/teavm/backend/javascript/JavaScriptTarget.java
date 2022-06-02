@@ -17,8 +17,8 @@ package org.teavm.backend.javascript;
 
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
+import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import javax.swing.plaf.synth.Region;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.ControlFlowEntry;
 import org.teavm.ast.RegularMethodNode;
@@ -57,6 +58,7 @@ import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.VirtualMethodContributor;
 import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
+import org.teavm.backend.javascript.splitting.RegionAnalyzer;
 import org.teavm.cache.AstCacheEntry;
 import org.teavm.cache.AstDependencyExtractor;
 import org.teavm.cache.CacheStatus;
@@ -330,16 +332,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     @Override
-    public void emit(ListableClassHolderSource classes, BuildTarget target, String outputName) {
-        try (OutputStream output = target.createResource(outputName);
-                Writer writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
-            emit(classes, writer, target);
-        } catch (IOException e) {
-            throw new RenderingException(e);
-        }
-    }
-
-    @Override
     public void beforeInlining(Program program, MethodReader method) {
         if (strict) {
             nullCheckInsertion.transformProgram(program, method.getReference());
@@ -357,11 +349,15 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     public void afterOptimizations(Program program, MethodReader method) {
     }
 
-    private void emit(ListableClassHolderSource classes, Writer writer, BuildTarget target) {
+    @Override
+    public void emit(ListableClassHolderSource classes, BuildTarget target, String outputName) {
         List<PreparedClass> clsNodes = modelToAst(classes);
         if (controller.wasCancelled()) {
             return;
         }
+
+        RegionAnalyzer regionAnalyzer = new RegionAnalyzer(classes, controller.getDependencyInfo().getCallGraph());
+        regionAnalyzer.analyze(controller.getEntryPoints().values().iterator().next().getMethod());
 
         AliasProvider aliasProvider = obfuscated
                 ? new MinifyingAliasProvider(topLevelNameLimit)
@@ -369,7 +365,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, controller.getUnprocessedClassSource());
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(obfuscated);
-        SourceWriter sourceWriter = builder.build(writer);
 
         DebugInformationEmitter debugEmitterToUse = debugEmitter;
         if (debugEmitterToUse == null) {
@@ -377,15 +372,16 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         }
         VirtualMethodContributorContext virtualMethodContributorContext = new VirtualMethodContributorContextImpl(
                 classes);
+        RegionFilter filter = new RegionFilter(regionAnalyzer);
         RenderingContext renderingContext = new RenderingContext(debugEmitterToUse,
                 controller.getUnprocessedClassSource(), classes,
                 controller.getClassLoader(), controller.getServices(), controller.getProperties(), naming,
                 controller.getDependencyInfo(), m -> isVirtual(virtualMethodContributorContext, m),
-                controller.getClassInitializerInfo(), strict);
+                controller.getClassInitializerInfo(), strict, filter);
         renderingContext.setMinifying(obfuscated);
-        Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
-                controller.getDiagnostics(), renderingContext);
-        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, sourceWriter);
+        Renderer renderer = new Renderer(asyncMethods, asyncFamilyMethods, controller.getDiagnostics(),
+                renderingContext);
+
         renderer.setProperties(controller.getProperties());
         renderer.setMinifying(obfuscated);
         renderer.setProgressConsumer(controller::reportProgress);
@@ -402,61 +398,141 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             }
             renderer.setDebugEmitter(debugEmitter);
         }
-        renderer.getDebugEmitter().setLocationProvider(sourceWriter);
+
         for (Map.Entry<MethodReference, Injector> entry : methodInjectors.entrySet()) {
             renderingContext.addInjector(entry.getKey(), entry.getValue());
         }
-        try {
-            printWrapperStart(sourceWriter);
 
-            for (RendererListener listener : rendererListeners) {
-                listener.begin(renderer, target);
-            }
-            int start = sourceWriter.getOffset();
+        renderer.prepare(clsNodes, regionAnalyzer);
 
-            renderer.prepare(clsNodes);
-            runtimeRenderer.renderRuntime();
-            sourceWriter.append("var ").append(renderer.getNaming().getScopeName()).ws().append("=").ws()
-                    .append("Object.create(null);").newLine();
-            if (!renderer.render(clsNodes)) {
-                return;
-            }
-            runtimeRenderer.renderHandWrittenRuntime("array.js");
-            renderer.renderStringPool();
-            renderer.renderStringConstants();
-            renderer.renderCompatibilityStubs();
-
-            if (renderer.isLongLibraryUsed()) {
-                runtimeRenderer.renderHandWrittenRuntime("long.js");
-                renderer.renderLongRuntimeAliases();
-            }
-            if (renderer.isThreadLibraryUsed()) {
-                runtimeRenderer.renderHandWrittenRuntime("thread.js");
+        String partPrefix = outputName;
+        if (partPrefix.endsWith(".js")) {
+            partPrefix = partPrefix.substring(0, partPrefix.length() - 3);
+        } else {
+            int extIndex = partPrefix.lastIndexOf('.');
+            if (extIndex < 0) {
+                partPrefix += "-parts";
             } else {
-                runtimeRenderer.renderHandWrittenRuntime("simpleThread.js");
+                partPrefix = partPrefix.substring(0, extIndex) + "-parts" + partPrefix.substring(extIndex);
             }
+        }
 
-            for (Map.Entry<? extends String, ? extends TeaVMEntryPoint> entry
-                    : controller.getEntryPoints().entrySet()) {
-                sourceWriter.append(entry.getKey()).ws().append("=").ws();
-                MethodReference ref = entry.getValue().getMethod();
-                sourceWriter.append("$rt_mainStarter(").appendMethodBody(ref);
-                sourceWriter.append(");").newLine();
-                sourceWriter.append(entry.getKey()).append(".").append("javaException").ws().append("=").ws()
-                        .append("$rt_javaException;").newLine();
+        int totalSize = 0;
+        boolean first = true;
+        for (RegionAnalyzer.Part part : regionAnalyzer.getParts()) {
+            if (first) {
+                first = false;
+                continue;
             }
-
-            for (RendererListener listener : rendererListeners) {
-                listener.complete();
+            String jsFileName = partPrefix + "/" + part.getIndex() + ".js";
+            try (Writer writer = new BufferedWriter(new OutputStreamWriter(target.createResource(jsFileName),
+                    StandardCharsets.UTF_8))) {
+                SourceWriter sourceWriter = builder.build(writer);
+                int start = sourceWriter.getOffset();
+                printRegularPart(part, classes, sourceWriter, renderer, clsNodes, target, filter);
+                totalSize += sourceWriter.getOffset() - start;
+            } catch (IOException e) {
+                throw new RenderingException("IO Error occurred", e);
             }
+        }
 
-            printWrapperEnd(sourceWriter);
-
-            int totalSize = sourceWriter.getOffset() - start;
-            printStats(renderer, totalSize);
+        RegionAnalyzer.Part firstPart = regionAnalyzer.getParts().iterator().next();
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(target.createResource(outputName),
+                StandardCharsets.UTF_8))) {
+            SourceWriter sourceWriter = builder.build(writer);
+            int start = sourceWriter.getOffset();
+            printMainPart(firstPart, classes, sourceWriter, renderer, clsNodes, target, filter,
+                    regionAnalyzer.getParts().size() > 1,
+                    controller.getEntryPoints().values().iterator().next().getPublicName());
+            totalSize += sourceWriter.getOffset() - start;
         } catch (IOException e) {
             throw new RenderingException("IO Error occurred", e);
         }
+
+        printStats(renderer, totalSize);
+    }
+
+    private void printMainPart(RegionAnalyzer.Part part, ListableClassHolderSource classes,
+            SourceWriter sourceWriter, Renderer renderer, List<PreparedClass> clsNodes, BuildTarget target,
+            RegionFilter filter, boolean multipleParts, String entryPointName) throws IOException {
+        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, sourceWriter);
+
+        printWrapperStart(sourceWriter);
+
+        for (RendererListener listener : rendererListeners) {
+            listener.begin(renderer, target);
+        }
+
+        runtimeRenderer.renderRuntime();
+        sourceWriter.append("var ").append(renderer.getNaming().getScopeName()).ws().append("=").ws()
+                .append("Object.create(null);");
+        if (multipleParts) {
+            sourceWriter.softNewLine();
+            sourceWriter.append(entryPointName).append(".").append(renderer.getNaming().getScopeName())
+                    .ws().append("=").ws().append(renderer.getNaming().getScopeName()).append(";");
+        }
+        sourceWriter.newLine();
+        printPart(part, classes, sourceWriter, renderer, clsNodes, target, filter);
+        runtimeRenderer.renderHandWrittenRuntime("array.js");
+        renderer.renderStringPool();
+        renderer.renderStringConstants();
+        renderer.renderCompatibilityStubs();
+
+        if (renderer.isLongLibraryUsed()) {
+            runtimeRenderer.renderHandWrittenRuntime("long.js");
+            renderer.renderLongRuntimeAliases();
+        }
+        if (renderer.isThreadLibraryUsed()) {
+            runtimeRenderer.renderHandWrittenRuntime("thread.js");
+        } else {
+            runtimeRenderer.renderHandWrittenRuntime("simpleThread.js");
+        }
+
+        for (Map.Entry<? extends String, ? extends TeaVMEntryPoint> entry
+                : controller.getEntryPoints().entrySet()) {
+            sourceWriter.append(entry.getKey()).ws().append("=").ws();
+            MethodReference ref = entry.getValue().getMethod();
+            sourceWriter.append("$rt_mainStarter(").appendMethodBody(ref);
+            sourceWriter.append(");").newLine();
+            sourceWriter.append(entry.getKey()).append(".").append("javaException").ws().append("=").ws()
+                    .append("$rt_javaException;").newLine();
+        }
+
+        for (RendererListener listener : rendererListeners) {
+            listener.complete();
+        }
+
+        printWrapperEnd(sourceWriter);
+    }
+
+    private void printRegularPart(RegionAnalyzer.Part part, ListableClassHolderSource classes,
+            SourceWriter sourceWriter, Renderer renderer, List<PreparedClass> clsNodes, BuildTarget target,
+            RegionFilter filter) throws IOException {
+        printPartWrapperStart(sourceWriter);
+
+        for (RendererListener listener : rendererListeners) {
+            listener.begin(renderer, target);
+        }
+
+        printPart(part, classes, sourceWriter, renderer, clsNodes, target, filter);
+        renderer.renderStringPool();
+        renderer.renderStringConstants();
+
+        for (RendererListener listener : rendererListeners) {
+            listener.complete();
+        }
+
+        printWrapperEnd(sourceWriter);
+    }
+
+    private boolean printPart(RegionAnalyzer.Part part, ListableClassHolderSource classes,
+            SourceWriter sourceWriter, Renderer renderer, List<PreparedClass> clsNodes, BuildTarget target,
+            RegionFilter filter) throws IOException {
+        if (debugEmitter != null) {
+            debugEmitter.setLocationProvider(sourceWriter);
+        }
+        filter.setCurrentPart(part);
+        return renderer.render(clsNodes);
     }
 
     private void printWrapperStart(SourceWriter writer) throws IOException {
@@ -464,6 +540,11 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         for (String key : controller.getEntryPoints().keySet()) {
             writer.append("var ").append(key).append(";").softNewLine();
         }
+        writer.append("(function()").ws().append("{").newLine();
+    }
+
+    private void printPartWrapperStart(SourceWriter writer) throws IOException {
+        writer.append("\"use strict\";").newLine();
         writer.append("(function()").ws().append("{").newLine();
     }
 
