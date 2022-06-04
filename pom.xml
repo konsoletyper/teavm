@@ -68,7 +68,7 @@
 
     <html4j.version>1.5</html4j.version>
     <slf4j.version>1.7.30</slf4j.version>
-    <asm.version>9.1</asm.version>
+    <asm.version>9.3</asm.version>
 
     <java.version>1.8</java.version>
     <java-tests.version>11</java-tests.version>

@@ -129,7 +129,7 @@ public class MetaprogrammingClassLoader extends ClassLoader {
         boolean compileTime;
 
         CompileTimeClassVisitor() {
-            super(Opcodes.ASM7, null);
+            super(Opcodes.ASM9, null);
         }
 
         @Override
