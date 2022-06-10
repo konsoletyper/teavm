@@ -386,4 +386,18 @@ public class StreamTest {
         spliterator.forEachRemaining(appendNumbersTo(sb));
         assertEquals("1;2;3;", sb.toString());
     }
+
+    @Test
+    public void takeWhileWorks() {
+        var sb = new StringBuilder();
+        Stream.of(1, 2, 3, 4, 0, 5, 6).takeWhile(n -> n < 4).forEach(sb::append);
+        assertEquals("123", sb.toString());
+    }
+
+    @Test
+    public void takeWhileWithOtherStreamOps() {
+        var sb = new StringBuilder();
+        Stream.of(1, 2, 3, 4, 0, 5, 6).takeWhile(i -> i < 4).filter(i -> i % 2 != 0).forEach(sb::append);
+        assertEquals("13", sb.toString());
+    }
 }
