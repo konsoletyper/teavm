@@ -152,7 +152,7 @@ public interface TStream<T> extends TBaseStream<T, TStream<T>> {
     }
     
     @SuppressWarnings("unchecked")
-    default List<T> toList() {
-        return (List<T>) Collections.unmodifiableList(new ArrayList<>(Arrays.asList(this.toArray())));
+    default TList<T> toList() {
+        return (TList<T>) TCollections.unmodifiableList(new TArrayList<>(TArrays.asList(toArray())));
     }
 }
