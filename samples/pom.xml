@@ -38,5 +38,6 @@
     <module>kotlin</module>
     <module>scala</module>
     <module>gamepad</module>
+    <module>logging</module>
   </modules>
 </project>
