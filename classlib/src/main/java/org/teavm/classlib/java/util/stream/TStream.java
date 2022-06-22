@@ -150,4 +150,9 @@ public interface TStream<T> extends TBaseStream<T, TStream<T>> {
             return new TGenericConcatStream<>(a, b);
         }
     }
+    
+    @SuppressWarnings("unchecked")
+    default List<T> toList() {
+        return (List<T>) Collections.unmodifiableList(new ArrayList<>(Arrays.asList(this.toArray())));
+    }
 }
