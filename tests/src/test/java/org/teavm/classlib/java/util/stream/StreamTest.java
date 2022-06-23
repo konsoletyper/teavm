@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.teavm.classlib.java.util.stream.Helper.appendNumbersTo;
 import static org.teavm.classlib.java.util.stream.Helper.testDoubleStream;
 import static org.teavm.classlib.java.util.stream.Helper.testIntStream;
@@ -29,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Spliterator;
 import java.util.function.Function;
 import java.util.stream.DoubleStream;
@@ -399,5 +401,43 @@ public class StreamTest {
         var sb = new StringBuilder();
         Stream.of(1, 2, 3, 4, 0, 5, 6).takeWhile(i -> i < 4).filter(i -> i % 2 != 0).forEach(sb::append);
         assertEquals("13", sb.toString());
+    }
+
+    @Test
+    public void toList() {
+        List<Integer> list = Stream.of(1, 2, 3, 4, 5).filter(i -> i % 2 == 0).toList();
+        assertEquals(Arrays.asList(2, 4), list);
+        try {
+            list.add(23);
+            fail("UOE expected on list.add");
+        } catch (UnsupportedOperationException e) {
+            // ok
+        }
+        try {
+            list.set(0, 23);
+            fail("UOE expected on list.set");
+        } catch (UnsupportedOperationException e) {
+            // ok
+        }
+        try {
+            list.remove(0);
+            fail("UOE expected on list.remove");
+        } catch (UnsupportedOperationException e) {
+            // ok
+        }
+        try {
+            list.clear();
+            fail("UOE expected on list.clear");
+        } catch (UnsupportedOperationException e) {
+            // ok
+        }
+        Iterator<Integer> iter = list.iterator();
+        iter.next();
+        try {
+            iter.remove();
+            fail("UOE expected on iterator.remove");
+        } catch (UnsupportedOperationException e) {
+            // ok
+        }
     }
 }
