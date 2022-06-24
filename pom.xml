@@ -71,7 +71,7 @@
     <asm.version>9.1</asm.version>
 
     <java.version>1.8</java.version>
-    <java-tests.version>11</java-tests.version>
+    <java-tests.version>17</java-tests.version>
 
     <rhino.version>1.7.11</rhino.version>
 
