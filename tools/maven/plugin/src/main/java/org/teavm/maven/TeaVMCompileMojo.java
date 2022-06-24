@@ -262,7 +262,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
         try {
             RemoteBuildService buildService;
             try {
-                Registry registry = LocateRegistry.getRegistry(daemon.getPort());
+                Registry registry = LocateRegistry.getRegistry("localhost", daemon.getPort());
                 buildService = (RemoteBuildService) registry.lookup(RemoteBuildService.ID);
             } catch (RemoteException | NotBoundException e) {
                 throw new MojoExecutionException("Error connecting TeaVM process", e);
