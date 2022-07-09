@@ -450,10 +450,9 @@ public class TeaVMTool {
             generatedFiles.add(outputFile);
 
             if (targetType == TeaVMTargetType.JAVASCRIPT) {
-                try (OutputStream output = new FileOutputStream(outputFile, true)) {
-                    try (Writer writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
-                        additionalJavaScriptOutput(writer);
-                    }
+                try (OutputStream output = new FileOutputStream(outputFile, true);
+                        Writer writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
+                    additionalJavaScriptOutput(writer);
                 }
             }
 
