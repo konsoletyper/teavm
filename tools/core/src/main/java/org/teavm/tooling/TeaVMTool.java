@@ -417,7 +417,7 @@ public class TeaVMTool {
             }
 
             vm.installPlugins();
-            for (ClassHolderTransformer transformer : resolveTransformers(classLoader)) {
+            for (ClassHolderTransformer transformer : resolveTransformers()) {
                 vm.add(transformer);
             }
             if (mainClass != null) {
@@ -546,7 +546,7 @@ public class TeaVMTool {
         copier.copy(new File(targetDirectory, "src"));
     }
 
-    private List<ClassHolderTransformer> resolveTransformers(ClassLoader classLoader) {
+    private List<ClassHolderTransformer> resolveTransformers() {
         List<ClassHolderTransformer> transformerInstances = new ArrayList<>();
         if (transformers == null) {
             return transformerInstances;
