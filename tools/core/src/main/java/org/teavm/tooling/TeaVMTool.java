@@ -426,7 +426,11 @@ public class TeaVMTool {
             for (String className : classesToPreserve) {
                 vm.preserveType(className);
             }
-            targetDirectory.mkdirs();
+
+            if (!targetDirectory.mkdirs()) {
+                log.error("Target directory could not be created");
+                return;
+            }
 
             BuildTarget buildTarget = new DirectoryBuildTarget(targetDirectory);
             String outputName = getResolvedTargetFileName();
