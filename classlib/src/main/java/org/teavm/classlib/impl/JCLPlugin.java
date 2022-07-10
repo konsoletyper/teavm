@@ -27,6 +27,7 @@ import org.teavm.classlib.impl.currency.CountriesGenerator;
 import org.teavm.classlib.impl.currency.CurrenciesGenerator;
 import org.teavm.classlib.impl.currency.CurrencyHelper;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
+import org.teavm.classlib.impl.record.ObjectMethodsSubstitutor;
 import org.teavm.classlib.impl.tz.DateTimeZoneProvider;
 import org.teavm.classlib.impl.tz.DateTimeZoneProviderIntrinsic;
 import org.teavm.classlib.impl.tz.DateTimeZoneProviderPatch;
@@ -104,6 +105,13 @@ public class JCLPlugin implements TeaVMPlugin {
                 ValueType.object("java.lang.String"), ValueType.object("java.lang.invoke.MethodType"),
                 ValueType.arrayOf(ValueType.object("java.lang.Object")),
                 ValueType.object("java.lang.invoke.CallSite")), lms);
+        host.add(new MethodReference("java.lang.runtime.ObjectMethods", "bootstrap",
+                ValueType.object("java.lang.invoke.MethodHandles$Lookup"), ValueType.object("java.lang.String"),
+                ValueType.object("java.lang.invoke.TypeDescriptor"), ValueType.object("java.lang.Class"),
+                ValueType.object("java.lang.String"),
+                ValueType.arrayOf(ValueType.object("java.lang.invoke.MethodHandle")),
+                ValueType.object("java.lang.Object")),
+                new ObjectMethodsSubstitutor());
 
         StringConcatFactorySubstitutor stringConcatSubstitutor = new StringConcatFactorySubstitutor();
         host.add(new MethodReference("java.lang.invoke.StringConcatFactory", "makeConcat",

@@ -43,7 +43,7 @@ import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
-import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.util.InvokeDynamicUtil;
 
 public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor {
     private static final int FLAG_SERIALIZABLE = 1;
@@ -114,7 +114,7 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
                     implementorSignature[i + capturedVarCount]);
         }
 
-        ValueEmitter result = invoke(pe, implMethod, passedArguments);
+        ValueEmitter result = InvokeDynamicUtil.invoke(pe, implMethod, passedArguments);
         ValueType expectedResult = instantiatedMethodType[instantiatedMethodType.length - 1];
         if (result != null && expectedResult != ValueType.VOID) {
             ValueType actualResult = implementorSignature[implementorSignature.length - 1];
@@ -177,43 +177,6 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
                 dependencies.toArray(new String[0]));
 
         return callerPe.construct(ctor.getOwnerName(), callSite.getArguments().toArray(new ValueEmitter[0]));
-    }
-
-    private ValueEmitter invoke(ProgramEmitter pe, MethodHandle handle, ValueEmitter[] arguments) {
-        switch (handle.getKind()) {
-            case GET_FIELD:
-                return arguments[0].getField(handle.getName(), handle.getValueType());
-            case GET_STATIC_FIELD:
-                return pe.getField(handle.getClassName(), handle.getName(), handle.getValueType());
-            case PUT_FIELD:
-                arguments[0].setField(handle.getName(), arguments[0].cast(handle.getValueType()));
-                return null;
-            case PUT_STATIC_FIELD:
-                pe.setField(handle.getClassName(), handle.getName(), arguments[0].cast(handle.getValueType()));
-                return null;
-            case INVOKE_VIRTUAL:
-            case INVOKE_INTERFACE:
-            case INVOKE_SPECIAL: {
-                for (int i = 1; i < arguments.length; ++i) {
-                    arguments[i] = arguments[i].cast(handle.getArgumentType(i - 1));
-                }
-                arguments[0] = arguments[0].cast(ValueType.object(handle.getClassName()));
-                InvocationType type = handle.getKind() == MethodHandleType.INVOKE_SPECIAL
-                        ? InvocationType.SPECIAL
-                        : InvocationType.VIRTUAL;
-                return arguments[0].invoke(type, handle.getName(), handle.getValueType(),
-                        Arrays.copyOfRange(arguments, 1, arguments.length));
-            }
-            case INVOKE_STATIC:
-                for (int i = 0; i < arguments.length; ++i) {
-                    arguments[i] = arguments[i].cast(handle.getArgumentType(i));
-                }
-                return pe.invoke(handle.getClassName(), handle.getName(), handle.getValueType(), arguments);
-            case INVOKE_CONSTRUCTOR:
-                return pe.construct(handle.getClassName(), arguments);
-            default:
-                throw new IllegalArgumentException("Unexpected handle type: " + handle.getKind());
-        }
     }
 
     private ValueEmitter tryConvertArgument(ValueEmitter arg, ValueType from, ValueType to) {

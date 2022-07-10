@@ -114,7 +114,8 @@ public class BasicBlockSplitter {
             Map<BasicBlock, List<Incoming>> incomingsBySource = new LinkedHashMap<>();
             for (Phi phi : block.getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
-                    if (mappings[incoming.getSource().getIndex()] == incoming.getSource().getIndex()) {
+                    if (incoming.getSource().getIndex() >= mappings.length
+                            || mappings[incoming.getSource().getIndex()] == incoming.getSource().getIndex()) {
                         continue;
                     }
                     incomingsBySource.computeIfAbsent(incoming.getSource(), b -> new ArrayList<>()).add(incoming);
