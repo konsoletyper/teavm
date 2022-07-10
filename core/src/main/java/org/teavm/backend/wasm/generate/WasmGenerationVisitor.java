@@ -1326,7 +1326,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                     WasmInt32Subtype.INT32));
         }
 
-        int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(type));
+        int classPointer = classGenerator.getClassPointer(type);
         String allocName = context.names.forMethod(new MethodReference(Allocator.class, "allocateMultiArray",
                 RuntimeClass.class, Address.class, int.class, RuntimeArray.class));
         WasmCall call = new WasmCall(allocName);

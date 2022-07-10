@@ -198,11 +198,7 @@ public class ClassGenerator {
 
         @Override
         public void visit(ConstructMultiArrayInstruction insn) {
-            ValueType type = insn.getItemType();
-            for (int i = 0; i < insn.getDimensions().size(); ++i) {
-                type = ValueType.arrayOf(type);
-            }
-            addType(type);
+            addType(insn.getItemType());
         }
     };
 

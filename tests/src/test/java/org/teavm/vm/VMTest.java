@@ -43,6 +43,32 @@ public class VMTest {
     }
 
     @Test
+    public void longMultiArrayCreated() {
+        long[][] array = new long[3][2];
+        assertEquals(3, array.length);
+        assertEquals(2, array[1].length);
+        assertEquals(2, array[2].length);
+
+        for (int i = 0; i < array.length; ++i) {
+            assertEquals(2, array[i].length);
+            for (int j = 0; j < array[i].length; ++j) {
+                assertEquals(0, array[i][j]);
+            }
+        }
+
+        for (int i = 0; i < array.length; ++i) {
+            Arrays.fill(array[i], 0x0123456789ABCDEFL);
+        }
+
+        for (int i = 0; i < array.length; ++i) {
+            assertEquals(2, array[i].length);
+            for (int j = 0; j < array[i].length; ++j) {
+                assertEquals(0x0123456789ABCDEFL, array[i][j]);
+            }
+        }
+    }
+
+    @Test
     public void catchExceptionFromLambda() {
         try {
             Runnable r = () -> throwException();

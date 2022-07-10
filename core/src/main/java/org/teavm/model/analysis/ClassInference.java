@@ -828,11 +828,7 @@ public class ClassInference {
 
         @Override
         public void visit(ConstructMultiArrayInstruction insn) {
-            ValueType type = insn.getItemType();
-            for (int i = 0; i < insn.getDimensions().size(); ++i) {
-                type = ValueType.arrayOf(type);
-            }
-            addType(insn.getReceiver().getIndex(), 0, type.toString());
+            addType(insn.getReceiver().getIndex(), 0, insn.getItemType().toString());
         }
 
         @Override
