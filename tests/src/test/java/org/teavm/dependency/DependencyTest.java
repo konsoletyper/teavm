@@ -108,6 +108,11 @@ public class DependencyTest {
         doTest();
     }
 
+    @Test
+    public void reflectionConstructor() {
+        doTest();
+    }
+
     private void doTest() {
         TeaVM vm = new TeaVMBuilder(new JavaScriptTarget())
                 .setClassLoader(DependencyTest.class.getClassLoader())
