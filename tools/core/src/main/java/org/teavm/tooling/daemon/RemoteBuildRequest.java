@@ -51,4 +51,5 @@ public class RemoteBuildRequest implements Serializable {
     public boolean longjmpSupported;
     public boolean heapDump;
     public boolean shortFileNames;
+    public boolean assertionsRemoved;
 }

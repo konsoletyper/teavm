@@ -57,6 +57,7 @@ import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
+import org.teavm.model.transformation.AssertionRemoval;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.tooling.sources.SourceFileProvider;
 import org.teavm.tooling.sources.SourceFilesCopier;
@@ -111,6 +112,7 @@ public class TeaVMTool {
     private boolean longjmpSupported = true;
     private boolean heapDump;
     private boolean shortFileNames;
+    private boolean assertionsRemoved;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -268,6 +270,10 @@ public class TeaVMTool {
         this.shortFileNames = shortFileNames;
     }
 
+    public void setAssertionsRemoved(boolean assertionsRemoved) {
+        this.assertionsRemoved = assertionsRemoved;
+    }
+
     public void setProgressListener(TeaVMProgressListener progressListener) {
         this.progressListener = progressListener;
     }
@@ -404,6 +410,10 @@ public class TeaVMTool {
             vm = vmBuilder.build();
             if (progressListener != null) {
                 vm.setProgressListener(progressListener);
+            }
+
+            if (assertionsRemoved) {
+                vm.add(new AssertionRemoval());
             }
 
             vm.setProperties(properties);
