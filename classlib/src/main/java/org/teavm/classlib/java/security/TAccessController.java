@@ -22,4 +22,8 @@ public final class TAccessController {
     public static <T> T doPrivileged(TPrivilegedAction<T> action) {
         return action.run();
     }
+
+    public static <T> T doPrivileged(TPrivilegedExceptionAction<T> action) {
+        return action.run();
+    }
 }
