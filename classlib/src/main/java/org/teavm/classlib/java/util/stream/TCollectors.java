@@ -17,6 +17,8 @@ package org.teavm.classlib.java.util.stream;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -41,6 +43,10 @@ public final class TCollectors {
 
     public static <T> TCollector<T, ?, List<T>> toList() {
         return toCollection(ArrayList::new);
+    }
+
+    public static <T> TCollector<T, ?, List<T>> toUnmodifiableList() {
+        return collectingAndThen(toList(), Collections::unmodifiableList);
     }
 
     public static <T> TCollector<T, ?, Set<T>> toSet() {
@@ -117,4 +123,19 @@ public final class TCollectors {
                 },
                 TCollector.Characteristics.IDENTITY_FINISH);
     }
+
+    public static <T, A, R, K> TCollector<T, A, K> collectingAndThen(
+            TCollector<T, A, R> downstream,
+            Function<R, K> finisher) {
+
+        EnumSet<TCollector.Characteristics> newCharacteristics = EnumSet.copyOf(downstream.characteristics());
+        newCharacteristics.remove(TCollector.Characteristics.IDENTITY_FINISH);
+
+        return new TCollectorImpl<>(downstream.supplier(),
+                downstream.accumulator(),
+                downstream.combiner(),
+                downstream.finisher().andThen(finisher),
+                newCharacteristics);
+    }
+
 }
