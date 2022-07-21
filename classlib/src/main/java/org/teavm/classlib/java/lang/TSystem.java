@@ -75,6 +75,10 @@ public final class TSystem extends TObject {
         return null;
     }
 
+    public static TSecurityManager getSecurityManager() {
+        return new TSecurityManager();
+    }
+
     public static void arraycopy(TObject src, int srcPos, TObject dest, int destPos, int length) {
         if (src == null || dest == null) {
             throw new TNullPointerException("Either src or dest is null");
