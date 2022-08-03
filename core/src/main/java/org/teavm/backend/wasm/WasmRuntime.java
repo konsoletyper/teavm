@@ -15,6 +15,9 @@
  */
 package org.teavm.backend.wasm;
 
+import static org.teavm.interop.wasi.Memory.free;
+import static org.teavm.interop.wasi.Memory.malloc;
+import static org.teavm.interop.wasi.Wasi.fdWrite;
 import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
@@ -95,6 +98,54 @@ public final class WasmRuntime {
 
     @Import(name = "logOutOfMemory", module = "teavm")
     public static native void printOutOfMemory();
+
+    public static void wasiPrintInt(int i) {
+        wasiPrintString(String.valueOf(i));
+    }
+
+    @Unmanaged
+    public static void wasiPrintString(String s) {
+        final int fd = 2; // stderr
+        int length = s.length();
+        Address myBuffer = malloc(length, 1);
+        for (int i = 0; i < length; ++i) {
+            myBuffer.add(i).putByte((byte) s.charAt(i));
+        }
+        final int vecSize = 8;
+        final int vecAlign = 4;
+        Address vec = malloc(vecSize, vecAlign);
+        final int sizeSize = 4;
+        final int sizeAlign = 4;
+        Address size = malloc(sizeSize, sizeAlign);
+
+        int index = 0;
+        while (true) {
+            vec.putInt(myBuffer.add(index).toInt());
+            vec.add(4).putInt(length - index);
+            short errno = fdWrite(fd, vec, 1, size);
+
+            if (errno == 0) {
+                int sizeValue = size.getInt();
+                index += sizeValue;
+                if (index >= length) {
+                    free(vec, vecSize, vecAlign);
+                    free(size, sizeSize, sizeAlign);
+                    free(myBuffer, length, 1);
+                    return;
+                }
+            } else {
+                free(vec, vecSize, vecAlign);
+                free(size, sizeSize, sizeAlign);
+                free(myBuffer, length, 1);
+                return;
+            }
+        }
+    }
+
+    @Unmanaged
+    public static void wasiPrintOutOfMemory() {
+       wasiPrintString("TeaVM: out of memory!");
+    }
 
     public static void fillZero(Address address, int count) {
         fill(address, (byte) 0, count);

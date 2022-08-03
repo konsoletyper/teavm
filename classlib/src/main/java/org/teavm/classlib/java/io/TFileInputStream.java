@@ -19,12 +19,22 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.fs.VirtualFile;
 import org.teavm.classlib.fs.VirtualFileAccessor;
+import org.teavm.classlib.fs.wasi.WasiVirtualFileAccessor;
 
 public class TFileInputStream extends InputStream {
     private static final byte[] ONE_BYTE_BUFFER = new byte[1];
     private VirtualFileAccessor accessor;
+
+    public TFileInputStream(int fd) {
+        if (PlatformDetector.isWasi()) {
+            this.accessor = new WasiVirtualFileAccessor(fd);
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
 
     public TFileInputStream(TFile file) throws FileNotFoundException {
         VirtualFile virtualFile = file.findVirtualFile();

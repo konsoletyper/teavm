@@ -28,6 +28,16 @@ public class ConsoleIntrinsic implements WasmIntrinsic {
             "printString", String.class, void.class);
     private static final MethodReference PRINT_INT = new MethodReference(WasmRuntime.class,
             "printInt", int.class, void.class);
+    private static final MethodReference WASI_PRINT_STRING = new MethodReference(WasmRuntime.class,
+            "wasiPrintString", String.class, void.class);
+    private static final MethodReference WASI_PRINT_INT = new MethodReference(WasmRuntime.class,
+            "wasiPrintInt", int.class, void.class);
+
+    private final boolean wasi;
+
+    public ConsoleIntrinsic(boolean wasi) {
+        this.wasi = wasi;
+    }
 
     @Override
     public boolean isApplicable(MethodReference methodReference) {
@@ -48,13 +58,13 @@ public class ConsoleIntrinsic implements WasmIntrinsic {
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
         switch (invocation.getMethod().getName()) {
             case "printString": {
-                String name = manager.getNames().forMethod(PRINT_STRING);
+                String name = manager.getNames().forMethod(wasi ? WASI_PRINT_STRING : PRINT_STRING);
                 WasmCall call = new WasmCall(name, true);
                 call.getArguments().add(manager.generate(invocation.getArguments().get(0)));
                 return call;
             }
             case "printInt": {
-                String name = manager.getNames().forMethod(PRINT_INT);
+                String name = manager.getNames().forMethod(wasi ? WASI_PRINT_INT : PRINT_INT);
                 WasmCall call = new WasmCall(name, true);
                 call.getArguments().add(manager.generate(invocation.getArguments().get(0)));
                 return call;

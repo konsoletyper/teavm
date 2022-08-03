@@ -18,6 +18,7 @@ package org.teavm.classlib.fs;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.fs.c.CFileSystem;
 import org.teavm.classlib.fs.memory.InMemoryVirtualFileSystem;
+import org.teavm.classlib.fs.wasi.WasiFileSystem;
 
 public final class VirtualFileSystemProvider {
     private static VirtualFileSystem instance;
@@ -25,6 +26,8 @@ public final class VirtualFileSystemProvider {
     static {
         if (PlatformDetector.isC()) {
             instance = new CFileSystem();
+        } else if (PlatformDetector.isWasi()) {
+            instance = new WasiFileSystem();
         } else {
             instance = new InMemoryVirtualFileSystem();
         }

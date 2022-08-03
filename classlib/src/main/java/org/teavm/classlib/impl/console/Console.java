@@ -47,7 +47,7 @@ public final class Console {
 
     public static void writeStdout(String s) {
         for (int i = 0; i < s.length(); ++i) {
-            writeStderr(s.charAt(i));
+            writeStdout(s.charAt(i));
         }
     }
 

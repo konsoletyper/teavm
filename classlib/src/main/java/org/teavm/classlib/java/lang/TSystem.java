@@ -15,6 +15,10 @@
  */
 package org.teavm.classlib.java.lang;
 
+import static org.teavm.interop.wasi.Memory.free;
+import static org.teavm.interop.wasi.Memory.malloc;
+import static org.teavm.interop.wasi.Wasi.CLOCKID_REALTIME;
+import static org.teavm.interop.wasi.Wasi.ERRNO_SUCCESS;
 import java.util.Enumeration;
 import java.util.Properties;
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
@@ -26,6 +30,8 @@ import org.teavm.classlib.impl.c.Memory;
 import org.teavm.classlib.impl.console.StderrOutputStream;
 import org.teavm.classlib.impl.console.StdoutOutputStream;
 import org.teavm.classlib.java.io.TConsole;
+import org.teavm.classlib.java.io.TFileInputStream;
+import org.teavm.classlib.java.io.TFileOutputStream;
 import org.teavm.classlib.java.io.TInputStream;
 import org.teavm.classlib.java.io.TOutputStream;
 import org.teavm.classlib.java.io.TPrintStream;
@@ -35,6 +41,8 @@ import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
+import org.teavm.interop.wasi.Wasi;
+import org.teavm.interop.wasi.Wasi.ErrnoException;
 import org.teavm.jso.browser.Performance;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.GC;
@@ -52,21 +60,33 @@ public final class TSystem extends TObject {
 
     public static TPrintStream out() {
         if (outCache == null) {
-            outCache = new TPrintStream((TOutputStream) (Object) StdoutOutputStream.INSTANCE, false);
+            if (PlatformDetector.isWasi()) {
+                outCache = new TPrintStream((TOutputStream) (Object) new TFileOutputStream(1));
+            } else {
+                outCache = new TPrintStream((TOutputStream) (Object) StdoutOutputStream.INSTANCE, false);
+            }
         }
         return outCache;
     }
 
     public static TPrintStream err() {
         if (errCache == null) {
-            errCache = new TPrintStream((TOutputStream) (Object) StderrOutputStream.INSTANCE, false);
+            if (PlatformDetector.isWasi()) {
+                errCache = new TPrintStream((TOutputStream) (Object) new TFileOutputStream(2));
+            } else {
+                errCache = new TPrintStream((TOutputStream) (Object) StderrOutputStream.INSTANCE, false);
+            }
         }
         return errCache;
     }
 
     public static TInputStream in() {
         if (inCache == null) {
-            inCache = new TConsoleInputStream();
+            if (PlatformDetector.isWasi()) {
+                inCache = (TInputStream) (Object) new TFileInputStream(0);
+            } else {
+                inCache = new TConsoleInputStream();
+            }
         }
         return inCache;
     }
@@ -143,10 +163,28 @@ public final class TSystem extends TObject {
     public static native long currentTimeMillis();
 
     private static long currentTimeMillisLowLevel() {
-        if (PlatformDetector.isWebAssembly()) {
+        if (PlatformDetector.isWasi()) {
+            return currentTimeMillisWasi();
+        } else if (PlatformDetector.isWebAssembly()) {
             return (long) currentTimeMillisWasm();
         } else {
             return (long) currentTimeMillisC();
+        }
+    }
+
+    private static long currentTimeMillisWasi() {
+        final int timestampSize = 8;
+        final int timestampAlign = 8;
+        Address timestamp = malloc(timestampSize, timestampAlign);
+        short errno = Wasi.clockTimeGet(CLOCKID_REALTIME, 10, timestamp);
+
+        if (errno == ERRNO_SUCCESS) {
+            long timestampValue = timestamp.getLong();
+            free(timestamp, timestampSize, timestampAlign);
+            return timestampValue / 1000000;
+        } else {
+            free(timestamp, timestampSize, timestampAlign);
+            throw new ErrnoException("clock_time_get", errno);
         }
     }
 
@@ -289,7 +327,7 @@ public final class TSystem extends TObject {
     public static String lineSeparator() {
         return "\n";
     }
-    
+
     public static String getenv(String name) {
         return null;
     }

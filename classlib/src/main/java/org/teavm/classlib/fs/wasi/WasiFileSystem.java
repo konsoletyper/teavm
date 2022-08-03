@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2022 TeaVM Contributors.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,11 +13,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.tooling;
+package org.teavm.classlib.fs.wasi;
 
-public enum TeaVMTargetType {
-    JAVASCRIPT,
-    WEBASSEMBLY,
-    WASI,
-    C
+import org.teavm.classlib.fs.VirtualFile;
+import org.teavm.classlib.fs.VirtualFileSystem;
+
+public class WasiFileSystem implements VirtualFileSystem {
+    @Override
+    public String getUserDir() {
+        return "/";
+    }
+
+    @Override
+    public VirtualFile getFile(String path) {
+        return new WasiVirtualFile(path);
+    }
+
+    @Override
+    public boolean isWindows() {
+        return false;
+    }
+
+    @Override
+    public String canonicalize(String path) {
+        return path;
+    }
 }

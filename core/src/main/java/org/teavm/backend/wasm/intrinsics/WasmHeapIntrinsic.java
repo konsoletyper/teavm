@@ -17,17 +17,26 @@ package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmHeap;
+import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.model.MethodReference;
 
 public class WasmHeapIntrinsic implements WasmIntrinsic {
+    private final boolean wasi;
+
+    public WasmHeapIntrinsic(boolean wasi) {
+        this.wasi = wasi;
+    }
+
     @Override
     public boolean isApplicable(MethodReference methodReference) {
         if (!methodReference.getClassName().equals(WasmHeap.class.getName())) {
             return false;
         }
         switch (methodReference.getName()) {
+            case "initHeapTrace":
+                return wasi;
             case "growMemory":
                 return true;
             default:
@@ -38,6 +47,8 @@ public class WasmHeapIntrinsic implements WasmIntrinsic {
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
         switch (invocation.getMethod().getName()) {
+            case "initHeapTrace":
+                return new WasmBlock(false);
             case "growMemory":
                 return new WasmMemoryGrow(manager.generate(invocation.getArguments().get(0)));
             default:

@@ -315,7 +315,9 @@ public class TeaVMTool {
             case JAVASCRIPT:
                 return prepareJavaScriptTarget();
             case WEBASSEMBLY:
-                return prepareWebAssemblyTarget();
+                return prepareWebAssemblyTarget(false);
+            case WASI:
+                return prepareWebAssemblyTarget(true);
             case C:
                 return prepareCTarget();
         }
@@ -335,7 +337,7 @@ public class TeaVMTool {
         return javaScriptTarget;
     }
 
-    private WasmTarget prepareWebAssemblyTarget() {
+    private WasmTarget prepareWebAssemblyTarget(boolean wasi) {
         webAssemblyTarget = new WasmTarget();
         webAssemblyTarget.setDebugging(debugInformationGenerated);
         webAssemblyTarget.setCEmitted(debugInformationGenerated);
@@ -344,6 +346,7 @@ public class TeaVMTool {
         webAssemblyTarget.setMinHeapSize(minHeapSize);
         webAssemblyTarget.setMaxHeapSize(maxHeapSize);
         webAssemblyTarget.setObfuscated(obfuscated);
+        webAssemblyTarget.setWasi(wasi);
         return webAssemblyTarget;
     }
 
@@ -491,6 +494,7 @@ public class TeaVMTool {
                 case JAVASCRIPT:
                     return "classes.js";
                 case WEBASSEMBLY:
+                case WASI:
                     return "classes.wasm";
                 case C:
                     return "classes.c";

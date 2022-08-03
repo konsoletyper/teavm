@@ -40,11 +40,19 @@ import org.teavm.runtime.GC;
 public class GCIntrinsic implements WasmIntrinsic {
     private static final MethodReference PRINT_OUT_OF_MEMORY = new MethodReference(
             WasmRuntime.class, "printOutOfMemory", void.class);
+    private static final MethodReference WASI_PRINT_OUT_OF_MEMORY = new MethodReference(
+            WasmRuntime.class, "wasiPrintOutOfMemory", void.class);
     private static final MethodReference RESIZE_HEAP = new MethodReference(
             WasmHeap.class, "resizeHeap", int.class, void.class);
     private static final FieldReference CARD_TABLE = new FieldReference(WasmHeap.class.getName(), "cardTable");
     private static final FieldReference HEAP_ADDRESS = new FieldReference(WasmHeap.class.getName(), "heapAddress");
     public final List<WasmInt32Constant> regionSizeExpressions = new ArrayList<>();
+
+    private final boolean wasi;
+
+    public GCIntrinsic(boolean wasi) {
+        this.wasi = wasi;
+    }
 
     public void setRegionSize(int regionSize) {
         for (WasmInt32Constant constant : regionSizeExpressions) {
@@ -111,7 +119,8 @@ public class GCIntrinsic implements WasmIntrinsic {
                 return intToLong(getStaticField(manager, "heapSize"));
             case "outOfMemory": {
                 WasmBlock block = new WasmBlock(false);
-                WasmCall call = new WasmCall(manager.getNames().forMethod(PRINT_OUT_OF_MEMORY), true);
+                WasmCall call = new WasmCall(
+                        manager.getNames().forMethod(wasi ? WASI_PRINT_OUT_OF_MEMORY : PRINT_OUT_OF_MEMORY), true);
                 block.getBody().add(call);
                 block.getBody().add(new WasmUnreachable());
                 return block;
