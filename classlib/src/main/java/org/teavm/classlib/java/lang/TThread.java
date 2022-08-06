@@ -116,6 +116,10 @@ public class TThread extends TObject implements TRunnable {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public final boolean isDaemon() {
         return daemon;
     }
