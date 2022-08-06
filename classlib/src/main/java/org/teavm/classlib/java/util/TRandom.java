@@ -74,8 +74,16 @@ public class TRandom extends TObject implements TSerializable {
         return (int) (nextDouble() * n);
     }
 
+    public int nextInt(int origin, int bound) {
+        return origin + nextInt() * (bound - origin);
+    }
+
     public long nextLong() {
         return ((long) nextInt() << 32) | nextInt();
+    }
+
+    public long nextLong(long origin, long bound) {
+        return origin + nextLong() * (bound - origin);
     }
 
     public boolean nextBoolean() {
@@ -86,12 +94,20 @@ public class TRandom extends TObject implements TSerializable {
         return (float) nextDouble();
     }
 
+    public float nextFloat(float origin, float bound) {
+        return origin + nextFloat() * (bound - origin);
+    }
+
     public double nextDouble() {
         if (PlatformDetector.isC()) {
             return crand();
         } else {
             return random();
         }
+    }
+
+    public double nextDouble(double origin, double bound) {
+        return origin + nextDouble() * (bound - origin);
     }
 
     @Import(name = "teavm_rand")
