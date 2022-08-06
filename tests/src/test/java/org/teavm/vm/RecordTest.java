@@ -38,7 +38,7 @@ public class RecordTest {
 
     @Test
     public void toStringMethod() {
-        String s = new A(2, "q").toString();
+        String s = new B(2, "q", 3L).toString();
 
         int index = 0;
 
@@ -56,8 +56,19 @@ public class RecordTest {
 
         index = s.indexOf("q", index);
         assertTrue(index > 0);
+        ++index;
+
+        index = s.indexOf("z", index);
+        assertTrue(index > 0);
+        ++index;
+
+        index = s.indexOf("3", index);
+        assertTrue(index > 0);
     }
 
     record A(int x, String y) {
+    }
+
+    record B(int x, String y, Long z) {
     }
 }

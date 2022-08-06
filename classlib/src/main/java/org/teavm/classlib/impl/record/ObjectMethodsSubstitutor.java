@@ -171,6 +171,9 @@ public class ObjectMethodsSubstitutor implements BootstrapMethodSubstitutor {
             String fieldTitle = (index == 0 ? "" : ", ") + fieldName + "=";
             resultVar = resultVar.invokeVirtual("append", StringBuilder.class, pe.constant(fieldTitle));
             ValueEmitter thisField = InvokeDynamicUtil.invoke(pe, getter, thisVar);
+            if (!(getter.getValueType() instanceof ValueType.Primitive)) {
+                thisField = thisField.cast(Object.class);
+            }
             resultVar = resultVar.invokeVirtual("append", StringBuilder.class, thisField);
 
             index = next + 1;
