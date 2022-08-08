@@ -437,9 +437,9 @@ public class TeaVMTool {
                 vm.preserveType(className);
             }
 
-            if (!targetDirectory.mkdirs()) {
+            if (!targetDirectory.exists() && !targetDirectory.mkdirs()) {
                 log.error("Target directory could not be created");
-                return;
+                System.exit(-1);
             }
 
             BuildTarget buildTarget = new DirectoryBuildTarget(targetDirectory);
