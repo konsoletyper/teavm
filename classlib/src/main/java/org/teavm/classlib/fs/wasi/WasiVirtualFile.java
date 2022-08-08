@@ -15,8 +15,6 @@
  */
 package org.teavm.classlib.fs.wasi;
 
-import static org.teavm.interop.wasi.Memory.free;
-import static org.teavm.interop.wasi.Memory.malloc;
 import static org.teavm.interop.wasi.Wasi.DIRFLAGS_FOLLOW_SYMLINKS;
 import static org.teavm.interop.wasi.Wasi.ERRNO_BADF;
 import static org.teavm.interop.wasi.Wasi.ERRNO_NOENT;
@@ -49,6 +47,9 @@ import org.teavm.interop.wasi.Wasi;
 import org.teavm.interop.wasi.Wasi.ErrnoException;
 
 public class WasiVirtualFile implements VirtualFile {
+    // Enough room for a 64-byte WASI `filestat`, plus 8 bytes of padding for alignment:
+    private static final byte[] SEVENTY_TWO_BYTE_BUFFER = new byte[72];
+
     private final int dirFd;
     private final String path;
 
@@ -94,39 +95,28 @@ public class WasiVirtualFile implements VirtualFile {
     }
 
     static List<Preopened> getPreopened() {
+        byte[] prestatBuffer = SEVENTY_TWO_BYTE_BUFFER;
+        Address prestat = Address.align(Address.ofData(prestatBuffer), 4);
         List<Preopened> list = new ArrayList<>();
-        // skip stdin, stdout, and stderr
-        int fd = 3;
-        final int prestatSize = 8;
-        final int prestatAlign = 4;
-        Address prestat = malloc(prestatSize, prestatAlign);
+        int fd = 3; // skip stdin, stdout, and stderr
         while (true) {
             short errno = Wasi.fdPrestatGet(fd, prestat);
 
             if (errno == ERRNO_SUCCESS) {
-                final int prestatTag = 0;
-                if (prestat.add(prestatTag).getByte() == PRESTAT_DIR) {
-                    final int prestatBody = 4;
-                    final int prestatDirDir = 0;
-                    int length = prestat.add(prestatBody + prestatDirDir).getInt();
-                    Address buffer = malloc(length, 1);
-                    errno = Wasi.fdPrestatDirName(fd, buffer, length);
+                if (prestat.getByte() == PRESTAT_DIR) {
+                    int length = prestat.add(4).getInt();
+                    byte[] bytes = new byte[length];
+                    errno = Wasi.fdPrestatDirName(fd, Address.ofData(bytes), length);
 
                     if (errno == ERRNO_SUCCESS) {
-                        byte[] bytes = new byte[length];
-                        Wasi.getBytes(buffer, bytes, 0, length);
-                        free(buffer, length, 1);
                         list.add(new Preopened(fd, new String(bytes, StandardCharsets.UTF_8)));
                     } else {
-                        free(buffer, length, 1);
-                        free(prestat, prestatSize, prestatAlign);
                         throw new ErrnoException("fd_prestat_dir_name", errno);
                     }
                 }
 
                 fd += 1;
             } else {
-                free(prestat, prestatSize, prestatAlign);
                 if (errno == ERRNO_BADF) {
                     return list;
                 } else {
@@ -146,9 +136,8 @@ public class WasiVirtualFile implements VirtualFile {
             return null;
         }
 
-        final int filestatSize = 64;
-        final int filestatAlign = 8;
-        Address filestat = malloc(filestatSize, filestatAlign);
+        byte[] filestatBuffer = SEVENTY_TWO_BYTE_BUFFER;
+        Address filestat = Address.align(Address.ofData(filestatBuffer), 8);
         short errno;
         String sysCall;
 
@@ -158,23 +147,15 @@ public class WasiVirtualFile implements VirtualFile {
         } else {
             sysCall = "path_filestat_get";
             byte[] bytes = path.getBytes(StandardCharsets.UTF_8);
-            Address path = malloc(bytes.length, 1);
-            Wasi.putBytes(path, bytes, 0, bytes.length);
-            errno = Wasi.pathFilestatGet(dirFd, DIRFLAGS_FOLLOW_SYMLINKS, path, bytes.length, filestat);
-            free(path, bytes.length, 1);
+            errno = Wasi.pathFilestatGet(dirFd, DIRFLAGS_FOLLOW_SYMLINKS, Address.ofData(bytes), bytes.length,
+                                         filestat);
         }
 
         if (errno == ERRNO_SUCCESS) {
-            final int filestatFileType = 16;
-            final int filestatFileSize = 32;
-            final int filestatMtime = 48;
-            Stat stat = new Stat(filestat.add(filestatFileType).getByte(), filestat.add(filestatMtime).getLong(),
-                                 filestat.add(filestatFileSize).getLong());
-            free(filestat, filestatSize, filestatAlign);
+            Stat stat = new Stat((byte) filestat.add(16).getByte(), filestat.add(48).getLong(),
+                                 filestat.add(32).getLong());
             return stat;
         } else {
-            free(filestat, filestatSize, filestatAlign);
-
             if (errno == ERRNO_NOENT) {
                 return null;
             } else {
@@ -196,49 +177,38 @@ public class WasiVirtualFile implements VirtualFile {
     }
 
     private static String[] listFiles(int fd) {
+        byte[] sizeBuffer = SEVENTY_TWO_BYTE_BUFFER;
+        Address size = Address.align(Address.ofData(sizeBuffer), 4);
         ArrayList<String> list = new ArrayList<>();
         final int direntSize = 24;
-        final int direntAlign = 8;
         int bufferSize = direntSize + 256;
-        Address dirent = malloc(bufferSize, direntAlign);
-        final int sizeSize = 4;
-        final int sizeAlign = 4;
-        Address size = malloc(sizeSize, sizeAlign);
+        byte[] direntBuffer = new byte[bufferSize + 8];
+        Address dirent = Address.align(Address.ofData(direntBuffer), 8);
         long cookie = 0;
 
         while (true) {
             short errno = Wasi.fdReaddir(fd, dirent, bufferSize, cookie, size);
 
             if (errno == ERRNO_SUCCESS) {
-                int sizeValue = size.getInt();
+                int length = dirent.add(16).getInt();
 
-                final int direntNameLength = 16;
-                int length = dirent.add(direntNameLength).getInt();
-
-                if (sizeValue < length) {
-                    free(size, sizeSize, sizeAlign);
-                    free(dirent, bufferSize, direntAlign);
+                if (size.getInt() < length) {
                     return list.toArray(new String[list.size()]);
+                } else if (direntSize + length > bufferSize) {
+                    bufferSize = direntSize + length;
+                    direntBuffer = new byte[bufferSize + 8];
+                    dirent = Address.align(Address.ofData(direntBuffer), 8);
                 } else {
-                    if (direntSize + length > bufferSize) {
-                        free(dirent, bufferSize, direntAlign);
-                        bufferSize = direntSize + length;
-                        dirent = malloc(bufferSize, direntAlign);
-                    } else {
-                        final int direntCookie = 0;
-                        cookie = dirent.add(direntCookie).getLong();
-                        byte[] bytes = new byte[length];
-                        Wasi.getBytes(dirent.add(direntSize), bytes, 0, length);
-                        // TODO: This is probably not guaranteed to be UTF-8
-                        String name = new String(bytes, StandardCharsets.UTF_8);
-                        if (!name.startsWith(".")) {
-                            list.add(name);
-                        }
+                    cookie = dirent.getLong();
+                    byte[] bytes = new byte[length];
+                    Wasi.getBytes(dirent.add(direntSize), bytes, 0, length);
+                    // TODO: This is probably not guaranteed to be UTF-8
+                    String name = new String(bytes, StandardCharsets.UTF_8);
+                    if (!name.startsWith(".")) {
+                        list.add(name);
                     }
                 }
             } else {
-                free(size, sizeSize, sizeAlign);
-                free(dirent, bufferSize, direntAlign);
                 throw new ErrnoException("fd_read_dir", errno);
             }
         }
@@ -264,21 +234,14 @@ public class WasiVirtualFile implements VirtualFile {
         }
 
         byte[] bytes = path.getBytes(StandardCharsets.UTF_8);
-        Address path = malloc(bytes.length, 1);
-        Wasi.putBytes(path, bytes, 0, bytes.length);
-        final int fdSize = 4;
-        final int fdAlign = 4;
-        Address fd = malloc(fdSize, fdAlign);
-        short errno = Wasi.pathOpen(dirFd, DIRFLAGS_FOLLOW_SYMLINKS, path, bytes.length, oflags, rights, rights,
-                                    fdflags, fd);
-        free(path, bytes.length, 1);
+        byte[] fdBuffer = SEVENTY_TWO_BYTE_BUFFER;
+        Address fd = Address.align(Address.ofData(fdBuffer), 4);
+        short errno = Wasi.pathOpen(dirFd, DIRFLAGS_FOLLOW_SYMLINKS, Address.ofData(bytes), bytes.length, oflags,
+                                    rights, rights, fdflags, fd);
 
         if (errno == ERRNO_SUCCESS) {
-            int fdValue = fd.getInt();
-            free(fd, fdSize, fdAlign);
-            return fdValue;
+            return fd.getInt();
         } else {
-            free(fd, fdSize, fdAlign);
             throw new ErrnoException("path_open", errno);
         }
     }
@@ -333,10 +296,7 @@ public class WasiVirtualFile implements VirtualFile {
 
     private static boolean createDirectory(int fd, String fileName) {
         byte[] bytes = fileName.getBytes(StandardCharsets.UTF_8);
-        Address path = malloc(bytes.length, 1);
-        Wasi.putBytes(path, bytes, 0, bytes.length);
-        short errno = Wasi.pathCreateDirectory(fd, path, bytes.length);
-        free(path, bytes.length, 1);
+        short errno = Wasi.pathCreateDirectory(fd, Address.ofData(bytes), bytes.length);
 
         return errno == ERRNO_SUCCESS;
     }
@@ -366,24 +326,16 @@ public class WasiVirtualFile implements VirtualFile {
         }
 
         byte[] bytes = path.getBytes(StandardCharsets.UTF_8);
-        Address path = malloc(bytes.length, 1);
-        Wasi.putBytes(path, bytes, 0, bytes.length);
-        short errno = Wasi.pathUnlinkFile(dirFd, path, bytes.length);
-        free(path, bytes.length, 1);
+        short errno = Wasi.pathUnlinkFile(dirFd, Address.ofData(bytes), bytes.length);
 
         return errno == ERRNO_SUCCESS;
     }
 
     private static boolean adopt(int fd, WasiVirtualFile file, String fileName) {
         byte[] newBytes = fileName.getBytes(StandardCharsets.UTF_8);
-        Address newPath = malloc(newBytes.length, 1);
-        Wasi.putBytes(newPath, newBytes, 0, newBytes.length);
         byte[] oldBytes = file.path.getBytes(StandardCharsets.UTF_8);
-        Address oldPath = malloc(oldBytes.length, 1);
-        Wasi.putBytes(oldPath, oldBytes, 0, oldBytes.length);
-        short errno = Wasi.pathRename(file.dirFd, oldPath, oldBytes.length, fd, newPath, newBytes.length);
-        free(oldPath, oldBytes.length, 1);
-        free(newPath, newBytes.length, 1);
+        short errno = Wasi.pathRename(file.dirFd, Address.ofData(oldBytes), oldBytes.length, fd,
+                                      Address.ofData(newBytes), newBytes.length);
 
         return errno == ERRNO_SUCCESS;
     }
@@ -448,11 +400,8 @@ public class WasiVirtualFile implements VirtualFile {
             errno = Wasi.fdFilestatSetTimes(dirFd, 0, lastModified * 1000000L, FSTFLAGS_MTIME);
         } else {
             byte[] bytes = path.getBytes(StandardCharsets.UTF_8);
-            Address path = malloc(bytes.length, 1);
-            Wasi.putBytes(path, bytes, 0, bytes.length);
-            errno = Wasi.pathFilestatSetTimes(dirFd, DIRFLAGS_FOLLOW_SYMLINKS, path, bytes.length, 0,
+            errno = Wasi.pathFilestatSetTimes(dirFd, DIRFLAGS_FOLLOW_SYMLINKS, Address.ofData(bytes), bytes.length, 0,
                                               lastModified * 1000000L, FSTFLAGS_MTIME);
-            free(path, bytes.length, 1);
         }
 
         return errno == ERRNO_SUCCESS;

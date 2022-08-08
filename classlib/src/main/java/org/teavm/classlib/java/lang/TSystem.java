@@ -15,8 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import static org.teavm.interop.wasi.Memory.free;
-import static org.teavm.interop.wasi.Memory.malloc;
 import static org.teavm.interop.wasi.Wasi.CLOCKID_REALTIME;
 import static org.teavm.interop.wasi.Wasi.ERRNO_SUCCESS;
 import java.util.Enumeration;
@@ -50,6 +48,9 @@ import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 
 public final class TSystem extends TObject {
+    // Enough room for an I64 plus padding for alignment:
+    private static final byte[] SIXTEEN_BYTE_BUFFER = new byte[16];
+
     private static TPrintStream outCache;
     private static TPrintStream errCache;
     private static TInputStream inCache;
@@ -173,17 +174,13 @@ public final class TSystem extends TObject {
     }
 
     private static long currentTimeMillisWasi() {
-        final int timestampSize = 8;
-        final int timestampAlign = 8;
-        Address timestamp = malloc(timestampSize, timestampAlign);
+        byte[] timestampBuffer = SIXTEEN_BYTE_BUFFER;
+        Address timestamp = Address.align(Address.ofData(timestampBuffer), 8);
         short errno = Wasi.clockTimeGet(CLOCKID_REALTIME, 10, timestamp);
 
         if (errno == ERRNO_SUCCESS) {
-            long timestampValue = timestamp.getLong();
-            free(timestamp, timestampSize, timestampAlign);
-            return timestampValue / 1000000;
+            return timestamp.getLong() / 1000000;
         } else {
-            free(timestamp, timestampSize, timestampAlign);
             throw new ErrnoException("clock_time_get", errno);
         }
     }

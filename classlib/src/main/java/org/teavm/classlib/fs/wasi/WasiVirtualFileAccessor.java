@@ -15,8 +15,6 @@
  */
 package org.teavm.classlib.fs.wasi;
 
-import static org.teavm.interop.wasi.Memory.free;
-import static org.teavm.interop.wasi.Memory.malloc;
 import static org.teavm.interop.wasi.Wasi.ERRNO_SUCCESS;
 import static org.teavm.interop.wasi.Wasi.WHENCE_CURRENT;
 import static org.teavm.interop.wasi.Wasi.WHENCE_START;
@@ -27,6 +25,11 @@ import org.teavm.interop.Address;
 import org.teavm.interop.wasi.Wasi;
 
 public class WasiVirtualFileAccessor implements VirtualFileAccessor {
+    // Enough room for an I32 plus padding for alignment:
+    private static final byte[] EIGHT_BYTE_BUFFER = new byte[8];
+    // Enough room for an I64 plus padding for alignment:
+    private static final byte[] SIXTEEN_BYTE_BUFFER = new byte[16];
+
     private int fd;
 
     public WasiVirtualFileAccessor(int fd) {
@@ -35,61 +38,40 @@ public class WasiVirtualFileAccessor implements VirtualFileAccessor {
 
     @Override
     public int read(byte[] buffer, int offset, int length) throws IOException {
-        Address myBuffer = malloc(length, 1);
-        final int vecSize = 8;
-        final int vecAlign = 4;
-        Address vec = malloc(vecSize, vecAlign);
-        vec.putInt(myBuffer.toInt());
+        byte[] vecBuffer = SIXTEEN_BYTE_BUFFER;
+        Address vec = Address.align(Address.ofData(vecBuffer), 4);
+        vec.putInt(Address.ofData(buffer).add(offset).toInt());
         vec.add(4).putInt(length);
-        final int sizeSize = 4;
-        final int sizeAlign = 4;
-        Address size = malloc(sizeSize, sizeAlign);
+        byte[] sizeBuffer = EIGHT_BYTE_BUFFER;
+        Address size = Address.align(Address.ofData(sizeBuffer), 4);
         short errno = Wasi.fdRead(fd, vec, 1, size);
-        free(vec, vecSize, vecAlign);
 
         if (errno == ERRNO_SUCCESS) {
-            int sizeValue = size.getInt();
-            Wasi.getBytes(myBuffer, buffer, offset, sizeValue);
-            free(size, sizeSize, sizeAlign);
-            free(myBuffer, length, 1);
-            return sizeValue;
+            return size.getInt();
         } else {
-            free(size, sizeSize, sizeAlign);
-            free(myBuffer, length, 1);
             throw new IOException(errnoMessage("fd_read", errno));
         }
     }
 
     @Override
     public void write(byte[] buffer, int offset, int length) throws IOException {
-        Address myBuffer = malloc(length, 1);
-        Wasi.putBytes(myBuffer, buffer, offset, length);
-        final int vecSize = 8;
-        final int vecAlign = 4;
-        Address vec = malloc(vecSize, vecAlign);
-        final int sizeSize = 4;
-        final int sizeAlign = 4;
-        Address size = malloc(sizeSize, sizeAlign);
+        byte[] vecBuffer = SIXTEEN_BYTE_BUFFER;
+        Address vec = Address.align(Address.ofData(vecBuffer), 4);
+        byte[] sizeBuffer = EIGHT_BYTE_BUFFER;
+        Address size = Address.align(Address.ofData(sizeBuffer), 4);
 
         int index = 0;
         while (true) {
-            vec.putInt(myBuffer.add(index).toInt());
+            vec.putInt(Address.ofData(buffer).add(offset + index).toInt());
             vec.add(4).putInt(length - index);
             short errno = Wasi.fdWrite(fd, vec, 1, size);
 
             if (errno == ERRNO_SUCCESS) {
-                int sizeValue = size.getInt();
-                index += sizeValue;
+                index += size.getInt();
                 if (index >= length) {
-                    free(vec, vecSize, vecAlign);
-                    free(size, sizeSize, sizeAlign);
-                    free(myBuffer, length, 1);
                     return;
                 }
             } else {
-                free(vec, vecSize, vecAlign);
-                free(size, sizeSize, sizeAlign);
-                free(myBuffer, length, 1);
                 throw new IOException(errnoMessage("fd_write", errno));
             }
         }
@@ -97,33 +79,25 @@ public class WasiVirtualFileAccessor implements VirtualFileAccessor {
 
     @Override
     public int tell() throws IOException {
-        final int filesizeSize = 8;
-        final int filesizeAlign = 8;
-        Address filesize = malloc(filesizeSize, filesizeAlign);
+        byte[] filesizeBuffer = SIXTEEN_BYTE_BUFFER;
+        Address filesize = Address.align(Address.ofData(filesizeBuffer), 8);
         short errno = Wasi.fdTell(fd, filesize);
 
         if (errno == ERRNO_SUCCESS) {
-            long sizeValue = filesize.getLong();
-            free(filesize, filesizeSize, filesizeAlign);
-            return (int) sizeValue;
+            return (int) filesize.getLong();
         } else {
-            free(filesize, filesizeSize, filesizeAlign);
             throw new IOException(errnoMessage("fd_tell", errno));
         }
     }
 
     private long seek(long offset, byte whence) throws IOException {
-        final int filesizeSize = 8;
-        final int filesizeAlign = 8;
-        Address filesize = malloc(filesizeSize, filesizeAlign);
+        byte[] filesizeBuffer = SIXTEEN_BYTE_BUFFER;
+        Address filesize = Address.align(Address.ofData(filesizeBuffer), 8);
         short errno = Wasi.fdSeek(fd, offset, whence, filesize);
 
         if (errno == ERRNO_SUCCESS) {
-            long sizeValue = filesize.getLong();
-            free(filesize, filesizeSize, filesizeAlign);
-            return sizeValue;
+            return filesize.getLong();
         } else {
-            free(filesize, filesizeSize, filesizeAlign);
             throw new IOException(errnoMessage("fd_seek", errno));
         }
     }

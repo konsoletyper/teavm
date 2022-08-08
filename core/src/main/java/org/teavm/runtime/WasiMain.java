@@ -15,8 +15,6 @@
  */
 package org.teavm.runtime;
 
-import static org.teavm.interop.wasi.Memory.free;
-import static org.teavm.interop.wasi.Memory.malloc;
 import static org.teavm.interop.wasi.Wasi.ERRNO_SUCCESS;
 import java.nio.charset.StandardCharsets;
 import org.teavm.interop.Address;
@@ -24,49 +22,42 @@ import org.teavm.interop.wasi.Wasi;
 import org.teavm.interop.wasi.Wasi.ErrnoException;
 
 public final class WasiMain {
+    private static final byte[] TWELVE_BYTE_BUFFER = new byte[12];
+
     private WasiMain() {
     }
 
     static void startMain() {
-        final int sizesSize = 8;
-        final int sizesAlign = 4;
-        Address sizes = malloc(sizesSize, sizesAlign);
+        byte[] sizesBuffer = TWELVE_BYTE_BUFFER;
+        Address sizes = Address.align(Address.ofData(sizesBuffer), 4);
         short errno = Wasi.argsSizesGet(sizes, sizes.add(4));
 
         if (errno == ERRNO_SUCCESS) {
             int argvSize = sizes.getInt();
             int argvBufSize = sizes.add(4).getInt();
-            free(sizes, sizesSize, sizesAlign);
 
-            Address argv = malloc(argvSize * 4, 4);
-            Address argvBuf = malloc(argvBufSize, 1);
-            errno = Wasi.argsGet(argv, argvBuf);
+            byte[] argvBuffer = new byte[(argvSize * 4) + 4];
+            Address argv = Address.align(Address.ofData(argvBuffer), 4);
+            byte[] argvBuf = new byte[argvBufSize];
+            errno = Wasi.argsGet(argv, Address.ofData(argvBuf));
 
             if (errno == ERRNO_SUCCESS) {
-                int[] argvOffsets = new int[argvSize];
-                byte[] argvBufBytes = new byte[argvBufSize];
-                for (int i = 0; i < argvSize; ++i) {
-                    argvOffsets[i] = argv.add(i * 4).getInt() - argvBuf.toInt();
-                }
-                Wasi.getBytes(argvBuf, argvBufBytes, 0, argvBufSize);
-                free(argv, argvSize * 4, 4);
-                free(argvBuf, argvBufSize, 1);
-
                 String[] args = new String[argvSize - 1];
                 for (int i = 1; i < argvSize; ++i) {
-                    int offset = argvOffsets[i];
-                    int length = (i == argvSize - 1 ? argvBufSize : argvOffsets[i + 1]) - 1 - offset;
-                    args[i - 1] = new String(argvBufBytes, offset, length, StandardCharsets.UTF_8);
+                    int offset = argv.add(i * 4).getInt() - Address.ofData(argvBuf).toInt();
+                    int length = (i == argvSize - 1
+                                  ? argvBufSize
+                                  : (argv.add((i + 1) * 4).getInt() - Address.ofData(argvBuf).toInt()))
+                        - 1 - offset;
+
+                    args[i - 1] = new String(argvBuf, offset, length, StandardCharsets.UTF_8);
                 }
 
                 Fiber.startMain(args);
             } else {
-                free(argv, argvSize * 4, 4);
-                free(argvBuf, argvBufSize, 1);
                 throw new ErrnoException("args_get", errno);
             }
         } else {
-            free(sizes, sizesSize, sizesAlign);
             throw new ErrnoException("args_sizes_get", errno);
         }
     }
