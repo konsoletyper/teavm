@@ -22,11 +22,6 @@ public final class PlatformDetector {
     private PlatformDetector() {
     }
 
-    @PlatformMarker(Platforms.WASI)
-    public static boolean isWasi() {
-        return false;
-    }
-
     @PlatformMarker(Platforms.WEBASSEMBLY)
     public static boolean isWebAssembly() {
         return false;

@@ -203,7 +203,6 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     private boolean obfuscated;
     private Set<MethodReference> asyncMethods;
     private boolean hasThreads;
-    private boolean wasi;
 
     @Override
     public void setController(TeaVMTargetController controller) {
@@ -296,10 +295,6 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         this.obfuscated = obfuscated;
     }
 
-    public void setWasi(boolean wasi) {
-        this.wasi = wasi;
-    }
-
     @Override
     public void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
         for (Class<?> type : Arrays.asList(int.class, long.class, float.class, double.class)) {
@@ -336,22 +331,12 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 String[].class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "lookupResource", Address.class,
                 String.class, Address.class)).use();
-
-        if (wasi) {
-            dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "wasiPrintString",
-                    String.class, void.class)).use();
-            dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "wasiPrintInt",
-                    int.class, void.class)).use();
-            dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "wasiPrintOutOfMemory",
-                    void.class)).use();
-        } else {
-            dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "printString",
-                    String.class, void.class)).use();
-            dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "printInt",
-                    int.class, void.class)).use();
-            dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "printOutOfMemory",
-                    void.class)).use();
-        }
+        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "wasiPrintString",
+                String.class, void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "wasiPrintInt",
+                int.class, void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "wasiPrintOutOfMemory",
+                void.class)).use();
 
         dependencyAnalyzer.linkMethod(INIT_HEAP_REF).use();
         dependencyAnalyzer.linkMethod(RESIZE_HEAP_REF).use();
@@ -388,12 +373,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         dependencyAnalyzer.linkMethod(new MethodReference(Fiber.class, "isResuming", boolean.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(Fiber.class, "isSuspending", boolean.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(Fiber.class, "current", Fiber.class)).use();
-        if (wasi) {
-            dependencyAnalyzer.linkMethod(WASI_START_MAIN).use();
-        } else {
-            dependencyAnalyzer.linkMethod(new MethodReference(Fiber.class, "startMain", String[].class, void.class))
-                    .use();
-        }
+        dependencyAnalyzer.linkMethod(WASI_START_MAIN).use();
         dependencyAnalyzer.linkMethod(new MethodReference(EventQueue.class, "processSingle", void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(EventQueue.class, "isStopped", boolean.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(Thread.class, "setCurrentThread", Thread.class,
@@ -475,12 +455,12 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         context.addIntrinsic(new LongIntrinsic());
         context.addIntrinsic(new IntegerIntrinsic());
         context.addIntrinsic(new ObjectIntrinsic());
-        context.addIntrinsic(new ConsoleIntrinsic(wasi));
+        context.addIntrinsic(new ConsoleIntrinsic());
         context.addGenerator(new ArrayGenerator());
         if (!Boolean.parseBoolean(System.getProperty("teavm.wasm.vmAssertions", "false"))) {
             context.addIntrinsic(new MemoryTraceIntrinsic());
         }
-        context.addIntrinsic(new WasmHeapIntrinsic(wasi));
+        context.addIntrinsic(new WasmHeapIntrinsic());
         context.addIntrinsic(new FiberIntrinsic());
 
         IntrinsicFactoryContext intrinsicFactoryContext = new IntrinsicFactoryContext();
@@ -488,7 +468,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             context.addIntrinsic(additionalIntrinsicFactory.create(intrinsicFactoryContext));
         }
 
-        GCIntrinsic gcIntrinsic = new GCIntrinsic(wasi);
+        GCIntrinsic gcIntrinsic = new GCIntrinsic();
         context.addIntrinsic(gcIntrinsic);
         MutatorIntrinsic mutatorIntrinsic = new MutatorIntrinsic();
         context.addIntrinsic(mutatorIntrinsic);
@@ -525,9 +505,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         generateInitFunction(classes, initFunction, names, binaryWriter.getAddress());
         module.add(initFunction);
         module.setStartFunction(initFunction);
-        if (!wasi) {
-            module.add(createStartFunction(names));
-        }
+        module.add(createStartFunction(names));
 
         for (String functionName : classGenerator.getFunctionTable()) {
             WasmFunction function = module.getFunctions().get(functionName);
@@ -565,17 +543,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     private WasmFunction createStartFunction(NameProvider names) {
         WasmFunction function = new WasmFunction("teavm_start");
-        function.setExportName("start");
-        function.getParameters().add(WasmType.INT32);
-
-        WasmLocal local = new WasmLocal(WasmType.INT32, "args");
-        function.add(local);
-
-        WasmCall call = new WasmCall(names.forMethod(new MethodReference(Fiber.class, "startMain", String[].class,
-                void.class)));
-        call.getArguments().add(new WasmGetLocal(local));
-        function.getBody().add(call);
-
+        function.setExportName("_start");
+        function.getBody().add(new WasmCall(names.forMethod(WASI_START_MAIN)));
         return function;
     }
 
@@ -640,10 +609,6 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 continue;
             }
             initFunction.getBody().add(new WasmCall(names.forClassInitializer(className)));
-        }
-
-        if (wasi) {
-            initFunction.getBody().add(new WasmCall(names.forMethod(WASI_START_MAIN)));
         }
     }
 
@@ -994,15 +959,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     @Override
     public String[] getPlatformTags() {
-        List<String> list = new ArrayList<String>() {{
-                add(Platforms.WEBASSEMBLY);
-                add(Platforms.LOW_LEVEL);
-                if (wasi) {
-                    add(Platforms.WASI);
-                }
-            }};
-
-        return list.toArray(new String[list.size()]);
+        return new String[] { Platforms.WEBASSEMBLY, Platforms.LOW_LEVEL };
     }
 
     @Override

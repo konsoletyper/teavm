@@ -15,8 +15,11 @@
  */
 package org.teavm.interop.wasi;
 
+import static org.teavm.interop.wasi.Memory.free;
+import static org.teavm.interop.wasi.Memory.malloc;
 import org.teavm.interop.Address;
 import org.teavm.interop.Import;
+import org.teavm.interop.Unmanaged;
 
 public final class Wasi {
     public static final int CLOCKID_REALTIME = 0;
@@ -132,6 +135,37 @@ public final class Wasi {
     public static String errnoMessage(String sysCall, short errno) {
         // TODO: Provide a friendly message for each case.
         return "errno for " + sysCall + ": " + errno;
+    }
+
+    @Unmanaged
+    public static void printBuffer(int fd, Address buffer, int length) {
+        final int vecSize = 8;
+        final int vecAlign = 4;
+        Address vec = malloc(vecSize, vecAlign);
+        final int sizeSize = 4;
+        final int sizeAlign = 4;
+        Address size = malloc(sizeSize, sizeAlign);
+
+        int index = 0;
+        while (true) {
+            vec.putInt(buffer.add(index).toInt());
+            vec.add(4).putInt(length - index);
+            short errno = fdWrite(fd, vec, 1, size);
+
+            if (errno == 0) {
+                int sizeValue = size.getInt();
+                index += sizeValue;
+                if (index >= length) {
+                    free(vec, vecSize, vecAlign);
+                    free(size, sizeSize, sizeAlign);
+                    return;
+                }
+            } else {
+                free(vec, vecSize, vecAlign);
+                free(size, sizeSize, sizeAlign);
+                return;
+            }
+        }
     }
 
     public static class ErrnoException extends RuntimeException {

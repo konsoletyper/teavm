@@ -86,7 +86,7 @@ class CRunStrategy implements TestRunStrategy {
         }
     }
 
-    private String mergeLines(List<String> lines) {
+    static String mergeLines(List<String> lines) {
         StringBuilder sb = new StringBuilder();
         for (String line : lines) {
             sb.append(line).append('\n');
@@ -94,7 +94,7 @@ class CRunStrategy implements TestRunStrategy {
         return sb.toString();
     }
 
-    private void writeLines(List<String> lines) {
+    static void writeLines(List<String> lines) {
         for (String line : lines) {
             System.out.println(line);
         }
@@ -124,7 +124,7 @@ class CRunStrategy implements TestRunStrategy {
         return runProcess(new ProcessBuilder(command).directory(inputDir).start(), output, new ArrayList<>());
     }
 
-    private boolean runProcess(Process process, List<String> output, List<String> stdout) throws InterruptedException {
+    static boolean runProcess(Process process, List<String> output, List<String> stdout) throws InterruptedException {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(process.getInputStream()));
         BufferedReader stderr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
         ConcurrentLinkedQueue<String> lines = new ConcurrentLinkedQueue<>();

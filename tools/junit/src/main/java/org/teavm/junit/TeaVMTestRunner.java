@@ -206,6 +206,12 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 case "browser-firefox":
                     wasmRunStrategy = new BrowserRunStrategy(outputDir, "WASM", this::firefoxBrowser);
                     break;
+                case "wasi-wasmtime":
+                    wasmRunStrategy = new WasiRunStrategy("wasmtime");
+                    break;
+                case "wasi-wasmer":
+                    wasmRunStrategy = new WasiRunStrategy("wasmer");
+                    break;
                 default:
                     throw new InitializationError("Unknown run strategy: " + runStrategyName);
             }

@@ -15,8 +15,12 @@
  */
 package org.teavm.classlib.impl.console;
 
+import static org.teavm.interop.wasi.Memory.free;
+import static org.teavm.interop.wasi.Memory.malloc;
+import static org.teavm.interop.wasi.Wasi.printBuffer;
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.JSBody;
@@ -29,7 +33,7 @@ public final class Console {
         if (PlatformDetector.isC()) {
             writeC(b);
         } else if (PlatformDetector.isWebAssembly()) {
-            writeWasm(b);
+            writeWasi(2, b);
         } else {
             writeJs(b);
         }
@@ -39,7 +43,7 @@ public final class Console {
         if (PlatformDetector.isC()) {
             writeC(b);
         } else if (PlatformDetector.isWebAssembly()) {
-            writeWasm(b);
+            writeWasi(1, b);
         } else {
             writeJsStdout(b);
         }
@@ -57,8 +61,13 @@ public final class Console {
     @JSBody(params = "b", script = "$rt_putStdout(b);")
     private static native void writeJsStdout(int b);
 
-    @Import(name = "putwchar", module = "teavm")
-    private static native void writeWasm(int b);
+    @Unmanaged
+    private static void writeWasi(int fd, int b) {
+        Address buffer = malloc(1, 1);
+        buffer.putInt(b);
+        printBuffer(fd, buffer, 1);
+        free(buffer, 1, 1);
+    }
 
     @Unmanaged
     @Import(name = "teavm_logchar")

@@ -61,7 +61,7 @@ public final class TSystem extends TObject {
 
     public static TPrintStream out() {
         if (outCache == null) {
-            if (PlatformDetector.isWasi()) {
+            if (PlatformDetector.isWebAssembly()) {
                 outCache = new TPrintStream((TOutputStream) (Object) new TFileOutputStream(1));
             } else {
                 outCache = new TPrintStream((TOutputStream) (Object) StdoutOutputStream.INSTANCE, false);
@@ -72,7 +72,7 @@ public final class TSystem extends TObject {
 
     public static TPrintStream err() {
         if (errCache == null) {
-            if (PlatformDetector.isWasi()) {
+            if (PlatformDetector.isWebAssembly()) {
                 errCache = new TPrintStream((TOutputStream) (Object) new TFileOutputStream(2));
             } else {
                 errCache = new TPrintStream((TOutputStream) (Object) StderrOutputStream.INSTANCE, false);
@@ -83,7 +83,7 @@ public final class TSystem extends TObject {
 
     public static TInputStream in() {
         if (inCache == null) {
-            if (PlatformDetector.isWasi()) {
+            if (PlatformDetector.isWebAssembly()) {
                 inCache = (TInputStream) (Object) new TFileInputStream(0);
             } else {
                 inCache = new TConsoleInputStream();
@@ -164,29 +164,16 @@ public final class TSystem extends TObject {
     public static native long currentTimeMillis();
 
     private static long currentTimeMillisLowLevel() {
-        if (PlatformDetector.isWasi()) {
+        if (PlatformDetector.isWebAssembly()) {
             return currentTimeMillisWasi();
-        } else if (PlatformDetector.isWebAssembly()) {
-            return (long) currentTimeMillisWasm();
         } else {
             return (long) currentTimeMillisC();
         }
     }
 
     private static long currentTimeMillisWasi() {
-        byte[] timestampBuffer = SIXTEEN_BYTE_BUFFER;
-        Address timestamp = Address.align(Address.ofData(timestampBuffer), 8);
-        short errno = Wasi.clockTimeGet(CLOCKID_REALTIME, 10, timestamp);
-
-        if (errno == ERRNO_SUCCESS) {
-            return timestamp.getLong() / 1000000;
-        } else {
-            throw new ErrnoException("clock_time_get", errno);
-        }
+        return nanoTimeWasi() / 1000000;
     }
-
-    @Import(name = "currentTimeMillis", module = "teavm")
-    private static native double currentTimeMillisWasm();
 
     @Import(name = "teavm_currentTimeMillis")
     @RuntimeInclude("time.h")
@@ -302,7 +289,7 @@ public final class TSystem extends TObject {
 
     public static long nanoTime() {
         if (PlatformDetector.isWebAssembly()) {
-            return (long) (nanoTimeWasm() * 1000000);
+            return (long) nanoTimeWasi();
         } else if (PlatformDetector.isLowLevel()) {
             return nanoTimeLowLevel();
         } else {
@@ -310,8 +297,17 @@ public final class TSystem extends TObject {
         }
     }
 
-    @Import(module = "teavm", name = "nanoTime")
-    private static native double nanoTimeWasm();
+    private static long nanoTimeWasi() {
+        byte[] timestampBuffer = SIXTEEN_BYTE_BUFFER;
+        Address timestamp = Address.align(Address.ofData(timestampBuffer), 8);
+        short errno = Wasi.clockTimeGet(CLOCKID_REALTIME, 10, timestamp);
+
+        if (errno == ERRNO_SUCCESS) {
+            return timestamp.getLong();
+        } else {
+            throw new ErrnoException("clock_time_get", errno);
+        }
+    }
 
     @Import(name = "teavm_currentTimeNano")
     @RuntimeInclude("time.h")

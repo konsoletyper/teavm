@@ -48,11 +48,10 @@
             </goals>
             <configuration>
               <targetDirectory>${project.build.directory}/generated/wasm/teavm-wasm</targetDirectory>
-              <targetType>WASI</targetType>
+              <targetType>WEBASSEMBLY</targetType>
               <mainClass>wasi.Test</mainClass>
               <debugInformationGenerated>true</debugInformationGenerated>
-              <sourceMapsGenerated>true</sourceMapsGenerated>
-              <sourceFilesCopied>true</sourceFilesCopied>
+              <minifying>false</minifying>
               <!-- Anything beyond SIMPLE appears to break non-trivial code,
                    apparently due to skipped <clinit> calls: -->
               <optimizationLevel>SIMPLE</optimizationLevel>

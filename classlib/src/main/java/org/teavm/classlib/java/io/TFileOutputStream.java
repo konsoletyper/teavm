@@ -30,7 +30,7 @@ public class TFileOutputStream extends OutputStream {
     private VirtualFileAccessor accessor;
 
     public TFileOutputStream(int fd) {
-        if (PlatformDetector.isWasi()) {
+        if (PlatformDetector.isWebAssembly()) {
             this.accessor = new WasiVirtualFileAccessor(fd);
         } else {
             throw new UnsupportedOperationException();

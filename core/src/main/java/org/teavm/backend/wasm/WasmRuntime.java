@@ -17,7 +17,7 @@ package org.teavm.backend.wasm;
 
 import static org.teavm.interop.wasi.Memory.free;
 import static org.teavm.interop.wasi.Memory.malloc;
-import static org.teavm.interop.wasi.Wasi.fdWrite;
+import static org.teavm.interop.wasi.Wasi.printBuffer;
 import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
@@ -90,56 +90,41 @@ public final class WasmRuntime {
     @Import(name = "print", module = "spectest")
     public static native void print(int a);
 
-    @Import(name = "logString", module = "teavm")
-    public static native void printString(String s);
-
-    @Import(name = "logInt", module = "teavm")
-    public static native void printInt(int i);
-
-    @Import(name = "logOutOfMemory", module = "teavm")
-    public static native void printOutOfMemory();
-
+    @Unmanaged
     public static void wasiPrintInt(int i) {
-        wasiPrintString(String.valueOf(i));
+        if (i == 0) {
+            wasiPrintString("0");
+            return;
+        }
+        if (i == -2147483648) {
+            wasiPrintString("-2147483648");
+            return;
+        }
+        if (i < 0) {
+            wasiPrintString("-");
+            i = -i;
+        }
+        int bufferLength = 10;
+        Address buffer = malloc(bufferLength, 1);
+        int j = 0;
+        while (i > 0 && j < bufferLength) {
+            buffer.add(bufferLength - j - 1).putByte((byte) (48 + (i % 10)));
+            i /= 10;
+            ++j;
+        }
+        printBuffer(2, buffer.add(bufferLength - j), j);
+        free(buffer, bufferLength, 1);
     }
 
     @Unmanaged
     public static void wasiPrintString(String s) {
-        final int fd = 2; // stderr
         int length = s.length();
-        Address myBuffer = malloc(length, 1);
+        Address buffer = malloc(length, 1);
         for (int i = 0; i < length; ++i) {
-            myBuffer.add(i).putByte((byte) s.charAt(i));
+            buffer.add(i).putByte((byte) s.charAt(i));
         }
-        final int vecSize = 8;
-        final int vecAlign = 4;
-        Address vec = malloc(vecSize, vecAlign);
-        final int sizeSize = 4;
-        final int sizeAlign = 4;
-        Address size = malloc(sizeSize, sizeAlign);
-
-        int index = 0;
-        while (true) {
-            vec.putInt(myBuffer.add(index).toInt());
-            vec.add(4).putInt(length - index);
-            short errno = fdWrite(fd, vec, 1, size);
-
-            if (errno == 0) {
-                int sizeValue = size.getInt();
-                index += sizeValue;
-                if (index >= length) {
-                    free(vec, vecSize, vecAlign);
-                    free(size, sizeSize, sizeAlign);
-                    free(myBuffer, length, 1);
-                    return;
-                }
-            } else {
-                free(vec, vecSize, vecAlign);
-                free(size, sizeSize, sizeAlign);
-                free(myBuffer, length, 1);
-                return;
-            }
-        }
+        printBuffer(2, buffer, length);
+        free(buffer, length, 1);
     }
 
     @Unmanaged

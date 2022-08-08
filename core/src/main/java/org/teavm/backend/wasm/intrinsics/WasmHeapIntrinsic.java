@@ -23,20 +23,13 @@ import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.model.MethodReference;
 
 public class WasmHeapIntrinsic implements WasmIntrinsic {
-    private final boolean wasi;
-
-    public WasmHeapIntrinsic(boolean wasi) {
-        this.wasi = wasi;
-    }
-
     @Override
     public boolean isApplicable(MethodReference methodReference) {
         if (!methodReference.getClassName().equals(WasmHeap.class.getName())) {
             return false;
         }
         switch (methodReference.getName()) {
-            case "initHeapTrace":
-                return wasi;
+            case "initHeapTrace": // TODO: make this configureable
             case "growMemory":
                 return true;
             default:

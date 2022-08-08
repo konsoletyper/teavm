@@ -15,7 +15,6 @@
  */
 package org.teavm.dependency;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractList;
 import java.util.ArrayList;
 

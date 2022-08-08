@@ -26,7 +26,7 @@ public final class VirtualFileSystemProvider {
     static {
         if (PlatformDetector.isC()) {
             instance = new CFileSystem();
-        } else if (PlatformDetector.isWasi()) {
+        } else if (PlatformDetector.isWebAssembly()) {
             instance = new WasiFileSystem();
         } else {
             instance = new InMemoryVirtualFileSystem();
