@@ -17,6 +17,7 @@ package org.teavm.classlib.fs.wasi;
 
 import static org.teavm.interop.wasi.Wasi.DIRFLAGS_FOLLOW_SYMLINKS;
 import static org.teavm.interop.wasi.Wasi.ERRNO_BADF;
+import static org.teavm.interop.wasi.Wasi.ERRNO_EXIST;
 import static org.teavm.interop.wasi.Wasi.ERRNO_NOENT;
 import static org.teavm.interop.wasi.Wasi.ERRNO_SUCCESS;
 import static org.teavm.interop.wasi.Wasi.FDFLAGS_APPEND;
@@ -36,6 +37,7 @@ import static org.teavm.interop.wasi.Wasi.RIGHTS_SEEK;
 import static org.teavm.interop.wasi.Wasi.RIGHTS_SYNC;
 import static org.teavm.interop.wasi.Wasi.RIGHTS_TELL;
 import static org.teavm.interop.wasi.Wasi.RIGHTS_WRITE;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -108,8 +110,12 @@ public class WasiVirtualFile implements VirtualFile {
                     byte[] bytes = new byte[length];
                     errno = Wasi.fdPrestatDirName(fd, Address.ofData(bytes), length);
 
-                    if (errno == ERRNO_SUCCESS) {
-                        list.add(new Preopened(fd, new String(bytes, StandardCharsets.UTF_8)));
+                    if (errno == ERRNO_SUCCESS && length > 0) {
+                        if (bytes[length - 1] == 0) {
+                            length -= 1;
+                        }
+
+                        list.add(new Preopened(fd, new String(bytes, 0, length, StandardCharsets.UTF_8)));
                     } else {
                         throw new ErrnoException("fd_prestat_dir_name", errno);
                     }
@@ -177,6 +183,10 @@ public class WasiVirtualFile implements VirtualFile {
     }
 
     private static String[] listFiles(int fd) {
+        if (fd == -1) {
+            return null;
+        }
+
         byte[] sizeBuffer = SEVENTY_TWO_BYTE_BUFFER;
         Address size = Address.align(Address.ofData(sizeBuffer), 4);
         ArrayList<String> list = new ArrayList<>();
@@ -216,21 +226,25 @@ public class WasiVirtualFile implements VirtualFile {
 
     @Override
     public String[] listFiles() {
-        if (path == null) {
-            return listFiles(dirFd);
-        } else {
-            int fd = open(OFLAGS_DIRECTORY, RIGHTS_READ, (short) 0);
-            try {
-                return listFiles(fd);
-            } finally {
-                close(fd);
+        try {
+            if (path == null) {
+                return listFiles(dirFd);
+            } else {
+                int fd = open(OFLAGS_DIRECTORY, RIGHTS_READ, (short) 0);
+                try {
+                    return listFiles(fd);
+                } finally {
+                    close(fd);
+                }
             }
+        } catch (ErrnoException e) {
+            return null;
         }
     }
 
     private int open(short oflags, long rights, short fdflags) {
-        if (path == null) {
-            throw new UnsupportedOperationException();
+        if (path == null || dirFd == -1) {
+            throw new ErrnoException("path_open", ERRNO_BADF);
         }
 
         byte[] bytes = path.getBytes(StandardCharsets.UTF_8);
@@ -264,15 +278,27 @@ public class WasiVirtualFile implements VirtualFile {
         if (append) {
             fdflags |= FDFLAGS_APPEND;
         }
-        return new WasiVirtualFileAccessor(open((short) 0, rights, fdflags));
+        try {
+            return new WasiVirtualFileAccessor(open((short) 0, rights, fdflags));
+        } catch (ErrnoException e) {
+            return null;
+        }
     }
 
-    private static boolean createFile(int fd, String fileName) {
+    private static boolean createFile(int fd, String fileName) throws IOException {
+        if (fd == -1) {
+            throw new FileNotFoundException();
+        }
+
         try {
             close(new WasiVirtualFile(fd, fileName).open((short) (OFLAGS_CREATE | OFLAGS_EXCLUSIVE), 0, (short) 0));
             return true;
         } catch (ErrnoException e) {
-            return false;
+            if (e.getErrno() == ERRNO_EXIST) {
+                return false;
+            } else {
+                throw new IOException(e);
+            }
         }
     }
 
@@ -289,12 +315,20 @@ public class WasiVirtualFile implements VirtualFile {
                     close(fd);
                 }
             } catch (ErrnoException e) {
-                return false;
+                if (e.getErrno() == ERRNO_EXIST) {
+                    return false;
+                } else {
+                    throw new IOException(e);
+                }
             }
         }
     }
 
     private static boolean createDirectory(int fd, String fileName) {
+        if (fd == -1) {
+            return false;
+        }
+
         byte[] bytes = fileName.getBytes(StandardCharsets.UTF_8);
         short errno = Wasi.pathCreateDirectory(fd, Address.ofData(bytes), bytes.length);
 
@@ -321,8 +355,8 @@ public class WasiVirtualFile implements VirtualFile {
 
     @Override
     public boolean delete() {
-        if (path == null) {
-            throw new UnsupportedOperationException();
+        if (path == null || dirFd == -1) {
+            return false;
         }
 
         byte[] bytes = path.getBytes(StandardCharsets.UTF_8);
@@ -332,6 +366,10 @@ public class WasiVirtualFile implements VirtualFile {
     }
 
     private static boolean adopt(int fd, WasiVirtualFile file, String fileName) {
+        if (fd == -1 || file.dirFd == -1) {
+            return false;
+        }
+
         byte[] newBytes = fileName.getBytes(StandardCharsets.UTF_8);
         byte[] oldBytes = file.path.getBytes(StandardCharsets.UTF_8);
         short errno = Wasi.pathRename(file.dirFd, Address.ofData(oldBytes), oldBytes.length, fd,
@@ -345,7 +383,7 @@ public class WasiVirtualFile implements VirtualFile {
         WasiVirtualFile wasiFile = (WasiVirtualFile) file;
 
         if (wasiFile.path == null || fileName == null) {
-            throw new UnsupportedOperationException();
+            return false;
         }
 
         if (path == null) {
@@ -386,7 +424,8 @@ public class WasiVirtualFile implements VirtualFile {
 
     @Override
     public long lastModified() {
-        return stat().mtime / 1000000L;
+        Stat stat = stat();
+        return stat == null ? 0 : stat.mtime / 1000000L;
     }
 
     @Override

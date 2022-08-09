@@ -25,6 +25,7 @@ public final class Wasi {
     public static final int CLOCKID_REALTIME = 0;
     public static final short ERRNO_SUCCESS = 0;
     public static final short ERRNO_BADF = 8;
+    public static final short ERRNO_EXIST = 20;
     public static final short ERRNO_NOENT = 44;
     public static final byte PRESTAT_DIR = 0;
     public static final byte FILETYPE_DIRECTORY = 3;
@@ -179,6 +180,10 @@ public final class Wasi {
 
         public String getMessage() {
             return errnoMessage(sysCall, errno);
+        }
+
+        public short getErrno() {
+            return errno;
         }
     }
 }

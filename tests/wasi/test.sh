@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -Eeuo pipefail
 
 runtime=${1:-wasmtime}
 
@@ -28,6 +28,13 @@ function expect_is_dir {
   fi
 }
 
+function expect_is_file {
+  if [ ! -f "$1" ]; then
+    echo "FAIL: expected \"$1\" to be a file at line ${BASH_LINENO[0]}" >&2
+    exit 1
+  fi
+}
+
 function expect_nonexistence {
   if [ -e "$1" ]; then
     echo "FAIL: expected \"$1\" to not exist at line ${BASH_LINENO[0]}" >&2
@@ -50,9 +57,14 @@ mkdir foo
 mkdir bar
 $runtime --dir bar --dir foo --invoke mkdirs $wasm <<<foo/bar/baz
 expect_is_dir foo/bar/baz
-rm -r foo bar
+rm -r foo/bar
 
-mkdir foo
+$runtime --dir bar --dir foo --invoke create $wasm <<<foo/bar.txt
+expect_is_file foo/bar.txt
+
+$runtime --dir bar --dir foo --invoke create_already_exists $wasm <<<foo/bar.txt
+expect_is_file foo/bar.txt
+
 $runtime --dir foo --invoke write $wasm <<<foo/bar.txt:hola
 expect_eq hola "$(cat foo/bar.txt)"
 
@@ -75,6 +87,22 @@ expect_eq "a.txt b.txt c.txt" "$($runtime --dir foo --invoke list $wasm <<<foo)"
 
 $runtime --dir foo --invoke mtime $wasm <<<foo/a.txt:274853014000
 expect_eq 274853014 "$(stat -c %Y foo/a.txt)"
-rm -r foo
+
+expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_mkdirs $wasm <<<bar/baz/buzz)"
+expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_create $wasm <<<bar/baz.txt)"
+expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_write $wasm <<<bar/baz.txt)"
+
+for path in foo/does-not-exist.txt bar/baz.txt; do
+  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_read $wasm <<<$path)"
+  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_random_access $wasm <<<$path)"
+  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_length $wasm <<<$path)"
+  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_rename $wasm <<<$path:foo/wow.txt)"
+  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_rename $wasm <<<foo/wow.txt:$path)"
+  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_delete $wasm <<<$path)"
+  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_list $wasm <<<$path)"
+  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_mtime $wasm <<<$path)"
+done
+
+rm -r foo bar
 
 echo "success!"
