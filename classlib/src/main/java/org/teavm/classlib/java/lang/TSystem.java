@@ -17,7 +17,9 @@ package org.teavm.classlib.java.lang;
 
 import static org.teavm.interop.wasi.Wasi.CLOCKID_REALTIME;
 import static org.teavm.interop.wasi.Wasi.ERRNO_SUCCESS;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Properties;
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.backend.javascript.spi.GeneratedBy;
@@ -50,6 +52,8 @@ import org.teavm.runtime.RuntimeClass;
 public final class TSystem extends TObject {
     // Enough room for an I64 plus padding for alignment:
     private static final byte[] SIXTEEN_BYTE_BUFFER = new byte[16];
+
+    private static HashMap<String, String> envMap;
 
     private static TPrintStream outCache;
     private static TPrintStream errCache;
@@ -322,6 +326,52 @@ public final class TSystem extends TObject {
     }
 
     public static String getenv(String name) {
-        return null;
+        if (PlatformDetector.isWebAssembly()) {
+            return getEnvWasi(name);
+        } else {
+            return null;
+        }
+    }
+
+    private static String getEnvWasi(String name) {
+        if (envMap == null) {
+            envMap = new HashMap<>();
+            byte[] sizesBuffer = SIXTEEN_BYTE_BUFFER;
+            Address sizes = Address.align(Address.ofData(sizesBuffer), 4);
+            short errno = Wasi.environSizesGet(sizes, sizes.add(4));
+
+            if (errno == ERRNO_SUCCESS) {
+                int environSize = sizes.getInt();
+                int environBufSize = sizes.add(4).getInt();
+
+                byte[] environBuffer = new byte[(environSize * 4) + 4];
+                Address environ = Address.align(Address.ofData(environBuffer), 4);
+                byte[] environBuf = new byte[environBufSize];
+                errno = Wasi.environGet(environ, Address.ofData(environBuf));
+
+                if (errno == ERRNO_SUCCESS) {
+                    for (int i = 0; i < environSize; ++i) {
+                        int offset = environ.add(i * 4).getInt() - Address.ofData(environBuf).toInt();
+                        int length = (i == environSize - 1
+                                      ? environBufSize
+                                      : (environ.add((i + 1) * 4).getInt() - Address.ofData(environBuf).toInt()))
+                            - 1 - offset;
+
+                        // TODO: this is probably not guaranteed to be UTF-8:
+                        String var = new String(environBuf, offset, length, StandardCharsets.UTF_8);
+                        int index = var.indexOf('=');
+                        if (index != -1) {
+                            envMap.put(var.substring(0, index), var.substring(index + 1));
+                        }
+                    }
+                } else {
+                    throw new ErrnoException("environ_get", errno);
+                }
+            } else {
+                throw new ErrnoException("environ_sizes_get", errno);
+            }
+        }
+
+        return envMap.get(name);
     }
 }

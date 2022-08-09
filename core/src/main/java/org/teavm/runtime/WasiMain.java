@@ -50,6 +50,7 @@ public final class WasiMain {
                                   : (argv.add((i + 1) * 4).getInt() - Address.ofData(argvBuf).toInt()))
                         - 1 - offset;
 
+                    // TODO: this is probably not guaranteed to be UTF-8:
                     args[i - 1] = new String(argvBuf, offset, length, StandardCharsets.UTF_8);
                 }
 

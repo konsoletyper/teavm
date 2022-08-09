@@ -26,6 +26,16 @@ public class Test {
         throw new Exception(message);
     }
 
+    @Export(name = "env")
+    public static void env() throws IOException {
+        String string = readString();
+        int index = string.indexOf(':');
+        String var1 = string.substring(0, index);
+        String var2 = string.substring(index + 1);
+        System.out.print(System.getenv(var1));
+        System.out.print(System.getenv(var2));
+    }
+
     @Export(name = "catch")
     public static void doCatch() {
         try {

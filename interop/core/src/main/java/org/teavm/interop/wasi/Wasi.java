@@ -61,6 +61,12 @@ public final class Wasi {
     @Import(name = "clock_time_get", module = "wasi_snapshot_preview1")
     public static native short clockTimeGet(int clockid, long precision, Address timestamp);
 
+    @Import(name = "environ_sizes_get", module = "wasi_snapshot_preview1")
+    public static native short environSizesGet(Address environSize, Address environBufSize);
+
+    @Import(name = "environ_get", module = "wasi_snapshot_preview1")
+    public static native short environGet(Address environ, Address environBuf);
+
     @Import(name = "path_create_directory", module = "wasi_snapshot_preview1")
     public static native short pathCreateDirectory(int fd, Address path, int pathLength);
 
