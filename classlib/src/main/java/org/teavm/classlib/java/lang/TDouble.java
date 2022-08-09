@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
@@ -249,29 +250,61 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         return isInfinite(value);
     }
 
+    public static boolean isNaN(double v) {
+        if (PlatformDetector.isWebAssembly()) {
+            return v != v;
+        } else {
+            return nativeIsNaN(v);
+        }
+    }
+
     @JSBody(params = "v", script = "return isNaN(v);")
     @Import(module = "teavm", name = "isnan")
     @NoSideEffects
     @Unmanaged
-    public static native boolean isNaN(double v);
+    private static native boolean nativeIsNaN(double v);
 
-    @JSBody(script = "return NaN;")
-    @Import(module = "teavm", name = "teavm_getNaN")
-    @NoSideEffects
-    @Unmanaged
-    private static native double getNaN();
+    public static boolean isInfinite(double v) {
+        if (PlatformDetector.isWebAssembly()) {
+            return v == (1d / 0d) || v == (-1d / 0d);
+        } else {
+            return nativeIsInfinite(v);
+        }
+    }
 
     @JSBody(params = "v", script = "return !isFinite(v);")
     @Import(module = "teavm", name = "isinf")
     @NoSideEffects
     @Unmanaged
-    public static native boolean isInfinite(double v);
+    public static native boolean nativeIsInfinite(double v);
+
+    public static boolean isFinite(double v) {
+        if (PlatformDetector.isWebAssembly()) {
+            return v < (1d / 0d) && v > (-1d / 0d);
+        } else {
+            return nativeIsFinite(v);
+        }
+    }
 
     @JSBody(params = "v", script = "return isFinite(v);")
     @Import(module = "teavm", name = "isfinite")
     @NoSideEffects
     @Unmanaged
-    public static native boolean isFinite(double v);
+    public static native boolean nativeIsFinite(double v);
+
+    public static double getNaN() {
+        if (PlatformDetector.isWebAssembly()) {
+            return 0d / 0d;
+        } else {
+            return nativeGetNaN();
+        }
+    }
+
+    @JSBody(script = "return NaN;")
+    @Import(module = "teavm", name = "teavm_getNaN")
+    @NoSideEffects
+    @Unmanaged
+    private static native double nativeGetNaN();
 
     public static long doubleToRawLongBits(double value) {
         return doubleToLongBits(value);

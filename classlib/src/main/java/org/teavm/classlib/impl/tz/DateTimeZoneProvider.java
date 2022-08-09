@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
 import org.teavm.interop.Import;
@@ -181,10 +182,21 @@ public final class DateTimeZoneProvider {
         return area.has(locationName) ? area.get(locationName) : null;
     }
 
+    private static int getNativeOffset(double instant) {
+        if (PlatformDetector.isWebAssembly()) {
+            // See https://github.com/WebAssembly/WASI/issues/467.
+            //
+            // For now, we always return UTC
+            return 0;
+        } else {
+            return getNativeOffsetSystem(instant);
+        }
+    }
+
     @JSBody(params = "instant", script = "return new Date(instant).getTimezoneOffset();")
     @Import(module = "teavm", name = "getNativeOffset")
     @Unmanaged
-    private static native int getNativeOffset(double instant);
+    private static native int getNativeOffsetSystem(double instant);
 
     private static native ResourceMap<ResourceMap<TimeZoneResource>> getResource();
 }

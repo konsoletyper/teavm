@@ -10,6 +10,7 @@ import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.TimeZone;
 import org.teavm.interop.Export;
 
 public class Test {
@@ -34,6 +35,43 @@ public class Test {
         String var2 = string.substring(index + 1);
         System.out.print(System.getenv(var1));
         System.out.print(System.getenv(var2));
+    }
+
+    @Export(name = "floats")
+    public static void floats() throws IOException {
+        String string = readString();
+        int index = string.indexOf('/');
+        float n1 = Float.parseFloat(string.substring(0, index));
+        float n2 = Float.parseFloat(string.substring(index + 1));
+        System.out.print("" + Float.isNaN(n1 / n2));
+        System.out.print(":" + Float.isFinite(n1 / n2));
+        System.out.print(":" + Float.isInfinite(n1 / n2));
+    }
+
+    @Export(name = "doubles")
+    public static void doubles() throws IOException {
+        String string = readString();
+        int index = string.indexOf('/');
+        double n1 = Double.parseDouble(string.substring(0, index));
+        double n2 = Double.parseDouble(string.substring(index + 1));
+        System.out.print("" + Double.isNaN(n1 / n2));
+        System.out.print(":" + Double.isFinite(n1 / n2));
+        System.out.print(":" + Double.isInfinite(n1 / n2));
+    }
+
+    @Export(name = "upper")
+    public static void upper() throws IOException {
+        System.out.print(readString().toUpperCase());
+    }
+
+    @Export(name = "lower")
+    public static void lower() throws IOException {
+        System.out.print(readString().toLowerCase());
+    }
+
+    @Export(name = "timezone")
+    public static void timezone() throws IOException {
+        System.out.print(TimeZone.getDefault().getOffset(Long.parseLong(readString())));
     }
 
     @Export(name = "catch")

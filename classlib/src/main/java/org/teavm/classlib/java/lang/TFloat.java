@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
@@ -95,29 +96,61 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         return floatToIntBits(f);
     }
 
+    public static boolean isNaN(float v) {
+        if (PlatformDetector.isWebAssembly()) {
+            return v != v;
+        } else {
+            return nativeIsNaN(v);
+        }
+    }
+
     @JSBody(params = "v", script = "return isNaN(v);")
     @Import(module = "teavm", name = "isnan")
     @NoSideEffects
     @Unmanaged
-    public static native boolean isNaN(float v);
+    private static native boolean nativeIsNaN(float v);
+
+    public static boolean isInfinite(float v) {
+        if (PlatformDetector.isWebAssembly()) {
+            return v == (1f / 0f) || v == (-1f / 0f);
+        } else {
+            return nativeIsInfinite(v);
+        }
+    }
 
     @JSBody(params = "v", script = "return !isFinite(v);")
     @Import(module = "teavm", name = "isinf")
     @NoSideEffects
     @Unmanaged
-    public static native boolean isInfinite(float v);
+    public static native boolean nativeIsInfinite(float v);
+
+    public static boolean isFinite(float v) {
+        if (PlatformDetector.isWebAssembly()) {
+            return v < (1f / 0f) && v > (-1f / 0f);
+        } else {
+            return nativeIsFinite(v);
+        }
+    }
 
     @JSBody(params = "v", script = "return isFinite(v);")
     @Import(module = "teavm", name = "isfinite")
     @NoSideEffects
     @Unmanaged
-    public static native boolean isFinite(float v);
+    public static native boolean nativeIsFinite(float v);
+
+    public static float getNaN() {
+        if (PlatformDetector.isWebAssembly()) {
+            return 0f / 0f;
+        } else {
+            return nativeGetNaN();
+        }
+    }
 
     @JSBody(script = "return NaN;")
     @Import(module = "teavm", name = "teavm_getNaN")
     @NoSideEffects
     @Unmanaged
-    private static native float getNaN();
+    private static native float nativeGetNaN();
 
     public static float parseFloat(TString string) throws TNumberFormatException {
         // TODO: parse infinite and different radix

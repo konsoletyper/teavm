@@ -44,6 +44,18 @@ function expect_nonexistence {
 
 expect_eq "foo bar baz" "$($runtime $wasm foo bar baz)"
 
+for which in floats doubles; do
+  expect_eq "false:true:false" "$($runtime --invoke $which $wasm <<<1/2)"
+  expect_eq "false:false:true" "$($runtime --invoke $which $wasm <<<1/0)"
+  expect_eq "false:false:true" "$($runtime --invoke $which $wasm <<<-1/0)"
+  expect_eq "true:false:false" "$($runtime --invoke $which $wasm <<<0/0)"
+done
+
+expect_eq "alifuelzb89" "$($runtime --invoke lower $wasm <<<alIFUElzB89)"
+expect_eq "ALIFUELZB89" "$($runtime --invoke upper $wasm <<<alIFUElzB89)"
+
+expect_eq 0 "$($runtime --invoke timezone $wasm <<<1660079800000)"
+
 expect_eq 42713 "$($runtime --env foo=42 --env bar=713 --invoke env $wasm <<<foo:bar)"
 
 expect_eq hello "$($runtime --invoke catch $wasm <<<hello)"

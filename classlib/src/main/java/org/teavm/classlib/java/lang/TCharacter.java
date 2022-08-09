@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
@@ -235,8 +236,21 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return (char) toLowerCase((int) ch);
     }
 
-    @DelegateTo("toLowerCaseLowLevel")
     public static int toLowerCase(int ch) {
+        if (PlatformDetector.isWebAssembly()) {
+            // TODO: Implement this for non-ascii chars.
+            if (ch >= 'A' && ch <= 'Z') {
+                return (ch - 'A') + 'a';
+            } else {
+                return ch;
+            }
+        } else {
+            return toLowerCasePlatform(ch);
+        }
+    }
+
+    @DelegateTo("toLowerCaseLowLevel")
+    private static int toLowerCasePlatform(int ch) {
         return Platform.stringFromCharCode(ch).toLowerCase().charCodeAt(0);
     }
 
@@ -253,8 +267,21 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return (char) toUpperCase((int) ch);
     }
 
+    public static int toUpperCase(int ch) {
+        if (PlatformDetector.isWebAssembly()) {
+            // TODO: Implement this for non-ascii chars.
+            if (ch >= 'a' && ch <= 'z') {
+                return (ch - 'a') + 'A';
+            } else {
+                return ch;
+            }
+        } else {
+            return toLowerCasePlatform(ch);
+        }
+    }
+
     @DelegateTo("toUpperCaseLowLevel")
-    public static int toUpperCase(int codePoint) {
+    public static int toUpperCasePlatform(int codePoint) {
         return Platform.stringFromCharCode(codePoint).toUpperCase().charCodeAt(0);
     }
 
