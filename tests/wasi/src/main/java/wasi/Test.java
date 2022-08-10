@@ -14,92 +14,237 @@ import java.util.TimeZone;
 import org.teavm.interop.Export;
 
 public class Test {
-    public static void main(String[] args) {
-        for (int i = 0; i < args.length; ++i) {
-            System.out.print(args[i]);
-            if (i < args.length - 1) {
-                System.out.print(" ");
+    public static void main(String[] args) throws IOException {
+        switch (args[0]) {
+        case "echo-args": {
+            for (int i = 1; i < args.length; ++i) {
+                System.out.print(args[i]);
+                if (i < args.length - 1) {
+                    System.out.print(" ");
+                }
             }
+            break;
+        }
+        case "random": {
+            System.out.print(Math.random());
+            break;
+        }
+        case "env": {
+            System.out.print(System.getenv(args[1]));
+            System.out.print(System.getenv(args[2]));
+            break;
+        }
+        case "floats": {
+            float n1 = Float.parseFloat(args[1]);
+            float n2 = Float.parseFloat(args[2]);
+            System.out.print("" + Float.isNaN(n1 / n2));
+            System.out.print(":" + Float.isFinite(n1 / n2));
+            System.out.print(":" + Float.isInfinite(n1 / n2));
+            break;
+        }
+        case "doubles": {
+            double n1 = Double.parseDouble(args[1]);
+            double n2 = Double.parseDouble(args[2]);
+            System.out.print("" + Double.isNaN(n1 / n2));
+            System.out.print(":" + Double.isFinite(n1 / n2));
+            System.out.print(":" + Double.isInfinite(n1 / n2));
+            break;
+        }
+        case "catch": {
+            try {
+                doThrow(args[1]);
+            } catch (Exception e) {
+                System.out.print(e.getMessage());
+            }
+            break;
+        }
+        case "epoch": {
+            System.out.print(System.currentTimeMillis());
+            break;
+        }
+        case "stdin": {
+            byte[] buffer = new byte[256];
+            int count = 0;
+            while ((count = System.in.read(buffer, 0, buffer.length)) != -1) {
+                System.out.write(buffer, 0, count);
+            }
+            break;
+        }
+        case "mkdirs": {
+            if (!new File(args[1]).mkdirs()) {
+                throw new AssertionError();
+            }
+            break;
+        }
+        case "create": {
+            if (!new File(args[1]).createNewFile()) {
+                throw new AssertionError();
+            }
+            break;
+        }
+        case "create_already_exists": {
+            if (new File(args[1]).createNewFile()) {
+                throw new AssertionError();
+            }
+            break;
+        }
+        case "write": {
+            try (PrintStream out = new PrintStream(new FileOutputStream(args[1]))) {
+                out.print(args[2]);
+            }
+            break;
+        }
+        case "read": {
+            try (InputStream in = new FileInputStream(args[1])) {
+                System.out.println(readString(in));
+            }
+            break;
+        }
+        case "seek": {
+            long position = Long.parseLong(args[2]);
+            RandomAccessFile file = new RandomAccessFile(args[1], "r");
+            long length = file.length();
+            file.seek(position);
+            if (position != file.getFilePointer()) {
+                throw new AssertionError();
+            }
+            byte[] buffer = new byte[(int) (length - position)];
+            file.readFully(buffer);
+            System.out.write(buffer);
+            break;
+        }
+        case "resize": {
+            long length = Long.parseLong(args[2]);
+            new RandomAccessFile(args[1], "rw").setLength(length);
+            break;
+        }
+        case "length": {
+            System.out.println(new File(args[1]).length());
+            break;
+        }
+        case "rename": {
+            if (!new File(args[1]).renameTo(new File(args[2]))) {
+                throw new AssertionError();
+            }
+            break;
+        }
+        case "delete": {
+            if (!new File(args[1]).delete()) {
+                throw new AssertionError();
+            }
+            break;
+        }
+        case "list": {
+            File[] files = new File(args[1]).listFiles();
+            String[] names = new String[files.length];
+            for (int i = 0; i < files.length; ++i) {
+                names[i] = files[i].getName();
+            }
+            Arrays.sort(names);
+
+            for (int i = 0; i < names.length; ++i) {
+                System.out.print(names[i]);
+                if (i < names.length - 1) {
+                    System.out.print(" ");
+                }
+            }
+            break;
+        }
+        case "mtime": {
+            long time = Long.parseLong(args[2]);
+            if (!new File(args[1]).setLastModified(time)) {
+                throw new AssertionError();
+            }
+            if (time != new File(args[1]).lastModified()) {
+                throw new AssertionError();
+            }
+            break;
+        }
+        case "bad-mkdirs": {
+            if (new File(args[1]).mkdirs()) {
+                throw new AssertionError();
+            }
+            System.out.print("SUCCESS");
+            break;
+        }
+        case "bad-create": {
+            try {
+                new File(args[1]).createNewFile();
+                throw new AssertionError();
+            } catch (IOException e) {
+                System.out.print("SUCCESS");
+            }
+            break;
+        }
+        case "bad-write": {
+            try {
+                new FileOutputStream(args[1]);
+                throw new AssertionError();
+            } catch (FileNotFoundException e) {
+                System.out.print("SUCCESS");
+            }
+            break;
+        }
+        case "bad-read": {
+            try {
+                new FileInputStream(args[1]);
+                throw new AssertionError();
+            } catch (FileNotFoundException e) {
+                System.out.print("SUCCESS");
+            }
+            break;
+        }
+        case "bad-random-access": {
+            try {
+                new RandomAccessFile(args[1], "r");
+                throw new AssertionError();
+            } catch (FileNotFoundException e) {
+                System.out.print("SUCCESS");
+            }
+            break;
+        }
+        case "bad-length": {
+            if (new File(args[1]).length() != 0) {
+                throw new AssertionError();
+            }
+            System.out.print("SUCCESS");
+            break;
+        }
+        case "bad-rename": {
+            if (new File(args[1]).renameTo(new File(args[2]))) {
+                throw new AssertionError();
+            }
+            System.out.print("SUCCESS");
+            break;
+        }
+        case "bad-delete": {
+            if (new File(args[1]).delete()) {
+                throw new AssertionError();
+            }
+            System.out.print("SUCCESS");
+            break;
+        }
+        case "bad-list": {
+            if (new File(args[1]).listFiles() != null) {
+                throw new AssertionError();
+            }
+            System.out.print("SUCCESS");
+            break;
+        }
+        case "bad-mtime": {
+            if (new File(args[1]).lastModified() != 0) {
+                throw new AssertionError();
+            }
+            System.out.print("SUCCESS");
+            break;
+        }
+        default:
+            System.err.println("unknown command: " + args[0]);
         }
     }
 
     private static void doThrow(String message) throws Exception {
         throw new Exception(message);
-    }
-
-    @Export(name = "random")
-    public static void random() {
-        System.out.print(Math.random());
-    }
-
-    @Export(name = "env")
-    public static void env() throws IOException {
-        String string = readString();
-        int index = string.indexOf(':');
-        String var1 = string.substring(0, index);
-        String var2 = string.substring(index + 1);
-        System.out.print(System.getenv(var1));
-        System.out.print(System.getenv(var2));
-    }
-
-    @Export(name = "floats")
-    public static void floats() throws IOException {
-        String string = readString();
-        int index = string.indexOf('/');
-        float n1 = Float.parseFloat(string.substring(0, index));
-        float n2 = Float.parseFloat(string.substring(index + 1));
-        System.out.print("" + Float.isNaN(n1 / n2));
-        System.out.print(":" + Float.isFinite(n1 / n2));
-        System.out.print(":" + Float.isInfinite(n1 / n2));
-    }
-
-    @Export(name = "doubles")
-    public static void doubles() throws IOException {
-        String string = readString();
-        int index = string.indexOf('/');
-        double n1 = Double.parseDouble(string.substring(0, index));
-        double n2 = Double.parseDouble(string.substring(index + 1));
-        System.out.print("" + Double.isNaN(n1 / n2));
-        System.out.print(":" + Double.isFinite(n1 / n2));
-        System.out.print(":" + Double.isInfinite(n1 / n2));
-    }
-
-    @Export(name = "upper")
-    public static void upper() throws IOException {
-        System.out.print(readString().toUpperCase());
-    }
-
-    @Export(name = "lower")
-    public static void lower() throws IOException {
-        System.out.print(readString().toLowerCase());
-    }
-
-    @Export(name = "timezone")
-    public static void timezone() throws IOException {
-        System.out.print(TimeZone.getDefault().getOffset(Long.parseLong(readString())));
-    }
-
-    @Export(name = "catch")
-    public static void doCatch() {
-        try {
-            doThrow(readString());
-        } catch (Exception e) {
-            System.out.print(e.getMessage());
-        }
-    }
-
-    @Export(name = "epoch")
-    public static void epoch() {
-        System.out.print(System.currentTimeMillis());
-    }
-
-    @Export(name = "stdin")
-    public static void stdin() throws IOException {
-        byte[] buffer = new byte[256];
-        int count = 0;
-        while ((count = System.in.read(buffer, 0, buffer.length)) != -1) {
-            System.out.write(buffer, 0, count);
-        }
     }
 
     private static String readString(InputStream in) throws IOException {
@@ -115,220 +260,5 @@ public class Test {
         }
 
         return new String(buffer, 0, offset, StandardCharsets.UTF_8).trim();
-    }
-
-    private static String readString() throws IOException {
-        return readString(System.in);
-    }
-
-    @Export(name = "mkdirs")
-    public static void mkdirs() throws IOException {
-        if (!new File(readString()).mkdirs()) {
-            throw new AssertionError();
-        }
-    }
-
-    @Export(name = "create")
-    public static void create() throws IOException {
-        if (!new File(readString()).createNewFile()) {
-            throw new AssertionError();
-        }
-    }
-
-    @Export(name = "create_already_exists")
-    public static void createAlreadyExists() throws IOException {
-        if (new File(readString()).createNewFile()) {
-            throw new AssertionError();
-        }
-    }
-
-    @Export(name = "write")
-    public static void write() throws IOException {
-        String string = readString();
-        int index = string.indexOf(':');
-        String path = string.substring(0, index);
-        String message = string.substring(index + 1);
-        try (PrintStream out = new PrintStream(new FileOutputStream(path))) {
-            out.print(message);
-        }
-    }
-
-    @Export(name = "read")
-    public static void read() throws IOException {
-        try (InputStream in = new FileInputStream(readString())) {
-            System.out.println(readString(in));
-        }
-    }
-
-    @Export(name = "seek")
-    public static void seek() throws IOException {
-        String string = readString();
-        int index = string.indexOf(':');
-        String path = string.substring(0, index);
-        long position = Long.parseLong(string.substring(index + 1));
-        RandomAccessFile file = new RandomAccessFile(path, "r");
-        long length = file.length();
-        file.seek(position);
-        if (position != file.getFilePointer()) {
-            throw new AssertionError();
-        }
-        byte[] buffer = new byte[(int) (length - position)];
-        file.readFully(buffer);
-        System.out.write(buffer);
-    }
-
-    @Export(name = "resize")
-    public static void resize() throws IOException {
-        String string = readString();
-        int index = string.indexOf(':');
-        String path = string.substring(0, index);
-        long length = Long.parseLong(string.substring(index + 1));
-        new RandomAccessFile(path, "rw").setLength(length);
-    }
-
-    @Export(name = "length")
-    public static void length() throws IOException {
-        System.out.println(new File(readString()).length());
-    }
-
-    @Export(name = "rename")
-    public static void rename() throws IOException {
-        String string = readString();
-        int index = string.indexOf(':');
-        String oldPath = string.substring(0, index);
-        String newPath = string.substring(index + 1);
-        if (!new File(oldPath).renameTo(new File(newPath))) {
-            throw new AssertionError();
-        }
-    }
-
-    @Export(name = "delete")
-    public static void delete() throws IOException {
-        if (!new File(readString()).delete()) {
-            throw new AssertionError();
-        }
-    }
-
-    @Export(name = "list")
-    public static void list() throws IOException {
-        File[] files = new File(readString()).listFiles();
-        String[] names = new String[files.length];
-        for (int i = 0; i < files.length; ++i) {
-            names[i] = files[i].getName();
-        }
-        Arrays.sort(names);
-
-        for (int i = 0; i < names.length; ++i) {
-            System.out.print(names[i]);
-            if (i < names.length - 1) {
-                System.out.print(" ");
-            }
-        }
-    }
-
-    @Export(name = "mtime")
-    public static void mtime() throws IOException {
-        String string = readString();
-        int index = string.indexOf(':');
-        String path = string.substring(0, index);
-        long time = Long.parseLong(string.substring(index + 1));
-        if (!new File(path).setLastModified(time)) {
-            throw new AssertionError();
-        }
-        if (time != new File(path).lastModified()) {
-            throw new AssertionError();
-        }
-    }
-
-    @Export(name = "bad_mkdirs")
-    public static void badMkdirs() throws IOException {
-        if (new File(readString()).mkdirs()) {
-            throw new AssertionError();
-        }
-        System.out.print("SUCCESS");
-    }
-
-    @Export(name = "bad_create")
-    public static void badCreate() throws IOException {
-        try {
-            new File(readString()).createNewFile();
-            throw new AssertionError();
-        } catch (IOException e) {
-            System.out.print("SUCCESS");
-        }
-    }
-
-    @Export(name = "bad_write")
-    public static void badWrite() throws IOException {
-        try {
-            new FileOutputStream(readString());
-            throw new AssertionError();
-        } catch (FileNotFoundException e) {
-            System.out.print("SUCCESS");
-        }
-    }
-
-    @Export(name = "bad_read")
-    public static void badRead() throws IOException {
-        try {
-            new FileInputStream(readString());
-            throw new AssertionError();
-        } catch (FileNotFoundException e) {
-            System.out.print("SUCCESS");
-        }
-    }
-
-    @Export(name = "bad_random_access")
-    public static void badRandomAccess() throws IOException {
-        try {
-            new RandomAccessFile(readString(), "r");
-            throw new AssertionError();
-        } catch (FileNotFoundException e) {
-            System.out.print("SUCCESS");
-        }
-    }
-
-    @Export(name = "bad_length")
-    public static void badLength() throws IOException {
-        if (new File(readString()).length() != 0) {
-            throw new AssertionError();
-        }
-        System.out.print("SUCCESS");
-    }
-
-    @Export(name = "bad_rename")
-    public static void badRename() throws IOException {
-        String string = readString();
-        int index = string.indexOf(':');
-        String oldPath = string.substring(0, index);
-        String newPath = string.substring(index + 1);
-        if (new File(oldPath).renameTo(new File(newPath))) {
-            throw new AssertionError();
-        }
-        System.out.print("SUCCESS");
-    }
-
-    @Export(name = "bad_delete")
-    public static void badDelete() throws IOException {
-        if (new File(readString()).delete()) {
-            throw new AssertionError();
-        }
-        System.out.print("SUCCESS");
-    }
-
-    @Export(name = "bad_list")
-    public static void badList() throws IOException {
-        if (new File(readString()).listFiles() != null) {
-            throw new AssertionError();
-        }
-        System.out.print("SUCCESS");
-    }
-
-    @Export(name = "bad_mtime")
-    public static void badMtime() throws IOException {
-        if (new File(readString()).lastModified() != 0) {
-            throw new AssertionError();
-        }
-        System.out.print("SUCCESS");
     }
 }

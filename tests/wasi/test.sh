@@ -42,79 +42,74 @@ function expect_nonexistence {
   fi
 }
 
-expect_eq "foo bar baz" "$($runtime $wasm foo bar baz)"
+expect_eq "foo bar baz" "$($runtime $wasm echo-args foo bar baz)"
 
 for which in floats doubles; do
-  expect_eq "false:true:false" "$($runtime --invoke $which $wasm <<<1/2)"
-  expect_eq "false:false:true" "$($runtime --invoke $which $wasm <<<1/0)"
-  expect_eq "false:false:true" "$($runtime --invoke $which $wasm <<<-1/0)"
-  expect_eq "true:false:false" "$($runtime --invoke $which $wasm <<<0/0)"
+  expect_eq "false:true:false" "$($runtime $wasm $which 1 2)"
+  expect_eq "false:false:true" "$($runtime $wasm $which 1 0)"
+  expect_eq "false:false:true" "$($runtime $wasm $which -1 0)"
+  expect_eq "true:false:false" "$($runtime $wasm $which 0 0)"
 done
 
-expect_eq "alifuelzb89" "$($runtime --invoke lower $wasm <<<alIFUElzB89)"
-expect_eq "ALIFUELZB89" "$($runtime --invoke upper $wasm <<<alIFUElzB89)"
+expect_eq 42713 "$($runtime --env foo=42 --env bar=713 $wasm env foo bar)"
 
-expect_eq 0 "$($runtime --invoke timezone $wasm <<<1660079800000)"
-
-expect_eq 42713 "$($runtime --env foo=42 --env bar=713 --invoke env $wasm <<<foo:bar)"
-
-expect_eq hello "$($runtime --invoke catch $wasm <<<hello)"
+expect_eq hello "$($runtime $wasm catch hello)"
 
 expect_almost_eq \
   $(printf "%0.f" "$(bc <<<"$(date +"%s.%N")*1000")") \
-  "$($runtime --invoke epoch $wasm)"
+  "$($runtime $wasm epoch)"
 
-expect_eq "foo bar baz" "$($runtime --invoke stdin $wasm <<<"foo bar baz")"
+expect_eq "foo bar baz" "$($runtime $wasm stdin <<<"foo bar baz")"
 
 rm -rf foo bar
 mkdir foo
 mkdir bar
-$runtime --dir bar --dir foo --invoke mkdirs $wasm <<<foo/bar/baz
+$runtime --dir bar --dir foo $wasm mkdirs foo/bar/baz
 expect_is_dir foo/bar/baz
 rm -r foo/bar
 
-$runtime --dir bar --dir foo --invoke create $wasm <<<foo/bar.txt
+$runtime --dir bar --dir foo $wasm create foo/bar.txt
 expect_is_file foo/bar.txt
 
-$runtime --dir bar --dir foo --invoke create_already_exists $wasm <<<foo/bar.txt
+$runtime --dir bar --dir foo $wasm create_already_exists foo/bar.txt
 expect_is_file foo/bar.txt
 
-$runtime --dir foo --invoke write $wasm <<<foo/bar.txt:hola
+$runtime --dir foo $wasm write foo/bar.txt hola
 expect_eq hola "$(cat foo/bar.txt)"
 
-expect_eq hola "$($runtime --dir foo --invoke read $wasm <<<foo/bar.txt)"
+expect_eq hola "$($runtime --dir foo $wasm read foo/bar.txt)"
 
-expect_eq la "$($runtime --dir foo --invoke seek $wasm <<<foo/bar.txt:2)"
+expect_eq la "$($runtime --dir foo $wasm seek foo/bar.txt 2)"
 
-$runtime --dir foo --invoke resize $wasm <<<foo/bar.txt:1
+$runtime --dir foo $wasm resize foo/bar.txt 1
 expect_eq h "$(cat foo/bar.txt)"
 
-$runtime --dir foo --invoke rename $wasm <<<foo/bar.txt:foo/um.txt
+$runtime --dir foo $wasm rename foo/bar.txt foo/um.txt
 expect_nonexistence foo/bar.txt
 expect_eq h "$(cat foo/um.txt)"
 
-$runtime --dir foo --invoke delete $wasm <<<foo/um.txt
+$runtime --dir foo $wasm delete foo/um.txt
 expect_nonexistence foo/um.txt
 
 touch foo/a.txt foo/b.txt foo/c.txt
-expect_eq "a.txt b.txt c.txt" "$($runtime --dir foo --invoke list $wasm <<<foo)"
+expect_eq "a.txt b.txt c.txt" "$($runtime --dir foo $wasm list foo)"
 
-$runtime --dir foo --invoke mtime $wasm <<<foo/a.txt:274853014000
+$runtime --dir foo $wasm mtime foo/a.txt 274853014000
 expect_eq 274853014 "$(stat -c %Y foo/a.txt)"
 
-expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_mkdirs $wasm <<<bar/baz/buzz)"
-expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_create $wasm <<<bar/baz.txt)"
-expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_write $wasm <<<bar/baz.txt)"
+expect_eq "SUCCESS" "$($runtime --dir foo $wasm bad-mkdirs bar/baz/buzz)"
+expect_eq "SUCCESS" "$($runtime --dir foo $wasm bad-create bar/baz.txt)"
+expect_eq "SUCCESS" "$($runtime --dir foo $wasm bad-write bar/baz.txt)"
 
 for path in foo/does-not-exist.txt bar/baz.txt; do
-  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_read $wasm <<<$path)"
-  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_random_access $wasm <<<$path)"
-  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_length $wasm <<<$path)"
-  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_rename $wasm <<<$path:foo/wow.txt)"
-  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_rename $wasm <<<foo/wow.txt:$path)"
-  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_delete $wasm <<<$path)"
-  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_list $wasm <<<$path)"
-  expect_eq "SUCCESS" "$($runtime --dir foo --invoke bad_mtime $wasm <<<$path)"
+  expect_eq "SUCCESS" "$($runtime --dir foo $wasm bad-read $path)"
+  expect_eq "SUCCESS" "$($runtime --dir foo $wasm bad-random-access $path)"
+  expect_eq "SUCCESS" "$($runtime --dir foo $wasm bad-length $path)"
+  expect_eq "SUCCESS" "$($runtime --dir foo $wasm bad-rename $path foo/wow.txt)"
+  expect_eq "SUCCESS" "$($runtime --dir foo $wasm bad-rename foo/wow.txt $path)"
+  expect_eq "SUCCESS" "$($runtime --dir foo $wasm bad-delete $path)"
+  expect_eq "SUCCESS" "$($runtime --dir foo $wasm bad-list $path)"
+  expect_eq "SUCCESS" "$($runtime --dir foo $wasm bad-mtime $path)"
 done
 
 rm -r foo bar
