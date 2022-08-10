@@ -80,7 +80,9 @@ public class WasiVirtualFile implements VirtualFile {
                 break;
             }
 
-            if (preopened.name.length() > bestName.length() && path.startsWith(preopened.name + "/")) {
+            if (preopened.name.length() > bestName.length()
+                && (path.startsWith(preopened.name + "/")
+                    || preopened.name.equals("/"))) {
                 bestFd = preopened.fd;
                 bestName = preopened.name;
             }
