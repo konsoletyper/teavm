@@ -73,7 +73,7 @@ class CRunStrategy implements TestRunStrategy {
                 if (run.getArgument() != null) {
                     runCommand.add(run.getArgument());
                 }
-                runProcess(new ProcessBuilder(runCommand.toArray(new String[0])).start(), runtimeOutput, stdout);
+                runProcess(new ProcessBuilder(runCommand.toArray(new String[0])).start(), runtimeOutput, stdout, 0);
             }
             if (!stdout.isEmpty() && stdout.get(stdout.size() - 1).equals("SUCCESS")) {
                 writeLines(runtimeOutput);
@@ -121,13 +121,36 @@ class CRunStrategy implements TestRunStrategy {
     private boolean runCompiler(File inputDir, List<String> output)
             throws IOException, InterruptedException {
         String command = new File(compilerCommand).getAbsolutePath();
-        return runProcess(new ProcessBuilder(command).directory(inputDir).start(), output, new ArrayList<>());
+        return runProcess(new ProcessBuilder(command).directory(inputDir).start(), output, new ArrayList<>(), 0);
     }
 
-    static boolean runProcess(Process process, List<String> output, List<String> stdout) throws InterruptedException {
+    static boolean runProcess(Process process, List<String> output, List<String> stdout, long timeoutMillis)
+           throws InterruptedException {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(process.getInputStream()));
         BufferedReader stderr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
         ConcurrentLinkedQueue<String> lines = new ConcurrentLinkedQueue<>();
+
+        if (timeoutMillis > 0) {
+            Thread thread = new Thread(() -> {
+                    long then = System.currentTimeMillis();
+                    try {
+                        while (true) {
+                            long now = System.currentTimeMillis();
+                            if (now < then + timeoutMillis) {
+                                Thread.sleep((then + timeoutMillis) - now);
+                            } else {
+                                break;
+                            }
+                        }
+                        lines.add("TIMEOUT");
+                        process.destroy();
+                    } catch (InterruptedException e) {
+                        // do nothing
+                    }
+            });
+            thread.setDaemon(true);
+            thread.start();
+        }
 
         Thread thread = new Thread(() -> {
             try {

@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 class WasiRunStrategy implements TestRunStrategy {
+    private static final long TIMEOUT_MILLIS = 5 * 60 * 1000;
+
     private final String runtime;
 
     WasiRunStrategy(String runtime) {
@@ -58,13 +60,16 @@ class WasiRunStrategy implements TestRunStrategy {
                 runCommand.add(run.getArgument());
             }
 
-            runProcess(new ProcessBuilder(runCommand.toArray(new String[0])).start(), runtimeOutput, stdout);
+            synchronized (this) {
+                runProcess(new ProcessBuilder(runCommand.toArray(new String[0])).start(), runtimeOutput, stdout,
+                           TIMEOUT_MILLIS);
 
-            if (!stdout.isEmpty() && stdout.get(stdout.size() - 1).equals("SUCCESS")) {
-                writeLines(runtimeOutput);
-                run.getCallback().complete();
-            } else {
-                run.getCallback().error(new RuntimeException("Test failed:\n" + mergeLines(runtimeOutput)));
+                if (!stdout.isEmpty() && stdout.get(stdout.size() - 1).equals("SUCCESS")) {
+                    writeLines(runtimeOutput);
+                    run.getCallback().complete();
+                } else {
+                    run.getCallback().error(new RuntimeException("Test failed:\n" + mergeLines(runtimeOutput)));
+                }
             }
         } catch (InterruptedException e) {
             run.getCallback().complete();
