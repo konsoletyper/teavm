@@ -652,6 +652,29 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 writer.append(line).append('\n');
             }
         }
+
+        String[] paths = new String[] {
+            "node_modules/browser_wasi_shim/fd.js",
+            "node_modules/browser_wasi_shim/fs_fd.js",
+            "node_modules/browser_wasi_shim/fs_core.js",
+            "node_modules/browser_wasi_shim/wasi.js",
+            "node_modules/browser_wasi_shim/wasi_defs.js",
+        };
+
+        for (String path : paths) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    loader.getResourceAsStream("org/teavm/backend/wasm/" + path), StandardCharsets.UTF_8));
+                 Writer writer = new OutputStreamWriter(buildTarget.createResource(path),
+                         StandardCharsets.UTF_8)) {
+                while (true) {
+                    String line = reader.readLine();
+                    if (line == null) {
+                        break;
+                    }
+                    writer.append(line).append('\n');
+                }
+            }
+        }
     }
 
     private void generateMethods(ListableClassHolderSource classes, WasmGenerationContext context,

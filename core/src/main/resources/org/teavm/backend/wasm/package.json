@@ -1,0 +1,28 @@
+{
+  "name": "teavm_browser_shim",
+  "version": "1.0.0",
+  "description": "Shim for running TeaVM-generated Wasm modules in a web browser",
+  "scripts": {
+    "test": ":"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/konsoletyper/teavm.git"
+  },
+  "keywords": [
+    "teavm",
+    "wasi",
+    "webassembly",
+    "wasm",
+    "java"
+  ],
+  "author": "TeaVM Contributors",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/konsoletyper/teavm/issues"
+  },
+  "homepage": "https://teavm.org",
+  "dependencies": {
+    "browser_wasi_shim": "git+https://github.com/bjorn3/browser_wasi_shim.git"
+  }
+}

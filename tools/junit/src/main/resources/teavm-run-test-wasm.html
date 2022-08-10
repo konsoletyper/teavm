@@ -23,7 +23,7 @@
   <body>
     <script type="text/javascript" src="${SCRIPT}-runtime.js"></script>
     <script type="text/javascript">
-        TeaVM.wasm.load("${SCRIPT}").then(teavm => teavm.main(["${IDENTIFIER}"]));
+        TeaVM.wasm.load("${SCRIPT}", { args: "${IDENTIFIER}" }).then(teavm => teavm.main());
     </script>
   </body>
 </html>

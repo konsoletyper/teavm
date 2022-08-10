@@ -121,9 +121,10 @@ function launchWasmTest(path, argument, callback) {
                 status: "failed",
                 errorMessage: err.message + '\n' + err.stack
             }));
-        }
+        },
+        args: argument ? [argument] : []
     }).then(teavm => {
-        teavm.main(argument ? [argument] : []);
+        teavm.main();
     })
     .then(() => {
         callback(wrapResponse({ status: "OK" }));

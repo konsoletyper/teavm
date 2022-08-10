@@ -14,11 +14,15 @@
  *  limitations under the License.
  */
 
+const fdImport = import("./node_modules/browser_wasi_shim/fd.js");
+const fsFdImport = import("./node_modules/browser_wasi_shim/fs_fd.js");
+const wasiImport = import("./node_modules/browser_wasi_shim/wasi.js");
+
 var TeaVM = TeaVM || {};
 TeaVM.wasm = function() {
     class JavaError extends Error {
         constructor(message) {
-            super(message)
+            super(message);
         }
     }
 
@@ -84,19 +88,10 @@ TeaVM.wasm = function() {
         controller.reject = null;
         controller.complete = false;
         obj.teavm = {
-            currentTimeMillis: currentTimeMillis,
-            nanoTime: function() { return performance.now(); },
-            isnan: isNaN,
-            teavm_getNaN: function() { return NaN; },
-            isinf: function(n) { return !isFinite(n) },
-            isfinite: isFinite,
             putwchar: putwchar,
             towlower: towlower,
             towupper: towupper,
             getNativeOffset: getNativeOffset,
-            logString: string => logString(string, controller),
-            logInt: logInt,
-            logOutOfMemory: () => console.log("Out of memory"),
             teavm_interrupt: () => interrupt(controller)
         };
 
@@ -138,7 +133,6 @@ TeaVM.wasm = function() {
             teavm[name] = wrapExport(instance.exports["teavm_" + name], instance);
         }
 
-        teavm.main = createMain(teavm, instance.exports.main);
         return teavm;
     }
 
@@ -180,7 +174,7 @@ TeaVM.wasm = function() {
         }).then(data => create(data, options));
     }
 
-    function create(data, options) {
+    async function create(data, options) {
         if (!options) {
             options = {};
         }
@@ -191,36 +185,65 @@ TeaVM.wasm = function() {
             options.installImports(importObj);
         }
 
-        return WebAssembly.instantiate(data, importObj).then(resultObject => {
-            controller.instance = resultObject.instance;
-            let teavm = createTeaVM(resultObject.instance);
-            teavm.main = createMain(teavm, controller);
-            return teavm;
-        });
+        let args = options.args || [];
+        // WASI expects the first argument to be the executable name, so we prepend a dummy arg here:
+        args = args.slice();
+        args.unshift("");
+
+        const env = [];
+
+        const { Fd } = await fdImport;
+        const { PreopenDirectory } = await fsFdImport;
+        const { default: WASI } = await wasiImport;
+
+        class LogFd extends Fd {
+            constructor(putwchar) {
+                super();
+                this.putwchar = putwchar;
+            }
+
+            fd_write(view8, iovs) {
+                let nwritten = 0;
+                let decoder = new TextDecoder("utf-8");
+                for (let iovec of iovs) {
+                    let string = decoder.decode(view8.slice(iovec.buf, iovec.buf + iovec.buf_len));
+                    for (let i = 0; i < string.length; ++i) {
+                        this.putwchar(string.charCodeAt(i));
+                    }
+                    nwritten += iovec.buf_len;
+                }
+                return { ret: 0, nwritten };
+            }
+        }
+
+        const fds = [
+            new Fd(),
+            new LogFd(importObj.teavm.putwchar),
+            new LogFd(importObj.teavm.putwchar),
+            new PreopenDirectory("/", {})
+        ];
+
+        const wasi = new WASI(args, env, fds);
+
+        const imports = {
+            ...{ "wasi_snapshot_preview1": wasi.wasiImport },
+            ...importObj
+        };
+
+        const { instance } = await WebAssembly.instantiate(data, imports);
+
+        controller.instance = instance;
+        let teavm = createTeaVM(instance);
+        teavm.main = createMain(teavm, controller, wasi);
+        return teavm;
     }
 
-    function createMain(teavm, controller) {
-        return function(args) {
-            if (typeof args === "undefined") {
-                args = [];
-            }
+    function createMain(teavm, controller, wasi) {
+        return function() {
             return new Promise((resolve, reject) => {
-                let javaArgs = teavm.allocateStringArray(args.length);
-                let javaArgsData = new DataView(teavm.memory.buffer, teavm.objectArrayData(javaArgs), args.length * 4);
-                for (let i = 0; i < args.length; ++i) {
-                    let arg = args[i];
-                    let javaArg = teavm.allocateString(arg.length);
-                    let javaArgAddress = teavm.objectArrayData(teavm.stringData(javaArg));
-                    let javaArgData = new DataView(teavm.memory.buffer, javaArgAddress, arg.length * 2);
-                    for (let j = 0; j < arg.length; ++j) {
-                        javaArgData.setUint16(j * 2, arg.charCodeAt(j), true);
-                    }
-                    javaArgsData.setInt32(i * 4, javaArg, true);
-                }
-
                 controller.resolve = resolve;
                 controller.reject = reject;
-                wrapExport(teavm.instance.exports.start, teavm.instance)(javaArgs);
+                wrapExport(() => wasi.start(teavm.instance), teavm.instance)();
                 process(controller);
             });
         }
