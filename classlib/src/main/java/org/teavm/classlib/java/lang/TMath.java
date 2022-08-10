@@ -20,6 +20,7 @@ import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
+import org.teavm.interop.wasi.Wasi;
 
 @NoSideEffects
 public final class TMath extends TObject {
@@ -155,7 +156,13 @@ public final class TMath extends TObject {
 
     @Unmanaged
     public static double random() {
-        return PlatformDetector.isC() ? randomC() : randomImpl();
+        if (PlatformDetector.isC()) {
+            return randomC();
+        } else if (PlatformDetector.isWebAssembly()) {
+            return Wasi.random();
+        } else {
+            return randomImpl();
+        }
     }
 
     @Import(name = "teavm_rand")

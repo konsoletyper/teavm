@@ -49,6 +49,9 @@ public final class Wasi {
     public static final byte WHENCE_CURRENT = 1;
     public static final byte WHENCE_END = 2;
 
+    private static byte[] initialRandom;
+    private static long nextRandom;
+
     private Wasi() {
     }
 
@@ -125,6 +128,9 @@ public final class Wasi {
     public static native short pathOpen(int dirFd, int lookupFlags, Address path, int pathLength, short oflags,
                                         long baseRights, long inheritingRights, short fdflags, Address fd);
 
+    @Import(name = "random_get", module = "wasi_snapshot_preview1")
+    public static native short randomGet(Address buffer, int bufferLength);
+
     // TODO: make this an Address intrinsic that does a bulk memory operation
     public static void getBytes(Address address, byte[] bytes, int offset, int length) {
         for (int i = 0; i < length; ++i) {
@@ -173,6 +179,33 @@ public final class Wasi {
                 return;
             }
         }
+    }
+
+    public static double random() {
+        return (((long) nextRandom(26) << 27) + nextRandom(27)) / (double) (1L << 53);
+    }
+
+    private static int nextRandom(int bits) {
+        if (initialRandom == null) {
+            initialRandom = new byte[8];
+            short errno = Wasi.randomGet(Address.ofData(initialRandom), 8);
+
+            if (errno != ERRNO_SUCCESS) {
+                throw new ErrnoException("random_get", errno);
+            }
+
+            nextRandom = (initialRandom[0] & 0xFFL)
+                | ((initialRandom[1] & 0xFFL) << 8)
+                | ((initialRandom[2] & 0xFFL) << 16)
+                | ((initialRandom[3] & 0xFFL) << 24)
+                | ((initialRandom[4] & 0xFFL) << 32)
+                | ((initialRandom[5] & 0xFFL) << 40)
+                | ((initialRandom[6] & 0xFFL) << 48)
+                | ((initialRandom[7] & 0xFFL) << 56);
+        }
+
+        nextRandom = ((nextRandom * 0x5DEECE66DL) + 0xBL) & ((1L << 48) - 1);
+        return (int) (nextRandom >>> (48 - bits));
     }
 
     public static class ErrnoException extends RuntimeException {

@@ -30,16 +30,17 @@ import org.teavm.classlib.java.util.stream.intimpl.TSimpleIntStreamImpl;
 import org.teavm.classlib.java.util.stream.longimpl.TSimpleLongStreamImpl;
 import org.teavm.interop.Import;
 import org.teavm.interop.Unmanaged;
+import org.teavm.interop.wasi.Wasi;
 import org.teavm.jso.JSBody;
 
 public class TRandom extends TObject implements TSerializable {
 
     /** A stored gaussian value for nextGaussian() */
     private double storedGaussian;
-    
+
     /** Whether storedGuassian value is valid */
     private boolean haveStoredGaussian;
-    
+
     public TRandom() {
     }
 
@@ -131,10 +132,18 @@ public class TRandom extends TObject implements TSerializable {
         return v1 * m;
     }
 
+    private static double random() {
+        if (PlatformDetector.isWebAssembly()) {
+            return Wasi.random();
+        } else {
+            return nativeRandom();
+        }
+    }
+
     @JSBody(script = "return Math.random();")
     @Import(module = "teavmMath", name = "random")
     @Unmanaged
-    private static native double random();
+    private static native double nativeRandom();
 
     public TIntStream ints(long streamSize) {
         if (streamSize < 0) {

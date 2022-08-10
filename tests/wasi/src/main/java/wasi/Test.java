@@ -27,6 +27,11 @@ public class Test {
         throw new Exception(message);
     }
 
+    @Export(name = "random")
+    public static void random() {
+        System.out.print(Math.random());
+    }
+
     @Export(name = "env")
     public static void env() throws IOException {
         String string = readString();
