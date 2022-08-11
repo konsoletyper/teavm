@@ -1,3 +1,5 @@
+// @flow
+
 // Based on https://github.com/bytecodealliance/wasi/tree/d3c7a34193cb33d994b11104b22d234530232b5f
 
 export const FD_STDIN = 0;
@@ -118,17 +120,17 @@ export const RIGHTS_POLL_FD_READWRITE = 1 << 27;
 export const RIGHTS_SOCK_SHUTDOWN = 1 << 28;
 
 export class Iovec {
-    buf = 0;
-    buf_len = 0;
+    /*:: buf: number*/;
+    /*:: buf_len: number*/;
 
-    static read_bytes(view, ptr) {
+    static read_bytes(view/*: DataView*/, ptr/*: number*/)/*: Iovec*/ {
         let iovec = new Iovec();
         iovec.buf = view.getUint32(ptr, true);
         iovec.buf_len = view.getUint32(ptr + 4, true);
         return iovec;
     }
 
-    static read_bytes_array(view, ptr, len) {
+    static read_bytes_array(view/*: DataView*/, ptr/*: number*/, len/*: number*/)/*: Array<Iovec>*/ {
         let iovecs = [];
         for (let i = 0; i < len; i++) {
             iovecs.push(Iovec.read_bytes(view, ptr + 8 * i));
@@ -138,17 +140,17 @@ export class Iovec {
 }
 
 export class Ciovec {
-    buf = 0;
-    buf_len = 0;
+    /*:: buf: number*/;
+    /*:: buf_len: number*/;
 
-    static read_bytes(view, ptr) {
+    static read_bytes(view/*: DataView*/, ptr/*: number*/)/*: Ciovec*/ {
         let iovec = new Ciovec();
         iovec.buf = view.getUint32(ptr, true);
         iovec.buf_len = view.getUint32(ptr + 4, true);
         return iovec;
     }
 
-    static read_bytes_array(view, ptr, len) {
+    static read_bytes_array(view/*: DataView*/, ptr/*: number*/, len/*: number*/)/*: Array<Ciovec>*/ {
         let iovecs = [];
         for (let i = 0; i < len; i++) {
             iovecs.push(Ciovec.read_bytes(view, ptr + 8 * i));
@@ -171,25 +173,26 @@ export const FILETYPE_SOCKET_STREAM = 6;
 export const FILETYPE_SYMBOLIC_LINK = 7;
 
 export class Dirent {
-    d_next = 0n;
-    d_ino = 1n;
-    d_type = 0;
-    dir_name = [];
+    /*:: d_next: BigInt*/;
+    d_ino/*: BigInt*/ = 1n;
+    /*:: d_namlen: number*/;
+    /*:: d_type: number*/;
+    /*:: dir_name: Uint8Array*/;
 
-    constructor(next_cookie, name, type) {
+    constructor(next_cookie/*: BigInt*/, name/*: string*/, type/*: number*/) {
         let encoded_name = new TextEncoder("utf-8").encode(name);
 
         this.d_next = next_cookie;
-        this.d_namlen = encoded_name.length;
+        this.d_namlen = encoded_name.byteLength;
         this.d_type = type;
         this.dir_name = encoded_name;
     }
 
-    length() {
-        return 24 + this.dir_name.length;
+    length()/*: number*/ {
+        return 24 + this.dir_name.byteLength;
     }
 
-    write_bytes(view, view8, ptr) {
+    write_bytes(view/*: DataView*/, view8/*: Uint8Array*/, ptr/*: number*/) {
         view.setBigUint64(ptr, this.d_next, true);
         view.setBigUint64(ptr + 8, this.d_ino, true);
         view.setUint32(ptr + 16, this.dir_name.length, true); // d_namlen
@@ -212,18 +215,18 @@ export const FDFLAGS_RSYNC = 1 << 3;
 export const FDFLAGS_SYNC = 1 << 4;
 
 export class Fdstat {
-    fs_filetype = 0;
-    fs_flags = 0;
-    fs_rights_base = 0n;
-    fs_rights_inherited = 0n;
+    /*:: fs_filetype: number*/;
+    /*:: fs_flags: number*/;
+    fs_rights_base/*: BigInt*/ = 0n;
+    fs_rights_inherited/*: BigInt*/ = 0n;
 
-    constructor(filetype, flags) {
+    constructor(filetype/*: number*/, flags/*: number*/) {
         this.fs_filetype = filetype;
         this.fs_flags = flags;
     }
 
-    write_bytes(view, ptr) {
-        view.setUint8(ptr, this.fs_filetype, true);
+    write_bytes(view/*: DataView*/, ptr/*: number*/) {
+        view.setUint8(ptr, this.fs_filetype);
         view.setUint16(ptr + 2, this.fs_flags, true);
         view.setBigUint64(ptr + 8, this.fs_rights_base, true);
         view.setBigUint64(ptr + 16, this.fs_rights_inherited, true);
@@ -241,24 +244,24 @@ export const OFLAGS_EXCL = 1 << 2;
 export const OFLAGS_TRUNC = 1 << 3;
 
 export class Filestat {
-    dev = 0n;
-    ino = 0n;
-    filetype = null;
-    nlink = 0n;
-    size = null;
-    atim = 0n;
-    mtim = 0n;
-    ctim = 0n;
+    dev/*: BigInt*/ = 0n;
+    ino/*: BigInt*/ = 0n;
+    /*:: filetype: number*/;
+    nlink/*: BigInt*/ = 0n;
+    /*:: size: BigInt*/;
+    atim/*: BigInt*/ = 0n;
+    mtim/*: BigInt*/ = 0n;
+    ctim/*: BigInt*/ = 0n;
 
-    constructor(filetype, size) {
+    constructor(filetype/*: number*/, size/*: number | BigInt*/) {
         this.filetype = filetype;
         this.size = BigInt(size);
     }
 
-    write_bytes(view, ptr) {
+    write_bytes(view/*: DataView*/, ptr/*: number*/) {
         view.setBigUint64(ptr, this.dev, true);
         view.setBigUint64(ptr + 8, this.ino, true);
-        view.setUint8(ptr + 16, this.file_type);
+        view.setUint8(ptr + 16, this.filetype);
         view.setBigUint64(ptr + 24, this.nlink, true);
         view.setBigUint64(ptr + 32, this.size, true);
         view.setBigUint64(ptr + 38, this.atim, true);
@@ -318,29 +321,29 @@ export const SDFLAGS_WR = 1 << 1;
 export const PREOPENTYPE_DIR = 0;
 
 export class PrestatDir {
-    pr_name_len = 0;
+    /*:: pr_name_len: number*/;
 
-    constructor(name_len) {
+    constructor(name_len/*: number*/) {
         this.pr_name_len = name_len;
     }
 
-    write_bytes(view, ptr) {
+    write_bytes(view/*: DataView*/, ptr/*: number*/) {
         view.setUint32(ptr, this.pr_name_len, true);
     }
 }
 
 export class Prestat {
-    tag = 0;
-    inner = null;
+    /*:: tag: number*/;
+    /*:: inner: PrestatDir*/;
 
-    static dir(name_len) {
+    static dir(name_len/*: number*/)/*: Prestat*/ {
         let prestat = new Prestat();
         prestat.tag = PREOPENTYPE_DIR;
         prestat.inner = new PrestatDir(name_len);
         return prestat;
     }
 
-    write_bytes(view, ptr) {
+    write_bytes(view/*: DataView*/, ptr/*: number*/) {
         view.setUint32(ptr, this.tag, true);
         this.inner.write_bytes(view, ptr + 4);
     }

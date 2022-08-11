@@ -29,6 +29,3 @@ target
 !.idea/checkstyle-idea.xml
 
 dependency-reduced-pom.xml
-
-core/src/main/resources/org/teavm/backend/wasm/node_modules/xterm
-core/src/main/resources/org/teavm/backend/wasm/node_modules/xterm-addon-fit

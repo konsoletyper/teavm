@@ -1,21 +1,23 @@
+// @flow
+
 import * as wasi from "./wasi_defs.js";
 import { File, Directory } from "./fs_core.js";
 import { Fd } from "./fd.js";
 
 export class OpenFile extends Fd {
-    file = null;
-    file_pos = 0;
+    /*:: file: File*/;
+    file_pos/*: number*/ = 0;
 
-    constructor(file) {
+    constructor(file/*: File*/) {
         super();
         this.file = file;
     }
 
-    fd_fdstat_get() {
-        return { ret: 0, filestat: new wasi.Fdstat(wasi.FILETYPE_REGULAR_FILE, 0) };
+    fd_fdstat_get()/*: { ret: number, fdstat: wasi.Fdstat | null }*/ {
+        return { ret: 0, fdstat: new wasi.Fdstat(wasi.FILETYPE_REGULAR_FILE, 0) };
     }
 
-    fd_read(view8, iovs) {
+    fd_read(view8/*: Uint8Array*/, iovs/*: Array<wasi.Iovec>*/)/*: { ret: number, nread: number }*/ {
         let nread = 0;
         for (let iovec of iovs) {
             if (this.file_pos < this.file.data.byteLength) {
@@ -30,7 +32,7 @@ export class OpenFile extends Fd {
         return { ret: 0, nread };
     }
 
-    fd_seek(offset, whence) {
+    fd_seek(offset/*: number*/, whence/*: number*/)/*: {ret: number, offset: number }*/ {
         let calculated_offset;
         switch (whence) {
             case wasi.WHENCE_SET:
@@ -40,7 +42,7 @@ export class OpenFile extends Fd {
                 calculated_offset = this.file_pos + offset;
                 break;
             case wasi.WHENCE_END:
-                calculated_offset = this.file.data.length + offset;
+                calculated_offset = this.file.data.byteLength + offset;
                 break;
             default:
                 return { ret: wasi.ERRNO_INVAL, offset: 0 };
@@ -54,7 +56,7 @@ export class OpenFile extends Fd {
         return { ret: 0, offset: calculated_offset };
     }
 
-    fd_write(view8, iovs) {
+    fd_write(view8/*: Uint8Array*/, iovs/*: Array<wasi.Ciovec>*/)/*: { ret: number, nwritten: number }*/ {
         let nwritten = 0;
         for (let iovec of iovs) {
             let buffer = view8.slice(iovec.buf, iovec.buf + iovec.buf_len);
@@ -75,24 +77,24 @@ export class OpenFile extends Fd {
         return { ret: 0, nwritten };
     }
 
-    fd_filestat_get() {
+    fd_filestat_get()/*: { ret: number, stat: wasi.Filestat }*/ {
         return { ret: 0, stat: this.file.stat() };
     }
 }
 
 export class OpenDirectory extends Fd {
-    dir = null;
+    /*:: dir: Directory*/;
 
-    constructor(dir) {
+    constructor(dir/*: Directory */) {
         super();
         this.dir = dir;
     }
 
-    fd_fdstat_get() {
-        return { ret: 0, filestat: new wasi.Fdstat(wasi.FILETYPE_DIRECTORY, 0) };
+    fd_fdstat_get()/*: { ret: number, fdstat: wasi.Fdstat | null }*/ {
+        return { ret: 0, fdstat: new wasi.Fdstat(wasi.FILETYPE_DIRECTORY, 0) };
     }
 
-    fd_readdir_single(cookie) {
+    fd_readdir_single(cookie/*: BigInt*/)/*: { ret: number, dirent: wasi.Dirent | null }*/ {
         console.log(cookie, Object.keys(this.dir.contents).slice(Number(cookie)));
         if (cookie >= BigInt(Object.keys(this.dir.contents).length)) {
             return { ret: 0, dirent: null };
@@ -105,7 +107,7 @@ export class OpenDirectory extends Fd {
         return { ret: 0, dirent: new wasi.Dirent(cookie + 1n, name, entry.stat().filetype) };
     }
 
-    path_filestat_get(flags, path) {
+    path_filestat_get(flags/*: number*/, path/*: string*/)/*: { ret: number, filestat: wasi.Filestat | null }*/ {
         let entry = this.dir.get_entry_for_path(path);
         if (entry == null) {
             return { ret: -1, filestat: null };
@@ -113,7 +115,14 @@ export class OpenDirectory extends Fd {
         return { ret: 0, filestat: entry.stat() };
     }
 
-    path_open(dirflags, path, oflags, fs_rights_base, fs_rights_inheriting, fd_flags) {
+    path_open(
+        dirflags/*: number*/,
+        path/*: string*/,
+        oflags/*: number*/,
+        fs_rights_base/*: BigInt*/,
+        fs_rights_inheriting/*: BigInt*/,
+        fd_flags/*: number*/
+    )/*: { ret: number, fd_obj: Fd | null }*/ {
         let entry = this.dir.get_entry_for_path(path);
         if (entry == null) {
             if ((oflags & wasi.OFLAGS_CREAT) == wasi.OFLAGS_CREAT) {
@@ -142,20 +151,20 @@ export class OpenDirectory extends Fd {
 }
 
 export class PreopenDirectory extends OpenDirectory {
-    prestat_name = null;
+    /*:: prestat_name: Uint8Array*/;
 
-    constructor(name, contents) {
+    constructor(name/*: string*/, contents/*: { [string]: File | Directory }*/) {
         super(new Directory(contents));
         this.prestat_name = new TextEncoder("utf-8").encode(name);
     }
 
-    fd_prestat_get() {
+    fd_prestat_get()/*: { ret: number, prestat: wasi.Prestat }*/ {
         return {
             ret: 0, prestat: wasi.Prestat.dir(this.prestat_name.length)
         };
     }
 
-    fd_prestat_dir_name() {
+    fd_prestat_dir_name()/*: { ret: number, prestat_dir_name: Uint8Array }*/ {
         return {
             ret: 0, prestat_dir_name: this.prestat_name
         };

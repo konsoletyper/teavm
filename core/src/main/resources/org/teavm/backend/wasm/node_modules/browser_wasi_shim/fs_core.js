@@ -1,18 +1,20 @@
+// @flow
+
 import * as wasi from "./wasi_defs.js";
 
 export class File {
-    data = null;
+    /*:: data: Uint8Array*/;
 
-    constructor(data) {
+    constructor(data/*: ArrayBuffer | Uint8Array*/) {
         console.log(data);
         this.data = new Uint8Array(data);
     }
 
-    get size() {
+    get size()/*: number*/ {
         return this.data.byteLength;
     }
 
-    stat() {
+    stat()/*: wasi.Filestat*/ {
         return new wasi.Filestat(wasi.FILETYPE_REGULAR_FILE, this.size);
     }
 
@@ -22,17 +24,17 @@ export class File {
 }
 
 export class Directory {
-    contents = null;
+    /*:: contents: { [string]: File | Directory } */;
 
-    constructor(contents) {
+    constructor(contents/*: { [string]: File | Directory }*/) {
         this.contents = contents;
     }
 
-    stat() {
+    stat()/*: wasi.Filestat*/ {
         return new wasi.Filestat(wasi.FILETYPE_DIRECTORY, 0);
     }
 
-    get_entry_for_path(path) {
+    get_entry_for_path(path/*: string*/)/*: File | Directory | null*/ {
         let entry = this;
         for (let component of path.split("/")) {
             if (component == "") break;
@@ -46,10 +48,11 @@ export class Directory {
         return entry;
     }
 
-    create_entry_for_path(path) {
+    create_entry_for_path(path/*: string*/)/*: File | Directory*/ {
+        // FIXME fix type errors
         let entry = this;
-        let components = path.split("/").filter((component) => component != "/");
-        for (let i in components) {
+        let components/*: Array<string>*/ = path.split("/").filter((component) => component != "/");
+        for (let i = 0; i < components.length; i++) {
             let component = components[i];
             if (entry.contents[component] != undefined) {
                 entry = entry.contents[component];
