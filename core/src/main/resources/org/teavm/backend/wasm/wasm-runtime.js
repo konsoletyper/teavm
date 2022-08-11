@@ -14,9 +14,9 @@
  *  limitations under the License.
  */
 
-const fdImport = import("./node_modules/browser_wasi_shim/fd.js");
-const fsFdImport = import("./node_modules/browser_wasi_shim/fs_fd.js");
-const wasiImport = import("./node_modules/browser_wasi_shim/wasi.js");
+const fdImport = import("./node_modules/@bjorn3/browser_wasi_shim/src/fd.js");
+const fsFdImport = import("./node_modules/@bjorn3/browser_wasi_shim/src/fs_fd.js");
+const wasiImport = import("./node_modules/@bjorn3/browser_wasi_shim/src/wasi.js");
 
 var TeaVM = TeaVM || {};
 TeaVM.wasm = function() {

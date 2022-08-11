@@ -654,11 +654,11 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
 
         String[] paths = new String[] {
-            "node_modules/browser_wasi_shim/fd.js",
-            "node_modules/browser_wasi_shim/fs_fd.js",
-            "node_modules/browser_wasi_shim/fs_core.js",
-            "node_modules/browser_wasi_shim/wasi.js",
-            "node_modules/browser_wasi_shim/wasi_defs.js",
+            "node_modules/@bjorn3/browser_wasi_shim/src/fd.js",
+            "node_modules/@bjorn3/browser_wasi_shim/src/fs_fd.js",
+            "node_modules/@bjorn3/browser_wasi_shim/src/fs_core.js",
+            "node_modules/@bjorn3/browser_wasi_shim/src/wasi.js",
+            "node_modules/@bjorn3/browser_wasi_shim/src/wasi_defs.js",
         };
 
         for (String path : paths) {

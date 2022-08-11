@@ -23,6 +23,6 @@
   },
   "homepage": "https://teavm.org",
   "dependencies": {
-    "browser_wasi_shim": "git+https://github.com/bjorn3/browser_wasi_shim.git"
+    "@bjorn3/browser_wasi_shim": "^0.1.0"
   }
 }

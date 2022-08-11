@@ -1,8 +1,8 @@
 {
-  "name": "browser_wasi_shim",
-  "version": "1.0.0",
+  "name": "@bjorn3/browser_wasi_shim",
+  "version": "0.1.0",
   "license": "MIT OR Apache-2.0",
-  "description": "",
+  "description": "A pure javascript shim for WASI",
   "scripts": {
     "flow": "flow"
   },
