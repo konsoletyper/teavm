@@ -20,6 +20,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -120,5 +121,17 @@ public class SetTest {
         for (String e : expectedCopy) {
             assertNull("Iterator did not return all of expected elements", e);
         }
+    }
+
+    @Test
+    public void hashCodeTest() {
+        Set<String> a = new LinkedHashSet<>();
+        a.add("foo");
+        a.add("bar");
+        Set<String> b = new LinkedHashSet<>();
+        b.add("bar");
+        b.add("foo");
+
+        assertEquals(a.hashCode(), b.hashCode());
     }
 }

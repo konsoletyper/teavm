@@ -15,8 +15,6 @@
  */
 package org.teavm.classlib.java.util;
 
-import java.util.Arrays;
-
 public abstract class TAbstractSet<E> extends TAbstractCollection<E> implements TSet<E> {
     public TAbstractSet() {
         super();
@@ -67,6 +65,13 @@ public abstract class TAbstractSet<E> extends TAbstractCollection<E> implements 
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(toArray());
+        int result = 0;
+        for (TIterator<E> iter = iterator(); iter.hasNext();) {
+            E e = iter.next();
+            if (e != null) {
+                result += e.hashCode();
+            }
+        }
+        return result;
     }
 }
