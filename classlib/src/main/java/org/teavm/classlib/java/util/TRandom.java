@@ -75,15 +75,54 @@ public class TRandom extends TObject implements TSerializable {
     }
 
     public int nextInt(int origin, int bound) {
-        return origin + nextInt() * (bound - origin);
+        if (origin >= bound) {
+            throw new IllegalArgumentException();
+        }
+        int range = bound - origin;
+        if (range > 0) {
+            return nextInt(range) + origin;
+        } else {
+            while (true) {
+                int value = nextInt();
+                if (value >= origin && value < bound) {
+                    return value;
+                }
+            }
+        }
     }
 
     public long nextLong() {
         return ((long) nextInt() << 32) | nextInt();
     }
 
+    public long nextLong(long bound) {
+        if (bound <= 0) {
+            throw new IllegalArgumentException();
+        }
+        while (true) {
+            long value = nextLong();
+            long result = value % bound;
+            if (value - result + (bound - 1) < 0) {
+                return result;
+            }
+        }
+    }
+
     public long nextLong(long origin, long bound) {
-        return origin + nextLong() * (bound - origin);
+        if (origin >= bound) {
+            throw new IllegalArgumentException();
+        }
+        long range = bound - origin;
+        if (range > 0) {
+            return nextLong(range) + origin;
+        } else {
+            while (true) {
+                long value = nextLong();
+                if (value >= origin && value < bound) {
+                    return value;
+                }
+            }
+        }
     }
 
     public boolean nextBoolean() {
@@ -94,8 +133,12 @@ public class TRandom extends TObject implements TSerializable {
         return (float) nextDouble();
     }
 
+    public float nextFloat(float bound) {
+        return (float) nextDouble(bound);
+    }
+
     public float nextFloat(float origin, float bound) {
-        return origin + nextFloat() * (bound - origin);
+        return (float) nextDouble(origin, bound);
     }
 
     public double nextDouble() {
@@ -106,8 +149,22 @@ public class TRandom extends TObject implements TSerializable {
         }
     }
 
+    public double nextDouble(double bound) {
+        if (bound <= 0) {
+            throw new IllegalArgumentException();
+        }
+        double value = nextDouble() * bound;
+        if (value == bound) {
+            value = Math.nextDown(value);
+        }
+        return value;
+    }
+
     public double nextDouble(double origin, double bound) {
-        return origin + nextDouble() * (bound - origin);
+        if (origin >= bound) {
+            throw new IllegalArgumentException();
+        }
+        return origin + nextDouble(bound - origin);
     }
 
     @Import(name = "teavm_rand")
@@ -292,16 +349,6 @@ public class TRandom extends TObject implements TSerializable {
                 return true;
             }
         };
-    }
-
-    private long nextLong(long limit) {
-        while (true) {
-            long value = nextLong();
-            long result = value % limit;
-            if (value - result + (limit - 1) < 0) {
-                return result;
-            }
-        }
     }
 
     public TLongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
