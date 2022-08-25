@@ -496,7 +496,7 @@ public class VMTest {
     }
 
     static class SuperClass {
-        static final Integer ONE = new Integer(1);
+        static final Integer ONE = Integer.valueOf(1);
 
         private Integer value;
 
@@ -616,5 +616,22 @@ public class VMTest {
         assertEquals(0, ((int[][]) o).length);
         o = new int[0][];
         assertEquals(0, ((int[][]) o).length);
+    }
+
+    @Test
+    public void precedence() {
+        float a = count(3);
+        float b = count(7);
+        float c = 5;
+        assertEquals(1, a * b % c, 0.1f);
+        assertEquals(6, a * (b % c), 0.1f);
+    }
+
+    private int count(int value) {
+        int result = 0;
+        for (int i = 0; i < value; ++i) {
+            result += 1;
+        }
+        return result;
     }
 }
