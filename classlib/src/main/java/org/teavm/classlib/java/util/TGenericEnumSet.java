@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.platform.Platform;
+import org.teavm.platform.PlatformClass;
 
 class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
     Class<E> cls;
@@ -39,7 +40,9 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
     }
 
     static Enum<?>[] getConstants(Class<?> cls) {
-        return Platform.getEnumConstants(((TClass<?>) (Object) cls).getPlatformClass());
+        PlatformClass platformClass = ((TClass<?>) (Object) cls).getPlatformClass();
+        Platform.initClass(platformClass);
+        return Platform.getEnumConstants(platformClass);
     }
 
     @Override
