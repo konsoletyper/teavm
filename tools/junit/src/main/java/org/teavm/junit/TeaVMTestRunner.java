@@ -29,6 +29,7 @@ import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -245,9 +246,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private Process browserTemplate(String name, String url, BiConsumer<String, List<String>> paramsBuilder) {
         File temp;
         try {
-            temp = File.createTempFile("teavm", "teavm");
-            temp.delete();
-            temp.mkdirs();
+            temp = Files.createTempDirectory("teavm" + "teavm").toFile();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> deleteDir(temp)));
             System.out.println("Running " + name + " with user data dir: " + temp.getAbsolutePath());
             List<String> params = new ArrayList<>();
