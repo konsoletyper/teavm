@@ -407,4 +407,14 @@ public class StringBuilderTest {
     public void substringWithUpperBoundAtEndWorks() {
         assertEquals("23", "123".substring(1, 3));
     }
+
+    @Test
+    public void indexOf() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("12345");
+        assertEquals(3, sb.indexOf("45"));
+        assertEquals(-1, sb.indexOf("56"));
+        assertEquals(0, sb.indexOf("12345"));
+        assertEquals(0, sb.indexOf("123"));
+    }
 }

@@ -674,7 +674,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
 
     public int indexOf(TString str, int fromIndex) {
         int sz = length - str.length();
-        outer: for (int i = fromIndex; i < sz; ++i) {
+        outer: for (int i = fromIndex; i <= sz; ++i) {
             for (int j = 0; j < str.length(); ++j) {
                 if (buffer[i + j] != str.charAt(j)) {
                     continue outer;
