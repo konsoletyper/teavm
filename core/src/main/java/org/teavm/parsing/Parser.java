@@ -71,8 +71,8 @@ public class Parser {
     }
 
     public MethodHolder parseMethod(MethodNode node, String fileName) {
-        MethodNode nodeWithoutJsr = new MethodNode(Opcodes.ASM7, node.access, node.name, node.desc, node.signature,
-                node.exceptions.toArray(new String[0]));
+        MethodNode nodeWithoutJsr = new MethodNode(AsmUtil.API_VERSION, node.access, node.name, node.desc,
+                node.signature, node.exceptions.toArray(new String[0]));
         JSRInlinerAdapter adapter = new JSRInlinerAdapter(nodeWithoutJsr, node.access, node.name, node.desc,
                 node.signature, node.exceptions.toArray(new String[0]));
         node.accept(adapter);

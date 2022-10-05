@@ -30,6 +30,7 @@ import org.teavm.metaprogramming.Action;
 import org.teavm.metaprogramming.Computation;
 import org.teavm.metaprogramming.Metaprogramming;
 import org.teavm.model.MethodReference;
+import org.teavm.parsing.AsmUtil;
 
 public class MetaprogrammingInstrumentation {
     private static String lambdaMetafactory = LambdaMetafactory.class.getName().replace('.', '/');
@@ -44,9 +45,9 @@ public class MetaprogrammingInstrumentation {
         return writer.toByteArray();
     }
 
-    class ClassTransformer extends ClassVisitor {
+    static class ClassTransformer extends ClassVisitor {
         ClassTransformer(ClassVisitor cv) {
-            super(Opcodes.ASM7, cv);
+            super(AsmUtil.API_VERSION, cv);
         }
 
         @Override
@@ -56,11 +57,11 @@ public class MetaprogrammingInstrumentation {
         }
     }
 
-    class MethodTransformer extends MethodVisitor {
+    static class MethodTransformer extends MethodVisitor {
         private boolean instrumented;
 
         MethodTransformer(MethodVisitor mv) {
-            super(Opcodes.ASM7, mv);
+            super(AsmUtil.API_VERSION, mv);
         }
 
         @Override
