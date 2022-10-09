@@ -43,6 +43,32 @@ public class VMTest {
     }
 
     @Test
+    public void longMultiArrayCreated() {
+        long[][] array = new long[3][2];
+        assertEquals(3, array.length);
+        assertEquals(2, array[1].length);
+        assertEquals(2, array[2].length);
+
+        for (int i = 0; i < array.length; ++i) {
+            assertEquals(2, array[i].length);
+            for (int j = 0; j < array[i].length; ++j) {
+                assertEquals(0, array[i][j]);
+            }
+        }
+
+        for (int i = 0; i < array.length; ++i) {
+            Arrays.fill(array[i], 0x0123456789ABCDEFL);
+        }
+
+        for (int i = 0; i < array.length; ++i) {
+            assertEquals(2, array[i].length);
+            for (int j = 0; j < array[i].length; ++j) {
+                assertEquals(0x0123456789ABCDEFL, array[i][j]);
+            }
+        }
+    }
+
+    @Test
     public void catchExceptionFromLambda() {
         try {
             Runnable r = () -> throwException();
@@ -470,7 +496,7 @@ public class VMTest {
     }
 
     static class SuperClass {
-        static final Integer ONE = new Integer(1);
+        static final Integer ONE = Integer.valueOf(1);
 
         private Integer value;
 
@@ -590,5 +616,22 @@ public class VMTest {
         assertEquals(0, ((int[][]) o).length);
         o = new int[0][];
         assertEquals(0, ((int[][]) o).length);
+    }
+
+    @Test
+    public void precedence() {
+        float a = count(3);
+        float b = count(7);
+        float c = 5;
+        assertEquals(1, a * b % c, 0.1f);
+        assertEquals(6, a * (b % c), 0.1f);
+    }
+
+    private int count(int value) {
+        int result = 0;
+        for (int i = 0; i < value; ++i) {
+            result += 1;
+        }
+        return result;
     }
 }

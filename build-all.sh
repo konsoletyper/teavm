@@ -23,7 +23,7 @@ git archive HEAD | tar -x -C build-dir
 pushd build-dir
 
 mvn -e -V install \
- -P with-idea -P with-cli \
+ -P with-idea -P with-cli -P with-tests \
  -Dteavm.junit.optimized=false \
  -Dteavm.junit.js.decodeStack=false \
  -Dteavm.junit.threads=4 \

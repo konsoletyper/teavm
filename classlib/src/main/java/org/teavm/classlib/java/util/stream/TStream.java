@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util.stream;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -29,6 +30,7 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import java.util.function.UnaryOperator;
+import org.teavm.classlib.java.util.TTemplateCollections;
 import org.teavm.classlib.java.util.stream.impl.TArrayStreamImpl;
 import org.teavm.classlib.java.util.stream.impl.TEmptyStreamImpl;
 import org.teavm.classlib.java.util.stream.impl.TGenerateStream;
@@ -78,6 +80,8 @@ public interface TStream<T> extends TBaseStream<T, TStream<T>> {
     TStream<T> peek(Consumer<? super T> action);
 
     TStream<T> limit(long maxSize);
+
+    TStream<T> takeWhile(Predicate<? super T> predicate);
 
     TStream<T> skip(long n);
 
@@ -147,5 +151,10 @@ public interface TStream<T> extends TBaseStream<T, TStream<T>> {
         } else {
             return new TGenericConcatStream<>(a, b);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    default List<T> toList() {
+        return (List<T>) new TTemplateCollections.ImmutableArrayList<>(toArray());
     }
 }

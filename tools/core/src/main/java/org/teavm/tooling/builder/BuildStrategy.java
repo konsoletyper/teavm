@@ -84,5 +84,7 @@ public interface BuildStrategy {
 
     void setShortFileNames(boolean shortFileNames);
 
+    void setAssertionsRemoved(boolean assertionsRemoved);
+
     BuildResult build() throws BuildException;
 }

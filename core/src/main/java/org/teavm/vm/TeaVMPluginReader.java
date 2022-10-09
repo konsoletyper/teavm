@@ -35,9 +35,9 @@ import java.util.stream.Collectors;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.teavm.metaprogramming.CompileTime;
+import org.teavm.parsing.AsmUtil;
 import org.teavm.vm.spi.After;
 import org.teavm.vm.spi.Before;
 import org.teavm.vm.spi.Requires;
@@ -205,8 +205,8 @@ final class TeaVMPluginReader {
     static class PluginDescriptorFiller extends ClassVisitor {
         PluginDescriptor descriptor;
 
-        public PluginDescriptorFiller(PluginDescriptor descriptor) {
-            super(Opcodes.ASM7);
+        PluginDescriptorFiller(PluginDescriptor descriptor) {
+            super(AsmUtil.API_VERSION);
             this.descriptor = descriptor;
         }
 
@@ -223,12 +223,12 @@ final class TeaVMPluginReader {
         }
 
         private AnnotationVisitor readClassArray(Consumer<String[]> resultConsumer) {
-            return new AnnotationVisitor(Opcodes.ASM7) {
+            return new AnnotationVisitor(AsmUtil.API_VERSION) {
                 @Override
                 public AnnotationVisitor visitArray(String name) {
                     List<String> values = new ArrayList<>();
                     if (name.equals("value")) {
-                        return new AnnotationVisitor(Opcodes.ASM7) {
+                        return new AnnotationVisitor(AsmUtil.API_VERSION) {
                             @Override
                             public void visit(String name, Object value) {
                                 values.add(((Type) value).getClassName());

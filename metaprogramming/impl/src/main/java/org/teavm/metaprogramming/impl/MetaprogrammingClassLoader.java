@@ -24,9 +24,9 @@ import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.teavm.metaprogramming.CompileTime;
+import org.teavm.parsing.AsmUtil;
 
 public class MetaprogrammingClassLoader extends ClassLoader {
     private MetaprogrammingInstrumentation instrumentation = new MetaprogrammingInstrumentation();
@@ -129,7 +129,7 @@ public class MetaprogrammingClassLoader extends ClassLoader {
         boolean compileTime;
 
         CompileTimeClassVisitor() {
-            super(Opcodes.ASM7, null);
+            super(AsmUtil.API_VERSION, null);
         }
 
         @Override

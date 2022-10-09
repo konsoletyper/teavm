@@ -27,7 +27,6 @@ import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
-import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CastIntegerInstruction;
 import org.teavm.model.instructions.CastNumberInstruction;
@@ -45,7 +44,6 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.IsInstanceInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
 import org.teavm.model.instructions.NegateInstruction;
-import org.teavm.model.instructions.NullCheckInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
@@ -254,16 +252,6 @@ public class UnusedVariableElimination implements MethodOptimization {
 
         @Override
         public void visit(IsInstanceInstruction insn) {
-            requestUsage(insn.getReceiver());
-        }
-
-        @Override
-        public void visit(NullCheckInstruction insn) {
-            requestUsage(insn.getReceiver());
-        }
-
-        @Override
-        public void visit(BoundCheckInstruction insn) {
             requestUsage(insn.getReceiver());
         }
     }

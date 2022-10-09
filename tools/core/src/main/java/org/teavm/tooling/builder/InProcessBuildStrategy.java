@@ -69,6 +69,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private Properties properties = new Properties();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private boolean shortFileNames;
+    private boolean assertionsRemoved;
 
     public InProcessBuildStrategy(ClassLoaderFactory classLoaderFactory) {
         this.classLoaderFactory = classLoaderFactory;
@@ -227,6 +228,11 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setAssertionsRemoved(boolean assertionsRemoved) {
+        this.assertionsRemoved = assertionsRemoved;
+    }
+
+    @Override
     public BuildResult build() throws BuildException {
         TeaVMTool tool = new TeaVMTool();
         tool.setProgressListener(progressListener);
@@ -257,6 +263,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setLongjmpSupported(longjmpSupported);
         tool.setHeapDump(heapDump);
         tool.setShortFileNames(shortFileNames);
+        tool.setAssertionsRemoved(assertionsRemoved);
 
         tool.getProperties().putAll(properties);
 

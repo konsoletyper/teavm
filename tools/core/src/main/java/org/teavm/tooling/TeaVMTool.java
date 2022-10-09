@@ -57,6 +57,7 @@ import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
+import org.teavm.model.transformation.AssertionRemoval;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.tooling.sources.SourceFileProvider;
 import org.teavm.tooling.sources.SourceFilesCopier;
@@ -111,6 +112,7 @@ public class TeaVMTool {
     private boolean longjmpSupported = true;
     private boolean heapDump;
     private boolean shortFileNames;
+    private boolean assertionsRemoved;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -268,6 +270,10 @@ public class TeaVMTool {
         this.shortFileNames = shortFileNames;
     }
 
+    public void setAssertionsRemoved(boolean assertionsRemoved) {
+        this.assertionsRemoved = assertionsRemoved;
+    }
+
     public void setProgressListener(TeaVMProgressListener progressListener) {
         this.progressListener = progressListener;
     }
@@ -406,6 +412,10 @@ public class TeaVMTool {
                 vm.setProgressListener(progressListener);
             }
 
+            if (assertionsRemoved) {
+                vm.add(new AssertionRemoval());
+            }
+
             vm.setProperties(properties);
             vm.setProgramCache(incremental ? programCache : EmptyProgramCache.INSTANCE);
             vm.setCacheStatus(cacheStatus);
@@ -417,7 +427,7 @@ public class TeaVMTool {
             }
 
             vm.installPlugins();
-            for (ClassHolderTransformer transformer : resolveTransformers(classLoader)) {
+            for (ClassHolderTransformer transformer : resolveTransformers()) {
                 vm.add(transformer);
             }
             if (mainClass != null) {
@@ -426,7 +436,11 @@ public class TeaVMTool {
             for (String className : classesToPreserve) {
                 vm.preserveType(className);
             }
-            targetDirectory.mkdirs();
+
+            if (!targetDirectory.exists() && !targetDirectory.mkdirs()) {
+                log.error("Target directory could not be created");
+                System.exit(-1);
+            }
 
             BuildTarget buildTarget = new DirectoryBuildTarget(targetDirectory);
             String outputName = getResolvedTargetFileName();
@@ -450,10 +464,9 @@ public class TeaVMTool {
             generatedFiles.add(outputFile);
 
             if (targetType == TeaVMTargetType.JAVASCRIPT) {
-                try (OutputStream output = new FileOutputStream(new File(targetDirectory, outputName), true)) {
-                    try (Writer writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
-                        additionalJavaScriptOutput(writer);
-                    }
+                try (OutputStream output = new FileOutputStream(outputFile, true);
+                        Writer writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
+                    additionalJavaScriptOutput(writer);
                 }
             }
 
@@ -547,7 +560,7 @@ public class TeaVMTool {
         copier.copy(new File(targetDirectory, "src"));
     }
 
-    private List<ClassHolderTransformer> resolveTransformers(ClassLoader classLoader) {
+    private List<ClassHolderTransformer> resolveTransformers() {
         List<ClassHolderTransformer> transformerInstances = new ArrayList<>();
         if (transformers == null) {
             return transformerInstances;

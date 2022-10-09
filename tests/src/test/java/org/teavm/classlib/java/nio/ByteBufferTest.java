@@ -17,6 +17,7 @@ package org.teavm.classlib.java.nio;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.nio.BufferOverflowException;
@@ -151,6 +152,18 @@ public class ByteBufferTest {
         assertThat(buffer.get(15), is((byte) 24));
         buffer.put(16, (byte) 25);
         assertThat(slice.get(1), is((byte) 25));
+    }
+
+    @Test
+    public void sliceOfSlice() {
+        ByteBuffer buffer = ByteBuffer.allocate(100);
+        buffer.put(new byte[10]);
+        ByteBuffer slice1 = buffer.slice();
+        slice1.put(new byte[15]);
+        ByteBuffer slice2 = slice1.slice();
+
+        assertEquals(25, slice2.arrayOffset());
+        assertEquals(75, slice2.capacity());
     }
 
     @Test

@@ -28,6 +28,7 @@ public enum Precedence {
     COMPARISON,
     BITWISE_SHIFT,
     ADDITION,
+    MODULO,
     MULTIPLICATION,
     UNARY,
     NEW,

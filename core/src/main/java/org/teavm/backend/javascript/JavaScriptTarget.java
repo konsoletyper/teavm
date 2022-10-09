@@ -340,10 +340,16 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     @Override
+    public void beforeInlining(Program program, MethodReader method) {
+        if (strict) {
+            nullCheckInsertion.transformProgram(program, method.getReference());
+        }
+    }
+
+    @Override
     public void beforeOptimizations(Program program, MethodReader method) {
         if (strict) {
             boundCheckInsertion.transformProgram(program, method.getReference());
-            nullCheckInsertion.transformProgram(program, method.getReference());
         }
     }
 

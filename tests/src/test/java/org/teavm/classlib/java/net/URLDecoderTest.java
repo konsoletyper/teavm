@@ -16,7 +16,6 @@
 
 package org.teavm.classlib.java.net;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.UnsupportedEncodingException;
@@ -30,12 +29,6 @@ import org.teavm.junit.WholeClassCompilation;
 @RunWith(TeaVMTestRunner.class)
 @WholeClassCompilation
 public class URLDecoderTest {
-
-    @Test
-    public void test_Constructor() {
-        URLDecoder ud = new URLDecoder();
-        assertNotNull("Constructor failed.", ud);
-    }
 
     @Test
     public void test_decodeLjava_lang_String() {

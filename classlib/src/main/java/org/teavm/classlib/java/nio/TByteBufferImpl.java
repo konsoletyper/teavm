@@ -32,7 +32,8 @@ class TByteBufferImpl extends TByteBuffer {
 
     @Override
     public TByteBuffer slice() {
-        return new TByteBufferImpl(position, limit - position,  array, 0, limit - position, direct, readOnly);
+        return new TByteBufferImpl(position + start, limit - position,  array, 0, limit - position,
+                direct, readOnly);
     }
 
     @Override

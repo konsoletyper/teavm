@@ -161,6 +161,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter(property = "teavm.shortFileNames", defaultValue = "false")
     private boolean shortFileNames;
 
+    @Parameter(property = "teavm.assertionsRemoved", defaultValue = "false")
+    private boolean assertionsRemoved;
+
     private void setupBuilder(BuildStrategy builder) throws MojoExecutionException {
         builder.setLog(new MavenTeaVMToolLog(getLog()));
         try {
@@ -186,6 +189,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setMinHeapSize(minHeapSize * 1024 * 1024);
             builder.setMaxHeapSize(maxHeapSize * 1024 * 1024);
             builder.setShortFileNames(shortFileNames);
+            builder.setAssertionsRemoved(assertionsRemoved);
         } catch (RuntimeException e) {
             throw new MojoExecutionException("Unexpected error occurred", e);
         }
@@ -262,7 +266,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
         try {
             RemoteBuildService buildService;
             try {
-                Registry registry = LocateRegistry.getRegistry(daemon.getPort());
+                Registry registry = LocateRegistry.getRegistry("localhost", daemon.getPort());
                 buildService = (RemoteBuildService) registry.lookup(RemoteBuildService.ID);
             } catch (RemoteException | NotBoundException e) {
                 throw new MojoExecutionException("Error connecting TeaVM process", e);

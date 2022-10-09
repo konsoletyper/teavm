@@ -23,16 +23,16 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-class TTemplateCollections {
+public final class TTemplateCollections {
 
     private TTemplateCollections() {
     }
 
-    static class ImmutableArrayList<T> extends AbstractImmutableList<T> implements RandomAccess {
+    public static class ImmutableArrayList<T> extends AbstractImmutableList<T> implements RandomAccess {
         private final T[] list;
 
         @SafeVarargs
-        ImmutableArrayList(T... list) {
+        public ImmutableArrayList(T... list) {
             this.list = list;
         }
 

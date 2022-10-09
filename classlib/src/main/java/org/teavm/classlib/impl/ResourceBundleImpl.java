@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -58,7 +59,8 @@ public class ResourceBundleImpl {
         Set<String> implementations = new LinkedHashSet<>();
         while (urls.hasMoreElements()) {
             URL url = urls.nextElement();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"))) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(),
+                    StandardCharsets.UTF_8))) {
                 while (true) {
                     String line = reader.readLine();
                     if (line == null) {

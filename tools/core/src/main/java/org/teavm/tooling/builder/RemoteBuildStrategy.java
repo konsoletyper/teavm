@@ -201,6 +201,11 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setAssertionsRemoved(boolean assertionsRemoved) {
+        request.assertionsRemoved = assertionsRemoved;
+    }
+
+    @Override
     public BuildResult build() throws BuildException {
         RemoteBuildResponse response;
         try {

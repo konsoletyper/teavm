@@ -31,6 +31,7 @@ public class DefaultInliningStrategy implements InliningStrategy {
     private final int depthThreshold;
     private final int totalComplexityThreshold;
     private final boolean onceUsedOnly;
+    private int getComplexityDepth;
 
     public DefaultInliningStrategy(int complexityThreshold, int depthThreshold, int totalComplexityThreshold,
             boolean onceUsedOnly) {
@@ -52,7 +53,7 @@ public class DefaultInliningStrategy implements InliningStrategy {
         return new InliningStepImpl(complexityHolder);
     }
 
-    private static Complexity getComplexity(ProgramReader program, InliningContext context) {
+    private Complexity getComplexity(ProgramReader program, InliningContext context) {
         int complexity = 0;
         ComplexityCounter counter = new ComplexityCounter(context);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
@@ -101,7 +102,7 @@ public class DefaultInliningStrategy implements InliningStrategy {
         int complexity;
     }
 
-    static class ComplexityCounter extends AbstractInstructionReader {
+    class ComplexityCounter extends AbstractInstructionReader {
         InliningContext context;
         int complexity;
         boolean callsToUsedOnceMethods;
@@ -132,10 +133,12 @@ public class DefaultInliningStrategy implements InliningStrategy {
         }
 
         private boolean isTrivialCall(ProgramReader program) {
-            if (program == null) {
+            if (program == null || getComplexityDepth > 10) {
                return false;
             }
+            getComplexityDepth++;
             Complexity complexity = getComplexity(program, context);
+            getComplexityDepth--;
             return complexity.score <= 1 && !complexity.callsToUsedOnceMethods;
         }
 

@@ -46,6 +46,9 @@ public class ScalaHacks implements ClassHolderTransformer {
             case "scala.util.Properties$":
                 transformProperties(cls);
                 break;
+            case "scala.runtime.Statics":
+                transformStatics(cls, context.getHierarchy());
+                break;
             default:
                 if (cls.getName().endsWith(SCALA_INTERNAL_CLASS_MARKER)) {
                     checkAndRemoveExportAnnotation(cls);
@@ -93,6 +96,15 @@ public class ScalaHacks implements ClassHolderTransformer {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private void transformStatics(ClassHolder cls, ClassHierarchy hierarchy) {
+        for (MethodHolder method : cls.getMethods()) {
+            if (method.getName().equals("releaseFence")) {
+                ProgramEmitter pe = ProgramEmitter.create(method, hierarchy);
+                pe.exit();
             }
         }
     }

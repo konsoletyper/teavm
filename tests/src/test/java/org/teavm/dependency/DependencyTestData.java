@@ -15,6 +15,9 @@
  */
 package org.teavm.dependency;
 
+import java.util.AbstractList;
+import java.util.ArrayList;
+
 public class DependencyTestData {
     private DependencyTestData() {
     }
@@ -111,6 +114,14 @@ public class DependencyTestData {
                 throw new IllegalArgumentException();
             default:
                 return new Exception();
+        }
+    }
+
+    public static void reflectionConstructor() throws Exception {
+        var classes = new Class<?>[] { AbstractList.class, ArrayList.class };
+        for (var cls : classes) {
+            var instance = cls.getConstructor().newInstance();
+            MetaAssertions.assertTypes(instance, ArrayList.class);
         }
     }
 

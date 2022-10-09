@@ -51,6 +51,8 @@ public abstract class TResourceBundle {
     private static final Map<String, Supplier<ResourceBundle>> bundleProviders =
             ResourceBundleImpl.createBundleMap(false);
 
+    private String name;
+
     public TResourceBundle() {
     }
 
@@ -118,6 +120,10 @@ public abstract class TResourceBundle {
         return locale;
     }
 
+    public String getBaseBundleName() {
+        return name;
+    }
+
     public final Object getObject(String key) {
         TResourceBundle last;
         TResourceBundle theParent = this;
@@ -173,6 +179,7 @@ public abstract class TResourceBundle {
                 }
             }
             cache.put(bundleName, bundle);
+            bundle.name = base;
             return bundle;
         }
 
@@ -180,6 +187,7 @@ public abstract class TResourceBundle {
             bundle = handleGetBundle(base, extension, loadBase);
             if (bundle != null) {
                 cache.put(bundleName, bundle);
+                bundle.name = base;
                 return bundle;
             }
         }
@@ -219,7 +227,7 @@ public abstract class TResourceBundle {
                 }
                 country = name.substring(index + 1, nextIndex);
                 if (nextIndex + 1 < name.length()) {
-                    variant = name.substring(nextIndex + 1, name.length());
+                    variant = name.substring(nextIndex + 1);
                 }
             }
         }
