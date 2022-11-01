@@ -120,6 +120,6 @@ public class NativePointerFinder {
         }
         String className = ((ValueType.Object) type).getClassName();
         return characteristics.isStructure(className) || className.equals(Address.class.getName())
-                || characteristics.isFunction(className);
+                || characteristics.isFunction(className) || characteristics.isResource(className);
     }
 }
