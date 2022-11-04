@@ -23,6 +23,8 @@ import static org.junit.Assert.assertTrue;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Collections;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -39,7 +41,12 @@ public class ClassTest {
 
     @Test
     public void classSimpleNameEvaluated() {
-
+        assertEquals("Object", Object.class.getSimpleName());
+        assertEquals("Object[]", Object[].class.getSimpleName());
+        assertEquals("int", int.class.getSimpleName());
+        assertEquals("int[]", int[].class.getSimpleName());
+        assertEquals("InnerClass", InnerClass.class.getSimpleName());
+        assertEquals("", new Object() { }.getClass().getSimpleName());
     }
 
     @Test
@@ -186,6 +193,26 @@ public class ClassTest {
         assertEquals("foo", annot.l());
         assertArrayEquals(new String[] { "bar" }, annot.m());
         assertEquals(Integer.class, annot.n());
+    }
+
+    @Test
+    public void getInterfaces() {
+        assertEquals(0, SuperclassWithoutInterfaces.class.getInterfaces().length);
+        assertEquals(Set.of(TestInterface1.class, TestInterface2.class),
+                Set.of(ClassWithInterfaces.class.getInterfaces()));
+    }
+
+    private static class SuperclassWithoutInterfaces {
+    }
+
+    private static class ClassWithInterfaces extends SuperclassWithoutInterfaces
+            implements TestInterface1, TestInterface2 {
+    }
+
+    private interface TestInterface1 {
+    }
+
+    private interface TestInterface2 {
     }
 
     @TestAnnot
