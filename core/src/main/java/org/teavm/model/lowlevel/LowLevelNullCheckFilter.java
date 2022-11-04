@@ -29,7 +29,7 @@ public class LowLevelNullCheckFilter implements NullCheckFilter {
     @Override
     public boolean apply(FieldReference field) {
         return !characteristics.isStructure(field.getClassName())
-                && !characteristics.isStructure(field.getClassName());
+                && !characteristics.isResource(field.getClassName());
     }
 
     @Override

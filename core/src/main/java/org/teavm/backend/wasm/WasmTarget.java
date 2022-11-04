@@ -427,7 +427,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         ClassMetadataRequirements metadataRequirements = new ClassMetadataRequirements(controller.getDependencyInfo());
         WasmClassGenerator classGenerator = new WasmClassGenerator(classes, controller.getUnprocessedClassSource(),
                 vtableProvider, tagRegistry, binaryWriter, names, metadataRequirements,
-                controller.getClassInitializerInfo());
+                controller.getClassInitializerInfo(), characteristics);
 
         Decompiler decompiler = new Decompiler(classes, new HashSet<>(), false);
         WasmStringPool stringPool = classGenerator.getStringPool();
