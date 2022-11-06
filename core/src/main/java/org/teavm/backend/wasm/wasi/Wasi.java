@@ -15,10 +15,12 @@
  */
 package org.teavm.backend.wasm.wasi;
 
+import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 
 public final class Wasi {
     public static final int CLOCKID_REALTIME = 0;
+    public static final short ERRNO_SUCCESS = 0;
 
     private Wasi() {
     }
@@ -28,4 +30,10 @@ public final class Wasi {
 
     @Import(name = "clock_time_get", module = "wasi_snapshot_preview1")
     public static native short clockTimeGet(int clockId, long precision, LongResult result);
+
+    @Import(name = "args_sizes_get", module = "wasi_snapshot_preview1")
+    public static native short argsSizesGet(SizeResult argvSize, SizeResult argvBufSize);
+
+    @Import(name = "args_get", module = "wasi_snapshot_preview1")
+    public static native short argsGet(Address argv, Address argvBuf);
 }

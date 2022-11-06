@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.runtime;
 
+import java.nio.charset.StandardCharsets;
 import org.teavm.backend.wasm.wasi.IOVec;
 import org.teavm.backend.wasm.wasi.LongResult;
 import org.teavm.backend.wasm.wasi.SizeResult;
@@ -65,7 +66,7 @@ public class WasiSupport {
             int end = Math.min(s.length(), i + charsInChunk);
             int count = end - i;
             for (int j = 0; j < count; ++j) {
-                buffer.add(offsetInBuffer + j).putByte((byte) s.charAt(j));
+                buffer.add(j).putByte((byte) s.charAt(i + j));
             }
             putCharsStderr(buffer, count);
         }
@@ -74,6 +75,8 @@ public class WasiSupport {
     @Unmanaged
     public static void printInt(int i) {
         int count = 0;
+        boolean negative = i < 0;
+        i = Math.abs(i);
         Address buffer = WasiBuffer.getBuffer().add(WasiBuffer.getBufferSize());
         do {
             ++count;
@@ -81,6 +84,11 @@ public class WasiSupport {
             buffer.putByte((byte) ((i % 10) + (int) '0'));
             i /= 10;
         } while (i > 0);
+        if (negative) {
+            ++count;
+            buffer = buffer.add(-1);
+            buffer.putByte((byte) '-');
+        }
         putCharsStderr(buffer, count);
     }
 
@@ -91,5 +99,35 @@ public class WasiSupport {
 
     @Unmanaged
     public static void initHeapTrace(int maxHeap) {
+    }
+
+    public static String[] getArgs() {
+        Address buffer = WasiBuffer.getBuffer();
+        SizeResult sizesReceiver = buffer.toStructure();
+        SizeResult bufferSizeReceiver = buffer.add(Structure.sizeOf(SizeResult.class)).toStructure();
+        short errno = Wasi.argsSizesGet(sizesReceiver, bufferSizeReceiver);
+
+        if (errno != Wasi.ERRNO_SUCCESS) {
+            throw new RuntimeException("Could not get command line arguments");
+        }
+        int argvSize = sizesReceiver.value;
+        int argvBufSize = bufferSizeReceiver.value;
+
+        int[] argvOffsets = new int[argvSize];
+        byte[] argvBuffer = new byte[argvBufSize];
+        errno = Wasi.argsGet(Address.ofData(argvOffsets), Address.ofData(argvBuffer));
+
+        if (errno != Wasi.ERRNO_SUCCESS) {
+            throw new RuntimeException("Could not get command line arguments");
+        }
+
+        String[] args = new String[argvSize - 1];
+        for (int i = 1; i < argvSize; ++i) {
+            int offset = argvOffsets[i] - Address.ofData(argvBuffer).toInt();
+            int length = (i == argvSize - 1 ? argvBufSize - offset : argvOffsets[i + 1] - argvOffsets[i]) - 1;
+            args[i - 1] = new String(argvBuffer, offset, length, StandardCharsets.UTF_8);
+        }
+
+        return args;
     }
 }

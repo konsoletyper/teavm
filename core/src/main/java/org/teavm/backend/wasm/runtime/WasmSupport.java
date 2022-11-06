@@ -49,4 +49,8 @@ public class WasmSupport {
 
     @Import(name = "init", module = "teavmHeapTrace")
     public static native void initHeapTrace(int maxHeap);
+
+    public static String[] getArgs() {
+        return new String[0];
+    }
 }
