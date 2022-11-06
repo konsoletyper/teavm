@@ -551,7 +551,9 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             emitC(module, buildTarget, getBaseName(outputName) + ".wasm.c");
         }
 
-        emitRuntime(buildTarget, getBaseName(outputName) + ".wasm-runtime.js");
+        if (runtimeType == WasmRuntimeType.TEAVM) {
+            emitRuntime(buildTarget, getBaseName(outputName) + ".wasm-runtime.js");
+        }
     }
 
     private WasmFunction createStartFunction(NameProvider names) {
