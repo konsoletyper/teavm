@@ -19,6 +19,7 @@ import java.util.Enumeration;
 import java.util.Properties;
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.backend.javascript.spi.GeneratedBy;
+import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.fs.VirtualFileSystemProvider;
 import org.teavm.classlib.fs.c.CFileSystem;
@@ -144,14 +145,11 @@ public final class TSystem extends TObject {
 
     private static long currentTimeMillisLowLevel() {
         if (PlatformDetector.isWebAssembly()) {
-            return (long) currentTimeMillisWasm();
+            return WasmSupport.currentTimeMillis();
         } else {
-            return (long) currentTimeMillisC();
+            return currentTimeMillisC();
         }
     }
-
-    @Import(name = "currentTimeMillis", module = "teavm")
-    private static native double currentTimeMillisWasm();
 
     @Import(name = "teavm_currentTimeMillis")
     @RuntimeInclude("time.h")

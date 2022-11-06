@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2022 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,15 +16,17 @@
 package org.teavm.classlib.impl.console;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
-public class StdoutOutputStream extends ConsoleOutputStream {
-    public static final StdoutOutputStream INSTANCE = new StdoutOutputStream();
+public abstract class ConsoleOutputStream extends OutputStream {
+    private byte[] buffer = new byte[1];
 
-    private StdoutOutputStream() {
+    @Override
+    public void write(int b) throws IOException {
+        buffer[0] = (byte) b;
+        write(buffer);
     }
 
     @Override
-    public void write(byte[] b, int off, int len) throws IOException {
-        Console.writeStdout(b, off, len);
-    }
+    public abstract void write(byte[] b, int off, int len) throws IOException;
 }

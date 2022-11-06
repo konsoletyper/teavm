@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2022 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,18 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.console;
+package org.teavm.backend.wasm.runtime;
 
-import java.io.IOException;
+import org.teavm.interop.Address;
 
-public class StdoutOutputStream extends ConsoleOutputStream {
-    public static final StdoutOutputStream INSTANCE = new StdoutOutputStream();
+public final class WasiBuffer {
+    private static byte[] argBuffer = new byte[256];
 
-    private StdoutOutputStream() {
+    private WasiBuffer() {
     }
 
-    @Override
-    public void write(byte[] b, int off, int len) throws IOException {
-        Console.writeStdout(b, off, len);
+    public static int getBufferSize() {
+        return argBuffer.length;
+    }
+
+    public static Address getBuffer() {
+        return Address.ofData(argBuffer);
     }
 }

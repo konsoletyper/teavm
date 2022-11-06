@@ -106,6 +106,7 @@ import org.teavm.backend.wasm.render.WasmCRenderer;
 import org.teavm.backend.wasm.render.WasmRenderer;
 import org.teavm.backend.wasm.transformation.IndirectCallTraceTransformation;
 import org.teavm.backend.wasm.transformation.MemoryAccessTraceTransformation;
+import org.teavm.backend.wasm.transformation.WasiSupportClassTransformer;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyAnalyzer;
@@ -199,6 +200,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     private boolean obfuscated;
     private Set<MethodReference> asyncMethods;
     private boolean hasThreads;
+    private WasmRuntimeType runtimeType = WasmRuntimeType.TEAVM;
 
     @Override
     public void setController(TeaVMTargetController controller) {
@@ -233,6 +235,9 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         List<ClassHolderTransformer> transformers = new ArrayList<>();
         transformers.add(new ClassPatch());
         transformers.add(new WasmDependencyListener());
+        if (runtimeType == WasmRuntimeType.WASI) {
+            transformers.add(new WasiSupportClassTransformer());
+        }
         return transformers;
     }
 
@@ -289,6 +294,15 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     public void setObfuscated(boolean obfuscated) {
         this.obfuscated = obfuscated;
+    }
+
+    public void setRuntimeType(WasmRuntimeType runtimeType) {
+        this.runtimeType = runtimeType;
+    }
+
+    @Override
+    public WasmRuntimeType getRuntimeType() {
+        return runtimeType;
     }
 
     @Override
@@ -502,6 +516,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         module.add(initFunction);
         module.setStartFunction(initFunction);
         module.add(createStartFunction(names));
+        module.add(createStartCallerFunction());
 
         for (String functionName : classGenerator.getFunctionTable()) {
             WasmFunction function = module.getFunctions().get(functionName);
@@ -548,6 +563,17 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         WasmCall call = new WasmCall(names.forMethod(new MethodReference(Fiber.class, "startMain", String[].class,
                 void.class)));
         call.getArguments().add(new WasmGetLocal(local));
+        function.getBody().add(call);
+
+        return function;
+    }
+
+    private WasmFunction createStartCallerFunction() {
+        WasmFunction function = new WasmFunction("teavm_call_start");
+        function.setExportName("_start");
+
+        WasmCall call = new WasmCall("teavm_start");
+        call.getArguments().add(new WasmInt32Constant(0));
         function.getBody().add(call);
 
         return function;

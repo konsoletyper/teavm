@@ -15,8 +15,8 @@
  */
 package org.teavm.backend.wasm;
 
+import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.interop.Address;
-import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Unmanaged;
 
@@ -60,8 +60,9 @@ public final class WasmHeap {
 
     public static native void growMemory(int amount);
 
-    @Import(name = "init", module = "teavmHeapTrace")
-    private static native void initHeapTrace(int maxHeap);
+    private static void initHeapTrace(int maxHeap) {
+        WasmSupport.initHeapTrace(maxHeap);
+    }
 
     public static void initHeap(Address start, int minHeap, int maxHeap, int stackSize) {
         initHeapTrace(maxHeap);

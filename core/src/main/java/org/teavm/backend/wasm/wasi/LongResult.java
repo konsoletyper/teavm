@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2022 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,18 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.console;
+package org.teavm.backend.wasm.wasi;
 
-import java.io.IOException;
+import org.teavm.interop.Structure;
 
-public class StdoutOutputStream extends ConsoleOutputStream {
-    public static final StdoutOutputStream INSTANCE = new StdoutOutputStream();
-
-    private StdoutOutputStream() {
-    }
-
-    @Override
-    public void write(byte[] b, int off, int len) throws IOException {
-        Console.writeStdout(b, off, len);
-    }
+public class LongResult extends Structure {
+    public long value;
 }
