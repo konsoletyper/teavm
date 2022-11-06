@@ -60,6 +60,7 @@ import org.junit.runners.model.InitializationError;
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.backend.javascript.JavaScriptTarget;
+import org.teavm.backend.wasm.WasmRuntimeType;
 import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.debugging.information.DebugInformation;
@@ -110,6 +111,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     static final String JS_DECODE_STACK = "teavm.junit.js.decodeStack";
     private static final String C_ENABLED = "teavm.junit.c";
     private static final String WASM_ENABLED = "teavm.junit.wasm";
+    private static final String WASI_ENABLED = "teavm.junit.wasi";
+    private static final String WASI_RUNNER = "teavm.junit.wasi.runner";
     private static final String C_COMPILER = "teavm.junit.c.compiler";
     private static final String C_LINE_NUMBERS = "teavm.junit.c.lineNumbers";
     private static final String MINIFIED = "teavm.junit.minified";
@@ -191,6 +194,10 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         String cCommand = System.getProperty(C_COMPILER);
         if (cCommand != null) {
             runners.get(RunKind.C).strategy = new CRunStrategy(cCommand);
+        }
+        String wasiCommand = System.getProperty(WASI_RUNNER);
+        if (wasiCommand != null) {
+            runners.get(RunKind.WASI).strategy = new WasiRunStrategy(wasiCommand);
         }
 
         runStrategyName = System.getProperty(WASM_RUNNER);
@@ -405,7 +412,17 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         }
 
         for (TeaVMTestConfiguration<WasmTarget> configuration : getWasmConfigurations()) {
-            CompileResult result = compileToWasm(wholeClass(children), "classTest", configuration, outputPath);
+            CompileResult result = compileToWasm(WasmRuntimeType.TEAVM, wholeClass(children), "classTest",
+                    configuration, outputPath);
+            if (!result.success) {
+                hasErrors = true;
+                notifier.fireTestFailure(createFailure(description, result));
+            }
+        }
+
+        for (TeaVMTestConfiguration<WasmTarget> configuration : getWasiConfigurations()) {
+            CompileResult result = compileToWasm(WasmRuntimeType.WASI, wholeClass(children), "classTest",
+                    configuration, outputPath);
             if (!result.success) {
                 hasErrors = true;
                 notifier.fireTestFailure(createFailure(description, result));
@@ -509,6 +526,15 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             }
         }
 
+        for (TeaVMTestConfiguration<WasmTarget> configuration : getWasiConfigurations()) {
+            File testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), false, ".wasm");
+            runs.add(createTestRun(configuration, testPath, child, RunKind.WASI, reference.toString(),
+                    notifier, onSuccess));
+            File htmlPath = getOutputFile(outputPathForMethod, "test-wasm", configuration.getSuffix(), false, ".html");
+            properties.put("SCRIPT", "../" + testPath.getName());
+            properties.put("IDENTIFIER", reference.toString());
+        }
+
         for (TeaVMTestConfiguration<CTarget> configuration : getCConfigurations()) {
             File testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), true, ".c");
             runs.add(createTestRun(configuration, testPath, child, RunKind.C, reference.toString(),
@@ -549,8 +575,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             }
 
             for (TeaVMTestConfiguration<WasmTarget> configuration : getWasmConfigurations()) {
-                CompileResult compileResult = compileToWasm(singleTest(child), "test", configuration,
-                        outputPath);
+                CompileResult compileResult = compileToWasm(WasmRuntimeType.TEAVM, singleTest(child),
+                        "test", configuration, outputPath);
                 TestRun run = prepareRun(configuration, child, compileResult, notifier, RunKind.WASM, onSuccess);
                 if (run != null) {
                     runs.add(run);
@@ -565,6 +591,19 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
+                }
+            }
+
+            for (TeaVMTestConfiguration<WasmTarget> configuration : getWasiConfigurations()) {
+                CompileResult compileResult = compileToWasm(WasmRuntimeType.WASI, singleTest(child), "test",
+                        configuration, outputPath);
+                TestRun run = prepareRun(configuration, child, compileResult, notifier, RunKind.WASI, onSuccess);
+                if (run != null) {
+                    runs.add(run);
+
+                    File testPath = getOutputFile(outputPath, "test", configuration.getSuffix(), false, ".wasm");
+                    properties.put("SCRIPT", testPath.getName());
+                    properties.put("IDENTIFIER", "");
                 }
             }
         } catch (Throwable e) {
@@ -970,8 +1009,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 info.runner.init();
             }
             info.runner.run(run);
-
-            RunKind kind = run.getKind();
         }
     }
 
@@ -1059,9 +1096,14 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         return cTarget;
     }
 
-    private CompileResult compileToWasm(Consumer<TeaVM> additionalProcessing, String baseName,
-            TeaVMTestConfiguration<WasmTarget> configuration, File path) {
-        return compile(configuration, WasmTarget::new, TestNativeEntryPoint.class.getName(), path,
+    private CompileResult compileToWasm(WasmRuntimeType runtimeType, Consumer<TeaVM> additionalProcessing,
+            String baseName, TeaVMTestConfiguration<WasmTarget> configuration, File path) {
+        Supplier<WasmTarget> targetSupplier = () -> {
+            WasmTarget target = new WasmTarget();
+            target.setRuntimeType(runtimeType);
+            return target;
+        };
+        return compile(configuration, targetSupplier, TestNativeEntryPoint.class.getName(), path,
                 ".wasm", null, false, additionalProcessing, baseName);
     }
 
@@ -1226,6 +1268,17 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private List<TeaVMTestConfiguration<WasmTarget>> getWasmConfigurations() {
         List<TeaVMTestConfiguration<WasmTarget>> configurations = new ArrayList<>();
         if (Boolean.getBoolean(WASM_ENABLED)) {
+            configurations.add(TeaVMTestConfiguration.WASM_DEFAULT);
+            if (Boolean.getBoolean(OPTIMIZED)) {
+                configurations.add(TeaVMTestConfiguration.WASM_OPTIMIZED);
+            }
+        }
+        return configurations;
+    }
+
+    private List<TeaVMTestConfiguration<WasmTarget>> getWasiConfigurations() {
+        List<TeaVMTestConfiguration<WasmTarget>> configurations = new ArrayList<>();
+        if (Boolean.getBoolean(WASI_ENABLED)) {
             configurations.add(TeaVMTestConfiguration.WASM_DEFAULT);
             if (Boolean.getBoolean(OPTIMIZED)) {
                 configurations.add(TeaVMTestConfiguration.WASM_OPTIMIZED);
