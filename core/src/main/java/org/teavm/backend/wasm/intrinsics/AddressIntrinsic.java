@@ -23,6 +23,7 @@ import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
+import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
@@ -172,6 +173,8 @@ public class AddressIntrinsic implements WasmIntrinsic {
                 return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
                         manager.generate(invocation.getArguments().get(0)), new WasmInt32Constant(start));
             }
+            case "pin":
+                return new WasmDrop(new WasmInt32Constant(0));
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());
         }

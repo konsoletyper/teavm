@@ -93,4 +93,6 @@ public final class Address {
     public long diff(Address that) {
         return toLong() - that.toLong();
     }
+
+    public static native void pin(Object obj);
 }
