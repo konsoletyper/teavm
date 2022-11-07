@@ -20,8 +20,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Objects;
-import org.teavm.classlib.fs.VirtualFile;
-import org.teavm.classlib.fs.VirtualFileAccessor;
+import org.teavm.runtime.fs.VirtualFile;
+import org.teavm.runtime.fs.VirtualFileAccessor;
 
 public class TFileOutputStream extends OutputStream {
     private static final byte[] ONE_BYTE_BUFER = new byte[1];

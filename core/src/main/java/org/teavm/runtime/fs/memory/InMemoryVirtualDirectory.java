@@ -13,12 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.fs.memory;
+package org.teavm.runtime.fs.memory;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.teavm.classlib.fs.VirtualFileAccessor;
+import org.teavm.runtime.fs.VirtualFileAccessor;
 
 public class InMemoryVirtualDirectory extends AbstractInMemoryVirtualFile {
     final Map<String, AbstractInMemoryVirtualFile> children = new LinkedHashMap<>();

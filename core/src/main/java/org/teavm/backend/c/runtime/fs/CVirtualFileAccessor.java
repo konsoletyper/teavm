@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2022 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,10 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.fs.c;
+package org.teavm.backend.c.runtime.fs;
 
 import java.io.IOException;
-import org.teavm.classlib.fs.VirtualFileAccessor;
+import org.teavm.runtime.fs.VirtualFileAccessor;
 
 public class CVirtualFileAccessor implements VirtualFileAccessor {
     private long file;

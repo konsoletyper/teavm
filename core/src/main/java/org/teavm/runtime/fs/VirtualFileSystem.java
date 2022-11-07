@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2022 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,26 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.fs;
+package org.teavm.runtime.fs;
 
-import java.io.IOException;
+public interface VirtualFileSystem {
+    String getUserDir();
 
-public interface VirtualFileAccessor {
-    int read(byte[] buffer, int offset, int limit) throws IOException;
+    VirtualFile getFile(String path);
 
-    void write(byte[] buffer, int offset, int limit) throws IOException;
+    boolean isWindows();
 
-    int tell() throws IOException;
-
-    void seek(int target) throws IOException;
-
-    void skip(int amount) throws IOException;
-
-    int size() throws IOException;
-
-    void resize(int size) throws IOException;
-
-    void close() throws IOException;
-
-    void flush() throws IOException;
+    String canonicalize(String path);
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2022 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,20 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.fs.c;
+package org.teavm.backend.c.runtime.fs;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
-import org.teavm.classlib.fs.VirtualFile;
-import org.teavm.classlib.fs.VirtualFileSystem;
-import org.teavm.classlib.impl.c.Memory;
-import org.teavm.classlib.impl.c.StringList;
+import org.teavm.backend.c.runtime.Memory;
+import org.teavm.backend.c.runtime.StringList;
 import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 import org.teavm.interop.Unmanaged;
+import org.teavm.runtime.fs.VirtualFile;
+import org.teavm.runtime.fs.VirtualFileSystem;
 
 public class CFileSystem implements VirtualFileSystem {
     private Map<String, Entry> cache = new HashMap<>();

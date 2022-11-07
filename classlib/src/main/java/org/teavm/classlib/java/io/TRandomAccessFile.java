@@ -23,10 +23,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UTFDataFormatException;
 import java.util.Objects;
-import org.teavm.classlib.fs.VirtualFile;
-import org.teavm.classlib.fs.VirtualFileAccessor;
 import org.teavm.classlib.java.lang.TIndexOutOfBoundsException;
 import org.teavm.classlib.java.lang.TNullPointerException;
+import org.teavm.runtime.fs.VirtualFile;
+import org.teavm.runtime.fs.VirtualFileAccessor;
 
 public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
     private static final byte[] ONE_BYTE_BUFFER = new byte[1];

@@ -18,12 +18,11 @@ package org.teavm.classlib.java.lang;
 import java.util.Enumeration;
 import java.util.Properties;
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
+import org.teavm.backend.c.runtime.Memory;
+import org.teavm.backend.c.runtime.fs.CFileSystem;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.classlib.PlatformDetector;
-import org.teavm.classlib.fs.VirtualFileSystemProvider;
-import org.teavm.classlib.fs.c.CFileSystem;
-import org.teavm.classlib.impl.c.Memory;
 import org.teavm.classlib.impl.console.StderrOutputStream;
 import org.teavm.classlib.impl.console.StdoutOutputStream;
 import org.teavm.classlib.java.io.TConsole;
@@ -41,6 +40,7 @@ import org.teavm.runtime.Allocator;
 import org.teavm.runtime.GC;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
+import org.teavm.runtime.fs.VirtualFileSystemProvider;
 
 public final class TSystem extends TObject {
     private static TPrintStream outCache;

@@ -23,10 +23,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Objects;
-import org.teavm.classlib.fs.VirtualFile;
-import org.teavm.classlib.fs.VirtualFileSystem;
-import org.teavm.classlib.fs.VirtualFileSystemProvider;
 import org.teavm.classlib.java.util.TRandom;
+import org.teavm.runtime.fs.VirtualFile;
+import org.teavm.runtime.fs.VirtualFileSystem;
+import org.teavm.runtime.fs.VirtualFileSystemProvider;
 
 public class TFile implements Serializable, Comparable<TFile> {
     private String path;
