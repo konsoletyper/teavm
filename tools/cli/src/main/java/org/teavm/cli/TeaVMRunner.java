@@ -223,7 +223,7 @@ public final class TeaVMRunner {
                 case "webassembly-wasi":
                 case "wasm-wasi":
                 case "wasi":
-                    tool.setTargetType(TeaVMTargetType.WEBASSEMBLY);
+                    tool.setTargetType(TeaVMTargetType.WEBASSEMBLY_WASI);
                     break;
                 case "c":
                     tool.setTargetType(TeaVMTargetType.C);
