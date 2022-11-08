@@ -80,7 +80,7 @@ public class WasiVirtualFile implements VirtualFile {
         if (baseFd < 0) {
             return null;
         }
-        Filestat filestat = Address.align(WasiBuffer.getBuffer(), 8).toStructure();
+        Filestat filestat = WasiBuffer.getBuffer().toStructure();
         int errno;
         if (path != null) {
             byte[] bytes = path.getBytes(StandardCharsets.UTF_8);
@@ -207,7 +207,7 @@ public class WasiVirtualFile implements VirtualFile {
             fdflags |= FDFLAGS_APPEND;
         }
         int fd = open((short) 0, rights, fdflags);
-        return fd >= 0 ? new WasiVirtualFileAccessor(fs, fd) : null;
+        return fd >= 0 ? new WasiVirtualFileAccessor(this, fd) : null;
     }
 
     @Override

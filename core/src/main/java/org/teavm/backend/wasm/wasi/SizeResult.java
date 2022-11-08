@@ -18,5 +18,5 @@ package org.teavm.backend.wasm.wasi;
 import org.teavm.interop.Structure;
 
 public class SizeResult extends Structure {
-    public int value;
+    public long value;
 }

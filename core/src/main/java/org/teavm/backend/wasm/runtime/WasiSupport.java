@@ -15,8 +15,10 @@
  */
 package org.teavm.backend.wasm.runtime;
 
+import static org.teavm.backend.wasm.wasi.Wasi.ERRNO_SUCCESS;
 import java.nio.charset.StandardCharsets;
 import org.teavm.backend.wasm.wasi.IOVec;
+import org.teavm.backend.wasm.wasi.IntResult;
 import org.teavm.backend.wasm.wasi.LongResult;
 import org.teavm.backend.wasm.wasi.SizeResult;
 import org.teavm.backend.wasm.wasi.Wasi;
@@ -26,6 +28,9 @@ import org.teavm.interop.Unmanaged;
 
 @Unmanaged
 public class WasiSupport {
+    private static long nextRandom;
+    private static boolean randomInitialized;
+
     private WasiSupport() {
     }
 
@@ -43,7 +48,7 @@ public class WasiSupport {
     public static void putChars(int fd, Address address, int count) {
         Address argsAddress = WasiBuffer.getBuffer();
         IOVec ioVec = argsAddress.toStructure();
-        SizeResult result = argsAddress.add(Structure.sizeOf(IOVec.class)).toStructure();
+        SizeResult result = Address.align(argsAddress.add(Structure.sizeOf(IOVec.class)), 16).toStructure();
         ioVec.buffer = address;
         ioVec.bufferLength = count;
         Wasi.fdWrite(fd, ioVec, 1, result);
@@ -51,8 +56,7 @@ public class WasiSupport {
 
     @Unmanaged
     public static long currentTimeMillis() {
-        Address argsAddress = WasiBuffer.getBuffer();
-        LongResult result = argsAddress.toStructure();
+        LongResult result = WasiBuffer.getBuffer().toStructure();
         Wasi.clockTimeGet(Wasi.CLOCKID_REALTIME, 10, result);
         return result.value;
     }
@@ -103,21 +107,22 @@ public class WasiSupport {
 
     public static String[] getArgs() {
         Address buffer = WasiBuffer.getBuffer();
-        SizeResult sizesReceiver = buffer.toStructure();
-        SizeResult bufferSizeReceiver = buffer.add(Structure.sizeOf(SizeResult.class)).toStructure();
+        IntResult sizesReceiver = buffer.toStructure();
+        IntResult bufferSizeReceiver = Address.align(buffer.add(Structure.sizeOf(IntResult.class)), 16)
+                .toStructure();
         short errno = Wasi.argsSizesGet(sizesReceiver, bufferSizeReceiver);
 
-        if (errno != Wasi.ERRNO_SUCCESS) {
+        if (errno != ERRNO_SUCCESS) {
             throw new RuntimeException("Could not get command line arguments");
         }
-        int argvSize = sizesReceiver.value;
-        int argvBufSize = bufferSizeReceiver.value;
+        int argvSize = (int) sizesReceiver.value;
+        int argvBufSize = (int) bufferSizeReceiver.value;
 
         int[] argvOffsets = new int[argvSize];
         byte[] argvBuffer = new byte[argvBufSize];
         errno = Wasi.argsGet(Address.ofData(argvOffsets), Address.ofData(argvBuffer));
 
-        if (errno != Wasi.ERRNO_SUCCESS) {
+        if (errno != ERRNO_SUCCESS) {
             throw new RuntimeException("Could not get command line arguments");
         }
 
@@ -129,5 +134,24 @@ public class WasiSupport {
         }
 
         return args;
+    }
+
+    public static double random() {
+        return (((long) nextRandom(26) << 27) + nextRandom(27)) / (double) (1L << 53);
+    }
+
+    private static int nextRandom(int bits) {
+        if (!randomInitialized) {
+            short errno = Wasi.randomGet(WasiBuffer.getBuffer(), 8);
+
+            if (errno != ERRNO_SUCCESS) {
+                throw new RuntimeException("random_get: " + errno);
+            }
+
+            nextRandom = WasiBuffer.getBuffer().getLong();
+        }
+
+        nextRandom = ((nextRandom * 0x5DEECE66DL) + 0xBL) & ((1L << 48) - 1);
+        return (int) (nextRandom >>> (48 - bits));
     }
 }

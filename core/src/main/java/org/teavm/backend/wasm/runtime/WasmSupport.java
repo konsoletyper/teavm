@@ -53,4 +53,7 @@ public class WasmSupport {
     public static String[] getArgs() {
         return new String[0];
     }
+
+    @Import(module = "teavmMath", name = "random")
+    public static native double random();
 }

@@ -13,20 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.runtime;
+package org.teavm.backend.wasm.wasi;
 
-import org.teavm.backend.wasm.WasmHeap;
-import org.teavm.interop.Address;
+import org.teavm.interop.Structure;
 
-public final class WasiBuffer {
-    private WasiBuffer() {
-    }
-
-    public static int getBufferSize() {
-        return WasmHeap.bufferSize;
-    }
-
-    public static Address getBuffer() {
-        return WasmHeap.buffer;
-    }
+public class IntResult extends Structure {
+    public int value;
 }

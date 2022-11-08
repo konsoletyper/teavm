@@ -175,7 +175,7 @@ import org.teavm.vm.spi.TeaVMHostExtension;
 
 public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     private static final MethodReference INIT_HEAP_REF = new MethodReference(WasmHeap.class, "initHeap",
-            Address.class, int.class, int.class, int.class, void.class);
+            Address.class, int.class, int.class, int.class, int.class, void.class);
     private static final MethodReference RESIZE_HEAP_REF = new MethodReference(WasmHeap.class, "resizeHeap",
             int.class, void.class);
     private static final Set<MethodReference> VIRTUAL_METHODS = new HashSet<>(Arrays.asList(
@@ -621,7 +621,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
         initFunction.getBody().add(new WasmCall(names.forMethod(INIT_HEAP_REF),
                 new WasmInt32Constant(heapAddress), new WasmInt32Constant(minHeapSize),
-                new WasmInt32Constant(maxHeapSize), new WasmInt32Constant(WasmHeap.DEFAULT_STACK_SIZE)));
+                new WasmInt32Constant(maxHeapSize), new WasmInt32Constant(WasmHeap.DEFAULT_STACK_SIZE),
+                new WasmInt32Constant(WasmHeap.DEFAULT_BUFFER_SIZE)));
 
         for (Class<?> javaCls : new Class<?>[] { GC.class }) {
             ClassReader cls = classes.get(javaCls.getName());
@@ -949,6 +950,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         int newRegionsCount = WasmHeap.calculateRegionsCount(maxHeapSize, WasmHeap.DEFAULT_REGION_SIZE);
         int newRegionsSize = WasmHeap.calculateRegionsSize(newRegionsCount);
 
+        address = WasmRuntime.align(address, 16);
+        address = WasmRuntime.align(address + WasmHeap.DEFAULT_BUFFER_SIZE, 16);
         address = WasmRuntime.align(address + WasmHeap.DEFAULT_STACK_SIZE, 16);
         address = WasmRuntime.align(address + maxHeapSize, 16);
         address = WasmRuntime.align(address + newRegionsSize, 16);

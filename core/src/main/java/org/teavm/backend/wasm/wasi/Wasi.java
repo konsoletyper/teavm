@@ -62,13 +62,22 @@ public final class Wasi {
     public static native short clockTimeGet(int clockId, long precision, LongResult result);
 
     @Import(name = "args_sizes_get", module = "wasi_snapshot_preview1")
-    public static native short argsSizesGet(SizeResult argvSize, SizeResult argvBufSize);
+    public static native short argsSizesGet(IntResult argvSize, IntResult argvBufSize);
 
     @Import(name = "args_get", module = "wasi_snapshot_preview1")
     public static native short argsGet(Address argv, Address argvBuf);
 
+    @Import(name = "fd_read", module = "wasi_snapshot_preview1")
+    public static native short fdRead(int fd, IOVec vecArray, int vecArrayLength, SizeResult size);
+
     @Import(name = "fd_write", module = "wasi_snapshot_preview1")
     public static native short fdWrite(int fd, IOVec vectors, int vectorsCont, SizeResult result);
+
+    @Import(name = "fd_tell", module = "wasi_snapshot_preview1")
+    public static native short fdTell(int fd, SizeResult size);
+
+    @Import(name = "fd_seek", module = "wasi_snapshot_preview1")
+    public static native short fdSeek(int fd, long offset, byte whence, SizeResult size);
 
     @Import(name = "fd_prestat_get", module = "wasi_snapshot_preview1")
     public static native short fdPrestatGet(int fd, Prestat prestat);
@@ -109,4 +118,14 @@ public final class Wasi {
     @Import(name = "path_filestat_set_times", module = "wasi_snapshot_preview1")
     public static native short pathFilestatSetTimes(int fd, int lookupFlags, Address path, int pathLength,
             long atime, long mtime, short fstflags);
+
+    @Import(name = "fd_filestat_set_size", module = "wasi_snapshot_preview1")
+    public static native short fdFilestatSetSize(int fd, long size);
+
+    @Import(name = "fd_sync", module = "wasi_snapshot_preview1")
+    public static native short fdSync(int fd);
+
+    @Import(name = "random_get", module = "wasi_snapshot_preview1")
+    public static native short randomGet(Address buffer, int bufferLength);
+
 }

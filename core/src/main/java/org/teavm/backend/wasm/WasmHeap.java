@@ -26,6 +26,7 @@ public final class WasmHeap {
     public static final int PAGE_SIZE = 65536;
     public static final int DEFAULT_STACK_SIZE = PAGE_SIZE * 4;
     public static final int DEFAULT_REGION_SIZE = 1024;
+    public static final int DEFAULT_BUFFER_SIZE = 512;
 
     public static int minHeapSize;
     public static int maxHeapSize;
@@ -42,6 +43,8 @@ public final class WasmHeap {
     public static Address stackAddress;
     public static Address stack;
     public static int stackSize;
+    public static Address buffer;
+    public static int bufferSize;
 
     private WasmHeap() {
     }
@@ -64,10 +67,13 @@ public final class WasmHeap {
         WasmSupport.initHeapTrace(maxHeap);
     }
 
-    public static void initHeap(Address start, int minHeap, int maxHeap, int stackSize) {
+    public static void initHeap(Address start, int minHeap, int maxHeap, int stackSize, int bufferSize) {
         initHeapTrace(maxHeap);
-        stackAddress = start;
-        stack = start;
+        buffer = start;
+        buffer = WasmRuntime.align(start, 16);
+        WasmHeap.bufferSize = bufferSize;
+        stack = WasmRuntime.align(buffer.add(bufferSize), 16);
+        stackAddress = stack;
         heapAddress = WasmRuntime.align(stackAddress.add(stackSize), 16);
         memoryLimit = WasmRuntime.align(start, PAGE_SIZE);
         minHeapSize = minHeap;
