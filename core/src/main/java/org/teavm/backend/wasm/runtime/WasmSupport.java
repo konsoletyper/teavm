@@ -56,4 +56,7 @@ public class WasmSupport {
 
     @Import(module = "teavmMath", name = "random")
     public static native double random();
+
+    @Import(module = "teavmMath", name = "pow")
+    public static native double pow(double x, double y);
 }

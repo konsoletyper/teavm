@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.backend.javascript.spi.GeneratedBy;
+import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
@@ -105,10 +106,18 @@ public final class TMath extends TObject {
     @Unmanaged
     public static native double floor(double a);
 
+    public static double pow(double x, double y) {
+        if (PlatformDetector.isWebAssembly()) {
+            return WasmSupport.pow(x, y);
+        } else {
+            return powImpl(x, y);
+        }
+    }
+
     @GeneratedBy(MathNativeGenerator.class)
     @Import(module = "teavmMath", name = "pow")
     @Unmanaged
-    public static native double pow(double x, double y);
+    private static native double powImpl(double x, double y);
 
     public static double rint(double a) {
         return round(a);

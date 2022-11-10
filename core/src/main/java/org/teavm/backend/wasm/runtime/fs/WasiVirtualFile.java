@@ -64,7 +64,7 @@ public class WasiVirtualFile implements VirtualFile {
         }
         initialized = true;
 
-        fs.findBestPreopened(path);
+        fs.findBestPreopened(fullPath);
         path = fs.bestPreopenedPath;
         baseFd = fs.bestPreopenedId;
         fs.bestPreopenedPath = null;

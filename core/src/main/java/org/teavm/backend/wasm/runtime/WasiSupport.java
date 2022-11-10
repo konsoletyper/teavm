@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.runtime;
 
 import static org.teavm.backend.wasm.wasi.Wasi.ERRNO_SUCCESS;
 import java.nio.charset.StandardCharsets;
+import org.teavm.backend.wasm.runtime.math.WasmPow;
 import org.teavm.backend.wasm.wasi.IOVec;
 import org.teavm.backend.wasm.wasi.IntResult;
 import org.teavm.backend.wasm.wasi.LongResult;
@@ -153,5 +154,9 @@ public class WasiSupport {
 
         nextRandom = ((nextRandom * 0x5DEECE66DL) + 0xBL) & ((1L << 48) - 1);
         return (int) (nextRandom >>> (48 - bits));
+    }
+
+    public static double pow(double x, double y) {
+        return WasmPow.pow(x, y);
     }
 }

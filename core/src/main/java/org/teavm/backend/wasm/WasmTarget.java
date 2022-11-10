@@ -107,6 +107,7 @@ import org.teavm.backend.wasm.render.WasmRenderer;
 import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.backend.wasm.transformation.IndirectCallTraceTransformation;
 import org.teavm.backend.wasm.transformation.MemoryAccessTraceTransformation;
+import org.teavm.backend.wasm.transformation.WasiFileSystemProviderTransformer;
 import org.teavm.backend.wasm.transformation.WasiSupportClassTransformer;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.ClassDependency;
@@ -238,6 +239,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         transformers.add(new WasmDependencyListener());
         if (runtimeType == WasmRuntimeType.WASI) {
             transformers.add(new WasiSupportClassTransformer());
+            transformers.add(new WasiFileSystemProviderTransformer());
         }
         return transformers;
     }

@@ -175,6 +175,15 @@ public class AddressIntrinsic implements WasmIntrinsic {
             }
             case "pin":
                 return new WasmDrop(new WasmInt32Constant(0));
+            case "diff": {
+                WasmExpression result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB,
+                        manager.generate(invocation.getArguments().get(0)),
+                        manager.generate(invocation.getArguments().get(1))
+                );
+                result = new WasmConversion(WasmType.INT32, WasmType.INT64, true, result);
+                result.setLocation(invocation.getLocation());
+                return result;
+            }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());
         }

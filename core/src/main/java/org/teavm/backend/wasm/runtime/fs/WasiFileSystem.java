@@ -47,10 +47,6 @@ public class WasiFileSystem implements VirtualFileSystem {
     }
 
     void findBestPreopened(String path) {
-        if (path.startsWith("/")) {
-            path = path.substring(1);
-        }
-
         if (path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);
         }
@@ -65,8 +61,8 @@ public class WasiFileSystem implements VirtualFileSystem {
                 break;
             }
 
-            if (preopened.name.length() > bestNameLength) {
-                int prefixLen = getPrefixLength(path, preopened.name);
+            int prefixLen = getPrefixLength(path, preopened.name);
+            if (prefixLen > bestNameLength) {
                 if (prefixLen >= 0) {
                     bestFd = preopened.fd;
                     bestNameLength = prefixLen;
@@ -120,7 +116,7 @@ public class WasiFileSystem implements VirtualFileSystem {
             if (errno == ERRNO_BADF) {
                 break;
             }
-            if (errno != ERRNO_BADF) {
+            if (errno != ERRNO_SUCCESS) {
                 return Collections.emptyList();
             }
 
