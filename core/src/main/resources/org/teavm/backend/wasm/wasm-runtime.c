@@ -8,9 +8,12 @@
 #include <wctype.h>
 #include <time.h>
 #include <uchar.h>
+#include <unistd.h>
 
 static int8_t *wasm_heap;
 static int32_t wasm_heap_size;
+static int wasm_args;
+static char** wasm_argv;
 
 float teavm_teavm_getNaN() {
     return NAN;
@@ -22,7 +25,7 @@ float teavm_teavm_getNaN() {
 #define teavmMath_ceil ceil
 #define teavmMath_floor floor
 
-double teavm_currentTimeMillis() {
+int64_t teavm_currentTimeMillis() {
     struct timespec time;
     clock_gettime(CLOCK_REALTIME, &time);
 
@@ -74,4 +77,77 @@ void teavm_logString(int32_t string) {
 
 void teavm_logInt(int32_t v) {
     wprintf(L"%" PRId32, v);
+}
+
+int32_t wasi_snapshot_preview1_clock_time_get(int32_t clock_id, int64_t precision, int32_t result_ptr) {
+    int64_t* resultAddr = (int64_t*) (wasm_heap + result_ptr);
+    *resultAddr = teavm_currentTimeMillis();
+    return 0;
+}
+
+int32_t wasi_snapshot_preview1_args_sizes_get(int32_t argv_size, int32_t argv_buffer_size) {
+    int32_t* argvSizePtr = (int32_t*) (wasm_heap + argv_size);
+    int32_t* argvBufferSizePtr = (int32_t*) (wasm_heap + argv_buffer_size);
+    *argvSizePtr = (int32_t) wasm_args;
+
+    int32_t bufferSize = 0;
+    for (int i = 0; i < wasm_args; ++i) {
+        bufferSize += (int32_t) strlen(wasm_argv[i]);
+    }
+    *argvBufferSizePtr = bufferSize;
+    return 0;
+}
+
+int32_t wasi_snapshot_preview1_args_get(int32_t sizes_ptr, int32_t args_ptr) {
+    int32_t* sizesPtr = (int32_t*) (wasm_heap + sizes_ptr);
+    char* argsPtr = (char*) (wasm_heap + args_ptr);
+    int offset = 0;
+    for (int i = 0; i < wasm_args; ++i) {
+        sizesPtr[i] = (int32_t) offset;
+        int len = strlen(wasm_argv[i]);
+        memcpy(argsPtr + offset, wasm_argv[i], len);
+        offset += len;
+    }
+    return 0;
+}
+
+typedef struct {
+    int32_t tag;
+    union {
+        struct {
+            int32_t name_length;
+        } dir;
+    } data;
+} WasiPrestat;
+
+int32_t wasi_snapshot_preview1_fd_prestat_get(int32_t fd, int32_t prestat_ptr) {
+    if (fd != 3) {
+        return 8;
+    }
+    WasiPrestat* prestat = (WasiPrestat*) (wasm_heap + prestat_ptr);
+    prestat->tag = 0;
+    prestat->data.dir.name_length = 1;
+    return 0;
+}
+
+int32_t wasi_snapshot_preview1_fd_prestat_dir_name(int32_t fd, int32_t path, int32_t path_length) {
+    char* pathPtr = (char*) (wasm_heap + path);
+    *pathPtr = '/';
+    return 0;
+}
+
+typedef struct {
+    int32_t buf;
+    int32_t buf_len;
+} WasiIOVec;
+
+int32_t wasi_snapshot_preview1_fd_write(int32_t fd, int32_t iovs, int32_t count, int32_t result) {
+    WasiIOVec* vec = (WasiIOVec*) (wasm_heap + iovs);
+    int32_t written = 0;
+    for (int32_t i = 0; i < count; ++i) {
+        written += write((int) fd, (char*) (wasm_heap + vec->buf), vec->buf_len);
+    }
+    int32_t* resultPtr = (int32_t*) (wasm_heap + result);
+    *resultPtr = written;
+    return 0;
 }

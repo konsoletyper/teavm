@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.transformation;
 
 import org.teavm.backend.wasm.runtime.WasiSupport;
 import org.teavm.backend.wasm.runtime.WasmSupport;
+import org.teavm.interop.Import;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
@@ -45,6 +46,7 @@ public class WasiSupportClassTransformer implements ClassHolderTransformer {
                 if (method.hasModifier(ElementModifier.NATIVE)) {
                     method.getModifiers().remove(ElementModifier.NATIVE);
                 }
+                method.getAnnotations().remove(Import.class.getName());
                 ProgramEmitter pe = ProgramEmitter.create(method, classHierarchy);
                 ValueEmitter[] args = new ValueEmitter[method.parameterCount()];
                 for (int i = 0; i < args.length; ++i) {

@@ -111,7 +111,7 @@ public class GCIntrinsic implements WasmIntrinsic {
                 return intToLong(getStaticField(manager, "heapSize"));
             case "outOfMemory": {
                 WasmBlock block = new WasmBlock(false);
-                WasmCall call = new WasmCall(manager.getNames().forMethod(PRINT_OUT_OF_MEMORY), true);
+                WasmCall call = new WasmCall(manager.getNames().forMethod(PRINT_OUT_OF_MEMORY));
                 block.getBody().add(call);
                 block.getBody().add(new WasmUnreachable());
                 return block;

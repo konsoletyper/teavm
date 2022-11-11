@@ -348,8 +348,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 String.class, void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "printInt",
                 int.class, void.class)).use();
-        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "printOutOfMemory",
-                void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "printOutOfMemory", void.class)).use();
 
         dependencyAnalyzer.linkMethod(INIT_HEAP_REF).use();
         dependencyAnalyzer.linkMethod(RESIZE_HEAP_REF).use();
@@ -471,10 +470,11 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         context.addIntrinsic(new ObjectIntrinsic());
         context.addIntrinsic(new ConsoleIntrinsic());
         context.addGenerator(new ArrayGenerator());
-        if (!Boolean.parseBoolean(System.getProperty("teavm.wasm.vmAssertions", "false"))) {
+        boolean vmAssertions = Boolean.parseBoolean(System.getProperty("teavm.wasm.vmAssertions", "false"));
+        if (!vmAssertions) {
             context.addIntrinsic(new MemoryTraceIntrinsic());
         }
-        context.addIntrinsic(new WasmHeapIntrinsic());
+        context.addIntrinsic(new WasmHeapIntrinsic(vmAssertions));
         context.addIntrinsic(new FiberIntrinsic());
 
         IntrinsicFactoryContext intrinsicFactoryContext = new IntrinsicFactoryContext();

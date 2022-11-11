@@ -102,10 +102,6 @@ public class WasiSupport {
         printString("Out of memory");
     }
 
-    @Unmanaged
-    public static void initHeapTrace(int maxHeap) {
-    }
-
     public static String[] getArgs() {
         Address buffer = WasiBuffer.getBuffer();
         IntResult sizesReceiver = buffer.toStructure();
@@ -143,6 +139,7 @@ public class WasiSupport {
 
     private static int nextRandom(int bits) {
         if (!randomInitialized) {
+            randomInitialized = true;
             short errno = Wasi.randomGet(WasiBuffer.getBuffer(), 8);
 
             if (errno != ERRNO_SUCCESS) {

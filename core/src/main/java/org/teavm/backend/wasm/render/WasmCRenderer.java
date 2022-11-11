@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
@@ -80,9 +81,11 @@ public class WasmCRenderer {
             }
         }
 
-        line("void main() {");
+        line("void main(int argc, char** argv) {");
         indent();
 
+        line("wasm_args = argc;");
+        line("wasm_argv = argv;");
         renderHeap(module);
         if (module.getStartFunction() != null) {
             line(module.getStartFunction().getName() + "();");
@@ -91,6 +94,12 @@ public class WasmCRenderer {
         for (WasmFunction function : module.getFunctions().values()) {
             if (function.getExportName() != null && function.getExportName().equals("main")) {
                 line(function.getName() + "(1);");
+            }
+        }
+
+        for (WasmFunction function : module.getFunctions().values()) {
+            if (Objects.equals(function.getExportName(), "_start")) {
+                line(function.getName() + "();");
             }
         }
 
