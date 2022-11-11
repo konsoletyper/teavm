@@ -22,6 +22,7 @@ import static org.teavm.dependency.AbstractInstructionAnalyzer.MONITOR_EXIT_SYNC
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.teavm.model.AccessLevel;
 import org.teavm.model.BasicBlockReader;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHierarchy;
@@ -31,6 +32,7 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.IncomingReader;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.PhiReader;
 import org.teavm.model.Program;
@@ -368,6 +370,15 @@ class DependencyGraphBuilder {
         @Override
         protected void invokeVirtual(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments) {
+            ClassReader cls = dependencyAnalyzer.getClassSource().get(method.getClassName());
+            if (cls != null) {
+                MethodReader methodHolder = cls.getMethod(method.getDescriptor());
+                if (methodHolder != null && methodHolder.getLevel() == AccessLevel.PRIVATE) {
+                    invokeSpecial(receiver, instance, method, arguments);
+                    return;
+                }
+            }
+
             if (handleSpecialMethod(receiver, instance, method)) {
                 return;
             }
@@ -377,7 +388,7 @@ class DependencyGraphBuilder {
                 actualArgs[i + 1] = nodes[arguments.get(i).getIndex()];
             }
             actualArgs[0] = getNode(instance);
-            DependencyConsumer listener = new VirtualCallConsumer(getNode(instance),
+            DependencyConsumer listener = new VirtualCallConsumer(
                     method.getClassName(), method.getDescriptor(), dependencyAnalyzer, actualArgs,
                     receiver != null ? getNode(receiver) : null, getCallLocation(),
                     currentExceptionConsumer);
