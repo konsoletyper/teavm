@@ -16,9 +16,6 @@ float teavm_teavm_getNaN() {
     return NAN;
 }
 
-#define teavm_isnan isnan
-#define teavm_isinf isinf
-#define teavm_isfinite isfinite
 #define teavmMath_sin sin
 #define teavmMath_cos cos
 #define teavmMath_sqrt sqrt

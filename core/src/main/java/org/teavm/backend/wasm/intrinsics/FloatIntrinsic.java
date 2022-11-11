@@ -46,6 +46,7 @@ public class FloatIntrinsic implements WasmIntrinsic {
             case "getNaN":
             case "isNaN":
             case "isInfinite":
+            case "isFinite":
             case "floatToIntBits":
             case "intBitsToFloat":
                 return true;
@@ -65,6 +66,13 @@ public class FloatIntrinsic implements WasmIntrinsic {
             case "isInfinite":
                 return testSpecialIEEE(manager.generate(invocation.getArguments().get(0)), manager,
                     WasmIntBinaryOperation.EQ);
+            case "isFinite": {
+                WasmExpression result = testSpecialIEEE(manager.generate(invocation.getArguments().get(0)), manager,
+                        WasmIntBinaryOperation.EQ);
+                result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, result,
+                        new WasmInt32Constant(0));
+                return result;
+            }
             case "floatToIntBits": {
                 WasmConversion conversion = new WasmConversion(WasmType.FLOAT32, WasmType.INT32, false,
                         manager.generate(invocation.getArguments().get(0)));

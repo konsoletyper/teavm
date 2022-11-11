@@ -39,12 +39,6 @@ TeaVM.wasm = function() {
             putwchar(memory[buffer++]);
         }
     }
-    function towlower(code) {
-        return String.fromCharCode(code).toLowerCase().charCodeAt(0);
-    }
-    function towupper(code) {
-        return String.fromCharCode(code).toUpperCase().charCodeAt(0);
-    }
     function currentTimeMillis() {
         return new Date().getTime();
     }
@@ -94,14 +88,8 @@ TeaVM.wasm = function() {
         obj.teavm = {
             currentTimeMillis: currentTimeMillis,
             nanoTime: function() { return performance.now(); },
-            isnan: isNaN,
-            teavm_getNaN: function() { return NaN; },
-            isinf: function(n) { return !isFinite(n) },
-            isfinite: isFinite,
             putwcharsOut: (chars, count) => putwchars(controller, chars, count),
             putwcharsErr: (chars, count) => putwchars(controller, chars, count),
-            towlower: towlower,
-            towupper: towupper,
             getNativeOffset: getNativeOffset,
             logString: string => logString(string, controller),
             logInt: logInt,
