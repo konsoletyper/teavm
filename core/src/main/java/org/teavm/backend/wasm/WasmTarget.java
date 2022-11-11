@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -48,7 +47,6 @@ import org.teavm.backend.wasm.generate.WasmNameProvider;
 import org.teavm.backend.wasm.generate.WasmSpecialFunctionGenerator;
 import org.teavm.backend.wasm.generate.WasmStringPool;
 import org.teavm.backend.wasm.generators.ArrayGenerator;
-import org.teavm.backend.wasm.generators.WasmMethodGenerator;
 import org.teavm.backend.wasm.generators.WasmMethodGeneratorContext;
 import org.teavm.backend.wasm.intrinsics.AddressIntrinsic;
 import org.teavm.backend.wasm.intrinsics.AllocatorIntrinsic;
@@ -110,7 +108,6 @@ import org.teavm.backend.wasm.transformation.MemoryAccessTraceTransformation;
 import org.teavm.backend.wasm.transformation.WasiFileSystemProviderTransformer;
 import org.teavm.backend.wasm.transformation.WasiSupportClassTransformer;
 import org.teavm.common.ServiceRepository;
-import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.diagnostics.Diagnostics;
@@ -128,7 +125,6 @@ import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
-import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
 import org.teavm.model.ListableClassHolderSource;
@@ -311,11 +307,11 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     @Override
     public void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
         for (Class<?> type : Arrays.asList(int.class, long.class, float.class, double.class)) {
-            MethodReference method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
+            var method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
             dependencyAnalyzer.linkMethod(method).use();
         }
         for (Class<?> type : Arrays.asList(float.class, double.class)) {
-            MethodReference method = new MethodReference(WasmRuntime.class, "remainder", type, type, type);
+            var method = new MethodReference(WasmRuntime.class, "remainder", type, type, type);
             dependencyAnalyzer.linkMethod(method).use();
         }
 
@@ -373,11 +369,11 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         dependencyAnalyzer.linkMethod(new MethodReference(String.class, "allocate", int.class, String.class))
                 .use();
 
-        ClassDependency runtimeClassDep = dependencyAnalyzer.linkClass(RuntimeClass.class.getName());
-        ClassDependency runtimeObjectDep = dependencyAnalyzer.linkClass(RuntimeObject.class.getName());
-        ClassDependency runtimeArrayDep = dependencyAnalyzer.linkClass(RuntimeArray.class.getName());
-        for (ClassDependency classDep : Arrays.asList(runtimeClassDep, runtimeObjectDep, runtimeArrayDep)) {
-            for (FieldReader field : classDep.getClassReader().getFields()) {
+        var runtimeClassDep = dependencyAnalyzer.linkClass(RuntimeClass.class.getName());
+        var runtimeObjectDep = dependencyAnalyzer.linkClass(RuntimeObject.class.getName());
+        var runtimeArrayDep = dependencyAnalyzer.linkClass(RuntimeArray.class.getName());
+        for (var classDep : Arrays.asList(runtimeClassDep, runtimeObjectDep, runtimeArrayDep)) {
+            for (var field : classDep.getClassReader().getFields()) {
                 dependencyAnalyzer.linkField(field.getReference());
             }
         }
@@ -392,7 +388,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmSupport.class, "getArgs", String[].class)).use();
 
-        ClassReader fiberClass = dependencyAnalyzer.getClassSource().get(Fiber.class.getName());
+        var fiberClass = dependencyAnalyzer.getClassSource().get(Fiber.class.getName());
         for (MethodReader method : fiberClass.getMethods()) {
             if (method.getName().startsWith("pop") || method.getName().equals("push")) {
                 dependencyAnalyzer.linkMethod(method.getReference()).use();
@@ -404,7 +400,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     @Override
     public void analyzeBeforeOptimizations(ListableClassReaderSource classSource) {
-        AsyncMethodFinder asyncFinder = new AsyncMethodFinder(controller.getDependencyInfo().getCallGraph(),
+        var asyncFinder = new AsyncMethodFinder(controller.getDependencyInfo().getCallGraph(),
                 controller.getDependencyInfo());
         asyncFinder.find(classSource);
         asyncMethods = new HashSet<>(asyncFinder.getAsyncMethods());
@@ -435,26 +431,25 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         WasmModule module = new WasmModule();
         WasmFunction initFunction = new WasmFunction("__start__");
 
-        VirtualTableProvider vtableProvider = createVirtualTableProvider(classes);
+        var vtableProvider = createVirtualTableProvider(classes);
         ClassHierarchy hierarchy = new ClassHierarchy(classes);
         TagRegistry tagRegistry = new TagRegistry(classes, hierarchy);
         BinaryWriter binaryWriter = new BinaryWriter(256);
-        NameProvider names = new NameProviderWithSpecialNames(new WasmNameProvider(),
-                controller.getUnprocessedClassSource());
-        ClassMetadataRequirements metadataRequirements = new ClassMetadataRequirements(controller.getDependencyInfo());
-        WasmClassGenerator classGenerator = new WasmClassGenerator(classes, controller.getUnprocessedClassSource(),
+        var names = new NameProviderWithSpecialNames(new WasmNameProvider(), controller.getUnprocessedClassSource());
+        var metadataRequirements = new ClassMetadataRequirements(controller.getDependencyInfo());
+        var classGenerator = new WasmClassGenerator(classes, controller.getUnprocessedClassSource(),
                 vtableProvider, tagRegistry, binaryWriter, names, metadataRequirements,
                 controller.getClassInitializerInfo(), characteristics);
 
         Decompiler decompiler = new Decompiler(classes, new HashSet<>(), false);
-        WasmStringPool stringPool = classGenerator.getStringPool();
-        WasmGenerationContext context = new WasmGenerationContext(classes, module, controller.getDiagnostics(),
+        var stringPool = classGenerator.getStringPool();
+        var context = new WasmGenerationContext(classes, module, controller.getDiagnostics(),
                 vtableProvider, tagRegistry, stringPool, names);
 
         context.addIntrinsic(new AddressIntrinsic(classGenerator));
         context.addIntrinsic(new StructureIntrinsic(classes, classGenerator));
         context.addIntrinsic(new FunctionIntrinsic(classGenerator));
-        WasmRuntimeIntrinsic wasmRuntimeIntrinsic = new WasmRuntimeIntrinsic();
+        var wasmRuntimeIntrinsic = new WasmRuntimeIntrinsic();
         context.addIntrinsic(wasmRuntimeIntrinsic);
         context.addIntrinsic(new AllocatorIntrinsic(classGenerator));
         context.addIntrinsic(new PlatformIntrinsic());
@@ -477,7 +472,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         context.addIntrinsic(new WasmHeapIntrinsic(vmAssertions));
         context.addIntrinsic(new FiberIntrinsic());
 
-        IntrinsicFactoryContext intrinsicFactoryContext = new IntrinsicFactoryContext();
+        var intrinsicFactoryContext = new IntrinsicFactoryContext();
         for (WasmIntrinsicFactory additionalIntrinsicFactory : additionalIntrinsics) {
             context.addIntrinsic(additionalIntrinsicFactory.create(intrinsicFactoryContext));
         }
@@ -487,11 +482,11 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         MutatorIntrinsic mutatorIntrinsic = new MutatorIntrinsic();
         context.addIntrinsic(mutatorIntrinsic);
         context.addIntrinsic(new ShadowStackIntrinsic());
-        ExceptionHandlingIntrinsic exceptionHandlingIntrinsic = new ExceptionHandlingIntrinsic(binaryWriter,
+        var exceptionHandlingIntrinsic = new ExceptionHandlingIntrinsic(binaryWriter,
                 classGenerator, stringPool, obfuscated);
         context.addIntrinsic(exceptionHandlingIntrinsic);
 
-        WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator, binaryWriter,
+        var generator = new WasmGenerator(decompiler, classes, context, classGenerator, binaryWriter,
                 asyncMethods::contains);
 
         generateMethods(classes, context, generator, classGenerator, binaryWriter, module);
@@ -505,7 +500,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         mutatorIntrinsic.setClassesAddress(classGenerator.getClassesAddress());
         mutatorIntrinsic.setClassCount(classGenerator.getClassCount());
 
-        WasmMemorySegment dataSegment = new WasmMemorySegment();
+        var dataSegment = new WasmMemorySegment();
         dataSegment.setData(binaryWriter.getData());
         dataSegment.setOffset(256);
         module.getSegments().add(dataSegment);
@@ -537,8 +532,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             new IndirectCallTraceTransformation(module).apply();
         }
 
-        WasmBinaryWriter writer = new WasmBinaryWriter();
-        WasmBinaryRenderer renderer = new WasmBinaryRenderer(writer, version, obfuscated);
+        var writer = new WasmBinaryWriter();
+        var renderer = new WasmBinaryRenderer(writer, version, obfuscated);
         renderer.render(module);
 
         try (OutputStream output = buildTarget.createResource(outputName)) {
@@ -559,14 +554,14 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     }
 
     private WasmFunction createStartFunction(NameProvider names) {
-        WasmFunction function = new WasmFunction("teavm_start");
+        var function = new WasmFunction("teavm_start");
         function.setExportName("start");
         function.getParameters().add(WasmType.INT32);
 
-        WasmLocal local = new WasmLocal(WasmType.INT32, "args");
+        var local = new WasmLocal(WasmType.INT32, "args");
         function.add(local);
 
-        WasmCall call = new WasmCall(names.forMethod(new MethodReference(Fiber.class, "startMain", String[].class,
+        var call = new WasmCall(names.forMethod(new MethodReference(Fiber.class, "startMain", String[].class,
                 void.class)));
         call.getArguments().add(new WasmGetLocal(local));
         function.getBody().add(call);
@@ -710,7 +705,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             }
         }
 
-        MethodGeneratorContextImpl methodGeneratorContext = new MethodGeneratorContextImpl(binaryWriter,
+        var methodGeneratorContext = new MethodGeneratorContextImpl(binaryWriter,
                 context.getStringPool(), context.getDiagnostics(), context.names, classGenerator, classes);
 
         for (MethodHolder method : methods) {
@@ -736,7 +731,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             }
 
             if (implementor.hasModifier(ElementModifier.NATIVE)) {
-                WasmMethodGenerator methodGenerator = context.getGenerator(method.getReference());
+                var methodGenerator = context.getGenerator(method.getReference());
                 if (methodGenerator != null) {
                     WasmFunction function = context.getFunction(context.names.forMethod(method.getReference()));
                     methodGenerator.apply(method.getReference(), function, methodGeneratorContext);
@@ -807,7 +802,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     private void generateIsClass(WasmLocal subtypeVar, WasmClassGenerator classGenerator, TagRegistry tagRegistry,
             String className, List<WasmExpression> body) {
-        List<TagRegistry.Range> ranges = tagRegistry.getRanges(className);
+        var ranges = tagRegistry.getRanges(className);
         if (ranges.isEmpty()) {
             body.add(new WasmReturn(new WasmInt32Constant(0)));
             return;
@@ -965,14 +960,14 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     }
 
     private VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {
-        VirtualTableBuilder builder = new VirtualTableBuilder(classes);
+        var builder = new VirtualTableBuilder(classes);
         builder.setMethodsUsedAtCallSites(getMethodsUsedOnCallSites(classes));
         builder.setMethodCalledVirtually(controller::isVirtual);
         return builder.build();
     }
 
     private Set<MethodReference> getMethodsUsedOnCallSites(ListableClassHolderSource classes) {
-        Set<MethodReference> virtualMethods = new HashSet<>();
+        var virtualMethods = new HashSet<MethodReference>();
 
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
@@ -1085,8 +1080,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
             switch (invocation.getMethod().getName()) {
                 case "runMain": {
-                    Iterator<? extends TeaVMEntryPoint> entryPointIter = controller.getEntryPoints().values()
-                            .iterator();
+                    var entryPointIter = controller.getEntryPoints().values().iterator();
                     if (entryPointIter.hasNext()) {
                         TeaVMEntryPoint entryPoint = entryPointIter.next();
                         String name = manager.getNames().forMethod(entryPoint.getMethod());
@@ -1095,7 +1089,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                         call.setLocation(invocation.getLocation());
                         return call;
                     } else {
-                        WasmUnreachable unreachable = new WasmUnreachable();
+                        var unreachable = new WasmUnreachable();
                         unreachable.setLocation(invocation.getLocation());
                         return unreachable;
                     }
