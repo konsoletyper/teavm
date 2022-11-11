@@ -92,7 +92,7 @@ int32_t wasi_snapshot_preview1_args_sizes_get(int32_t argv_size, int32_t argv_bu
 
     int32_t bufferSize = 0;
     for (int i = 0; i < wasm_args; ++i) {
-        bufferSize += (int32_t) strlen(wasm_argv[i]);
+        bufferSize += (int32_t) strlen(wasm_argv[i]) + 1;
     }
     *argvBufferSizePtr = bufferSize;
     return 0;
@@ -103,8 +103,8 @@ int32_t wasi_snapshot_preview1_args_get(int32_t sizes_ptr, int32_t args_ptr) {
     char* argsPtr = (char*) (wasm_heap + args_ptr);
     int offset = 0;
     for (int i = 0; i < wasm_args; ++i) {
-        sizesPtr[i] = (int32_t) offset;
-        int len = strlen(wasm_argv[i]);
+        sizesPtr[i] = (int32_t) offset + args_ptr;
+        int len = strlen(wasm_argv[i]) + 1;
         memcpy(argsPtr + offset, wasm_argv[i], len);
         offset += len;
     }

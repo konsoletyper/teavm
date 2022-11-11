@@ -141,19 +141,19 @@ public final class ExceptionHandling {
 
     @Unmanaged
     public static void throwClassCastException() {
-        throw new ClassCastException();
+        throwException(new ClassCastException());
     }
 
     @Unmanaged
     @Export(name = "teavm_throwNullPointerException")
     public static void throwNullPointerException() {
-        throw new NullPointerException();
+        throwException(new NullPointerException());
     }
 
     @Unmanaged
     @Export(name = "teavm_throwArrayIndexOutOfBoundsException")
     public static void throwArrayIndexOutOfBoundsException() {
-        throw new ArrayIndexOutOfBoundsException();
+        throwException(new ArrayIndexOutOfBoundsException());
     }
 
     @Unmanaged

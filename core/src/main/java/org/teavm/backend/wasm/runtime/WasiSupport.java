@@ -112,8 +112,8 @@ public class WasiSupport {
         if (errno != ERRNO_SUCCESS) {
             throw new RuntimeException("Could not get command line arguments");
         }
-        int argvSize = (int) sizesReceiver.value;
-        int argvBufSize = (int) bufferSizeReceiver.value;
+        int argvSize = sizesReceiver.value;
+        int argvBufSize = bufferSizeReceiver.value;
 
         int[] argvOffsets = new int[argvSize];
         byte[] argvBuffer = new byte[argvBufSize];

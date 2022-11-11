@@ -69,7 +69,6 @@ public final class WasmHeap {
 
     public static void initHeap(Address start, int minHeap, int maxHeap, int stackSize, int bufferSize) {
         initHeapTrace(maxHeap);
-        buffer = start;
         buffer = WasmRuntime.align(start, 16);
         WasmHeap.bufferSize = bufferSize;
         stack = WasmRuntime.align(buffer.add(bufferSize), 16);
