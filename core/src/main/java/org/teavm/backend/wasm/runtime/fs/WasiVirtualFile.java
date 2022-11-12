@@ -27,6 +27,7 @@ import static org.teavm.backend.wasm.wasi.Wasi.OFLAGS_DIRECTORY;
 import static org.teavm.backend.wasm.wasi.Wasi.OFLAGS_EXCLUSIVE;
 import static org.teavm.backend.wasm.wasi.Wasi.RIGHTS_FD_FILESTAT_GET;
 import static org.teavm.backend.wasm.wasi.Wasi.RIGHTS_FD_FILESTAT_SET_SIZE;
+import static org.teavm.backend.wasm.wasi.Wasi.RIGHTS_FD_READDIR;
 import static org.teavm.backend.wasm.wasi.Wasi.RIGHTS_READ;
 import static org.teavm.backend.wasm.wasi.Wasi.RIGHTS_SEEK;
 import static org.teavm.backend.wasm.wasi.Wasi.RIGHTS_SYNC;
@@ -39,7 +40,7 @@ import org.teavm.backend.wasm.runtime.WasiBuffer;
 import org.teavm.backend.wasm.wasi.Dirent;
 import org.teavm.backend.wasm.wasi.FdResult;
 import org.teavm.backend.wasm.wasi.Filestat;
-import org.teavm.backend.wasm.wasi.SizeResult;
+import org.teavm.backend.wasm.wasi.IntResult;
 import org.teavm.backend.wasm.wasi.Wasi;
 import org.teavm.interop.Address;
 import org.teavm.interop.Structure;
@@ -109,12 +110,12 @@ public class WasiVirtualFile implements VirtualFile {
     }
 
     private String[] listFiles(int fd) {
-        SizeResult sizePtr = WasiBuffer.getBuffer().toStructure();
+        IntResult sizePtr = WasiBuffer.getBuffer().toStructure();
         ArrayList<String> list = new ArrayList<>();
         final int direntSize = Structure.sizeOf(Dirent.class);
         byte[] direntArray = fs.buffer;
         Address direntBuffer = Address.align(Address.ofData(direntArray), 8);
-        int direntArrayOffset = (int) direntBuffer.diff(Address.ofData(direntArray).add(8));
+        int direntArrayOffset = (int) direntBuffer.diff(Address.ofData(direntArray));
         int bufferSize = direntArray.length - direntArrayOffset;
         long cookie = 0;
 
@@ -124,27 +125,34 @@ public class WasiVirtualFile implements VirtualFile {
             if (errno != ERRNO_SUCCESS) {
                 return null;
             }
+            int size = sizePtr.value;
             int remainingSize = bufferSize;
+            int entryOffset = 0;
             while (true) {
                 if (remainingSize < direntSize) {
                     break;
                 }
-                Address direntPtr = direntBuffer.add(direntArrayOffset);
+                Address direntPtr = direntBuffer.add(entryOffset);
                 Dirent dirent = direntPtr.toStructure();
-                int entryLength = direntSize + (int) dirent.nameLength;
+                int entryLength = direntSize + dirent.nameLength;
                 if (entryLength > bufferSize) {
                     direntArray = new byte[entryLength * 3 / 2 + 8];
                     direntBuffer = Address.align(Address.ofData(direntArray), 8);
                     direntArrayOffset = (int) direntBuffer.diff(Address.ofData(direntArray));
                     bufferSize = direntArray.length - direntArrayOffset;
                     break;
+                } else if (entryOffset + entryLength > bufferSize) {
+                    break;
                 }
                 cookie = dirent.next;
-                list.add(new String(direntArray, direntArrayOffset + direntSize, (int) dirent.nameLength,
-                        StandardCharsets.UTF_8));
+                String name = new String(direntArray, direntArrayOffset + entryOffset + direntSize, dirent.nameLength,
+                        StandardCharsets.UTF_8);
+                if (!name.equals(".") && !name.equals("..")) {
+                    list.add(name);
+                }
                 remainingSize -= entryLength;
-                direntArrayOffset += entryLength;
-                if (direntArrayOffset == sizePtr.value) {
+                entryOffset += entryLength;
+                if (entryOffset == size) {
                     break outer;
                 }
             }
@@ -159,7 +167,7 @@ public class WasiVirtualFile implements VirtualFile {
         if (baseFd < 0) {
             return null;
         }
-        int fd = path != null ? open(OFLAGS_DIRECTORY, RIGHTS_READ, (short) 0) : baseFd;
+        int fd = path != null ? open(OFLAGS_DIRECTORY, RIGHTS_READ | RIGHTS_FD_READDIR, (short) 0) : baseFd;
         if (fd < 0) {
             return null;
         }
@@ -214,7 +222,7 @@ public class WasiVirtualFile implements VirtualFile {
     public boolean createFile(String fileName) throws IOException {
         init();
         if (baseFd < 0) {
-            return false;
+            throw new IOException("Can't create file: access to directory not granted by WASI runtime");
         }
         int fd = open(baseFd, constructPath(path, fileName), (short) (OFLAGS_CREATE | OFLAGS_EXCLUSIVE), 0, (short) 0);
         if (fs.errno == ERRNO_EXIST) {
@@ -241,12 +249,17 @@ public class WasiVirtualFile implements VirtualFile {
     @Override
     public boolean delete() {
         init();
-        if (fullPath == null || baseFd < 0) {
+        if (path == null || baseFd < 0) {
             return false;
         }
-        byte[] bytes = path.getBytes(StandardCharsets.UTF_8);
-        short errno = Wasi.pathUnlinkFile(baseFd, Address.ofData(bytes), bytes.length);
-        return errno == ERRNO_SUCCESS;
+        if (isFile()) {
+            byte[] bytes = path.getBytes(StandardCharsets.UTF_8);
+            return Wasi.pathUnlinkFile(baseFd, Address.ofData(bytes), bytes.length) == ERRNO_SUCCESS;
+        } else if (isDirectory()) {
+            byte[] bytes = path.getBytes(StandardCharsets.UTF_8);
+            return Wasi.pathRemoveDirectory(baseFd, Address.ofData(bytes), bytes.length) == ERRNO_SUCCESS;
+        }
+        return false;
     }
 
     private static boolean adopt(int fd, WasiVirtualFile file, String fileName) {

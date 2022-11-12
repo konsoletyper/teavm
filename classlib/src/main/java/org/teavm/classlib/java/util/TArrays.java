@@ -1527,6 +1527,7 @@ public class TArrays extends TObject {
 
     @SafeVarargs
     public static <T> TList<T> asList(final T... a) {
+        Objects.requireNonNull(a);
         return new ArrayAsList<>(a);
     }
 

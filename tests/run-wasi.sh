@@ -1,1 +1,1 @@
-~/.wasmtime/bin/wasmtime run --dir target/wasi-testdir --mapdir /::target/wasi-testdir $1 $2
+~/.wasmtime/bin/wasmtime run --mapdir /::target/wasi-testdir $1 $2

@@ -44,6 +44,7 @@ public final class Wasi {
     public static final long RIGHTS_SYNC = 1L << 4;
     public static final long RIGHTS_CREATE_DIRECTORY = 1L << 9;
     public static final long RIGHTS_CREATE_FILE = 1L << 10;
+    public static final long RIGHTS_FD_READDIR = 1L << 14;
     public static final long RIGHTS_FD_FILESTAT_GET = 1L << 21;
     public static final long RIGHTS_FD_FILESTAT_SET_SIZE = 1L << 22;
 
@@ -93,7 +94,7 @@ public final class Wasi {
             Filestat filestat);
 
     @Import(name = "fd_readdir", module = "wasi_snapshot_preview1")
-    public static native short fdReaddir(int fd, Address dirent, int direntSize, long cookie, SizeResult size);
+    public static native short fdReaddir(int fd, Address dirent, int direntSize, long cookie, IntResult size);
 
     @Import(name = "path_open", module = "wasi_snapshot_preview1")
     public static native short pathOpen(int dirFd, int lookupFlags, Address path, int pathLength, short oflags,
@@ -107,6 +108,9 @@ public final class Wasi {
 
     @Import(name = "path_unlink_file", module = "wasi_snapshot_preview1")
     public static native short pathUnlinkFile(int fd, Address path, int pathLength);
+
+    @Import(name = "path_remove_directory", module = "wasi_snapshot_preview1")
+    public static native short pathRemoveDirectory(int fd, Address path, int pathLength);
 
     @Import(name = "path_rename", module = "wasi_snapshot_preview1")
     public static native short pathRename(int oldFd, Address oldPath, int oldPathLength, int newFd, Address newPath,

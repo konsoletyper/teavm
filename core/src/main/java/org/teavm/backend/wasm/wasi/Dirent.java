@@ -20,6 +20,6 @@ import org.teavm.interop.Structure;
 public class Dirent extends Structure {
     public long next;
     public long inode;
-    public long nameLength;
-    public long fileType;
+    public int nameLength;
+    public int fileType;
 }

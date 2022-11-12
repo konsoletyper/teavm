@@ -55,7 +55,7 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
         }
 
         VirtualFile virtualFile = file.findVirtualFile();
-        if (virtualFile == null || virtualFile.isDirectory()) {
+        if (virtualFile == null || !virtualFile.isFile()) {
             throw new FileNotFoundException();
         }
 

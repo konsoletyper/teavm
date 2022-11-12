@@ -47,7 +47,7 @@ public class WasiFileSystem implements VirtualFileSystem {
     }
 
     void findBestPreopened(String path) {
-        if (path.endsWith("/")) {
+        if (path.endsWith("/") && path.length() > 1) {
             path = path.substring(0, path.length() - 1);
         }
 
@@ -81,12 +81,11 @@ public class WasiFileSystem implements VirtualFileSystem {
     }
 
     private static int getPrefixLength(String name, String dir) {
-        if (dir.equals("/")) {
-            return 0;
-        } else {
-            return name.startsWith(dir) && name.length() > dir.length() && name.charAt(dir.length()) == '/'
-                    ? dir.length() + 1 : -1;
+        if (dir.equals("/") && name.startsWith("/")) {
+            return 1;
         }
+        return name.startsWith(dir) && name.length() > dir.length() && name.charAt(dir.length()) == '/'
+                ? dir.length() + 1 : -1;
     }
 
     @Override
