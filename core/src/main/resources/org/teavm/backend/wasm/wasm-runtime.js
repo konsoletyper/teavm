@@ -31,9 +31,9 @@ TeaVM.wasm = function() {
             lineBuffer += String.fromCharCode(charCode);
         }
     }
-    function putwchars(buffer, count) {
+    function putwchars(controller, buffer, count) {
         let instance = controller.instance;
-        let memory = instance.exports.memory.buffer;
+        let memory = new Int8Array(instance.exports.memory.buffer);
         for (let i = 0; i < count; ++i) {
             // TODO: support UTF-8
             putwchar(memory[buffer++]);

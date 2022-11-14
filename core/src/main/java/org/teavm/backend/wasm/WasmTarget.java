@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
@@ -39,6 +40,7 @@ import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.lowlevel.generate.NameProviderWithSpecialNames;
 import org.teavm.backend.lowlevel.transform.CoroutineTransformation;
 import org.teavm.backend.wasm.binary.BinaryWriter;
+import org.teavm.backend.wasm.generate.DwarfGenerator;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.generate.WasmDependencyListener;
 import org.teavm.backend.wasm.generate.WasmGenerationContext;
@@ -76,6 +78,7 @@ import org.teavm.backend.wasm.intrinsics.WasmIntrinsicFactory;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicFactoryContext;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.backend.wasm.intrinsics.WasmRuntimeIntrinsic;
+import org.teavm.backend.wasm.model.WasmCustomSection;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
@@ -491,6 +494,10 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 classGenerator, stringPool, obfuscated);
         context.addIntrinsic(exceptionHandlingIntrinsic);
 
+        var dwarfGenerator = debugging ? new DwarfGenerator() : null;
+        if (dwarfGenerator != null) {
+            dwarfGenerator.begin();
+        }
         var generator = new WasmGenerator(decompiler, classes, context, classGenerator, binaryWriter,
                 asyncMethods::contains);
 
@@ -539,7 +546,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
         var writer = new WasmBinaryWriter();
         var renderer = new WasmBinaryRenderer(writer, version, obfuscated);
-        renderer.render(module);
+        renderer.render(module, buildDwarf(dwarfGenerator));
 
         try (OutputStream output = buildTarget.createResource(outputName)) {
             output.write(writer.getData());
@@ -556,6 +563,16 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         if (runtimeType == WasmRuntimeType.TEAVM) {
             emitRuntime(buildTarget, getBaseName(outputName) + ".wasm-runtime.js");
         }
+    }
+
+    private Supplier<Collection<? extends WasmCustomSection>> buildDwarf(DwarfGenerator generator) {
+        if (generator == null) {
+            return null;
+        }
+        return () -> {
+            generator.end();
+            return generator.createSections();
+        };
     }
 
     private WasmFunction createStartFunction(NameProvider names) {
