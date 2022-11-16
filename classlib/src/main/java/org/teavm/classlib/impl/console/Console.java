@@ -54,7 +54,7 @@ public final class Console {
         } else {
             for (int i = 0; i < len; ++i) {
                 byte b = data[i + off];
-                writeJs(b & 0xFF);
+                writeJsStdout(b & 0xFF);
             }
         }
     }
