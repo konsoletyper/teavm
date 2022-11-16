@@ -464,11 +464,11 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         for (String key : controller.getEntryPoints().keySet()) {
             writer.append("var ").append(key).append(";").softNewLine();
         }
-        writer.append("(function()").ws().append("{").newLine();
+        writer.append("(function($rt_globals)").ws().append("{").newLine();
     }
 
     private void printWrapperEnd(SourceWriter writer) throws IOException {
-        writer.append("})();").newLine();
+        writer.append("})(this);").newLine();
     }
 
     private void printStats(Renderer renderer, int totalSize) {

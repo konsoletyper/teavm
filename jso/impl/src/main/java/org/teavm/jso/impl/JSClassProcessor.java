@@ -26,7 +26,6 @@ import java.util.Objects;
 import java.util.Set;
 import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.AstRoot;
 import org.mozilla.javascript.ast.FunctionNode;
 import org.teavm.backend.javascript.rendering.JSParser;
@@ -556,27 +555,26 @@ class JSClassProcessor {
                 .toArray(String[]::new) : new String[0];
 
         // Parse JS script
-        TeaVMErrorReporter errorReporter = new TeaVMErrorReporter(diagnostics,
-                new CallLocation(methodToProcess.getReference()));
-        CompilerEnvirons env = new CompilerEnvirons();
+        var errorReporter = new TeaVMErrorReporter(diagnostics, new CallLocation(methodToProcess.getReference()));
+        var env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
         env.setLanguageVersion(Context.VERSION_1_8);
         env.setIdeMode(true);
-        JSParser parser = new JSParser(env, errorReporter);
+        var parser = new JSParser(env, errorReporter);
         AstRoot rootNode;
         try {
             rootNode = (AstRoot) parser.parseAsObject(new StringReader("function(){" + script + "}"), null, 0);
         } catch (IOException e) {
             throw new RuntimeException("IO Error occurred", e);
         }
-        AstNode body = ((FunctionNode) rootNode.getFirstChild()).getBody();
+        var body = ((FunctionNode) rootNode.getFirstChild()).getBody();
 
         repository.methodMap.put(methodToProcess.getReference(), proxyMethod);
         if (errorReporter.hasErrors()) {
             repository.emitters.put(proxyMethod, new JSBodyBloatedEmitter(isStatic, proxyMethod,
                     script, parameterNames));
         } else {
-            AstNode expr = JSBodyInlineUtil.isSuitableForInlining(methodToProcess.getReference(),
+            var expr = JSBodyInlineUtil.isSuitableForInlining(methodToProcess.getReference(),
                     parameterNames, body);
             if (expr != null) {
                 repository.inlineMethods.add(methodToProcess.getReference());
@@ -584,7 +582,7 @@ class JSClassProcessor {
                 expr = body;
             }
             javaInvocationProcessor.process(location, expr);
-            repository.emitters.put(proxyMethod, new JSBodyAstEmitter(isStatic, expr, parameterNames));
+            repository.emitters.put(proxyMethod, new JSBodyAstEmitter(isStatic, expr, rootNode, parameterNames));
         }
     }
 
