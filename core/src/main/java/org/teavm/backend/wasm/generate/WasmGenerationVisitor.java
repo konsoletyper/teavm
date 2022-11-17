@@ -1451,7 +1451,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         expr.getIndex().acceptVisitor(this);
     }
 
-    private WasmExpression negate(WasmExpression expr) {
+    private static WasmExpression negate(WasmExpression expr) {
         if (expr instanceof WasmIntBinary) {
             WasmIntBinary binary = (WasmIntBinary) expr;
             if (binary.getType() == WasmIntType.INT32 && binary.getOperation() == WasmIntBinaryOperation.XOR) {
@@ -1478,11 +1478,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, expr, new WasmInt32Constant(0));
     }
 
-    private boolean isOne(WasmExpression expression) {
+    private static boolean isOne(WasmExpression expression) {
         return expression instanceof WasmInt32Constant && ((WasmInt32Constant) expression).getValue() == 1;
     }
 
-    private boolean isZero(WasmExpression expression) {
+    private static boolean isZero(WasmExpression expression) {
         return expression instanceof WasmInt32Constant && ((WasmInt32Constant) expression).getValue() == 0;
     }
 
@@ -1546,7 +1546,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         return expression;
     }
 
-    private WasmIntBinaryOperation negate(WasmIntBinaryOperation op) {
+    private static WasmIntBinaryOperation negate(WasmIntBinaryOperation op) {
         switch (op) {
             case EQ:
                 return WasmIntBinaryOperation.NE;
@@ -1573,7 +1573,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
     }
 
-    private WasmFloatBinaryOperation negate(WasmFloatBinaryOperation op) {
+    private static WasmFloatBinaryOperation negate(WasmFloatBinaryOperation op) {
         switch (op) {
             case EQ:
                 return WasmFloatBinaryOperation.NE;

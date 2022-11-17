@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2022 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,12 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.c;
+package org.teavm.runtime.fs;
 
-import org.teavm.interop.Structure;
+public interface VirtualFileSystem {
+    String getUserDir();
 
-public class StringList extends Structure {
-    public CharPtr data;
-    public int length;
-    public StringList next;
+    VirtualFile getFile(String path);
+
+    boolean isWindows();
+
+    String canonicalize(String path);
 }

@@ -82,6 +82,7 @@
                     <item>-Dteavm.version=${project.version}</item>
                     <item>-Dmaven.repo.local=${settings.localRepository}</item>
                     <item>-B</item>
+                    <item>-e</item>
                   </arguments>
                 </configuration>
               </execution>

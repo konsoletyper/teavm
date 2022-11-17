@@ -1,0 +1,1 @@
+~/.wasmtime/bin/wasmtime run --mapdir /::target/wasi-testdir $1 $2

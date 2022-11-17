@@ -21,6 +21,7 @@ import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.Block;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.AstWriter;
+import org.teavm.backend.javascript.rendering.DefaultGlobalNameWriter;
 import org.teavm.backend.javascript.rendering.Precedence;
 import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.backend.javascript.spi.InjectorContext;
@@ -29,17 +30,19 @@ import org.teavm.model.MethodReference;
 class JSBodyAstEmitter implements JSBodyEmitter {
     private boolean isStatic;
     private AstNode ast;
+    private AstNode rootAst;
     private String[] parameterNames;
 
-    JSBodyAstEmitter(boolean isStatic, AstNode ast, String[] parameterNames) {
+    JSBodyAstEmitter(boolean isStatic, AstNode ast, AstNode rootAst, String[] parameterNames) {
         this.isStatic = isStatic;
         this.ast = ast;
+        this.rootAst = rootAst;
         this.parameterNames = parameterNames;
     }
 
     @Override
     public void emit(InjectorContext context) throws IOException {
-        AstWriter astWriter = new AstWriter(context.getWriter());
+        var astWriter = new AstWriter(context.getWriter(), new DefaultGlobalNameWriter(context.getWriter()));
         int paramIndex = 0;
         if (!isStatic) {
             int index = paramIndex++;
@@ -51,7 +54,7 @@ class JSBodyAstEmitter implements JSBodyEmitter {
             astWriter.declareNameEmitter(parameterNames[i],
                     prec -> context.writeExpr(context.getArgument(index), convert(prec)));
         }
-        astWriter.hoist(ast);
+        astWriter.hoist(rootAst);
         astWriter.print(ast, convert(context.getPrecedence()));
     }
 
@@ -139,7 +142,7 @@ class JSBodyAstEmitter implements JSBodyEmitter {
 
     @Override
     public void emit(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        AstWriter astWriter = new AstWriter(writer);
+        var astWriter = new AstWriter(writer, new DefaultGlobalNameWriter(writer));
         int paramIndex = 1;
         if (!isStatic) {
             int index = paramIndex++;
@@ -149,7 +152,7 @@ class JSBodyAstEmitter implements JSBodyEmitter {
             int index = paramIndex++;
             astWriter.declareNameEmitter(parameterNames[i], prec -> writer.append(context.getParameterName(index)));
         }
-        astWriter.hoist(ast);
+        astWriter.hoist(rootAst);
         if (ast instanceof Block) {
             for (Node child = ast.getFirstChild(); child != null; child = child.getNext()) {
                 astWriter.print((AstNode) child);

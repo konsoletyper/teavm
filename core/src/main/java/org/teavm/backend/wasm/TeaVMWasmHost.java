@@ -20,4 +20,6 @@ import org.teavm.vm.spi.TeaVMHostExtension;
 
 public interface TeaVMWasmHost extends TeaVMHostExtension {
     void add(WasmIntrinsicFactory intrinsicFactory);
+
+    WasmRuntimeType getRuntimeType();
 }

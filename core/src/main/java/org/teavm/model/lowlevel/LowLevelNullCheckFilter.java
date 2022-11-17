@@ -28,11 +28,14 @@ public class LowLevelNullCheckFilter implements NullCheckFilter {
 
     @Override
     public boolean apply(FieldReference field) {
-        return !characteristics.isStructure(field.getClassName());
+        return !characteristics.isStructure(field.getClassName())
+                && !characteristics.isResource(field.getClassName());
     }
 
     @Override
     public boolean apply(MethodReference method) {
-        return characteristics.isManaged(method.getClassName()) && characteristics.isManaged(method);
+        return characteristics.isManaged(method.getClassName())
+                && characteristics.isManaged(method)
+                && !characteristics.isResource(method.getClassName());
     }
 }

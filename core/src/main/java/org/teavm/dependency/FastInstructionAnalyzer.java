@@ -16,7 +16,10 @@
 package org.teavm.dependency;
 
 import java.util.List;
+import org.teavm.model.AccessLevel;
 import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.VariableReader;
 
@@ -46,6 +49,14 @@ class FastInstructionAnalyzer extends AbstractInstructionAnalyzer {
     @Override
     protected void invokeVirtual(VariableReader receiver, VariableReader instance, MethodReference method,
             List<? extends VariableReader> arguments) {
+        ClassReader cls = dependencyAnalyzer.getClassSource().get(method.getClassName());
+        if (cls != null) {
+            MethodReader methodHolder = cls.getMethod(method.getDescriptor());
+            if (methodHolder != null && methodHolder.getLevel() == AccessLevel.PRIVATE) {
+                invokeSpecial(receiver, instance, method, arguments);
+                return;
+            }
+        }
         invokeGetClass(method);
         FastVirtualCallConsumer consumer = dependencyAnalyzer.getVirtualCallConsumer(method);
         consumer.addLocation(impreciseLocation);

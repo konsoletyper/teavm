@@ -20,8 +20,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Objects;
-import org.teavm.classlib.fs.VirtualFile;
-import org.teavm.classlib.fs.VirtualFileAccessor;
+import org.teavm.runtime.fs.VirtualFile;
+import org.teavm.runtime.fs.VirtualFileAccessor;
 
 public class TFileOutputStream extends OutputStream {
     private static final byte[] ONE_BYTE_BUFER = new byte[1];
@@ -44,7 +44,7 @@ public class TFileOutputStream extends OutputStream {
             throw new FileNotFoundException("Invalid file name");
         }
         VirtualFile parentVirtualFile = file.findParentFile();
-        if (parentVirtualFile != null) {
+        if (parentVirtualFile != null && parentVirtualFile.isDirectory()) {
             try {
                 parentVirtualFile.createFile(file.getName());
             } catch (IOException e) {
@@ -53,6 +53,9 @@ public class TFileOutputStream extends OutputStream {
         }
 
         VirtualFile virtualFile = file.findVirtualFile();
+        if (virtualFile == null || !virtualFile.isFile()) {
+            throw new FileNotFoundException("Could not create file");
+        }
         accessor = virtualFile.createAccessor(false, true, append);
         if (accessor == null) {
             throw new FileNotFoundException();

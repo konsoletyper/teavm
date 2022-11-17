@@ -49,12 +49,14 @@ import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTable;
 import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.model.classes.VirtualTableProvider;
+import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
 public class WasmClassGenerator {
     private ClassReaderSource processedClassSource;
     private ClassReaderSource classSource;
+    private Characteristics characteristics;
     public final NameProvider names;
     private Map<ValueType, ClassBinaryData> binaryDataMap = new LinkedHashMap<>();
     private BinaryWriter binaryWriter;
@@ -115,7 +117,7 @@ public class WasmClassGenerator {
     public WasmClassGenerator(ClassReaderSource processedClassSource, ClassReaderSource classSource,
             VirtualTableProvider vtableProvider, TagRegistry tagRegistry, BinaryWriter binaryWriter,
             NameProvider names, ClassMetadataRequirements metadataRequirements,
-            ClassInitializerInfo classInitializerInfo) {
+            ClassInitializerInfo classInitializerInfo, Characteristics characteristics) {
         this.processedClassSource = processedClassSource;
         this.classSource = classSource;
         this.vtableProvider = vtableProvider;
@@ -125,6 +127,7 @@ public class WasmClassGenerator {
         this.names = names;
         this.metadataRequirements = metadataRequirements;
         this.classInitializerInfo = classInitializerInfo;
+        this.characteristics = characteristics;
     }
 
     public WasmStringPool getStringPool() {
@@ -161,10 +164,12 @@ public class WasmClassGenerator {
                     break;
             }
 
-            binaryData.data = createPrimitiveClassData(size, type);
+            binaryData.data = classStructure.createValue();
+            createPrimitiveClassData(binaryData.data, size, type);
             binaryData.start = binaryWriter.append(binaryData.data);
         } else if (type == ValueType.VOID) {
-            binaryData.data = createPrimitiveClassData(0, type);
+            binaryData.data = classStructure.createValue();
+            createPrimitiveClassData(binaryData.data, 0, type);
             binaryData.start = binaryWriter.append(binaryData.data);
         } else if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
@@ -207,8 +212,7 @@ public class WasmClassGenerator {
         }
     }
 
-    private DataValue createPrimitiveClassData(int size, ValueType type) {
-        DataValue value = classStructure.createValue();
+    private DataValue createPrimitiveClassData(DataValue value, int size, ValueType type) {
         value.setInt(CLASS_SIZE, size);
         value.setInt(CLASS_FLAGS, RuntimeClass.PRIMITIVE);
         value.setInt(CLASS_IS_INSTANCE, functionTable.size());
@@ -395,23 +399,11 @@ public class WasmClassGenerator {
         if (type instanceof ValueType.Primitive) {
             return false;
         } else if (type instanceof ValueType.Object) {
-            ClassReader cls = classSource.get(((ValueType.Object) type).getClassName());
-            if (cls == null) {
-                return true;
-            }
-            if (cls.getName().equals(Address.class.getName())) {
-                return false;
-            }
-            while (cls != null) {
-                if (cls.getName().equals(Structure.class.getName()) || cls.getName().equals(Function.class.getName())) {
-                    return false;
-                }
-                if (cls.getParent() == null) {
-                    return true;
-                }
-                cls = classSource.get(cls.getParent());
-            }
-            return true;
+            String className = ((ValueType.Object) type).getClassName();
+            return !characteristics.isStructure(className)
+                    && !characteristics.isFunction(className)
+                    && !characteristics.isResource(className)
+                    && !className.equals(Address.class.getName());
         } else {
             return true;
         }

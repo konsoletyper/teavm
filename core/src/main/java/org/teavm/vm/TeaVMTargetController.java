@@ -59,4 +59,5 @@ public interface TeaVMTargetController {
     void addVirtualMethods(Predicate<MethodReference> methods);
 
     ClassInitializerInfo getClassInitializerInfo();
+
 }

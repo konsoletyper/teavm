@@ -72,6 +72,7 @@ public class GCIntrinsic implements WasmIntrinsic {
             case "maxAvailableBytes":
             case "resizeHeap":
             case "writeBarrier":
+            case "canShrinkHeap":
                 return true;
             default:
                 return false;
@@ -111,7 +112,7 @@ public class GCIntrinsic implements WasmIntrinsic {
                 return intToLong(getStaticField(manager, "heapSize"));
             case "outOfMemory": {
                 WasmBlock block = new WasmBlock(false);
-                WasmCall call = new WasmCall(manager.getNames().forMethod(PRINT_OUT_OF_MEMORY), true);
+                WasmCall call = new WasmCall(manager.getNames().forMethod(PRINT_OUT_OF_MEMORY));
                 block.getBody().add(call);
                 block.getBody().add(new WasmUnreachable());
                 return block;
@@ -131,6 +132,12 @@ public class GCIntrinsic implements WasmIntrinsic {
                         cardIndex);
                 return new WasmStoreInt32(1, card, new WasmInt32Constant(0), WasmInt32Subtype.INT8);
             }
+            case "canShrinkHeap": {
+                var expr = new WasmInt32Constant(0);
+                expr.setLocation(invocation.getLocation());
+                return expr;
+            }
+
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());
         }

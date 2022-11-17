@@ -39,4 +39,36 @@ public class CharacterTest {
         assertEquals(Character.NON_SPACING_MARK, Character.getType(0xFE25));
         assertEquals(Character.DECIMAL_DIGIT_NUMBER, Character.getType(0x1D7D9));
     }
+
+    @Test
+    public void lowerCase() {
+        assertEquals('1', Character.toLowerCase('1'));
+        assertEquals('a', Character.toLowerCase('a'));
+        assertEquals('b', Character.toLowerCase('b'));
+        assertEquals('z', Character.toLowerCase('z'));
+        assertEquals('@', Character.toLowerCase('@'));
+        assertEquals('a', Character.toLowerCase('A'));
+        assertEquals('b', Character.toLowerCase('B'));
+        assertEquals('z', Character.toLowerCase('Z'));
+        assertEquals('щ', Character.toLowerCase('щ'));
+        assertEquals('щ', Character.toLowerCase('Щ'));
+        assertEquals('ü', Character.toLowerCase('ü'));
+        assertEquals('ü', Character.toLowerCase('Ü'));
+    }
+
+    @Test
+    public void upperCase() {
+        assertEquals('1', Character.toUpperCase('1'));
+        assertEquals('A', Character.toUpperCase('a'));
+        assertEquals('B', Character.toUpperCase('b'));
+        assertEquals('Z', Character.toUpperCase('z'));
+        assertEquals('@', Character.toUpperCase('@'));
+        assertEquals('A', Character.toUpperCase('A'));
+        assertEquals('B', Character.toUpperCase('B'));
+        assertEquals('Z', Character.toUpperCase('Z'));
+        assertEquals('Щ', Character.toUpperCase('щ'));
+        assertEquals('Щ', Character.toUpperCase('Щ'));
+        assertEquals('Ü', Character.toUpperCase('ü'));
+        assertEquals('Ü', Character.toUpperCase('Ü'));
+    }
 }

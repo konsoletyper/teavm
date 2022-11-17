@@ -37,6 +37,7 @@ import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.backend.c.generate.ShorteningFileNameProvider;
 import org.teavm.backend.c.generate.SimpleFileNameProvider;
 import org.teavm.backend.javascript.JavaScriptTarget;
+import org.teavm.backend.wasm.WasmRuntimeType;
 import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.cache.AlwaysStaleCacheStatus;
@@ -315,7 +316,9 @@ public class TeaVMTool {
             case JAVASCRIPT:
                 return prepareJavaScriptTarget();
             case WEBASSEMBLY:
-                return prepareWebAssemblyTarget();
+                return prepareWebAssemblyDefaultTarget();
+            case WEBASSEMBLY_WASI:
+                return prepareWebAssemblyWasiTarget();
             case C:
                 return prepareCTarget();
         }
@@ -345,6 +348,18 @@ public class TeaVMTool {
         webAssemblyTarget.setMaxHeapSize(maxHeapSize);
         webAssemblyTarget.setObfuscated(obfuscated);
         return webAssemblyTarget;
+    }
+
+    private WasmTarget prepareWebAssemblyDefaultTarget() {
+        WasmTarget target = prepareWebAssemblyTarget();
+        target.setRuntimeType(WasmRuntimeType.TEAVM);
+        return target;
+    }
+
+    private WasmTarget prepareWebAssemblyWasiTarget() {
+        WasmTarget target = prepareWebAssemblyTarget();
+        target.setRuntimeType(WasmRuntimeType.WASI);
+        return target;
     }
 
     private CTarget prepareCTarget() {

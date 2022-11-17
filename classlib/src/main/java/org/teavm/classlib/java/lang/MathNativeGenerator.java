@@ -25,8 +25,8 @@ public class MathNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         String name = methodRef.getName();
-        if (name.equals("randomImpl")) {
-            name = "random";
+        if (name.endsWith("Impl")) {
+            name = name.substring(0, name.length() - 4);
         }
         function(context, writer, "Math." + name, methodRef.parameterCount());
     }

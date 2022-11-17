@@ -164,6 +164,7 @@ public class IncrementalTest {
     private String runScript(String script, String fileName) {
         Scriptable scope = new NativeObject();
         scope.setParentScope(rhinoRootScope);
+        scope.setPrototype(rhinoRootScope);
         rhinoContext.evaluateString(scope, script, fileName, 1, null);
         Function main = (Function) scope.get("main", scope);
         ScriptRuntime.doTopCall(main, rhinoContext, scope, scope,

@@ -15,7 +15,9 @@
  */
 package org.teavm.backend.c.intrinsic;
 
+import org.teavm.ast.Expr;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.ast.VariableExpr;
 import org.teavm.backend.c.generate.CodeGeneratorUtil;
 import org.teavm.backend.c.util.ConstantUtil;
 import org.teavm.interop.Address;
@@ -62,6 +64,8 @@ public class AddressIntrinsic implements Intrinsic {
             case "sizeOf":
 
             case "ofData":
+
+            case "pin":
                 return true;
             default:
                 return false;
@@ -212,6 +216,16 @@ public class AddressIntrinsic implements Intrinsic {
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print(" + sizeof(TeaVM_Array) + (intptr_t) TEAVM_ALIGN(NULL, "
                         + sizeOf(type.getItemType()) + "))");
+                break;
+            }
+
+            case "pin": {
+                context.writer().print("/* PIN ");
+                Expr arg = invocation.getArguments().get(0);
+                if (arg instanceof VariableExpr) {
+                    context.writer().print(((VariableExpr) arg).getIndex() + " ");
+                }
+                context.writer().print("*/");
                 break;
             }
         }

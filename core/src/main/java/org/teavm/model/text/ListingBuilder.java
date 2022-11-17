@@ -89,9 +89,11 @@ public class ListingBuilder {
                         while (inliningInfo != null) {
                             sb.append(" at ");
                             InstructionStringifier.escapeIdentifierIfNeeded(sb, inliningInfo.getMethod().toString());
-                            sb.append(" '");
-                            InstructionStringifier.escapeStringLiteral(inliningInfo.getFileName(), sb);
-                            sb.append("' " + inliningInfo.getLine());
+                            if (inliningInfo.getFileName() != null) {
+                                sb.append(" '");
+                                InstructionStringifier.escapeStringLiteral(inliningInfo.getFileName(), sb);
+                                sb.append("' " + inliningInfo.getLine());
+                            }
                             inliningInfo = inliningInfo.getParent();
                         }
                     }

@@ -651,7 +651,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement, TType {
         int j = 0;
         for (int i = 0; i < supertypes.getLength(); ++i) {
             if (supertypes.get(i) != platformClass.getMetadata().getSuperclass()) {
-                filteredSupertypes[j++] = (TClass<? super T>) getClass(supertypes.get(j));
+                filteredSupertypes[j++] = (TClass<? super T>) getClass(supertypes.get(i));
             }
         }
 

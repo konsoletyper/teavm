@@ -237,6 +237,10 @@ public class JCLPlugin implements TeaVMPlugin {
                 new CharacterMetadataGenerator());
         reg.register(new MethodReference(Character.class, "acquireTitleCaseMapping", StringResource.class),
                 new CharacterMetadataGenerator());
+        reg.register(new MethodReference(Character.class, "acquireUpperCaseMapping", StringResource.class),
+                new CharacterMetadataGenerator());
+        reg.register(new MethodReference(Character.class, "acquireLowerCaseMapping", StringResource.class),
+                new CharacterMetadataGenerator());
     }
 
     @PlatformMarker

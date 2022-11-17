@@ -32,7 +32,11 @@ public class CharacterMetadataGenerator implements MetadataGenerator {
             case "obtainClasses":
                 return generateObtainClasses(context);
             case "acquireTitleCaseMapping":
-                return generateObtainTitleCaseMapping(context);
+                return generateAcquireTitleCaseMapping(context);
+            case "acquireUpperCaseMapping":
+                return generateAcquireUpperCaseMapping(context);
+            case "acquireLowerCaseMapping":
+                return generateAcquireLowerCaseMapping(context);
             default:
                 return null;
         }
@@ -50,9 +54,21 @@ public class CharacterMetadataGenerator implements MetadataGenerator {
         return res;
     }
 
-    private Resource generateObtainTitleCaseMapping(MetadataGeneratorContext context) {
+    private Resource generateAcquireTitleCaseMapping(MetadataGeneratorContext context) {
         StringResource res = context.createResource(StringResource.class);
-        res.setValue(UnicodeHelper.encodeIntDiff(UnicodeSupport.getTitleCaseMapping()));
+        res.setValue(UnicodeHelper.encodeCaseMapping(UnicodeSupport.getTitleCaseMapping()));
+        return res;
+    }
+
+    private Resource generateAcquireUpperCaseMapping(MetadataGeneratorContext context) {
+        StringResource res = context.createResource(StringResource.class);
+        res.setValue(UnicodeHelper.encodeCaseMapping(UnicodeSupport.getUpperCaseMapping()));
+        return res;
+    }
+
+    private Resource generateAcquireLowerCaseMapping(MetadataGeneratorContext context) {
+        StringResource res = context.createResource(StringResource.class);
+        res.setValue(UnicodeHelper.encodeCaseMapping(UnicodeSupport.getLowerCaseMapping()));
         return res;
     }
 }

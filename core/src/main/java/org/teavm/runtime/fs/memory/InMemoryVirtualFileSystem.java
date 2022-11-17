@@ -13,10 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.fs.memory;
+package org.teavm.runtime.fs.memory;
 
-import org.teavm.classlib.fs.VirtualFile;
-import org.teavm.classlib.fs.VirtualFileSystem;
+import org.teavm.runtime.fs.VirtualFile;
+import org.teavm.runtime.fs.VirtualFileSystem;
 
 public class InMemoryVirtualFileSystem implements VirtualFileSystem {
     InMemoryVirtualDirectory root = new InMemoryVirtualDirectory("");

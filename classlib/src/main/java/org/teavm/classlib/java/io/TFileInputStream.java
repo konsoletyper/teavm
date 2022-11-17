@@ -19,8 +19,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
-import org.teavm.classlib.fs.VirtualFile;
-import org.teavm.classlib.fs.VirtualFileAccessor;
+import org.teavm.runtime.fs.VirtualFile;
+import org.teavm.runtime.fs.VirtualFileAccessor;
 
 public class TFileInputStream extends InputStream {
     private static final byte[] ONE_BYTE_BUFFER = new byte[1];
@@ -28,7 +28,7 @@ public class TFileInputStream extends InputStream {
 
     public TFileInputStream(TFile file) throws FileNotFoundException {
         VirtualFile virtualFile = file.findVirtualFile();
-        if (virtualFile == null || virtualFile.isDirectory()) {
+        if (virtualFile == null || !virtualFile.isFile()) {
             throw new FileNotFoundException();
         }
 

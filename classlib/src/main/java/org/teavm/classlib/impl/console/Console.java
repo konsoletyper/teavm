@@ -16,7 +16,9 @@
 package org.teavm.classlib.impl.console;
 
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
+import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.JSBody;
@@ -25,29 +27,35 @@ public final class Console {
     private Console() {
     }
 
-    public static void writeStderr(int b) {
+    public static void writeStderr(byte[] data, int off, int len) {
         if (PlatformDetector.isC()) {
-            writeC(b);
+            for (int i = 0; i < len; ++i) {
+                byte b = data[i + off];
+                writeC(b & 0xFF);
+            }
         } else if (PlatformDetector.isWebAssembly()) {
-            writeWasm(b);
+            WasmSupport.putCharsStderr(Address.ofData(data).add(off), len);
         } else {
-            writeJs(b);
+            for (int i = 0; i < len; ++i) {
+                byte b = data[i + off];
+                writeJs(b & 0xFF);
+            }
         }
     }
 
-    public static void writeStdout(int b) {
+    public static void writeStdout(byte[] data, int off, int len) {
         if (PlatformDetector.isC()) {
-            writeC(b);
+            for (int i = 0; i < len; ++i) {
+                byte b = data[i + off];
+                writeC(b & 0xFF);
+            }
         } else if (PlatformDetector.isWebAssembly()) {
-            writeWasm(b);
+            WasmSupport.putCharsStdout(Address.ofData(data).add(off), len);
         } else {
-            writeJsStdout(b);
-        }
-    }
-
-    public static void writeStdout(String s) {
-        for (int i = 0; i < s.length(); ++i) {
-            writeStderr(s.charAt(i));
+            for (int i = 0; i < len; ++i) {
+                byte b = data[i + off];
+                writeJsStdout(b & 0xFF);
+            }
         }
     }
 
@@ -56,9 +64,6 @@ public final class Console {
 
     @JSBody(params = "b", script = "$rt_putStdout(b);")
     private static native void writeJsStdout(int b);
-
-    @Import(name = "putwchar", module = "teavm")
-    private static native void writeWasm(int b);
 
     @Unmanaged
     @Import(name = "teavm_logchar")

@@ -32,6 +32,7 @@ public class Characteristics {
     private ObjectByteMap<String> isStructure = new ObjectByteHashMap<>();
     private ObjectByteMap<String> isStaticInit = new ObjectByteHashMap<>();
     private ObjectByteMap<String> isFunction = new ObjectByteHashMap<>();
+    private ObjectByteMap<String> isResource = new ObjectByteHashMap<>();
     private ObjectByteMap<MethodReference> isManaged = new ObjectByteHashMap<>();
 
     public Characteristics(ClassReaderSource classSource) {
@@ -52,6 +53,35 @@ public class Characteristics {
                 }
             }
             isStructure.put(className, result);
+        }
+        return result != 0;
+    }
+
+    public boolean isResource(String className) {
+        byte result = isResource.getOrDefault(className, (byte) -1);
+        if (result < 0) {
+            if (className.equals("org.teavm.platform.metadata.Resource")) {
+                result = 1;
+            } else {
+                ClassReader cls = classSource.get(className);
+                result = 0;
+                if (cls != null) {
+                    if (cls.getParent() != null) {
+                        result = isResource(cls.getParent()) ? (byte) 1 : 0;
+                    }
+                    if (result == 0) {
+                        for (String itf : cls.getInterfaces()) {
+                            if (isResource(itf)) {
+                                result = 1;
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    result = 0;
+                }
+            }
+            isResource.put(className, result);
         }
         return result != 0;
     }
