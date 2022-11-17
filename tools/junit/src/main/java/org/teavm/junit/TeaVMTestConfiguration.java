@@ -29,7 +29,7 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
 
     void apply(T target);
 
-    TeaVMTestConfiguration<JavaScriptTarget> JS_DEFAULT = new TeaVMTestConfiguration<JavaScriptTarget>() {
+    TeaVMTestConfiguration<JavaScriptTarget> JS_DEFAULT = new TeaVMTestConfiguration<>() {
         @Override
         public String getSuffix() {
             return "";
@@ -46,7 +46,7 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
         }
     };
 
-    TeaVMTestConfiguration<JavaScriptTarget> JS_OPTIMIZED = new TeaVMTestConfiguration<JavaScriptTarget>() {
+    TeaVMTestConfiguration<JavaScriptTarget> JS_OPTIMIZED = new TeaVMTestConfiguration<>() {
         @Override
         public String getSuffix() {
             return "optimized";
@@ -63,7 +63,7 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
         }
     };
 
-    TeaVMTestConfiguration<JavaScriptTarget> JS_MINIFIED = new TeaVMTestConfiguration<JavaScriptTarget>() {
+    TeaVMTestConfiguration<JavaScriptTarget> JS_MINIFIED = new TeaVMTestConfiguration<>() {
         @Override
         public String getSuffix() {
             return "min";
@@ -80,7 +80,7 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
         }
     };
 
-    TeaVMTestConfiguration<WasmTarget> WASM_DEFAULT = new TeaVMTestConfiguration<WasmTarget>() {
+    TeaVMTestConfiguration<WasmTarget> WASM_DEFAULT = new TeaVMTestConfiguration<>() {
         @Override
         public String getSuffix() {
             return "";
@@ -99,7 +99,7 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
         }
     };
 
-    TeaVMTestConfiguration<WasmTarget> WASM_OPTIMIZED = new TeaVMTestConfiguration<WasmTarget>() {
+    TeaVMTestConfiguration<WasmTarget> WASM_OPTIMIZED = new TeaVMTestConfiguration<>() {
         @Override
         public String getSuffix() {
             return "optimized";
@@ -115,7 +115,7 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
         }
     };
 
-    TeaVMTestConfiguration<CTarget> C_DEFAULT = new TeaVMTestConfiguration<CTarget>() {
+    TeaVMTestConfiguration<CTarget> C_DEFAULT = new TeaVMTestConfiguration<>() {
         @Override
         public String getSuffix() {
             return "";
@@ -131,7 +131,7 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
         }
     };
 
-    TeaVMTestConfiguration<CTarget> C_OPTIMIZED = new TeaVMTestConfiguration<CTarget>() {
+    TeaVMTestConfiguration<CTarget> C_OPTIMIZED = new TeaVMTestConfiguration<>() {
         @Override
         public String getSuffix() {
             return "optimized";
