@@ -15,6 +15,9 @@
  */
 package org.teavm.classlib.java.util;
 
+import org.teavm.classlib.PlatformDetector;
+import org.teavm.jso.JSBody;
+
 public class TUUID {
 
     private String value;
@@ -44,9 +47,16 @@ public class TUUID {
     }
 
     public static TUUID randomUUID() {
-        String value = s4() + s4() + "-" + s4() + "-" + s4() + "-" + s4() + "-" + s4() + s4() + s4();
-        return new TUUID(value);
+        if (PlatformDetector.isJavaScript()) {
+            return new TUUID(jsUUID());
+        } else {
+            String value = s4() + s4() + "-" + s4() + "-" + s4() + "-" + s4() + "-" + s4() + s4() + s4();
+            return new TUUID(value);
+        }
     }
+
+    @JSBody(script = "return crypto.randomUUID();")
+    private static native String jsUUID();
 
     private static String s4() {
         return Integer.toString((int) Math.floor((1 + Math.random()) * 65536), 16).substring(1);
