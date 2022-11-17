@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.runtime;
 
 import org.teavm.interop.Address;
 import org.teavm.interop.Import;
+import org.teavm.runtime.Fiber;
 
 public class WasmSupport {
     private WasmSupport() {
@@ -59,4 +60,17 @@ public class WasmSupport {
 
     @Import(module = "teavmMath", name = "pow")
     public static native double pow(double x, double y);
+
+    private static void initClasses() {
+    }
+
+    public static void runWithoutArgs() {
+        initClasses();
+        Fiber.start(() -> Fiber.runMain(getArgs()), false);
+    }
+
+    public static void runWithArgs(String[] args) {
+        initClasses();
+        Fiber.start(() -> Fiber.runMain(args), false);
+    }
 }

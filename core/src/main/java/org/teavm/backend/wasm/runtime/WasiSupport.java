@@ -27,7 +27,6 @@ import org.teavm.interop.Address;
 import org.teavm.interop.Structure;
 import org.teavm.interop.Unmanaged;
 
-@Unmanaged
 public class WasiSupport {
     private static long nextRandom;
     private static boolean randomInitialized;
@@ -59,7 +58,7 @@ public class WasiSupport {
     public static long currentTimeMillis() {
         LongResult result = WasiBuffer.getBuffer().toStructure();
         Wasi.clockTimeGet(Wasi.CLOCKID_REALTIME, 10, result);
-        return result.value;
+        return result.value / 1000000;
     }
 
     @Unmanaged

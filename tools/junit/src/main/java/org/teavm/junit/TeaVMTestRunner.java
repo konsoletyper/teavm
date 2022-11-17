@@ -207,6 +207,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 case "browser":
                     wasmRunStrategy = new BrowserRunStrategy(outputDir, "WASM", this::customBrowser);
                     break;
+                case "chrome":
                 case "browser-chrome":
                     wasmRunStrategy = new BrowserRunStrategy(outputDir, "WASM", this::chromeBrowser);
                     break;

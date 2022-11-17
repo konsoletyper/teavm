@@ -81,7 +81,9 @@ void teavm_logInt(int32_t v) {
 
 int32_t wasi_snapshot_preview1_clock_time_get(int32_t clock_id, int64_t precision, int32_t result_ptr) {
     int64_t* resultAddr = (int64_t*) (wasm_heap + result_ptr);
-    *resultAddr = teavm_currentTimeMillis();
+    struct timespec time;
+    clock_gettime(CLOCK_REALTIME, &time);
+    *resultAddr = time.tv_sec * 1000000000 + (int64_t) round(time.tv_nsec);
     return 0;
 }
 

@@ -534,8 +534,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             }
         }
 
-        for (TeaVMEntryPoint entryPoint : entryPoints.values()) {
-            addInitializersToEntryPoint(classes, entryPoint.getMethod());
+        var initializers = target.getInitializerMethods();
+        if (initializers == null) {
+            initializers = entryPoints.values().stream().map(ep -> ep.getMethod()).collect(Collectors.toList());
+        }
+        for (var initMethod : initializers) {
+            addInitializersToEntryPoint(classes, initMethod);
         }
     }
 

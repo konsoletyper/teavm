@@ -257,7 +257,7 @@ public class Fiber {
         start(() -> runMain(args), false);
     }
 
-    static native void runMain(String[] args);
+    public static native void runMain(String[] args);
 
     private void start() {
         Fiber former = current;
