@@ -289,6 +289,9 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
             }
 
             analyze(className);
+            if (isDynamicInitializer(className)) {
+                methodInfo.anyFieldModified = true;
+            }
         }
 
         private void analyzeCalledMethod(MethodInfo calledMethod) {
