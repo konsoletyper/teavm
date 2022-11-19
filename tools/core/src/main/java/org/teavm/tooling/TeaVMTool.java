@@ -509,6 +509,7 @@ public class TeaVMTool {
                 case JAVASCRIPT:
                     return "classes.js";
                 case WEBASSEMBLY:
+                case WEBASSEMBLY_WASI:
                     return "classes.wasm";
                 case C:
                     return "classes.c";
