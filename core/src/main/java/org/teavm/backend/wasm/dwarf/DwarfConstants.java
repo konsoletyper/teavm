@@ -55,6 +55,8 @@ public final class DwarfConstants {
     public static final int DW_LNS_SET_EPILOGUE_BEGIN = 0x0B;
     public static final int DW_LNS_SET_ISA = 0x0C;
 
+    public static final int DW_LNE_END_SEQUENCE = 0x01;
+
     private DwarfConstants() {
     }
 }

@@ -122,6 +122,10 @@ public class DwarfGenerator {
         lines.lineNumber(address, fileName, lineNumber);
     }
 
+    public void endLineNumberSequence(int address) {
+        lines.endLineNumberSequence(address);
+    }
+
     public DwarfInfoWriter getInfoWriter() {
         return infoWriter;
     }

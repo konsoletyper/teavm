@@ -275,8 +275,8 @@ public class WasmBinaryRenderer {
 
         section.writeLEB(functions.size());
         for (var function : functions) {
-            var body = renderFunction(function, section.getPosition());
-            section.writeLEB(body.length);
+            var body = renderFunction(function, section.getPosition() + 4);
+            section.writeLEB4(body.length);
             section.writeBytes(body);
         }
 
@@ -322,12 +322,16 @@ public class WasmBinaryRenderer {
         for (WasmExpression part : function.getBody()) {
             part.acceptVisitor(visitor);
         }
-        code.writeByte(0x0B);
 
+        if (dwarfGenerator != null) {
+            dwarfGenerator.endLineNumberSequence(offset + code.getPosition());
+        }
+
+        code.writeByte(0x0B);
         if (dwarfGenerator != null && function.getName() != null) {
             infoWriter.tag(getMethodAbbrev());
             infoWriter.writeInt(dwarfGenerator.strings.stringRef(function.getName()));
-            infoWriter.writeInt(offset);
+            infoWriter.writeInt(offset - 4);
             infoWriter.writeInt(offset + code.getPosition());
             infoWriter.emptyTag();
         }

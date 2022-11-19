@@ -19,6 +19,7 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_DATA2;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_LINE_STRP;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_LNCT_DIRECTORY_INDEX;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_LNCT_PATH;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_LNE_END_SEQUENCE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_LNS_ADVANCE_LINE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_LNS_ADVANCE_PC;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_LNS_COPY;
@@ -171,26 +172,43 @@ class DwarfLinesGenerator {
             instructionsBlob.writeLEB(fileRef);
             changed = true;
         }
-        if (address != this.address || line != this.line) {
-            int lineIncrement = line - this.line;
-            int addressIncrement = address - this.address;
-            if (!tryEmitSpecial(lineIncrement, addressIncrement)) {
-                if (lineIncrement != 0) {
-                    instructionsBlob.writeByte(DW_LNS_ADVANCE_LINE);
-                    instructionsBlob.writeSLEB(lineIncrement);
-                }
-                if (addressIncrement != 0) {
-                    instructionsBlob.writeByte(DW_LNS_ADVANCE_PC);
-                    instructionsBlob.writeSLEB(addressIncrement);
-                }
-            }
+        if (advanceTo(address, line)) {
             changed = true;
-            this.line = line;
-            this.address = address;
         }
         if (changed) {
             instructionsBlob.writeByte(DW_LNS_COPY);
         }
+    }
+
+    void endLineNumberSequence(int address) {
+        advanceTo(address, line);
+        instructionsBlob.writeByte(0);
+        instructionsBlob.writeByte(1);
+        instructionsBlob.writeByte(DW_LNE_END_SEQUENCE);
+        this.line = 1;
+        this.file = 0;
+        this.address = 0;
+    }
+
+    private boolean advanceTo(int address, int line) {
+        if (address == this.address && line == this.line) {
+            return false;
+        }
+        int lineIncrement = line - this.line;
+        int addressIncrement = address - this.address;
+        if (!tryEmitSpecial(lineIncrement, addressIncrement)) {
+            if (lineIncrement != 0) {
+                instructionsBlob.writeByte(DW_LNS_ADVANCE_LINE);
+                instructionsBlob.writeSLEB(lineIncrement);
+            }
+            if (addressIncrement != 0) {
+                instructionsBlob.writeByte(DW_LNS_ADVANCE_PC);
+                instructionsBlob.writeLEB(addressIncrement);
+            }
+        }
+        this.line = line;
+        this.address = address;
+        return true;
     }
 
     private boolean tryEmitSpecial(int lineIncrement, int addressIncrement) {
