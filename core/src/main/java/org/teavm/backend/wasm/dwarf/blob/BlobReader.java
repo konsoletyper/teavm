@@ -48,7 +48,7 @@ public class BlobReader {
         var offsetInChunk = this.offsetInChunk;
         while (ptr < to) {
             var chunk = blob.chunkAt(currentChunk);
-            var limit = Math.min(ptr + chunk.length, to);
+            var limit = Math.min(ptr + chunk.length - offsetInChunk, to);
             var bytesToWrite = limit - ptr;
             consumer.accept(chunk, offsetInChunk, offsetInChunk + bytesToWrite);
             offsetInChunk += bytesToWrite;

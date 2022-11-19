@@ -30,7 +30,7 @@ import org.teavm.backend.wasm.model.WasmCustomSection;
 public class DwarfGenerator {
     private DwarfInfoWriter infoWriter = new DwarfInfoWriter();
     private DwarfPlaceholder endOfSection;
-    private DwarfStrings strings = new DwarfStrings();
+    public final DwarfStrings strings = new DwarfStrings();
     private DwarfStrings lineStrings = new DwarfStrings();
     private DwarfLinesGenerator lines = new DwarfLinesGenerator(lineStrings);
     private Marker highPcMarker;
@@ -89,8 +89,10 @@ public class DwarfGenerator {
     }
 
     public void setCodeSize(int codeSize) {
+        var backup = infoWriter.marker();
         highPcMarker.rewind();
         infoWriter.writeInt(codeSize);
+        backup.rewind();
     }
 
     public Collection<? extends WasmCustomSection> createSections() {
@@ -118,5 +120,9 @@ public class DwarfGenerator {
 
     public void lineNumber(int address, String fileName, int lineNumber) {
         lines.lineNumber(address, fileName, lineNumber);
+    }
+
+    public DwarfInfoWriter getInfoWriter() {
+        return infoWriter;
     }
 }

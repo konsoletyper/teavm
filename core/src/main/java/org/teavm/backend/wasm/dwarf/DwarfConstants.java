@@ -21,6 +21,7 @@ public final class DwarfConstants {
     public static final int DW_UT_COMPILE = 0x01;
 
     public static final int DW_TAG_COMPILE_UNIT = 0x11;
+    public static final int DW_TAG_SUBPROGRAM = 0x2E;
 
     public static final int DW_AT_NAME = 0x03;
     public static final int DW_AT_STMT_LIST = 0x10;

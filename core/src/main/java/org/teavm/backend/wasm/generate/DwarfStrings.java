@@ -20,11 +20,11 @@ import com.carrotsearch.hppc.ObjectIntMap;
 import java.nio.charset.StandardCharsets;
 import org.teavm.backend.wasm.dwarf.blob.Blob;
 
-class DwarfStrings {
+public class DwarfStrings {
     final Blob blob = new Blob();
     private ObjectIntMap<String> offsets = new ObjectIntHashMap<>();
 
-    int stringRef(String s) {
+    public int stringRef(String s) {
         int ptr = offsets.getOrDefault(s, -1);
         if (ptr < 0) {
             ptr = blob.size();
