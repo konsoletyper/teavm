@@ -47,6 +47,7 @@ class DwarfLinesGenerator {
     private int address;
     private int file = 1;
     private int line = 1;
+    private boolean sequenceStarted;
 
     DwarfLinesGenerator(DwarfStrings strings) {
         this.strings = strings;
@@ -178,9 +179,13 @@ class DwarfLinesGenerator {
         if (changed) {
             instructionsBlob.writeByte(DW_LNS_COPY);
         }
+        sequenceStarted = true;
     }
 
     void endLineNumberSequence(int address) {
+        if (!sequenceStarted) {
+            return;
+        }
         advanceTo(address, line);
         instructionsBlob.writeByte(0);
         instructionsBlob.writeByte(1);
@@ -188,6 +193,7 @@ class DwarfLinesGenerator {
         this.line = 1;
         this.file = 0;
         this.address = 0;
+        sequenceStarted = false;
     }
 
     private boolean advanceTo(int address, int line) {
