@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.teavm.backend.wasm.generate.DwarfGenerator;
 import org.teavm.backend.wasm.model.WasmCustomSection;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -53,11 +54,14 @@ public class WasmBinaryRenderer {
     private Map<WasmSignature, Integer> signatureIndexes = new HashMap<>();
     private Map<String, Integer> functionIndexes = new HashMap<>();
     private boolean obfuscated;
+    private DwarfGenerator dwarfGenerator;
 
-    public WasmBinaryRenderer(WasmBinaryWriter output, WasmBinaryVersion version, boolean obfuscated) {
+    public WasmBinaryRenderer(WasmBinaryWriter output, WasmBinaryVersion version, boolean obfuscated,
+            DwarfGenerator dwarfGenerator) {
         this.output = output;
         this.version = version;
         this.obfuscated = obfuscated;
+        this.dwarfGenerator = dwarfGenerator;
     }
 
     public void render(WasmModule module) {
@@ -256,24 +260,28 @@ public class WasmBinaryRenderer {
     }
 
     private void renderCode(WasmModule module) {
-        WasmBinaryWriter section = new WasmBinaryWriter();
+        var section = new WasmBinaryWriter();
 
-        List<WasmFunction> functions = module.getFunctions().values().stream()
+        var functions = module.getFunctions().values().stream()
                 .filter(function -> function.getImportName() == null)
                 .collect(Collectors.toList());
 
         section.writeLEB(functions.size());
-        for (WasmFunction function : functions) {
-            byte[] body = renderFunction(function);
+        for (var function : functions) {
+            var body = renderFunction(function, section.getPosition());
             section.writeLEB(body.length);
             section.writeBytes(body);
+        }
+
+        if (dwarfGenerator != null) {
+            dwarfGenerator.setCodeSize(section.getPosition());
         }
 
         writeSection(SECTION_CODE, "code", section.getData());
     }
 
-    private byte[] renderFunction(WasmFunction function) {
-        WasmBinaryWriter code = new WasmBinaryWriter();
+    private byte[] renderFunction(WasmFunction function, int offset) {
+        var code = new WasmBinaryWriter();
 
         List<WasmLocal> localVariables = function.getLocalVariables();
         int parameterCount = Math.min(function.getParameters().size(), localVariables.size());
@@ -301,9 +309,9 @@ public class WasmBinaryRenderer {
             }
         }
 
-        Map<String, Integer> importIndexes = this.functionIndexes;
-        WasmBinaryRenderingVisitor visitor = new WasmBinaryRenderingVisitor(code, version, functionIndexes,
-                importIndexes, signatureIndexes);
+        var importIndexes = this.functionIndexes;
+        var visitor = new WasmBinaryRenderingVisitor(code, version, functionIndexes, importIndexes,
+                signatureIndexes, dwarfGenerator, offset);
         for (WasmExpression part : function.getBody()) {
             part.acceptVisitor(visitor);
         }

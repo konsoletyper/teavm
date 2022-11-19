@@ -40,4 +40,8 @@ public class Marker {
         posInChunk = blob.posInChunk;
         ptr = blob.ptr;
     }
+
+    public int ptr() {
+        return ptr;
+    }
 }

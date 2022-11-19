@@ -61,6 +61,15 @@ public class DwarfInfoWriter {
         return this;
     }
 
+    public DwarfInfoWriter skip(int count) {
+        output.skip(count);
+        return this;
+    }
+
+    public Marker marker() {
+        return output.marker();
+    }
+
     public DwarfAbbreviation abbreviation(int tag, boolean hasChildren, Consumer<Blob> blob) {
         var abbr = new DwarfAbbreviation(tag, hasChildren, blob);
         abbreviations.add(abbr);

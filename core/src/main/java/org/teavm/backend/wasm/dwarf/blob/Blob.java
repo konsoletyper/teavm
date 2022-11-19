@@ -100,9 +100,27 @@ public class Blob {
         var buffer = this.buffer;
         while ((value & 0x7F) != value) {
             buffer[ptr++] = (byte) ((value & 0x7F) | 0x80);
-            value >>= 7;
+            value >>>= 7;
         }
         buffer[ptr++] = (byte) (value & 0x7F);
+        return write(buffer, 0, ptr);
+    }
+
+    public Blob writeSLEB(int value) {
+        var ptr = 0;
+        var buffer = this.buffer;
+        var sign = value >>> 31;
+        while (true) {
+            var digit = value & 0x7F;
+            value >>= 7;
+            var more = value != 0 && value != -1 || digit >> 6 != sign;
+            if (more) {
+                buffer[ptr++] = (byte) (digit | 0x80);
+            } else {
+                buffer[ptr++] = (byte) digit;
+                break;
+            }
+        }
         return write(buffer, 0, ptr);
     }
 
@@ -125,6 +143,10 @@ public class Blob {
 
     public BlobReader newReader(BinaryDataConsumer consumer) {
         return new BlobReader(this, consumer);
+    }
+
+    public BinaryDataConsumer writer() {
+        return this::write;
     }
 
     public Marker marker() {

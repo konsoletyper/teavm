@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.render;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.teavm.backend.wasm.generate.DwarfGenerator;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
@@ -57,16 +58,21 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     private Map<String, Integer> functionIndexes;
     private Map<String, Integer> importedIndexes;
     private Map<WasmSignature, Integer> signatureIndexes;
+    private DwarfGenerator dwarfGenerator;
+    private int addressOffset;
     private int depth;
     private Map<WasmBlock, Integer> blockDepths = new HashMap<>();
 
     WasmBinaryRenderingVisitor(WasmBinaryWriter writer, WasmBinaryVersion version, Map<String, Integer> functionIndexes,
-            Map<String, Integer> importedIndexes, Map<WasmSignature, Integer> signatureIndexes) {
+            Map<String, Integer> importedIndexes, Map<WasmSignature, Integer> signatureIndexes,
+            DwarfGenerator dwarfGenerator, int addressOffset) {
         this.writer = writer;
         this.version = version;
         this.functionIndexes = functionIndexes;
         this.importedIndexes = importedIndexes;
         this.signatureIndexes = signatureIndexes;
+        this.dwarfGenerator = dwarfGenerator;
+        this.addressOffset = addressOffset;
     }
 
     @Override
@@ -95,6 +101,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         }
         expression.getCondition().acceptVisitor(this);
 
+        emitLocation(expression);
         writer.writeByte(0x0D);
 
         writeLabel(expression.getTarget());
@@ -106,6 +113,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
             expression.getResult().acceptVisitor(this);
         }
 
+        emitLocation(expression);
         writer.writeByte(0x0C);
 
         writeLabel(expression.getTarget());
@@ -115,6 +123,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmSwitch expression) {
         expression.getSelector().acceptVisitor(this);
 
+        emitLocation(expression);
         writer.writeByte(0x0E);
 
         writer.writeLEB(expression.getTargets().size());
@@ -132,6 +141,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmConditional expression) {
         expression.getCondition().acceptVisitor(this);
+        emitLocation(expression);
         writer.writeByte(0x04);
         writeBlockType(expression.getType());
 
@@ -160,40 +170,47 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         if (expression.getValue() != null) {
             expression.getValue().acceptVisitor(this);
         }
+        emitLocation(expression);
         writer.writeByte(0x0F);
     }
 
     @Override
     public void visit(WasmUnreachable expression) {
+        emitLocation(expression);
         writer.writeByte(0x0);
     }
 
     @Override
     public void visit(WasmInt32Constant expression) {
+        emitLocation(expression);
         writer.writeByte(0x41);
         writer.writeSignedLEB(expression.getValue());
     }
 
     @Override
     public void visit(WasmInt64Constant expression) {
+        emitLocation(expression);
         writer.writeByte(0x42);
         writer.writeSignedLEB(expression.getValue());
     }
 
     @Override
     public void visit(WasmFloat32Constant expression) {
+        emitLocation(expression);
         writer.writeByte(0x43);
         writer.writeFixed(Float.floatToRawIntBits(expression.getValue()));
     }
 
     @Override
     public void visit(WasmFloat64Constant expression) {
+        emitLocation(expression);
         writer.writeByte(0x44);
         writer.writeFixed(Double.doubleToRawLongBits(expression.getValue()));
     }
 
     @Override
     public void visit(WasmGetLocal expression) {
+        emitLocation(expression);
         writer.writeByte(0x20);
         writer.writeLEB(expression.getLocal().getIndex());
     }
@@ -201,6 +218,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmSetLocal expression) {
         expression.getValue().acceptVisitor(this);
+        emitLocation(expression);
         writer.writeByte(0x21);
         writer.writeLEB(expression.getLocal().getIndex());
     }
@@ -209,6 +227,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmIntBinary expression) {
         expression.getFirst().acceptVisitor(this);
         expression.getSecond().acceptVisitor(this);
+        emitLocation(expression);
         render0xD(expression);
     }
 
@@ -379,6 +398,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmFloatBinary expression) {
         expression.getFirst().acceptVisitor(this);
         expression.getSecond().acceptVisitor(this);
+        emitLocation(expression);
         render0xD(expression);
     }
 
@@ -503,6 +523,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmFloatUnary expression) {
         expression.getOperand().acceptVisitor(this);
+        emitLocation(expression);
         render0xD(expression);
     }
 
@@ -570,6 +591,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmConversion expression) {
         expression.getOperand().acceptVisitor(this);
+        emitLocation(expression);
         switch (expression.getSourceType()) {
             case INT32:
                 switch (expression.getTargetType()) {
@@ -658,6 +680,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         Integer functionIndex = !expression.isImported()
                 ? functionIndexes.get(expression.getFunctionName())
                 : importedIndexes.get(expression.getFunctionName());
+        emitLocation(expression);
         if (functionIndex == null) {
             writer.writeByte(0x00);
             return;
@@ -688,12 +711,14 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmDrop expression) {
         expression.getOperand().acceptVisitor(this);
+        emitLocation(expression);
         writer.writeByte(0x1A);
     }
 
     @Override
     public void visit(WasmLoadInt32 expression) {
         expression.getIndex().acceptVisitor(this);
+        emitLocation(expression);
         switch (expression.getConvertFrom()) {
             case INT8:
                 writer.writeByte(0x2C);
@@ -718,6 +743,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmLoadInt64 expression) {
         expression.getIndex().acceptVisitor(this);
+        emitLocation(expression);
         switch (expression.getConvertFrom()) {
             case INT8:
                 writer.writeByte(0x30);
@@ -748,6 +774,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmLoadFloat32 expression) {
         expression.getIndex().acceptVisitor(this);
+        emitLocation(expression);
         writer.writeByte(0x2A);
         writer.writeByte(alignment(expression.getAlignment()));
         writer.writeLEB(expression.getOffset());
@@ -756,6 +783,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmLoadFloat64 expression) {
         expression.getIndex().acceptVisitor(this);
+        emitLocation(expression);
         writer.writeByte(0x2B);
         writer.writeByte(alignment(expression.getAlignment()));
         writer.writeLEB(expression.getOffset());
@@ -765,6 +793,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmStoreInt32 expression) {
         expression.getIndex().acceptVisitor(this);
         expression.getValue().acceptVisitor(this);
+        emitLocation(expression);
         switch (expression.getConvertTo()) {
             case INT8:
             case UINT8:
@@ -786,6 +815,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmStoreInt64 expression) {
         expression.getIndex().acceptVisitor(this);
         expression.getValue().acceptVisitor(this);
+        emitLocation(expression);
         switch (expression.getConvertTo()) {
             case INT8:
             case UINT8:
@@ -811,6 +841,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmStoreFloat32 expression) {
         expression.getIndex().acceptVisitor(this);
         expression.getValue().acceptVisitor(this);
+        emitLocation(expression);
         writer.writeByte(0x38);
         writer.writeByte(alignment(expression.getAlignment()));
         writer.writeLEB(expression.getOffset());
@@ -820,6 +851,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmStoreFloat64 expression) {
         expression.getIndex().acceptVisitor(this);
         expression.getValue().acceptVisitor(this);
+        emitLocation(expression);
         writer.writeByte(0x39);
         writer.writeByte(alignment(expression.getAlignment()));
         writer.writeLEB(expression.getOffset());
@@ -828,6 +860,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmMemoryGrow expression) {
         expression.getAmount().acceptVisitor(this);
+        emitLocation(expression);
         writer.writeByte(0x40);
         writer.writeByte(0);
     }
@@ -839,5 +872,13 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     private void writeLabel(WasmBlock target) {
         int blockDepth = blockDepths.get(target);
         writer.writeLEB(depth - blockDepth);
+    }
+
+    private void emitLocation(WasmExpression expression) {
+        if (dwarfGenerator == null || expression.getLocation() == null) {
+            return;
+        }
+        dwarfGenerator.lineNumber(writer.getPosition() + addressOffset, expression.getLocation().getFileName(),
+                expression.getLocation().getLine());
     }
 }

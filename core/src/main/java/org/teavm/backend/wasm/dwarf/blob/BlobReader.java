@@ -16,14 +16,14 @@
 package org.teavm.backend.wasm.dwarf.blob;
 
 public class BlobReader {
-    private Blob output;
+    private Blob blob;
     private BinaryDataConsumer consumer;
     private int ptr;
     private int currentChunk;
     private int offsetInChunk;
 
-    BlobReader(Blob output, BinaryDataConsumer consumer) {
-        this.output = output;
+    BlobReader(Blob blob, BinaryDataConsumer consumer) {
+        this.blob = blob;
         this.consumer = consumer;
     }
 
@@ -31,8 +31,12 @@ public class BlobReader {
         return ptr;
     }
 
+    public void readRemaining() {
+        advance(blob.size());
+    }
+
     public void advance(int to) {
-        if (to < ptr || to > output.size()) {
+        if (to < ptr || to > blob.size()) {
             throw new IllegalArgumentException();
         }
         if (to == ptr) {
@@ -43,7 +47,7 @@ public class BlobReader {
         var currentChunk = this.currentChunk;
         var offsetInChunk = this.offsetInChunk;
         while (ptr < to) {
-            var chunk = output.chunkAt(currentChunk);
+            var chunk = blob.chunkAt(currentChunk);
             var limit = Math.min(ptr + chunk.length, to);
             var bytesToWrite = limit - ptr;
             consumer.accept(chunk, offsetInChunk, offsetInChunk + bytesToWrite);
