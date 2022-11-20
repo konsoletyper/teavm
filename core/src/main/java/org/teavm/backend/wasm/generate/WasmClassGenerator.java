@@ -97,6 +97,7 @@ public class WasmClassGenerator {
     private int classCount;
     private ClassMetadataRequirements metadataRequirements;
     private ClassInitializerInfo classInitializerInfo;
+    private DwarfClassGenerator dwarfClassGenerator;
 
     private static final int CLASS_SIZE = 1;
     private static final int CLASS_FLAGS = 2;
@@ -117,7 +118,8 @@ public class WasmClassGenerator {
     public WasmClassGenerator(ClassReaderSource processedClassSource, ClassReaderSource classSource,
             VirtualTableProvider vtableProvider, TagRegistry tagRegistry, BinaryWriter binaryWriter,
             NameProvider names, ClassMetadataRequirements metadataRequirements,
-            ClassInitializerInfo classInitializerInfo, Characteristics characteristics) {
+            ClassInitializerInfo classInitializerInfo, Characteristics characteristics,
+            DwarfClassGenerator dwarfClassGenerator) {
         this.processedClassSource = processedClassSource;
         this.classSource = classSource;
         this.vtableProvider = vtableProvider;
@@ -128,6 +130,7 @@ public class WasmClassGenerator {
         this.metadataRequirements = metadataRequirements;
         this.classInitializerInfo = classInitializerInfo;
         this.characteristics = characteristics;
+        this.dwarfClassGenerator = dwarfClassGenerator;
     }
 
     public WasmStringPool getStringPool() {
@@ -173,12 +176,15 @@ public class WasmClassGenerator {
             binaryData.start = binaryWriter.append(binaryData.data);
         } else if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
-            ClassReader cls = classSource.get(className);
+            var cls = classSource.get(className);
 
             if (cls != null) {
                 calculateLayout(cls, binaryData);
                 if (binaryData.start >= 0) {
                     binaryData.start = binaryWriter.append(createStructure(binaryData));
+                }
+                if (dwarfClassGenerator != null) {
+                    dwarfClassGenerator.getClass(className);
                 }
             }
         } else if (type instanceof ValueType.Array) {

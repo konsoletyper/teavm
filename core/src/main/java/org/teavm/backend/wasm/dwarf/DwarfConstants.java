@@ -20,14 +20,19 @@ public final class DwarfConstants {
 
     public static final int DW_UT_COMPILE = 0x01;
 
+    public static final int DW_TAG_CLASS_TYPE = 0x02;
     public static final int DW_TAG_COMPILE_UNIT = 0x11;
     public static final int DW_TAG_SUBPROGRAM = 0x2E;
+    public static final int DW_TAG_NAMESPACE = 0x39;
 
     public static final int DW_AT_NAME = 0x03;
     public static final int DW_AT_STMT_LIST = 0x10;
     public static final int DW_AT_LOW_PC = 0x11;
     public static final int DW_AT_HIGH_PC = 0x12;
+    public static final int DW_AT_LANGUAGE = 0x13;
     public static final int DW_AT_PRODUCER = 0x25;
+
+    public static final int DW_LANG_JAVA = 0x0b;
 
     public static final int DW_CHILDREN_YES = 1;
     public static final int DW_CHILDREN_NO = 0;

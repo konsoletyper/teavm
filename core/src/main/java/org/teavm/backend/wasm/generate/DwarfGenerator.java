@@ -16,11 +16,21 @@
 package org.teavm.backend.wasm.generate;
 
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DWARF_VERSION;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_HIGH_PC;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_LANGUAGE;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_LOW_PC;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_NAME;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_PRODUCER;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_STMT_LIST;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_ADDR;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_DATA2;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_SEC_OFFSET;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_STRP;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_LANG_JAVA;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_COMPILE_UNIT;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_UT_COMPILE;
 import java.util.ArrayList;
 import java.util.Collection;
-import org.teavm.backend.wasm.dwarf.DwarfConstants;
 import org.teavm.backend.wasm.dwarf.DwarfInfoWriter;
 import org.teavm.backend.wasm.dwarf.DwarfPlaceholder;
 import org.teavm.backend.wasm.dwarf.blob.Blob;
@@ -64,13 +74,15 @@ public class DwarfGenerator {
 
     private void compilationUnit() {
         infoWriter.tag(infoWriter.abbreviation(DW_TAG_COMPILE_UNIT, true, data -> {
-            data.writeLEB(DwarfConstants.DW_AT_PRODUCER).writeLEB(DwarfConstants.DW_FORM_STRP);
-            data.writeLEB(DwarfConstants.DW_AT_NAME).writeLEB(DwarfConstants.DW_FORM_STRP);
-            data.writeLEB(DwarfConstants.DW_AT_STMT_LIST).writeLEB(DwarfConstants.DW_FORM_SEC_OFFSET);
-            data.writeLEB(DwarfConstants.DW_AT_LOW_PC).writeLEB(DwarfConstants.DW_FORM_ADDR);
-            data.writeLEB(DwarfConstants.DW_AT_HIGH_PC).writeLEB(DwarfConstants.DW_FORM_ADDR);
+            data.writeLEB(DW_AT_PRODUCER).writeLEB(DW_FORM_STRP);
+            data.writeLEB(DW_AT_LANGUAGE).writeLEB(DW_FORM_DATA2);
+            data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
+            data.writeLEB(DW_AT_STMT_LIST).writeLEB(DW_FORM_SEC_OFFSET);
+            data.writeLEB(DW_AT_LOW_PC).writeLEB(DW_FORM_ADDR);
+            data.writeLEB(DW_AT_HIGH_PC).writeLEB(DW_FORM_ADDR);
         }));
         infoWriter.writeInt(strings.stringRef("TeaVM"));
+        infoWriter.writeShort(DW_LANG_JAVA);
         infoWriter.writeInt(strings.stringRef("classes.wasm"));
         infoWriter.writeInt(0);
         infoWriter.writeInt(0);

@@ -40,6 +40,7 @@ import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.lowlevel.generate.NameProviderWithSpecialNames;
 import org.teavm.backend.lowlevel.transform.CoroutineTransformation;
 import org.teavm.backend.wasm.binary.BinaryWriter;
+import org.teavm.backend.wasm.generate.DwarfClassGenerator;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.generate.WasmDependencyListener;
@@ -445,9 +446,10 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         BinaryWriter binaryWriter = new BinaryWriter(256);
         var names = new NameProviderWithSpecialNames(new WasmNameProvider(), controller.getUnprocessedClassSource());
         var metadataRequirements = new ClassMetadataRequirements(controller.getDependencyInfo());
+        var dwarfClassGen = debugging ? new DwarfClassGenerator() : null;
         var classGenerator = new WasmClassGenerator(classes, controller.getUnprocessedClassSource(),
                 vtableProvider, tagRegistry, binaryWriter, names, metadataRequirements,
-                controller.getClassInitializerInfo(), characteristics);
+                controller.getClassInitializerInfo(), characteristics, dwarfClassGen);
 
         Decompiler decompiler = new Decompiler(classes, new HashSet<>(), false);
         var stringPool = classGenerator.getStringPool();
@@ -501,7 +503,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         var generator = new WasmGenerator(decompiler, classes, context, classGenerator, binaryWriter,
                 asyncMethods::contains);
 
-        generateMethods(classes, context, generator, classGenerator, binaryWriter, module);
+        generateMethods(classes, context, generator, classGenerator, binaryWriter, module, dwarfClassGen);
         new WasmInteropFunctionGenerator(classGenerator).generateFunctions(module);
         exceptionHandlingIntrinsic.postProcess(CallSiteDescriptor.extract(classes, classes.getClassNames()));
         generateIsSupertypeFunctions(tagRegistry, module, classGenerator);
@@ -545,8 +547,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
 
         var writer = new WasmBinaryWriter();
-        var renderer = new WasmBinaryRenderer(writer, version, obfuscated, dwarfGenerator);
-        renderer.render(module, buildDwarf(dwarfGenerator));
+        var renderer = new WasmBinaryRenderer(writer, version, obfuscated, dwarfGenerator, dwarfClassGen);
+        renderer.render(module, buildDwarf(dwarfGenerator, dwarfClassGen));
 
         try (OutputStream output = buildTarget.createResource(outputName)) {
             output.write(writer.getData());
@@ -565,11 +567,13 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
     }
 
-    private Supplier<Collection<? extends WasmCustomSection>> buildDwarf(DwarfGenerator generator) {
+    private Supplier<Collection<? extends WasmCustomSection>> buildDwarf(DwarfGenerator generator,
+            DwarfClassGenerator classGen) {
         if (generator == null) {
             return null;
         }
         return () -> {
+            classGen.write(generator.getInfoWriter(), generator.strings);
             generator.end();
             return generator.createSections();
         };
@@ -710,7 +714,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     }
 
     private void generateMethods(ListableClassHolderSource classes, WasmGenerationContext context,
-            WasmGenerator generator, WasmClassGenerator classGenerator, BinaryWriter binaryWriter, WasmModule module) {
+            WasmGenerator generator, WasmClassGenerator classGenerator, BinaryWriter binaryWriter, WasmModule module,
+            DwarfClassGenerator dwarfClassGen) {
         List<MethodHolder> methods = new ArrayList<>();
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
@@ -771,6 +776,11 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 generator.generate(method.getReference(), implementor);
             } else {
                 generateStub(context.names, module, method, implementor);
+            }
+            if (dwarfClassGen != null) {
+                var dwarfClass = dwarfClassGen.getClass(method.getOwnerName());
+                var dwarfSubprogram = dwarfClass.getSubprogram(method.getDescriptor());
+                dwarfClassGen.registerSubprogram(context.names.forMethod(method.getReference()), dwarfSubprogram);
             }
             if (controller.wasCancelled()) {
                 return;
