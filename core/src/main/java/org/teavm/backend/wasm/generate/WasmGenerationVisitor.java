@@ -903,21 +903,27 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             switch (expr.getMethod().getName()) {
                 case "allocStack":
                     generateAllocStack(expr.getArguments().get(0));
+                    result.setLocation(expr.getLocation());
                     return;
                 case "releaseStack":
                     generateReleaseStack();
+                    result.setLocation(expr.getLocation());
                     return;
                 case "registerGCRoot":
                     generateRegisterGcRoot(expr.getArguments().get(0), expr.getArguments().get(1));
+                    result.setLocation(expr.getLocation());
                     return;
                 case "removeGCRoot":
                     generateRemoveGcRoot(expr.getArguments().get(0));
+                    result.setLocation(expr.getLocation());
                     return;
                 case "registerCallSite":
                     generateRegisterCallSite(expr.getArguments().get(0));
+                    result.setLocation(expr.getLocation());
                     return;
                 case "getExceptionHandlerId":
                     generateGetHandlerId();
+                    result.setLocation(expr.getLocation());
                     return;
             }
         }
@@ -941,6 +947,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 accept(argument);
                 call.getArguments().add(result);
             }
+            call.setLocation(expr.getLocation());
             result = call;
         } else if (expr.getType() == InvocationType.CONSTRUCTOR) {
             WasmBlock block = new WasmBlock(false);

@@ -173,8 +173,8 @@ class DwarfLinesGenerator {
             instructionsBlob.writeLEB(fileRef);
             changed = true;
         }
-        if (advanceTo(address, line)) {
-            changed = true;
+        if (line != this.line || this.address != address) {
+            changed = advanceTo(address, line);
         }
         if (changed) {
             instructionsBlob.writeByte(DW_LNS_COPY);
@@ -186,23 +186,23 @@ class DwarfLinesGenerator {
         if (!sequenceStarted) {
             return;
         }
-        advanceTo(address, line);
+        if (this.address != address) {
+            advanceTo(address, line);
+        }
         instructionsBlob.writeByte(0);
         instructionsBlob.writeByte(1);
         instructionsBlob.writeByte(DW_LNE_END_SEQUENCE);
         this.line = 1;
-        this.file = 0;
+        this.file = 1;
         this.address = 0;
         sequenceStarted = false;
     }
 
     private boolean advanceTo(int address, int line) {
-        if (address == this.address && line == this.line) {
-            return false;
-        }
         int lineIncrement = line - this.line;
         int addressIncrement = address - this.address;
-        if (!tryEmitSpecial(lineIncrement, addressIncrement)) {
+        var result = !tryEmitSpecial(lineIncrement, addressIncrement);
+        if (result) {
             if (lineIncrement != 0) {
                 instructionsBlob.writeByte(DW_LNS_ADVANCE_LINE);
                 instructionsBlob.writeSLEB(lineIncrement);
@@ -214,7 +214,7 @@ class DwarfLinesGenerator {
         }
         this.line = line;
         this.address = address;
-        return true;
+        return result;
     }
 
     private boolean tryEmitSpecial(int lineIncrement, int addressIncrement) {

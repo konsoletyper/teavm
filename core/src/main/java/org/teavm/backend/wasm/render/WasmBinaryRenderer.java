@@ -331,8 +331,8 @@ public class WasmBinaryRenderer {
         if (dwarfGenerator != null && function.getName() != null) {
             infoWriter.tag(getMethodAbbrev());
             infoWriter.writeInt(dwarfGenerator.strings.stringRef(function.getName()));
-            infoWriter.writeInt(offset - 4);
-            infoWriter.writeInt(offset + code.getPosition());
+            infoWriter.writeInt(offset);
+            infoWriter.writeInt(offset + code.getPosition() - 1);
             infoWriter.emptyTag();
         }
 

@@ -875,7 +875,8 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     }
 
     private void emitLocation(WasmExpression expression) {
-        if (dwarfGenerator == null || expression.getLocation() == null) {
+        if (dwarfGenerator == null || expression.getLocation() == null
+                || expression.getLocation().getFileName() == null) {
             return;
         }
         dwarfGenerator.lineNumber(writer.getPosition() + addressOffset, expression.getLocation().getFileName(),
