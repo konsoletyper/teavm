@@ -15,10 +15,9 @@
  */
 package org.teavm.backend.wasm.generate;
 
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_HIGH_PC;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_LOW_PC;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_DECLARATION;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_NAME;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_ADDR;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_FLAG_PRESENT;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_STRP;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_CLASS_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_NAMESPACE;
@@ -30,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import org.teavm.backend.wasm.dwarf.DwarfAbbreviation;
 import org.teavm.backend.wasm.dwarf.DwarfInfoWriter;
+import org.teavm.backend.wasm.dwarf.DwarfPlaceholder;
 import org.teavm.model.MethodDescriptor;
 
 public class DwarfClassGenerator {
@@ -64,13 +64,6 @@ public class DwarfClassGenerator {
         return subprogramsByFunctionName.get(functionName);
     }
 
-    public Subprogram createSubprogram(String functionName) {
-        var subprogram = new Subprogram(functionName);
-        subprogramsByFunctionName.put(functionName, subprogram);
-        rootSubprograms.add(subprogram);
-        return subprogram;
-    }
-
     public void write(DwarfInfoWriter infoWriter, DwarfStrings strings) {
         this.infoWriter = infoWriter;
         this.strings = strings;
@@ -87,8 +80,7 @@ public class DwarfClassGenerator {
         if (methodAbbrev == null) {
             methodAbbrev = infoWriter.abbreviation(DW_TAG_SUBPROGRAM, true, data -> {
                 data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
-                data.writeLEB(DW_AT_LOW_PC).writeLEB(DW_FORM_ADDR);
-                data.writeLEB(DW_AT_HIGH_PC).writeLEB(DW_FORM_ADDR);
+                data.writeLEB(DW_AT_DECLARATION).writeLEB(DW_FORM_FLAG_PRESENT);
             });
         }
         return methodAbbrev;
@@ -170,18 +162,16 @@ public class DwarfClassGenerator {
 
     public class Subprogram {
         public final String name;
-        public int startAddress;
-        public int endAddress;
+        public DwarfPlaceholder ref;
 
         private Subprogram(String name) {
             this.name = name;
         }
 
         private void write() {
-            infoWriter.tag(getMethodAbbrev());
+            ref = infoWriter.placeholder(4);
+            infoWriter.mark(ref).tag(getMethodAbbrev());
             infoWriter.writeInt(strings.stringRef(name));
-            infoWriter.writeInt(startAddress);
-            infoWriter.writeInt(endAddress);
             infoWriter.emptyTag();
         }
     }

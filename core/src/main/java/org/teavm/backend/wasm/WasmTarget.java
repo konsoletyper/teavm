@@ -547,8 +547,11 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
 
         var writer = new WasmBinaryWriter();
+        if (dwarfClassGen != null) {
+            dwarfClassGen.write(dwarfGenerator.getInfoWriter(), dwarfGenerator.strings);
+        }
         var renderer = new WasmBinaryRenderer(writer, version, obfuscated, dwarfGenerator, dwarfClassGen);
-        renderer.render(module, buildDwarf(dwarfGenerator, dwarfClassGen));
+        renderer.render(module, buildDwarf(dwarfGenerator));
 
         try (OutputStream output = buildTarget.createResource(outputName)) {
             output.write(writer.getData());
@@ -567,13 +570,11 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
     }
 
-    private Supplier<Collection<? extends WasmCustomSection>> buildDwarf(DwarfGenerator generator,
-            DwarfClassGenerator classGen) {
+    private Supplier<Collection<? extends WasmCustomSection>> buildDwarf(DwarfGenerator generator) {
         if (generator == null) {
             return null;
         }
         return () -> {
-            classGen.write(generator.getInfoWriter(), generator.strings);
             generator.end();
             return generator.createSections();
         };

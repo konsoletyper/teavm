@@ -31,6 +31,9 @@ public final class DwarfConstants {
     public static final int DW_AT_HIGH_PC = 0x12;
     public static final int DW_AT_LANGUAGE = 0x13;
     public static final int DW_AT_PRODUCER = 0x25;
+    public static final int DW_AT_DECLARATION = 0x3c;
+    public static final int DW_AT_SPECIFICATION = 0x47;
+    public static final int DW_AT_LINKAGE_NAME = 0x6E;
 
     public static final int DW_LANG_JAVA = 0x0b;
 
@@ -43,8 +46,11 @@ public final class DwarfConstants {
     public static final int DW_FORM_ADDR = 0x01;
     public static final int DW_FORM_DATA2 = 0x05;
     public static final int DW_FORM_DATA4 = 0x06;
+    public static final int DW_FORM_FLAG = 0x0C;
     public static final int DW_FORM_STRP = 0x0E;
+    public static final int DW_FORM_REF4 = 0x13;
     public static final int DW_FORM_SEC_OFFSET = 0x17;
+    public static final int DW_FORM_FLAG_PRESENT = 0x19;
     public static final int DW_FORM_LINE_STRP = 0x1F;
 
     public static final int DW_LNS_COPY = 0x01;
