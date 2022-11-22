@@ -15,13 +15,22 @@
  */
 package org.teavm.backend.wasm.generate;
 
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_ATE_BOOLEAN;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_ATE_FLOAT;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_ATE_SIGNED;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_ATE_UTF;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_BYTE_SIZE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_DECLARATION;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_ENCODING;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_NAME;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_DATA1;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_FLAG_PRESENT;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_STRP;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_BASE_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_CLASS_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_NAMESPACE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_SUBPROGRAM;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_UNSPECIFIED_TYPE;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -31,16 +40,36 @@ import org.teavm.backend.wasm.dwarf.DwarfAbbreviation;
 import org.teavm.backend.wasm.dwarf.DwarfInfoWriter;
 import org.teavm.backend.wasm.dwarf.DwarfPlaceholder;
 import org.teavm.model.MethodDescriptor;
+import org.teavm.model.PrimitiveType;
+import org.teavm.model.ValueType;
+import org.teavm.model.util.VariableType;
 
 public class DwarfClassGenerator {
+    private static final ValueType objectType = ValueType.object("java.lang.Object");
     final Namespace root = new Namespace(null);
     final Map<String, Subprogram> subprogramsByFunctionName = new HashMap<>();
     final List<Subprogram> rootSubprograms = new ArrayList<>();
-    private DwarfInfoWriter infoWriter;
-    private DwarfStrings strings;
+    private final DwarfInfoWriter writer;
+    private final DwarfStrings strings;
     private DwarfAbbreviation nsAbbrev;
     private DwarfAbbreviation classTypeAbbrev;
     private DwarfAbbreviation methodAbbrev;
+    private DwarfPlaceholder[] primitiveTypes = new DwarfPlaceholder[PrimitiveType.values().length];
+    private DwarfPlaceholder unspecifiedType;
+    private DwarfAbbreviation baseTypeAbbrev;
+    private List<Runnable> postponedWrites = new ArrayList<>();
+
+    public DwarfClassGenerator(DwarfInfoWriter writer, DwarfStrings strings) {
+        this.writer = writer;
+        this.strings = strings;
+    }
+
+    public void flushTypes() {
+        for (var postponedWrite : postponedWrites) {
+            postponedWrite.run();
+        }
+        postponedWrites.clear();
+    }
 
     public ClassType getClass(String fullName) {
         var index = 0;
@@ -64,21 +93,16 @@ public class DwarfClassGenerator {
         return subprogramsByFunctionName.get(functionName);
     }
 
-    public void write(DwarfInfoWriter infoWriter, DwarfStrings strings) {
-        this.infoWriter = infoWriter;
-        this.strings = strings;
+    public void write() {
         root.writeChildren();
         for (var subprogram : rootSubprograms) {
             subprogram.write();
         }
-        this.infoWriter = null;
-        this.strings = null;
-        methodAbbrev = null;
     }
 
     private DwarfAbbreviation getMethodAbbrev() {
         if (methodAbbrev == null) {
-            methodAbbrev = infoWriter.abbreviation(DW_TAG_SUBPROGRAM, true, data -> {
+            methodAbbrev = writer.abbreviation(DW_TAG_SUBPROGRAM, true, data -> {
                 data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
                 data.writeLEB(DW_AT_DECLARATION).writeLEB(DW_FORM_FLAG_PRESENT);
             });
@@ -88,7 +112,7 @@ public class DwarfClassGenerator {
 
     private DwarfAbbreviation getNsAbbrev() {
         if (nsAbbrev == null) {
-            nsAbbrev = infoWriter.abbreviation(DW_TAG_NAMESPACE, true, data -> {
+            nsAbbrev = writer.abbreviation(DW_TAG_NAMESPACE, true, data -> {
                 data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
             });
         }
@@ -97,11 +121,125 @@ public class DwarfClassGenerator {
 
     private DwarfAbbreviation getClassTypeAbbrev() {
         if (classTypeAbbrev == null) {
-            classTypeAbbrev = infoWriter.abbreviation(DW_TAG_CLASS_TYPE, true, data -> {
+            classTypeAbbrev = writer.abbreviation(DW_TAG_CLASS_TYPE, true, data -> {
                 data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
             });
         }
         return classTypeAbbrev;
+    }
+
+    public DwarfPlaceholder getTypePtr(VariableType type) {
+        switch (type) {
+            case INT:
+                return getPrimitivePtr(ValueType.Primitive.INTEGER);
+            case LONG:
+                return getPrimitivePtr(ValueType.Primitive.LONG);
+            case FLOAT:
+                return getPrimitivePtr(ValueType.Primitive.FLOAT);
+            case DOUBLE:
+                return getPrimitivePtr(ValueType.Primitive.DOUBLE);
+            default:
+                return getTypePtr(objectType);
+        }
+    }
+
+    public DwarfPlaceholder getTypePtr(ValueType type) {
+        if (type instanceof ValueType.Primitive) {
+            return getPrimitivePtr((ValueType.Primitive) type);
+        } else if (type instanceof ValueType.Object) {
+            return getClassType(((ValueType.Object) type).getClassName());
+        }
+        return getClassType("java.lang.Object");
+    }
+
+    private DwarfPlaceholder getUnspecifiedType() {
+        if (unspecifiedType == null) {
+            unspecifiedType = writer.placeholder(4);
+            var abbrev = writer.abbreviation(DW_TAG_UNSPECIFIED_TYPE, false, blob -> {
+                blob.writeInt(DW_AT_NAME).writeInt(DW_FORM_STRP);
+            });
+            writer.mark(unspecifiedType).tag(abbrev).writeInt(strings.stringRef("<unspecified>"));
+        }
+        return unspecifiedType;
+    }
+
+    private DwarfPlaceholder getClassType(String name) {
+        return getClass(name).ptr;
+    }
+
+    private DwarfPlaceholder getPrimitivePtr(ValueType.Primitive type) {
+        var result = primitiveTypes[type.getKind().ordinal()];
+        if (result == null) {
+            String name;
+            int byteSize;
+            int encoding;
+            switch (type.getKind()) {
+                case BOOLEAN:
+                    name = "boolean";
+                    byteSize = 1;
+                    encoding = DW_ATE_BOOLEAN;
+                    break;
+                case BYTE:
+                    name = "byte";
+                    byteSize = 1;
+                    encoding = DW_ATE_SIGNED;
+                    break;
+                case SHORT:
+                    name = "short";
+                    byteSize = 2;
+                    encoding = DW_ATE_SIGNED;
+                    break;
+                case CHARACTER:
+                    name = "char";
+                    byteSize = 2;
+                    encoding = DW_ATE_UTF;
+                    break;
+                case INTEGER:
+                    name = "int";
+                    byteSize = 4;
+                    encoding = DW_ATE_SIGNED;
+                    break;
+                case LONG:
+                    name = "long";
+                    byteSize = 8;
+                    encoding = DW_ATE_SIGNED;
+                    break;
+                case FLOAT:
+                    name = "float";
+                    encoding = DW_ATE_FLOAT;
+                    byteSize = 4;
+                    break;
+                case DOUBLE:
+                    name = "double";
+                    encoding = DW_ATE_FLOAT;
+                    byteSize = 8;
+                    break;
+                default:
+                    throw new IllegalArgumentException();
+            }
+            var ptr = writer.placeholder(4);
+            postponedWrites.add(() -> {
+                writer.mark(ptr).tag(getBaseTypeAbbrev());
+                writer.writeInt(strings.stringRef(name));
+                writer.writeByte(byteSize);
+                writer.writeByte(encoding);
+            });
+            result = ptr;
+            primitiveTypes[type.getKind().ordinal()] = ptr;
+        }
+
+        return result;
+    }
+
+    private DwarfAbbreviation getBaseTypeAbbrev() {
+        if (baseTypeAbbrev == null) {
+            baseTypeAbbrev = writer.abbreviation(DW_TAG_BASE_TYPE, false, blob -> {
+                blob.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
+                blob.writeLEB(DW_AT_BYTE_SIZE).writeLEB(DW_FORM_DATA1);
+                blob.writeLEB(DW_AT_ENCODING).writeLEB(DW_FORM_DATA1);
+            });
+        }
+        return baseTypeAbbrev;
     }
 
     public class Namespace {
@@ -118,10 +256,10 @@ public class DwarfClassGenerator {
         }
 
         private void write() {
-            infoWriter.tag(getNsAbbrev());
-            infoWriter.writeInt(strings.stringRef(name));
+            writer.tag(getNsAbbrev());
+            writer.writeInt(strings.stringRef(name));
             writeChildren();
-            infoWriter.emptyTag();
+            writer.emptyTag();
         }
 
         private void writeChildren() {
@@ -140,39 +278,44 @@ public class DwarfClassGenerator {
 
     public class ClassType {
         public final String name;
+        final DwarfPlaceholder ptr;
         final Map<MethodDescriptor, Subprogram> subprograms = new LinkedHashMap<>();
 
         private ClassType(String name) {
+            ptr = writer.placeholder(4);
             this.name = name;
         }
 
         public Subprogram getSubprogram(MethodDescriptor desc) {
-            return subprograms.computeIfAbsent(desc, d -> new Subprogram(d.getName()));
+            return subprograms.computeIfAbsent(desc, d -> new Subprogram(d.getName(), desc));
         }
 
         private void write() {
-            infoWriter.tag(getClassTypeAbbrev());
-            infoWriter.writeInt(strings.stringRef(name));
+            writer.mark(ptr).tag(getClassTypeAbbrev());
+            writer.writeInt(strings.stringRef(name));
             for (var child : subprograms.values()) {
                 child.write();
             }
-            infoWriter.emptyTag();
+            writer.emptyTag();
         }
     }
 
     public class Subprogram {
         public final String name;
-        public DwarfPlaceholder ref;
+        public boolean isStatic;
+        public final MethodDescriptor descriptor;
+        public final DwarfPlaceholder ref;
 
-        private Subprogram(String name) {
+        private Subprogram(String name, MethodDescriptor descriptor) {
             this.name = name;
+            this.descriptor = descriptor;
+            ref = writer.placeholder(4);
         }
 
         private void write() {
-            ref = infoWriter.placeholder(4);
-            infoWriter.mark(ref).tag(getMethodAbbrev());
-            infoWriter.writeInt(strings.stringRef(name));
-            infoWriter.emptyTag();
+            writer.mark(ref).tag(getMethodAbbrev());
+            writer.writeInt(strings.stringRef(name));
+            writer.emptyTag();
         }
     }
 }

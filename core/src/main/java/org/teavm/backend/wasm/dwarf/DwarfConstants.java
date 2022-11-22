@@ -21,19 +21,35 @@ public final class DwarfConstants {
     public static final int DW_UT_COMPILE = 0x01;
 
     public static final int DW_TAG_CLASS_TYPE = 0x02;
+    public static final int DW_TAG_FORMAL_PARAMETER = 0x05;
     public static final int DW_TAG_COMPILE_UNIT = 0x11;
+    public static final int DW_TAG_BASE_TYPE = 0x24;
     public static final int DW_TAG_SUBPROGRAM = 0x2E;
+    public static final int DW_TAG_VARIABLE = 0x34;
     public static final int DW_TAG_NAMESPACE = 0x39;
+    public static final int DW_TAG_UNSPECIFIED_TYPE = 0x3B;
 
+    public static final int DW_AT_LOCATION = 0x02;
     public static final int DW_AT_NAME = 0x03;
+    public static final int DW_AT_BYTE_SIZE = 0x0B;
     public static final int DW_AT_STMT_LIST = 0x10;
     public static final int DW_AT_LOW_PC = 0x11;
     public static final int DW_AT_HIGH_PC = 0x12;
     public static final int DW_AT_LANGUAGE = 0x13;
     public static final int DW_AT_PRODUCER = 0x25;
-    public static final int DW_AT_DECLARATION = 0x3c;
+    public static final int DW_AT_DECLARATION = 0x3C;
+    public static final int DW_AT_ENCODING = 0x3E;
     public static final int DW_AT_SPECIFICATION = 0x47;
+    public static final int DW_AT_TYPE = 0x49;
     public static final int DW_AT_LINKAGE_NAME = 0x6E;
+
+    public static final int DW_ATE_ADDRESS = 0x01;
+    public static final int DW_ATE_BOOLEAN = 0x02;
+    public static final int DW_ATE_FLOAT = 0x04;
+    public static final int DW_ATE_SIGNED = 0x05;
+    public static final int DW_ATE_UNSIGNED = 0x07;
+    public static final int DW_ATE_UNSIGNED_CHAR = 0x08;
+    public static final int DW_ATE_UTF = 0x10;
 
     public static final int DW_LANG_JAVA = 0x0b;
 
@@ -46,12 +62,16 @@ public final class DwarfConstants {
     public static final int DW_FORM_ADDR = 0x01;
     public static final int DW_FORM_DATA2 = 0x05;
     public static final int DW_FORM_DATA4 = 0x06;
+    public static final int DW_FORM_DATA1 = 0x0B;
     public static final int DW_FORM_FLAG = 0x0C;
     public static final int DW_FORM_STRP = 0x0E;
     public static final int DW_FORM_REF4 = 0x13;
     public static final int DW_FORM_SEC_OFFSET = 0x17;
+    public static final int DW_FORM_EXPRLOC = 0x18;
     public static final int DW_FORM_FLAG_PRESENT = 0x19;
     public static final int DW_FORM_LINE_STRP = 0x1F;
+
+    public static final int DW_OP_WASM_LOCATION = 0xED;
 
     public static final int DW_LNS_COPY = 0x01;
     public static final int DW_LNS_ADVANCE_PC = 0x02;

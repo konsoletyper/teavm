@@ -446,7 +446,14 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         BinaryWriter binaryWriter = new BinaryWriter(256);
         var names = new NameProviderWithSpecialNames(new WasmNameProvider(), controller.getUnprocessedClassSource());
         var metadataRequirements = new ClassMetadataRequirements(controller.getDependencyInfo());
-        var dwarfClassGen = debugging ? new DwarfClassGenerator() : null;
+
+        var dwarfGenerator = debugging ? new DwarfGenerator() : null;
+        if (dwarfGenerator != null) {
+            dwarfGenerator.begin();
+        }
+        var dwarfClassGen = debugging
+                ? new DwarfClassGenerator(dwarfGenerator.getInfoWriter(), dwarfGenerator.strings)
+                : null;
         var classGenerator = new WasmClassGenerator(classes, controller.getUnprocessedClassSource(),
                 vtableProvider, tagRegistry, binaryWriter, names, metadataRequirements,
                 controller.getClassInitializerInfo(), characteristics, dwarfClassGen);
@@ -496,10 +503,6 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 classGenerator, stringPool, obfuscated);
         context.addIntrinsic(exceptionHandlingIntrinsic);
 
-        var dwarfGenerator = debugging ? new DwarfGenerator() : null;
-        if (dwarfGenerator != null) {
-            dwarfGenerator.begin();
-        }
         var generator = new WasmGenerator(decompiler, classes, context, classGenerator, binaryWriter,
                 asyncMethods::contains);
 
@@ -547,11 +550,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
 
         var writer = new WasmBinaryWriter();
-        if (dwarfClassGen != null) {
-            dwarfClassGen.write(dwarfGenerator.getInfoWriter(), dwarfGenerator.strings);
-        }
         var renderer = new WasmBinaryRenderer(writer, version, obfuscated, dwarfGenerator, dwarfClassGen);
-        renderer.render(module, buildDwarf(dwarfGenerator));
+        renderer.render(module, buildDwarf(dwarfGenerator, dwarfClassGen));
 
         try (OutputStream output = buildTarget.createResource(outputName)) {
             output.write(writer.getData());
@@ -570,11 +570,13 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
     }
 
-    private Supplier<Collection<? extends WasmCustomSection>> buildDwarf(DwarfGenerator generator) {
+    private Supplier<Collection<? extends WasmCustomSection>> buildDwarf(DwarfGenerator generator,
+            DwarfClassGenerator classGen) {
         if (generator == null) {
             return null;
         }
         return () -> {
+            classGen.write();
             generator.end();
             return generator.createSections();
         };
@@ -781,6 +783,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             if (dwarfClassGen != null) {
                 var dwarfClass = dwarfClassGen.getClass(method.getOwnerName());
                 var dwarfSubprogram = dwarfClass.getSubprogram(method.getDescriptor());
+                dwarfSubprogram.isStatic = method.hasModifier(ElementModifier.STATIC);
                 dwarfClassGen.registerSubprogram(context.names.forMethod(method.getReference()), dwarfSubprogram);
             }
             if (controller.wasCancelled()) {

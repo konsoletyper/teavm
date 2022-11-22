@@ -15,14 +15,6 @@
  */
 package org.teavm.backend.wasm.render;
 
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_HIGH_PC;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_LOW_PC;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_NAME;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_SPECIFICATION;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_ADDR;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_REF4;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_STRP;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_SUBPROGRAM;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,14 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.teavm.backend.wasm.dwarf.DwarfAbbreviation;
-import org.teavm.backend.wasm.dwarf.blob.Blob;
-import org.teavm.backend.wasm.dwarf.blob.Marker;
 import org.teavm.backend.wasm.generate.DwarfClassGenerator;
+import org.teavm.backend.wasm.generate.DwarfFunctionGenerator;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
 import org.teavm.backend.wasm.model.WasmCustomSection;
 import org.teavm.backend.wasm.model.WasmFunction;
-import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
@@ -67,9 +56,7 @@ public class WasmBinaryRenderer {
     private Map<String, Integer> functionIndexes = new HashMap<>();
     private boolean obfuscated;
     private DwarfGenerator dwarfGenerator;
-    private DwarfClassGenerator dwarfClassGen;
-    private DwarfAbbreviation methodAbbrev;
-    private DwarfAbbreviation functionAbbrev;
+    private DwarfFunctionGenerator dwarfFunctionGen;
 
     public WasmBinaryRenderer(WasmBinaryWriter output, WasmBinaryVersion version, boolean obfuscated,
             DwarfGenerator dwarfGenerator, DwarfClassGenerator dwarfClassGen) {
@@ -77,7 +64,7 @@ public class WasmBinaryRenderer {
         this.version = version;
         this.obfuscated = obfuscated;
         this.dwarfGenerator = dwarfGenerator;
-        this.dwarfClassGen = dwarfClassGen;
+        dwarfFunctionGen = dwarfClassGen != null ? new DwarfFunctionGenerator(dwarfClassGen, dwarfGenerator) : null;
     }
 
     public void render(WasmModule module) {
@@ -299,35 +286,21 @@ public class WasmBinaryRenderer {
     private byte[] renderFunction(WasmFunction function, int offset) {
         var code = new WasmBinaryWriter();
 
-        Marker endProgramMarker;
-        if (dwarfClassGen != null && function.getName() != null) {
-            var dwarfSubprogram = dwarfClassGen.getSubprogram(function.getName());
-            var writer = dwarfGenerator.getInfoWriter();
-            var strings = dwarfGenerator.strings;
-            writer.tag(dwarfSubprogram != null ? getMethodAbbrev() : getFunctionAbbrev());
-            if (dwarfSubprogram != null) {
-                writer.ref(dwarfSubprogram.ref, Blob::writeInt);
-            } else {
-                writer.writeInt(strings.stringRef(
-                        dwarfSubprogram != null ? dwarfSubprogram.name : function.getName()));
-            }
-            writer.writeInt(offset);
-            endProgramMarker = writer.marker();
-            writer.skip(4);
-        } else {
-            endProgramMarker = null;
+        if (dwarfFunctionGen != null) {
+            dwarfFunctionGen.begin(function, offset);
+
         }
 
-        List<WasmLocal> localVariables = function.getLocalVariables();
+        var localVariables = function.getLocalVariables();
         int parameterCount = Math.min(function.getParameters().size(), localVariables.size());
         localVariables = localVariables.subList(parameterCount, localVariables.size());
         if (localVariables.isEmpty()) {
             code.writeLEB(0);
         } else {
-            List<LocalEntry> localEntries = new ArrayList<>();
-            LocalEntry currentEntry = new LocalEntry(localVariables.get(0).getType());
+            var localEntries = new ArrayList<LocalEntry>();
+            var currentEntry = new LocalEntry(localVariables.get(0).getType());
             for (int i = 1; i < localVariables.size(); ++i) {
-                WasmType type = localVariables.get(i).getType();
+                var type = localVariables.get(i).getType();
                 if (currentEntry.type == type) {
                     currentEntry.count++;
                 } else {
@@ -338,7 +311,7 @@ public class WasmBinaryRenderer {
             localEntries.add(currentEntry);
 
             code.writeLEB(localEntries.size());
-            for (LocalEntry entry : localEntries) {
+            for (var entry : localEntries) {
                 code.writeLEB(entry.count);
                 code.writeType(entry.type, version);
             }
@@ -347,7 +320,7 @@ public class WasmBinaryRenderer {
         var importIndexes = this.functionIndexes;
         var visitor = new WasmBinaryRenderingVisitor(code, version, functionIndexes, importIndexes,
                 signatureIndexes, dwarfGenerator, offset);
-        for (WasmExpression part : function.getBody()) {
+        for (var part : function.getBody()) {
             part.acceptVisitor(visitor);
         }
 
@@ -357,13 +330,8 @@ public class WasmBinaryRenderer {
 
         code.writeByte(0x0B);
 
-        if (endProgramMarker != null) {
-            var dwarfWriter = dwarfGenerator.getInfoWriter();
-            var backup = dwarfWriter.marker();
-            endProgramMarker.rewind();
-            dwarfWriter.writeInt(offset + code.getPosition());
-            backup.rewind();
-            dwarfWriter.emptyTag();
+        if (dwarfFunctionGen != null) {
+            dwarfFunctionGen.end(code.getPosition());
         }
 
         return code.getData();
@@ -464,28 +432,5 @@ public class WasmBinaryRenderer {
         }
 
         output.writeBytes(data);
-    }
-
-
-    private DwarfAbbreviation getMethodAbbrev() {
-        if (methodAbbrev == null) {
-            methodAbbrev = dwarfGenerator.getInfoWriter().abbreviation(DW_TAG_SUBPROGRAM, true, data -> {
-                data.writeLEB(DW_AT_SPECIFICATION).writeLEB(DW_FORM_REF4);
-                data.writeLEB(DW_AT_LOW_PC).writeLEB(DW_FORM_ADDR);
-                data.writeLEB(DW_AT_HIGH_PC).writeLEB(DW_FORM_ADDR);
-            });
-        }
-        return methodAbbrev;
-    }
-
-    private DwarfAbbreviation getFunctionAbbrev() {
-        if (functionAbbrev == null) {
-            functionAbbrev = dwarfGenerator.getInfoWriter().abbreviation(DW_TAG_SUBPROGRAM, true, data -> {
-                data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
-                data.writeLEB(DW_AT_LOW_PC).writeLEB(DW_FORM_ADDR);
-                data.writeLEB(DW_AT_HIGH_PC).writeLEB(DW_FORM_ADDR);
-            });
-        }
-        return functionAbbrev;
     }
 }
