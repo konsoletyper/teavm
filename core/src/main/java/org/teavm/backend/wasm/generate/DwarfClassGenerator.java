@@ -22,18 +22,25 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_ATE_UTF;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_BYTE_SIZE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_DECLARATION;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_ENCODING;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_LOCATION;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_NAME;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_DATA1;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_DATA2;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_EXPRLOC;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_FLAG_PRESENT;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_REF4;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_STRP;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_OP_ADDR;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_OP_STACK_VALUE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_BASE_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_CLASS_TYPE;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_INHERITANCE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_NAMESPACE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_POINTER_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_SUBPROGRAM;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_UNSPECIFIED_TYPE;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_VARIABLE;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -57,12 +64,15 @@ public class DwarfClassGenerator {
     private final DwarfStrings strings;
     private DwarfAbbreviation nsAbbrev;
     private DwarfAbbreviation classTypeAbbrev;
+    private DwarfAbbreviation inheritanceAbbrev;
     private DwarfAbbreviation methodAbbrev;
     private DwarfPlaceholder[] primitiveTypes = new DwarfPlaceholder[PrimitiveType.values().length];
     private DwarfPlaceholder unspecifiedType;
     private DwarfAbbreviation baseTypeAbbrev;
     private DwarfAbbreviation pointerAbbrev;
+    private DwarfAbbreviation variableAbbrev;
     private List<Runnable> postponedWrites = new ArrayList<>();
+    private ClassType classClass;
 
     public DwarfClassGenerator(DwarfInfoWriter writer, DwarfStrings strings) {
         this.writer = writer;
@@ -99,10 +109,12 @@ public class DwarfClassGenerator {
     }
 
     public void write() {
+        classClass = getClass("java.lang.Class");
         root.writeChildren();
         for (var subprogram : rootSubprograms) {
             subprogram.write();
         }
+        flushTypes();
     }
 
     private DwarfAbbreviation getMethodAbbrev() {
@@ -128,9 +140,19 @@ public class DwarfClassGenerator {
         if (classTypeAbbrev == null) {
             classTypeAbbrev = writer.abbreviation(DW_TAG_CLASS_TYPE, true, data -> {
                 data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
+                data.writeLEB(DW_AT_BYTE_SIZE).writeLEB(DW_FORM_DATA2);
             });
         }
         return classTypeAbbrev;
+    }
+
+    private DwarfAbbreviation getInheritanceAbbrev() {
+        if (inheritanceAbbrev == null) {
+            inheritanceAbbrev = writer.abbreviation(DW_TAG_INHERITANCE, false, data -> {
+                data.writeLEB(DW_AT_TYPE).writeLEB(DW_FORM_REF4);
+            });
+        }
+        return inheritanceAbbrev;
     }
 
     public DwarfPlaceholder getTypePtr(VariableType type) {
@@ -169,7 +191,7 @@ public class DwarfClassGenerator {
     }
 
     private DwarfPlaceholder getClassType(String name) {
-        return getClass(name).getPointerPtr();
+        return getClass(name).ptr;
     }
 
     private DwarfPlaceholder getPrimitivePtr(ValueType.Primitive type) {
@@ -256,6 +278,17 @@ public class DwarfClassGenerator {
         return pointerAbbrev;
     }
 
+    private DwarfAbbreviation getVariableAbbrev() {
+        if (variableAbbrev == null) {
+            variableAbbrev = writer.abbreviation(DW_TAG_VARIABLE, false, blob -> {
+                blob.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
+                blob.writeLEB(DW_AT_TYPE).writeLEB(DW_FORM_REF4);
+                blob.writeLEB(DW_AT_LOCATION).writeLEB(DW_FORM_EXPRLOC);
+            });
+        }
+        return variableAbbrev;
+    }
+
     public class Namespace {
         public final String name;
         final Map<String, Namespace> namespaces = new LinkedHashMap<>();
@@ -295,14 +328,29 @@ public class DwarfClassGenerator {
         final DwarfPlaceholder ptr;
         private DwarfPlaceholder pointerPtr;
         final Map<MethodDescriptor, Subprogram> subprograms = new LinkedHashMap<>();
+        private ClassType superclass;
+        private int size;
+        private int pointer = -1;
 
         private ClassType(String name) {
             ptr = writer.placeholder(4);
             this.name = name;
         }
 
+        public void setSuperclass(ClassType superclass) {
+            this.superclass = superclass;
+        }
+
         public Subprogram getSubprogram(MethodDescriptor desc) {
             return subprograms.computeIfAbsent(desc, d -> new Subprogram(d.getName(), desc));
+        }
+
+        public void setSize(int size) {
+            this.size = size;
+        }
+
+        public void setPointer(int pointer) {
+            this.pointer = pointer;
         }
 
         public DwarfPlaceholder getPointerPtr() {
@@ -315,12 +363,25 @@ public class DwarfClassGenerator {
         private void write() {
             writer.mark(ptr).tag(getClassTypeAbbrev());
             writer.writeInt(strings.stringRef(name));
+            writer.writeShort(size);
+            if (superclass != null) {
+                writer.tag(getInheritanceAbbrev()).ref(superclass.ptr, Blob::writeInt);
+            }
             for (var child : subprograms.values()) {
                 child.write();
             }
             if (pointerPtr != null) {
                 writer.mark(pointerPtr).tag(getPointerAbbrev());
                 writer.ref(ptr, Blob::writeInt);
+            }
+            if (pointer >= 0) {
+                writer.tag(getVariableAbbrev());
+                writer.writeInt(strings.stringRef("__class__"));
+                writer.ref(classClass.ptr, Blob::writeInt);
+                var ops = new Blob();
+                ops.writeByte(DW_OP_ADDR).writeInt(pointer).writeByte(DW_OP_STACK_VALUE);
+                writer.writeLEB(ops.size());
+                ops.newReader(writer::write).readRemaining();
             }
             writer.emptyTag();
         }

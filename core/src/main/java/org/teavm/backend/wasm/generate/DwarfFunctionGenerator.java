@@ -25,6 +25,7 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_ADDR;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_EXPRLOC;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_REF4;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_STRP;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_OP_STACK_VALUE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_OP_WASM_LOCATION;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_FORMAL_PARAMETER;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_SUBPROGRAM;
@@ -33,6 +34,7 @@ import org.teavm.backend.wasm.dwarf.DwarfAbbreviation;
 import org.teavm.backend.wasm.dwarf.blob.Blob;
 import org.teavm.backend.wasm.dwarf.blob.Marker;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.model.util.VariableType;
 
 public class DwarfFunctionGenerator {
     private DwarfClassGenerator classGen;
@@ -114,6 +116,9 @@ public class DwarfFunctionGenerator {
 
             var operations = new Blob();
             operations.writeByte(DW_OP_WASM_LOCATION).writeByte(0).writeLEB(i + 1);
+            if (local.getJavaType() == VariableType.OBJECT) {
+                operations.writeByte(DW_OP_STACK_VALUE);
+            }
             writer.writeLEB(operations.size());
             operations.newReader(writer::write).readRemaining();
         }

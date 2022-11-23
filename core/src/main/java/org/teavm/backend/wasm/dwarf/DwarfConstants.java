@@ -24,6 +24,7 @@ public final class DwarfConstants {
     public static final int DW_TAG_FORMAL_PARAMETER = 0x05;
     public static final int DW_TAG_POINTER_TYPE = 0x0F;
     public static final int DW_TAG_COMPILE_UNIT = 0x11;
+    public static final int DW_TAG_INHERITANCE = 0x1C;
     public static final int DW_TAG_BASE_TYPE = 0x24;
     public static final int DW_TAG_SUBPROGRAM = 0x2E;
     public static final int DW_TAG_VARIABLE = 0x34;
@@ -72,6 +73,8 @@ public final class DwarfConstants {
     public static final int DW_FORM_FLAG_PRESENT = 0x19;
     public static final int DW_FORM_LINE_STRP = 0x1F;
 
+    public static final int DW_OP_ADDR = 0x03;
+    public static final int DW_OP_STACK_VALUE = 0x9F;
     public static final int DW_OP_WASM_LOCATION = 0xED;
 
     public static final int DW_LNS_COPY = 0x01;

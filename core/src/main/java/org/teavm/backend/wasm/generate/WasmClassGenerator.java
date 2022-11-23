@@ -179,12 +179,22 @@ public class WasmClassGenerator {
             var cls = classSource.get(className);
 
             if (cls != null) {
-                calculateLayout(cls, binaryData);
+                DwarfClassGenerator.ClassType dwarfClass;
+                if (dwarfClassGenerator != null) {
+                    dwarfClass = dwarfClassGenerator.getClass(className);
+                    dwarfClass.setSuperclass(cls.getParent() != null
+                            ? dwarfClassGenerator.getClass(cls.getParent())
+                            : null);
+                } else {
+                    dwarfClass = null;
+                }
+                calculateLayout(cls, binaryData, dwarfClass);
                 if (binaryData.start >= 0) {
                     binaryData.start = binaryWriter.append(createStructure(binaryData));
                 }
-                if (dwarfClassGenerator != null) {
-                    dwarfClassGenerator.getClass(className);
+                if (dwarfClass != null) {
+                    dwarfClass.setSize(binaryData.size);
+                    dwarfClass.setPointer(binaryData.start);
                 }
             }
         } else if (type instanceof ValueType.Array) {
@@ -486,7 +496,7 @@ public class WasmClassGenerator {
         return binaryDataMap.get(type).function;
     }
 
-    private void calculateLayout(ClassReader cls, ClassBinaryData data) {
+    private void calculateLayout(ClassReader cls, ClassBinaryData data, DwarfClassGenerator.ClassType dwarfClass) {
         if (cls.getName().equals(Structure.class.getName()) || cls.getName().equals(Address.class.getName())) {
             data.size = 0;
             data.start = -1;

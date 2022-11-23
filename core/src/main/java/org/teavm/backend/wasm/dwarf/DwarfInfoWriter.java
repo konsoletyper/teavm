@@ -20,6 +20,7 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_CHILDREN_YES;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import org.teavm.backend.wasm.dwarf.blob.BinaryDataConsumer;
 import org.teavm.backend.wasm.dwarf.blob.Blob;
@@ -115,6 +116,7 @@ public class DwarfInfoWriter {
     }
 
     public DwarfInfoWriter mark(DwarfPlaceholder placeholder) {
+        Objects.requireNonNull(placeholder);
         placements.add(new Placement(output.ptr()) {
             @Override
             void write(Blob blob) {
