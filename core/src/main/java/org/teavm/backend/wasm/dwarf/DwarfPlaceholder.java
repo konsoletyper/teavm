@@ -31,8 +31,8 @@ public class DwarfPlaceholder {
     void addForwardRef(DwarfPlaceholderWriter writer, Marker marker) {
         if (forwardReferences == null) {
             forwardReferences = new ArrayList<>();
-            forwardReferences.add(new ForwardRef(writer, marker));
         }
+        forwardReferences.add(new ForwardRef(writer, marker));
     }
 
     static class ForwardRef {

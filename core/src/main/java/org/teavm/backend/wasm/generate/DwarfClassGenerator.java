@@ -23,12 +23,15 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_BYTE_SIZE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_DECLARATION;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_ENCODING;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_NAME;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_DATA1;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_FLAG_PRESENT;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_REF4;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_STRP;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_BASE_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_CLASS_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_NAMESPACE;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_POINTER_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_SUBPROGRAM;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_UNSPECIFIED_TYPE;
 import java.util.ArrayList;
@@ -39,6 +42,7 @@ import java.util.Map;
 import org.teavm.backend.wasm.dwarf.DwarfAbbreviation;
 import org.teavm.backend.wasm.dwarf.DwarfInfoWriter;
 import org.teavm.backend.wasm.dwarf.DwarfPlaceholder;
+import org.teavm.backend.wasm.dwarf.blob.Blob;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.PrimitiveType;
 import org.teavm.model.ValueType;
@@ -57,6 +61,7 @@ public class DwarfClassGenerator {
     private DwarfPlaceholder[] primitiveTypes = new DwarfPlaceholder[PrimitiveType.values().length];
     private DwarfPlaceholder unspecifiedType;
     private DwarfAbbreviation baseTypeAbbrev;
+    private DwarfAbbreviation pointerAbbrev;
     private List<Runnable> postponedWrites = new ArrayList<>();
 
     public DwarfClassGenerator(DwarfInfoWriter writer, DwarfStrings strings) {
@@ -164,7 +169,7 @@ public class DwarfClassGenerator {
     }
 
     private DwarfPlaceholder getClassType(String name) {
-        return getClass(name).ptr;
+        return getClass(name).getPointerPtr();
     }
 
     private DwarfPlaceholder getPrimitivePtr(ValueType.Primitive type) {
@@ -242,6 +247,15 @@ public class DwarfClassGenerator {
         return baseTypeAbbrev;
     }
 
+    private DwarfAbbreviation getPointerAbbrev() {
+        if (pointerAbbrev == null) {
+            pointerAbbrev = writer.abbreviation(DW_TAG_POINTER_TYPE, false, blob -> {
+                blob.writeLEB(DW_AT_TYPE).writeLEB(DW_FORM_REF4);
+            });
+        }
+        return pointerAbbrev;
+    }
+
     public class Namespace {
         public final String name;
         final Map<String, Namespace> namespaces = new LinkedHashMap<>();
@@ -279,6 +293,7 @@ public class DwarfClassGenerator {
     public class ClassType {
         public final String name;
         final DwarfPlaceholder ptr;
+        private DwarfPlaceholder pointerPtr;
         final Map<MethodDescriptor, Subprogram> subprograms = new LinkedHashMap<>();
 
         private ClassType(String name) {
@@ -290,11 +305,22 @@ public class DwarfClassGenerator {
             return subprograms.computeIfAbsent(desc, d -> new Subprogram(d.getName(), desc));
         }
 
+        public DwarfPlaceholder getPointerPtr() {
+            if (pointerPtr == null) {
+                pointerPtr = writer.placeholder(4);
+            }
+            return pointerPtr;
+        }
+
         private void write() {
             writer.mark(ptr).tag(getClassTypeAbbrev());
             writer.writeInt(strings.stringRef(name));
             for (var child : subprograms.values()) {
                 child.write();
+            }
+            if (pointerPtr != null) {
+                writer.mark(pointerPtr).tag(getPointerAbbrev());
+                writer.ref(ptr, Blob::writeInt);
             }
             writer.emptyTag();
         }

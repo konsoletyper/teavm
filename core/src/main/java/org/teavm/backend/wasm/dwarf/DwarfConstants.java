@@ -22,6 +22,7 @@ public final class DwarfConstants {
 
     public static final int DW_TAG_CLASS_TYPE = 0x02;
     public static final int DW_TAG_FORMAL_PARAMETER = 0x05;
+    public static final int DW_TAG_POINTER_TYPE = 0x0F;
     public static final int DW_TAG_COMPILE_UNIT = 0x11;
     public static final int DW_TAG_BASE_TYPE = 0x24;
     public static final int DW_TAG_SUBPROGRAM = 0x2E;
