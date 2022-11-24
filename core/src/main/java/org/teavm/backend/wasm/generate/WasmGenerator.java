@@ -59,6 +59,7 @@ public class WasmGenerator {
         ClassHolder cls = classSource.get(methodReference.getClassName());
         MethodHolder method = cls.getMethod(methodReference.getDescriptor());
         WasmFunction function = new WasmFunction(names.forMethod(method.getReference()));
+        function.setJavaMethod(methodReference);
 
         if (!method.hasModifier(ElementModifier.STATIC)) {
             function.getParameters().add(WasmType.INT32);

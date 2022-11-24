@@ -13,21 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.dwarf;
+package org.teavm.backend.wasm.debug;
 
-import java.util.function.Consumer;
-import org.teavm.backend.wasm.blob.Blob;
-
-public class DwarfAbbreviation {
-    int tag;
-    boolean hasChildren;
-    Consumer<Blob> writer;
-    int index;
-    int count;
-
-    DwarfAbbreviation(int tag, boolean hasChildren, Consumer<Blob> writer) {
-        this.tag = tag;
-        this.hasChildren = hasChildren;
-        this.writer = writer;
-    }
+public interface DebugFiles {
+    int filePtr(String fileName);
 }

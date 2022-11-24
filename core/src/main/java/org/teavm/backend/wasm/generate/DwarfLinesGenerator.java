@@ -26,8 +26,8 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_LNS_COPY;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_LNS_SET_FILE;
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
-import org.teavm.backend.wasm.dwarf.blob.Blob;
-import org.teavm.backend.wasm.dwarf.blob.Marker;
+import org.teavm.backend.wasm.blob.Blob;
+import org.teavm.backend.wasm.blob.Marker;
 
 class DwarfLinesGenerator {
     private static final int MIN_INSN_LEN = 1;

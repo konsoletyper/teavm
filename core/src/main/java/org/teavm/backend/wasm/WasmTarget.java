@@ -40,6 +40,7 @@ import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.lowlevel.generate.NameProviderWithSpecialNames;
 import org.teavm.backend.lowlevel.transform.CoroutineTransformation;
 import org.teavm.backend.wasm.binary.BinaryWriter;
+import org.teavm.backend.wasm.debug.DebugInfoBuilder;
 import org.teavm.backend.wasm.generate.DwarfClassGenerator;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
@@ -550,8 +551,10 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
 
         var writer = new WasmBinaryWriter();
-        var renderer = new WasmBinaryRenderer(writer, version, obfuscated, dwarfGenerator, dwarfClassGen);
-        renderer.render(module, buildDwarf(dwarfGenerator, dwarfClassGen));
+        var debugBuilder = debugging ? new DebugInfoBuilder() : null;
+        var renderer = new WasmBinaryRenderer(writer, version, obfuscated, dwarfGenerator, dwarfClassGen,
+                debugBuilder.lines());
+        renderer.render(module, buildDebug(dwarfGenerator, dwarfClassGen, debugBuilder));
 
         try (OutputStream output = buildTarget.createResource(outputName)) {
             output.write(writer.getData());
@@ -570,15 +573,24 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
     }
 
-    private Supplier<Collection<? extends WasmCustomSection>> buildDwarf(DwarfGenerator generator,
-            DwarfClassGenerator classGen) {
-        if (generator == null) {
+    private Supplier<Collection<? extends WasmCustomSection>> buildDebug(DwarfGenerator generator,
+            DwarfClassGenerator classGen, DebugInfoBuilder debugBuilder) {
+        if (generator == null || debugBuilder == null) {
             return null;
         }
         return () -> {
-            classGen.write();
-            generator.end();
-            return generator.createSections();
+            var sections = new ArrayList<WasmCustomSection>();
+            if (classGen != null) {
+                classGen.write();
+            }
+            if (generator != null) {
+                generator.end();
+                sections.addAll(generator.createSections());
+            }
+            if (debugBuilder != null) {
+                sections.addAll(debugBuilder.build());
+            }
+            return sections;
         };
     }
 

@@ -13,26 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generate;
+package org.teavm.backend.wasm.debug;
 
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.nio.charset.StandardCharsets;
-import org.teavm.backend.wasm.blob.Blob;
 
-public class DwarfStrings {
-    final Blob blob = new Blob();
-    private ObjectIntMap<String> offsets = new ObjectIntHashMap<>();
+public class DebugStringsBuilder extends DebugSectionBuilder implements DebugStrings {
+    private ObjectIntMap<String> strings = new ObjectIntHashMap<>();
 
-    public int stringRef(String s) {
-        int ptr = offsets.getOrDefault(s, -1);
-        if (ptr < 0) {
-            ptr = blob.size();
-            offsets.put(s, ptr);
-            var bytes = s.getBytes(StandardCharsets.UTF_8);
-            blob.write(bytes);
-            blob.writeByte(0);
+    @Override
+    public int stringPtr(String str) {
+        var result = strings.getOrDefault(str, -1);
+        if (result < 0) {
+            result = strings.size();
+            strings.put(str, result);
+            blob.writeLEB(str.length());
+            blob.write(str.getBytes(StandardCharsets.UTF_8));
         }
-        return ptr;
+        return result;
     }
 }

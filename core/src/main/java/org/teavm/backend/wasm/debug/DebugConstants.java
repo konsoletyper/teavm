@@ -13,8 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.dwarf.blob;
+package org.teavm.backend.wasm.debug;
 
-public interface BinaryDataConsumer {
-    void accept(byte[] data, int offset, int limit);
+public final class DebugConstants {
+    private DebugConstants() {
+    }
+
+    public static final int LOC_START = 0;
+    public static final int LOC_END = 1;
+    public static final int LOC_LINE = 2;
+    public static final int LOC_FILE = 3;
+    public static final int LOC_PTR = 4;
+    public static final int LOC_USER = 10;
 }

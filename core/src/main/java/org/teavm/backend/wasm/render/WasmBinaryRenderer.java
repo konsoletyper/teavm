@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.teavm.backend.wasm.debug.DebugLines;
 import org.teavm.backend.wasm.generate.DwarfClassGenerator;
 import org.teavm.backend.wasm.generate.DwarfFunctionGenerator;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
@@ -57,14 +58,16 @@ public class WasmBinaryRenderer {
     private boolean obfuscated;
     private DwarfGenerator dwarfGenerator;
     private DwarfFunctionGenerator dwarfFunctionGen;
+    private DebugLines debugLines;
 
     public WasmBinaryRenderer(WasmBinaryWriter output, WasmBinaryVersion version, boolean obfuscated,
-            DwarfGenerator dwarfGenerator, DwarfClassGenerator dwarfClassGen) {
+            DwarfGenerator dwarfGenerator, DwarfClassGenerator dwarfClassGen, DebugLines debugLines) {
         this.output = output;
         this.version = version;
         this.obfuscated = obfuscated;
         this.dwarfGenerator = dwarfGenerator;
         dwarfFunctionGen = dwarfClassGen != null ? new DwarfFunctionGenerator(dwarfClassGen, dwarfGenerator) : null;
+        this.debugLines = debugLines;
     }
 
     public void render(WasmModule module) {
@@ -288,7 +291,9 @@ public class WasmBinaryRenderer {
 
         if (dwarfFunctionGen != null) {
             dwarfFunctionGen.begin(function, offset);
-
+        }
+        if (debugLines != null && function.getJavaMethod() != null) {
+            debugLines.start(function.getJavaMethod());
         }
 
         var localVariables = function.getLocalVariables();
@@ -319,13 +324,16 @@ public class WasmBinaryRenderer {
 
         var importIndexes = this.functionIndexes;
         var visitor = new WasmBinaryRenderingVisitor(code, version, functionIndexes, importIndexes,
-                signatureIndexes, dwarfGenerator, offset);
+                signatureIndexes, dwarfGenerator, function.getJavaMethod() != null ? debugLines : null, offset);
         for (var part : function.getBody()) {
             part.acceptVisitor(visitor);
         }
 
         if (dwarfGenerator != null) {
             dwarfGenerator.endLineNumberSequence(offset + code.getPosition());
+        }
+        if (debugLines != null) {
+            debugLines.end();
         }
 
         code.writeByte(0x0B);

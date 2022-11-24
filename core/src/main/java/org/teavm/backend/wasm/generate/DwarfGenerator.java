@@ -31,10 +31,10 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_COMPILE_UNIT;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_UT_COMPILE;
 import java.util.ArrayList;
 import java.util.Collection;
+import org.teavm.backend.wasm.blob.Blob;
+import org.teavm.backend.wasm.blob.Marker;
 import org.teavm.backend.wasm.dwarf.DwarfInfoWriter;
 import org.teavm.backend.wasm.dwarf.DwarfPlaceholder;
-import org.teavm.backend.wasm.dwarf.blob.Blob;
-import org.teavm.backend.wasm.dwarf.blob.Marker;
 import org.teavm.backend.wasm.model.WasmCustomSection;
 
 public class DwarfGenerator {

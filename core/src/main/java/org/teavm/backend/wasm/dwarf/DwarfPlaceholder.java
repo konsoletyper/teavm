@@ -17,7 +17,7 @@ package org.teavm.backend.wasm.dwarf;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.teavm.backend.wasm.dwarf.blob.Marker;
+import org.teavm.backend.wasm.blob.Marker;
 
 public class DwarfPlaceholder {
     int ptr = -1;

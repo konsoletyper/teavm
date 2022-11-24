@@ -22,9 +22,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
-import org.teavm.backend.wasm.dwarf.blob.BinaryDataConsumer;
-import org.teavm.backend.wasm.dwarf.blob.Blob;
-import org.teavm.backend.wasm.dwarf.blob.Marker;
+import org.teavm.backend.wasm.blob.BinaryDataConsumer;
+import org.teavm.backend.wasm.blob.Blob;
+import org.teavm.backend.wasm.blob.Marker;
 
 public class DwarfInfoWriter {
     private Blob output = new Blob();

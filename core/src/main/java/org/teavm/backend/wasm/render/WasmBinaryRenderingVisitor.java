@@ -15,8 +15,12 @@
  */
 package org.teavm.backend.wasm.render;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.teavm.backend.wasm.debug.DebugLines;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
@@ -51,6 +55,7 @@ import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
+import org.teavm.model.MethodReference;
 
 class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     private WasmBinaryWriter writer;
@@ -59,13 +64,16 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     private Map<String, Integer> importedIndexes;
     private Map<WasmSignature, Integer> signatureIndexes;
     private DwarfGenerator dwarfGenerator;
+    private DebugLines debugLines;
     private int addressOffset;
     private int depth;
     private Map<WasmBlock, Integer> blockDepths = new HashMap<>();
+    private List<MethodReference> methodStack = new ArrayList<>();
+    private List<MethodReference> currentMethodStack = new ArrayList<>();
 
     WasmBinaryRenderingVisitor(WasmBinaryWriter writer, WasmBinaryVersion version, Map<String, Integer> functionIndexes,
             Map<String, Integer> importedIndexes, Map<WasmSignature, Integer> signatureIndexes,
-            DwarfGenerator dwarfGenerator, int addressOffset) {
+            DwarfGenerator dwarfGenerator, DebugLines debugLines, int addressOffset) {
         this.writer = writer;
         this.version = version;
         this.functionIndexes = functionIndexes;
@@ -73,6 +81,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         this.signatureIndexes = signatureIndexes;
         this.dwarfGenerator = dwarfGenerator;
         this.addressOffset = addressOffset;
+        this.debugLines = debugLines;
     }
 
     @Override
@@ -875,11 +884,38 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     }
 
     private void emitLocation(WasmExpression expression) {
-        if (dwarfGenerator == null || expression.getLocation() == null
-                || expression.getLocation().getFileName() == null) {
+        if (expression.getLocation() == null || expression.getLocation().getFileName() == null) {
             return;
         }
-        dwarfGenerator.lineNumber(writer.getPosition() + addressOffset, expression.getLocation().getFileName(),
-                expression.getLocation().getLine());
+        if (dwarfGenerator != null) {
+            dwarfGenerator.lineNumber(writer.getPosition() + addressOffset, expression.getLocation().getFileName(),
+                    expression.getLocation().getLine());
+        }
+        if (debugLines != null) {
+            debugLines.advance(writer.getPosition() + addressOffset);
+            var loc = expression.getLocation();
+            var inlining = loc.getInlining();
+            while (inlining != null) {
+                currentMethodStack.add(loc.getInlining().getMethod());
+                inlining = inlining.getParent();
+            }
+            Collections.reverse(currentMethodStack);
+            var commonPart = 0;
+            while (commonPart < currentMethodStack.size() && commonPart < methodStack.size()
+                    && currentMethodStack.get(commonPart).equals(methodStack.get(commonPart))) {
+                ++commonPart;
+            }
+            while (methodStack.size() > commonPart) {
+                debugLines.end();
+                methodStack.remove(methodStack.size() - 1);
+            }
+            while (commonPart < currentMethodStack.size()) {
+                var method = currentMethodStack.get(commonPart);
+                methodStack.add(method);
+                debugLines.start(method);
+            }
+            currentMethodStack.clear();
+            debugLines.location(loc.getFileName(), loc.getLine());
+        }
     }
 }
