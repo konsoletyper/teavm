@@ -13,32 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.debug;
+package org.teavm.backend.wasm.debug.info;
 
-import org.teavm.backend.wasm.blob.BinaryDataConsumer;
-import org.teavm.backend.wasm.blob.Blob;
+public interface LineInfoCommandVisitor {
+    void visit(LineInfoEnterCommand command);
 
-public class DebugSectionBuilder {
-    private String name;
-    protected Blob blob = new Blob();
+    void visit(LineInfoExitCommand command);
 
-    protected DebugSectionBuilder(String name) {
-        this.name = name;
-    }
+    void visit(LineInfoFileCommand command);
 
-    public void read(BinaryDataConsumer consumer) {
-        blob.newReader(consumer).readRemaining();
-    }
-
-    public String name() {
-        return name;
-    }
-
-    public byte[] build() {
-        return blob.toArray();
-    }
-
-    public boolean isEmpty() {
-        return blob.size() == 0;
-    }
+    void visit(LineInfoLineCommand command);
 }

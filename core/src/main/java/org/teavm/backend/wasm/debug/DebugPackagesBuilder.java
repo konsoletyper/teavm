@@ -24,6 +24,7 @@ public class DebugPackagesBuilder extends DebugSectionBuilder implements DebugPa
     private ObjectIntMap<PackageInfo> packages = new ObjectIntHashMap<>();
 
     public DebugPackagesBuilder(DebugStrings strings) {
+        super(DebugConstants.SECTION_PACKAGES);
         this.strings = strings;
     }
 

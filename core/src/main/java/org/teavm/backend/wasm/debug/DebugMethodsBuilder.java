@@ -25,6 +25,7 @@ public class DebugMethodsBuilder extends  DebugSectionBuilder implements DebugMe
     private ObjectIntMap<MethodReference> methods = new ObjectIntHashMap<>();
 
     public DebugMethodsBuilder(DebugClasses classes, DebugStrings strings) {
+        super(DebugConstants.SECTION_METHODS);
         this.classes = classes;
         this.strings = strings;
     }

@@ -24,6 +24,7 @@ public class DebugFilesBuilder extends DebugSectionBuilder implements DebugFiles
     private ObjectIntMap<FileData> fileMap = new ObjectIntHashMap<>();
 
     public DebugFilesBuilder(DebugStrings strings) {
+        super(DebugConstants.SECTION_FILES);
         this.strings = strings;
     }
 

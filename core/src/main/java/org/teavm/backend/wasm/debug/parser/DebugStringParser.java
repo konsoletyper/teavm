@@ -13,32 +13,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.debug;
+package org.teavm.backend.wasm.debug.parser;
 
-import org.teavm.backend.wasm.blob.BinaryDataConsumer;
-import org.teavm.backend.wasm.blob.Blob;
+import java.util.ArrayList;
+import org.teavm.backend.wasm.debug.DebugConstants;
 
-public class DebugSectionBuilder {
-    private String name;
-    protected Blob blob = new Blob();
+public class DebugStringParser extends DebugSectionParser {
+    private String[] strings;
 
-    protected DebugSectionBuilder(String name) {
-        this.name = name;
+    public DebugStringParser() {
+        super(DebugConstants.SECTION_STRINGS);
     }
 
-    public void read(BinaryDataConsumer consumer) {
-        blob.newReader(consumer).readRemaining();
+    @Override
+    protected void doParse() {
+        var strings = new ArrayList<String>();
+        while (ptr < data.length) {
+            strings.add(readString());
+        }
+        this.strings = strings.toArray(new String[0]);
     }
 
-    public String name() {
-        return name;
-    }
-
-    public byte[] build() {
-        return blob.toArray();
-    }
-
-    public boolean isEmpty() {
-        return blob.size() == 0;
+    public String getString(int ref) {
+        return strings[ref];
     }
 }

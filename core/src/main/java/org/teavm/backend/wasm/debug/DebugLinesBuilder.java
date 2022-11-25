@@ -30,6 +30,7 @@ public class DebugLinesBuilder extends DebugSectionBuilder implements DebugLines
     private Deque<State> states = new ArrayDeque<>();
 
     public DebugLinesBuilder(DebugFiles files, DebugMethods methods) {
+        super(DebugConstants.SECTION_LINES);
         this.files = files;
         this.methods = methods;
     }
@@ -45,8 +46,8 @@ public class DebugLinesBuilder extends DebugSectionBuilder implements DebugLines
     @Override
     public void location(String file, int line) {
         if (Objects.equals(file, this.file) && this.ptr != lastWrittenPtr && this.line != line) {
-            if (this.ptr - lastWrittenPtr < 32 && Math.abs(this.line - line) <= 3) {
-                blob.writeByte(DebugConstants.LOC_USER + 32 * (this.ptr - lastWrittenPtr) + (line - this.line) + 3);
+            if (this.ptr - lastWrittenPtr < 32 && Math.abs(line - this.line) <= 3) {
+                blob.writeByte(DebugConstants.LOC_USER + (this.ptr - lastWrittenPtr) + 32 * (line - this.line + 3));
                 this.line = line;
                 lastWrittenPtr = ptr;
                 return;

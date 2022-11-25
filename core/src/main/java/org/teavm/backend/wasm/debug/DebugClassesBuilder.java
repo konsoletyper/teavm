@@ -24,6 +24,7 @@ public class DebugClassesBuilder extends DebugSectionBuilder implements DebugCla
     private ObjectIntMap<String> classes = new ObjectIntHashMap<>();
 
     public DebugClassesBuilder(DebugPackages packages, DebugStrings strings) {
+        super(DebugConstants.SECTION_CLASSES);
         this.packages = packages;
         this.strings = strings;
     }

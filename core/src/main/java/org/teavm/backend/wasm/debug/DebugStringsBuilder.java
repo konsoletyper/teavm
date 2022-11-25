@@ -22,6 +22,10 @@ import java.nio.charset.StandardCharsets;
 public class DebugStringsBuilder extends DebugSectionBuilder implements DebugStrings {
     private ObjectIntMap<String> strings = new ObjectIntHashMap<>();
 
+    public DebugStringsBuilder() {
+        super(DebugConstants.SECTION_STRINGS);
+    }
+
     @Override
     public int stringPtr(String str) {
         var result = strings.getOrDefault(str, -1);

@@ -62,19 +62,19 @@ public class DebugInfoBuilder {
 
     public List<WasmCustomSection> build() {
         var result = new ArrayList<WasmCustomSection>();
-        addSection(result, "teavm_str", strings);
-        addSection(result, "teavm_file", files);
-        addSection(result, "teavm_pkg", packages);
-        addSection(result, "teavm_classes", classes);
-        addSection(result, "teavm_methods", methods);
-        addSection(result, "teavm_line", lines);
+        addSection(result, strings);
+        addSection(result, files);
+        addSection(result, packages);
+        addSection(result, classes);
+        addSection(result, methods);
+        addSection(result, lines);
         return result;
     }
 
-    private void addSection(List<WasmCustomSection> sections, String name, DebugSectionBuilder builder) {
+    private void addSection(List<WasmCustomSection> sections, DebugSectionBuilder builder) {
         if (builder.isEmpty()) {
             return;
         }
-        sections.add(new WasmCustomSection(name, builder.build()));
+        sections.add(new WasmCustomSection(builder.name(), builder.build()));
     }
 }

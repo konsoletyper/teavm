@@ -25,4 +25,11 @@ public final class DebugConstants {
     public static final int LOC_FILE = 3;
     public static final int LOC_PTR = 4;
     public static final int LOC_USER = 10;
+
+    public static final String SECTION_STRINGS = "teavm_str";
+    public static final String SECTION_FILES = "teavm_file";
+    public static final String SECTION_PACKAGES = "teavm_pkg";
+    public static final String SECTION_CLASSES = "teavm_cls";
+    public static final String SECTION_METHODS = "teavm_mtd";
+    public static final String SECTION_LINES = "teavm_line";
 }
