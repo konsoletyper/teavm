@@ -101,7 +101,6 @@ public class DebugInfoParser {
     private Promise<Void> parseSection(int limit) {
         return readString("Error reading custom section name").thenAsync(name -> {
             var sectionParser = sectionParsers.get(name);
-            System.out.println("Section '" + name + "': " + (sectionParser != null ? "parsed" : "unknown"));
             if (sectionParser != null) {
                 return readBytes(limit - pos, "Error reading section '" + name + "' content")
                         .thenVoid(sectionParser::parse);

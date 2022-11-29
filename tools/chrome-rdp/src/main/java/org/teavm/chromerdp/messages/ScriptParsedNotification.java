@@ -22,6 +22,7 @@ public class ScriptParsedNotification {
     private String scriptId;
     private String url;
     private int executionContextId;
+    private String scriptLanguage;
 
     public String getScriptId() {
         return scriptId;
@@ -45,5 +46,13 @@ public class ScriptParsedNotification {
 
     public void setExecutionContextId(int executionContextId) {
         this.executionContextId = executionContextId;
+    }
+
+    public String getScriptLanguage() {
+        return scriptLanguage;
+    }
+
+    public void setScriptLanguage(String scriptLanguage) {
+        this.scriptLanguage = scriptLanguage;
     }
 }

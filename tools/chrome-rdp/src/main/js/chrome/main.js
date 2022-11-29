@@ -15,7 +15,7 @@ class DebuggerAgent {
     }
 
     attach() {
-        chrome.debugger.attach(this.debuggee, "1.2", () => {
+        chrome.debugger.attach(this.debuggee, "1.3", () => {
             this.attachedToDebugger = true;
             chrome.debugger.sendCommand(this.debuggee, "Debugger.enable", {}, () => this.connectToServer());
         });
@@ -102,7 +102,7 @@ class DebuggerAgent {
 
 DebuggerAgent.MAX_MESSAGE_SIZE = 65534;
 
-chrome.browserAction.onClicked.addListener(function(tab) {
+chrome.action.onClicked.addListener(tab => {
     chrome.storage.sync.get({ port: 2357 }, items => attachDebugger(tab, items.port));
 });
 

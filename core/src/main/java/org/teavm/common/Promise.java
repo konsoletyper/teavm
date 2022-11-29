@@ -320,6 +320,17 @@ public class Promise<T> {
         }
     }
 
+    public static void runNow(Runnable runnable) {
+        var queue = processing.get();
+        if (queue == null) {
+            runnable.run();
+        } else {
+            processing.remove();
+            runnable.run();
+            processing.set(queue);
+        }
+    }
+
     enum State {
         PENDING,
         WAITING_PROMISE,
