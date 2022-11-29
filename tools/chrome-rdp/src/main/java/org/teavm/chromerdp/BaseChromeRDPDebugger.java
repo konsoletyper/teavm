@@ -169,6 +169,8 @@ public abstract class BaseChromeRDPDebugger implements ChromeRDPExchangeConsumer
         message.setMethod(method);
         if (params != null) {
             message.setParams(mapper.valueToTree(params));
+        } else {
+            message.setParams(mapper.createObjectNode());
         }
 
         sendMessage(message);

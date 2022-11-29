@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2022 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,16 +15,14 @@
  */
 package org.teavm.debugging.javascript;
 
-public interface JavaScriptDebuggerListener {
-    void paused(JavaScriptBreakpoint breakpoint);
+import org.teavm.common.Promise;
 
-    void resumed();
+public interface JavaScriptScript {
+    String getId();
 
-    void attached();
+    JavaScriptLanguage getLanguage();
 
-    void detached();
+    String getUrl();
 
-    void breakpointChanged(JavaScriptBreakpoint breakpoint);
-
-    void scriptAdded(JavaScriptScript script);
+    Promise<String> getSource();
 }

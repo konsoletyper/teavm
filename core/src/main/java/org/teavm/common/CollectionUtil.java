@@ -35,7 +35,7 @@ public final class CollectionUtil {
         while (true) {
             var i = (l + u) / 2;
             var t = keyExtractor.apply(list.get(i));
-            var cmp = comparator.compare(t, key);
+            var cmp = comparator.compare(key, t);
             if (cmp == 0) {
                 return i;
             } else if (cmp > 0) {

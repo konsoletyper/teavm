@@ -22,12 +22,18 @@ import java.util.List;
 import org.teavm.common.CollectionUtil;
 
 public class LineInfo {
+    private int offset;
     private LineInfoSequence[] sequences;
     private List<? extends LineInfoSequence> sequenceList;
 
-    public LineInfo(LineInfoSequence[] sequences) {
+    public LineInfo(int offset, LineInfoSequence[] sequences) {
+        this.offset = offset;
         this.sequences = sequences.clone();
         sequenceList = Collections.unmodifiableList(Arrays.asList(this.sequences));
+    }
+
+    public int offset() {
+        return offset;
     }
 
     public List<? extends LineInfoSequence> sequences() {

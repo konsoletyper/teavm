@@ -93,6 +93,9 @@ public class DebugInfoParser {
             if (sectionCode == 0) {
                 return parseSection(pos + sectionSize);
             } else {
+                if (sectionCode == 3) {
+                    lines.setOffset(pos);
+                }
                 return skip(sectionSize, "Error skipping section " + sectionCode + " of size " + sectionSize);
             }
         });

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,12 +38,13 @@ import org.teavm.chromerdp.messages.CallFunctionCommand;
 import org.teavm.chromerdp.messages.CallFunctionResponse;
 import org.teavm.chromerdp.messages.CompileScriptCommand;
 import org.teavm.chromerdp.messages.CompileScriptResponse;
-import org.teavm.chromerdp.messages.ContinueToLocationCommand;
 import org.teavm.chromerdp.messages.GetPropertiesCommand;
 import org.teavm.chromerdp.messages.GetPropertiesResponse;
+import org.teavm.chromerdp.messages.GetScriptSourceCommand;
 import org.teavm.chromerdp.messages.RemoveBreakpointCommand;
 import org.teavm.chromerdp.messages.RunScriptCommand;
 import org.teavm.chromerdp.messages.ScriptParsedNotification;
+import org.teavm.chromerdp.messages.ScriptSource;
 import org.teavm.chromerdp.messages.SetBreakpointCommand;
 import org.teavm.chromerdp.messages.SetBreakpointResponse;
 import org.teavm.chromerdp.messages.SuspendedNotification;
@@ -52,7 +54,9 @@ import org.teavm.debugging.javascript.JavaScriptBreakpoint;
 import org.teavm.debugging.javascript.JavaScriptCallFrame;
 import org.teavm.debugging.javascript.JavaScriptDebugger;
 import org.teavm.debugging.javascript.JavaScriptDebuggerListener;
+import org.teavm.debugging.javascript.JavaScriptLanguage;
 import org.teavm.debugging.javascript.JavaScriptLocation;
+import org.teavm.debugging.javascript.JavaScriptScript;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 
 public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScriptDebugger {
@@ -62,8 +66,8 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
     private Set<RDPBreakpoint> breakpoints = new LinkedHashSet<>();
     private Map<String, RDPNativeBreakpoint> breakpointsByChromeId = new HashMap<>();
     private volatile RDPCallFrame[] callStack = new RDPCallFrame[0];
-    private Map<String, String> scripts = new HashMap<>();
-    private Map<String, String> scriptIds = new HashMap<>();
+    private Map<String, ChromeRDPScript> scripts = new LinkedHashMap<>();
+    private Map<String, JavaScriptScript> readonlyScripts = Collections.unmodifiableMap(scripts);
     private volatile boolean suspended;
     private Promise<Void> runtimeEnabledPromise;
 
@@ -162,17 +166,37 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
         if (params.getUrl() == null) {
             return Promise.VOID;
         }
-        if (scripts.putIfAbsent(params.getScriptId(), params.getUrl()) != null) {
-            return Promise.VOID;
+        var language = JavaScriptLanguage.JS;
+        if (params.getScriptLanguage() != null) {
+            switch (params.getScriptLanguage()) {
+                case "WebAssembly":
+                    language = JavaScriptLanguage.WASM;
+                    break;
+                case "JavaScript":
+                    language = JavaScriptLanguage.JS;
+                    break;
+                default:
+                    language = JavaScriptLanguage.UNKNOWN;
+                    break;
+            }
         }
+        var script = new ChromeRDPScript(this, params.getScriptId(), language, params.getUrl());
+        scripts.put(script.getId(), script);
         if (params.getUrl().equals("file://fake")) {
             return Promise.VOID;
         }
-        scriptIds.put(params.getUrl(), params.getScriptId());
-        for (JavaScriptDebuggerListener listener : getListeners()) {
-            listener.scriptAdded(params.getUrl());
+        for (var listener : getListeners()) {
+            listener.scriptAdded(script);
         }
-        return injectFunctions(params.getExecutionContextId());
+        if (language == JavaScriptLanguage.JS) {
+            return injectFunctions(params.getExecutionContextId());
+        }
+        return Promise.VOID;
+    }
+
+    @Override
+    public Map<? extends String, ? extends JavaScriptScript> getScripts() {
+        return readonlyScripts;
     }
 
     @Override
@@ -208,13 +232,6 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
     @Override
     public Promise<Void> stepOver() {
         return callMethodAsync("Debugger.stepOver", void.class, null);
-    }
-
-    @Override
-    public Promise<Void> continueToLocation(JavaScriptLocation location) {
-        ContinueToLocationCommand params = new ContinueToLocationCommand();
-        params.setLocation(unmap(location));
-        return callMethodAsync("Debugger.continueToLocation", void.class, params);
     }
 
     @Override
@@ -492,8 +509,8 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
     }
 
     private LocationDTO unmap(JavaScriptLocation location) {
-        LocationDTO dto = new LocationDTO();
-        dto.setScriptId(scriptIds.get(location.getScript()));
+        var dto = new LocationDTO();
+        dto.setScriptId(location.getScript().getId());
         dto.setLineNumber(location.getLine());
         dto.setColumnNumber(location.getColumn());
         return dto;
@@ -510,5 +527,12 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
             }
             return Collections.unmodifiableMap(newBackingMap);
         });
+    }
+
+    Promise<String> getScriptSource(String id) {
+        var callArgs = new GetScriptSourceCommand();
+        callArgs.scriptId = id;
+        return callMethodAsync("Debugger.getScriptSource", ScriptSource.class, callArgs)
+                .then(source -> source.bytecode);
     }
 }
