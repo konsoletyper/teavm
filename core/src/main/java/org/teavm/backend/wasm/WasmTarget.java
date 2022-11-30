@@ -553,7 +553,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         var writer = new WasmBinaryWriter();
         var debugBuilder = debugging ? new DebugInfoBuilder() : null;
         var renderer = new WasmBinaryRenderer(writer, version, obfuscated, dwarfGenerator, dwarfClassGen,
-                debugBuilder.lines());
+                debugBuilder != null ? debugBuilder.lines() : null);
         renderer.render(module, buildDebug(dwarfGenerator, dwarfClassGen, debugBuilder));
 
         try (OutputStream output = buildTarget.createResource(outputName)) {
