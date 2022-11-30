@@ -39,14 +39,14 @@ public final class CollectionUtil {
             if (cmp == 0) {
                 return i;
             } else if (cmp > 0) {
-                l = i + i;
+                l = i + 1;
                 if (l > u) {
-                    return -i - 1;
+                    return -i - 2;
                 }
             } else {
                 u = i - 1;
                 if (u < l) {
-                    return -i;
+                    return -i - 1;
                 }
             }
         }
