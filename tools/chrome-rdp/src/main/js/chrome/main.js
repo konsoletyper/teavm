@@ -4,6 +4,7 @@ class DebuggerAgent {
     constructor(tab, port) {
         this.pendingMessages = [];
         this.connection = null;
+        this.pingTimeout = null;
         this.attachedToDebugger = false;
         this.messageBuffer = "";
         this.port = 0;
@@ -37,13 +38,24 @@ class DebuggerAgent {
                 this.connection = null;
                 this.disconnect();
             }
+            this.stopPing();
         };
         this.connection.onopen = () => {
             for (const pendingMessage of this.pendingMessages) {
                 this.sendMessage(pendingMessage);
             }
             this.pendingMessages = null;
+            this.pingTimeout = setInterval(() => {
+                this.sendMessage({ method: "TeaVM.ping" });
+            }, 2000);
         };
+    }
+
+    stopPing() {
+        if (this.pingTimeout != null) {
+            clearInterval(this.pingTimeout);
+            this.pingTimeout = null;
+        }
     }
 
     receiveMessage(message) {
@@ -71,6 +83,7 @@ class DebuggerAgent {
 
     disconnect(callback) {
         if (this.connection) {
+            this.stopPing();
             const conn = this.connection;
             this.connection = null;
             conn.close();

@@ -118,6 +118,8 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
     @Override
     protected Promise<Void> handleMessage(Message message) throws IOException {
         switch (message.getMethod()) {
+            case "TeaVM.ping":
+                return Promise.VOID;
             case "Debugger.paused":
                 return firePaused(parseJson(SuspendedNotification.class, message.getParams()));
             case "Debugger.resumed":
@@ -141,7 +143,7 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
         if (params.getHitBreakpoints() != null && !params.getHitBreakpoints().isEmpty()) {
             nativeBreakpoint = breakpointsByChromeId.get(params.getHitBreakpoints().get(0));
         }
-        RDPBreakpoint breakpoint = !nativeBreakpoint.breakpoints.isEmpty()
+        RDPBreakpoint breakpoint = nativeBreakpoint != null && !nativeBreakpoint.breakpoints.isEmpty()
                 ? nativeBreakpoint.breakpoints.iterator().next()
                 : null;
 
