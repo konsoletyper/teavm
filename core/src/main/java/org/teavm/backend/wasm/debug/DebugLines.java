@@ -22,6 +22,8 @@ public interface DebugLines {
 
     void location(String file, int line);
 
+    void emptyLocation();
+
     void start(MethodReference methodReference);
 
     void end();

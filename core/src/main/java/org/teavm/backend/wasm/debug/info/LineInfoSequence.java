@@ -56,7 +56,10 @@ public class LineInfoSequence {
         var locations = new ArrayList<InstructionLocation>();
         for (var command : commands) {
             command.acceptVisitor(commandExecutor);
-            locations.add(commandExecutor.createLocation());
+            var location = commandExecutor.createLocation();
+            if (location != null) {
+                locations.add(location);
+            }
         }
         return new LineInfoUnpackedSequence(startAddress, endAddress, method, locations);
     }

@@ -55,11 +55,16 @@ public class LineInfo {
     public void dump(PrintStream out) {
         for (var i = 0; i < sequences.length; ++i) {
             var sequence = sequences[i];
-            out.println("Sequence " + i + ": " + sequence.method().fullName() + " [" + sequence.startAddress() + ".."
-                    + sequence.endAddress() + ")");
+            out.println("Sequence " + i + ": " + sequence.method().fullName() + " ["
+                    + Integer.toHexString(sequence.startAddress()) + ".."
+                    + Integer.toHexString(sequence.endAddress()) + ")");
             for (var location : sequence.unpack().locations()) {
-                out.println("  at " + location.address() + " " + location.location().file().fullName() + ":"
-                        + location.location().line());
+                out.print("  at " + Integer.toHexString(location.address()) + " ");
+                if (location.location() != null) {
+                    out.println(location.location().file().fullName() + ":" + location.location().line());
+                } else {
+                    out.println("<unmapped>");
+                }
             }
         }
     }

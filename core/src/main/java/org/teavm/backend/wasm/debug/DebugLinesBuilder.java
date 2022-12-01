@@ -66,6 +66,11 @@ public class DebugLinesBuilder extends DebugSectionBuilder implements DebugLines
         }
     }
 
+    @Override
+    public void emptyLocation() {
+        location(null, -1);
+    }
+
     private void flushPtr() {
         if (ptr != lastWrittenPtr) {
             blob.writeLEB(DebugConstants.LOC_PTR);

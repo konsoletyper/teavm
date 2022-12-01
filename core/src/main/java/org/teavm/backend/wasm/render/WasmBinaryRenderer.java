@@ -328,13 +328,7 @@ public class WasmBinaryRenderer {
         for (var part : function.getBody()) {
             part.acceptVisitor(visitor);
         }
-
-        if (dwarfGenerator != null) {
-            dwarfGenerator.endLineNumberSequence(offset + code.getPosition());
-        }
-        if (debugLines != null) {
-            debugLines.end();
-        }
+        visitor.endLocation();
 
         code.writeByte(0x0B);
 

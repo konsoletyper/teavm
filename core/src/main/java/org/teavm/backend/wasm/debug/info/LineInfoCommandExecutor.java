@@ -22,7 +22,7 @@ public class LineInfoCommandExecutor implements LineInfoCommandVisitor {
     private InliningLocation inliningLocation;
 
     public InstructionLocation createLocation() {
-        return file != null ? new InstructionLocation(address, new Location(file, line, inliningLocation)) : null;
+        return new InstructionLocation(address, file != null ? new Location(file, line, inliningLocation) : null);
     }
 
     @Override
