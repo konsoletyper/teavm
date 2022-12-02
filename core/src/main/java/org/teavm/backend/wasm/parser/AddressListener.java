@@ -15,20 +15,6 @@
  */
 package org.teavm.backend.wasm.parser;
 
-import org.teavm.backend.wasm.model.WasmType;
-
-public interface CodeSectionListener {
-    void sectionStart(int functionCount);
-
-    boolean functionStart(int index, int size);
-
-    void localsStart(int count);
-
-    void local(int start, int count, WasmType type);
-
-    CodeListener code();
-
-    void functionEnd();
-
-    void sectionEnd();
+public interface AddressListener {
+    void address(int address);
 }
