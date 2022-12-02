@@ -943,15 +943,22 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     }
 
     private void emitLocation(TextLocation location) {
-        if (deferTextLocationToEmit && location != null) {
-            textLocationToEmit = location;
+        if (deferTextLocationToEmit) {
+            if (location != null) {
+                textLocationToEmit = location;
+                deferTextLocationToEmit = false;
+            } else {
+                return;
+            }
         }
         flushLocation();
         textLocationToEmit = location;
     }
 
     private void emitDeferredLocation() {
-        flushLocation();
+        if (textLocationToEmit != null) {
+            flushLocation();
+        }
         textLocationToEmit = null;
         deferTextLocationToEmit = true;
     }
