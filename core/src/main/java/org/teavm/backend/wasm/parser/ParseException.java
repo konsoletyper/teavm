@@ -13,13 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.debug.parser;
+package org.teavm.backend.wasm.parser;
 
-class ParseException extends RuntimeException {
-    final String message;
-    final int pos;
+public class ParseException extends RuntimeException {
+    public final String message;
+    public final int pos;
 
-    ParseException(String message, int pos) {
+    public ParseException(String message, int pos) {
         super("Error parsing at " + pos + ": " + message);
         this.message = message;
         this.pos = pos;

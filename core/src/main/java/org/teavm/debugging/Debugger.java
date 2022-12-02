@@ -28,6 +28,8 @@ import java.util.Set;
 import org.teavm.backend.wasm.debug.info.LineInfo;
 import org.teavm.backend.wasm.debug.info.LineInfoFileCommand;
 import org.teavm.backend.wasm.debug.info.MethodInfo;
+import org.teavm.backend.wasm.debug.parser.DebugInfoParser;
+import org.teavm.common.ByteArrayAsyncInputStream;
 import org.teavm.common.Promise;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationProvider;
@@ -316,6 +318,9 @@ public class Debugger {
         for (var wasmLineInfo : wasmLineInfoBySource(location.getFileName())) {
             for (var sequence : wasmLineInfo.sequences()) {
                 for (var loc : sequence.unpack().locations()) {
+                    if (loc.location() == null) {
+                        continue;
+                    }
                     if (loc.location().line() == location.getLine()
                             && loc.location().file().fullName().equals(location.getFileName())) {
                         var jsLocation = new JavaScriptLocation(wasmScriptMap.get(wasmLineInfo),
@@ -513,16 +518,23 @@ public class Debugger {
                 return;
             }
             var decoder = Base64.getDecoder();
-            var reader = new DebugInfoReaderImpl(decoder.decode(source));
-            var parser = reader.read();
+            var reader = new ByteArrayAsyncInputStream(decoder.decode(source));
+            var parser = new DebugInfoParser(reader);
+            try {
+                reader.readFully(parser::parse);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
             if (parser.getLineInfo() != null) {
                 wasmLineInfoMap.put(script, parser.getLineInfo());
                 wasmScriptMap.put(parser.getLineInfo(), script);
                 for (var sequence : parser.getLineInfo().sequences()) {
                     for (var command : sequence.commands()) {
                         if (command instanceof LineInfoFileCommand) {
-                            addWasmInfoFile(((LineInfoFileCommand) command).file().fullName(),
-                                    parser.getLineInfo());
+                            var file = ((LineInfoFileCommand) command).file();
+                            if (file != null) {
+                                addWasmInfoFile(file.fullName(), parser.getLineInfo());
+                            }
                         }
                     }
                 }

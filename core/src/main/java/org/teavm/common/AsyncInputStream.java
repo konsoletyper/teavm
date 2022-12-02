@@ -13,11 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.debug.parser;
+package org.teavm.common;
 
-import org.teavm.common.Promise;
-
-public interface DebugInfoReader {
+public interface AsyncInputStream {
     Promise<Integer> skip(int amount);
 
     Promise<Integer> read(byte[] buffer, int offset, int count);

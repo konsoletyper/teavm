@@ -13,32 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.common;
 
-import org.teavm.backend.wasm.debug.parser.DebugInfoParser;
-import org.teavm.backend.wasm.debug.parser.DebugInfoReader;
-import org.teavm.common.CompletablePromise;
-import org.teavm.common.Promise;
+import java.util.function.Supplier;
 
-class DebugInfoReaderImpl implements DebugInfoReader {
+public class ByteArrayAsyncInputStream implements AsyncInputStream {
     private byte[] data;
     private int ptr;
     private CompletablePromise<Integer> promise;
     private byte[] target;
     private int offset;
     private int count;
+    private Throwable errorOccurred;
 
-    DebugInfoReaderImpl(byte[] data) {
+    public ByteArrayAsyncInputStream(byte[] data) {
         this.data = data;
-    }
-
-    DebugInfoParser read() {
-        var debugInfoParser = new DebugInfoParser(this);
-        Promise.runNow(() -> {
-            debugInfoParser.parse().catchVoid(Throwable::printStackTrace);
-            complete();
-        });
-        return debugInfoParser;
     }
 
     @Override
@@ -57,20 +46,31 @@ class DebugInfoReaderImpl implements DebugInfoReader {
         return promise;
     }
 
-    private void complete() {
-        while (promise != null) {
-            var p = promise;
-            count = Math.min(count, data.length - ptr);
-            promise = null;
-            if (target != null) {
-                System.arraycopy(data, ptr, target, offset, count);
-                target = null;
+    public void readFully(Supplier<Promise<?>> command) {
+        Promise.runNow(() -> {
+            command.get().catchError(e -> {
+                errorOccurred = e;
+                throw new RuntimeException(e);
+            });
+            while (promise != null) {
+                var p = promise;
+                count = Math.min(count, data.length - ptr);
+                promise = null;
+                if (target != null) {
+                    System.arraycopy(data, ptr, target, offset, count);
+                    target = null;
+                }
+                ptr += count;
+                if (count == 0) {
+                    count = -1;
+                }
+                p.complete(count);
             }
-            ptr += count;
-            if (count == 0) {
-                count = -1;
-            }
-            p.complete(count);
+        });
+        var e = errorOccurred;
+        errorOccurred = null;
+        if (e != null) {
+            throw new RuntimeException(e);
         }
     }
 }
