@@ -685,7 +685,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement, TType {
     public static TClass<?> forName(TString name) throws TClassNotFoundException {
         PlatformClass cls = Platform.lookupClass(name.toString());
         if (cls == null) {
-            throw new TClassNotFoundException();
+            throw new TClassNotFoundException("Class " + name + " not found");
         }
         return getClass(cls);
     }
