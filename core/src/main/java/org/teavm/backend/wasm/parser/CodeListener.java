@@ -18,37 +18,100 @@ package org.teavm.backend.wasm.parser;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
+import org.teavm.backend.wasm.model.expression.WasmFloatUnaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
+import org.teavm.backend.wasm.model.expression.WasmInt64Subtype;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
 
 public interface CodeListener {
-    void error(int depth);
+    default void error(int depth) {
+    }
 
-    int startBlock(boolean loop, WasmType type);
+    default int startBlock(boolean loop, WasmType type) {
+        return 0;
+    }
 
-    int startConditionalBlock(WasmType type);
+    default int startConditionalBlock(WasmType type) {
+        return 0;
+    }
 
-    void startElseSection(int token);
+    default void startElseSection(int token) {
+    }
 
-    void endBlock(int token);
+    default void endBlock(int token) {
+    }
 
-    void branch(BranchOpcode opcode, int depth, int target);
+    default void branch(BranchOpcode opcode, int depth, int target) {
+    }
 
-    void tableBranch(int[] depths, int[] targets, int defaultDepth, int defaultTarget);
+    default void tableBranch(int[] depths, int[] targets, int defaultDepth, int defaultTarget) {
+    }
 
-    void opcode(Opcode opcode);
+    default void opcode(Opcode opcode) {
+    }
 
-    void local(LocalOpcode opcode, int index);
+    default void local(LocalOpcode opcode, int index) {
+    }
 
-    void binary(WasmIntBinaryOperation opcode, WasmIntType type);
+    default void unary(WasmIntUnaryOperation opcode, WasmIntType type) {
+    }
 
-    void binary(WasmFloatBinaryOperation opcode, WasmFloatType type);
+    default void unary(WasmFloatUnaryOperation opcode, WasmFloatType type) {
+    }
 
-    void int32Constant(int value);
+    default void binary(WasmIntBinaryOperation opcode, WasmIntType type) {
+    }
 
-    void int64Constant(long value);
+    default void binary(WasmFloatBinaryOperation opcode, WasmFloatType type) {
+    }
 
-    void float32Constant(float value);
+    default void call(int functionIndex) {
+    }
 
-    void float64Constant(double value);
+    default void indirectCall(int typeIndex, int tableIndex) {
+    }
+
+    default void loadInt32(WasmInt32Subtype convertFrom, int align, int offset) {
+    }
+
+    default void storeInt32(WasmInt32Subtype convertTo, int align, int offset) {
+    }
+
+    default void loadInt64(WasmInt64Subtype convertFrom, int align, int offset) {
+    }
+
+    default void storeInt64(WasmInt64Subtype convertTo, int align, int offset) {
+    }
+
+    default void loadFloat32(int align, int offset) {
+    }
+
+    default void storeFloat32(int align, int offset) {
+    }
+
+    default void loadFloat64(int align, int offset) {
+    }
+
+    default void storeFloat64(int align, int offset) {
+    }
+
+    default void convert(WasmType sourceType, WasmType targetType, boolean signed, boolean reinterpret) {
+    }
+
+    default void memoryGrow() {
+    }
+
+    default void int32Constant(int value) {
+    }
+
+    default void int64Constant(long value) {
+    }
+
+    default void float32Constant(float value) {
+    }
+
+    default void float64Constant(double value) {
+    }
 }

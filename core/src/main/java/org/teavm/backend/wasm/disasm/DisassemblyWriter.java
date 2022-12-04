@@ -63,9 +63,9 @@ public class DisassemblyWriter {
                     out.print("                ");
                 }
             }
-        }
-        for (int i = 0; i < indentLevel; ++i) {
-            out.print("  ");
+            for (int i = 0; i < indentLevel; ++i) {
+                out.print("  ");
+            }
         }
     }
 

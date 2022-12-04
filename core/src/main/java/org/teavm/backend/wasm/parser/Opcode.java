@@ -17,5 +17,7 @@ package org.teavm.backend.wasm.parser;
 
 public enum Opcode {
     UNREACHABLE,
-    RETURN
+    NOP,
+    RETURN,
+    DROP
 }
