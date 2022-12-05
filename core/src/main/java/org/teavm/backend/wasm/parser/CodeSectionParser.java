@@ -68,10 +68,10 @@ public class CodeSectionParser {
         var end = ptr + functionSize;
         if (listener.functionStart(index, functionSize)) {
             parseLocals();
-        }
-        codeListener = listener.code();
-        if (codeListener != null) {
-            parseCode();
+            codeListener = listener.code();
+            if (codeListener != null) {
+                parseCode();
+            }
         }
         ptr = end;
         reportAddress();
@@ -625,7 +625,7 @@ public class CodeSectionParser {
         }
         blockStack.remove(blockStack.size() - 1);
         reportAddress();
-        codeListener.endBlock(token);
+        codeListener.endBlock(token, isLoop);
         ++ptr;
         return true;
     }
@@ -656,7 +656,7 @@ public class CodeSectionParser {
         }
         blockStack.remove(blockStack.size() - 1);
         reportAddress();
-        codeListener.endBlock(token);
+        codeListener.endBlock(token, false);
         ++ptr;
         return true;
     }

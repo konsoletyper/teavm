@@ -42,7 +42,6 @@ public class DebugLinesParser extends DebugSectionParser {
     private int address;
     private MethodInfo currentMethod;
     private int sequenceStartAddress;
-    private int offset;
 
     public DebugLinesParser(
             DebugFileParser files,
@@ -57,13 +56,8 @@ public class DebugLinesParser extends DebugSectionParser {
         return lineInfo;
     }
 
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
     @Override
     protected void doParse() {
-        address = offset;
         while (ptr < data.length) {
             var cmd = data[ptr++] & 0xFF;
             switch (cmd) {
@@ -91,7 +85,7 @@ public class DebugLinesParser extends DebugSectionParser {
                     break;
             }
         }
-        lineInfo = new LineInfo(offset, sequences.toArray(new LineInfoSequence[0]));
+        lineInfo = new LineInfo(sequences.toArray(new LineInfoSequence[0]));
         sequences = null;
         commands = null;
         stateStack = null;

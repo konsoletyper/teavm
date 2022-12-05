@@ -13,31 +13,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.parser;
+package org.teavm.backend.wasm.debug.info;
 
-import org.teavm.backend.wasm.model.WasmType;
+public class FunctionControlFlow {
+    private int start;
+    private int end;
+    int[] offsets;
+    int[] data;
 
-public interface CodeSectionListener {
-    default void sectionStart(int functionCount) {
+    FunctionControlFlow(int[] offsets, int[] data) {
+        this.offsets = offsets;
+        this.data = data;
     }
 
-    default boolean functionStart(int index, int size) {
-        return false;
+    public int start() {
+        return start;
     }
 
-    default void localsStart(int count) {
+    public int end() {
+        return end;
     }
 
-    default void local(int start, int count, WasmType type) {
-    }
-
-    default CodeListener code() {
-        return null;
-    }
-
-    default void functionEnd() {
-    }
-
-    default void sectionEnd() {
+    public FunctionControlFlowIterator iterator() {
+        return new FunctionControlFlowIterator(this);
     }
 }

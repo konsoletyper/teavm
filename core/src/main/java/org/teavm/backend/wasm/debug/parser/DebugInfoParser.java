@@ -21,7 +21,9 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-import org.teavm.backend.wasm.debug.info.LineInfo;
+import org.teavm.backend.wasm.debug.info.ControlFlowInfo;
+import org.teavm.backend.wasm.debug.info.DebugInfo;
+import org.teavm.backend.wasm.parser.CodeSectionParser;
 import org.teavm.backend.wasm.parser.ModuleParser;
 import org.teavm.common.AsyncInputStream;
 import org.teavm.common.ByteArrayAsyncInputStream;
@@ -29,6 +31,8 @@ import org.teavm.common.ByteArrayAsyncInputStream;
 public class DebugInfoParser extends ModuleParser {
     private Map<String, DebugSectionParser> sectionParsers = new HashMap<>();
     private DebugLinesParser lines;
+    private ControlFlowInfo controlFlow;
+    private int offset;
 
     public DebugInfoParser(AsyncInputStream reader) {
         super(reader);
@@ -45,8 +49,8 @@ public class DebugInfoParser extends ModuleParser {
         return section;
     }
 
-    public LineInfo getLineInfo() {
-        return lines.getLineInfo();
+    public DebugInfo getDebugInfo() {
+        return new DebugInfo(lines.getLineInfo(), controlFlow, offset);
     }
 
     @Override
@@ -55,9 +59,17 @@ public class DebugInfoParser extends ModuleParser {
             var parser = sectionParsers.get(name);
             return parser != null ? parser::parse : null;
         } else if (code == 10) {
-            lines.setOffset(pos);
+            this.offset = pos;
+            return this::parseCode;
         }
         return null;
+    }
+
+    private void parseCode(byte[] data) {
+        var builder = new ControlFlowParser();
+        var codeParser = new CodeSectionParser(builder, builder);
+        codeParser.parse(data);
+        controlFlow = builder.build();
     }
 
     public static void main(String[] args) throws IOException {
@@ -69,9 +81,9 @@ public class DebugInfoParser extends ModuleParser {
         var input = new ByteArrayAsyncInputStream(Files.readAllBytes(file.toPath()));
         var parser = new DebugInfoParser(input);
         input.readFully(parser::parse);
-        var lineInfo = parser.getLineInfo();
-        if (lineInfo != null) {
-            lineInfo.dump(System.out);
+        var debugInfo = parser.getDebugInfo();
+        if (debugInfo != null) {
+            debugInfo.dump(System.out);
         } else {
             System.out.println("No debug information found");
         }

@@ -152,7 +152,7 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     }
 
     @Override
-    public void endBlock(int token) {
+    public void endBlock(int token, boolean loop) {
         writer.address(address).outdent().write("end  (; $label_" + token + " ;)").eol();
     }
 

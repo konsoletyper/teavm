@@ -25,7 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.teavm.backend.wasm.debug.info.LineInfo;
+import org.teavm.backend.wasm.debug.info.DebugInfo;
 import org.teavm.backend.wasm.debug.info.LineInfoFileCommand;
 import org.teavm.backend.wasm.debug.info.MethodInfo;
 import org.teavm.backend.wasm.debug.parser.DebugInfoParser;
@@ -55,9 +55,9 @@ public class Debugger {
     private List<JavaScriptBreakpoint> temporaryBreakpoints = new ArrayList<>();
     private Map<JavaScriptScript, DebugInformation> debugInformationMap = new HashMap<>();
     private Map<String, Set<DebugInformation>> debugInformationFileMap = new HashMap<>();
-    private Map<JavaScriptScript, LineInfo> wasmLineInfoMap = new HashMap<>();
-    private Map<LineInfo, JavaScriptScript> wasmScriptMap = new HashMap<>();
-    private Map<String, Set<LineInfo>> wasmInfoFileMap = new HashMap<>();
+    private Map<JavaScriptScript, DebugInfo> wasmDebugInfoMap = new HashMap<>();
+    private Map<DebugInfo, JavaScriptScript> wasmScriptMap = new HashMap<>();
+    private Map<String, Set<DebugInfo>> wasmInfoFileMap = new HashMap<>();
     private Map<DebugInformation, JavaScriptScript> scriptMap = new HashMap<>();
     private Map<JavaScriptBreakpoint, Breakpoint> breakpointMap = new HashMap<>();
     private Set<Breakpoint> breakpoints = new LinkedHashSet<>();
@@ -130,12 +130,14 @@ public class Debugger {
                     }
                     break;
                 case WASM: {
-                    var info = wasmLineInfoMap.get(script);
+                    var info = wasmDebugInfoMap.get(script);
                     if (info != null) {
                         return enterMethod ? javaScriptDebugger.stepInto() : javaScriptDebugger.stepOver();
                     }
                     break;
                 }
+                case UNKNOWN:
+                    break;
             }
             enterMethod = false;
             first = false;
@@ -240,7 +242,7 @@ public class Debugger {
         return list != null ? new ArrayList<>(list) : Collections.emptyList();
     }
 
-    private List<LineInfo> wasmLineInfoBySource(String sourceFile) {
+    private List<DebugInfo> wasmLineInfoBySource(String sourceFile) {
         var list = wasmInfoFileMap.get(sourceFile);
         return list != null ? new ArrayList<>(list) : Collections.emptyList();
     }
@@ -315,16 +317,19 @@ public class Debugger {
                 }));
             }
         }
-        for (var wasmLineInfo : wasmLineInfoBySource(location.getFileName())) {
-            for (var sequence : wasmLineInfo.sequences()) {
+        for (var wasmDebugInfo : wasmLineInfoBySource(location.getFileName())) {
+            if (wasmDebugInfo.lines() == null) {
+                continue;
+            }
+            for (var sequence : wasmDebugInfo.lines().sequences()) {
                 for (var loc : sequence.unpack().locations()) {
                     if (loc.location() == null) {
                         continue;
                     }
                     if (loc.location().line() == location.getLine()
                             && loc.location().file().fullName().equals(location.getFileName())) {
-                        var jsLocation = new JavaScriptLocation(wasmScriptMap.get(wasmLineInfo),
-                                0, loc.address());
+                        var jsLocation = new JavaScriptLocation(wasmScriptMap.get(wasmDebugInfo),
+                                0, loc.address() + wasmDebugInfo.offset());
                         promises.add(javaScriptDebugger.createBreakpoint(jsLocation).thenVoid(jsBreakpoint -> {
                             jsBreakpoints.add(jsBreakpoint);
                             breakpointMap.put(jsBreakpoint, breakpoint);
@@ -427,15 +432,20 @@ public class Debugger {
     }
 
     private List<SourceLocationWithMethod> mapWasmFrames(JavaScriptCallFrame frame) {
-        var lineInfo = wasmLineInfoMap.get(frame.getLocation().getScript());
+        var debugInfo = wasmDebugInfoMap.get(frame.getLocation().getScript());
+        if (debugInfo == null) {
+            return Collections.emptyList();
+        }
+        var lineInfo = debugInfo.lines();
         if (lineInfo == null) {
             return Collections.emptyList();
         }
-        var sequence = lineInfo.find(frame.getLocation().getColumn());
+        var address = frame.getLocation().getColumn() - debugInfo.offset();
+        var sequence = lineInfo.find(address);
         if (sequence == null) {
             return Collections.emptyList();
         }
-        var instructionLocation = sequence.unpack().find(frame.getLocation().getColumn());
+        var instructionLocation = sequence.unpack().find(address);
         if (instructionLocation == null) {
             return Collections.emptyList();
         }
@@ -525,15 +535,18 @@ public class Debugger {
             } catch (Throwable e) {
                 e.printStackTrace();
             }
-            if (parser.getLineInfo() != null) {
-                wasmLineInfoMap.put(script, parser.getLineInfo());
-                wasmScriptMap.put(parser.getLineInfo(), script);
-                for (var sequence : parser.getLineInfo().sequences()) {
-                    for (var command : sequence.commands()) {
-                        if (command instanceof LineInfoFileCommand) {
-                            var file = ((LineInfoFileCommand) command).file();
-                            if (file != null) {
-                                addWasmInfoFile(file.fullName(), parser.getLineInfo());
+            var debugInfo = parser.getDebugInfo();
+            if (debugInfo != null) {
+                wasmDebugInfoMap.put(script, debugInfo);
+                wasmScriptMap.put(debugInfo, script);
+                if (debugInfo.lines() != null) {
+                    for (var sequence : debugInfo.lines().sequences()) {
+                        for (var command : sequence.commands()) {
+                            if (command instanceof LineInfoFileCommand) {
+                                var file = ((LineInfoFileCommand) command).file();
+                                if (file != null) {
+                                    addWasmInfoFile(file.fullName(), debugInfo);
+                                }
                             }
                         }
                     }
@@ -542,13 +555,13 @@ public class Debugger {
         });
     }
 
-    private void addWasmInfoFile(String sourceFile, LineInfo wasmLineInfo) {
+    private void addWasmInfoFile(String sourceFile, DebugInfo debugInfo) {
         var list = wasmInfoFileMap.get(sourceFile);
         if (list == null) {
             list = new HashSet<>();
             wasmInfoFileMap.put(sourceFile, list);
         }
-        list.add(wasmLineInfo);
+        list.add(debugInfo);
         allSourceFiles.add(sourceFile);
     }
 

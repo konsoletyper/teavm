@@ -40,7 +40,7 @@ public interface CodeListener {
     default void startElseSection(int token) {
     }
 
-    default void endBlock(int token) {
+    default void endBlock(int token, boolean loop) {
     }
 
     default void branch(BranchOpcode opcode, int depth, int target) {
