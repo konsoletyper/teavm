@@ -132,6 +132,9 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     HTMLDocument getOwnerDocument();
 
     @JSProperty
+    HTMLCollection getChildren();
+
+    @JSProperty
     String getInnerHTML();
 
     @JSProperty
