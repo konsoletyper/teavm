@@ -15,8 +15,10 @@
  */
 package org.teavm.classlib.java.util;
 
-public class TUUID {
+import org.teavm.classlib.PlatformDetector;
+import org.teavm.jso.crypto.Crypto;
 
+public class TUUID {
     private String value;
 
     private TUUID(String value) {
@@ -44,8 +46,12 @@ public class TUUID {
     }
 
     public static TUUID randomUUID() {
-        String value = s4() + s4() + "-" + s4() + "-" + s4() + "-" + s4() + "-" + s4() + s4() + s4();
-        return new TUUID(value);
+        if (PlatformDetector.isJavaScript() && Crypto.isSupported()) {
+            return new TUUID(Crypto.current().randomUUID());
+        } else {
+            String value = s4() + s4() + "-" + s4() + "-" + s4() + "-" + s4() + "-" + s4() + s4() + s4();
+            return new TUUID(value);
+        }
     }
 
     private static String s4() {
