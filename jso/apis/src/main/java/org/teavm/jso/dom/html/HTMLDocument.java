@@ -64,6 +64,8 @@ public interface HTMLDocument extends Document, EventTarget {
     @JSProperty
     HTMLElement getActiveElement();
 
+    HTMLElement elementFromPoint(int x, int y);
+
     @JSProperty
     boolean isDesignMode();
 
