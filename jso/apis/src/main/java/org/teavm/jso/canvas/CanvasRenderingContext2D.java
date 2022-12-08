@@ -45,7 +45,11 @@ public interface CanvasRenderingContext2D extends JSObject {
 
     boolean isPointInPath(double x, double y);
 
+    boolean isPointInPath(Path2D path, double x, double y);
+
     boolean isPointInStroke(double x, double y);
+
+    boolean isPointInStroke(Path2D path, double x, double y);
 
     void quadraticCurveTo(double cpx, double cpy, double x, double y);
 
@@ -53,9 +57,13 @@ public interface CanvasRenderingContext2D extends JSObject {
 
     void scrollPathIntoView();
 
+    void scrollPathIntoView(Path2D path);
+
     // Clip
 
     void clip();
+
+    void clip(Path2D path);
 
     // Creating images, gradients and patterns
 
@@ -105,6 +113,8 @@ public interface CanvasRenderingContext2D extends JSObject {
 
     void fill();
 
+    void fill(Path2D path);
+
     void fillRect(double x, double y, double width, double height);
 
     void fillText(String text, double x, double y, double maxWidth);
@@ -114,6 +124,8 @@ public interface CanvasRenderingContext2D extends JSObject {
     // Sroke
 
     void stroke();
+
+    void stroke(Path2D path);
 
     void strokeRect(double x, double y, double w, double h);
 
