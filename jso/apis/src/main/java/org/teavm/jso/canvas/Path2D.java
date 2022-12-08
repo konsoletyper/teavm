@@ -20,6 +20,9 @@ import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 
 public abstract class Path2D extends JSObject {
+    private Path2D() {
+    }
+
     @JSBody(script = "return new Path2D();")
     @NoSideEffects
     public static native Path2D create();
