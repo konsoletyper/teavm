@@ -18,17 +18,17 @@ package org.teavm.debugging.javascript;
 import java.util.Objects;
 
 public class JavaScriptLocation {
-    private String script;
+    private JavaScriptScript script;
     private int line;
     private int column;
 
-    public JavaScriptLocation(String script, int line, int column) {
+    public JavaScriptLocation(JavaScriptScript script, int line, int column) {
         this.script = script;
         this.line = line;
         this.column = column;
     }
 
-    public String getScript() {
+    public JavaScriptScript getScript() {
         return script;
     }
 

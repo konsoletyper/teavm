@@ -16,6 +16,7 @@
 package org.teavm.debugging;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,10 +25,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.teavm.backend.wasm.debug.info.DebugInfo;
+import org.teavm.backend.wasm.debug.info.LineInfoFileCommand;
+import org.teavm.backend.wasm.debug.info.MethodInfo;
+import org.teavm.backend.wasm.debug.parser.DebugInfoParser;
+import org.teavm.common.ByteArrayAsyncInputStream;
 import org.teavm.common.Promise;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationProvider;
-import org.teavm.debugging.information.DebuggerCallSite;
 import org.teavm.debugging.information.DebuggerCallSiteVisitor;
 import org.teavm.debugging.information.DebuggerStaticCallSite;
 import org.teavm.debugging.information.DebuggerVirtualCallSite;
@@ -38,22 +43,28 @@ import org.teavm.debugging.javascript.JavaScriptCallFrame;
 import org.teavm.debugging.javascript.JavaScriptDebugger;
 import org.teavm.debugging.javascript.JavaScriptDebuggerListener;
 import org.teavm.debugging.javascript.JavaScriptLocation;
+import org.teavm.debugging.javascript.JavaScriptScript;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public class Debugger {
     private Set<DebuggerListener> listeners = new LinkedHashSet<>();
     private JavaScriptDebugger javaScriptDebugger;
     private DebugInformationProvider debugInformationProvider;
     private List<JavaScriptBreakpoint> temporaryBreakpoints = new ArrayList<>();
-    private Map<String, DebugInformation> debugInformationMap = new HashMap<>();
+    private Map<JavaScriptScript, DebugInformation> debugInformationMap = new HashMap<>();
     private Map<String, Set<DebugInformation>> debugInformationFileMap = new HashMap<>();
-    private Map<DebugInformation, String> scriptMap = new HashMap<>();
+    private Map<JavaScriptScript, DebugInfo> wasmDebugInfoMap = new HashMap<>();
+    private Map<DebugInfo, JavaScriptScript> wasmScriptMap = new HashMap<>();
+    private Map<String, Set<DebugInfo>> wasmInfoFileMap = new HashMap<>();
+    private Map<DebugInformation, JavaScriptScript> scriptMap = new HashMap<>();
     private Map<JavaScriptBreakpoint, Breakpoint> breakpointMap = new HashMap<>();
     private Set<Breakpoint> breakpoints = new LinkedHashSet<>();
     private Set<? extends Breakpoint> readonlyBreakpoints = Collections.unmodifiableSet(breakpoints);
     private CallFrame[] callStack;
     private Set<String> scriptNames = new LinkedHashSet<>();
+    private Set<String> allSourceFiles = new LinkedHashSet<>();
 
     public Debugger(JavaScriptDebugger javaScriptDebugger, DebugInformationProvider debugInformationProvider) {
         this.javaScriptDebugger = javaScriptDebugger;
@@ -98,61 +109,83 @@ public class Debugger {
     }
 
     private Promise<Void> step(boolean enterMethod) {
-        CallFrame[] callStack = getCallStack();
+        var callStack = getCallStack();
         if (callStack == null || callStack.length == 0) {
             return jsStep(enterMethod);
         }
-        CallFrame recentFrame = callStack[0];
+        var recentFrame = callStack[0];
         if (recentFrame.getLocation() == null || recentFrame.getLocation().getFileName() == null
                 || recentFrame.getLocation().getLine() < 0) {
             return jsStep(enterMethod);
         }
-        Set<JavaScriptLocation> successors = new HashSet<>();
+        var successors = new HashSet<JavaScriptLocation>();
         boolean first = true;
-        for (CallFrame frame : callStack) {
-            boolean exits;
-            String script = frame.getOriginalLocation().getScript();
-            DebugInformation debugInfo = debugInformationMap.get(script);
-            if (frame.getLocation() != null && frame.getLocation().getFileName() != null
-                    && frame.getLocation().getLine() >= 0 && debugInfo != null) {
-                exits = addFollowing(debugInfo, frame.getLocation(), script, new HashSet<>(), successors);
-                if (enterMethod) {
-                    CallSiteSuccessorFinder successorFinder = new CallSiteSuccessorFinder(debugInfo, script,
-                            successors);
-                    DebuggerCallSite[] callSites = debugInfo.getCallSites(frame.getLocation());
-                    for (DebuggerCallSite callSite : callSites) {
-                        callSite.acceptVisitor(successorFinder);
+        loop:
+        for (var frame : callStack) {
+            var script = frame.getOriginalLocation().getScript();
+            switch (script.getLanguage()) {
+                case JS:
+                    if (!addJsBreakpoints(frame, script, enterMethod, first, successors)) {
+                        break loop;
                     }
+                    break;
+                case WASM: {
+                    var info = wasmDebugInfoMap.get(script);
+                    if (info != null) {
+                        return enterMethod ? javaScriptDebugger.stepInto() : javaScriptDebugger.stepOver();
+                    }
+                    break;
                 }
-            } else {
-                exits = true;
-            }
-            if (!exits) {
-                break;
+                case UNKNOWN:
+                    break;
             }
             enterMethod = false;
-            if (!first && frame.getLocation() != null) {
-                for (GeneratedLocation location : debugInfo.getGeneratedLocations(frame.getLocation())) {
-                    successors.add(new JavaScriptLocation(script, location.getLine(), location.getColumn()));
-                }
-            }
             first = false;
         }
 
-        List<Promise<Void>> jsBreakpointPromises = new ArrayList<>();
-        for (JavaScriptLocation successor : successors) {
+        var jsBreakpointPromises = new ArrayList<Promise<Void>>();
+        for (var successor : successors) {
             jsBreakpointPromises.add(javaScriptDebugger.createBreakpoint(successor)
                     .thenVoid(temporaryBreakpoints::add));
         }
         return Promise.allVoid(jsBreakpointPromises).thenAsync(v -> javaScriptDebugger.resume());
     }
 
+    private boolean addJsBreakpoints(CallFrame frame, JavaScriptScript script, boolean enterMethod, boolean first,
+            Set<JavaScriptLocation> successors) {
+        var debugInfo = debugInformationMap.get(script);
+        boolean exits;
+        if (frame.getLocation() != null && frame.getLocation().getFileName() != null
+                && frame.getLocation().getLine() >= 0 && debugInfo != null) {
+            exits = addFollowing(debugInfo, frame.getLocation(), script, new HashSet<>(), successors);
+            if (enterMethod) {
+                var successorFinder = new CallSiteSuccessorFinder(debugInfo, script, successors);
+                var callSites = debugInfo.getCallSites(frame.getLocation());
+                for (var callSite : callSites) {
+                    callSite.acceptVisitor(successorFinder);
+                }
+            }
+        } else {
+            exits = true;
+        }
+        if (!exits) {
+            return false;
+        }
+        if (!first && frame.getLocation() != null) {
+            for (var location : debugInfo.getGeneratedLocations(frame.getLocation())) {
+                successors.add(new JavaScriptLocation(script, location.getLine(), location.getColumn()));
+            }
+        }
+        return false;
+    }
+
     static class CallSiteSuccessorFinder implements DebuggerCallSiteVisitor {
         private DebugInformation debugInfo;
-        private String script;
+        private JavaScriptScript script;
         Set<JavaScriptLocation> locations;
 
-        CallSiteSuccessorFinder(DebugInformation debugInfo, String script, Set<JavaScriptLocation> locations) {
+        CallSiteSuccessorFinder(DebugInformation debugInfo, JavaScriptScript script,
+                Set<JavaScriptLocation> locations) {
             this.debugInfo = debugInfo;
             this.script = script;
             this.locations = locations;
@@ -177,7 +210,7 @@ public class Debugger {
         }
     }
 
-    private boolean addFollowing(DebugInformation debugInfo, SourceLocation location, String script,
+    private boolean addFollowing(DebugInformation debugInfo, SourceLocation location, JavaScriptScript script,
             Set<SourceLocation> visited, Set<JavaScriptLocation> successors) {
         if (!visited.add(location)) {
             return false;
@@ -205,7 +238,12 @@ public class Debugger {
     }
 
     private List<DebugInformation> debugInformationBySource(String sourceFile) {
-        Set<DebugInformation> list = debugInformationFileMap.get(sourceFile);
+        var list = debugInformationFileMap.get(sourceFile);
+        return list != null ? new ArrayList<>(list) : Collections.emptyList();
+    }
+
+    private List<DebugInfo> wasmLineInfoBySource(String sourceFile) {
+        var list = wasmInfoFileMap.get(sourceFile);
         return list != null ? new ArrayList<>(list) : Collections.emptyList();
     }
 
@@ -222,7 +260,7 @@ public class Debugger {
         for (DebugInformation debugInformation : debugInformationBySource(fileName)) {
             Collection<GeneratedLocation> locations = debugInformation.getGeneratedLocations(fileName, line);
             for (GeneratedLocation location : locations) {
-                JavaScriptLocation jsLocation = new JavaScriptLocation(scriptMap.get(debugInformation),
+                var jsLocation = new JavaScriptLocation(scriptMap.get(debugInformation),
                         location.getLine(), location.getColumn());
                 promises.add(javaScriptDebugger.createBreakpoint(jsLocation).thenVoid(temporaryBreakpoints::add));
             }
@@ -239,11 +277,11 @@ public class Debugger {
     }
 
     public Collection<? extends String> getSourceFiles() {
-        return debugInformationFileMap.keySet();
+        return allSourceFiles;
     }
 
     public Promise<Breakpoint> createBreakpoint(SourceLocation location) {
-        Breakpoint breakpoint = new Breakpoint(this, location);
+        var breakpoint = new Breakpoint(this, location);
         breakpoints.add(breakpoint);
         return updateInternalBreakpoints(breakpoint).then(v -> {
             updateBreakpointStatus(breakpoint, false);
@@ -260,18 +298,18 @@ public class Debugger {
             return Promise.VOID;
         }
 
-        List<Promise<Void>> promises = new ArrayList<>();
-        for (JavaScriptBreakpoint jsBreakpoint : breakpoint.jsBreakpoints) {
+        var promises = new ArrayList<Promise<Void>>();
+        for (var jsBreakpoint : breakpoint.jsBreakpoints) {
             breakpointMap.remove(jsBreakpoint);
             promises.add(jsBreakpoint.destroy());
         }
 
-        List<JavaScriptBreakpoint> jsBreakpoints = new ArrayList<>();
-        SourceLocation location = breakpoint.getLocation();
-        for (DebugInformation debugInformation : debugInformationBySource(location.getFileName())) {
-            Collection<GeneratedLocation> locations = debugInformation.getGeneratedLocations(location);
-            for (GeneratedLocation genLocation : locations) {
-                JavaScriptLocation jsLocation = new JavaScriptLocation(scriptMap.get(debugInformation),
+        var jsBreakpoints = new ArrayList<JavaScriptBreakpoint>();
+        var location = breakpoint.getLocation();
+        for (var debugInformation : debugInformationBySource(location.getFileName())) {
+            var locations = debugInformation.getGeneratedLocations(location);
+            for (var genLocation : locations) {
+                var jsLocation = new JavaScriptLocation(scriptMap.get(debugInformation),
                         genLocation.getLine(), genLocation.getColumn());
                 promises.add(javaScriptDebugger.createBreakpoint(jsLocation).thenVoid(jsBreakpoint -> {
                     jsBreakpoints.add(jsBreakpoint);
@@ -279,10 +317,32 @@ public class Debugger {
                 }));
             }
         }
+        for (var wasmDebugInfo : wasmLineInfoBySource(location.getFileName())) {
+            if (wasmDebugInfo.lines() == null) {
+                continue;
+            }
+            for (var sequence : wasmDebugInfo.lines().sequences()) {
+                for (var loc : sequence.unpack().locations()) {
+                    if (loc.location() == null) {
+                        continue;
+                    }
+                    if (loc.location().line() == location.getLine()
+                            && loc.location().file().fullName().equals(location.getFileName())) {
+                        var jsLocation = new JavaScriptLocation(wasmScriptMap.get(wasmDebugInfo),
+                                0, loc.address() + wasmDebugInfo.offset());
+                        promises.add(javaScriptDebugger.createBreakpoint(jsLocation).thenVoid(jsBreakpoint -> {
+                            jsBreakpoints.add(jsBreakpoint);
+                            breakpointMap.put(jsBreakpoint, breakpoint);
+                        }));
+                    }
+                }
+            }
+        }
         breakpoint.jsBreakpoints = jsBreakpoints;
 
         return Promise.allVoid(promises);
     }
+
 
     private DebuggerListener[] getListeners() {
         return listeners.toArray(new DebuggerListener[0]);
@@ -312,30 +372,101 @@ public class Debugger {
         if (callStack == null) {
             // TODO: with inlining enabled we can have several JVM methods compiled into one JavaScript function
             // so we must consider this case.
-            List<CallFrame> frames = new ArrayList<>();
+            var frames = new ArrayList<CallFrame>();
             boolean wasEmpty = false;
-            for (JavaScriptCallFrame jsFrame : javaScriptDebugger.getCallStack()) {
-                DebugInformation debugInformation = debugInformationMap.get(jsFrame.getLocation().getScript());
-                SourceLocation loc;
-                if (debugInformation != null) {
-                    loc = debugInformation.getSourceLocation(jsFrame.getLocation().getLine(),
-                            jsFrame.getLocation().getColumn());
-                } else {
-                    loc = null;
+            for (var jsFrame : javaScriptDebugger.getCallStack()) {
+                List<SourceLocationWithMethod> locations;
+                DebugInformation debugInformation = null;
+                switch (jsFrame.getLocation().getScript().getLanguage()) {
+                    case JS:
+                        debugInformation = debugInformationMap.get(jsFrame.getLocation().getScript());
+                        locations = mapJsFrames(jsFrame, debugInformation);
+                        break;
+                    case WASM:
+                        locations = mapWasmFrames(jsFrame);
+                        break;
+                    default:
+                        locations = Collections.emptyList();
+                        break;
                 }
-                boolean empty = loc == null || (loc.getFileName() == null && loc.getLine() < 0);
-                MethodReference method = !empty && debugInformation != null
-                        ? debugInformation.getMethodAt(jsFrame.getLocation().getLine(),
-                                jsFrame.getLocation().getColumn())
-                        : null;
-                if (!empty || !wasEmpty) {
-                    frames.add(new CallFrame(this, jsFrame, loc, method, debugInformation));
+                for (var locWithMethod : locations) {
+                    var loc = locWithMethod.loc;
+                    var method = locWithMethod.method;
+                    if (!locWithMethod.empty || !wasEmpty) {
+                        frames.add(new CallFrame(this, jsFrame, loc, method, debugInformation));
+                    }
+                    wasEmpty = locWithMethod.empty;
                 }
-                wasEmpty = empty;
             }
             callStack = frames.toArray(new CallFrame[0]);
         }
         return callStack.clone();
+    }
+
+    private static class SourceLocationWithMethod {
+        private final boolean empty;
+        private final SourceLocation loc;
+        private final MethodReference method;
+
+        SourceLocationWithMethod(boolean empty, SourceLocation loc, MethodReference method) {
+            this.empty = empty;
+            this.loc = loc;
+            this.method = method;
+        }
+    }
+
+    private List<SourceLocationWithMethod> mapJsFrames(JavaScriptCallFrame frame,
+            DebugInformation debugInformation) {
+        SourceLocation loc;
+        if (debugInformation != null) {
+            loc = debugInformation.getSourceLocation(frame.getLocation().getLine(),
+                    frame.getLocation().getColumn());
+        } else {
+            loc = null;
+        }
+        boolean empty = loc == null || (loc.getFileName() == null && loc.getLine() < 0);
+        var method = !empty && debugInformation != null
+                ? debugInformation.getMethodAt(frame.getLocation().getLine(), frame.getLocation().getColumn())
+                : null;
+        return Collections.singletonList(new SourceLocationWithMethod(empty, loc, method));
+    }
+
+    private List<SourceLocationWithMethod> mapWasmFrames(JavaScriptCallFrame frame) {
+        var debugInfo = wasmDebugInfoMap.get(frame.getLocation().getScript());
+        if (debugInfo == null) {
+            return Collections.emptyList();
+        }
+        var lineInfo = debugInfo.lines();
+        if (lineInfo == null) {
+            return Collections.emptyList();
+        }
+        var address = frame.getLocation().getColumn() - debugInfo.offset();
+        var sequence = lineInfo.find(address);
+        if (sequence == null) {
+            return Collections.emptyList();
+        }
+        var instructionLocation = sequence.unpack().find(address);
+        if (instructionLocation == null) {
+            return Collections.emptyList();
+        }
+
+        var location = instructionLocation.location();
+        var result = new ArrayList<SourceLocationWithMethod>();
+        while (true) {
+            var loc = new SourceLocation(location.file().fullName(), location.line());
+            var inlining = location.inlining();
+            var method = inlining != null ? inlining.method() : sequence.method();
+            result.add(new SourceLocationWithMethod(false, loc, getMethodReference(method)));
+            if (inlining == null) {
+                break;
+            }
+            location = inlining.location();
+        }
+        return result;
+    }
+
+    private MethodReference getMethodReference(MethodInfo methodInfo) {
+        return new MethodReference(methodInfo.cls().fullName(), methodInfo.name(), ValueType.VOID);
     }
 
     Promise<Map<String, Variable>> createVariables(JavaScriptCallFrame jsFrame, DebugInformation debugInformation) {
@@ -356,29 +487,82 @@ public class Debugger {
         });
     }
 
-    private void addScript(String name) {
-        if (!name.isEmpty()) {
-            scriptNames.add(name);
+    private void addScript(JavaScriptScript script) {
+        Promise<Void> promise;
+        switch (script.getLanguage()) {
+            case JS:
+                promise = addJavaScriptScript(script);
+                break;
+            case WASM:
+                promise = addWasmScript(script);
+                break;
+            default:
+                promise = Promise.VOID;
+                break;
         }
-        if (debugInformationMap.containsKey(name)) {
-            updateBreakpoints();
-            return;
-        }
-        DebugInformation debugInfo = debugInformationProvider.getDebugInformation(name);
+        promise.thenVoid(v -> updateBreakpoints());
+    }
+
+    private Promise<Void> addJavaScriptScript(JavaScriptScript script) {
+        var debugInfo = debugInformationProvider.getDebugInformation(script.getUrl());
         if (debugInfo == null) {
-            return;
+            return Promise.VOID;
         }
-        debugInformationMap.put(name, debugInfo);
-        for (String sourceFile : debugInfo.getFilesNames()) {
-            Set<DebugInformation> list = debugInformationFileMap.get(sourceFile);
+        debugInformationMap.put(script, debugInfo);
+        for (var sourceFile : debugInfo.getFilesNames()) {
+            var list = debugInformationFileMap.get(sourceFile);
             if (list == null) {
                 list = new HashSet<>();
                 debugInformationFileMap.put(sourceFile, list);
+                allSourceFiles.add(sourceFile);
             }
             list.add(debugInfo);
         }
-        scriptMap.put(debugInfo, name);
-        updateBreakpoints();
+        scriptMap.put(debugInfo, script);
+        return Promise.VOID;
+    }
+
+    private Promise<Void> addWasmScript(JavaScriptScript script) {
+        return script.getSource().thenVoid(source -> {
+            if (source == null) {
+                return;
+            }
+            var decoder = Base64.getDecoder();
+            var reader = new ByteArrayAsyncInputStream(decoder.decode(source));
+            var parser = new DebugInfoParser(reader);
+            try {
+                reader.readFully(parser::parse);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+            var debugInfo = parser.getDebugInfo();
+            if (debugInfo != null) {
+                wasmDebugInfoMap.put(script, debugInfo);
+                wasmScriptMap.put(debugInfo, script);
+                if (debugInfo.lines() != null) {
+                    for (var sequence : debugInfo.lines().sequences()) {
+                        for (var command : sequence.commands()) {
+                            if (command instanceof LineInfoFileCommand) {
+                                var file = ((LineInfoFileCommand) command).file();
+                                if (file != null) {
+                                    addWasmInfoFile(file.fullName(), debugInfo);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    private void addWasmInfoFile(String sourceFile, DebugInfo debugInfo) {
+        var list = wasmInfoFileMap.get(sourceFile);
+        if (list == null) {
+            list = new HashSet<>();
+            wasmInfoFileMap.put(sourceFile, list);
+        }
+        list.add(debugInfo);
+        allSourceFiles.add(sourceFile);
     }
 
     public Set<? extends String> getScriptNames() {
@@ -488,8 +672,8 @@ public class Debugger {
         }
 
         @Override
-        public void scriptAdded(String name) {
-            addScript(name);
+        public void scriptAdded(JavaScriptScript script) {
+            addScript(script);
         }
 
         @Override

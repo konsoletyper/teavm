@@ -92,6 +92,16 @@ public class WasmBinaryWriter {
         }
     }
 
+    public void writeLEB4(int v) {
+        alloc(4);
+        for (int i = 0; i < 3; ++i) {
+            int digit = v & 0x7F;
+            data[pointer++] = (byte) (digit | 0x80);
+            v >>>= 7;
+        }
+        data[pointer++] = (byte) (v & 0x7F);
+    }
+
     public void writeSignedLEB(int v) {
         alloc(5);
         while (true) {

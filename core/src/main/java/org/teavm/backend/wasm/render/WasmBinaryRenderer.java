@@ -17,12 +17,18 @@ package org.teavm.backend.wasm.render;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.teavm.backend.wasm.debug.DebugLines;
+import org.teavm.backend.wasm.generate.DwarfClassGenerator;
+import org.teavm.backend.wasm.generate.DwarfFunctionGenerator;
+import org.teavm.backend.wasm.generate.DwarfGenerator;
+import org.teavm.backend.wasm.model.WasmCustomSection;
 import org.teavm.backend.wasm.model.WasmFunction;
-import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
@@ -50,14 +56,25 @@ public class WasmBinaryRenderer {
     private Map<WasmSignature, Integer> signatureIndexes = new HashMap<>();
     private Map<String, Integer> functionIndexes = new HashMap<>();
     private boolean obfuscated;
+    private DwarfGenerator dwarfGenerator;
+    private DwarfFunctionGenerator dwarfFunctionGen;
+    private DebugLines debugLines;
 
-    public WasmBinaryRenderer(WasmBinaryWriter output, WasmBinaryVersion version, boolean obfuscated) {
+    public WasmBinaryRenderer(WasmBinaryWriter output, WasmBinaryVersion version, boolean obfuscated,
+            DwarfGenerator dwarfGenerator, DwarfClassGenerator dwarfClassGen, DebugLines debugLines) {
         this.output = output;
         this.version = version;
         this.obfuscated = obfuscated;
+        this.dwarfGenerator = dwarfGenerator;
+        dwarfFunctionGen = dwarfClassGen != null ? new DwarfFunctionGenerator(dwarfClassGen, dwarfGenerator) : null;
+        this.debugLines = debugLines;
     }
 
     public void render(WasmModule module) {
+        render(module, Collections::emptyList);
+    }
+
+    public void render(WasmModule module, Supplier<Collection<? extends WasmCustomSection>> customSectionSupplier) {
         output.writeInt32(0x6d736100);
         switch (version) {
             case V_0x1:
@@ -78,6 +95,7 @@ public class WasmBinaryRenderer {
         if (!obfuscated) {
             renderNames(module);
         }
+        renderCustomSections(module, customSectionSupplier);
     }
 
     private void renderSignatures(WasmModule module) {
@@ -248,35 +266,46 @@ public class WasmBinaryRenderer {
     }
 
     private void renderCode(WasmModule module) {
-        WasmBinaryWriter section = new WasmBinaryWriter();
+        var section = new WasmBinaryWriter();
 
-        List<WasmFunction> functions = module.getFunctions().values().stream()
+        var functions = module.getFunctions().values().stream()
                 .filter(function -> function.getImportName() == null)
                 .collect(Collectors.toList());
 
         section.writeLEB(functions.size());
-        for (WasmFunction function : functions) {
-            byte[] body = renderFunction(function);
-            section.writeLEB(body.length);
+        for (var function : functions) {
+            var body = renderFunction(function, section.getPosition() + 4);
+            section.writeLEB4(body.length);
             section.writeBytes(body);
+        }
+
+        if (dwarfGenerator != null) {
+            dwarfGenerator.setCodeSize(section.getPosition());
         }
 
         writeSection(SECTION_CODE, "code", section.getData());
     }
 
-    private byte[] renderFunction(WasmFunction function) {
-        WasmBinaryWriter code = new WasmBinaryWriter();
+    private byte[] renderFunction(WasmFunction function, int offset) {
+        var code = new WasmBinaryWriter();
 
-        List<WasmLocal> localVariables = function.getLocalVariables();
+        if (dwarfFunctionGen != null) {
+            dwarfFunctionGen.begin(function, offset);
+        }
+        if (debugLines != null && function.getJavaMethod() != null) {
+            debugLines.start(function.getJavaMethod());
+        }
+
+        var localVariables = function.getLocalVariables();
         int parameterCount = Math.min(function.getParameters().size(), localVariables.size());
         localVariables = localVariables.subList(parameterCount, localVariables.size());
         if (localVariables.isEmpty()) {
             code.writeLEB(0);
         } else {
-            List<LocalEntry> localEntries = new ArrayList<>();
-            LocalEntry currentEntry = new LocalEntry(localVariables.get(0).getType());
+            var localEntries = new ArrayList<LocalEntry>();
+            var currentEntry = new LocalEntry(localVariables.get(0).getType());
             for (int i = 1; i < localVariables.size(); ++i) {
-                WasmType type = localVariables.get(i).getType();
+                var type = localVariables.get(i).getType();
                 if (currentEntry.type == type) {
                     currentEntry.count++;
                 } else {
@@ -287,19 +316,25 @@ public class WasmBinaryRenderer {
             localEntries.add(currentEntry);
 
             code.writeLEB(localEntries.size());
-            for (LocalEntry entry : localEntries) {
+            for (var entry : localEntries) {
                 code.writeLEB(entry.count);
                 code.writeType(entry.type, version);
             }
         }
 
-        Map<String, Integer> importIndexes = this.functionIndexes;
-        WasmBinaryRenderingVisitor visitor = new WasmBinaryRenderingVisitor(code, version, functionIndexes,
-                importIndexes, signatureIndexes);
-        for (WasmExpression part : function.getBody()) {
+        var importIndexes = this.functionIndexes;
+        var visitor = new WasmBinaryRenderingVisitor(code, version, functionIndexes, importIndexes,
+                signatureIndexes, dwarfGenerator, function.getJavaMethod() != null ? debugLines : null, offset);
+        for (var part : function.getBody()) {
             part.acceptVisitor(visitor);
         }
+        visitor.endLocation();
+
         code.writeByte(0x0B);
+
+        if (dwarfFunctionGen != null) {
+            dwarfFunctionGen.end(code.getPosition());
+        }
 
         return code.getData();
     }
@@ -352,6 +387,22 @@ public class WasmBinaryRenderer {
         section.writeBytes(payload);
 
         writeSection(SECTION_UNKNOWN, "name", section.getData());
+    }
+
+    private void renderCustomSections(WasmModule module,
+            Supplier<Collection<? extends WasmCustomSection>> sectionSupplier) {
+        for (var customSection : module.getCustomSections().values()) {
+            renderCustomSection(customSection);
+        }
+        if (sectionSupplier != null) {
+            for (var customSection : sectionSupplier.get()) {
+                renderCustomSection(customSection);
+            }
+        }
+    }
+
+    private void renderCustomSection(WasmCustomSection customSection) {
+        writeSection(SECTION_UNKNOWN, customSection.getName(), customSection.getData());
     }
 
     static class LocalEntry {

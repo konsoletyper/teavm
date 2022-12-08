@@ -15,6 +15,7 @@
  */
 package org.teavm.debugging.javascript;
 
+import java.util.Map;
 import org.teavm.common.Promise;
 
 public interface JavaScriptDebugger {
@@ -32,8 +33,6 @@ public interface JavaScriptDebugger {
 
     Promise<Void> stepOver();
 
-    Promise<Void> continueToLocation(JavaScriptLocation location);
-
     boolean isSuspended();
 
     boolean isAttached();
@@ -43,4 +42,6 @@ public interface JavaScriptDebugger {
     JavaScriptCallFrame[] getCallStack();
 
     Promise<JavaScriptBreakpoint> createBreakpoint(JavaScriptLocation location);
+
+    Map<? extends String, ? extends JavaScriptScript> getScripts();
 }

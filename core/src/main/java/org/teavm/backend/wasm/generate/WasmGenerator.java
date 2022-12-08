@@ -59,6 +59,7 @@ public class WasmGenerator {
         ClassHolder cls = classSource.get(methodReference.getClassName());
         MethodHolder method = cls.getMethod(methodReference.getDescriptor());
         WasmFunction function = new WasmFunction(names.forMethod(method.getReference()));
+        function.setJavaMethod(methodReference);
 
         if (!method.hasModifier(ElementModifier.STATIC)) {
             function.getParameters().add(WasmType.INT32);
@@ -85,7 +86,9 @@ public class WasmGenerator {
             WasmType type = variable.getType() != null
                     ? WasmGeneratorUtil.mapType(variable.getType())
                     : WasmType.INT32;
-            function.add(new WasmLocal(type, variable.getName()));
+            var local = new WasmLocal(type, variable.getName());
+            local.setJavaType(variable.getType());
+            function.add(local);
         }
 
         WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, classGenerator, binaryWriter, function,

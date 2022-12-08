@@ -50,6 +50,11 @@
       <groupId>javax.websocket</groupId>
       <artifactId>javax.websocket-api</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.carrotsearch</groupId>
+      <artifactId>hppc</artifactId>
+      <optional>true</optional>
+    </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>

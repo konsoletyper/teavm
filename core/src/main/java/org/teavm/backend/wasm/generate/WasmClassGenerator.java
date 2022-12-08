@@ -97,6 +97,7 @@ public class WasmClassGenerator {
     private int classCount;
     private ClassMetadataRequirements metadataRequirements;
     private ClassInitializerInfo classInitializerInfo;
+    private DwarfClassGenerator dwarfClassGenerator;
 
     private static final int CLASS_SIZE = 1;
     private static final int CLASS_FLAGS = 2;
@@ -117,7 +118,8 @@ public class WasmClassGenerator {
     public WasmClassGenerator(ClassReaderSource processedClassSource, ClassReaderSource classSource,
             VirtualTableProvider vtableProvider, TagRegistry tagRegistry, BinaryWriter binaryWriter,
             NameProvider names, ClassMetadataRequirements metadataRequirements,
-            ClassInitializerInfo classInitializerInfo, Characteristics characteristics) {
+            ClassInitializerInfo classInitializerInfo, Characteristics characteristics,
+            DwarfClassGenerator dwarfClassGenerator) {
         this.processedClassSource = processedClassSource;
         this.classSource = classSource;
         this.vtableProvider = vtableProvider;
@@ -128,6 +130,7 @@ public class WasmClassGenerator {
         this.metadataRequirements = metadataRequirements;
         this.classInitializerInfo = classInitializerInfo;
         this.characteristics = characteristics;
+        this.dwarfClassGenerator = dwarfClassGenerator;
     }
 
     public WasmStringPool getStringPool() {
@@ -173,12 +176,25 @@ public class WasmClassGenerator {
             binaryData.start = binaryWriter.append(binaryData.data);
         } else if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
-            ClassReader cls = classSource.get(className);
+            var cls = classSource.get(className);
 
             if (cls != null) {
-                calculateLayout(cls, binaryData);
+                DwarfClassGenerator.ClassType dwarfClass;
+                if (dwarfClassGenerator != null) {
+                    dwarfClass = dwarfClassGenerator.getClass(className);
+                    dwarfClass.setSuperclass(cls.getParent() != null
+                            ? dwarfClassGenerator.getClass(cls.getParent())
+                            : null);
+                } else {
+                    dwarfClass = null;
+                }
+                calculateLayout(cls, binaryData, dwarfClass);
                 if (binaryData.start >= 0) {
                     binaryData.start = binaryWriter.append(createStructure(binaryData));
+                }
+                if (dwarfClass != null) {
+                    dwarfClass.setSize(binaryData.size);
+                    dwarfClass.setPointer(binaryData.start);
                 }
             }
         } else if (type instanceof ValueType.Array) {
@@ -480,7 +496,7 @@ public class WasmClassGenerator {
         return binaryDataMap.get(type).function;
     }
 
-    private void calculateLayout(ClassReader cls, ClassBinaryData data) {
+    private void calculateLayout(ClassReader cls, ClassBinaryData data, DwarfClassGenerator.ClassType dwarfClass) {
         if (cls.getName().equals(Structure.class.getName()) || cls.getName().equals(Address.class.getName())) {
             data.size = 0;
             data.start = -1;

@@ -15,6 +15,7 @@
  */
 package org.teavm.debugging;
 
+import java.util.Collections;
 import java.util.Map;
 import org.teavm.common.Promise;
 import org.teavm.debugging.information.DebugInformation;
@@ -62,7 +63,11 @@ public class CallFrame {
 
     public Promise<Map<String, Variable>> getVariables() {
         if (variables == null) {
-            variables = debugger.createVariables(originalCallFrame, debugInformation);
+            if (debugInformation != null) {
+                variables = debugger.createVariables(originalCallFrame, debugInformation);
+            } else {
+                variables = Promise.of(Collections.emptyMap());
+            }
         }
         return variables;
     }

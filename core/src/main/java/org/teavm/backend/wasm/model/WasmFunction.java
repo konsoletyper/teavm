@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.model.MethodReference;
 
 public class WasmFunction {
     WasmModule module;
@@ -32,6 +33,7 @@ public class WasmFunction {
     private List<WasmLocal> localVariables = new ArrayList<>();
     private List<WasmLocal> readonlyLocalVariables = Collections.unmodifiableList(localVariables);
     private List<WasmExpression> body = new ArrayList<>();
+    private MethodReference javaMethod;
 
     public WasmFunction(String name) {
         Objects.requireNonNull(name);
@@ -97,5 +99,13 @@ public class WasmFunction {
         local.function = this;
         local.index = localVariables.size();
         localVariables.add(local);
+    }
+
+    public MethodReference getJavaMethod() {
+        return javaMethod;
+    }
+
+    public void setJavaMethod(MethodReference javaMethod) {
+        this.javaMethod = javaMethod;
     }
 }
