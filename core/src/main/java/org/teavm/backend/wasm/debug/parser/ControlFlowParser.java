@@ -31,7 +31,7 @@ import org.teavm.backend.wasm.parser.Opcode;
 public class ControlFlowParser implements CodeSectionListener, CodeListener, AddressListener {
     private int previousAddress;
     private int address;
-    private FunctionControlFlowBuilder cfb;
+    private int startAddress;
     private List<Branch> branches = new ArrayList<>();
     private List<FunctionControlFlow> ranges = new ArrayList<>();
     private List<Branch> pendingBranches = new ArrayList<>();
@@ -50,7 +50,7 @@ public class ControlFlowParser implements CodeSectionListener, CodeListener, Add
 
     @Override
     public boolean functionStart(int index, int size) {
-        cfb = new FunctionControlFlowBuilder();
+        startAddress = address;
         return true;
     }
 
@@ -71,7 +71,7 @@ public class ControlFlowParser implements CodeSectionListener, CodeListener, Add
 
     private int startBlock(boolean loop) {
         var token = blocks.size();
-        var branch = !loop ? newBranch(false) : null;
+        var branch = !loop ? newPendingBranch(false) : null;
         var block = new Block(branch, address);
         blocks.add(block);
         if (branch != null) {
@@ -169,6 +169,7 @@ public class ControlFlowParser implements CodeSectionListener, CodeListener, Add
 
     @Override
     public void functionEnd() {
+        var cfb = new FunctionControlFlowBuilder(startAddress, address);
         for (var branch : branches) {
             if (branch.isCall) {
                 cfb.addCall(branch.address, branch.targets.toArray());

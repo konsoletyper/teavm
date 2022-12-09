@@ -15,6 +15,7 @@
  */
 package org.teavm.debugging;
 
+import com.carrotsearch.hppc.IntHashSet;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -25,9 +26,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.teavm.backend.wasm.debug.info.DebugInfo;
 import org.teavm.backend.wasm.debug.info.LineInfoFileCommand;
 import org.teavm.backend.wasm.debug.info.MethodInfo;
+import org.teavm.backend.wasm.debug.info.StepLocationsFinder;
 import org.teavm.backend.wasm.debug.parser.DebugInfoParser;
 import org.teavm.common.ByteArrayAsyncInputStream;
 import org.teavm.common.Promise;
@@ -53,6 +56,7 @@ public class Debugger {
     private JavaScriptDebugger javaScriptDebugger;
     private DebugInformationProvider debugInformationProvider;
     private List<JavaScriptBreakpoint> temporaryBreakpoints = new ArrayList<>();
+    private Predicate<JavaScriptBreakpoint> temporaryBreakpointHandler;
     private Map<JavaScriptScript, DebugInformation> debugInformationMap = new HashMap<>();
     private Map<String, Set<DebugInformation>> debugInformationFileMap = new HashMap<>();
     private Map<JavaScriptScript, DebugInfo> wasmDebugInfoMap = new HashMap<>();
@@ -65,6 +69,7 @@ public class Debugger {
     private CallFrame[] callStack;
     private Set<String> scriptNames = new LinkedHashSet<>();
     private Set<String> allSourceFiles = new LinkedHashSet<>();
+    private StepLocationsFinder wasmStepLocationsFinder;
 
     public Debugger(JavaScriptDebugger javaScriptDebugger, DebugInformationProvider debugInformationProvider) {
         this.javaScriptDebugger = javaScriptDebugger;
@@ -113,70 +118,91 @@ public class Debugger {
         if (callStack == null || callStack.length == 0) {
             return jsStep(enterMethod);
         }
-        var recentFrame = callStack[0];
-        if (recentFrame.getLocation() == null || recentFrame.getLocation().getFileName() == null
-                || recentFrame.getLocation().getLine() < 0) {
+        var frame = callStack[0];
+        if (frame.getLocation() == null || frame.getLocation().getFileName() == null
+                || frame.getLocation().getLine() < 0) {
             return jsStep(enterMethod);
         }
         var successors = new HashSet<JavaScriptLocation>();
-        boolean first = true;
-        loop:
-        for (var frame : callStack) {
-            var script = frame.getOriginalLocation().getScript();
+        var script = frame.getOriginalLocation().getScript();
+        var hasSuccessors = false;
+        if (frame.getLocation() != null && frame.getLocation().getFileName() != null
+                && frame.getLocation().getLine() >= 0) {
             switch (script.getLanguage()) {
                 case JS:
-                    if (!addJsBreakpoints(frame, script, enterMethod, first, successors)) {
-                        break loop;
-                    }
+                    hasSuccessors = addJsBreakpoints(frame, script, enterMethod, successors);
                     break;
                 case WASM: {
-                    var info = wasmDebugInfoMap.get(script);
-                    if (info != null) {
-                        return enterMethod ? javaScriptDebugger.stepInto() : javaScriptDebugger.stepOver();
+                    var promise = stepWasm(frame, enterMethod);
+                    if (promise != null) {
+                        return promise;
                     }
                     break;
                 }
-                case UNKNOWN:
+                default:
                     break;
             }
-            enterMethod = false;
-            first = false;
         }
 
-        var jsBreakpointPromises = new ArrayList<Promise<Void>>();
-        for (var successor : successors) {
-            jsBreakpointPromises.add(javaScriptDebugger.createBreakpoint(successor)
-                    .thenVoid(temporaryBreakpoints::add));
+        if (hasSuccessors) {
+            return jsStep(enterMethod);
+        } else {
+            return createTemporaryBreakpoints(successors, null).thenAsync(v -> javaScriptDebugger.stepOut());
         }
-        return Promise.allVoid(jsBreakpointPromises).thenAsync(v -> javaScriptDebugger.resume());
     }
 
-    private boolean addJsBreakpoints(CallFrame frame, JavaScriptScript script, boolean enterMethod, boolean first,
+    private Promise<Void> createTemporaryBreakpoints(Collection<JavaScriptLocation> locations,
+            Predicate<JavaScriptBreakpoint> handler) {
+        var jsBreakpointPromises = new ArrayList<Promise<Void>>();
+        for (var location : locations) {
+            jsBreakpointPromises.add(javaScriptDebugger.createBreakpoint(location)
+                    .thenVoid(temporaryBreakpoints::add));
+        }
+        temporaryBreakpointHandler = handler;
+        return Promise.allVoid(jsBreakpointPromises);
+    }
+
+    private boolean addJsBreakpoints(CallFrame frame, JavaScriptScript script, boolean enterMethod,
             Set<JavaScriptLocation> successors) {
         var debugInfo = debugInformationMap.get(script);
-        boolean exits;
-        if (frame.getLocation() != null && frame.getLocation().getFileName() != null
-                && frame.getLocation().getLine() >= 0 && debugInfo != null) {
-            exits = addFollowing(debugInfo, frame.getLocation(), script, new HashSet<>(), successors);
-            if (enterMethod) {
-                var successorFinder = new CallSiteSuccessorFinder(debugInfo, script, successors);
-                var callSites = debugInfo.getCallSites(frame.getLocation());
-                for (var callSite : callSites) {
-                    callSite.acceptVisitor(successorFinder);
-                }
-            }
-        } else {
-            exits = true;
-        }
-        if (!exits) {
+        if (debugInfo == null) {
             return false;
         }
-        if (!first && frame.getLocation() != null) {
-            for (var location : debugInfo.getGeneratedLocations(frame.getLocation())) {
-                successors.add(new JavaScriptLocation(script, location.getLine(), location.getColumn()));
+        addFollowing(debugInfo, frame.getLocation(), script, new HashSet<>(), successors);
+        if (enterMethod) {
+            var successorFinder = new CallSiteSuccessorFinder(debugInfo, script, successors);
+            var callSites = debugInfo.getCallSites(frame.getLocation());
+            for (var callSite : callSites) {
+                callSite.acceptVisitor(successorFinder);
             }
         }
-        return false;
+        return true;
+    }
+
+    private Promise<Void> stepWasm(CallFrame frame, boolean enterMethod) {
+        var debugInfo = wasmDebugInfoMap.get(frame.getOriginalLocation().getScript());
+        if (debugInfo == null || debugInfo.controlFlow() == null || debugInfo.lines() == null) {
+            return null;
+        }
+        if (wasmStepLocationsFinder == null || wasmStepLocationsFinder.debugInfo != debugInfo) {
+            wasmStepLocationsFinder = new StepLocationsFinder(debugInfo);
+        }
+        wasmStepLocationsFinder.step(frame.getLocation().getFileName(), frame.getLocation().getLine(),
+                frame.getOriginalLocation().getColumn(), enterMethod);
+
+        var locations = new ArrayList<JavaScriptLocation>();
+        for (var breakpointAddress : wasmStepLocationsFinder.getBreakpointAddresses()) {
+            locations.add(new JavaScriptLocation(frame.getOriginalLocation().getScript(), 0, breakpointAddress));
+        }
+        var callAddresses = IntHashSet.from(wasmStepLocationsFinder.getCallAddresses());
+        var result = createTemporaryBreakpoints(locations, br -> {
+            if (br != null && br.isValid() && callAddresses.contains(br.getLocation().getColumn())) {
+                javaScriptDebugger.stepInto();
+                return false;
+            }
+            return true;
+        });
+        return result.thenVoid(x -> javaScriptDebugger.stepOut());
     }
 
     static class CallSiteSuccessorFinder implements DebuggerCallSiteVisitor {
@@ -599,20 +625,29 @@ public class Debugger {
     }
 
     private void firePaused(JavaScriptBreakpoint breakpoint) {
-        List<JavaScriptBreakpoint> temporaryBreakpoints = new ArrayList<>(this.temporaryBreakpoints);
+        var temporaryBreakpoints = new ArrayList<>(this.temporaryBreakpoints);
+        var handler = temporaryBreakpointHandler;
         this.temporaryBreakpoints.clear();
-        List<Promise<Void>> promises = new ArrayList<>();
-        for (JavaScriptBreakpoint jsBreakpoint : temporaryBreakpoints) {
+        temporaryBreakpointHandler = null;
+        var promises = new ArrayList<Promise<Void>>();
+        for (var jsBreakpoint : temporaryBreakpoints) {
             promises.add(jsBreakpoint.destroy());
         }
         callStack = null;
         Promise.allVoid(promises).thenVoid(v -> {
             Breakpoint javaBreakpoint = null;
-            if (breakpoint != null && !temporaryBreakpoints.contains(breakpoint)) {
-                javaBreakpoint = breakpointMap.get(breakpoint);
+            JavaScriptBreakpoint tmpBreakpoint = null;
+            if (breakpoint != null) {
+                if (temporaryBreakpoints.contains(breakpoint)) {
+                    tmpBreakpoint = breakpoint;
+                } else {
+                    javaBreakpoint = breakpointMap.get(breakpoint);
+                }
             }
-            for (DebuggerListener listener : getListeners()) {
-                listener.paused(javaBreakpoint);
+            if (handler == null || !handler.test(tmpBreakpoint)) {
+                for (var listener : getListeners()) {
+                    listener.paused(javaBreakpoint);
+                }
             }
         });
     }

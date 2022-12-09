@@ -51,7 +51,7 @@ public class ControlFlowInfo {
         for (int i = 0; i < functions.size(); ++i) {
             var range = functions.get(i);
             out.println("Range #" + i + ": [" + range.start() + ".." + range.end() + ")");
-            for (var iter = range.iterator(); iter.hasNext(); iter.next()) {
+            for (var iter = range.iterator(0); iter.hasNext(); iter.next()) {
                 out.print("  " + Integer.toHexString(iter.address()));
                 if (iter.isCall()) {
                     out.print(" (call)");

@@ -24,8 +24,9 @@ public class FunctionControlFlowIterator {
     private int offset;
     private boolean isCall;
 
-    FunctionControlFlowIterator(FunctionControlFlow controlFlow) {
+    FunctionControlFlowIterator(FunctionControlFlow controlFlow, int index) {
         this.controlFlow = controlFlow;
+        this.index = 0;
     }
 
     public boolean hasNext() {
@@ -35,6 +36,10 @@ public class FunctionControlFlowIterator {
     public void next() {
         ++index;
         valid = false;
+    }
+
+    public void rewind(int index) {
+        this.index = index;
     }
 
     private void fill() {

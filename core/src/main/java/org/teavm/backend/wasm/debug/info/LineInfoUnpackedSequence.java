@@ -49,13 +49,18 @@ public class LineInfoUnpackedSequence {
     }
 
     public InstructionLocation find(int address) {
+        var index = findIndex(address);
+        return index >= 0 ? locations.get(index) : null;
+    }
+
+    public int findIndex(int address) {
         if (address < startAddress || address >= endAddress) {
-            return null;
+            return -1;
         }
         var index = CollectionUtil.binarySearch(locations, address, InstructionLocation::address);
         if (index < 0) {
             index = -index;
         }
-        return locations.get(Math.min(locations.size() - 1, index));
+        return Math.min(locations.size() - 1, index);
     }
 }
