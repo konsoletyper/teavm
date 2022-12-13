@@ -32,4 +32,5 @@ public final class DebugConstants {
     public static final String SECTION_CLASSES = "teavm_cls";
     public static final String SECTION_METHODS = "teavm_mtd";
     public static final String SECTION_LINES = "teavm_line";
+    public static final String SECTION_VARIABLES = "teavm_var";
 }

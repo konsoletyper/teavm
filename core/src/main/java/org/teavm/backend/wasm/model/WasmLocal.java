@@ -16,7 +16,7 @@
 package org.teavm.backend.wasm.model;
 
 import java.util.Objects;
-import org.teavm.model.util.VariableType;
+import org.teavm.backend.wasm.debug.info.VariableType;
 
 public class WasmLocal {
     WasmFunction function;

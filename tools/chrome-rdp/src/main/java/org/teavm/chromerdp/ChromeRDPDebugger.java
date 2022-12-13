@@ -86,7 +86,6 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
     protected void onDetach() {
         suspended = false;
         callStack = null;
-
     }
 
     private Promise<Void> injectFunctions(int contextId) {

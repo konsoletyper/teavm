@@ -403,6 +403,7 @@ public class Debugger {
             for (var jsFrame : javaScriptDebugger.getCallStack()) {
                 List<SourceLocationWithMethod> locations;
                 DebugInformation debugInformation = null;
+                DebugInfo wasmDebugInfo = null;
                 switch (jsFrame.getLocation().getScript().getLanguage()) {
                     case JS:
                         debugInformation = debugInformationMap.get(jsFrame.getLocation().getScript());
@@ -410,6 +411,9 @@ public class Debugger {
                         break;
                     case WASM:
                         locations = mapWasmFrames(jsFrame);
+                        if (!locations.isEmpty()) {
+                            wasmDebugInfo = wasmDebugInfoMap.get(jsFrame.getLocation().getScript());
+                        }
                         break;
                     default:
                         locations = Collections.emptyList();
@@ -419,7 +423,7 @@ public class Debugger {
                     var loc = locWithMethod.loc;
                     var method = locWithMethod.method;
                     if (!locWithMethod.empty || !wasEmpty) {
-                        frames.add(new CallFrame(this, jsFrame, loc, method, debugInformation));
+                        frames.add(new CallFrame(this, jsFrame, loc, method, debugInformation, wasmDebugInfo));
                     }
                     wasEmpty = locWithMethod.empty;
                 }
@@ -510,6 +514,36 @@ public class Debugger {
                 }
             }
             return Collections.unmodifiableMap(vars);
+        });
+    }
+
+    Promise<Map<String, Variable>> createVariables(JavaScriptCallFrame jsFrame, DebugInfo debugInfo) {
+        return jsFrame.getVariables().thenAsync(jsVariables -> {
+            var vars = new HashMap<String, Variable>();
+            var variables = debugInfo.variables();
+            var promises = new ArrayList<Promise<Void>>();
+            if (variables != null) {
+                var address = jsFrame.getLocation().getColumn();
+                address -= debugInfo.offset();
+                for (var range : variables.find(address)) {
+                    var propertiesPromise = jsVariables.get("$var" + range.index()).getValue().getProperties();
+                    promises.add(propertiesPromise
+                            .then(prop -> {
+                                var variable = prop.get("value");
+                                return variable != null ? variable.getValue() : null;
+                            })
+                            .thenAsync(value -> {
+                                if (value != null) {
+                                    var varValue = new Value(this, debugInfo, value);
+                                    var variable = new Variable(range.variable().name(), varValue);
+                                    vars.put(variable.getName(), variable);
+                                }
+                                return Promise.VOID;
+                            })
+                    );
+                }
+            }
+            return Promise.allVoid(promises).then(x -> vars);
         });
     }
 

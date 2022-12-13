@@ -18,14 +18,20 @@ package org.teavm.backend.wasm.debug.info;
 import java.io.PrintStream;
 
 public class DebugInfo {
+    private VariablesInfo variables;
     private LineInfo lines;
     private ControlFlowInfo controlFlow;
     private int offset;
 
-    public DebugInfo(LineInfo lines, ControlFlowInfo controlFlow, int offset) {
+    public DebugInfo(VariablesInfo variables, LineInfo lines, ControlFlowInfo controlFlow, int offset) {
+        this.variables = variables;
         this.lines = lines;
         this.controlFlow = controlFlow;
         this.offset = offset;
+    }
+
+    public VariablesInfo variables() {
+        return variables;
     }
 
     public LineInfo lines() {
@@ -51,6 +57,10 @@ public class DebugInfo {
         if (controlFlow != null) {
             out.println("CONTROL FLOW");
             controlFlow.dump(out);
+        }
+        if (variables != null) {
+            out.println("VARIABLES");
+            variables.dump(out);
         }
     }
 }

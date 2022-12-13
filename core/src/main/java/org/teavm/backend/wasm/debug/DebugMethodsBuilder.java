@@ -19,7 +19,7 @@ import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import org.teavm.model.MethodReference;
 
-public class DebugMethodsBuilder extends  DebugSectionBuilder implements DebugMethods {
+public class DebugMethodsBuilder extends DebugSectionBuilder implements DebugMethods {
     private DebugClasses classes;
     private DebugStrings strings;
     private ObjectIntMap<MethodReference> methods = new ObjectIntHashMap<>();

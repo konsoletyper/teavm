@@ -17,6 +17,7 @@ package org.teavm.debugging;
 
 import java.util.Collections;
 import java.util.Map;
+import org.teavm.backend.wasm.debug.info.DebugInfo;
 import org.teavm.common.Promise;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.SourceLocation;
@@ -31,14 +32,16 @@ public class CallFrame {
     private MethodReference method;
     private Promise<Map<String, Variable>> variables;
     private DebugInformation debugInformation;
+    private DebugInfo wasmDebugInfo;
 
     CallFrame(Debugger debugger, JavaScriptCallFrame originalFrame, SourceLocation location, MethodReference method,
-            DebugInformation debugInformation) {
+            DebugInformation debugInformation, DebugInfo wasmDebugInfo) {
         this.debugger = debugger;
         this.originalCallFrame = originalFrame;
         this.location = location;
         this.method = method;
         this.debugInformation = debugInformation;
+        this.wasmDebugInfo = wasmDebugInfo;
     }
 
     public Debugger getDebugger() {
@@ -65,6 +68,8 @@ public class CallFrame {
         if (variables == null) {
             if (debugInformation != null) {
                 variables = debugger.createVariables(originalCallFrame, debugInformation);
+            } else if (wasmDebugInfo != null) {
+                variables = debugger.createVariables(originalCallFrame, wasmDebugInfo);
             } else {
                 variables = Promise.of(Collections.emptyMap());
             }

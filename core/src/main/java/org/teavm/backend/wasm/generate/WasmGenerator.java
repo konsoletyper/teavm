@@ -21,6 +21,7 @@ import org.teavm.ast.VariableNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.binary.BinaryWriter;
+import org.teavm.backend.wasm.debug.info.VariableType;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
@@ -87,7 +88,7 @@ public class WasmGenerator {
                     ? WasmGeneratorUtil.mapType(variable.getType())
                     : WasmType.INT32;
             var local = new WasmLocal(type, variable.getName());
-            local.setJavaType(variable.getType());
+            local.setJavaType(mapType(variable.getType()));
             function.add(local);
         }
 
@@ -105,6 +106,21 @@ public class WasmGenerator {
         }
 
         return function;
+    }
+
+    private VariableType mapType(org.teavm.model.util.VariableType type) {
+        switch (type) {
+            case INT:
+                return VariableType.INT;
+            case LONG:
+                return VariableType.LONG;
+            case FLOAT:
+                return VariableType.FLOAT;
+            case DOUBLE:
+                return VariableType.DOUBLE;
+            default:
+                return VariableType.OBJECT;
+        }
     }
 
     public WasmFunction generateNative(MethodReference methodReference) {

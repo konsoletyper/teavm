@@ -17,6 +17,7 @@ package org.teavm.debugging;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.teavm.backend.wasm.debug.info.DebugInfo;
 import org.teavm.common.Promise;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.javascript.JavaScriptValue;
@@ -25,6 +26,7 @@ import org.teavm.debugging.javascript.JavaScriptVariable;
 public class Value {
     private Debugger debugger;
     private DebugInformation debugInformation;
+    private DebugInfo wasmDebugInfo;
     private JavaScriptValue jsValue;
     private Promise<Map<String, Variable>> properties;
     private Promise<String> type;
@@ -32,6 +34,12 @@ public class Value {
     Value(Debugger debugger, DebugInformation debugInformation, JavaScriptValue jsValue) {
         this.debugger = debugger;
         this.debugInformation = debugInformation;
+        this.jsValue = jsValue;
+    }
+
+    Value(Debugger debugger, DebugInfo wasmDebugInfo, JavaScriptValue jsValue) {
+        this.debugger = debugger;
+        this.wasmDebugInfo = wasmDebugInfo;
         this.jsValue = jsValue;
     }
 

@@ -47,13 +47,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.backend.wasm.blob.Blob;
+import org.teavm.backend.wasm.debug.info.VariableType;
 import org.teavm.backend.wasm.dwarf.DwarfAbbreviation;
 import org.teavm.backend.wasm.dwarf.DwarfInfoWriter;
 import org.teavm.backend.wasm.dwarf.DwarfPlaceholder;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.PrimitiveType;
 import org.teavm.model.ValueType;
-import org.teavm.model.util.VariableType;
 
 public class DwarfClassGenerator {
     private static final ValueType objectType = ValueType.object("java.lang.Object");
