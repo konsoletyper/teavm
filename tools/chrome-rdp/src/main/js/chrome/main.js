@@ -45,20 +45,32 @@ class DebuggerAgent {
                 this.sendMessage(pendingMessage);
             }
             this.pendingMessages = null;
-            this.pingTimeout = setInterval(() => {
-                this.sendMessage({ method: "TeaVM.ping" });
-            }, 2000);
+            this.sendPing();
         };
+    }
+
+    sendPing() {
+        this.sendMessage({ method: "TeaVM.ping" });
+    }
+
+    schedulePing() {
+        this.pingTimeout = setTimeout(() => {
+            this.sendPing();
+        }, 2000);
     }
 
     stopPing() {
         if (this.pingTimeout != null) {
-            clearInterval(this.pingTimeout);
+            clearTimeout(this.pingTimeout);
             this.pingTimeout = null;
         }
     }
 
     receiveMessage(message) {
+        if (message.method === "TeaVM.pong") {
+            this.schedulePing();
+            return;
+        }
         chrome.debugger.sendCommand(this.debuggee, message.method, message.params, response => {
             if (message.id) {
                 const responseToServer = {

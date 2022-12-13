@@ -18,14 +18,9 @@ package org.teavm.backend.wasm.debug.info;
 import com.carrotsearch.hppc.IntArrayDeque;
 import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.teavm.backend.wasm.debug.parser.DebugInfoParser;
-import org.teavm.common.ByteArrayAsyncInputStream;
 import org.teavm.common.CollectionUtil;
 
 public class StepLocationsFinder {
@@ -207,17 +202,5 @@ public class StepLocationsFinder {
         Point(int address) {
             this.address = address;
         }
-    }
-
-    public static void main(String[] args) throws IOException {
-        var file = new File("/home/konsoletyper/prog/apache-tomcat-10.0.4/webapps/wasm/classes.wasm");
-        var input = new ByteArrayAsyncInputStream(Files.readAllBytes(file.toPath()));
-        var parser = new DebugInfoParser(input);
-        input.readFully(parser::parse);
-        var debugInfo = parser.getDebugInfo();
-
-        var finder = new StepLocationsFinder(debugInfo);
-        finder.step("org/teavm/samples/wasi/WasiTest2.java", 9, 0x943e + debugInfo.offset(), false);
-        System.out.println(Arrays.toString(finder.getBreakpointAddresses()));
     }
 }

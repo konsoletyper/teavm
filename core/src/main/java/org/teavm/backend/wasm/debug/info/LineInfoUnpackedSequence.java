@@ -59,8 +59,8 @@ public class LineInfoUnpackedSequence {
         }
         var index = CollectionUtil.binarySearch(locations, address, InstructionLocation::address);
         if (index < 0) {
-            index = -index;
+            index = -index - 2;
         }
-        return Math.min(locations.size() - 1, index);
+        return index;
     }
 }

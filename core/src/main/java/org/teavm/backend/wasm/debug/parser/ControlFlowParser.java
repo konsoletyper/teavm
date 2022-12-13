@@ -73,6 +73,7 @@ public class ControlFlowParser implements CodeSectionListener, CodeListener, Add
         var token = blocks.size();
         var branch = !loop ? newPendingBranch(false) : null;
         var block = new Block(branch, address);
+        block.loop = loop;
         blocks.add(block);
         if (branch != null) {
             block.pendingBranches.add(branch);
@@ -135,17 +136,16 @@ public class ControlFlowParser implements CodeSectionListener, CodeListener, Add
         if (opcode == BranchOpcode.BR_IF) {
             pendingBranches.add(branch);
         }
-        var block = blocks.get(target);
-        block.pendingBranches.add(branch);
+        branch.jumpTo(blocks.get(target));
     }
 
     @Override
     public void tableBranch(int[] depths, int[] targets, int defaultDepth, int defaultTarget) {
         var branch = newPendingBranch(false);
         for (var target : targets) {
-            blocks.get(target).pendingBranches.add(branch);
+            branch.jumpTo(blocks.get(target));
         }
-        blocks.get(defaultTarget).pendingBranches.add(branch);
+        branch.jumpTo(blocks.get(defaultDepth));
     }
 
     private Branch newPendingBranch(boolean isCall) {
@@ -185,6 +185,7 @@ public class ControlFlowParser implements CodeSectionListener, CodeListener, Add
 
     private static class Block {
         Branch branch;
+        boolean loop;
         final int address;
         List<Branch> pendingBranches = new ArrayList<>();
 
@@ -202,6 +203,14 @@ public class ControlFlowParser implements CodeSectionListener, CodeListener, Add
         Branch(int address, boolean isCall) {
             this.address = address;
             this.isCall = isCall;
+        }
+
+        void jumpTo(Block block) {
+            if (block.loop) {
+                targets.add(block.address);
+            } else {
+                block.pendingBranches.add(this);
+            }
         }
     }
 }

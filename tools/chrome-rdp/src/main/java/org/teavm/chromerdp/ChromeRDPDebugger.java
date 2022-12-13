@@ -86,6 +86,7 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
     protected void onDetach() {
         suspended = false;
         callStack = null;
+
     }
 
     private Promise<Void> injectFunctions(int contextId) {
@@ -119,6 +120,7 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
     protected Promise<Void> handleMessage(Message message) throws IOException {
         switch (message.getMethod()) {
             case "TeaVM.ping":
+                sendPong();
                 return Promise.VOID;
             case "Debugger.paused":
                 return firePaused(parseJson(SuspendedNotification.class, message.getParams()));
@@ -128,6 +130,12 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
                 return scriptParsed(parseJson(ScriptParsedNotification.class, message.getParams()));
         }
         return Promise.VOID;
+    }
+
+    private void sendPong() {
+        var message = new Message();
+        message.setMethod("TeaVM.pong");
+        sendMessage(message);
     }
 
     private Promise<Void> firePaused(SuspendedNotification params) {
