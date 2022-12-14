@@ -484,9 +484,10 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
                     return new RDPValue(this, null, remoteValue.getType(), remoteValue.getObjectId(),
                             true);
                 }
-            default:
-                return new RDPValue(this, remoteValue.getValue().asText(), remoteValue.getType(),
-                        remoteValue.getObjectId(), false);
+            default: {
+                var valueAsText = remoteValue.getValue() != null ? remoteValue.getValue().asText() : "null";
+                return new RDPValue(this, valueAsText, remoteValue.getType(), remoteValue.getObjectId(), false);
+            }
         }
     }
 

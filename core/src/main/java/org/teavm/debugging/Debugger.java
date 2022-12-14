@@ -162,6 +162,17 @@ public class Debugger {
         return Promise.allVoid(jsBreakpointPromises);
     }
 
+    private Promise<Void> destroyTemporaryBreakpoints() {
+        var temporaryBreakpoints = new ArrayList<>(this.temporaryBreakpoints);
+        this.temporaryBreakpoints.clear();
+        var promises = new ArrayList<Promise<Void>>();
+        for (var jsBreakpoint : temporaryBreakpoints) {
+            promises.add(jsBreakpoint.destroy());
+        }
+        callStack = null;
+        return Promise.allVoid(promises);
+    }
+
     private boolean addJsBreakpoints(CallFrame frame, JavaScriptScript script, boolean enterMethod,
             Set<JavaScriptLocation> successors) {
         var debugInfo = debugInformationMap.get(script);
@@ -197,10 +208,10 @@ public class Debugger {
         var callAddresses = IntHashSet.from(wasmStepLocationsFinder.getCallAddresses());
         var result = createTemporaryBreakpoints(locations, br -> {
             if (br != null && br.isValid() && callAddresses.contains(br.getLocation().getColumn())) {
-                javaScriptDebugger.stepInto();
-                return false;
+                destroyTemporaryBreakpoints().thenVoid(x -> javaScriptDebugger.stepInto());
+                return true;
             }
-            return true;
+            return false;
         });
         return result.thenVoid(x -> javaScriptDebugger.stepOut());
     }
@@ -659,31 +670,26 @@ public class Debugger {
     }
 
     private void firePaused(JavaScriptBreakpoint breakpoint) {
-        var temporaryBreakpoints = new ArrayList<>(this.temporaryBreakpoints);
         var handler = temporaryBreakpointHandler;
-        this.temporaryBreakpoints.clear();
         temporaryBreakpointHandler = null;
-        var promises = new ArrayList<Promise<Void>>();
-        for (var jsBreakpoint : temporaryBreakpoints) {
-            promises.add(jsBreakpoint.destroy());
-        }
         callStack = null;
-        Promise.allVoid(promises).thenVoid(v -> {
-            Breakpoint javaBreakpoint = null;
-            JavaScriptBreakpoint tmpBreakpoint = null;
-            if (breakpoint != null) {
-                if (temporaryBreakpoints.contains(breakpoint)) {
-                    tmpBreakpoint = breakpoint;
-                } else {
-                    javaBreakpoint = breakpointMap.get(breakpoint);
-                }
+        Breakpoint javaBreakpoint = null;
+        JavaScriptBreakpoint tmpBreakpoint = null;
+        if (breakpoint != null) {
+            if (temporaryBreakpoints.contains(breakpoint)) {
+                tmpBreakpoint = breakpoint;
+            } else {
+                javaBreakpoint = breakpointMap.get(breakpoint);
             }
-            if (handler == null || !handler.test(tmpBreakpoint)) {
+        }
+        if (handler == null || !handler.test(tmpBreakpoint)) {
+            var pausedAtBreakpoint = javaBreakpoint;
+            destroyTemporaryBreakpoints().thenVoid(v -> {
                 for (var listener : getListeners()) {
-                    listener.paused(javaBreakpoint);
+                    listener.paused(pausedAtBreakpoint);
                 }
-            }
-        });
+            });
+        }
     }
 
     private void fireAttached() {
