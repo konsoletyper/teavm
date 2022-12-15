@@ -176,7 +176,7 @@ public class StepLocationsFinder {
             breakpointAddresses.add(point.address + debugInfo.offset());
             return;
         }
-        if (enterMethod) {
+        if (enterMethod && point.isCall) {
             breakpointAddresses.add(point.address + debugInfo.offset());
             callAddresses.add(point.address + debugInfo.offset());
         }

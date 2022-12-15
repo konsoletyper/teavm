@@ -26,7 +26,7 @@ public class FunctionControlFlowIterator {
 
     FunctionControlFlowIterator(FunctionControlFlow controlFlow, int index) {
         this.controlFlow = controlFlow;
-        this.index = 0;
+        this.index = index;
     }
 
     public boolean hasNext() {
@@ -39,7 +39,10 @@ public class FunctionControlFlowIterator {
     }
 
     public void rewind(int index) {
-        this.index = index;
+        if (this.index != index) {
+            this.index = index;
+            fill();
+        }
     }
 
     private void fill() {
