@@ -12,7 +12,9 @@ class DebuggerAgent {
 
         this.debuggee = { tabId : tab.id };
         this.port = port;
+        this.tab = tab;
         debuggerAgentMap[tab.id] = this;
+        this.contentScriptPingListener = (message, sender) => this.onContentScriptPing(message, sender);
     }
 
     attach() {
@@ -20,6 +22,17 @@ class DebuggerAgent {
             this.attachedToDebugger = true;
             chrome.debugger.sendCommand(this.debuggee, "Debugger.enable", {}, () => this.connectToServer());
         });
+        chrome.scripting.executeScript({
+            target: { tabId: this.tab.id },
+            files: ['ping.js']
+        });
+        chrome.runtime.onMessage.addListener(this.contentScriptPingListener);
+    }
+
+    onContentScriptPing(message, sender) {
+        if (message.comand === "ping" && typeof sender.tab !== "undefined" && sender.tab.id === this.tab.id) {
+            chrome.tabs.sendMessage(this.tab.id, { command: "pong" });
+        }
     }
 
     connectToServer() {
@@ -94,16 +107,18 @@ class DebuggerAgent {
     }
 
     disconnect(callback) {
+        chrome.runtime.onMessage.removeListener(this.contentScriptPingListener);
+        chrome.tabs.sendMessage(this.tab.id, { command: "quitPingPong" });
         if (this.connection) {
             this.stopPing();
             const conn = this.connection;
             this.connection = null;
             conn.close();
         }
+        delete debuggerAgentMap[this.debuggee.tabId];
         if (this.attachedToDebugger) {
             chrome.debugger.detach(this.debuggee, () => {
                 if (this.debuggee) {
-                    delete debuggerAgentMap[this.debuggee.tabId];
                     this.debuggee = null;
                 }
                 for (const callback of this.disconnectCallbacks) {
