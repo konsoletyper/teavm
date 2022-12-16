@@ -21,12 +21,15 @@ public class DebugInfo {
     private VariablesInfo variables;
     private LineInfo lines;
     private ControlFlowInfo controlFlow;
+    private ClassLayoutInfo classLayoutInfo;
     private int offset;
 
-    public DebugInfo(VariablesInfo variables, LineInfo lines, ControlFlowInfo controlFlow, int offset) {
+    public DebugInfo(VariablesInfo variables, LineInfo lines, ControlFlowInfo controlFlow,
+            ClassLayoutInfo classLayoutInfo, int offset) {
         this.variables = variables;
         this.lines = lines;
         this.controlFlow = controlFlow;
+        this.classLayoutInfo = classLayoutInfo;
         this.offset = offset;
     }
 
@@ -46,6 +49,10 @@ public class DebugInfo {
         return offset;
     }
 
+    public ClassLayoutInfo classLayoutInfo() {
+        return classLayoutInfo;
+    }
+
     public void dump(PrintStream out) {
         if (offset != 0) {
             out.println("Code section offset: " + Integer.toHexString(offset));
@@ -61,6 +68,10 @@ public class DebugInfo {
         if (variables != null) {
             out.println("VARIABLES");
             variables.dump(out);
+        }
+        if (classLayoutInfo != null) {
+            out.println("CLASS LAYOUT:");
+            classLayoutInfo.dump(out);
         }
     }
 }

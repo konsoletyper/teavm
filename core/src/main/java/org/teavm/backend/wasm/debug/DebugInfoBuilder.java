@@ -27,6 +27,7 @@ public class DebugInfoBuilder {
     private DebugMethodsBuilder methods;
     private DebugVariablesBuilder variables;
     private DebugLinesBuilder lines;
+    private DebugClassLayoutBuilder classLayout;
 
     public DebugInfoBuilder() {
         strings = new DebugStringsBuilder();
@@ -36,6 +37,7 @@ public class DebugInfoBuilder {
         methods = new DebugMethodsBuilder(classes, strings);
         variables = new DebugVariablesBuilder(strings);
         lines = new DebugLinesBuilder(files, methods);
+        classLayout = new DebugClassLayoutBuilder(classes, strings);
     }
 
     public DebugStrings strings() {
@@ -66,6 +68,10 @@ public class DebugInfoBuilder {
         return lines;
     }
 
+    public DebugClassLayout classLayout() {
+        return classLayout;
+    }
+
     public List<WasmCustomSection> build() {
         var result = new ArrayList<WasmCustomSection>();
         addSection(result, strings);
@@ -75,6 +81,7 @@ public class DebugInfoBuilder {
         addSection(result, methods);
         addSection(result, variables);
         addSection(result, lines);
+        addSection(result, classLayout);
         return result;
     }
 

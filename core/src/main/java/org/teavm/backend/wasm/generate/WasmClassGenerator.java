@@ -31,6 +31,8 @@ import org.teavm.backend.wasm.binary.DataPrimitives;
 import org.teavm.backend.wasm.binary.DataStructure;
 import org.teavm.backend.wasm.binary.DataType;
 import org.teavm.backend.wasm.binary.DataValue;
+import org.teavm.backend.wasm.debug.DebugClassLayout;
+import org.teavm.backend.wasm.debug.info.FieldType;
 import org.teavm.common.IntegerArray;
 import org.teavm.interop.Address;
 import org.teavm.interop.Function;
@@ -415,14 +417,18 @@ public class WasmClassGenerator {
         if (type instanceof ValueType.Primitive) {
             return false;
         } else if (type instanceof ValueType.Object) {
-            String className = ((ValueType.Object) type).getClassName();
-            return !characteristics.isStructure(className)
-                    && !characteristics.isFunction(className)
-                    && !characteristics.isResource(className)
-                    && !className.equals(Address.class.getName());
+            var className = ((ValueType.Object) type).getClassName();
+            return isManagedClass(className);
         } else {
             return true;
         }
+    }
+
+    private boolean isManagedClass(String className) {
+        return !characteristics.isStructure(className)
+                && !characteristics.isFunction(className)
+                && !characteristics.isResource(className)
+                && !className.equals(Address.class.getName());
     }
 
     private void fillVirtualTable(VirtualTable vtable, DataValue array) {
@@ -691,6 +697,105 @@ public class WasmClassGenerator {
             return false;
         }
         return cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID)) != null;
+    }
+
+    public void writeDebug(DebugClassLayout debug) {
+        var list = new ArrayList<>(binaryDataMap.values());
+        var indexes = new ObjectIntHashMap<ValueType>();
+        for (var i = 0; i < list.size(); ++i) {
+            indexes.put(list.get(i).type, i);
+        }
+        for (var i = 0; i < list.size(); ++i) {
+            var data = list.get(i);
+            if (data.type instanceof ValueType.Primitive) {
+                debug.writePrimitive(((ValueType.Primitive) data.type).getKind(), data.start);
+            } else if (data.type instanceof ValueType.Array) {
+                var itemType = ((ValueType.Array) data.type).getItemType();
+                debug.writeArray(indexes.get(itemType), data.start);
+            } else if (data.type instanceof ValueType.Object) {
+                var className = ((ValueType.Object) data.type).getClassName();
+                if (isManagedClass(className)) {
+                    var parent = data.cls.getParent() != null
+                            ? indexes.get(ValueType.object(data.cls.getParent()))
+                            : -1;
+                    if (data.isInferface) {
+                        debug.writeInterface(className, data.start);
+                    } else {
+                        debug.startClass(className, parent, data.start, data.size);
+                        var fields = getFieldsWithOffset(data);
+                        for (var entry : fields) {
+                            if (entry.field.hasModifier(ElementModifier.STATIC)) {
+                                debug.staticField(entry.field.getName(), entry.offset,
+                                        asDebugType(entry.field.getType()));
+                            }
+                        }
+                        for (var entry : fields) {
+                            if (!entry.field.hasModifier(ElementModifier.STATIC)) {
+                                debug.instanceField(entry.field.getName(), entry.offset,
+                                        asDebugType(entry.field.getType()));
+                            }
+                        }
+                        debug.endClass();
+                    }
+                } else {
+                    debug.writeUnknown(data.start);
+                }
+            } else {
+                debug.writeUnknown(data.start);
+            }
+        }
+    }
+
+    private List<FieldWithOffset> getFieldsWithOffset(ClassBinaryData data) {
+        var result = new ArrayList<FieldWithOffset>();
+        for (var field : data.fieldLayout) {
+            var fieldReader = data.cls.getField(field.key);
+            result.add(new FieldWithOffset(fieldReader, field.value));
+        }
+        return result;
+    }
+
+    private static class FieldWithOffset {
+        private FieldReader field;
+        private int offset;
+
+        FieldWithOffset(FieldReader field, int offset) {
+            this.field = field;
+            this.offset = offset;
+        }
+    }
+
+    private FieldType asDebugType(ValueType type) {
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                    return FieldType.BOOLEAN;
+                case BYTE:
+                    return FieldType.BYTE;
+                case SHORT:
+                    return FieldType.SHORT;
+                case CHARACTER:
+                    return FieldType.CHAR;
+                case INTEGER:
+                    return FieldType.INT;
+                case LONG:
+                    return FieldType.LONG;
+                case FLOAT:
+                    return FieldType.FLOAT;
+                case DOUBLE:
+                    return FieldType.DOUBLE;
+                default:
+                    return FieldType.UNDEFINED;
+            }
+        } else if (type instanceof ValueType.Object) {
+            if (isManagedClass(((ValueType.Object) type).getClassName())) {
+                return FieldType.OBJECT;
+            } else {
+                return FieldType.ADDRESS;
+            }
+        } else {
+            return FieldType.OBJECT;
+        }
     }
 
     static class ClassBinaryData {
