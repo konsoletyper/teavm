@@ -90,8 +90,6 @@
     <jackson.version>2.12.2</jackson.version>
     <gson.version>2.8.6</gson.version>
 
-    <idea.version>2018.2.8</idea.version>
-
     <maven-plugin-api.version>3.3.3</maven-plugin-api.version>
     <maven-plugin-annotations.version>3.3</maven-plugin-annotations.version>
 
@@ -415,12 +413,12 @@
     </profile>
     
     <profile>
-      <id>with-idea</id>
+      <id>with-ide-deps</id>
       <modules>
-        <module>tools/idea</module>
+        <module>tools/ide-deps</module>
       </modules>
     </profile>
-    
+
     <profile>
       <id>with-eclipse</id>
       <modules>

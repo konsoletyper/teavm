@@ -480,15 +480,7 @@ class WasmValueImpl extends Value {
 
     @Override
     public Promise<Boolean> hasInnerStructure() {
-        return getCalculatedType().then(type -> {
-            switch (type.kind()) {
-                case CLASS:
-                case ARRAY:
-                    return true;
-                default:
-                    return false;
-            }
-        });
+        return Promise.of(type == FieldType.OBJECT && longValue != 0);
     }
 
     @Override

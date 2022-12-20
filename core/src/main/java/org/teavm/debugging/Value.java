@@ -16,13 +16,11 @@
 package org.teavm.debugging;
 
 import java.util.Map;
-import org.teavm.backend.wasm.debug.info.DebugInfo;
 import org.teavm.common.Promise;
 import org.teavm.debugging.javascript.JavaScriptValue;
 
 public abstract class Value {
     Debugger debugger;
-    private DebugInfo wasmDebugInfo;
     private Promise<Map<String, Variable>> properties;
     private Promise<String> type;
 
