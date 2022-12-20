@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2022 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,21 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging.javascript;
+package org.teavm.chromerdp.data;
 
-import java.util.Map;
-import org.teavm.common.Promise;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-public interface JavaScriptCallFrame {
-    JavaScriptDebugger getDebugger();
-
-    JavaScriptLocation getLocation();
-
-    Promise<Map<String, ? extends JavaScriptVariable>> getVariables();
-
-    JavaScriptValue getThisVariable();
-
-    JavaScriptValue getClosureVariable();
-
-    Promise<byte[]> getMemory(int address, int count);
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class ExceptionDetailsDTO {
+    public int exceptionId;
+    public String text;
 }

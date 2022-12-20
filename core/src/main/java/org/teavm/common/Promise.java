@@ -140,8 +140,8 @@ public class Promise<T> {
         if (state == State.PENDING || state == State.WAITING_PROMISE) {
             if (thenList == null) {
                 thenList = new ArrayList<>();
-                thenList.add(new Then<>(f, result, false));
             }
+            thenList.add(new Then<>(f, result, false));
         } else {
             passValue(f, result);
         }
@@ -160,8 +160,8 @@ public class Promise<T> {
         if (state == State.PENDING || state == State.WAITING_PROMISE) {
             if (thenList == null) {
                 thenList = new ArrayList<>();
-                thenList.add(new Then<>(f, result, true));
             }
+            thenList.add(new Then<>(f, result, true));
         } else if (state == State.COMPLETED) {
             passValueAsync(f, result);
         }
@@ -173,8 +173,8 @@ public class Promise<T> {
         if (state == State.PENDING || state == State.WAITING_PROMISE) {
             if (catchList == null) {
                 catchList = new ArrayList<>();
-                catchList.add(new Catch(f, result));
             }
+            catchList.add(new Catch(f, result));
         } else if (state == State.ERRORED) {
             passError(f, result);
         }
@@ -266,9 +266,9 @@ public class Promise<T> {
             this.value = value;
 
             if (thenList != null) {
-                List<Then<T>> list = thenList;
+                var list = thenList;
                 thenList = null;
-                for (Then<T> then : list) {
+                for (var then : list) {
                     if (then.promise) {
                         passValueAsync((Function<T, Promise<Object>>) then.f, (Promise<Object>) then.target);
                     } else {

@@ -15,35 +15,22 @@
  */
 package org.teavm.debugging;
 
-import java.util.HashMap;
 import java.util.Map;
 import org.teavm.backend.wasm.debug.info.DebugInfo;
 import org.teavm.common.Promise;
-import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.javascript.JavaScriptValue;
-import org.teavm.debugging.javascript.JavaScriptVariable;
 
-public class Value {
-    private Debugger debugger;
-    private DebugInformation debugInformation;
+public abstract class Value {
+    Debugger debugger;
     private DebugInfo wasmDebugInfo;
-    private JavaScriptValue jsValue;
     private Promise<Map<String, Variable>> properties;
     private Promise<String> type;
 
-    Value(Debugger debugger, DebugInformation debugInformation, JavaScriptValue jsValue) {
+    Value(Debugger debugger) {
         this.debugger = debugger;
-        this.debugInformation = debugInformation;
-        this.jsValue = jsValue;
     }
 
-    Value(Debugger debugger, DebugInfo wasmDebugInfo, JavaScriptValue jsValue) {
-        this.debugger = debugger;
-        this.wasmDebugInfo = wasmDebugInfo;
-        this.jsValue = jsValue;
-    }
-
-    private static boolean isNumeric(String str) {
+    static boolean isNumeric(String str) {
         for (int i = 0; i < str.length(); ++i) {
             char c = str.charAt(i);
             if (c < '0' || c > '9') {
@@ -53,89 +40,29 @@ public class Value {
         return true;
     }
 
-    public Promise<String> getRepresentation() {
-        return jsValue.getRepresentation();
-    }
+    public abstract Promise<String> getRepresentation();
 
     public Promise<String> getType() {
         if (type == null) {
-            type = jsValue.getClassName().then(className -> {
-                if (className.startsWith("a/")) {
-                    className = className.substring(2);
-                    String origClassName = className;
-                    int degree = 0;
-                    while (className.endsWith("[]")) {
-                        className = className.substring(0, className.length() - 2);
-                        ++degree;
-                    }
-                    String javaClassName = debugInformation.getClassNameByJsName(className);
-                    if (javaClassName != null) {
-                        if (degree > 0) {
-                            StringBuilder sb = new StringBuilder(javaClassName);
-                            for (int i = 0; i < degree; ++i) {
-                                sb.append("[]");
-                            }
-                            javaClassName = sb.toString();
-                        }
-                        className = javaClassName;
-                    } else {
-                        className = origClassName;
-                    }
-                }
-                return className;
-            });
+            type = prepareType();
         }
         return type;
     }
 
+    abstract Promise<String> prepareType();
+
     public Promise<Map<String, Variable>> getProperties() {
         if (properties == null) {
-            properties = jsValue.getProperties().thenAsync(jsVariables -> {
-                return getType().thenAsync(className -> {
-                    if (!className.startsWith("@") && className.endsWith("[]") && jsVariables.containsKey("data")) {
-                        return jsVariables.get("data").getValue().getProperties()
-                                .then(arrayData -> fillArray(arrayData));
-                    }
-                    Map<String, Variable> vars = new HashMap<>();
-                    for (Map.Entry<String, ? extends JavaScriptVariable> entry : jsVariables.entrySet()) {
-                        JavaScriptVariable jsVar = entry.getValue();
-                        String name;
-                        name = debugger.mapField(className, entry.getKey());
-                        if (name == null) {
-                            continue;
-                        }
-                        Value value = new Value(debugger, debugInformation, jsVar.getValue());
-                        vars.put(name, new Variable(name, value));
-                    }
-                    return Promise.of(vars);
-                });
-            });
+            properties = prepareProperties();
         }
         return properties;
     }
 
-    private Map<String, Variable> fillArray(Map<String, ? extends JavaScriptVariable> jsVariables) {
-        Map<String, Variable> vars = new HashMap<>();
-        for (Map.Entry<String, ? extends JavaScriptVariable> entry : jsVariables.entrySet()) {
-            JavaScriptVariable jsVar = entry.getValue();
-            if (!isNumeric(entry.getKey())) {
-                continue;
-            }
-            Value value = new Value(debugger, debugInformation, jsVar.getValue());
-            vars.put(entry.getKey(), new Variable(entry.getKey(), value));
-        }
-        return vars;
-    }
+    abstract Promise<Map<String, Variable>> prepareProperties();
 
-    public Promise<Boolean> hasInnerStructure() {
-        return getType().then(value -> !value.equals("long") && jsValue.hasInnerStructure());
-    }
+    public abstract Promise<Boolean> hasInnerStructure();
 
-    public Promise<String> getInstanceId() {
-        return getType().then(value -> value.equals("long") ? null : jsValue.getInstanceId());
-    }
+    public abstract Promise<String> getInstanceId();
 
-    public JavaScriptValue getOriginalValue() {
-        return jsValue;
-    }
+    public abstract JavaScriptValue getOriginalValue();
 }

@@ -714,7 +714,16 @@ public class WasmClassGenerator {
                 debug.writeArray(indexes.get(itemType), data.start);
             } else if (data.type instanceof ValueType.Object) {
                 var className = ((ValueType.Object) data.type).getClassName();
-                if (isManagedClass(className)) {
+                if (className.equals("java.lang.Class")) {
+                    int headerSize = 8;
+                    debug.startClass(className, indexes.get(ValueType.object("java.lang.Object")), data.start, 60);
+                    debug.instanceField("size", 8, FieldType.INT);
+                    debug.instanceField("flags", 12, FieldType.INT);
+                    debug.instanceField("name", 24, FieldType.OBJECT);
+                    debug.instanceField("itemType", 32, FieldType.OBJECT);
+                    debug.instanceField("parent", 56, FieldType.OBJECT);
+                    debug.endClass();
+                } else if (isManagedClass(className)) {
                     var parent = data.cls.getParent() != null
                             ? indexes.get(ValueType.object(data.cls.getParent()))
                             : -1;

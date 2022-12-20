@@ -47,6 +47,7 @@ import org.teavm.debugging.javascript.JavaScriptDebugger;
 import org.teavm.debugging.javascript.JavaScriptDebuggerListener;
 import org.teavm.debugging.javascript.JavaScriptLocation;
 import org.teavm.debugging.javascript.JavaScriptScript;
+import org.teavm.debugging.javascript.JavaScriptValue;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -516,7 +517,7 @@ public class Debugger {
             for (Map.Entry<String, ? extends JavaScriptVariable> entry : jsVariables.entrySet()) {
                 JavaScriptVariable jsVar = entry.getValue();
                 String[] names = mapVariable(entry.getKey(), jsFrame.getLocation());
-                Value value = new Value(this, debugInformation, jsVar.getValue());
+                Value value = new JsValueImpl(this, debugInformation, jsVar.getValue());
                 for (String name : names) {
                     if (name == null) {
                         name = "js:" + jsVar.getName();
@@ -543,9 +544,15 @@ public class Debugger {
                                 var variable = prop.get("value");
                                 return variable != null ? variable.getValue() : null;
                             })
-                            .thenAsync(value -> {
+                            .thenAsync((JavaScriptValue value) -> {
                                 if (value != null) {
-                                    var varValue = new Value(this, debugInfo, value);
+                                    var repr = value.getSimpleRepresentation();
+                                    if (repr.endsWith("n")) {
+                                        repr = repr.substring(0, repr.length() - 1);
+                                    }
+                                    var longValue = Long.parseLong(repr);
+                                    var varValue = new WasmValueImpl(this, debugInfo,
+                                            range.variable().type().asFieldType(), jsFrame, longValue);
                                     var variable = new Variable(range.variable().name(), varValue);
                                     vars.put(variable.getName(), variable);
                                 }
