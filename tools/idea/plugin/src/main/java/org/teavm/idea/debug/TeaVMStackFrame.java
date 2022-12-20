@@ -63,7 +63,7 @@ class TeaVMStackFrame extends XStackFrame {
                 if (jsFrame != null) {
                     JavaScriptLocation jsLocation = jsFrame.getLocation();
                     if (jsLocation != null) {
-                        virtualFile = VirtualFileManager.getInstance().findFileByUrl(jsLocation.getScript());
+                        virtualFile = VirtualFileManager.getInstance().findFileByUrl(jsLocation.getScript().getUrl());
                         if (virtualFile != null) {
                             line = jsLocation.getLine();
                         }
