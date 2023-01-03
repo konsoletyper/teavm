@@ -21,10 +21,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -55,11 +55,11 @@ final class TeaVMPluginReader {
     static void load(ClassLoader classLoader, Consumer<String> consumer) {
         Set<String> unorderedPlugins = new HashSet<>();
         try {
-            Enumeration<URL> resourceFiles = classLoader.getResources(DESCRIPTOR_LOCATION);
+            var resourceFiles = classLoader.getResources(DESCRIPTOR_LOCATION);
             while (resourceFiles.hasMoreElements()) {
                 URL resourceFile = resourceFiles.nextElement();
-                try (BufferedReader input = new BufferedReader(
-                        new InputStreamReader(resourceFile.openStream(), "UTF-8"))) {
+                try (var input = new BufferedReader(
+                        new InputStreamReader(resourceFile.openStream(), StandardCharsets.UTF_8))) {
                     readPlugins(input, unorderedPlugins);
                 }
             }

@@ -39,36 +39,6 @@ package org.teavm.classlib.java.util.regex;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-/**
- * Represents a pattern used for matching, searching, or replacing strings.
- * {@code Pattern}s are specified in terms of regular expressions and compiled
- * using an instance of this class. They are then used in conjunction with a
- * {@link TMatcher} to perform the actual search.
- * <p/>
- * A typical use case looks like this:
- * <p/>
- *
- * <pre>
- * Pattern p = Pattern.compile(&quot;Hello, A[a-z]*!&quot;);
- *
- * Matcher m = p.matcher(&quot;Hello, Android!&quot;);
- * boolean b1 = m.matches(); // true
- *
- * m.setInput(&quot;Hello, Robot!&quot;);
- * boolean b2 = m.matches(); // false
- * </pre>
- * <p/>
- * The above code could also be written in a more compact fashion, though this
- * variant is less efficient, since {@code Pattern} and {@code Matcher} objects
- * are created on the fly instead of being reused. fashion:
- *
- * <pre>
- * boolean b1 = Pattern.matches(&quot;Hello, A[a-z]*!&quot;, &quot;Hello, Android!&quot;); // true
- * boolean b2 = Pattern.matches(&quot;Hello, A[a-z]*!&quot;, &quot;Hello, Robot!&quot;); // false
- * </pre>
- *
- * @see TMatcher
- */
 public final class TPattern implements Serializable {
 
     private static final long serialVersionUID = 5073258162644648461L;

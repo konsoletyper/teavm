@@ -15,44 +15,36 @@
  */
 
 plugins {
-    id("java")
-    id("checkstyle")
-    id("org.jetbrains.intellij") version "1.10.1"
-}
-
-group = "org.teavm"
-version = "0.7.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
-    mavenLocal()
+    java
+    alias(libs.plugins.intellij)
 }
 
 intellij {
-    version.set("2020.1.4")
-    type.set("IC") // Target IDE Platform
+    version.set(libs.versions.idea.asProvider().get())
+    type.set("IC")
 
-    plugins.set(listOf("java", "org.intellij.scala:2020.1.43", "org.jetbrains.kotlin"))
-}
+    plugins.set(listOf(
+            "java",
+            "org.intellij.scala:${libs.versions.idea.scala.get()}",
+            "org.jetbrains.kotlin"
+    ))
 
-checkstyle {
-    toolVersion = "8.41"
-    configFile = File("../../checkstyle.xml")
+
 }
 
 dependencies {
-    implementation(group = "org.teavm", name = "teavm-ide-deps", version = project.version.toString(),
-            classifier = "shaded")
+    implementation(project(path = ":tools:ide-deps", configuration = "shadow").setTransitive(false))
 }
 
 tasks {
-    withType<JavaCompile> {
-        sourceCompatibility = "11"
-        targetCompatibility = "11"
-    }
-
     patchPluginXml {
         sinceBuild.set("201")
         untilBuild.set("231.*")
+    }
+    jar {
+        archiveFileName.set("teavm-plugin.jar")
+    }
+    buildSearchableOptions {
+        enabled = false
     }
 }

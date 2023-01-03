@@ -1,0 +1,67 @@
+<!--
+    Copyright 2014 Alexey Andreev.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+         http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>PI calculator example</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <script type="text/javascript" charset="utf-8" src="teavm/stdout.js"></script>
+    <script type="text/javascript" charset="utf-8" src="wasm/pi.wasm-runtime.js"></script>
+    <style>
+      #stdout {
+          font-family: monospace;
+          white-space: pre-wrap;
+          margin-top: 1em;
+      }
+    </style>
+    <script type="application/javascript">
+        let runner = null;
+        function init() {
+            TeaVM.wasm.load("wasm/pi.wasm", {
+                installImports(o, controller) {
+                    function putwchars(address, count) {
+                        let instance = controller.instance;
+                        let memory = new Int8Array(instance.exports.memory.buffer);
+                        let string = "";
+                        for (let i = 0; i < count; ++i) {
+                            string += $rt_putStdoutCustom(memory[address++]);
+                        }
+                    }
+                    o.teavm.putwcharsOut = putwchars;
+                    o.teavm.putwcharsErr = putwchars;
+                },
+            }).then(teavm => {
+                this.instance = teavm.instance;
+                runner = n => teavm.main([n.toString()]);
+                document.getElementById("run").disabled = false;
+            })
+        }
+        function calculate() {
+            var count = parseInt(document.getElementById("digit-count").value);
+            runner(count);
+        }
+        init();
+    </script>
+  </head>
+  <body>
+    <div>
+      Digit count:
+      <input type="text" id="digit-count" value="1000">
+      <button onclick="calculate()" id="run" disabled>Run</button>
+    </div>
+    <div id="stdout"></div>
+  </body>
+</html>

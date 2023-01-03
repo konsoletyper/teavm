@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="run-tests (wasi)" type="JUnit" factoryName="JUnit">
-    <module name="teavm-tests" />
+    <module name="teavm.tests.test" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="org.teavm.*" />

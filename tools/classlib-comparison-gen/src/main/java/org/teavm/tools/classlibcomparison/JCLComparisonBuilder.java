@@ -19,18 +19,15 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -38,7 +35,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
 import org.teavm.model.ReferenceCache;
@@ -72,7 +68,7 @@ public class JCLComparisonBuilder {
             System.err.println("Usage: -output <directory>");
             System.exit(1);
         }
-        JCLComparisonBuilder builder = new JCLComparisonBuilder();
+        var builder = new JCLComparisonBuilder();
 
         for (int i = 0; i < args.length; ++i) {
             if (args[i].equals("-output")) {
@@ -84,7 +80,7 @@ public class JCLComparisonBuilder {
     }
 
     public void buildComparisonReport() throws IOException {
-        List<JCLPackage> packages = buildModel();
+        var packages = buildModel();
         processModel(packages);
         new File(outputDirectory).mkdirs();
         copyResource("html/class_obj.png");
@@ -122,19 +118,18 @@ public class JCLComparisonBuilder {
     }
 
     private List<JCLPackage> buildModel() throws IOException {
-        Map<String, JCLPackage> packageMap = new HashMap<>();
-        ClasspathClassHolderSource classSource = new ClasspathClassHolderSource(classLoader, new ReferenceCache());
+        var packageMap = new HashMap<String, JCLPackage>();
+        var classSource = new ClasspathClassHolderSource(classLoader, new ReferenceCache());
         visitor = new JCLComparisonVisitor(classSource, packageMap);
         try {
-            Path p = Paths.get(URI.create("jrt:/modules/java.base/java/"));
+            var fs = FileSystems.getFileSystem(URI.create("jrt:/"));
+            var p = fs.getPath("modules/java.base/java");
             Files.walkFileTree(p, new SimpleFileVisitor<>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     if (validateName(file.getFileName().toString())) {
                         try (InputStream input = Files.newInputStream(file)) {
                             compareClass(input);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
                         }
                     }
                     return FileVisitResult.CONTINUE;
@@ -195,25 +190,21 @@ public class JCLComparisonBuilder {
     }
 
     private void compareClass(InputStream input) throws IOException {
-        byte[] buffer = IOUtils.toByteArray(input);
-        ClassReader reader = new ClassReader(buffer);
+        var buffer = input.readAllBytes();
+        var reader = new ClassReader(buffer);
         reader.accept(visitor, 0);
     }
 
     private void copyResource(String name) throws IOException {
         String simpleName = name.substring(name.lastIndexOf('/') + 1);
-        try (InputStream input = classLoader.getResourceAsStream(name);
-                OutputStream output = new FileOutputStream(new File(outputDirectory, simpleName))) {
-            IOUtils.copy(input, output);
+        try (var input = classLoader.getResourceAsStream(name);
+                var output = new FileOutputStream(new File(outputDirectory, simpleName))) {
+            input.transferTo(output);
         }
     }
 
     private void generateHtml(Writer out, List<JCLPackage> packages) throws IOException {
-        String template;
-        try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream("html/jcl.html"),
-                StandardCharsets.UTF_8)) {
-            template = IOUtils.toString(reader);
-        }
+        var template = readResourceString("html/jcl.html");
         int placeholderIndex = template.indexOf(TEMPLATE_PLACEHOLDER);
         String header = template.substring(0, placeholderIndex);
         String footer = template.substring(placeholderIndex + TEMPLATE_PLACEHOLDER.length());
@@ -243,11 +234,7 @@ public class JCLComparisonBuilder {
     }
 
     private void generatePackageHtml(Writer out, JCLPackage pkg) throws IOException {
-        String template;
-        try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream("html/jcl-class.html"),
-                StandardCharsets.UTF_8)) {
-            template = IOUtils.toString(reader);
-        }
+        var template = readResourceString("html/jcl-class.html");
         template = template.replace("${CLASSNAME}", pkg.name);
         int placeholderIndex = template.indexOf(TEMPLATE_PLACEHOLDER);
         String header = template.substring(0, placeholderIndex);
@@ -279,11 +266,7 @@ public class JCLComparisonBuilder {
     }
 
     private void generateClassHtml(Writer out, JCLPackage pkg, JCLClass cls) throws IOException {
-        String template;
-        try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream("html/jcl-class.html"),
-                StandardCharsets.UTF_8)) {
-            template = IOUtils.toString(reader);
-        }
+        var template = readResourceString("html/jcl-class.html");
         template = template.replace("${CLASSNAME}", pkg.name + "." + cls.name);
         int placeholderIndex = template.indexOf(TEMPLATE_PLACEHOLDER);
         String header = template.substring(0, placeholderIndex);
@@ -334,6 +317,12 @@ public class JCLComparisonBuilder {
             writeRow(out, type, null, item.status, name, null, null);
         }
         out.write(footer);
+    }
+
+    private String readResourceString(String name) throws IOException {
+        try (var input = classLoader.getResourceAsStream(name)) {
+            return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
 
     private String printType(Type type) {

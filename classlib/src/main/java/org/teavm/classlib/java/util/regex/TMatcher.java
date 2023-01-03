@@ -35,33 +35,6 @@ package org.teavm.classlib.java.util.regex;
 
 import java.util.ArrayList;
 
-/**
- * Provides a means of matching regular expressions against a given input,
- * finding occurrences of regular expressions in a given input, or replacing
- * parts of a given input. A {@code Matcher} instance has an associated
- * {@link TPattern} instance and an input text. A typical use case is to
- * iteratively find all occurrences of the {@code Pattern}, until the end of the
- * input is reached, as the following example illustrates:
- *
- * <p/>
- *
- * <pre>
- * Pattern p = Pattern.compile(&quot;[A-Za-z]+&quot;);
- *
- * Matcher m = p.matcher(&quot;Hello, Android!&quot;);
- * while (m.find()) {
- *     System.out.println(m.group()); // prints &quot;Hello&quot; and &quot;Android&quot;
- * }
- * </pre>
- *
- * <p/>
- *
- * The {@code Matcher} has a state that results from the previous operations.
- * For example, it knows whether the most recent attempt to find the
- * {@code Pattern} was successful and at which position the next attempt would
- * resume the search. Depending on the application's needs, it may become
- * necessary to explicitly {@link #reset()} this state from time to time.
- */
 public final class TMatcher implements TMatchResult {
 
     static final int MODE_FIND = 1;

@@ -21,13 +21,16 @@ Useful links:
 Building TeaVM
 --------------
 
-Simply clone source code (`git clone https://github.com/konsoletyper/teavm.git`) and run maven build (`mvn clean install`). You can do things a little faster (`mvn clean -DskipTests`) or even a little more faster (`mvn clean -DskipTests -Dteavm.build.all=false`).
+Simply clone source code (`git clone https://github.com/konsoletyper/teavm.git`)
+and run Gradle build (`gradle publishToMavenLocal`).
 
 
 Preview builds
 --------------
 
-You may want to access new features and don't want to wait until stable release is published on Maven Central. In this case you can get latest development build from [bintray](https://bintray.com/konsoletyper/teavm/teavm-dev). All you need is to put the following in your `pom.xml`:
+You may want to access new features and don't want to wait until stable release is published on Maven Central. 
+In this case you can get latest development build from [bintray](https://bintray.com/konsoletyper/teavm/teavm-dev).
+All you need is to put the following in your `pom.xml`:
 
 ```xml
   <repositories>
@@ -44,13 +47,21 @@ You may want to access new features and don't want to wait until stable release 
   </pluginRepositories>
 ```
 
-IDEA plugin is also available in preview builds. You need to add corresponding repository manually to IDEA. Open *Settings* -> *Plugins* -> *Browse repositories...* -> *Manage repositories...*, click *Add* button and enter `https://teavm.org/idea/dev/teavmRepository.xml`. Then get back to *Browse repositories* and pick TeaVM plugin from list. 
+IDEA plugin is also available in preview builds. You need to add corresponding repository manually to IDEA. 
+Open *Settings* -> *Plugins* -> *Browse repositories...* -> *Manage repositories...*, click *Add* button 
+and enter `https://teavm.org/idea/dev/teavmRepository.xml`. 
+Then get back to *Browse repositories* and pick TeaVM plugin from list. 
 
 
 Embedding TeaVM
 ---------------
 
-If you are not satisfied with Maven, you can embed TeaVM in your program or even create your own plugin for any build tool, like Ant or Gradle. The starting point for you may be `org.teavm.tooling.TeaVMTool` class from `teavm-tooling` artifact. You may want to go deeper and use `org.teavm.vm.TeaVM` from `teavm-core` artifact, learn how `TeaVMTool` initializes it. To learn how to use `TeaVMTool` class itself, find its usages across project source code. You most likely encounter Maven and IDEA plugins.
+If you are not satisfied with Maven, you can embed TeaVM in your program 
+or even create your own plugin for any build tool, like Ant or Gradle.
+The starting point for you may be `org.teavm.tooling.TeaVMTool` class from `teavm-tooling` artifact. 
+You may want to go deeper and use `org.teavm.vm.TeaVM` from `teavm-core` artifact, learn how `TeaVMTool` initializes it. 
+To learn how to use `TeaVMTool` class itself, find its usages across project source code. 
+You most likely encounter Maven and IDEA plugins.
   
 Please, notice that these APIs for embedding are still unstable and may change between versions.
 
@@ -58,7 +69,13 @@ Please, notice that these APIs for embedding are still unstable and may change b
 WebAssembly
 -----------
 
-WebAssembly support is in experimental status. It may lack major features available in JavaScript backend. There's no documentation yet and you should do many things by hands (like embedding generated `wasm` file into your page, importing JavaScript objects, etc). Look at [samples/benchmark](https://github.com/konsoletyper/teavm/blob/master/samples/benchmark/) module. You should first examine `pom.xml` file to learn how to build `wasm` file from Java. Then you may want to examine `index-teavm.html` and `index-teavm.js` to learn how to embed WebAssembly into your web page.
+WebAssembly support is in experimental status. It may lack major features available in JavaScript backend. 
+There's no documentation yet and you should do many things by hands 
+(like embedding generated `wasm` file into your page, importing JavaScript objects, etc).
+Look at [samples/benchmark](https://github.com/konsoletyper/teavm/blob/master/samples/benchmark/) module.
+You should first examine `pom.xml` file to learn how to build `wasm` file from Java.
+Then you may want to examine `index-teavm.html` and `index-teavm.js`
+to learn how to embed WebAssembly into your web page.
 
 
 License
@@ -66,13 +83,15 @@ License
  
 TeaVM is distributed under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 TeaVM does not rely on OpenJDK or code or other (L)GPL code.
-TeaVM has its own reimplementation of Java class library, which is either implemented from scratch or based on non-(L)GPL projects:
+TeaVM has its own reimplementation of Java class library, which is either implemented from scratch or
+based on non-(L)GPL projects:
 
 * [Apache Harmony](https://harmony.apache.org/) (Apache 2.0)
 * [Joda-Time](https://github.com/JodaOrg/joda-time) (Apache 2.0)
 * [jzlib](https://github.com/ymnk/jzlib) (BSD style license)
 
-If you want to contribute code to implementation of Java class library, please make sure it's no based on OpenJDK or other code licensed under (L)GPL.
+If you want to contribute code to implementation of Java class library, 
+please make sure it's no based on OpenJDK or other code licensed under (L)GPL.
 
 
 Feedback
@@ -80,4 +99,5 @@ Feedback
 
 More information is available at the official site: https://teavm.org.
 
-Ask your questions by email: info@teavm.org. Also you can report issues on a project's [issue tracker](https://github.com/konsoletyper/teavm/issues).
+Ask your questions by email: info@teavm.org. Also you can report issues on a project's
+[issue tracker](https://github.com/konsoletyper/teavm/issues).

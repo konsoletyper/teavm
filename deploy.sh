@@ -21,8 +21,7 @@ git fetch
 git archive master | tar -x -C build-dir || { echo 'Git archive failed' ; exit 1; }
 
 function deploy_teavm {
-  TEAVM_OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download)"`
-  TEAVM_DEPLOY_VERSION=${TEAVM_OLD_VERSION%.0-SNAPSHOT}
+  TEAVM_DEPLOY_VERSION=`sed -En 's/teavm\.project\.version\s*=\s*([0-9]+\.[0-9]+)\..*/\1/p' gradle.properties`
   git rev-parse master >commit-id.txt
   TEAVM_DEPLOY_COMMIT_ID=`cat commit-id.txt`
 
@@ -45,31 +44,8 @@ function deploy_teavm {
 
   echo "Building version $TEAVM_DEPLOY_VERSION_FULL"
 
-  sed -i -e "s/{{TEAVM_DEPLOY_URL}}/ftp:\/\/${TEAVM_DEPLOY_SERVER//\//\\/}\/maven\/repository/g" pom.xml
-
-  mvn -e versions:set \
-    -DnewVersion="$TEAVM_DEPLOY_VERSION_FULL" \
-    -DgenerateBackupPoms=false \
-    || { echo 'Setting version' ; return 1; }
-
-  mvn -T $TEAVM_DEPLOY_THREADS -e -V install \
-   --settings ../deploy-settings.xml \
-   -P with-idea -P with-cli -P deploy-to-teavm -P with-tests \
-   -Dmaven.repo.local=`pwd`/../build-cache/maven-repository \
-   -Dteavm.build.all=false \
-   -Dteavm.junit.optimized=true \
-   -Dteavm.junit.js.decodeStack=false \
-   -Dteavm.junit.threads=$TEAVM_DEPLOY_TEST_THREADS \
-   -Dteavm.junit.js.runner=browser-chrome \
-   || { echo 'Build failed' ; return 1; }
-
-   mvn -T $TEAVM_DEPLOY_THREADS -e -V deploy \
-      --settings ../deploy-settings.xml \
-      -P with-idea -P with-cli -P deploy-to-teavm \
-      -Dmaven.repo.local=`pwd`/../build-cache/maven-repository \
-      -Dteavm.build.all=false \
-      -DskipTests \
-      || { echo 'Deploy failed' ; return 1; }
+  ./gradlew build || { echo 'Build failed' ; return 1; }
+  ./gradlew publishAllPublicationsToMavenRepository || { echo 'Deploy failed' ; return 1; }
 
  cat <<EOF >idea-repository.xml
 <?xml version="1.0" encoding="UTF-8"?>
