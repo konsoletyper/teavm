@@ -49,13 +49,16 @@ public abstract class Path2D extends JSObject {
 
     public abstract void arc(double x, double y, double radius, double startAngle, double endAngle);
 
-    public abstract void arc(double x, double y, double radius, double startAngle, double endAngle, boolean counterclockwise);
+    public abstract void arc(double x, double y, double radius, double startAngle, double endAngle,
+            boolean counterclockwise);
 
     public abstract void arcTo(double x1, double y1, double x2, double y2, double radius);
 
-    public abstract void ellipse(double x, double y, double radiusX, double radiusY, double rotation, double startAngle, double endAngle);
+    public abstract void ellipse(double x, double y, double radiusX, double radiusY, double rotation,
+            double startAngle, double endAngle);
 
-    public abstract void ellipse(double x, double y, double radiusX, double radiusY, double rotation, double startAngle, double endAngle, boolean counterclockwise);
+    public abstract void ellipse(double x, double y, double radiusX, double radiusY, double rotation,
+            double startAngle, double endAngle, boolean counterclockwise);
 
     public abstract void rect(double x, double y, double width, double height);
 

@@ -967,6 +967,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         emitLocation(null);
         flushLocation();
         if (debugLines != null) {
+            debugLines.advance(writer.getPosition() + addressOffset);
             debugLines.end();
         }
     }
@@ -984,7 +985,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     private void doEmitLocation() {
         var address = positionToEmit + addressOffset;
         if (dwarfGenerator != null) {
-            if (textLocationToEmit == null) {
+            if (textLocationToEmit == null || textLocationToEmit.getFileName() == null) {
                 dwarfGenerator.endLineNumberSequence(address);
             } else {
                 dwarfGenerator.lineNumber(address, textLocationToEmit.getFileName(), textLocationToEmit.getLine());
@@ -1009,7 +1010,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                 methodStack.remove(methodStack.size() - 1);
             }
             while (commonPart < currentMethodStack.size()) {
-                var method = currentMethodStack.get(commonPart);
+                var method = currentMethodStack.get(commonPart++);
                 methodStack.add(method);
                 debugLines.start(method);
             }

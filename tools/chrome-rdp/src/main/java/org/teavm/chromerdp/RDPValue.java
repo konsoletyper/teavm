@@ -43,6 +43,11 @@ class RDPValue implements JavaScriptValue {
     }
 
     @Override
+    public String getSimpleRepresentation() {
+        return defaultRepresentation;
+    }
+
+    @Override
     public Promise<String> getRepresentation() {
         if (representation == null) {
             if (objectId != null) {

@@ -28,4 +28,6 @@ public interface JavaScriptCallFrame {
     JavaScriptValue getThisVariable();
 
     JavaScriptValue getClosureVariable();
+
+    Promise<byte[]> getMemory(int address, int count);
 }

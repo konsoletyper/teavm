@@ -21,7 +21,9 @@ public class FunctionControlFlow {
     int[] offsets;
     int[] data;
 
-    FunctionControlFlow(int[] offsets, int[] data) {
+    FunctionControlFlow(int start, int end, int[] offsets, int[] data) {
+        this.start = start;
+        this.end = end;
         this.offsets = offsets;
         this.data = data;
     }
@@ -34,7 +36,33 @@ public class FunctionControlFlow {
         return end;
     }
 
-    public FunctionControlFlowIterator iterator() {
-        return new FunctionControlFlowIterator(this);
+    public FunctionControlFlowIterator iterator(int index) {
+        return new FunctionControlFlowIterator(this, index);
+    }
+
+    public int count() {
+        return offsets.length;
+    }
+
+    public int findIndex(int address) {
+        var l = 0;
+        var u = offsets.length;
+        while (true) {
+            var i = (l + u) / 2;
+            var t = data[offsets[i]];
+            if (address == t) {
+                return i;
+            } else if (address > t) {
+                l = i + 1;
+                if (l > u) {
+                    return i + 1;
+                }
+            } else {
+                u = i - 1;
+                if (u < l) {
+                    return i;
+                }
+            }
+        }
     }
 }

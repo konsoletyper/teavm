@@ -18,8 +18,15 @@ package org.teavm.backend.wasm.debug.info;
 import com.carrotsearch.hppc.IntArrayList;
 
 public class FunctionControlFlowBuilder {
+    private int start;
+    private int end;
     private IntArrayList offsets = new IntArrayList();
     private IntArrayList data = new IntArrayList();
+
+    public FunctionControlFlowBuilder(int start, int end) {
+        this.start = start;
+        this.end = end;
+    }
 
     public void addBranch(int position, int[] targets) {
         offsets.add(data.size() << 1);
@@ -38,6 +45,6 @@ public class FunctionControlFlowBuilder {
     }
 
     public FunctionControlFlow build() {
-        return new FunctionControlFlow(offsets.toArray(), data.toArray());
+        return new FunctionControlFlow(start, end, offsets.toArray(), data.toArray());
     }
 }

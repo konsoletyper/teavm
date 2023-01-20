@@ -1463,26 +1463,40 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             WasmIntBinary binary = (WasmIntBinary) expr;
             if (binary.getType() == WasmIntType.INT32 && binary.getOperation() == WasmIntBinaryOperation.XOR) {
                 if (isOne(binary.getFirst())) {
-                    return binary.getSecond();
+                    var result = binary.getSecond();
+                    if (result.getLocation() == null && expr.getLocation() != null) {
+                        result.setLocation(expr.getLocation());
+                    }
+                    return result;
                 }
                 if (isOne(binary.getSecond())) {
-                    return binary.getFirst();
+                    var result = binary.getFirst();
+                    if (result.getLocation() == null && expr.getLocation() != null) {
+                        result.setLocation(expr.getLocation());
+                    }
+                    return result;
                 }
             }
 
             WasmIntBinaryOperation negatedOp = negate(binary.getOperation());
             if (negatedOp != null) {
-                return new WasmIntBinary(binary.getType(), negatedOp, binary.getFirst(), binary.getSecond());
+                var result = new WasmIntBinary(binary.getType(), negatedOp, binary.getFirst(), binary.getSecond());
+                result.setLocation(expr.getLocation());
+                return result;
             }
         } else if (expr instanceof WasmFloatBinary) {
             WasmFloatBinary binary = (WasmFloatBinary) expr;
             WasmFloatBinaryOperation negatedOp = negate(binary.getOperation());
             if (negatedOp != null) {
-                return new WasmFloatBinary(binary.getType(), negatedOp, binary.getFirst(), binary.getSecond());
+                var result = new WasmFloatBinary(binary.getType(), negatedOp, binary.getFirst(), binary.getSecond());
+                result.setLocation(expr.getLocation());
+                return result;
             }
         }
 
-        return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, expr, new WasmInt32Constant(0));
+        var result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, expr, new WasmInt32Constant(0));
+        result.setLocation(expr.getLocation());
+        return result;
     }
 
     private static boolean isOne(WasmExpression expression) {

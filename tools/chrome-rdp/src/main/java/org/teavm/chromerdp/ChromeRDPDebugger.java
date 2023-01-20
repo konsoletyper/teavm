@@ -15,10 +15,12 @@
  */
 package org.teavm.chromerdp;
 
+import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -108,6 +110,25 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
                 });
     }
 
+    private Promise<Void> injectWasmFunctions(int contextId) {
+        return enableRuntime()
+                .thenAsync(v -> {
+                    var compileParams = new CompileScriptCommand();
+                    compileParams.expression = ""
+                            + "$dbg_memory = function(buffer, offset, count) { return btoa("
+                            + "String.fromCharCode.apply(null, new Uint8Array(buffer, offset, count))) };\n";
+                    compileParams.sourceURL = "file://fake-wasm";
+                    compileParams.persistScript = true;
+                    compileParams.executionContextId = contextId;
+                    return callMethodAsync("Runtime.compileScript", CompileScriptResponse.class, compileParams);
+                })
+                .thenAsync(response -> {
+                    var runParams = new RunScriptCommand();
+                    runParams.scriptId = response.scriptId;
+                    return callMethodAsync("Runtime.runScript", void.class, runParams);
+                });
+    }
+
     private Promise<Void> enableRuntime() {
         if (runtimeEnabledPromise == null) {
             runtimeEnabledPromise = callMethodAsync("Runtime.enable", void.class, null);
@@ -119,6 +140,7 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
     protected Promise<Void> handleMessage(Message message) throws IOException {
         switch (message.getMethod()) {
             case "TeaVM.ping":
+                sendPong();
                 return Promise.VOID;
             case "Debugger.paused":
                 return firePaused(parseJson(SuspendedNotification.class, message.getParams()));
@@ -128,6 +150,12 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
                 return scriptParsed(parseJson(ScriptParsedNotification.class, message.getParams()));
         }
         return Promise.VOID;
+    }
+
+    private void sendPong() {
+        var message = new Message();
+        message.setMethod("TeaVM.pong");
+        sendMessage(message);
     }
 
     private Promise<Void> firePaused(SuspendedNotification params) {
@@ -184,7 +212,7 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
         }
         var script = new ChromeRDPScript(this, params.getScriptId(), language, params.getUrl());
         scripts.put(script.getId(), script);
-        if (params.getUrl().equals("file://fake")) {
+        if (params.getUrl().startsWith("file://fake")) {
             return Promise.VOID;
         }
         for (var listener : getListeners()) {
@@ -192,6 +220,8 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
         }
         if (language == JavaScriptLanguage.JS) {
             return injectFunctions(params.getExecutionContextId());
+        } else if (language == JavaScriptLanguage.WASM) {
+            return injectWasmFunctions(params.getExecutionContextId());
         }
         return Promise.VOID;
     }
@@ -352,7 +382,7 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
     }
 
     Promise<List<RDPLocalVariable>> getScope(String scopeId) {
-        GetPropertiesCommand params = new GetPropertiesCommand();
+        var params = new GetPropertiesCommand();
         params.setObjectId(scopeId);
         params.setOwnProperties(true);
 
@@ -385,6 +415,20 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
                 });
     }
 
+    Promise<List<RDPLocalVariable>> getSpecialScope(String scopeId) {
+        var params = new GetPropertiesCommand();
+        params.setObjectId(scopeId);
+        params.setOwnProperties(false);
+
+        return callMethodAsync("Runtime.getProperties", GetPropertiesResponse.class, params)
+                .then(response -> {
+                    if (response == null) {
+                        return Collections.emptyList();
+                    }
+                    return parseProperties(scopeId, response.getResult(), null);
+                });
+    }
+
     Promise<String> getClassName(String objectId) {
         CallFunctionCommand params = new CallFunctionCommand();
         CallArgumentDTO arg = new CallArgumentDTO();
@@ -398,6 +442,34 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
                     RemoteObjectDTO result = response != null ? response.getResult() : null;
                     return result.getValue() != null ? result.getValue().textValue() : null;
                 });
+    }
+
+    Promise<byte[]> getMemory(String objectId, int start, int count) {
+        var params = new CallFunctionCommand();
+        params.setObjectId(objectId);
+        params.setArguments(new CallArgumentDTO[] { objArg(objectId), intArg(start), intArg(count) });
+        params.setFunctionDeclaration("$dbg_memory");
+
+        return callMethodAsync("Runtime.callFunctionOn", CallFunctionResponse.class, params)
+                .then(response -> {
+                    var result = response != null ? response.getResult() : null;
+                    if (result.getValue() == null) {
+                        return null;
+                    }
+                    return Base64.getDecoder().decode(result.getValue().textValue());
+                });
+    }
+
+    private CallArgumentDTO objArg(String objectId) {
+        var arg = new CallArgumentDTO();
+        arg.setObjectId(objectId);
+        return arg;
+    }
+
+    private CallArgumentDTO intArg(int value) {
+        var arg = new CallArgumentDTO();
+        arg.setValue(new IntNode(value));
+        return arg;
     }
 
     Promise<String> getRepresentation(String objectId) {
@@ -477,9 +549,10 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
                     return new RDPValue(this, null, remoteValue.getType(), remoteValue.getObjectId(),
                             true);
                 }
-            default:
-                return new RDPValue(this, remoteValue.getValue().asText(), remoteValue.getType(),
-                        remoteValue.getObjectId(), false);
+            default: {
+                var valueAsText = remoteValue.getValue() != null ? remoteValue.getValue().asText() : "null";
+                return new RDPValue(this, valueAsText, remoteValue.getType(), remoteValue.getObjectId(), false);
+            }
         }
     }
 
@@ -487,6 +560,7 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
         String scopeId = null;
         RDPValue thisObject = null;
         RDPValue closure = null;
+        RDPValue module = null;
         for (ScopeDTO scope : dto.getScopeChain()) {
             switch (scope.getType()) {
                 case "local":
@@ -500,10 +574,14 @@ public class ChromeRDPDebugger extends BaseChromeRDPDebugger implements JavaScri
                     thisObject = new RDPValue(this, scope.getObject().getDescription(), scope.getObject().getType(),
                             scope.getObject().getObjectId(), true);
                     break;
+                case "module":
+                    module = new RDPValue(this, scope.getObject().getDescription(), scope.getObject().getType(),
+                            scope.getObject().getObjectId(), true);
+                    break;
             }
         }
         return new RDPCallFrame(this, dto.getCallFrameId(), map(dto.getLocation()), scopeId,
-                thisObject, closure);
+                thisObject, module, closure);
     }
 
     private JavaScriptLocation map(LocationDTO dto) {
