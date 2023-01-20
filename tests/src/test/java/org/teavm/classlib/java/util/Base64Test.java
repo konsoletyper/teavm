@@ -24,7 +24,7 @@ import org.junit.Test;
 public class Base64Test {
     @Test
     public void decoderWorks() {
-        Decoder decoder = Base64.decoder();
+        Decoder decoder = Base64.getDecoder();
         assertEquals("q", decoder.decode("cQ=="));
         assertEquals("qw", decoder.decode("cXc="));
         assertEquals("qwe", decoder.decode("cXdl"));
@@ -37,7 +37,7 @@ public class Base64Test {
 
     @Test
     public void encoderWorks() {
-        Encoder encoder = Base64.encoder();
+        Encoder encoder = Base64.getEncoder();
         assertEquals("cQ==", encoder.encode("q"));
         assertEquals("cXc=", encoder.encode("qw"));
         assertEquals("cXdl", encoder.encode("qwe"));
@@ -50,7 +50,7 @@ public class Base64Test {
 
     @Test
     public void urlDecoderWorks() {
-        Decoder decoder = Base64.urlDecoder();
+        Decoder decoder = Base64.getUrlDecoder();
         assertEquals("q", decoder.decode("cQ"));
         assertEquals("qw", decoder.decode("cXc"));
         assertEquals("qwe", decoder.decode("cXdl"));
@@ -62,7 +62,7 @@ public class Base64Test {
 
     @Test
     public void urlEncoderWorks() {
-        Encoder encoder = Base64.urlEncoder();
+        Encoder encoder = Base64.getUrlEncoder();
         assertEquals("cQ", encoder.encodeNoPad("q"));
         assertEquals("cXc", encoder.encodeNoPad("qw"));
         assertEquals("cXdl", encoder.encodeNoPad("qwe"));
