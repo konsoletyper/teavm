@@ -90,6 +90,7 @@ public final class ChromeRDPRunner {
 
         @Override
         public void detached() {
+            queue.offer(() -> { });
         }
     };
 
@@ -121,6 +122,7 @@ public final class ChromeRDPRunner {
                     }
                 }).start();
             } else if (!debugger.isAttached() && wasAttached) {
+                System.out.println("Detached");
                 break;
             }
         }

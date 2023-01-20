@@ -31,7 +31,9 @@ import org.teavm.common.ByteArrayAsyncInputStream;
 public class DebugInfoParser extends ModuleParser {
     private Map<String, DebugSectionParser> sectionParsers = new HashMap<>();
     private DebugLinesParser lines;
+    private DebugVariablesParser variables;
     private ControlFlowInfo controlFlow;
+    private DebugClassLayoutParser classLayoutInfo;
     private int offset;
 
     public DebugInfoParser(AsyncInputStream reader) {
@@ -41,7 +43,9 @@ public class DebugInfoParser extends ModuleParser {
         var packages = addSection(new DebugPackageParser(strings));
         var classes = addSection(new DebugClassParser(strings, packages));
         var methods = addSection(new DebugMethodParser(strings, classes));
+        variables = addSection(new DebugVariablesParser(strings));
         lines = addSection(new DebugLinesParser(files, methods));
+        classLayoutInfo = addSection(new DebugClassLayoutParser(strings, classes));
     }
 
     private <T extends DebugSectionParser> T addSection(T section) {
@@ -50,7 +54,8 @@ public class DebugInfoParser extends ModuleParser {
     }
 
     public DebugInfo getDebugInfo() {
-        return new DebugInfo(lines.getLineInfo(), controlFlow, offset);
+        return new DebugInfo(variables.getVariablesInfo(), lines.getLineInfo(), controlFlow,
+                classLayoutInfo.getInfo(), offset);
     }
 
     @Override

@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.teavm.backend.wasm.debug.DebugLines;
+import org.teavm.backend.wasm.debug.DebugVariables;
 import org.teavm.backend.wasm.generate.DwarfClassGenerator;
 import org.teavm.backend.wasm.generate.DwarfFunctionGenerator;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
@@ -59,15 +60,18 @@ public class WasmBinaryRenderer {
     private DwarfGenerator dwarfGenerator;
     private DwarfFunctionGenerator dwarfFunctionGen;
     private DebugLines debugLines;
+    private DebugVariables debugVariables;
 
     public WasmBinaryRenderer(WasmBinaryWriter output, WasmBinaryVersion version, boolean obfuscated,
-            DwarfGenerator dwarfGenerator, DwarfClassGenerator dwarfClassGen, DebugLines debugLines) {
+            DwarfGenerator dwarfGenerator, DwarfClassGenerator dwarfClassGen, DebugLines debugLines,
+            DebugVariables debugVariables) {
         this.output = output;
         this.version = version;
         this.obfuscated = obfuscated;
         this.dwarfGenerator = dwarfGenerator;
         dwarfFunctionGen = dwarfClassGen != null ? new DwarfFunctionGenerator(dwarfClassGen, dwarfGenerator) : null;
         this.debugLines = debugLines;
+        this.debugVariables = debugVariables;
     }
 
     public void render(WasmModule module) {
@@ -335,8 +339,22 @@ public class WasmBinaryRenderer {
         if (dwarfFunctionGen != null) {
             dwarfFunctionGen.end(code.getPosition());
         }
+        if (debugVariables != null) {
+            writeDebugVariables(function, offset, code.getPosition());
+        }
 
         return code.getData();
+    }
+
+    private void writeDebugVariables(WasmFunction function, int offset, int size) {
+        debugVariables.startSequence(offset);
+        for (var local : function.getLocalVariables()) {
+            if (local.getName() != null && local.getJavaType() != null) {
+                debugVariables.type(local.getName(), local.getJavaType());
+                debugVariables.range(local.getName(), offset, offset + size, local.getIndex());
+            }
+        }
+        debugVariables.endSequence();
     }
 
     private void renderInitializer(WasmBinaryWriter output, int value) {

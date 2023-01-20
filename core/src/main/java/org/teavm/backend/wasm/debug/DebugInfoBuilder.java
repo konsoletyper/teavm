@@ -25,7 +25,9 @@ public class DebugInfoBuilder {
     private DebugPackagesBuilder packages;
     private DebugClassesBuilder classes;
     private DebugMethodsBuilder methods;
+    private DebugVariablesBuilder variables;
     private DebugLinesBuilder lines;
+    private DebugClassLayoutBuilder classLayout;
 
     public DebugInfoBuilder() {
         strings = new DebugStringsBuilder();
@@ -33,7 +35,9 @@ public class DebugInfoBuilder {
         packages = new DebugPackagesBuilder(strings);
         classes = new DebugClassesBuilder(packages, strings);
         methods = new DebugMethodsBuilder(classes, strings);
+        variables = new DebugVariablesBuilder(strings);
         lines = new DebugLinesBuilder(files, methods);
+        classLayout = new DebugClassLayoutBuilder(classes, strings);
     }
 
     public DebugStrings strings() {
@@ -52,12 +56,20 @@ public class DebugInfoBuilder {
         return classes;
     }
 
-    public DebugMethodsBuilder methods() {
+    public DebugMethods methods() {
         return methods;
     }
 
-    public DebugLinesBuilder lines() {
+    public DebugVariables variables() {
+        return variables;
+    }
+
+    public DebugLines lines() {
         return lines;
+    }
+
+    public DebugClassLayout classLayout() {
+        return classLayout;
     }
 
     public List<WasmCustomSection> build() {
@@ -67,7 +79,9 @@ public class DebugInfoBuilder {
         addSection(result, packages);
         addSection(result, classes);
         addSection(result, methods);
+        addSection(result, variables);
         addSection(result, lines);
+        addSection(result, classLayout);
         return result;
     }
 

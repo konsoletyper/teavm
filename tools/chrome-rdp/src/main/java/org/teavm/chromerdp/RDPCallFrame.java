@@ -29,16 +29,19 @@ class RDPCallFrame implements JavaScriptCallFrame {
     private JavaScriptLocation location;
     private Promise<Map<String, ? extends JavaScriptVariable>> variables;
     private JavaScriptValue thisObject;
+    private JavaScriptValue moduleObject;
+    private Promise<JavaScriptValue> memoryObject;
     private JavaScriptValue closure;
     private String scopeId;
 
     RDPCallFrame(ChromeRDPDebugger debugger, String chromeId, JavaScriptLocation location, String scopeId,
-            JavaScriptValue thisObject, JavaScriptValue closure) {
+            JavaScriptValue thisObject, JavaScriptValue moduleObject, JavaScriptValue closure) {
         this.debugger = debugger;
         this.chromeId = chromeId;
         this.location = location;
         this.scopeId = scopeId;
         this.thisObject = thisObject;
+        this.moduleObject = moduleObject;
         this.closure = closure;
     }
 
@@ -72,5 +75,35 @@ class RDPCallFrame implements JavaScriptCallFrame {
     @Override
     public JavaScriptValue getClosureVariable() {
         return closure;
+    }
+
+    private Promise<JavaScriptValue> getMemoryObject() {
+        if (memoryObject == null) {
+            memoryObject = getPropertyIfExists(moduleObject, "memories")
+                    .thenAsync(x -> getPropertyIfExists(x, "$memory"))
+                    .thenAsync(x -> getPropertyIfExists(x, "buffer"));
+        }
+        return memoryObject;
+    }
+
+    @Override
+    public Promise<byte[]> getMemory(int address, int count) {
+        return getMemoryObject().thenAsync(buf -> buf != null
+                ? debugger.getMemory(buf.getInstanceId(), address, count)
+                : null);
+    }
+
+    private Promise<JavaScriptValue> getPropertyIfExists(JavaScriptValue value, String name) {
+        if (value == null) {
+            return Promise.of(null);
+        }
+        return debugger.getSpecialScope(value.getInstanceId()).then(properties -> {
+            for (var property : properties) {
+                if (property.getName().equals(name)) {
+                    return property.getValue();
+                }
+            }
+            return null;
+        });
     }
 }
