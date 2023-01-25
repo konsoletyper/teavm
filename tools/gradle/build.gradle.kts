@@ -17,7 +17,7 @@
 plugins {
     `java-gradle-plugin`
     publishing
-    `maven-publish`
+    `teavm-publish`
 }
 
 dependencies {

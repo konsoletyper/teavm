@@ -14,4 +14,10 @@
  *  limitations under the License.
  */
 
+plugins {
+    idea
+}
+
 group = "org.teavm"
+
+idea.module.excludeDirs.add(File(rootDir, "build-dir"))
