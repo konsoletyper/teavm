@@ -21,17 +21,23 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import javax.inject.Inject;
+import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Provider;
+import org.teavm.gradle.api.TeaVMBaseExtension;
+import org.teavm.gradle.api.TeaVMLibraries;
+import org.teavm.gradle.api.TeaVMTests;
 import org.teavm.gradle.config.ArtifactCoordinates;
 
-public class TeaVMBaseExtensionImpl implements TeaVMBaseExtension {
+class TeaVMBaseExtensionImpl implements TeaVMBaseExtension {
     protected Project project;
     private Provider<Properties> properties;
+    private TeaVMTestsImpl tests;
 
     @Inject
-    public TeaVMBaseExtensionImpl(Project project) {
+    TeaVMBaseExtensionImpl(Project project, ObjectFactory objectFactory) {
         this.project = project;
         properties = project.provider(() -> {
             var result = new Properties();
@@ -44,6 +50,8 @@ public class TeaVMBaseExtensionImpl implements TeaVMBaseExtension {
             }
             return result;
         });
+        tests = new TeaVMTestsImpl(objectFactory);
+        tests.configure(this);
     }
 
     private void append(Properties target, File source) throws IOException {
@@ -101,5 +109,15 @@ public class TeaVMBaseExtensionImpl implements TeaVMBaseExtension {
             }
             return project.getProviders().gradleProperty("teavm." + name).getOrElse(null);
         });
+    }
+
+    @Override
+    public TeaVMTests getTests() {
+        return tests;
+    }
+
+    @Override
+    public void tests(Action<TeaVMTests> config) {
+        config.execute(tests);
     }
 }

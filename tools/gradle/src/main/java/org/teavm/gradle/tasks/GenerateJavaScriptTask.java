@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle;
+package org.teavm.gradle.tasks;
 
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;

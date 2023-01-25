@@ -13,16 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle;
+package org.teavm.gradle.api;
 
-import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.provider.Property;
 
-public interface TeaVMLibraries {
-    Dependency getJso();
+public interface TeaVMJSTests {
+    Property<Boolean> getEnabled();
 
-    Dependency getJsoApis();
+    Property<TeaVMWebTestRunner> getRunner();
 
-    Dependency getInterop();
-
-    Dependency getMetaprogramming();
+    Property<Boolean> getDecodeStack();
 }

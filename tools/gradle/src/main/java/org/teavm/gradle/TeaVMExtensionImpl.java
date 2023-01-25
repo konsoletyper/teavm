@@ -16,21 +16,26 @@
 package org.teavm.gradle;
 
 import java.io.File;
-import javax.inject.Inject;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.model.ObjectFactory;
+import org.teavm.gradle.api.OptimizationLevel;
+import org.teavm.gradle.api.TeaVMCConfiguration;
+import org.teavm.gradle.api.TeaVMCommonConfiguration;
+import org.teavm.gradle.api.TeaVMExtension;
+import org.teavm.gradle.api.TeaVMJSConfiguration;
+import org.teavm.gradle.api.TeaVMWasiConfiguration;
+import org.teavm.gradle.api.TeaVMWasmConfiguration;
 
-public class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtension {
+class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtension {
     private TeaVMJSConfiguration js;
     private TeaVMWasmConfiguration wasm;
     private TeaVMWasiConfiguration wasi;
     private TeaVMCConfiguration c;
     private TeaVMCommonConfiguration all;
 
-    @Inject
-    public TeaVMExtensionImpl(Project project, ObjectFactory objectFactory) {
-        super(project);
+    TeaVMExtensionImpl(Project project, ObjectFactory objectFactory) {
+        super(project, objectFactory);
         js = objectFactory.newInstance(TeaVMJSConfiguration.class);
         wasm = objectFactory.newInstance(TeaVMWasmConfiguration.class);
         wasi = objectFactory.newInstance(TeaVMWasiConfiguration.class);

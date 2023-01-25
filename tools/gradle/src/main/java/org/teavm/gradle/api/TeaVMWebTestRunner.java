@@ -13,10 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle;
+package org.teavm.gradle.api;
 
-import org.gradle.api.provider.Property;
-
-public interface TeaVMWasmBaseConfiguration extends TeaVMCommonConfiguration, TeaVMNativeBaseConfiguration {
-    Property<String> getTargetFileName();
+public enum TeaVMWebTestRunner {
+    CUSTOM_BROWSER,
+    CHROME,
+    FIREFOX,
+    NONE
 }

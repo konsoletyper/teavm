@@ -27,7 +27,14 @@ import org.gradle.api.plugins.WarPlugin;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.bundling.War;
+import org.teavm.gradle.api.TeaVMConfiguration;
+import org.teavm.gradle.api.TeaVMExtension;
 import org.teavm.gradle.config.ArtifactCoordinates;
+import org.teavm.gradle.tasks.GenerateCTask;
+import org.teavm.gradle.tasks.GenerateJavaScriptTask;
+import org.teavm.gradle.tasks.GenerateWasiTask;
+import org.teavm.gradle.tasks.GenerateWasmTask;
+import org.teavm.gradle.tasks.TeaVMTask;
 
 public class TeaVMPlugin implements Plugin<Project> {
     public static final String EXTENSION_NAME = "teavm";
@@ -53,10 +60,11 @@ public class TeaVMPlugin implements Plugin<Project> {
         registerTasks(project);
         addDependencies(project);
         setupWarTask(project);
+        TeaVMTestConfigurator.configure(project, project.getExtensions().getByType(TeaVMExtension.class).getTests());
     }
 
     private void registerExtension(Project project) {
-        var extension = objectFactory.newInstance(TeaVMExtensionImpl.class);
+        var extension = new TeaVMExtensionImpl(project, objectFactory);
         project.getExtensions().add(TeaVMExtension.class, EXTENSION_NAME, extension);
     }
 
@@ -83,6 +91,7 @@ public class TeaVMPlugin implements Plugin<Project> {
         sourceSet.setCompileClasspath(sourceSet.getCompileClasspath().plus(main)
                 .plus(project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)));
         sourceSet.java(java -> { });
+        project.getDependencies().add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, sourceSet.getOutput());
     }
 
     private void registerTasks(Project project) {
@@ -145,6 +154,7 @@ public class TeaVMPlugin implements Plugin<Project> {
     private void addDependencies(Project project) {
         project.getDependencies().add(CONFIGURATION_NAME, ArtifactCoordinates.CLASSLIB);
         project.getDependencies().add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, ArtifactCoordinates.JUNIT);
+        project.getDependencies().add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, ArtifactCoordinates.CLASSLIB);
     }
 
     private void setupWarTask(Project project) {

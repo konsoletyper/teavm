@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle;
+package org.teavm.gradle.tasks;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +33,7 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
+import org.teavm.gradle.api.OptimizationLevel;
 import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.builder.BuildException;
 import org.teavm.tooling.builder.BuildStrategy;

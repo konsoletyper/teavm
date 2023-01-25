@@ -13,18 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle;
+package org.teavm.gradle.api;
 
 import org.gradle.api.provider.Property;
 
-public interface TeaVMJSConfiguration extends TeaVMWebConfiguration {
+public interface TeaVMCConfiguration extends TeaVMConfiguration, TeaVMNativeBaseConfiguration {
+    Property<Boolean> getHeapDump();
+
+    Property<Boolean> getShortFileNames();
+
     Property<Boolean> getObfuscated();
-
-    Property<Boolean> getStrict();
-
-    Property<Boolean> getSourceMap();
-
-    Property<String> getEntryPointName();
-
-    Property<String> getTargetFileName();
 }

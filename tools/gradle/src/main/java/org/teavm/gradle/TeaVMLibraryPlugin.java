@@ -20,6 +20,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
+import org.teavm.gradle.api.TeaVMBaseExtension;
 import org.teavm.gradle.config.ArtifactCoordinates;
 
 public class TeaVMLibraryPlugin implements Plugin<Project> {
@@ -32,9 +33,10 @@ public class TeaVMLibraryPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
-        var extension = objectFactory.newInstance(TeaVMBaseExtensionImpl.class);
+        var extension = new TeaVMBaseExtensionImpl(project, objectFactory);
         project.getExtensions().add(TeaVMBaseExtension.class, TeaVMPlugin.EXTENSION_NAME, extension);
         project.getDependencies().add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, ArtifactCoordinates.JUNIT);
-        project.getDependencies().add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, ArtifactCoordinates.CLASSLIB);
+        project.getDependencies().add(JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME, ArtifactCoordinates.CLASSLIB);
+        TeaVMTestConfigurator.configure(project, extension.getTests());
     }
 }

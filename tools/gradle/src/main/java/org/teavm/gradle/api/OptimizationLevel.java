@@ -13,7 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle;
+package org.teavm.gradle.api;
 
-public interface TeaVMWasmConfiguration extends TeaVMWebConfiguration, TeaVMWasmBaseConfiguration {
+public enum OptimizationLevel {
+    NONE,
+    BALANCED,
+    AGGRESSIVE
 }

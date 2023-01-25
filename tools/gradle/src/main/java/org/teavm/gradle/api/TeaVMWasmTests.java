@@ -13,10 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle;
+package org.teavm.gradle.api;
 
-public enum OptimizationLevel {
-    NONE,
-    BALANCED,
-    AGGRESSIVE
+import org.gradle.api.provider.Property;
+
+public interface TeaVMWasmTests {
+    Property<Boolean> getEnabled();
+
+    Property<TeaVMWebTestRunner> getRunner();
 }

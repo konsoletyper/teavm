@@ -13,28 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle;
+package org.teavm.gradle.api;
 
 import org.gradle.api.Action;
 
-public interface TeaVMExtension extends TeaVMBaseExtension {
-    TeaVMJSConfiguration getJs();
+public interface TeaVMTests {
+    TeaVMJSTests getJs();
 
-    void js(Action<TeaVMJSConfiguration> action);
+    void js(Action<TeaVMJSTests> config);
 
-    TeaVMWasmConfiguration getWasm();
+    TeaVMWasmTests getWasm();
 
-    void wasm(Action<TeaVMWasmConfiguration> action);
-
-    TeaVMWasiConfiguration getWasi();
-
-    void wasi(Action<TeaVMWasiConfiguration> action);
-
-    TeaVMCConfiguration getC();
-
-    void c(Action<TeaVMCConfiguration> action);
-
-    TeaVMCommonConfiguration getAll();
-
-    void all(Action<TeaVMCommonConfiguration> action);
+    void wasm(Action<TeaVMWasmTests> config);
 }

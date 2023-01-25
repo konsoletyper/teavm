@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2023 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,15 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle;
+package org.teavm.gradle.tasks;
 
 import org.gradle.api.logging.Logger;
 import org.teavm.tooling.TeaVMToolLog;
 
-public class GradleTeaVMToolLog implements TeaVMToolLog {
+class GradleTeaVMToolLog implements TeaVMToolLog {
     private Logger log;
 
-    public GradleTeaVMToolLog(Logger log) {
+    GradleTeaVMToolLog(Logger log) {
         this.log = log;
     }
 

@@ -56,7 +56,7 @@ val generateLibJs by tasks.register<JavaExec>("generateLibJs") {
     mainClass.set("org.teavm.tooling.deobfuscate.js.Compiler")
     args(
         "org.teavm.tooling.deobfuscate.js.DeobfuscatorLib",
-        "\$teavm_deobfuscator",
+        "deobfuscator",
         File(buildDir, "teavm-lib").absolutePath,
         "deobfuscator-lib.js",
     )

@@ -13,7 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle;
+package org.teavm.gradle.api;
 
-public interface TeaVMWasiConfiguration extends TeaVMWasmBaseConfiguration, TeaVMConfiguration {
+import org.gradle.api.provider.Property;
+
+public interface TeaVMJSConfiguration extends TeaVMWebConfiguration {
+    Property<Boolean> getObfuscated();
+
+    Property<Boolean> getStrict();
+
+    Property<Boolean> getSourceMap();
+
+    Property<String> getEntryPointName();
+
+    Property<String> getTargetFileName();
 }

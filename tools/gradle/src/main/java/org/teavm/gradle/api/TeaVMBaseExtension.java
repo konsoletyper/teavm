@@ -13,12 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle;
+package org.teavm.gradle.api;
 
-import org.gradle.api.provider.Property;
+import org.gradle.api.Action;
+import org.gradle.api.provider.Provider;
 
-public interface TeaVMConfiguration extends TeaVMCommonConfiguration {
-    Property<String> getRelativePathInOutputDir();
+public interface TeaVMBaseExtension {
+    TeaVMLibraries getLibs();
 
-    Property<Boolean> getSkip();
+    Provider<String> property(String name);
+
+    TeaVMTests getTests();
+
+    void tests(Action<TeaVMTests> config);
 }
