@@ -24,14 +24,14 @@ description = "Java class library emulation"
 dependencies {
     compileOnly(project(":core"))
 
-    implementation(project(":platform"))
-    implementation(project(":jso:apis"))
-    implementation(project(":jso:impl"))
-    implementation(project(":metaprogramming:impl"))
-    implementation(libs.commons.io)
-    implementation(libs.gson)
-    implementation(libs.jzlib)
-    implementation(libs.jodaTime)
+    api(project(":platform"))
+    api(project(":jso:apis"))
+    api(project(":jso:impl"))
+    api(project(":metaprogramming:impl"))
+    api(libs.commons.io)
+    api(libs.gson)
+    api(libs.jzlib)
+    api(libs.jodaTime)
 
     testImplementation(libs.junit)
     testImplementation(project(":core"))
