@@ -38,6 +38,19 @@ public class TBase64 {
         public byte[] encode(byte[] src) {
             return Base64Impl.encode(src, mapping, padding);
         }
+
+        public String encodeToString(byte[] src) {
+            var bytes = encode(src);
+            var chars = new char[bytes.length];
+            for (var i = 0; i < bytes.length; ++i) {
+                chars[i] = (char) (bytes[i] & 0xFF);
+            }
+            return new String(chars);
+        }
+
+        public Encoder withoutPadding() {
+            return new Encoder(mapping, false);
+        }
     }
 
     public Decoder getDecoder() {
@@ -57,6 +70,14 @@ public class TBase64 {
 
         public byte[] decode(byte[] src) {
             return Base64Impl.decode(src, mapping);
+        }
+
+        public byte[] decode(String src) {
+            var bytes = new byte[src.length()];
+            for (var i = 0; i < bytes.length; ++i) {
+                bytes[i] = (byte) src.charAt(i);
+            }
+            return decode(bytes);
         }
     }
 }

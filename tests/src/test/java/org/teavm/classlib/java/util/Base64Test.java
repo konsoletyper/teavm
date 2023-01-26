@@ -13,87 +13,75 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
+package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.*;
-import java.io.UnsupportedEncodingException;
+import static org.junit.Assert.assertEquals;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
 @WholeClassCompilation
 public class Base64Test {
     @Test
     public void decoderWorks() {
-        Decoder decoder = Base64.getDecoder();
-        assertEquals("q", decoder.decode("cQ=="));
-        assertEquals("qw", decoder.decode("cXc="));
-        assertEquals("qwe", decoder.decode("cXdl"));
-        assertEquals("qwer", decoder.decode("cXdlcg=="));
-        assertEquals("qwert", decoder.decode("cXdlcnQ="));
-        assertEquals("qwerty", decoder.decode("cXdlcnR5"));
-        assertEquals("qwertyu", decoder.decode("cXdlcnR5dQ=="));
-        assertEquals("юзернейм:пароль", decoder.decode("0Y7Qt9C10YDQvdC10LnQvDrQv9Cw0YDQvtC70Yw="));
+        assertEquals("q", decode("cQ=="));
+        assertEquals("qw", decode("cXc="));
+        assertEquals("qwe", decode("cXdl"));
+        assertEquals("qwer", decode("cXdlcg=="));
+        assertEquals("qwert", decode("cXdlcnQ="));
+        assertEquals("qwerty", decode("cXdlcnR5"));
+        assertEquals("qwertyu", decode("cXdlcnR5dQ=="));
+        assertEquals("юзернейм:пароль", decode("0Y7Qt9C10YDQvdC10LnQvDrQv9Cw0YDQvtC70Yw="));
     }
 
     @Test
     public void encoderWorks() {
-        Encoder encoder = Base64.getEncoder();
-        assertEquals("cQ==", encoder.encode("q"));
-        assertEquals("cXc=", encoder.encode("qw"));
-        assertEquals("cXdl", encoder.encode("qwe"));
-        assertEquals("cXdlcg==", encoder.encode("qwer"));
-        assertEquals("cXdlcnQ=", encoder.encode("qwert"));
-        assertEquals("cXdlcnR5", encoder.encode("qwerty"));
-        assertEquals("cXdlcnR5dQ==", encoder.encode("qwertyu"));
-        assertEquals("0Y7Qt9C10YDQvdC10LnQvDrQv9Cw0YDQvtC70Yw=", encoder.encode("юзернейм:пароль"));
+        assertEquals("cQ==", encode("q"));
+        assertEquals("cXc=", encode("qw"));
+        assertEquals("cXdl", encode("qwe"));
+        assertEquals("cXdlcg==", encode("qwer"));
+        assertEquals("cXdlcnQ=", encode("qwert"));
+        assertEquals("cXdlcnR5", encode("qwerty"));
+        assertEquals("cXdlcnR5dQ==", encode("qwertyu"));
+        assertEquals("0Y7Qt9C10YDQvdC10LnQvDrQv9Cw0YDQvtC70Yw=", encode("юзернейм:пароль"));
     }
 
     @Test
     public void urlDecoderWorks() {
-        Decoder decoder = Base64.getUrlDecoder();
-        assertEquals("q", decoder.decode("cQ"));
-        assertEquals("qw", decoder.decode("cXc"));
-        assertEquals("qwe", decoder.decode("cXdl"));
-        assertEquals("qwer", decoder.decode("cXdlcg"));
-        assertEquals("qwerty", decoder.decode("cXdlcnR5"));
-        assertEquals("qwertyu", decoder.decode("cXdlcnR5dQ"));
-        assertEquals("юзернейм:пароль", decoder.decode("0Y7Qt9C10YDQvdC10LnQvDrQv9Cw0YDQvtC70Yw"));
+        assertEquals("q", decode("cQ"));
+        assertEquals("qw", decode("cXc"));
+        assertEquals("qwe", decode("cXdl"));
+        assertEquals("qwer", decode("cXdlcg"));
+        assertEquals("qwerty", decode("cXdlcnR5"));
+        assertEquals("qwertyu", decode("cXdlcnR5dQ"));
+        assertEquals("юзернейм:пароль", decode("0Y7Qt9C10YDQvdC10LnQvDrQv9Cw0YDQvtC70Yw"));
     }
 
     @Test
     public void urlEncoderWorks() {
-        Encoder encoder = Base64.getUrlEncoder();
-        assertEquals("cQ", encoder.encodeNoPad("q"));
-        assertEquals("cXc", encoder.encodeNoPad("qw"));
-        assertEquals("cXdl", encoder.encodeNoPad("qwe"));
-        assertEquals("cXdlcg", encoder.encodeNoPad("qwer"));
-        assertEquals("cXdlcnQ", encoder.encodeNoPad("qwert"));
-        assertEquals("cXdlcnR5", encoder.encodeNoPad("qwerty"));
-        assertEquals("cXdlcnR5dQ", encoder.encodeNoPad("qwertyu"));
-        assertEquals("0Y7Qt9C10YDQvdC10LnQvDrQv9Cw0YDQvtC70Yw", encoder.encode("юзернейм:пароль"));
+        assertEquals("cQ", encodeNoPad("q"));
+        assertEquals("cXc", encodeNoPad("qw"));
+        assertEquals("cXdl", encodeNoPad("qwe"));
+        assertEquals("cXdlcg", encodeNoPad("qwer"));
+        assertEquals("cXdlcnQ", encodeNoPad("qwert"));
+        assertEquals("cXdlcnR5", encodeNoPad("qwerty"));
+        assertEquals("cXdlcnR5dQ", encodeNoPad("qwertyu"));
+        assertEquals("0Y7Qt9C10YDQvdC10LnQvDrQv9Cw0YDQvtC70Yw", encodeNoPad("юзернейм:пароль"));
     }
 
     private String decode(String text) {
-        try {
-            return new String(Base64Impl.decode(text.getBytes("UTF-8")), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            return "";
-        }
+        return new String(Base64.getDecoder().decode(text), StandardCharsets.UTF_8);
     }
 
     private String encode(String text) {
-        try {
-            return new String(Base64Impl.encode(text.getBytes("UTF-8"), true), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            return "";
-        }
+        return Base64.getEncoder().encodeToString(text.getBytes(StandardCharsets.UTF_8));
     }
 
     private String encodeNoPad(String text) {
-        try {
-            return new String(Base64Impl.encode(text.getBytes("UTF-8"), false), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            return "";
-        }
+        return Base64.getEncoder().withoutPadding().encodeToString(text.getBytes(StandardCharsets.UTF_8));
     }
 }
