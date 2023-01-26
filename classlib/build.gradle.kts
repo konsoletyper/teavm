@@ -54,6 +54,12 @@ tasks {
         exclude("html/**")
         exclude("org/teavm/classlib/impl/tz/tzdata*.zip")
     }
+    sourcesJar {
+        exclude("**/*.zip")
+        exclude("**/UnicodeData.txt")
+        exclude("**/iso*.xml")
+        exclude("**/iso*.csv")
+    }
 }
 
 teavmPublish {
