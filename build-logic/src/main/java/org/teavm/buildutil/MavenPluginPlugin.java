@@ -16,6 +16,7 @@
 package org.teavm.buildutil;
 
 import java.io.File;
+import java.util.Map;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.JavaLibraryPlugin;
@@ -47,8 +48,8 @@ public class MavenPluginPlugin implements Plugin<Project> {
         var sourceSets = project.getExtensions().getByType(SourceSetContainer.class);
         var main = sourceSets.getByName("main");
         task.getClassesDirectory().convention(main.getOutput().getClassesDirs().getSingleFile());
-        task.dependsOn(project.getTasks().getByName(JavaPlugin.CLASSES_TASK_NAME));
-        main.getOutput().dir(generatedDir);
+        task.dependsOn(project.getTasks().getByName(JavaPlugin.COMPILE_JAVA_TASK_NAME));
+        main.getOutput().dir(Map.of("builtBy", task), generatedDir);
     }
 
     private void installDependencies(Project project) {
