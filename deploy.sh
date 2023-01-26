@@ -50,7 +50,7 @@ function deploy_teavm {
   GRADLE+=" -Pteavm.publish.username=$TEAVM_DEPLOY_LOGIN"
   GRADLE+=" -Pteavm.publish.password=$TEAVM_DEPLOY_PASSWORD"
 
-  $GRADLE build -x test || { echo 'Build failed' ; return 1; }
+  $GRADLE build || { echo 'Build failed' ; return 1; }
   $GRADLE publishAllPublicationsToTeavmRepository || { echo 'Deploy failed' ; return 1; }
 
   curl -T tools/idea/build/distributions/idea-$TEAVM_DEPLOY_VERSION_FULL.zip \
