@@ -33,6 +33,7 @@ public class Base64Test {
         assertEquals("qwerty", decode("cXdlcnR5"));
         assertEquals("qwertyu", decode("cXdlcnR5dQ=="));
         assertEquals("qwertyu", decode("cXdlcnR5dQ"));
+        assertEquals("юзернейм:пароль", decode("0Y7Qt9C10YDQvdC10LnQvDrQv9Cw0YDQvtC70Yw="));
     }
 
     @Test
@@ -44,6 +45,7 @@ public class Base64Test {
         assertEquals("cXdlcnQ=", encode("qwert"));
         assertEquals("cXdlcnR5", encode("qwerty"));
         assertEquals("cXdlcnR5dQ==", encode("qwertyu"));
+        assertEquals("0Y7Qt9C10YDQvdC10LnQvDrQv9Cw0YDQvtC70Yw=", encode("юзернейм:пароль"));
     }
 
     @Test

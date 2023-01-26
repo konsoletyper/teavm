@@ -21,10 +21,10 @@ var Benchmark = function() {
         this.resultTableBody = document.getElementById("result-table-body");
     }
     Benchmark.prototype.load = function() {
-        TeaVM.wasm.load("teavm-wasm/classes.wasm", {
+        TeaVM.wasm.load("wasm/benchmark.wasm", {
             installImports: installImports.bind(this),
         }).then(teavm => {
-            this.instance = teavm;
+            this.instance = teavm.instance;
             teavm.main();
         })
     };

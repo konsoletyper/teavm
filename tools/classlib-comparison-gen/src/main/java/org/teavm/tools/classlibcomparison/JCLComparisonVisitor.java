@@ -19,6 +19,7 @@ import java.util.Map;
 import org.objectweb.asm.*;
 import org.teavm.model.*;
 import org.teavm.model.ClassReader;
+import org.teavm.parsing.AsmUtil;
 
 class JCLComparisonVisitor extends ClassVisitor {
     private Map<String, JCLPackage> packageMap;
@@ -28,7 +29,7 @@ class JCLComparisonVisitor extends ClassVisitor {
     private JCLClass jclClass;
 
     public JCLComparisonVisitor(ClassReaderSource classSource, Map<String, JCLPackage> packageMap) {
-        super(Opcodes.ASM7);
+        super(AsmUtil.API_VERSION);
         this.classSource = classSource;
         this.packageMap = packageMap;
     }

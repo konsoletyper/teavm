@@ -31,7 +31,7 @@ public final class AsyncProgram {
         withAsync();
 
         report("");
-        final Object lock = new Object();
+        final var lock = new Object();
         new Thread(() -> {
             try {
                 doRun(lock);
@@ -60,12 +60,12 @@ public final class AsyncProgram {
 
     private static void findPrimes() {
         report("Finding primes");
-        boolean[] prime = new boolean[1000];
+        var prime = new boolean[1000];
         prime[2] = true;
         prime[3] = true;
-        nextPrime: for (int i = 5; i < prime.length; i += 2) {
-            int maxPrime = (int) Math.sqrt(i);
-            for (int j = 3; j <= maxPrime; j += 2) {
+        nextPrime: for (var i = 5; i < prime.length; i += 2) {
+            var maxPrime = (int) Math.sqrt(i);
+            for (var j = 3; j <= maxPrime; j += 2) {
                 Thread.yield();
                 if (prime[j] && i % j == 0) {
                     continue nextPrime;
@@ -73,8 +73,8 @@ public final class AsyncProgram {
             }
             prime[i] = true;
         }
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 1000; ++i) {
+        var sb = new StringBuilder();
+        for (var i = 0; i < 1000; ++i) {
             if (prime[i]) {
                 sb.append(i).append(' ');
             }
@@ -83,7 +83,7 @@ public final class AsyncProgram {
     }
 
     private static void report(String message) {
-        long current = System.currentTimeMillis() - start;
+        var current = System.currentTimeMillis() - start;
         System.out.println("[" + Thread.currentThread().getName() + "]/" + current + ": " + message);
     }
 
@@ -108,9 +108,9 @@ public final class AsyncProgram {
 
     private static void withoutAsync() {
         report("Start sync");
-        for (int i = 0; i < 20; ++i) {
-            StringBuilder sb = new StringBuilder();
-            for (int j = 0; j <= i; ++j) {
+        for (var i = 0; i < 20; ++i) {
+            var sb = new StringBuilder();
+            for (var j = 0; j <= i; ++j) {
                 sb.append(j);
                 sb.append(' ');
             }
@@ -121,8 +121,8 @@ public final class AsyncProgram {
 
     private static void withAsync() throws InterruptedException {
         report("Start async");
-        for (int i = 0; i < 20; ++i) {
-            StringBuilder sb = new StringBuilder();
+        for (var i = 0; i < 20; ++i) {
+            var sb = new StringBuilder();
             for (int j = 0; j <= i; ++j) {
                 sb.append(j);
                 sb.append(' ');

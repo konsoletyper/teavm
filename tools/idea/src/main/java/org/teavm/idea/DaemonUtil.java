@@ -29,8 +29,7 @@ import org.teavm.idea.devserver.DevServerRunner;
 import org.teavm.tooling.daemon.BuildDaemon;
 
 public final class DaemonUtil {
-    private static final Set<String> PLUGIN_FILES = new HashSet<>(Arrays.asList("teavm-jps-common.jar",
-            "teavm-plugin.jar", "teavm.jar"));
+    private static final Set<String> PLUGIN_FILES = new HashSet<>(Arrays.asList("teavm-plugin.jar", "teavm.jar"));
     private static final String DAEMON_CLASS = BuildDaemon.class.getName().replace('.', '/') + ".class";
     private static final String DEV_SERVER_CLASS = DevServerRunner.class.getName().replace('.', '/') + ".class";
     private static final int DAEMON_CLASS_DEPTH;

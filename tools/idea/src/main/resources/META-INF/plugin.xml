@@ -25,11 +25,6 @@
 
     <configurationType implementation="org.teavm.idea.devserver.TeaVMDevServerConfigurationType"/>
     <programRunner implementation="org.teavm.idea.devserver.TeaVMDevServerRunner"/>
-
-    <applicationConfigurable instance="org.teavm.idea.ui.TeaVMSettingsEditorTab"
-                             id="project.teavm.settings"
-                             displayName="TeaVM compiler"
-                             parentId="project.propCompiler"/>
   </extensions>
 
   <extensionPoints>

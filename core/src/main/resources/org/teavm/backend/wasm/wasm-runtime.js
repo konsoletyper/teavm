@@ -166,7 +166,7 @@ TeaVM.wasm = function() {
         const importObj = {};
         const controller = defaults(importObj);
         if (typeof options.installImports !== "undefined") {
-            options.installImports(importObj);
+            options.installImports(importObj, controller);
         }
 
         return WebAssembly.instantiateStreaming(fetch(path), importObj).then((obj => {

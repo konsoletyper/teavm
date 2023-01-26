@@ -50,13 +50,6 @@ public interface MetadataGeneratorContext extends ServiceRepository {
      */
     Properties getProperties();
 
-    /**
-     * Creates a new resource of the given type. The description of valid resources
-     * is available in documentation for {@link Resource}.
-     *
-     * @param resourceType type of resource to create.
-     * @return a new resource
-     */
     <T extends Resource> T createResource(Class<T> resourceType);
 
     /**
@@ -68,18 +61,8 @@ public interface MetadataGeneratorContext extends ServiceRepository {
      */
     StaticFieldResource createFieldResource(FieldReference field);
 
-    /**
-     * Creates a new resource array.
-     *
-     * @return a new resource.
-     */
     <T extends Resource> ResourceArray<T> createResourceArray();
 
-    /**
-     * Creates a new resource map.
-     *
-     * @return a new resource.
-     */
     <T extends Resource> ResourceMap<T> createResourceMap();
 
     ResourceTypeDescriptor getTypeDescriptor(Class<? extends Resource> type);
