@@ -17,43 +17,6 @@ package org.teavm.platform.metadata;
 
 import org.teavm.model.MethodReference;
 
-/**
- * <p>Represents a generator, that produces resources during compilation phase. User must implement this
- * interface and bind this implementation to a method that would read resources at runtime.</p>
- *
- * <p>Here is the full workflow:</p>
- *
- * <ul>
- *   <li>Compiler finds a method that is marked with the {@link MetadataProvider} annotation.
- *       This method must be declared as <code>native</code>, otherwise compiler should throw an exception.</li>
- *   <li>Compiler instantiates the {@link MetadataGenerator} instance with the no-arg constructor
- *       If no such constructor exists, compiler throws exception.</li>
- *   <li>Compiler runs the {@link #generateMetadata(MetadataGeneratorContext, MethodReference)} method
- *       ands gets the produced resource.</li>
- *   <li>Compiler generates implementation of the method marked with {@link MetadataProvider}, that
- *       will return the generated resource in run time.</li>
- * </ul>
- *
- * <p>Therefore, the type of the value, returned by the
- * {@link #generateMetadata(MetadataGeneratorContext, MethodReference)}
- * method must match the returning type of the appropriate method, marked with {@link MetadataProvider}.</p>
- *
- * <p>The valid resource types are the following:</p>
- *
- * <ul>
- *   <li>Valid interfaces, extending the {@link Resource} annotation. Read the description of this interface
- *       for detailed description about valid resources interfaces.</li>
- *   <li>{@link ResourceArray} of valid resources.</li>
- *   <li>{@link ResourceMap} of valid resources.</li>
- *   <li>The <code>null</code> value.</li>
- * </ul>
- *
- * <p>All other types are not considered to be resources and therefore are not accepted.</p>
- *
- * @see ClassScopedMetadataGenerator
- *
- * @author Alexey Andreev
- */
 public interface MetadataGenerator {
     /**
      * <p>Generates resources, that will be available at runtime.</p>

@@ -1,23 +1,18 @@
-TeaVM, GWT, HotSpot, Bck2Brwsr JBox2D Benchmark
+TeaVM, GWT, HotSpot, JBox2D Benchmark
 ===============================================
 
 Compares the speed of execution on a complex [JBox2D](http://www.jbox2d.org/) CPU extensive
 computation. JavaScript produced by TeaVM and GWT can be compared by running 
 
 ```
-$ mvn clean install
+$ gradle appStartWar
 ```
 
-then just open the generated HTML versions
+Also, in Linux it's possible to build and run native file:
 
 ```
-$ open target/teavm-samples-benchmark-*-SNAPSHOT/index.html 
+$ gradle runNativeLinux
 ```
 
-In addition to that one can run the same demo with classical HotSpot virtual machine. Just try:
-
-```
-$ mvn -Pfx exec:java
-```
-
-
+Please, refer to your Linux distribution documentation to find out how to install required dependencies 
+(cmake and gtk-devel).

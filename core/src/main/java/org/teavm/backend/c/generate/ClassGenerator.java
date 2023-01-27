@@ -1131,6 +1131,7 @@ public class ClassGenerator {
             String className = ((ValueType.Object) type).getClassName();
             return !context.getCharacteristics().isStructure(className)
                     && !context.getCharacteristics().isFunction(className)
+                    && !context.getCharacteristics().isResource(className)
                     && !className.equals(Address.class.getName());
         } else {
             return type instanceof ValueType.Array;

@@ -31,11 +31,13 @@ TeaVM.wasm = function() {
             lineBuffer += String.fromCharCode(charCode);
         }
     }
-    function towlower(code) {
-        return String.fromCharCode(code).toLowerCase().charCodeAt(0);
-    }
-    function towupper(code) {
-        return String.fromCharCode(code).toUpperCase().charCodeAt(0);
+    function putwchars(controller, buffer, count) {
+        let instance = controller.instance;
+        let memory = new Int8Array(instance.exports.memory.buffer);
+        for (let i = 0; i < count; ++i) {
+            // TODO: support UTF-8
+            putwchar(memory[buffer++]);
+        }
     }
     function currentTimeMillis() {
         return new Date().getTime();
@@ -86,13 +88,8 @@ TeaVM.wasm = function() {
         obj.teavm = {
             currentTimeMillis: currentTimeMillis,
             nanoTime: function() { return performance.now(); },
-            isnan: isNaN,
-            teavm_getNaN: function() { return NaN; },
-            isinf: function(n) { return !isFinite(n) },
-            isfinite: isFinite,
-            putwchar: putwchar,
-            towlower: towlower,
-            towupper: towupper,
+            putwcharsOut: (chars, count) => putwchars(controller, chars, count),
+            putwcharsErr: (chars, count) => putwchars(controller, chars, count),
             getNativeOffset: getNativeOffset,
             logString: string => logString(string, controller),
             logInt: logInt,
@@ -162,25 +159,6 @@ TeaVM.wasm = function() {
     }
 
     function load(path, options) {
-        let xhr = new XMLHttpRequest();
-        xhr.responseType = "arraybuffer";
-        xhr.open("GET", path);
-
-        return new Promise((resolve, reject) => {
-            xhr.onload = () => {
-                let response = xhr.response;
-                if (!response) {
-                    reject("Error loading Wasm data")
-                    return;
-                }
-
-                resolve(response);
-            };
-            xhr.send();
-        }).then(data => create(data, options));
-    }
-
-    function create(data, options) {
         if (!options) {
             options = {};
         }
@@ -188,15 +166,15 @@ TeaVM.wasm = function() {
         const importObj = {};
         const controller = defaults(importObj);
         if (typeof options.installImports !== "undefined") {
-            options.installImports(importObj);
+            options.installImports(importObj, controller);
         }
 
-        return WebAssembly.instantiate(data, importObj).then(resultObject => {
-            controller.instance = resultObject.instance;
-            let teavm = createTeaVM(resultObject.instance);
+        return WebAssembly.instantiateStreaming(fetch(path), importObj).then((obj => {
+            controller.instance = obj.instance;
+            let teavm = createTeaVM(obj.instance);
             teavm.main = createMain(teavm, controller);
             return teavm;
-        });
+        }));
     }
 
     function createMain(teavm, controller) {
@@ -226,5 +204,5 @@ TeaVM.wasm = function() {
         }
     }
 
-    return { JavaError, load, create };
+    return { JavaError, load };
 }();

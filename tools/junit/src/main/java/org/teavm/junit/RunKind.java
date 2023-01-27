@@ -18,5 +18,6 @@ package org.teavm.junit;
 enum RunKind {
     JAVASCRIPT,
     C,
-    WASM
+    WASM,
+    WASI
 }

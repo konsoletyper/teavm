@@ -20,7 +20,6 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.MethodDescriptor;
 
 class VirtualCallConsumer implements DependencyConsumer {
-    private final DependencyNode node;
     private final MethodDescriptor methodDesc;
     private final DependencyAnalyzer analyzer;
     private final DependencyNode[] parameters;
@@ -32,11 +31,9 @@ class VirtualCallConsumer implements DependencyConsumer {
     private boolean isPolymorphic;
     private MethodDependency monomorphicCall;
 
-    VirtualCallConsumer(DependencyNode node, String filterClass,
-            MethodDescriptor methodDesc, DependencyAnalyzer analyzer, DependencyNode[] parameters,
-            DependencyNode result, CallLocation location,
+    VirtualCallConsumer(String filterClass, MethodDescriptor methodDesc, DependencyAnalyzer analyzer,
+            DependencyNode[] parameters, DependencyNode result, CallLocation location,
             DependencyGraphBuilder.ExceptionConsumer exceptionConsumer) {
-        this.node = node;
         this.filter = analyzer.getSuperClassFilter(filterClass);
         this.methodDesc = methodDesc;
         this.analyzer = analyzer;

@@ -1261,7 +1261,7 @@ public final class OffsetTime
      * Outputs this time as a {@code String}, such as {@code 10:15:30+01:00}.
      * <p>
      * The output will be one of the following ISO-8601 formats:
-     * <p><ul>
+     * <ul>
      * <li>{@code HH:mmXXXXX}</li>
      * <li>{@code HH:mm:ssXXXXX}</li>
      * <li>{@code HH:mm:ss.SSSXXXXX}</li>

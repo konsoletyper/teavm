@@ -49,13 +49,13 @@ public class ConsoleIntrinsic implements WasmIntrinsic {
         switch (invocation.getMethod().getName()) {
             case "printString": {
                 String name = manager.getNames().forMethod(PRINT_STRING);
-                WasmCall call = new WasmCall(name, true);
+                WasmCall call = new WasmCall(name);
                 call.getArguments().add(manager.generate(invocation.getArguments().get(0)));
                 return call;
             }
             case "printInt": {
                 String name = manager.getNames().forMethod(PRINT_INT);
-                WasmCall call = new WasmCall(name, true);
+                WasmCall call = new WasmCall(name);
                 call.getArguments().add(manager.generate(invocation.getArguments().get(0)));
                 return call;
             }

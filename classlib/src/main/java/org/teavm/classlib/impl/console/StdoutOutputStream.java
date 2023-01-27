@@ -16,16 +16,15 @@
 package org.teavm.classlib.impl.console;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
-public class StdoutOutputStream extends OutputStream {
+public class StdoutOutputStream extends ConsoleOutputStream {
     public static final StdoutOutputStream INSTANCE = new StdoutOutputStream();
 
     private StdoutOutputStream() {
     }
 
     @Override
-    public void write(int b) throws IOException {
-        Console.writeStdout(b);
+    public void write(byte[] b, int off, int len) throws IOException {
+        Console.writeStdout(b, off, len);
     }
 }

@@ -53,7 +53,7 @@ import org.eclipse.jetty.websocket.api.WebSocketBehavior;
 import org.eclipse.jetty.websocket.api.WebSocketPolicy;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
-public class BrowserRunStrategy implements TestRunStrategy {
+class BrowserRunStrategy implements TestRunStrategy {
     private boolean decodeStack = Boolean.parseBoolean(System.getProperty(TeaVMTestRunner.JS_DECODE_STACK, "true"));
     private final File baseDir;
     private final String type;

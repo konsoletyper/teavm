@@ -87,6 +87,20 @@ public final class UnicodeHelper {
         return sb.toString();
     }
 
+    public static String encodeCaseMapping(int[] data) {
+        StringBuilder sb = new StringBuilder();
+        int sz = data.length / 2;
+        Base46.encodeUnsigned(sb, sz);
+        int last = 0;
+        for (int i = 0; i < sz; i++) {
+            int v = data[i * 2];
+            Base46.encodeUnsigned(sb, v - last);
+            last = v;
+            Base46.encode(sb, data[i * 2 + 1]);
+        }
+        return sb.toString();
+    }
+
     public static int[] decodeIntDiff(String text) {
         CharFlow flow = new CharFlow(text.toCharArray());
         int sz = Base46.decodeUnsigned(flow);
@@ -95,6 +109,19 @@ public final class UnicodeHelper {
         for (int i = 0; i < sz; i++) {
             last += Base46.decode(flow);
             data[i] = last;
+        }
+        return data;
+    }
+
+    public static int[] decodeCaseMapping(String text) {
+        CharFlow flow = new CharFlow(text.toCharArray());
+        int sz = Base46.decodeUnsigned(flow);
+        int[] data = new int[sz * 2];
+        int last = 0;
+        for (int i = 0; i < sz; i++) {
+            last += Base46.decodeUnsigned(flow);
+            data[i * 2] = last;
+            data[i * 2 + 1] = Base46.decode(flow);
         }
         return data;
     }

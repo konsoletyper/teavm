@@ -198,16 +198,16 @@ public abstract class ZoneRules {
      * <p>
      * There are various ways to handle the conversion from a {@code LocalDateTime}.
      * One technique, using this method, would be:
-     * <pre>
-     *  List<ZoneOffset> validOffsets = rules.getOffset(localDT);
+     * <pre>{@code
+     *  var validOffsets = rules.getOffset(localDT);
      *  if (validOffsets.size() == 1) {
      *    // Normal case: only one valid offset
      *    zoneOffset = validOffsets.get(0);
      *  } else {
      *    // Gap or Overlap: determine what to do from transition (which will be non-null)
-     *    ZoneOffsetTransition trans = rules.getTransition(localDT);
+     *    var trans = rules.getTransition(localDT);
      *  }
-     * </pre>
+     * }</pre>
      * <p>
      * In theory, it is possible for there to be more than two valid offsets.
      * This would happen if clocks to be put back more than once in quick succession.

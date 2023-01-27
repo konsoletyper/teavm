@@ -16,6 +16,6 @@
 
 package org.teavm.samples.kotlin
 
-fun main(args : Array<String>) {
+fun main() {
     println("Hello from Kotlin")
 }

@@ -35,6 +35,7 @@ import org.teavm.debugging.DebuggerListener;
 import org.teavm.debugging.Variable;
 import org.teavm.debugging.information.URLDebugInformationProvider;
 import org.teavm.debugging.javascript.JavaScriptLocation;
+import org.teavm.debugging.javascript.JavaScriptScript;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 
 public final class ChromeRDPRunner {
@@ -89,6 +90,7 @@ public final class ChromeRDPRunner {
 
         @Override
         public void detached() {
+            queue.offer(() -> { });
         }
     };
 
@@ -120,6 +122,7 @@ public final class ChromeRDPRunner {
                     }
                 }).start();
             } else if (!debugger.isAttached() && wasAttached) {
+                System.out.println("Detached");
                 break;
             }
         }
@@ -261,7 +264,7 @@ public final class ChromeRDPRunner {
     };
 
     private Promise<Void> tryResolveJsBreakpoint(String fileName, int lineNumber, int columnNumber) {
-        String[] fileNames = resolveJsFileName(fileName);
+        var fileNames = resolveJsFileName(fileName);
         if (fileNames.length == 0) {
             System.out.println("Unknown file: " + fileName);
             return Promise.VOID;
@@ -277,28 +280,8 @@ public final class ChromeRDPRunner {
         });
     }
 
-    private String[] resolveJsFileName(String fileName) {
-        if (debugger.getScriptNames().contains(fileName)) {
-            return new String[] { fileName };
-        }
-
-        String[] result = debugger.getScriptNames().stream()
-                .filter(f -> f.endsWith(fileName) && isPrecededByPathSeparator(f, fileName))
-                .toArray(String[]::new);
-        if (result.length == 1) {
-            return result;
-        }
-
-        return debugger.getSourceFiles().stream()
-                .filter(f -> {
-                    int index = f.lastIndexOf('.');
-                    if (index <= 0) {
-                        return false;
-                    }
-                    String nameWithoutExt = f.substring(0, index);
-                    return nameWithoutExt.endsWith(fileName)  && isPrecededByPathSeparator(nameWithoutExt, fileName);
-                })
-                .toArray(String[]::new);
+    private JavaScriptScript[] resolveJsFileName(String fileName) {
+        return new JavaScriptScript[0];
     }
 
     private String[] resolveFileName(String fileName) {

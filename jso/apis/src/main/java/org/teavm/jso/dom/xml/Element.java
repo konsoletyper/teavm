@@ -60,4 +60,6 @@ public interface Element extends Node {
 
     @JSProperty
     String getTagName();
+
+    void scrollIntoView();
 }

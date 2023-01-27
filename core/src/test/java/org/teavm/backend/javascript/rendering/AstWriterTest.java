@@ -15,14 +15,12 @@
  */
 package org.teavm.backend.javascript.rendering;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import java.io.IOException;
 import java.io.StringReader;
 import org.junit.Test;
 import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ast.AstRoot;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.codegen.SourceWriterBuilder;
 
@@ -30,227 +28,269 @@ public class AstWriterTest {
     private StringBuilder sb = new StringBuilder();
     private SourceWriter sourceWriter;
     private AstWriter writer;
+    private AstWriter writerWithGlobals;
 
     public AstWriterTest() {
-        SourceWriterBuilder builder = new SourceWriterBuilder(null);
+        var builder = new SourceWriterBuilder(null);
         builder.setMinified(true);
         sourceWriter = builder.build(sb);
-        writer = new AstWriter(sourceWriter);
+        writer = new AstWriter(sourceWriter, null);
+        writerWithGlobals = new AstWriter(sourceWriter, name -> prec -> sourceWriter.append("globals.").append(name));
     }
 
     @Test
     public void writesReturn() throws IOException {
-        assertThat(transform("return x;"), is("return x;"));
+        assertEquals("return x;", transform("return x;"));
     }
 
     @Test
     public void writesEmptyReturn() throws IOException {
-        assertThat(transform("return;"), is("return;"));
+        assertEquals("return;", transform("return;"));
     }
 
     @Test
     public void writesThrow() throws IOException {
-        assertThat(transform("throw x;"), is("throw x;"));
+        assertEquals("throw x;", transform("throw x;"));
     }
 
     @Test
     public void writesBreak() throws IOException {
-        assertThat(transform("a: while (true) { break a; }"), is("a:while(true){break a;}"));
+        assertEquals("a:while(true){break a;}", transform("a: while (true) { break a; }"));
     }
 
     @Test
     public void writesEmptyBreak() throws IOException {
-        assertThat(transform("while(true) { break; }"), is("while(true){break;}"));
+        assertEquals("while(true){break;}", transform("while(true) { break; }"));
     }
 
     @Test
     public void writesContinue() throws IOException {
-        assertThat(transform("a: while (true) { continue a; }"), is("a:while(true){continue a;}"));
+        assertEquals("a:while(true){continue a;}", transform("a: while (true) { continue a; }"));
     }
 
     @Test
     public void writesEmptyContinue() throws IOException {
-        assertThat(transform("while(true) { continue; }"), is("while(true){continue;}"));
+        assertEquals("while(true){continue;}", transform("while(true) { continue; }"));
     }
 
     @Test
     public void writesBlock() throws IOException {
-        assertThat(transform("{ foo(); bar(); }"), is("{foo();bar();}"));
+        assertEquals("{foo();bar();}", transform("{ foo(); bar(); }"));
     }
 
     @Test
     public void writesTryCatch() throws IOException {
-        assertThat(transform("try { foo(); } catch (e) { alert(e); }"), is("try {foo();}catch(e){alert(e);}"));
-        assertThat(transform("try { foo(); } finally { close(); }"), is("try {foo();}finally {close();}"));
+        assertEquals("try {foo();}catch(e){alert(e);}", transform("try { foo(); } catch (e) { alert(e); }"));
+        assertEquals("try {foo();}finally {close();}", transform("try { foo(); } finally { close(); }"));
     }
 
     @Test
     public void writesFor() throws IOException {
-        assertThat(transform("for (var i = 0; i < array.length; ++i,++j) foo(array[i]);"),
-                is("for(var i=0;i<array.length;++i,++j)foo(array[i]);"));
+        assertEquals(
+                "for(var i=0;i<array.length;++i,++j)foo(array[i]);",
+                transform("for (var i = 0; i < array.length; ++i,++j) foo(array[i]);")
+        );
     }
 
     @Test
     public void writesEmptyFor() throws IOException {
-        assertThat(transform("for (;;) foo();"), is("for(;;)foo();"));
+        assertEquals("for(;;)foo();", transform("for (;;) foo();"));
     }
 
     @Test
     public void writesForIn() throws IOException {
-        assertThat(transform("for (var property in window) alert(property);"),
-                is("for(var property in window)alert(property);"));
+        assertEquals(
+                "for(var property in window)alert(property);",
+                transform("for (var property in window) alert(property);")
+        );
     }
 
     @Test
     public void writesWhile() throws IOException {
-        assertThat(transform("while (shouldProceed()) proceed();"), is("while(shouldProceed())proceed();"));
+        assertEquals("while(shouldProceed())proceed();", transform("while (shouldProceed()) proceed();"));
     }
 
     @Test
     public void writesDoWhile() throws IOException {
-        assertThat(transform("do proceed(); while(shouldRepeat());"), is("do proceed();while(shouldRepeat());"));
+        assertEquals("do proceed();while(shouldRepeat());", transform("do proceed(); while(shouldRepeat());"));
     }
 
     @Test
     public void writesIfElse() throws IOException {
-        assertThat(transform("if (test()) performTrue(); else performFalse();"),
-                is("if(test())performTrue();else performFalse();"));
+        assertEquals(
+                "if(test())performTrue();else performFalse();",
+                transform("if (test()) performTrue(); else performFalse();")
+        );
     }
 
     @Test
     public void writesIf() throws IOException {
-        assertThat(transform("if (shouldPerform()) perform();"), is("if(shouldPerform())perform();"));
+        assertEquals("if(shouldPerform())perform();", transform("if (shouldPerform()) perform();"));
     }
 
     @Test
     public void writesSwitch() throws IOException {
-        assertThat(transform("switch (c) { "
+        assertEquals(
+                "switch(c){case '.':case '?':matchAny();break;case '*':matchSequence();break;"
+                        + "default:matchChar(c);break;}",
+                transform("switch (c) { "
                 + "case '.': case '?': matchAny(); break; "
                 + "case '*': matchSequence(); break;"
-                + "default: matchChar(c); break; } "),
-                is("switch(c){case '.':case '?':matchAny();break;case '*':matchSequence();break;"
-                        + "default:matchChar(c);break;}"));
+                + "default: matchChar(c); break; } ")
+        );
     }
 
     @Test
     public void writesLet() throws IOException {
-        assertThat(transform("let x = 1; alert(x);"), is("let x=1;alert(x);"));
-        assertThat(transform("let x = 1, y; alert(x,y);"), is("let x=1,y;alert(x,y);"));
+        assertEquals("let x=1;alert(x);", transform("let x = 1; alert(x);"));
+        assertEquals("let x=1,y;alert(x,y);", transform("let x = 1, y; alert(x,y);"));
     }
 
     @Test
     public void writesConst() throws IOException {
-        assertThat(transform("const x = 1,y = 2; alert(x,y);"), is("const x=1,y=2;alert(x,y);"));
+        assertEquals("const xx=1,yy=2;alert(xx,yy);", transform("const xx = 1,yy = 2; alert(xx,yy);"));
     }
 
     @Test
     public void writesElementGet() throws IOException {
-        assertThat(transform("return array[i];"), is("return array[i];"));
-        assertThat(transform("return array[i][j];"), is("return array[i][j];"));
-        assertThat(transform("return (array[i])[j];"), is("return array[i][j];"));
-        assertThat(transform("return (a + b)[i];"), is("return (a+b)[i];"));
-        assertThat(transform("return a + b[i];"), is("return a+b[i];"));
+        assertEquals("return array[i];", transform("return array[i];"));
+        assertEquals("return array[i][j];", transform("return array[i][j];"));
+        assertEquals("return array[i][j];", transform("return (array[i])[j];"));
+        assertEquals("return (a+b)[i];", transform("return (a + b)[i];"));
+        assertEquals("return a+b[i];", transform("return a + b[i];"));
     }
 
     @Test
     public void writesPropertyGet() throws IOException {
-        assertThat(transform("return array.length;"), is("return array.length;"));
-        assertThat(transform("return (array).length;"), is("return array.length;"));
-        assertThat(transform("return (x + y).toString();"), is("return (x+y).toString();"));
+        assertEquals("return array.length;", transform("return array.length;"));
+        assertEquals("return array.length;", transform("return (array).length;"));
+        assertEquals("return (x+y).toString();", transform("return (x + y).toString();"));
     }
 
     @Test
     public void writesFunctionCall() throws IOException {
-        assertThat(transform("return f(x);"), is("return f(x);"));
-        assertThat(transform("return (f)(x);"), is("return f(x);"));
-        assertThat(transform("return (f + g)(x);"), is("return (f+g)(x);"));
+        assertEquals("return f(x);", transform("return f(x);"));
+        assertEquals("return f(x);", transform("return (f)(x);"));
+        assertEquals("return (f+g)(x);", transform("return (f + g)(x);"));
     }
 
     @Test
     public void writesConstructorCall() throws IOException {
-        assertThat(transform("return new (f + g)(x);"), is("return new (f+g)(x);"));
-        assertThat(transform("return new f + g(x);"), is("return new f()+g(x);"));
-        assertThat(transform("return new f()(x);"), is("return new f()(x);"));
-        assertThat(transform("return (new f())(x);"), is("return new f()(x);"));
-        assertThat(transform("return new (f())(x);"), is("return new (f())(x);"));
-        assertThat(transform("return new f[0](x);"), is("return new f[0](x);"));
-        assertThat(transform("return (new f[0](x));"), is("return new f[0](x);"));
+        assertEquals("return new (f+g)(x);", transform("return new (f + g)(x);"));
+        assertEquals("return new f()+g(x);", transform("return new f + g(x);"));
+        assertEquals("return new f()(x);", transform("return new f()(x);"));
+        assertEquals("return new f()(x);", transform("return (new f())(x);"));
+        assertEquals("return new (f())(x);", transform("return new (f())(x);"));
+        assertEquals("return new f[0](x);", transform("return new f[0](x);"));
+        assertEquals("return new f[0](x);", transform("return (new f[0](x));"));
     }
 
     @Test
     public void writesConditionalExpr() throws IOException {
-        assertThat(transform("return cond ? 1 : 0;"), is("return cond?1:0;"));
-        assertThat(transform("return a < b ? -1 : a > b ? 1 : 0;"), is("return a<b? -1:a>b?1:0;"));
-        assertThat(transform("return a < b ? -1 : (a > b ? 1 : 0);"), is("return a<b? -1:a>b?1:0;"));
-        assertThat(transform("return (a < b ? x == y : x != y) ? 1 : 0;"), is("return (a<b?x==y:x!=y)?1:0;"));
-        assertThat(transform("return a < b ? (x > y ? x : y) : z"), is("return a<b?(x>y?x:y):z;"));
+        assertEquals("return cond?1:0;", transform("return cond ? 1 : 0;"));
+        assertEquals("return a<b? -1:a>b?1:0;", transform("return a < b ? -1 : a > b ? 1 : 0;"));
+        assertEquals("return a<b? -1:a>b?1:0;", transform("return a < b ? -1 : (a > b ? 1 : 0);"));
+        assertEquals("return (a<b?x==y:x!=y)?1:0;", transform("return (a < b ? x == y : x != y) ? 1 : 0;"));
+        assertEquals("return a<b?(x>y?x:y):z;", transform("return a < b ? (x > y ? x : y) : z"));
     }
 
     @Test
     public void writesRegExp() throws IOException {
-        assertThat(transform("return /[a-z]+/.match(text);"), is("return /[a-z]+/.match(text);"));
-        assertThat(transform("return /[a-z]+/ig.match(text);"), is("return /[a-z]+/ig.match(text);"));
+        assertEquals("return /[a-z]+/.match(text);", transform("return /[a-z]+/.match(text);"));
+        assertEquals("return /[a-z]+/ig.match(text);", transform("return /[a-z]+/ig.match(text);"));
     }
 
     @Test
     public void writesArrayLiteral() throws IOException {
-        assertThat(transform("return [];"), is("return [];"));
-        assertThat(transform("return [a, b + c];"), is("return [a,b+c];"));
+        assertEquals("return [];", transform("return [];"));
+        assertEquals("return [a,b+c];", transform("return [a, b + c];"));
     }
 
     @Test
     public void writesObjectLiteral() throws IOException {
-        assertThat(transform("return {};"), is("return {};"));
-        assertThat(transform("return { foo : bar };"), is("return {foo:bar};"));
-        assertThat(transform("return { foo : bar };"), is("return {foo:bar};"));
-        assertThat(transform("return { _foo : bar, get foo() { return this._foo; } };"),
-                is("return {_foo:bar,get foo(){return this._foo;}};"));
+        assertEquals("return {};", transform("return {};"));
+        assertEquals("return {foo:bar};", transform("return { foo : bar };"));
+        assertEquals("return {foo:bar};", transform("return { foo : bar };"));
+        assertEquals(
+                "return {_foo:bar,get foo(){return this._foo;}};",
+                transform("return { _foo : bar, get foo() { return this._foo; } };")
+        );
     }
 
     @Test
     public void writesFunction() throws IOException {
-        assertThat(transform("return function f(x, y) { return x + y; };"),
-                is("return function f(x,y){return x+y;};"));
+        assertEquals(
+                "return function f(x,y){return x+y;};",
+                transform("return function f(x, y) { return x + y; };")
+        );
     }
 
     @Test
     public void writesUnary() throws IOException {
-        assertThat(transform("return -a;"), is("return  -a;"));
-        assertThat(transform("return -(a + b);"), is("return  -(a+b);"));
-        assertThat(transform("return -a + b;"), is("return  -a+b;"));
-        assertThat(transform("return (-a) + b;"), is("return  -a+b;"));
-        assertThat(transform("return (-f)(x);"), is("return ( -f)(x);"));
-        assertThat(transform("return typeof a;"), is("return typeof a;"));
+        assertEquals("return  -a;", transform("return -a;"));
+        assertEquals("return  -(a+b);", transform("return -(a + b);"));
+        assertEquals("return  -a+b;", transform("return -a + b;"));
+        assertEquals("return  -a+b;", transform("return (-a) + b;"));
+        assertEquals("return ( -f)(x);", transform("return (-f)(x);"));
+        assertEquals("return typeof a;", transform("return typeof a;"));
     }
 
     @Test
     public void writesPostfix() throws IOException {
-        assertThat(transform("return a++;"), is("return a++;"));
+        assertEquals("return a++;", transform("return a++;"));
     }
 
     @Test
     public void respectsPrecedence() throws IOException {
-        assertThat(transform("return a + b + c;"), is("return a+b+c;"));
-        assertThat(transform("return (a + b) + c;"), is("return a+b+c;"));
-        assertThat(transform("return a + (b + c);"), is("return a+b+c;"));
-        assertThat(transform("return a - b + c;"), is("return a -b+c;"));
-        assertThat(transform("return (a - b) + c;"), is("return a -b+c;"));
-        assertThat(transform("return a - (b + c);"), is("return a -(b+c);"));
+        assertEquals("return a+b+c;", transform("return a + b + c;"));
+        assertEquals("return a+b+c;", transform("return (a + b) + c;"));
+        assertEquals("return a+b+c;", transform("return a + (b + c);"));
+        assertEquals("return a -b+c;", transform("return a - b + c;"));
+        assertEquals("return a -b+c;", transform("return (a - b) + c;"));
+        assertEquals("return a -(b+c);", transform("return a - (b + c);"));
     }
 
     @Test
     public void writesDelete() throws IOException {
-        assertThat(transform("delete a.b;"), is("delete a.b;"));
+        assertEquals("delete a.b;", transform("delete a.b;"));
+    }
+
+    @Test
+    public void writesGlobalRef() throws IOException {
+        assertEquals(
+                "function(x){return x+globals.y;}",
+                transformGlobals("function(x) { return x + y; }")
+        );
+        assertEquals(
+                "try {globals.foo();}catch(x){globals.foo(x);}",
+                transformGlobals("try { foo(); } catch (x) { foo(x); }")
+        );
+        assertEquals(
+                "for(var i=0;i<10;++i){globals.foo(i,globals.j);}",
+                transformGlobals("for (var i = 0; i < 10; ++i) { foo(i, j); }")
+        );
+        assertEquals(
+                "function(){var x=0;globals.foo(x,globals.y);}",
+                transformGlobals("function() { var x = 0; foo(x, y); }")
+        );
     }
 
     private String transform(String text) throws IOException {
+        return transform(text, writer);
+    }
+
+    private String transformGlobals(String text) throws IOException {
+        return transform(text, writerWithGlobals);
+    }
+
+    private String transform(String text, AstWriter writer) throws IOException {
         sb.setLength(0);
-        CompilerEnvirons env = new CompilerEnvirons();
+        var env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
         env.setLanguageVersion(Context.VERSION_1_8);
-        JSParser factory = new JSParser(env);
+        var factory = new JSParser(env);
         factory.enterFunction();
-        AstRoot rootNode = factory.parse(new StringReader(text), null, 0);
+        var rootNode = factory.parse(new StringReader(text), null, 0);
         factory.exitFunction();
         writer.hoist(rootNode);
         writer.print(rootNode);

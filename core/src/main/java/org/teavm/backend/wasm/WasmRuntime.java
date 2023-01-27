@@ -15,8 +15,8 @@
  */
 package org.teavm.backend.wasm;
 
+import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.interop.Address;
-import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Unmanaged;
 import org.teavm.runtime.RuntimeObject;
@@ -84,17 +84,21 @@ public final class WasmRuntime {
         return value;
     }
 
-    @Import(name = "print", module = "spectest")
-    public static native void print(int a);
+    public static void print(int a) {
+        WasmSupport.print(a);
+    }
 
-    @Import(name = "logString", module = "teavm")
-    public static native void printString(String s);
+    public static void printString(String s) {
+        WasmSupport.printString(s);
+    }
 
-    @Import(name = "logInt", module = "teavm")
-    public static native void printInt(int i);
+    public static void printInt(int i) {
+        WasmSupport.printInt(i);
+    }
 
-    @Import(name = "logOutOfMemory", module = "teavm")
-    public static native void printOutOfMemory();
+    public static void printOutOfMemory() {
+        WasmSupport.printOutOfMemory();
+    }
 
     public static void fillZero(Address address, int count) {
         fill(address, (byte) 0, count);

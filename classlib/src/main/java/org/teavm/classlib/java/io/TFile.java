@@ -23,10 +23,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Objects;
-import org.teavm.classlib.fs.VirtualFile;
-import org.teavm.classlib.fs.VirtualFileSystem;
-import org.teavm.classlib.fs.VirtualFileSystemProvider;
 import org.teavm.classlib.java.util.TRandom;
+import org.teavm.runtime.fs.VirtualFile;
+import org.teavm.runtime.fs.VirtualFileSystem;
+import org.teavm.runtime.fs.VirtualFileSystemProvider;
 
 public class TFile implements Serializable, Comparable<TFile> {
     private String path;
@@ -396,7 +396,7 @@ public class TFile implements Serializable, Comparable<TFile> {
 
     public boolean createNewFile() throws IOException {
         VirtualFile parentVirtualFile = findParentFile();
-        if (parentVirtualFile == null) {
+        if (parentVirtualFile == null || !parentVirtualFile.isDirectory()) {
             throw new IOException("Can't create file " + getPath() + " since parent directory does not exist");
         }
 
@@ -405,7 +405,7 @@ public class TFile implements Serializable, Comparable<TFile> {
 
     public boolean mkdir() {
         VirtualFile virtualFile = findParentFile();
-        return virtualFile != null && virtualFile.createDirectory(getName());
+        return virtualFile != null && virtualFile.isDirectory() && virtualFile.createDirectory(getName());
     }
 
     public boolean mkdirs() {
@@ -416,7 +416,7 @@ public class TFile implements Serializable, Comparable<TFile> {
         }
         int i = path.length();
 
-        do {
+        while (true) {
             VirtualFile file = fs().getFile(path.substring(0, i));
             if (file.isDirectory()) {
                 break;
@@ -424,13 +424,18 @@ public class TFile implements Serializable, Comparable<TFile> {
                 return false;
             }
 
-            i = path.lastIndexOf(separatorChar, i - 1);
-        } while (i >= 0);
-
-        i++;
+            int next = path.lastIndexOf(separatorChar, i - 1);
+            if (next < 0) {
+                break;
+            }
+            i = next;
+            if (i == 0) {
+                break;
+            }
+        }
 
         while (i < path.length()) {
-            int next = path.indexOf(separatorChar, i);
+            int next = path.indexOf(separatorChar, i + 1);
             if (next < 0) {
                 next = path.length();
             }
@@ -438,11 +443,12 @@ public class TFile implements Serializable, Comparable<TFile> {
                 break;
             }
 
-            VirtualFile file = fs().getFile(path.substring(0, i));
-            if (!file.createDirectory(path.substring(i, next))) {
+            String dirPath = i == 0 && path.startsWith("/") ? "/" : path.substring(0, i);
+            VirtualFile file = fs().getFile(dirPath);
+            if (!file.createDirectory(path.substring(i + 1, next))) {
                 return false;
             }
-            i = next + 1;
+            i = next;
         }
 
         return true;
@@ -515,7 +521,9 @@ public class TFile implements Serializable, Comparable<TFile> {
         if (directory == null) {
             String tmpDir = System.getProperty("java.io.tmpdir", ".");
             tmpDirFile = new TFile(tmpDir);
-            tmpDirFile.mkdirs();
+            if (!tmpDirFile.mkdirs()) {
+                throw new IOException("Could not access temp dir");
+            }
         } else {
             tmpDirFile = directory;
         }

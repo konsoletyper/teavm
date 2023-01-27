@@ -87,7 +87,7 @@ public class RuntimeRenderer {
         AstRoot ast = parseRuntime(name);
         ast.visit(new StringConstantElimination());
         new RuntimeAstTransformer(writer.getNaming()).accept(ast);
-        AstWriter astWriter = new AstWriter(writer);
+        var astWriter = new AstWriter(writer, new DefaultGlobalNameWriter(writer));
         astWriter.hoist(ast);
         astWriter.print(ast);
     }

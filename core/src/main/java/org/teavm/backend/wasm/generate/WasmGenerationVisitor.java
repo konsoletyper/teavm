@@ -903,21 +903,27 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             switch (expr.getMethod().getName()) {
                 case "allocStack":
                     generateAllocStack(expr.getArguments().get(0));
+                    result.setLocation(expr.getLocation());
                     return;
                 case "releaseStack":
                     generateReleaseStack();
+                    result.setLocation(expr.getLocation());
                     return;
                 case "registerGCRoot":
                     generateRegisterGcRoot(expr.getArguments().get(0), expr.getArguments().get(1));
+                    result.setLocation(expr.getLocation());
                     return;
                 case "removeGCRoot":
                     generateRemoveGcRoot(expr.getArguments().get(0));
+                    result.setLocation(expr.getLocation());
                     return;
                 case "registerCallSite":
                     generateRegisterCallSite(expr.getArguments().get(0));
+                    result.setLocation(expr.getLocation());
                     return;
                 case "getExceptionHandlerId":
                     generateGetHandlerId();
+                    result.setLocation(expr.getLocation());
                     return;
             }
         }
@@ -941,6 +947,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 accept(argument);
                 call.getArguments().add(result);
             }
+            call.setLocation(expr.getLocation());
             result = call;
         } else if (expr.getType() == InvocationType.CONSTRUCTOR) {
             WasmBlock block = new WasmBlock(false);
@@ -1451,38 +1458,52 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         expr.getIndex().acceptVisitor(this);
     }
 
-    private WasmExpression negate(WasmExpression expr) {
+    private static WasmExpression negate(WasmExpression expr) {
         if (expr instanceof WasmIntBinary) {
             WasmIntBinary binary = (WasmIntBinary) expr;
             if (binary.getType() == WasmIntType.INT32 && binary.getOperation() == WasmIntBinaryOperation.XOR) {
                 if (isOne(binary.getFirst())) {
-                    return binary.getSecond();
+                    var result = binary.getSecond();
+                    if (result.getLocation() == null && expr.getLocation() != null) {
+                        result.setLocation(expr.getLocation());
+                    }
+                    return result;
                 }
                 if (isOne(binary.getSecond())) {
-                    return binary.getFirst();
+                    var result = binary.getFirst();
+                    if (result.getLocation() == null && expr.getLocation() != null) {
+                        result.setLocation(expr.getLocation());
+                    }
+                    return result;
                 }
             }
 
             WasmIntBinaryOperation negatedOp = negate(binary.getOperation());
             if (negatedOp != null) {
-                return new WasmIntBinary(binary.getType(), negatedOp, binary.getFirst(), binary.getSecond());
+                var result = new WasmIntBinary(binary.getType(), negatedOp, binary.getFirst(), binary.getSecond());
+                result.setLocation(expr.getLocation());
+                return result;
             }
         } else if (expr instanceof WasmFloatBinary) {
             WasmFloatBinary binary = (WasmFloatBinary) expr;
             WasmFloatBinaryOperation negatedOp = negate(binary.getOperation());
             if (negatedOp != null) {
-                return new WasmFloatBinary(binary.getType(), negatedOp, binary.getFirst(), binary.getSecond());
+                var result = new WasmFloatBinary(binary.getType(), negatedOp, binary.getFirst(), binary.getSecond());
+                result.setLocation(expr.getLocation());
+                return result;
             }
         }
 
-        return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, expr, new WasmInt32Constant(0));
+        var result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, expr, new WasmInt32Constant(0));
+        result.setLocation(expr.getLocation());
+        return result;
     }
 
-    private boolean isOne(WasmExpression expression) {
+    private static boolean isOne(WasmExpression expression) {
         return expression instanceof WasmInt32Constant && ((WasmInt32Constant) expression).getValue() == 1;
     }
 
-    private boolean isZero(WasmExpression expression) {
+    private static boolean isZero(WasmExpression expression) {
         return expression instanceof WasmInt32Constant && ((WasmInt32Constant) expression).getValue() == 0;
     }
 
@@ -1546,7 +1567,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         return expression;
     }
 
-    private WasmIntBinaryOperation negate(WasmIntBinaryOperation op) {
+    private static WasmIntBinaryOperation negate(WasmIntBinaryOperation op) {
         switch (op) {
             case EQ:
                 return WasmIntBinaryOperation.NE;
@@ -1573,7 +1594,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
     }
 
-    private WasmFloatBinaryOperation negate(WasmFloatBinaryOperation op) {
+    private static WasmFloatBinaryOperation negate(WasmFloatBinaryOperation op) {
         switch (op) {
             case EQ:
                 return WasmFloatBinaryOperation.NE;

@@ -26,5 +26,5 @@ public interface JavaScriptDebuggerListener {
 
     void breakpointChanged(JavaScriptBreakpoint breakpoint);
 
-    void scriptAdded(String name);
+    void scriptAdded(JavaScriptScript script);
 }

@@ -634,4 +634,29 @@ public class VMTest {
         }
         return result;
     }
+
+    @Test
+    public void virtualCallWithPrivateMethods() {
+        assertEquals("ap", callA(new B()));
+    }
+
+    private static String callA(A a) {
+        return a.a();
+    }
+
+    static class A {
+        String a() {
+            return "a" + p();
+        }
+
+        private String p() {
+            return "p";
+        }
+    }
+
+    static class B extends A {
+        private String p() {
+            return "q";
+        }
+    }
 }

@@ -4,6 +4,7 @@ class DebuggerAgent {
     constructor(tab, port) {
         this.pendingMessages = [];
         this.connection = null;
+        this.pingTimeout = null;
         this.attachedToDebugger = false;
         this.messageBuffer = "";
         this.port = 0;
@@ -11,14 +12,27 @@ class DebuggerAgent {
 
         this.debuggee = { tabId : tab.id };
         this.port = port;
+        this.tab = tab;
         debuggerAgentMap[tab.id] = this;
+        this.contentScriptPingListener = (message, sender) => this.onContentScriptPing(message, sender);
     }
 
     attach() {
-        chrome.debugger.attach(this.debuggee, "1.2", () => {
+        chrome.debugger.attach(this.debuggee, "1.3", () => {
             this.attachedToDebugger = true;
             chrome.debugger.sendCommand(this.debuggee, "Debugger.enable", {}, () => this.connectToServer());
         });
+        chrome.scripting.executeScript({
+            target: { tabId: this.tab.id },
+            files: ['ping.js']
+        });
+        chrome.runtime.onMessage.addListener(this.contentScriptPingListener);
+    }
+
+    onContentScriptPing(message, sender) {
+        if (message.comand === "ping" && typeof sender.tab !== "undefined" && sender.tab.id === this.tab.id) {
+            chrome.tabs.sendMessage(this.tab.id, { command: "pong" });
+        }
     }
 
     connectToServer() {
@@ -37,16 +51,39 @@ class DebuggerAgent {
                 this.connection = null;
                 this.disconnect();
             }
+            this.stopPing();
         };
         this.connection.onopen = () => {
             for (const pendingMessage of this.pendingMessages) {
                 this.sendMessage(pendingMessage);
             }
             this.pendingMessages = null;
+            this.sendPing();
         };
     }
 
+    sendPing() {
+        this.sendMessage({ method: "TeaVM.ping" });
+    }
+
+    schedulePing() {
+        this.pingTimeout = setTimeout(() => {
+            this.sendPing();
+        }, 2000);
+    }
+
+    stopPing() {
+        if (this.pingTimeout != null) {
+            clearTimeout(this.pingTimeout);
+            this.pingTimeout = null;
+        }
+    }
+
     receiveMessage(message) {
+        if (message.method === "TeaVM.pong") {
+            this.schedulePing();
+            return;
+        }
         chrome.debugger.sendCommand(this.debuggee, message.method, message.params, response => {
             if (message.id) {
                 const responseToServer = {
@@ -70,15 +107,18 @@ class DebuggerAgent {
     }
 
     disconnect(callback) {
+        chrome.runtime.onMessage.removeListener(this.contentScriptPingListener);
+        chrome.tabs.sendMessage(this.tab.id, { command: "quitPingPong" });
         if (this.connection) {
+            this.stopPing();
             const conn = this.connection;
             this.connection = null;
             conn.close();
         }
+        delete debuggerAgentMap[this.debuggee.tabId];
         if (this.attachedToDebugger) {
             chrome.debugger.detach(this.debuggee, () => {
                 if (this.debuggee) {
-                    delete debuggerAgentMap[this.debuggee.tabId];
                     this.debuggee = null;
                 }
                 for (const callback of this.disconnectCallbacks) {
@@ -102,7 +142,7 @@ class DebuggerAgent {
 
 DebuggerAgent.MAX_MESSAGE_SIZE = 65534;
 
-chrome.browserAction.onClicked.addListener(function(tab) {
+chrome.action.onClicked.addListener(tab => {
     chrome.storage.sync.get({ port: 2357 }, items => attachDebugger(tab, items.port));
 });
 

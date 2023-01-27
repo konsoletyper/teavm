@@ -47,6 +47,7 @@ public class DoubleIntrinsic implements WasmIntrinsic {
             case "getNaN":
             case "isNaN":
             case "isInfinite":
+            case "isFinite":
             case "doubleToLongBits":
             case "longBitsToDouble":
                 return true;
@@ -65,7 +66,14 @@ public class DoubleIntrinsic implements WasmIntrinsic {
                         WasmIntBinaryOperation.NE);
             case "isInfinite":
                 return testSpecialIEEE(manager.generate(invocation.getArguments().get(0)), manager,
-                    WasmIntBinaryOperation.EQ);
+                        WasmIntBinaryOperation.NE);
+            case "isFinite": {
+                WasmExpression result = testSpecialIEEE(manager.generate(invocation.getArguments().get(0)), manager,
+                        WasmIntBinaryOperation.NE);
+                result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, result,
+                        new WasmInt32Constant(0));
+                return result;
+            }
             case "doubleToLongBits": {
                 WasmConversion conversion = new WasmConversion(WasmType.FLOAT64, WasmType.INT64, false,
                         manager.generate(invocation.getArguments().get(0)));

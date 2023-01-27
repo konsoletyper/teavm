@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
 import java.util.function.LongPredicate;
+import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TMath;
@@ -144,6 +145,8 @@ public class TRandom extends TObject implements TSerializable {
     public double nextDouble() {
         if (PlatformDetector.isC()) {
             return crand();
+        } else if (PlatformDetector.isWebAssembly()) {
+            return WasmSupport.random();
         } else {
             return random();
         }

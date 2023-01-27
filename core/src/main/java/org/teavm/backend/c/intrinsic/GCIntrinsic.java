@@ -39,6 +39,7 @@ public class GCIntrinsic implements Intrinsic {
             case "resizeHeap":
             case "cardTable":
             case "writeBarrier":
+            case "canShrinkHeap":
                 return true;
             default:
                 return false;
@@ -58,6 +59,10 @@ public class GCIntrinsic implements Intrinsic {
                 context.writer().print("teavm_gc_writeBarrier(");
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print(")");
+                break;
+
+            case "canShrinkHeap":
+                context.writer().print("1");
                 break;
 
             default:

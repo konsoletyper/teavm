@@ -32,6 +32,8 @@ public final class UnicodeSupport {
     private static int[] digitValues;
     private static byte[] classes;
     private static int[] titleCaseMapping;
+    private static int[] upperCaseMapping;
+    private static int[] lowerCaseMapping;
     private static Map<String, Byte> classMap = new HashMap<>();
 
     static {
@@ -74,6 +76,8 @@ public final class UnicodeSupport {
         IntegerArray digitValues = new IntegerArray(4096);
         IntegerArray classes = new IntegerArray(65536);
         IntegerArray titleCaseMapping = new IntegerArray(256);
+        IntegerArray upperCaseMapping = new IntegerArray(256);
+        IntegerArray lowerCaseMapping = new IntegerArray(256);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(UnicodeHelper.class
                 .getResourceAsStream("UnicodeData.txt")))) {
             while (true) {
@@ -97,13 +101,15 @@ public final class UnicodeSupport {
                 Byte charClass = classMap.get(fields[2]);
                 classes.add(charClass != null ? charClass.intValue() : 0);
 
-                if (!fields[14].isEmpty()) {
-                    int titleCaseCode = parseHex(fields[14]);
-                    if (fields[12].isEmpty() || parseHex(fields[12]) != titleCaseCode) {
-                        titleCaseMapping.add(charCode);
-                        titleCaseMapping.add(titleCaseCode);
-                    }
+                int upperCaseCode = !fields[12].isEmpty() ? parseHex(fields[12]) : charCode;
+                encodeCaseMapping(upperCaseMapping, charCode, upperCaseCode);
+                int lowerCaseCode = !fields[13].isEmpty() ? parseHex(fields[13]) : charCode;
+                encodeCaseMapping(lowerCaseMapping, charCode, lowerCaseCode);
+                int titleCaseCode = !fields[14].isEmpty() ? parseHex(fields[14]) : charCode;
+                if (titleCaseCode == upperCaseCode) {
+                    titleCaseCode = charCode;
                 }
+                encodeCaseMapping(titleCaseMapping, charCode, titleCaseCode);
             }
         } catch (IOException e) {
             throw new RuntimeException("Error reading unicode data", e);
@@ -131,6 +137,16 @@ public final class UnicodeSupport {
             UnicodeSupport.classes[i] = (byte) classes.get(i);
         }
         UnicodeSupport.titleCaseMapping = titleCaseMapping.getAll();
+        UnicodeSupport.upperCaseMapping = upperCaseMapping.getAll();
+        UnicodeSupport.lowerCaseMapping = lowerCaseMapping.getAll();
+    }
+
+    private static void encodeCaseMapping(IntegerArray array, int codePoint, int mappedCodePoint) {
+        int diff = mappedCodePoint - codePoint;
+        if (array.size() == 0 || diff != array.get(array.size() - 1)) {
+            array.add(codePoint);
+            array.add(diff);
+        }
     }
 
     private static String[] splitLine(String line) {
@@ -215,5 +231,15 @@ public final class UnicodeSupport {
     public static int[] getTitleCaseMapping() {
         ensureUnicodeData();
         return titleCaseMapping;
+    }
+
+    public static int[] getUpperCaseMapping() {
+        ensureUnicodeData();
+        return upperCaseMapping;
+    }
+
+    public static int[] getLowerCaseMapping() {
+        ensureUnicodeData();
+        return lowerCaseMapping;
     }
 }

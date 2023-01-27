@@ -105,7 +105,7 @@ import org.threeten.bp.jdk8.Jdk8Methods;
  * The earliest period is referred to as week 0 if it has less than the minimal number of days
  * and week 1 if it has at least the minimal number of days.
  * <p>
- * <table cellpadding="0" cellspacing="3" border="0" style="text-align: left; width: 50%;">
+ * <table style="text-align: left; width: 50%;">
  * <caption>Examples of WeekFields</caption>
  * <tr><th>Date</th><td>Day-of-week</td>
  *  <td>First day: Monday<br>Minimal days: 4</td><td>First day: Monday<br>Minimal days: 5</td></tr>

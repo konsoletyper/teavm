@@ -1,0 +1,22 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="run-tests (wasi)" type="JUnit" factoryName="JUnit">
+    <module name="teavm.tests.test" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="org.teavm.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <option name="PACKAGE_NAME" value="org.teavm" />
+    <option name="MAIN_CLASS_NAME" value="" />
+    <option name="METHOD_NAME" value="" />
+    <option name="TEST_OBJECT" value="package" />
+    <option name="VM_PARAMETERS" value="-ea -Dteavm.junit.target=target/wasi-tests -Dteavm.junit.threads=3 -Dteavm.junit.minified=false -Dteavm.junit.optimized=false -Dteavm.junit.wasi.runner=./run-wasi.sh -Dteavm.junit.wasi=true -Dteavm.junit.js=false" />
+    <option name="PARAMETERS" value="" />
+    <option name="WORKING_DIRECTORY" value="$MODULE_DIR$" />
+    <dir value="$USER_HOME$/idea-debug/teavm/tests/src/test/java" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

@@ -16,12 +16,14 @@
 package org.teavm.backend.wasm.model;
 
 import java.util.Objects;
+import org.teavm.backend.wasm.debug.info.VariableType;
 
 public class WasmLocal {
     WasmFunction function;
     int index;
     private String name;
     private WasmType type;
+    private VariableType javaType;
 
     public WasmLocal(WasmType type, String name) {
         Objects.requireNonNull(type);
@@ -56,5 +58,13 @@ public class WasmLocal {
 
     public int getIndex() {
         return index;
+    }
+
+    public void setJavaType(VariableType javaType) {
+        this.javaType = javaType;
+    }
+
+    public VariableType getJavaType() {
+        return javaType;
     }
 }
