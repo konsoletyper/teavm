@@ -59,6 +59,10 @@ gradle.allprojects {
     version = teavmVersion
 }
 
+gradle.allprojects {
+    apply(plugin = "javaVersion")
+}
+
 gradle.afterProject {
     val java = extensions.findByType<JavaPluginExtension>()
     if (java != null) {
@@ -66,11 +70,6 @@ gradle.afterProject {
         extensions.configure<CheckstyleExtension> {
             toolVersion = extensions.getByType<VersionCatalogsExtension>().named("libs")
                     .findVersion("checkstyle").get().requiredVersion
-        }
-        java.toolchain {
-            if (!languageVersion.isPresent) {
-                languageVersion.set(JavaLanguageVersion.of(11))
-            }
         }
     }
 

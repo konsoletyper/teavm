@@ -84,10 +84,7 @@ gradle.afterProject {
                     .findVersion("checkstyle").get().requiredVersion
             configDirectory.set(File(settings.rootDir, "../config/checkstyle"))
         }
-        java.toolchain {
-            if (!languageVersion.isPresent) {
-                languageVersion.set(JavaLanguageVersion.of(11))
-            }
-        }
+        java.sourceCompatibility = JavaVersion.VERSION_11
+        java.targetCompatibility = JavaVersion.VERSION_11
     }
 }
