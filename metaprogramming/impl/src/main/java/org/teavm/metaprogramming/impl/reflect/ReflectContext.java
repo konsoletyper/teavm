@@ -26,6 +26,8 @@ import org.teavm.model.ElementReader;
 import org.teavm.model.ValueType;
 
 public class ReflectContext {
+    private static final int RECORD = 0x10000;
+
     private ClassReaderSource classSource;
     private ClassHierarchy hierarchy;
     private Map<ValueType, ReflectClassImpl<?>> classes = new HashMap<>();
@@ -107,6 +109,9 @@ public class ReflectContext {
         }
         if (modifierSet.contains(ElementModifier.VOLATILE)) {
             modifiers |= Modifier.VOLATILE;
+        }
+        if (modifierSet.contains(ElementModifier.RECORD)) {
+            modifiers |= RECORD;
         }
         return modifiers;
     }

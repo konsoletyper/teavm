@@ -505,6 +505,9 @@ public class Parser {
                 member.getModifiers().add(ElementModifier.VOLATILE);
             }
         }
+        if ((access & Opcodes.ACC_RECORD) != 0) {
+            member.getModifiers().add(ElementModifier.RECORD);
+        }
     }
 
     private void parseAnnotations(AnnotationContainer annotations, List<AnnotationNode> visibleAnnotations,

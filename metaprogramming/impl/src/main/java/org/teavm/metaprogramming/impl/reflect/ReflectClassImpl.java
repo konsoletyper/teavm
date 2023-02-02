@@ -86,6 +86,12 @@ public class ReflectClassImpl<T> implements ReflectClass<T> {
         return classReader != null && classReader.readModifiers().contains(ElementModifier.ENUM);
     }
 
+    @Override
+    public boolean isRecord() {
+        resolve();
+        return classReader != null && classReader.readModifiers().contains(ElementModifier.RECORD);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public T[] getEnumConstants() {
