@@ -87,6 +87,9 @@ val generateConfig by tasks.registering {
         """.trimIndent())
     }
 }
-tasks.compileJava.configure { dependsOn(generateConfig) }
+tasks.compileJava.configure {
+    dependsOn(generateConfig)
+    options.encoding = "UTF-8"
+}
 
 sourceSets.main.configure { java.srcDir(generatedConfigDir) }

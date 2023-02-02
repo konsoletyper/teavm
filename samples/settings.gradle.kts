@@ -73,6 +73,10 @@ gradle.allprojects {
         mavenLocal()
         mavenCentral()
     }
+
+    tasks.withType<JavaCompile>().configureEach {
+        options.encoding = "UTF-8"
+    }
 }
 
 gradle.afterProject {

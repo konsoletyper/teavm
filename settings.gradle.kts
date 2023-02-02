@@ -61,6 +61,10 @@ gradle.allprojects {
 
 gradle.allprojects {
     apply(plugin = "javaVersion")
+
+    tasks.withType<JavaCompile>().configureEach {
+        options.encoding = "UTF-8"
+    }
 }
 
 gradle.afterProject {
