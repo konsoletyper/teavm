@@ -29,17 +29,17 @@ public class TFlow {
     public interface Subscriber<T> {
         void onComplete();
 
-        void onError​(Throwable t);
+        void onError(Throwable t);
 
-        void onNext​(T t);
+        void onNext(T t);
 
-        void onSubscribe​(Subscription s);
+        void onSubscribe(Subscription s);
     }
 
     public interface Subscription {
         void cancel();
 
-        void request​(long n);
+        void request(long n);
     }
 
 }
