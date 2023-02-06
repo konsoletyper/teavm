@@ -131,7 +131,7 @@ class UsageGenerator {
         String suffix = getSuffix();
         implRef = buildMethodReference(suffix);
         MetaprogrammingImpl.templateMethod = model.getMetaMethod();
-        VariableContext varContext = new TopLevelVariableContext(diagnostics);
+        VariableContext varContext = new TopLevelVariableContext(MetaprogrammingImpl.createDiagnostics());
         MetaprogrammingImpl.generator = new CompositeMethodGenerator(varContext);
         MetaprogrammingImpl.varContext = varContext;
         MetaprogrammingImpl.returnType = model.getMethod().getReturnType();
@@ -154,6 +154,7 @@ class UsageGenerator {
         }
 
         MetaprogrammingImpl.unsupportedCase = false;
+        MetaprogrammingImpl.error = false;
 
         try {
             proxyMethod.invoke(null, proxyArgs);
@@ -162,10 +163,11 @@ class UsageGenerator {
             e.printStackTrace(new PrintWriter(writer));
             diagnostics.error(location, "Error calling proxy method {{m0}}: " + writer.toString(),
                     model.getMetaMethod());
+            MetaprogrammingImpl.error = true;
         }
 
         MetaprogrammingImpl.close();
-        if (MetaprogrammingImpl.unsupportedCase) {
+        if (MetaprogrammingImpl.unsupportedCase || MetaprogrammingImpl.error) {
             return;
         }
 

@@ -73,6 +73,7 @@ public final class MetaprogrammingImpl {
     static CompositeMethodGenerator generator;
     static ValueType returnType;
     static boolean unsupportedCase;
+    static boolean error;
 
     private MetaprogrammingImpl() {
     }
@@ -405,6 +406,7 @@ public final class MetaprogrammingImpl {
         public void error(SourceLocation location, String error, Object... params) {
             convertParams(params);
             agent.getDiagnostics().error(convertLocation(location), error, params);
+            MetaprogrammingImpl.error = true;
         }
 
         @Override
@@ -438,4 +440,19 @@ public final class MetaprogrammingImpl {
                     : new CallLocation(method.getReference());
         }
     };
+
+    public static org.teavm.diagnostics.Diagnostics createDiagnostics() {
+        return new org.teavm.diagnostics.Diagnostics() {
+            @Override
+            public void error(CallLocation location, String error, Object... params) {
+                MetaprogrammingImpl.error = true;
+                agent.getDiagnostics().error(location, error, params);
+            }
+
+            @Override
+            public void warning(CallLocation location, String error, Object... params) {
+                agent.getDiagnostics().warning(location, error, params);
+            }
+        };
+    }
 }
