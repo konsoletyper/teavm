@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2023 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,35 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.samples.storage;
+package org.teavm.samples.webapis;
 
-import org.teavm.jso.browser.Storage;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLButtonElement;
 import org.teavm.jso.dom.html.HTMLDocument;
-import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.html.HTMLInputElement;
 
 /**
 *
 * @author Junji Takakura
 */
-public final class Application {
+public final class Storage {
     private static HTMLDocument document = Window.current().getDocument();
-    private static Storage storage = Window.current().getSessionStorage();
+    private static org.teavm.jso.browser.Storage storage = Window.current().getSessionStorage();
 
-    private Application() {
+    private Storage() {
     }
 
-    public static void main(String[] args) {
+    public static void run() {
         if (storage == null) {
             Window.alert("storage is not supported.");
         }
 
         HTMLButtonElement saveButton = document.getElementById("save-button").cast();
         saveButton.listenClick(e -> {
-            String key = document.getElementById("key").<HTMLInputElement>cast().getValue();
-            String value = document.getElementById("value").<HTMLInputElement>cast().getValue();
+            var key = document.getElementById("key").<HTMLInputElement>cast().getValue();
+            var value = document.getElementById("value").<HTMLInputElement>cast().getValue();
 
             if (key != null && key.length() > 0 && value != null && value.length() > 0) {
                 storage.setItem(key, value);
@@ -65,19 +63,19 @@ public final class Application {
     }
 
     private static void draw() {
-        HTMLElement tbody = document.getElementById("list");
+        var tbody = document.getElementById("list");
 
         while (tbody.getFirstChild() != null) {
             tbody.removeChild(tbody.getFirstChild());
         }
 
         for (int i = 0; i < storage.getLength(); i++) {
-            String key = storage.key(i);
-            String value = storage.getItem(key);
+            var key = storage.key(i);
+            var value = storage.getItem(key);
 
-            HTMLElement tdKey = document.createElement("td").withText(key);
-            HTMLElement tdValue = document.createElement("td").withText(value);
-            HTMLElement tr = document.createElement("tr").withChild(tdKey).withChild(tdValue);
+            var tdKey = document.createElement("td").withText(key);
+            var tdValue = document.createElement("td").withText(value);
+            var tr = document.createElement("tr").withChild(tdKey).withChild(tdValue);
 
             tbody.appendChild(tr);
         }
