@@ -26,5 +26,5 @@ dependencies {
 
 teavm.js {
     addedToWebApp.set(true)
-    mainClass.set("org.teavm.samples.video.Player")
+    mainClass.set("org.teavm.samples.webapis.Main")
 }

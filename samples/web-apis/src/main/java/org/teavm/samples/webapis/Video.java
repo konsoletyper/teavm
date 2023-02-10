@@ -13,22 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.samples.video;
+package org.teavm.samples.webapis;
 
 import org.teavm.jso.browser.Window;
-import org.teavm.jso.dom.html.HTMLBodyElement;
 import org.teavm.jso.dom.html.HTMLDocument;
-import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.html.HTMLSourceElement;
 import org.teavm.jso.dom.html.HTMLVideoElement;
 
-public final class Player {
+public final class Video {
     private static HTMLDocument document = Window.current().getDocument();
 
-    private Player() {
+    private Video() {
     }
 
-    public static void main(String[] args) {
+    public static void run() {
         HTMLSourceElement sourceMp4 = document.createElement("source").cast();
         sourceMp4.setSrc("http://media.w3.org/2010/05/sintel/trailer.mp4");
         sourceMp4.setAttribute("type", "video/mp4");
@@ -41,7 +39,7 @@ public final class Player {
         sourceOgv.setSrc("http://media.w3.org/2010/05/sintel/trailer.ogv");
         sourceOgv.setAttribute("type", "video/ogg");
 
-        HTMLElement p = document.createElement("p");
+        var p = document.createElement("p");
         p.appendChild(document.createTextNode("Your user agent does not support the HTML5 Video element."));
 
         HTMLVideoElement video = document.createElement("video").cast();
@@ -54,10 +52,10 @@ public final class Player {
         video.appendChild(sourceOgv);
         video.appendChild(p);
 
-        HTMLElement divVideo = document.createElement("div");
+        var divVideo = document.createElement("div");
         divVideo.appendChild(video);
 
-        HTMLElement divButtons = document.createElement("div")
+        var divButtons = document.createElement("div")
                 .withAttr("id", "button")
                 .withChild("button", elem -> elem.withText("load()").listenClick(evt -> video.load()))
                 .withChild("button", elem -> elem.withText("play()").listenClick(evt -> video.play()))
@@ -84,7 +82,7 @@ public final class Player {
                 .withChild("button", elem -> elem.withText("mute").listenClick(evt -> video.setMuted(true)))
                 .withChild("button", elem -> elem.withText("unmute").listenClick(evt -> video.setMuted(false)));
 
-        HTMLBodyElement body = document.getBody();
+        var body = document.getBody();
         body.appendChild(divVideo);
         body.appendChild(divButtons);
     }

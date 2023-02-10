@@ -58,8 +58,7 @@ include("benchmark")
 include("pi")
 include("kotlin")
 include("scala")
-include("video")
-include("storage")
+include("web-apis")
 
 gradle.allprojects {
     apply<WarPlugin>()
