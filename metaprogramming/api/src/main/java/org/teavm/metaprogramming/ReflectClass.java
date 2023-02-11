@@ -30,6 +30,8 @@ public interface ReflectClass<T> extends ReflectAnnotatedElement {
 
     boolean isEnum();
 
+    boolean isRecord();
+
     T[] getEnumConstants();
 
     int getModifiers();

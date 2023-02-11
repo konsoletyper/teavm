@@ -38,7 +38,8 @@ public enum ElementModifier {
     SYNCHRONIZED,
     TRANSIENT,
     VARARGS,
-    VOLATILE;
+    VOLATILE,
+    RECORD;
 
     public static int pack(Set<ElementModifier> elementModifiers) {
         ElementModifier[] knownModifiers = ElementModifier.values();
