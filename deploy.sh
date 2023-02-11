@@ -50,8 +50,8 @@ function deploy_teavm {
   GRADLE+=" -Pteavm.publish.username=$TEAVM_DEPLOY_LOGIN"
   GRADLE+=" -Pteavm.publish.password=$TEAVM_DEPLOY_PASSWORD"
 
-  $GRADLE build -x test || { echo 'Build failed' ; return 1; }
-  $GRADLE publishAllPublicationsToTeavmRepository || { echo 'Deploy failed' ; return 1; }
+  $GRADLE build || { echo 'Build failed' ; return 1; }
+  $GRADLE --max-workers 4 publishAllPublicationsToTeavmRepository || { echo 'Deploy failed' ; return 1; }
 
   curl -T tools/idea/build/distributions/idea-$TEAVM_DEPLOY_VERSION_FULL.zip \
       sftp://$TEAVM_DEPLOY_SERVER/idea/teavm-idea-$TEAVM_DEPLOY_VERSION_FULL.zip \
@@ -99,5 +99,5 @@ if [[ "$EXIT_CODE" == '0' ]] ; then
 fi
 popd
 
-#rm -rf build-dir
-#exit $EXIT_CODE
+rm -rf build-dir
+exit $EXIT_CODE

@@ -13,18 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.buildutil;
 
-plugins {
-    java
-    war
-    id("org.teavm")
-}
+import org.gradle.api.JavaVersion;
 
-dependencies {
-    teavm(teavm.libs.jsoApis)
-}
+public interface JavaVersionExtension {
+    JavaVersion getVersion();
 
-teavm.js {
-    addedToWebApp.set(true)
-    mainClass.set("org.teavm.samples.storage.Application")
+    void setVersion(JavaVersion version);
 }

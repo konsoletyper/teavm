@@ -13,18 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.samples.webapis;
 
-plugins {
-    java
-    war
-    id("org.teavm")
-}
+public final class Main {
+    private Main() {
+    }
 
-dependencies {
-    teavm(teavm.libs.jsoApis)
-}
-
-teavm.js {
-    addedToWebApp.set(true)
-    mainClass.set("org.teavm.samples.video.Player")
+    public static void main(String[] args) {
+        switch (args[0]) {
+            case "storage":
+                Storage.run();
+                break;
+            case "video":
+                Video.run();
+                break;
+        }
+    }
 }

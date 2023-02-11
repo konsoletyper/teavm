@@ -20,10 +20,8 @@ plugins {
 
 description = "Tests"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
-    }
+javaVersion {
+    version = JavaVersion.VERSION_17
 }
 
 dependencies {

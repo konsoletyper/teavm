@@ -1,5 +1,5 @@
 <!--
-    Copyright 2014 Alexey Andreev.
+    Copyright 2015 Alexey Andreev.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,23 +16,12 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Web Storage web application</title>
+    <title>HTML5 Video web application</title>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
-    <script type="text/javascript" charset="utf-8" src="js/storage.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/web-apis.js"></script>
+    <link href="video.css" rel="stylesheet" type="text/css">
   </head>
-  <body onload="main()">
-    <h1>Web Storage web application</h1>
-    <input type="text" id="key">
-    <input type="text" id="value">
-    <button id="save-button">Save</button>
-    <button id="delete-button">Delete</button>
-    <button id="delete-all-button">Delete All</button>
-    <table border="1">
-      <tr>
-        <th>Key</th><th>Value</th>
-      </tr>
-      <tbody id="list">
-      </tbody>
-    </table>
+  <body onload="main(['video'])">
+    <h1>HTML5 Video web application</h1>
   </body>
 </html>

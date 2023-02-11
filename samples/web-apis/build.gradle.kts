@@ -22,10 +22,9 @@ plugins {
 
 dependencies {
     teavm(teavm.libs.jsoApis)
-    compileOnly("jakarta.servlet:jakarta.servlet-api:6.0.0")
 }
 
 teavm.js {
     addedToWebApp.set(true)
-    mainClass.set("org.teavm.samples.hello.Client")
+    mainClass.set("org.teavm.samples.webapis.Main")
 }
