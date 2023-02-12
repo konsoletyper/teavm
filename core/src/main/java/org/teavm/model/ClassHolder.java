@@ -25,6 +25,7 @@ public class ClassHolder extends ElementHolder implements ClassReader {
     private Set<GenericValueType.Object> genericInterfaces = new LinkedHashSet<>();
     private Map<MethodDescriptor, MethodHolder> methods = new LinkedHashMap<>();
     private Map<String, FieldHolder> fields = new LinkedHashMap<>();
+    private Map<String, RecordComponentHolder> recordComponents = new LinkedHashMap<>();
     private String ownerName;
     private String simpleName;
     private String declaringClassName;
@@ -111,6 +112,11 @@ public class ClassHolder extends ElementHolder implements ClassReader {
         return fields.values();
     }
 
+    @Override
+    public Collection<? extends RecordComponentReader> getRecordComponents() {
+        return recordComponents.values();
+    }
+
     public void addField(FieldHolder field) {
         if (field.getOwner() != null) {
             throw new IllegalArgumentException("Field " + field.getName() + " is already "
@@ -130,6 +136,18 @@ public class ClassHolder extends ElementHolder implements ClassReader {
         }
         fields.remove(field.getName());
         field.setOwner(null);
+    }
+
+    public void addRecordComponent(RecordComponentHolder rc) {
+        if (rc.getOwner() != null) {
+            throw new IllegalArgumentException("Record component " + rc.getName() + " is already "
+                    + "in another class (" + rc.getOwner().getName() + ")");
+        }
+        rc.setOwner(this);
+        RecordComponentHolder oldRecordComponent = recordComponents.put(rc.getName(), rc);
+        if (oldRecordComponent != null) {
+            oldRecordComponent.setOwner(null);
+        }
     }
 
     @Override

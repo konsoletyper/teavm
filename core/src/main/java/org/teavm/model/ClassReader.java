@@ -37,6 +37,8 @@ public interface ClassReader extends ElementReader {
 
     Collection<? extends FieldReader> getFields();
 
+    Collection<? extends RecordComponentReader> getRecordComponents();
+
     String getOwnerName();
 
     String getSimpleName();

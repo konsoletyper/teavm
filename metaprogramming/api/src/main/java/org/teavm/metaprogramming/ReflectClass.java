@@ -18,6 +18,7 @@ package org.teavm.metaprogramming;
 import org.teavm.metaprogramming.reflect.ReflectAnnotatedElement;
 import org.teavm.metaprogramming.reflect.ReflectField;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
+import org.teavm.metaprogramming.reflect.ReflectRecordComponent;
 
 public interface ReflectClass<T> extends ReflectAnnotatedElement {
     boolean isPrimitive();
@@ -73,6 +74,8 @@ public interface ReflectClass<T> extends ReflectAnnotatedElement {
     ReflectField getDeclaredField(String name);
 
     ReflectField getField(String name);
+
+    ReflectRecordComponent[] getRecordComponents();
 
     T[] createArray(int size);
 

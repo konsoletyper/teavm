@@ -34,6 +34,7 @@ import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
+import org.teavm.model.RecordComponentReader;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 
@@ -74,6 +75,10 @@ public class ClassIO {
         output.writeUnsigned(cls.getMethods().size());
         for (MethodReader method : cls.getMethods()) {
             writeMethod(output, method);
+        }
+        output.writeUnsigned(cls.getRecordComponents().size());
+        for (RecordComponentReader rc : cls.getRecordComponents()) {
+            writeRecordComponent(output, rc);
         }
     }
 
@@ -116,6 +121,14 @@ public class ClassIO {
         }
         cls.methods = methods;
 
+        Map<String, CachedRecordComponent> recordComponents = new LinkedHashMap<>();
+        int rcCount = input.readUnsigned();
+        for (int i = 0; i < rcCount; ++i) {
+            CachedRecordComponent recordComponent = readRecordComponent(name, input);
+            recordComponents.put(recordComponent.name, recordComponent);
+        }
+        cls.recordComponents = recordComponents;
+
         return cls;
     }
 
@@ -135,6 +148,26 @@ public class ClassIO {
         field.level = accessLevels[input.readUnsigned()];
         field.modifiers = unpackModifiers(input.readUnsigned());
         field.initialValue = readFieldValue(input);
+        field.annotations = annotationIO.readAnnotations(input);
+        field.ownerName = className;
+        field.reference = referenceCache.getCached(new FieldReference(className, field.name));
+        return field;
+    }
+
+    private void writeRecordComponent(VarDataOutput output, RecordComponentReader rc) throws IOException {
+        output.writeUnsigned(symbolTable.lookup(rc.getName()));
+        output.writeUnsigned(symbolTable.lookup(rc.getType().toString()));
+        output.writeUnsigned(rc.getLevel().ordinal());
+        output.writeUnsigned(packModifiers(rc.readModifiers()));
+        annotationIO.writeAnnotations(output, rc.getAnnotations());
+    }
+
+    private CachedRecordComponent readRecordComponent(String className, VarDataInput input) throws IOException {
+        CachedRecordComponent field = new CachedRecordComponent();
+        field.name = referenceCache.getCached(symbolTable.at(input.readUnsigned()));
+        field.type = referenceCache.getCached(ValueType.parse(symbolTable.at(input.readUnsigned())));
+        field.level = accessLevels[input.readUnsigned()];
+        field.modifiers = unpackModifiers(input.readUnsigned());
         field.annotations = annotationIO.readAnnotations(input);
         field.ownerName = className;
         field.reference = referenceCache.getCached(new FieldReference(className, field.name));

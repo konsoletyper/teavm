@@ -28,6 +28,7 @@ import org.teavm.metaprogramming.ReflectClass;
 import org.teavm.metaprogramming.impl.MetaprogrammingImpl;
 import org.teavm.metaprogramming.reflect.ReflectField;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
+import org.teavm.metaprogramming.reflect.ReflectRecordComponent;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
@@ -44,6 +45,7 @@ public class ReflectClassImpl<T> implements ReflectClass<T> {
     private Class<?> cls;
     private Map<String, ReflectFieldImpl> declaredFields = new HashMap<>();
     private ReflectField[] fieldsCache;
+    private ReflectRecordComponent[] recordComponentsCache;
     private Map<MethodDescriptor, ReflectMethodImpl> methods = new HashMap<>();
     private Map<String, ReflectMethodImpl> declaredMethods = new HashMap<>();
     private ReflectMethod[] methodsCache;
@@ -376,6 +378,17 @@ public class ReflectClassImpl<T> implements ReflectClass<T> {
         return fieldReader != null && fieldReader.getLevel() == AccessLevel.PUBLIC
                 ? getDeclaredField(name)
                 : null;
+    }
+
+    @Override
+    public ReflectRecordComponent[] getRecordComponents() {
+        resolve();
+        if (classReader == null || !classReader.hasModifier(ElementModifier.RECORD)) {
+            return new ReflectRecordComponent[0];
+        }
+        return classReader.getRecordComponents().stream()
+                .map(rc -> new ReflectRecordComponentImpl(this, rc))
+                .toArray(ReflectRecordComponentImpl[]::new);
     }
 
     @Override
