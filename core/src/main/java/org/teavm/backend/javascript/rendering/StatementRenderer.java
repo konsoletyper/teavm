@@ -522,7 +522,11 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 return "var$" + index;
             }
         } else {
-            return RenderingUtil.indexToId(index);
+            String result = RenderingUtil.indexToId(index++);
+            while (RenderingUtil.KEYWORDS.contains(result) || !usedVariableNames.add(result)) {
+               result = RenderingUtil.indexToId(index++);
+            }
+            return result;
         }
     }
 
