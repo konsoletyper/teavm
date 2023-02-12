@@ -17,6 +17,7 @@ package org.teavm.metaprogramming.impl.reflect;
 
 import java.lang.annotation.Annotation;
 import org.teavm.metaprogramming.ReflectClass;
+import org.teavm.metaprogramming.reflect.ReflectMethod;
 import org.teavm.metaprogramming.reflect.ReflectRecordComponent;
 import org.teavm.model.RecordComponentReader;
 
@@ -26,6 +27,7 @@ public class ReflectRecordComponentImpl implements ReflectRecordComponent {
     public final RecordComponentReader recordComponent;
     private ReflectClassImpl<?> type;
     private ReflectAnnotatedElementImpl annotations;
+    private ReflectMethod accessor;
 
     public ReflectRecordComponentImpl(ReflectClassImpl<?> declaringClass, RecordComponentReader recordComponent) {
         context = declaringClass.getReflectContext();
@@ -57,8 +59,11 @@ public class ReflectRecordComponentImpl implements ReflectRecordComponent {
     }
 
     @Override
-    public Object get(Object target) {
-        throw new IllegalStateException("Don't call this method from compile domain");
+    public ReflectMethod getAccessor() {
+        if (accessor == null) {
+            accessor = type.getMethod(getName());
+        }
+        return accessor;
     }
 
     public RecordComponentReader getBackingRecordComponent() {

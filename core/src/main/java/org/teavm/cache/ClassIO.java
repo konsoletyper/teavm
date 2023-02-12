@@ -34,6 +34,7 @@ import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 import org.teavm.model.RecordComponentReader;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
@@ -163,15 +164,16 @@ public class ClassIO {
     }
 
     private CachedRecordComponent readRecordComponent(String className, VarDataInput input) throws IOException {
-        CachedRecordComponent field = new CachedRecordComponent();
-        field.name = referenceCache.getCached(symbolTable.at(input.readUnsigned()));
-        field.type = referenceCache.getCached(ValueType.parse(symbolTable.at(input.readUnsigned())));
-        field.level = accessLevels[input.readUnsigned()];
-        field.modifiers = unpackModifiers(input.readUnsigned());
-        field.annotations = annotationIO.readAnnotations(input);
-        field.ownerName = className;
-        field.reference = referenceCache.getCached(new FieldReference(className, field.name));
-        return field;
+        CachedRecordComponent rc = new CachedRecordComponent();
+        rc.name = referenceCache.getCached(symbolTable.at(input.readUnsigned()));
+        rc.type = referenceCache.getCached(ValueType.parse(symbolTable.at(input.readUnsigned())));
+        rc.level = accessLevels[input.readUnsigned()];
+        rc.modifiers = unpackModifiers(input.readUnsigned());
+        rc.annotations = annotationIO.readAnnotations(input);
+        rc.ownerName = className;
+        rc.reference = referenceCache.getCached(new FieldReference(className, rc.name));
+        rc.methodAccessorReference = referenceCache.getCached(new MethodReference(className, rc.name, rc.type));
+        return rc;
     }
 
     private void writeFieldValue(VarDataOutput output, Object value) throws IOException {

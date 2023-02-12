@@ -21,4 +21,6 @@ public interface RecordComponentReader extends MemberReader {
     GenericValueType getGenericType();
 
     FieldReference getReference();
+
+    MethodReference getMethodAccessorReference();
 }

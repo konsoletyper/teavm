@@ -20,6 +20,7 @@ public class RecordComponentHolder extends MemberHolder implements RecordCompone
     private GenericValueType genericType;
     private ClassHolder owner;
     private FieldReference reference;
+    private MethodReference methodAccessorReference;
 
     public RecordComponentHolder(String name) {
         super(name);
@@ -65,10 +66,22 @@ public class RecordComponentHolder extends MemberHolder implements RecordCompone
         return reference;
     }
 
-    public void updateReference(ReferenceCache cache) {
+    @Override
+    public MethodReference getMethodAccessorReference() {
+        if (methodAccessorReference == null && owner != null) {
+            methodAccessorReference = new MethodReference(getOwnerName(), getName(), getType());
+        }
+        return null;
+    }
+
+    public void updateReferences(ReferenceCache cache) {
         FieldReference reference = getReference();
         if (reference != null) {
             this.reference = cache.getCached(reference);
+        }
+        MethodReference methodAccessorReference = getMethodAccessorReference();
+        if (reference != null) {
+            this.methodAccessorReference = cache.getCached(methodAccessorReference);
         }
     }
 }

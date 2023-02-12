@@ -20,5 +20,5 @@ import org.teavm.metaprogramming.ReflectClass;
 public interface ReflectRecordComponent extends ReflectMember {
     ReflectClass<?> getType();
 
-    Object get(Object target);
+    ReflectMethod getAccessor();
 }

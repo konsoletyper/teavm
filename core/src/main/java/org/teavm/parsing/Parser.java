@@ -319,17 +319,17 @@ public class Parser {
             cls.addField(field);
             field.updateReference(referenceCache);
         }
-        for (RecordComponentNode rcNode : node.recordComponents) {
-            RecordComponentHolder recordComponent = parseRecordComponent(rcNode);
-            cls.addRecordComponent(recordComponent);
-            recordComponent.updateReference(referenceCache);
-        }
         String fullFileName = referenceCache.getCached(node.name.substring(0, node.name.lastIndexOf('/') + 1)
                 + node.sourceFile);
         for (MethodNode methodNode : node.methods) {
             MethodHolder method = parseMethod(methodNode, fullFileName);
             cls.addMethod(method);
             method.updateReference(referenceCache);
+        }
+        for (RecordComponentNode rcNode : node.recordComponents) {
+            RecordComponentHolder recordComponent = parseRecordComponent(rcNode);
+            cls.addRecordComponent(recordComponent);
+            recordComponent.updateReferences(referenceCache);
         }
 
         if (node.outerClass != null) {

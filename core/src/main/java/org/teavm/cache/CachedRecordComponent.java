@@ -17,6 +17,7 @@ package org.teavm.cache;
 
 import org.teavm.model.FieldReference;
 import org.teavm.model.GenericValueType;
+import org.teavm.model.MethodReference;
 import org.teavm.model.RecordComponentReader;
 import org.teavm.model.ValueType;
 
@@ -24,6 +25,7 @@ public class CachedRecordComponent extends CachedMember implements RecordCompone
     ValueType type;
     GenericValueType genericType;
     FieldReference reference;
+    MethodReference methodAccessorReference;
 
     @Override
     public ValueType getType() {
@@ -38,5 +40,10 @@ public class CachedRecordComponent extends CachedMember implements RecordCompone
     @Override
     public FieldReference getReference() {
         return reference;
+    }
+
+    @Override
+    public MethodReference getMethodAccessorReference() {
+        return methodAccessorReference;
     }
 }
