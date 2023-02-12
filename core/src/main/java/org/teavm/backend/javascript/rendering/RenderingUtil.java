@@ -31,7 +31,7 @@ public final class RenderingUtil {
             "super", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield",
             "NaN", "Map", "Set", "eval", "Math", "Date", "JSON", "Intl", "URL")));
     public static final String VARIABLE_START_CHARS = "abcdefghijklmnopqrstuvwxyz";
-    public static final String VARIABLE_PART_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$_";
+    public static final String VARIABLE_PART_CHARS = "abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$_";
 
     private RenderingUtil() {
     }
