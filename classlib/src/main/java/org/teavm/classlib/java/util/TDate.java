@@ -92,7 +92,7 @@ public class TDate implements TComparable<TDate> {
         if (PlatformDetector.isLowLevel()) {
             return initUtcDateLowLevel(year, month, date, hrs, min, sec);
         } else {
-            return (long) JSDate.UTC(year, month, date, hrs, min, sec);
+            return (long) JSDate.UTC(year + 1900, month, date, hrs, min, sec);
         }
     }
 
