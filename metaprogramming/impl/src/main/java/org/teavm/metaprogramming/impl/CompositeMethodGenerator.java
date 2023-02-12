@@ -327,7 +327,7 @@ public class CompositeMethodGenerator {
         } else if (value instanceof ReflectRecordComponentImpl) {
             ReflectRecordComponentImpl reflectRecordComponent = (ReflectRecordComponentImpl) value;
             diagnostics.error(new CallLocation(MetaprogrammingImpl.templateMethod, location),
-                    "Can't reference this ReflectField {{f0}} directly except for calling special "
+                    "Can't reference this ReflectRecordComponent {{f0}} directly except for calling special "
                             + "methods on it", reflectRecordComponent.recordComponent.getReference());
             NullConstantInstruction insn = new NullConstantInstruction();
             insn.setReceiver(program.createVariable());

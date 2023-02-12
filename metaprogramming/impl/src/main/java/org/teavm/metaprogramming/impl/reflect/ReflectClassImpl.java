@@ -382,13 +382,17 @@ public class ReflectClassImpl<T> implements ReflectClass<T> {
 
     @Override
     public ReflectRecordComponent[] getRecordComponents() {
-        resolve();
-        if (classReader == null || !classReader.hasModifier(ElementModifier.RECORD)) {
-            return new ReflectRecordComponent[0];
+        if (recordComponentsCache == null) {
+            resolve();
+            if (classReader == null || !classReader.hasModifier(ElementModifier.RECORD)) {
+                recordComponentsCache = new ReflectRecordComponent[0];
+            } else {
+                recordComponentsCache = classReader.getRecordComponents().stream()
+                        .map(rc -> new ReflectRecordComponentImpl(this, rc))
+                        .toArray(ReflectRecordComponentImpl[]::new);
+            }
         }
-        return classReader.getRecordComponents().stream()
-                .map(rc -> new ReflectRecordComponentImpl(this, rc))
-                .toArray(ReflectRecordComponentImpl[]::new);
+        return recordComponentsCache.clone();
     }
 
     @Override
