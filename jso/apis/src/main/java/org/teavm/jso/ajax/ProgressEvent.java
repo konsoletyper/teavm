@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2023 ihromant.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,10 +15,16 @@
  */
 package org.teavm.jso.ajax;
 
-import org.teavm.jso.JSFunctor;
-import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.events.Event;
 
-@JSFunctor
-public interface ReadyStateChangeHandler extends JSObject {
-    void stateChanged();
+public interface ProgressEvent extends Event {
+    @JSProperty
+    boolean isLengthComputable();
+
+    @JSProperty
+    int getLoaded();
+
+    @JSProperty
+    int getTotal();
 }

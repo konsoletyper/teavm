@@ -86,7 +86,7 @@ public class TXHRURLConnection extends THttpURLConnection {
     @Async
     private native Boolean performRequest();
     private void performRequest(AsyncCallback<Boolean> callback) {
-        xhr.setOnReadyStateChange(() -> {
+        xhr.setOnReadyStateChange(e -> {
             if (xhr.getReadyState() != XMLHttpRequest.DONE) {
                 return;
             }
