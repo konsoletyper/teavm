@@ -522,7 +522,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 return "var$" + index;
             }
         } else {
-            return RenderingUtil.indexToId(index++);
+            return RenderingUtil.indexToId(index);
         }
     }
 
