@@ -15,24 +15,9 @@
  */
 package org.teavm.backend.javascript.rendering;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import java.io.IOException;
-import java.io.StringReader;
-import java.util.Properties;
 import org.junit.Test;
-import org.mozilla.javascript.CompilerEnvirons;
-import org.mozilla.javascript.Context;
-import org.teavm.backend.javascript.codegen.NamingStrategy;
-import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.backend.javascript.codegen.SourceWriterBuilder;
-import org.teavm.common.ServiceRepository;
-import org.teavm.debugging.information.DebugInformationEmitter;
-import org.teavm.dependency.DependencyInfo;
-import org.teavm.model.ClassReaderSource;
-import org.teavm.model.ListableClassReaderSource;
-import org.teavm.model.MethodReference;
-import org.teavm.model.analysis.ClassInitializerInfo;
 
 public class StatementRendererTest {
     @Test
