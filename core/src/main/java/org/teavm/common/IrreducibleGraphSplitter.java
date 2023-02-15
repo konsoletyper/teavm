@@ -310,9 +310,10 @@ class IrreducibleGraphSplitter {
             }
             copyMap[node] = copyIndex;
             int realNodeCount = realNodes[node].size();
+            int nodesToCopy = Math.min(realNodeCount, realNodesCopies.length - realNodeCopiesIndex);
             subgraphRealNodes[copyIndex] = Arrays.copyOfRange(realNodesCopies, realNodeCopiesIndex,
-                    realNodeCopiesIndex + realNodeCount);
-            realNodeCopiesIndex += realNodeCount;
+                    realNodeCopiesIndex + nodesToCopy);
+            realNodeCopiesIndex += nodesToCopy;
             subgraphWeights[copyIndex] = weights[node];
             copyIndex++;
         }
