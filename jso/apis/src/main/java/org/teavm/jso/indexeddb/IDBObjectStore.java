@@ -45,6 +45,8 @@ public abstract class IDBObjectStore implements JSObject, IDBCursorSource {
     @JSProperty
     public abstract boolean isAutoIncrement();
 
+    public abstract IDBGetRequest getAllKeys();
+
     public abstract IDBRequest put(JSObject value, JSObject key);
 
     public abstract IDBRequest put(JSObject value);
