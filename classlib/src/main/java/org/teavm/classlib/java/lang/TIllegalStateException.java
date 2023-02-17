@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
-public class TIllegalStateException extends TException {
+public class TIllegalStateException extends TRuntimeException {
     private static final long serialVersionUID = 218741044430713159L;
 
     public TIllegalStateException() {
