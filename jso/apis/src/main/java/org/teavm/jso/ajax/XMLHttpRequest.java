@@ -55,7 +55,7 @@ public abstract class XMLHttpRequest implements JSObject, EventTarget {
     public abstract String getResponseHeader(String name);
 
     @JSProperty("onreadystatechange")
-    public abstract void setOnReadyStateChange(EventListener<Event> eventListener);
+    public abstract void setOnReadyStateChange(ReadyStateChangeHandler handler);
 
     @JSProperty("onabort")
     public abstract void onAbort(EventListener<ProgressEvent> eventListener);
@@ -79,7 +79,7 @@ public abstract class XMLHttpRequest implements JSObject, EventTarget {
     public abstract void onTimeout(EventListener<ProgressEvent> eventListener);
 
     public final void onComplete(Runnable runnable) {
-        setOnReadyStateChange(e -> {
+        setOnReadyStateChange(() -> {
             if (getReadyState() == DONE) {
                 runnable.run();
             }
