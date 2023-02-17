@@ -80,5 +80,5 @@ public abstract class WebSocket implements JSObject {
   public abstract String getUrl();
 
   @JSBody(script = "return typeof WebSocket !== 'undefined';")
-  protected static native boolean isSupported();
+  public static native boolean isSupported();
 }
