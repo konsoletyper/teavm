@@ -57,6 +57,9 @@ public abstract class XMLHttpRequest implements JSObject, EventTarget {
     @JSProperty("onreadystatechange")
     public abstract void setOnReadyStateChange(ReadyStateChangeHandler handler);
 
+    @JSProperty("onreadystatechange")
+    public abstract void setOnReadyStateChange(EventListener<Event> handler);
+
     @JSProperty("onabort")
     public abstract void onAbort(EventListener<ProgressEvent> eventListener);
 
