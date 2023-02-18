@@ -35,7 +35,7 @@ public abstract class WebSocket implements JSObject {
   public abstract void onMessage(EventListener<MessageEvent> eventListener);
 
   @JSProperty("onopen")
-  public abstract void onOpen(EventListener<MessageEvent> eventListener);
+  public abstract void onOpen(EventListener<Event> eventListener);
 
   @JSBody(params = "url", script = "return new WebSocket(url);")
   public static native WebSocket create(String url);
