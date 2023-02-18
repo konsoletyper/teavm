@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2023 ihromant.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,24 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
+package org.teavm.jso.ajax;
 
-public class TIllegalStateException extends TRuntimeException {
-    private static final long serialVersionUID = 218741044430713159L;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.events.Event;
 
-    public TIllegalStateException() {
-        super();
-    }
+public interface ProgressEvent extends Event {
+    @JSProperty
+    boolean isLengthComputable();
 
-    public TIllegalStateException(String message, TThrowable cause) {
-        super(message, cause);
-    }
+    @JSProperty
+    int getLoaded();
 
-    public TIllegalStateException(String message) {
-        super(message);
-    }
-
-    public TIllegalStateException(TThrowable cause) {
-        super(cause);
-    }
+    @JSProperty
+    int getTotal();
 }

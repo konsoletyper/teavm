@@ -18,9 +18,12 @@ package org.teavm.jso.ajax;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.events.Event;
+import org.teavm.jso.dom.events.EventListener;
+import org.teavm.jso.dom.events.EventTarget;
 import org.teavm.jso.dom.xml.Document;
 
-public abstract class XMLHttpRequest implements JSObject {
+public abstract class XMLHttpRequest implements JSObject, EventTarget {
     public static final int UNSET = 0;
 
     public static final int OPENED = 1;
@@ -53,6 +56,30 @@ public abstract class XMLHttpRequest implements JSObject {
 
     @JSProperty("onreadystatechange")
     public abstract void setOnReadyStateChange(ReadyStateChangeHandler handler);
+
+    @JSProperty("onreadystatechange")
+    public abstract void setOnReadyStateChange(EventListener<Event> handler);
+
+    @JSProperty("onabort")
+    public abstract void onAbort(EventListener<ProgressEvent> eventListener);
+
+    @JSProperty("onerror")
+    public abstract void onError(EventListener<ProgressEvent> eventListener);
+
+    @JSProperty("onload")
+    public abstract void onLoad(EventListener<ProgressEvent> eventListener);
+
+    @JSProperty("onloadstart")
+    public abstract void onLoadStart(EventListener<ProgressEvent> eventListener);
+
+    @JSProperty("onloadend")
+    public abstract void onLoadEnd(EventListener<ProgressEvent> eventListener);
+
+    @JSProperty("onprogress")
+    public abstract void onProgress(EventListener<ProgressEvent> eventListener);
+
+    @JSProperty("ontimeout")
+    public abstract void onTimeout(EventListener<ProgressEvent> eventListener);
 
     public final void onComplete(Runnable runnable) {
         setOnReadyStateChange(() -> {

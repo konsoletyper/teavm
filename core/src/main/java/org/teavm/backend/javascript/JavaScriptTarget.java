@@ -127,7 +127,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private final Set<MethodReference> asyncMethods = new HashSet<>();
     private final Set<MethodReference> asyncFamilyMethods = new HashSet<>();
     private List<VirtualMethodContributor> customVirtualMethods = new ArrayList<>();
-    private int topLevelNameLimit = 10000;
+    private int topLevelNameLimit = 500000;
     private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
     private boolean strict;
     private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();

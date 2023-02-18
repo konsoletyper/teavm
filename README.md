@@ -22,7 +22,7 @@ Building TeaVM
 --------------
 
 Simply clone source code (`git clone https://github.com/konsoletyper/teavm.git`)
-and run Gradle build (`gradle publishToMavenLocal`).
+and run Gradle build (`./gradlew publishToMavenLocal` or `gradlew.bat publishToMavenLocal`).
 
 
 Preview builds

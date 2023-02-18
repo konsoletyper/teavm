@@ -13,9 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.backend.javascript.rendering;
 
-plugins {
-    id("org.teavm") version "0.8.0-SNAPSHOT" apply false
-    id("org.wisepersist.gwt") version "1.1.19" apply false
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import java.util.HashSet;
+import org.junit.Test;
+
+public class VariableRenderingTest {
+    @Test
+    public void shortenedNames() {
+        var generator = new VariableNameGenerator(true);
+        var usedNames = new HashSet<String>();
+        for (var i = 0; i < 10000; ++i) {
+            var name = generator.variableName(i);
+            assertTrue(usedNames.add(name));
+            assertFalse(RenderingUtil.KEYWORDS.contains(name));
+        }
+    }
 }
-
