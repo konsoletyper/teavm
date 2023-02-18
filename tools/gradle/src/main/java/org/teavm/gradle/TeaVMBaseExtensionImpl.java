@@ -15,6 +15,7 @@
  */
 package org.teavm.gradle;
 
+import groovy.lang.Closure;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -119,5 +120,10 @@ class TeaVMBaseExtensionImpl implements TeaVMBaseExtension {
     @Override
     public void tests(Action<TeaVMTests> config) {
         config.execute(tests);
+    }
+
+    @Override
+    public void tests(Closure<Void> config) {
+        config.rehydrate(getTests(), config.getOwner(), config.getThisObject()).call();
     }
 }

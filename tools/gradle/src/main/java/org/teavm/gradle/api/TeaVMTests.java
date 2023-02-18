@@ -15,6 +15,8 @@
  */
 package org.teavm.gradle.api;
 
+import groovy.lang.Closure;
+import groovy.lang.DelegatesTo;
 import org.gradle.api.Action;
 
 public interface TeaVMTests {
@@ -22,7 +24,11 @@ public interface TeaVMTests {
 
     void js(Action<TeaVMJSTests> config);
 
+    void js(@DelegatesTo(TeaVMJSTests.class) Closure<Void> config);
+
     TeaVMWasmTests getWasm();
 
     void wasm(Action<TeaVMWasmTests> config);
+
+    void wasm(@DelegatesTo(TeaVMWasmTests.class) Closure<Void> config);
 }
