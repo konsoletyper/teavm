@@ -43,7 +43,7 @@ public final class JSObjects {
     @NoSideEffects
     public static native JSObject undefined();
 
-    @JSBody(params = "object", script = "return === null;")
+    @JSBody(params = "object", script = "return object === null;")
     @NoSideEffects
     public static native boolean isNull(JSObject object);
 
