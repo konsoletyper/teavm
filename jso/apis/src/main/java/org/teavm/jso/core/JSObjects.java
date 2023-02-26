@@ -43,6 +43,14 @@ public final class JSObjects {
     @NoSideEffects
     public static native JSObject undefined();
 
+    @JSBody(params = "object", script = "return === null;")
+    @NoSideEffects
+    public static native boolean isNull(JSObject object);
+
+    @JSBody(script = "return null;")
+    @NoSideEffects
+    public static native JSObject nullObject();
+
     @JSBody(params = "object", script = "return typeof object;")
     @NoSideEffects
     public static native String typeOf(JSObject object);
