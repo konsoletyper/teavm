@@ -284,7 +284,10 @@ var $rt_javaExceptionProp = Symbol("javaException")
 function $rt_exception(ex) {
     var err = ex.$jsException;
     if (!err) {
-        err = new Error("Java exception thrown");
+        var javaCause = $rt_throwableCause(ex);
+        var jsCause = javaCause !== null ? javaCause.$jsException : undefined;
+        var cause = typeof jsCause === "object" ? { cause : jsCause } : undefined;
+        err = new JavaError("Java exception thrown", cause);
         if (typeof Error.captureStackTrace === "function") {
             Error.captureStackTrace(err);
         }
@@ -692,6 +695,38 @@ function $rt_floatToIntBits(n) {
 function $rt_intBitsToFloat(n) {
     $rt_numberConversionView.setInt32(0, n);
     return $rt_numberConversionView.getFloat32(0);
+}
+
+var JavaError;
+if (typeof Reflect === 'object') {
+    var defaultMessage = Symbol("defaultMessage");
+    JavaError = function JavaError(message, cause) {
+        var self = Reflect.construct(Error, [undefined, cause], JavaError);
+        Object.setPrototypeOf(self, JavaError.prototype);
+        self[defaultMessage] = message;
+        return self;
+    }
+    JavaError.prototype = Object.create(Error.prototype, {
+        constructor: {
+            configurable: true,
+            writable: true,
+            value: JavaError
+        },
+        message: {
+            get: function() {
+                var javaException = this[$rt_javaExceptionProp];
+                if (typeof javaException === 'object') {
+                    var javaMessage = $rt_throwableMessage(javaException);
+                    if (typeof javaMessage === "object") {
+                        return javaMessage.toString();
+                    }
+                }
+                return this[defaultMessage];
+            }
+        }
+    });
+} else {
+    JavaError = Error;
 }
 
 function $rt_javaException(e) {
