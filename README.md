@@ -4,8 +4,6 @@ TeaVM
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.teavm/teavm-maven-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.teavm/teavm-maven-plugin) 
 [![Download](https://teavm.org/maven/latestBadge.svg)](https://teavm.org/maven/_latest)
 [![Gitter chat](https://img.shields.io/badge/gitter-join%20chat-green.svg)](https://gitter.im/teavm/Lobby)
-[![Code Quality: Java](https://img.shields.io/lgtm/grade/java/g/konsoletyper/teavm.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/konsoletyper/teavm/context:java)
-[![Total Alerts](https://img.shields.io/lgtm/alerts/g/konsoletyper/teavm.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/konsoletyper/teavm/alerts)
 
 See documentation at the [project web site](https://teavm.org/).
 
@@ -15,7 +13,7 @@ Useful links:
 * [Gallery](https://teavm.org/gallery.html)
 * [Flavour source code repository](https://github.com/konsoletyper/teavm-flavour)
 * [Site source code repository](https://github.com/konsoletyper/teavm-site)
-* [Discussion on Google groups](https://groups.google.com/forum/#!forum/teavm)
+* [Discussion on Google Groups](https://groups.google.com/forum/#!forum/teavm)
 
 
 Building TeaVM
@@ -23,34 +21,6 @@ Building TeaVM
 
 Simply clone source code (`git clone https://github.com/konsoletyper/teavm.git`)
 and run Gradle build (`./gradlew publishToMavenLocal` or `gradlew.bat publishToMavenLocal`).
-
-
-Preview builds
---------------
-
-You may want to access new features and don't want to wait until stable release is published on Maven Central. 
-In this case you can get latest development build from [bintray](https://bintray.com/konsoletyper/teavm/teavm-dev).
-All you need is to put the following in your `pom.xml`:
-
-```xml
-  <repositories>
-    <repository>
-      <id>teavm-dev</id>
-      <url>https://teavm.org/maven/repository</url>
-    </repository>
-  </repositories>
-  <pluginRepositories>
-    <pluginRepository>
-      <id>teavm-dev</id>
-      <url>https://teavm.org/maven/repository</url>
-    </pluginRepository>
-  </pluginRepositories>
-```
-
-IDEA plugin is also available in preview builds. You need to add corresponding repository manually to IDEA. 
-Open *Settings* -> *Plugins* -> *Browse repositories...* -> *Manage repositories...*, click *Add* button 
-and enter `https://teavm.org/idea/dev/teavmRepository.xml`. 
-Then get back to *Browse repositories* and pick TeaVM plugin from list. 
 
 
 Embedding TeaVM
@@ -70,7 +40,7 @@ WebAssembly
 -----------
 
 WebAssembly support is in experimental status. It may lack major features available in JavaScript backend. 
-There's no documentation yet and you should do many things by hands 
+There's no documentation yet, and you should do many things by hands 
 (like embedding generated `wasm` file into your page, importing JavaScript objects, etc).
 Look at [samples/benchmark](https://github.com/konsoletyper/teavm/blob/master/samples/benchmark/) module.
 You should first examine `pom.xml` file to learn how to build `wasm` file from Java.
@@ -91,7 +61,7 @@ based on non-(L)GPL projects:
 * [jzlib](https://github.com/ymnk/jzlib) (BSD style license)
 
 If you want to contribute code to implementation of Java class library, 
-please make sure it's no based on OpenJDK or other code licensed under (L)GPL.
+please make sure it's not based on OpenJDK or other code licensed under (L)GPL.
 
 
 Feedback
@@ -99,5 +69,5 @@ Feedback
 
 More information is available at the official site: https://teavm.org.
 
-Ask your questions by email: info@teavm.org. Also you can report issues on a project's
+Ask your questions by email: info@teavm.org. Also, you can report issues on a project's
 [issue tracker](https://github.com/konsoletyper/teavm/issues).
