@@ -30,4 +30,5 @@ tasks.processResources {
 
 teavmPublish {
     artifactId = "teavm-maven-webapp"
+    packaging = "maven-archetype"
 }

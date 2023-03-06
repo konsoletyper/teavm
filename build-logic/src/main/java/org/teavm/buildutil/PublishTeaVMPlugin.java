@@ -75,10 +75,14 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
             publication.setArtifactId(extension.getArtifactId());
         }
         publication.from(project.getComponents().getByName("java"));
+        if (extension.packaging != null) {
+            publication.getPom().setPackaging(extension.packaging);
+        }
     }
 
     private static class ExtensionImpl implements PublishTeaVMExtension {
         private String artifactId;
+        private String packaging;
 
         @Override
         public String getArtifactId() {
@@ -88,6 +92,16 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
         @Override
         public void setArtifactId(String artifactId) {
             this.artifactId = artifactId;
+        }
+
+        @Override
+        public String getPackaging() {
+            return packaging;
+        }
+
+        @Override
+        public void setPackaging(String packaging) {
+            this.packaging = packaging;
         }
     }
 }
