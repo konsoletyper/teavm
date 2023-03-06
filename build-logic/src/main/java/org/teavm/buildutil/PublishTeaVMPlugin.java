@@ -24,6 +24,8 @@ import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.gradle.api.publish.plugins.PublishingPlugin;
 import org.gradle.api.tasks.javadoc.Javadoc;
 import org.gradle.external.javadoc.CoreJavadocOptions;
+import org.gradle.plugins.signing.SigningExtension;
+import org.gradle.plugins.signing.SigningPlugin;
 
 public abstract class PublishTeaVMPlugin implements Plugin<Project> {
     private static final String EXTENSION_NAME = "teavmPublish";
@@ -32,6 +34,7 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
     public void apply(Project target) {
         target.getPlugins().apply(PublishingPlugin.class);
         target.getPlugins().apply(MavenPublishPlugin.class);
+        target.getPlugins().apply(SigningPlugin.class);
 
         var extension = new ExtensionImpl();
         target.getExtensions().add(PublishTeaVMExtension.class, EXTENSION_NAME, extension);
@@ -42,6 +45,12 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
                     customizePublication(target, publication, extension);
                 });
             });
+            var publish = Boolean.parseBoolean(target.getProviders().gradleProperty("teavm.mavenCentral.publish")
+                    .getOrElse("false"));
+            if (publish) {
+                var signing = target.getExtensions().getByType(SigningExtension.class);
+                publishing.getPublications().configureEach(signing::sign);
+            }
             publishing.repositories(repositories -> {
                 var url = target.getProviders().gradleProperty("teavm.publish.url");
                 if (url.isPresent()) {
@@ -54,7 +63,16 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
                                 "teavm.publish.password").get());
                     });
                 }
-                repositories.mavenCentral();
+                if (publish) {
+                    repositories.maven(repository -> {
+                        repository.setName("OSSRH");
+                        repository.setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2");
+                        repository.getCredentials().setUsername(target.getProviders().gradleProperty(
+                                "ossrhUsername").get());
+                        repository.getCredentials().setPassword(target.getProviders().gradleProperty(
+                                "ossrhPassword").get());
+                    });
+                }
             });
         }));
 

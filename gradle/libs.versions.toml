@@ -71,4 +71,4 @@ version.ref = "shadow"
 [plugins]
 
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
-intellij = { id = "org.jetbrains.intellij", version = "1.10.0" }
+intellij = { id = "org.jetbrains.intellij", version = "1.13.1" }

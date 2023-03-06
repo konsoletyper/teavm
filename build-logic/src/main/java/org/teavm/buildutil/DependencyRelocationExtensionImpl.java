@@ -67,6 +67,7 @@ class DependencyRelocationExtensionImpl implements DependencyRelocationExtension
         project.getPlugins().apply(VersionCatalogPlugin.class);
         project.getPlugins().apply(JavaLibraryPlugin.class);
         project.getPlugins().apply(PublishTeaVMPlugin.class);
+        project.setDescription("Relocated " + dependency.alias + " artifact to avoid JAR hell");
 
         var synthesizedProjects = new HashMap<ModuleIdentifier, String>();
         for (var dep : depsByProjectPath.values()) {

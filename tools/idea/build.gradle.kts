@@ -29,7 +29,6 @@ intellij {
             "org.jetbrains.kotlin"
     ))
 
-
 }
 
 dependencies {
@@ -46,5 +45,9 @@ tasks {
     }
     buildSearchableOptions {
         enabled = false
+    }
+
+    publishPlugin {
+        token.set(providers.gradleProperty("teavm.idea.publishToken"))
     }
 }

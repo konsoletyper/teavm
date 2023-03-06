@@ -16,7 +16,6 @@
 
 plugins {
     `java-library`
-    `teavm-publish`
 }
 
 description = "Incremental generator of C code"
@@ -24,8 +23,4 @@ description = "Incremental generator of C code"
 dependencies {
     implementation(project(":core"))
     implementation(project(":tools:core"))
-}
-
-teavmPublish {
-    artifactId = "teavm-c-inremental"
 }
