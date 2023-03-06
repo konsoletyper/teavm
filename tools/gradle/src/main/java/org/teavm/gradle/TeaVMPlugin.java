@@ -173,12 +173,6 @@ public class TeaVMPlugin implements Plugin<Project> {
                         spec.from(project.files(outDir.map(dir -> new File(dir, relPath.get()))));
                         spec.setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE);
                     }));
-                    task.with(project.copySpec(spec -> {
-                        spec.into(relPath.map(path -> joinPath("WEB-INF", path)));
-                        spec.include("*.teavmdbg");
-                        spec.from(project.files(outDir.map(dir -> new File(dir, relPath.get()))));
-                        spec.setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE);
-                    }));
                 }
                 if (wasmAddedToWebApp) {
                     task.dependsOn(project.getTasks().named(WASM_TASK_NAME));
