@@ -25,3 +25,18 @@ dependencies {
     implementation(project(":core"))
     implementation(libs.asm)
 }
+
+val outputDir = layout.buildDirectory.dir("jcl-support")
+val generateComparison by tasks.register<JavaExec>("generateComparison") {
+    dependsOn(tasks["relocateJar"])
+    inputs.files(configurations.runtimeClasspath)
+    inputs.files(tasks["relocateJar"].outputs.files)
+    outputs.dir(outputDir)
+    classpath = configurations.runtimeClasspath.get() + tasks["relocateJar"].outputs.files
+    mainClass.set("org.teavm.tools.classlibcomparison.JCLComparisonBuilder")
+    args("-output", outputDir.get().asFile.absolutePath)
+}
+
+tasks.build.configure {
+    dependsOn(generateComparison)
+}

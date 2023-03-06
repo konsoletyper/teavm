@@ -1,5 +1,5 @@
-TeaVM
-=====
+# TeaVM
+
  
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.teavm/teavm-maven-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.teavm/teavm-maven-plugin) 
 [![Download](https://teavm.org/maven/latestBadge.svg)](https://teavm.org/maven/_latest)
@@ -16,15 +16,19 @@ Useful links:
 * [Discussion on Google Groups](https://groups.google.com/forum/#!forum/teavm)
 
 
-Building TeaVM
---------------
+## Building TeaVM
 
 Simply clone source code (`git clone https://github.com/konsoletyper/teavm.git`)
 and run Gradle build (`./gradlew publishToMavenLocal` or `gradlew.bat publishToMavenLocal`).
 
 
-Embedding TeaVM
----------------
+### Useful Gradle tasks
+
+* `:tools:classlib-comparison-gen:build` &ndash; build Java class library compatibility report.
+  result is available at: `tools/classlib-comparison-gen/build/jcl-support`
+
+
+## Embedding TeaVM
 
 If you are not satisfied with Maven, you can embed TeaVM in your program 
 or even create your own plugin for any build tool, like Ant or Gradle.
@@ -36,8 +40,7 @@ You most likely encounter Maven and IDEA plugins.
 Please, notice that these APIs for embedding are still unstable and may change between versions.
 
 
-WebAssembly
------------
+## WebAssembly
 
 WebAssembly support is in experimental status. It may lack major features available in JavaScript backend. 
 There's no documentation yet, and you should do many things by hands 
@@ -48,8 +51,7 @@ Then you may want to examine `index-teavm.html` and `index-teavm.js`
 to learn how to embed WebAssembly into your web page.
 
 
-License
--------
+## License
  
 TeaVM is distributed under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 TeaVM does not rely on OpenJDK or code or other (L)GPL code.
@@ -64,8 +66,7 @@ If you want to contribute code to implementation of Java class library,
 please make sure it's not based on OpenJDK or other code licensed under (L)GPL.
 
 
-Feedback
---------
+## Feedback
 
 More information is available at the official site: https://teavm.org.
 
