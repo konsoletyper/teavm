@@ -157,11 +157,10 @@ class DependencyRelocationExtensionImpl implements DependencyRelocationExtension
         replaceDependencies(
                 project,
                 JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME,
-                Arrays.asList(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME,
-                        JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME),
-                Arrays.asList(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME,
-                        JavaPlugin.TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME,
-                        JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME),
+                Arrays.asList(JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME),
+                Arrays.asList(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME,
+                        JavaPlugin.TEST_COMPILE_ONLY_CONFIGURATION_NAME,
+                        JavaPlugin.TEST_RUNTIME_ONLY_CONFIGURATION_NAME),
                 depsByLibrary
         );
 

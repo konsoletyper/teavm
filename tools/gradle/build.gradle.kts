@@ -96,6 +96,9 @@ val createConfig by tasks.registering {
 }
 
 tasks.compileJava.configure { dependsOn(createConfig) }
+tasks.sourcesJar {
+    dependsOn(createConfig)
+}
 
 sourceSets.main.configure { java.srcDir(configPath) }
 
