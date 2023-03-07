@@ -42,6 +42,7 @@ import org.teavm.ast.SequentialStatement;
 import org.teavm.ast.Statement;
 import org.teavm.ast.SwitchClause;
 import org.teavm.ast.SwitchStatement;
+import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnaryOperation;
 import org.teavm.ast.WhileStatement;
@@ -51,6 +52,7 @@ import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
@@ -117,6 +119,8 @@ public class NewDecompiler {
     private ObjectIntMap<IdentifiedStatement> identifiedStatementUseCount = new ObjectIntHashMap<>();
     private boolean[] processingLoops;
     private boolean[] loopNodes;
+    private List<TryCatchBlock> currentTryCatches = new ArrayList<>();
+    private int[] usedTryCatchHandlers;
 
     public Statement decompile(Program program) {
         this.program = program;
@@ -138,7 +142,11 @@ public class NewDecompiler {
     }
 
     private static int blockEnterNode(BasicBlock block) {
-        return block.getIndex() * 2;
+        return blockEnterNode(block.getIndex());
+    }
+
+    private static int blockEnterNode(int blockIndex) {
+        return blockIndex * 2;
     }
 
     private static int blockExitNode(BasicBlock block) {
@@ -147,6 +155,10 @@ public class NewDecompiler {
 
     private static int owningBlockIndex(int node) {
         return node / 2;
+    }
+
+    private BasicBlock owningBlock(int node) {
+        return program.basicBlockAt(owningBlockIndex(node));
     }
 
     private int enteringBlockCount(BasicBlock block) {
@@ -163,6 +175,7 @@ public class NewDecompiler {
         processingLoops = new boolean[program.basicBlockCount()];
         loopNodes = new boolean[program.basicBlockCount()];
         loopExits = new WhileStatement[program.basicBlockCount()];
+        usedTryCatchHandlers = new int[program.basicBlockCount()];
         calculateVarInfo();
     }
 
@@ -209,12 +222,68 @@ public class NewDecompiler {
         while (currentBlock != null) {
             if (!processingLoops[currentBlock.getIndex()] && isLoopHead()) {
                 processLoop();
-            } else {
+            } else if (!processTryCatch()) {
                 for (var instruction : currentBlock) {
                     instruction.acceptVisitor(instructionDecompiler);
                 }
             }
         }
+    }
+
+    private boolean processTryCatch() {
+        var immediatelyDominatedNodes = domGraph.outgoingEdges(blockEnterNode(currentBlock));
+        if (immediatelyDominatedNodes.length == 1) {
+            return false;
+        }
+
+        var index = currentTryCatches.size();
+        if (index < currentBlock.getTryCatchBlocks().size()) {
+            var tryCatch = currentBlock.getTryCatchBlocks().get(index);
+            if (isRegularTryCatch(currentBlock, index, tryCatch)) {
+                processRegularTryCatch();
+                return false;
+            }
+        }
+
+        var childBlockCount = immediatelyDominatedNodes.length - 1;
+        for (var dominated : immediatelyDominatedNodes) {
+            if (usedTryCatchHandlers[owningBlockIndex(dominated)] > 0) {
+                --childBlockCount;
+            }
+        }
+        if (childBlockCount == 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private void processRegularTryCatch() {
+        var index = currentTryCatches.size();
+        var tryCatch = currentBlock.getTryCatchBlocks().get(index);
+        currentTryCatches.add(tryCatch);
+        usedTryCatchHandlers[tryCatch.getHandler().getIndex()]++;
+        var tryCatchStatement = new TryCatchStatement();
+        tryCatchStatement.setExceptionType(tryCatch.getExceptionType());
+        statements.add(tryCatchStatement);
+        processBlock(currentBlock, null, tryCatchStatement.getProtectedBody());
+        usedTryCatchHandlers[tryCatch.getHandler().getIndex()]--;
+        currentTryCatches.remove(index);
+    }
+
+    private boolean isRegularTryCatch(BasicBlock head, int handlerIndex, TryCatchBlock tryCatch) {
+        for (var tryBlock : cfg.incomingEdges(blockEnterNode(tryCatch.getHandler()))) {
+            var predecessorBlock = owningBlockIndex(tryBlock);
+            if (predecessorBlock == head.getIndex()) {
+                continue;
+            }
+            var tryPredecessor = owningBlock(dom.immediateDominatorOf(blockEnterNode(predecessorBlock)));
+            if (handlerIndex >= tryPredecessor.getTryCatchBlocks().size()
+                    || tryPredecessor.getTryCatchBlocks().get(handlerIndex) != tryCatch) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void processLoop() {
