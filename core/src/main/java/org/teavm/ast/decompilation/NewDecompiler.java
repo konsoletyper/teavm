@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.BinaryOperation;
@@ -118,9 +119,8 @@ public class NewDecompiler {
     private WhileStatement[] loopExits;
     private ObjectIntMap<IdentifiedStatement> identifiedStatementUseCount = new ObjectIntHashMap<>();
     private boolean[] processingLoops;
-    private boolean[] loopNodes;
-    private List<TryCatchBlock> currentTryCatches = new ArrayList<>();
-    private int[] usedTryCatchHandlers;
+    private boolean[] currentSequenceNodes;
+    private List<TryCatchElement> currentTryCatches = new ArrayList<>();
 
     public Statement decompile(Program program) {
         this.program = program;
@@ -150,7 +150,11 @@ public class NewDecompiler {
     }
 
     private static int blockExitNode(BasicBlock block) {
-        return block.getIndex() * 2 + 1;
+        return blockExitNode(block.getIndex());
+    }
+
+    private static int blockExitNode(int blockIndex) {
+        return blockIndex * 2 + 1;
     }
 
     private static int owningBlockIndex(int node) {
@@ -173,9 +177,8 @@ public class NewDecompiler {
         relocatableVars = new Expr[program.variableCount()];
         jumpTargets = new IdentifiedStatement[program.basicBlockCount()];
         processingLoops = new boolean[program.basicBlockCount()];
-        loopNodes = new boolean[program.basicBlockCount()];
+        currentSequenceNodes = new boolean[program.basicBlockCount()];
         loopExits = new WhileStatement[program.basicBlockCount()];
-        usedTryCatchHandlers = new int[program.basicBlockCount()];
         calculateVarInfo();
     }
 
@@ -214,7 +217,7 @@ public class NewDecompiler {
         statements = null;
         relocatableVars = null;
         jumpTargets = null;
-        loopNodes = null;
+        currentSequenceNodes = null;
         loopExits = null;
     }
 
@@ -222,7 +225,8 @@ public class NewDecompiler {
         while (currentBlock != null) {
             if (!processingLoops[currentBlock.getIndex()] && isLoopHead()) {
                 processLoop();
-            } else if (!processTryCatch()) {
+            } else if (!processTryCatchHeader()) {
+                applyNewTryCatchStack();
                 for (var instruction : currentBlock) {
                     instruction.acceptVisitor(instructionDecompiler);
                 }
@@ -230,59 +234,60 @@ public class NewDecompiler {
         }
     }
 
-    private boolean processTryCatch() {
+    private void applyNewTryCatchStack() {
+        var newTryCatches = currentBlock.getTryCatchBlocks();
+        var maxCommonSize = Math.min(newTryCatches.size(), currentTryCatches.size());
+        var commonSize = 0;
+        for (; commonSize < maxCommonSize; ++commonSize) {
+            if (!currentTryCatches.get(commonSize).equalTo(newTryCatches.get(commonSize))) {
+                break;
+            }
+        }
+
+        while (currentTryCatches.size() > commonSize) {
+            var tryCatch = currentTryCatches.remove(currentTryCatches.size() - 1);
+            var statementsToWrap = tryCatch.targetStatements.subList(tryCatch.start, tryCatch.targetStatements.size());
+            var tryCatchStatement = new TryCatchStatement();
+            tryCatchStatement.getProtectedBody().addAll(statementsToWrap);
+            tryCatchStatement.setExceptionType(tryCatch.exceptionType);
+            var exceptionVariable = tryCatch.handler.getExceptionVariable();
+            tryCatchStatement.setExceptionVariable(exceptionVariable != null ? exceptionVariable.getRegister() : -1);
+            addJumpStatement(tryCatchStatement.getHandler(), tryCatch.handler, nextBlock);
+            statementsToWrap.clear();
+            tryCatch.targetStatements.add(tryCatchStatement);
+        }
+
+        for (var i = commonSize; i < newTryCatches.size(); ++i) {
+            var tryCatch = newTryCatches.get(i);
+            var element = new TryCatchElement(tryCatch.getExceptionType(), tryCatch.getHandler(),
+                    statements, statements.size());
+            currentTryCatches.add(element);
+        }
+    }
+
+    private boolean processTryCatchHeader() {
         var immediatelyDominatedNodes = domGraph.outgoingEdges(blockEnterNode(currentBlock));
         if (immediatelyDominatedNodes.length == 1) {
             return false;
         }
 
-        var index = currentTryCatches.size();
-        if (index < currentBlock.getTryCatchBlocks().size()) {
-            var tryCatch = currentBlock.getTryCatchBlocks().get(index);
-            if (isRegularTryCatch(currentBlock, index, tryCatch)) {
-                processRegularTryCatch();
-                return false;
-            }
+        var childBlockCount = immediatelyDominatedNodes.length;
+        var childBlocks = new BasicBlock[childBlockCount];
+        for (int i = 0; i < childBlocks.length; i++) {
+            childBlocks[i] = owningBlock(immediatelyDominatedNodes[i]);
         }
 
-        var childBlockCount = immediatelyDominatedNodes.length - 1;
-        for (var dominated : immediatelyDominatedNodes) {
-            if (usedTryCatchHandlers[owningBlockIndex(dominated)] > 0) {
-                --childBlockCount;
-            }
-        }
-        if (childBlockCount == 0) {
-            return false;
+        var blockStatements = new BlockStatement[childBlockCount];
+        for (int i = 0; i < childBlocks.length; i++) {
+            var childBlock = childBlocks[i];
+            var blockStatement = new BlockStatement();
+            jumpTargets[childBlock.getIndex()] = blockStatement;
+            blockStatements[i] = blockStatement;
         }
 
-        return true;
-    }
-
-    private void processRegularTryCatch() {
-        var index = currentTryCatches.size();
-        var tryCatch = currentBlock.getTryCatchBlocks().get(index);
-        currentTryCatches.add(tryCatch);
-        usedTryCatchHandlers[tryCatch.getHandler().getIndex()]++;
-        var tryCatchStatement = new TryCatchStatement();
-        tryCatchStatement.setExceptionType(tryCatch.getExceptionType());
-        statements.add(tryCatchStatement);
-        processBlock(currentBlock, null, tryCatchStatement.getProtectedBody());
-        usedTryCatchHandlers[tryCatch.getHandler().getIndex()]--;
-        currentTryCatches.remove(index);
-    }
-
-    private boolean isRegularTryCatch(BasicBlock head, int handlerIndex, TryCatchBlock tryCatch) {
-        for (var tryBlock : cfg.incomingEdges(blockEnterNode(tryCatch.getHandler()))) {
-            var predecessorBlock = owningBlockIndex(tryBlock);
-            if (predecessorBlock == head.getIndex()) {
-                continue;
-            }
-            var tryPredecessor = owningBlock(dom.immediateDominatorOf(blockEnterNode(predecessorBlock)));
-            if (handlerIndex >= tryPredecessor.getTryCatchBlocks().size()
-                    || tryPredecessor.getTryCatchBlocks().get(handlerIndex) != tryCatch) {
-                return false;
-            }
-        }
+        var innerStatements = processBlockStatements(blockStatements, childBlocks);
+        processBlock(currentBlock, nextBlock, innerStatements);
+        currentBlock = nextBlock;
         return true;
     }
 
@@ -292,14 +297,14 @@ public class NewDecompiler {
         var nextBlockBackup = nextBlock;
 
         var loop = new WhileStatement();
-        var loopExit = getBestLoopExit();
+        fillLoopNodes();
+        var loopExit = getBestExit();
         if (loopExits[loopExit.getIndex()] != null) {
             loopExit = null;
         } else {
             loopExits[loopExit.getIndex()] = loop;
         }
         nextBlock = currentBlock;
-        statements.add(loop);
         statements = loop.getBody();
         jumpTargets[currentBlock.getIndex()] = loop;
         processingLoops[currentBlock.getIndex()] = true;
@@ -309,6 +314,7 @@ public class NewDecompiler {
         optimizeLoop(loop);
 
         statements = statementsBackup;
+        statements.add(loop);
         nextBlock = nextBlockBackup;
         if (loopExit != null) {
             loopExits[loopExit.getIndex()] = null;
@@ -339,8 +345,7 @@ public class NewDecompiler {
         loop.setCondition(not(firstIf.getCondition()));
     }
 
-    private BasicBlock getBestLoopExit() {
-        fillLoopNodes();
+    private BasicBlock getBestExit() {
         var stack = new IntStack();
         stack.push(currentBlock.getIndex());
         var nonLoopTargets = new IntArrayList();
@@ -349,10 +354,10 @@ public class NewDecompiler {
 
         while (!stack.isEmpty()) {
             int node = stack.pop();
-            var targets = domGraph.outgoingEdges(node * 2 + 1);
+            var targets = domGraph.outgoingEdges(blockExitNode(node));
 
             for (int target : targets) {
-                if (!loopNodes[owningBlockIndex(target)]) {
+                if (!currentSequenceNodes[owningBlockIndex(target)]) {
                     nonLoopTargets.add(owningBlockIndex(target));
                 }
             }
@@ -361,7 +366,7 @@ public class NewDecompiler {
                 int bestNonLoopTarget = nonLoopTargets.get(0);
                 for (int i = 1; i < nonLoopTargets.size(); ++i) {
                     int candidate = nonLoopTargets.get(i);
-                    if (dfs[bestNonLoopTarget * 2] < dfs[candidate * 2]) {
+                    if (dfs[blockEnterNode(bestNonLoopTarget)] < dfs[blockEnterNode(candidate)]) {
                         bestNonLoopTarget = candidate;
                     }
                 }
@@ -374,7 +379,7 @@ public class NewDecompiler {
             }
 
             for (int target : targets) {
-                if (loopNodes[owningBlockIndex(target)]) {
+                if (currentSequenceNodes[owningBlockIndex(target)]) {
                     stack.push(owningBlockIndex(target));
                 }
             }
@@ -395,13 +400,13 @@ public class NewDecompiler {
             }
             visited[blockIndex] = true;
             complexity += program.basicBlockAt(blockIndex).instructionCount();
-            for (int successor : cfg.outgoingEdges(blockIndex * 2)) {
+            for (int successor : cfg.outgoingEdges(blockEnterNode(blockIndex))) {
                 int successorIndex = owningBlockIndex(successor);
                 if (!visited[successorIndex]) {
                     stack.push(successorIndex);
                 }
             }
-            for (int successor : cfg.outgoingEdges(blockIndex * 2 + 1)) {
+            for (int successor : cfg.outgoingEdges(blockExitNode(blockIndex))) {
                 int successorIndex = owningBlockIndex(successor);
                 if (!visited[successorIndex]) {
                     stack.push(successorIndex);
@@ -412,20 +417,20 @@ public class NewDecompiler {
     }
 
     private void fillLoopNodes() {
-        Arrays.fill(loopNodes, false);
+        Arrays.fill(currentSequenceNodes, false);
         var stack = new int[cfg.size()];
         int stackPtr = 0;
         stack[stackPtr++] = currentBlock.getIndex();
 
         while (stackPtr > 0) {
             int node = stack[--stackPtr];
-            if (loopNodes[node]) {
+            if (currentSequenceNodes[node]) {
                 continue;
             }
-            loopNodes[node] = true;
-            for (int source : cfg.incomingEdges(node * 2)) {
-                int sourceIndex = source / 2;
-                if (!loopNodes[sourceIndex] && dom.dominates(blockEnterNode(currentBlock), source)) {
+            currentSequenceNodes[node] = true;
+            for (int source : cfg.incomingEdges(blockEnterNode(node))) {
+                int sourceIndex = owningBlockIndex(source);
+                if (!currentSequenceNodes[sourceIndex] && dom.dominates(blockEnterNode(currentBlock), source)) {
                     stack[stackPtr++] = sourceIndex;
                 }
             }
@@ -590,7 +595,7 @@ public class NewDecompiler {
         var childBlocks = new BasicBlock[childBlockCount];
         int j = 0;
         for (var immediatelyDominatedNode : immediatelyDominatedNodes) {
-            var childBlock = program.basicBlockAt(immediatelyDominatedNode / 2);
+            var childBlock = owningBlock(immediatelyDominatedNode);
             if (ownsTrueBranch && childBlock == ifTrue
                     || ownsFalseBranch && childBlock == ifFalse) {
                 continue;
@@ -653,8 +658,8 @@ public class NewDecompiler {
         var childBlocks = new BasicBlock[childBlockCount];
         int j = 0;
         for (var immediatelyDominatedNode : immediatelyDominatedNodes) {
-            var childBlock = program.basicBlockAt(immediatelyDominatedNode / 2);
-            if (isRegularBranch[owningBlockIndex(immediatelyDominatedNode)]) {
+            var childBlock = owningBlock(immediatelyDominatedNode);
+            if (isRegularBranch[childBlock.getIndex()]) {
                 continue;
             }
             childBlocks[j++] = childBlock;
@@ -708,10 +713,8 @@ public class NewDecompiler {
         currentBlock = childBlocks.length > 0 ? childBlocks[childBlocks.length - 1] : null;
     }
 
-    private void processBlockStatements(BlockStatement[] blockStatements, BasicBlock[] childBlocks,
-            Statement mainStatement) {
+    private List<Statement> processBlockStatements(BlockStatement[] blockStatements, BasicBlock[] childBlocks) {
         if (blockStatements.length > 0) {
-            blockStatements[0].getBody().add(mainStatement);
             for (int i = 0; i < childBlocks.length - 1; ++i) {
                 var prevBlockStatement = blockStatements[i];
                 optimizeConditionalBlock(prevBlockStatement);
@@ -723,9 +726,15 @@ public class NewDecompiler {
             var lastBlockStatement = blockStatements[blockStatements.length - 1];
             optimizeConditionalBlock(lastBlockStatement);
             addChildBlock(lastBlockStatement, statements);
+            return blockStatements[0].getBody();
         } else {
-            statements.add(mainStatement);
+            return statements;
         }
+    }
+
+    private void processBlockStatements(BlockStatement[] blockStatements, BasicBlock[] childBlocks,
+            Statement mainStatement) {
+        processBlockStatements(blockStatements, childBlocks).add(mainStatement);
     }
 
     private static class SwitchClauseProto {
@@ -1255,13 +1264,31 @@ public class NewDecompiler {
         }
     };
 
-    static class ExprStackElement {
+    private static class ExprStackElement {
         int variable;
         Expr value;
 
         ExprStackElement(int variable, Expr value) {
             this.variable = variable;
             this.value = value;
+        }
+    }
+
+    private static class TryCatchElement {
+        final String exceptionType;
+        final BasicBlock handler;
+        final List<Statement> targetStatements;
+        final int start;
+
+        TryCatchElement(String exceptionType, BasicBlock handler, List<Statement> targetStatements, int start) {
+            this.exceptionType = exceptionType;
+            this.handler = handler;
+            this.targetStatements = targetStatements;
+            this.start = start;
+        }
+
+        boolean equalTo(TryCatchBlock block) {
+            return Objects.equals(exceptionType, block.getExceptionType()) && handler == block.getHandler();
         }
     }
 }
