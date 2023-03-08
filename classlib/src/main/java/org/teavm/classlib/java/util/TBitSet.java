@@ -15,9 +15,9 @@
  */
 package org.teavm.classlib.java.util;
 
-import java.util.stream.IntStream;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
+import org.teavm.classlib.java.util.stream.TIntStream;
 import org.teavm.interop.Rename;
 
 public class TBitSet extends TObject implements TCloneable, TSerializable {
@@ -512,10 +512,10 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         return sb.toString();
     }
 
-    public IntStream stream() {
-        return IntStream.range(0, data.length).flatMap(idx -> {
+    public TIntStream stream() {
+        return TIntStream.range(0, data.length).flatMap(idx -> {
             int elem = data[idx];
-            return IntStream.range(0, Integer.SIZE).filter(pos -> (elem & (1 << pos)) != 0)
+            return TIntStream.range(0, Integer.SIZE).filter(pos -> (elem & (1 << pos)) != 0)
                     .map(pos -> idx * Integer.SIZE + pos);
         });
     }
