@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2023 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,36 +13,49 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.c.util.json;
+package org.teavm.common.json;
 
-public abstract class JsonVisitor {
+public class JsonAllErrorVisitor extends JsonVisitor {
+    @Override
     public JsonVisitor object(JsonErrorReporter reporter) {
+        reporter.error("Unexpected object");
         return null;
     }
 
+    @Override
     public JsonVisitor array(JsonErrorReporter reporter) {
+        reporter.error("Unexpected array");
         return null;
     }
 
+    @Override
     public JsonVisitor property(JsonErrorReporter reporter, String name) {
+        reporter.error("Unexpected property");
         return null;
     }
 
+    @Override
     public void stringValue(JsonErrorReporter reporter, String value) {
+        reporter.error("Unexpected string");
     }
 
+    @Override
     public void intValue(JsonErrorReporter reporter, long value) {
+        reporter.error("Unexpected number");
     }
 
+    @Override
     public void floatValue(JsonErrorReporter reporter, double value) {
+        reporter.error("Unexpected number");
     }
 
+    @Override
     public void nullValue(JsonErrorReporter reporter) {
+        reporter.error("Unexpected null");
     }
 
+    @Override
     public void booleanValue(JsonErrorReporter reporter, boolean value) {
-    }
-
-    public void end(JsonErrorReporter reporter) {
+        reporter.error("Unexpected boolean");
     }
 }

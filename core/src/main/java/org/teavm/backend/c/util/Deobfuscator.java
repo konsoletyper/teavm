@@ -26,13 +26,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.teavm.backend.c.util.json.JsonAllErrorVisitor;
-import org.teavm.backend.c.util.json.JsonArrayVisitor;
-import org.teavm.backend.c.util.json.JsonErrorReporter;
-import org.teavm.backend.c.util.json.JsonParser;
-import org.teavm.backend.c.util.json.JsonPropertyVisitor;
-import org.teavm.backend.c.util.json.JsonVisitingConsumer;
-import org.teavm.backend.c.util.json.JsonVisitor;
+import org.teavm.common.json.JsonAllErrorVisitor;
+import org.teavm.common.json.JsonArrayVisitor;
+import org.teavm.common.json.JsonErrorReporter;
+import org.teavm.common.json.JsonParser;
+import org.teavm.common.json.JsonPropertyVisitor;
+import org.teavm.common.json.JsonVisitingConsumer;
+import org.teavm.common.json.JsonVisitor;
 
 public class Deobfuscator {
     private Map<Integer, CallSite> callSites = new HashMap<>();

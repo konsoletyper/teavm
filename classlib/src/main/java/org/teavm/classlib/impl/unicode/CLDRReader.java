@@ -15,24 +15,28 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.teavm.common.json.JsonObjectValue;
+import org.teavm.common.json.JsonParser;
+import org.teavm.common.json.JsonValue;
+import org.teavm.common.json.JsonValueParserVisitor;
+import org.teavm.common.json.JsonValueProvider;
+import org.teavm.common.json.JsonVisitingConsumer;
+import org.teavm.common.json.JsonVisitor;
 
 public class CLDRReader {
     private static final String[] weekdayKeys = { "sun", "mon", "tue", "wed", "thu", "fri", "sat" };
@@ -132,7 +136,7 @@ public class CLDRReader {
                         readTimeZones(localeName, localeInfo, input);
                         break;
                     case "ca-gregorian.json": {
-                        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
+                        var root = (JsonObjectValue) parse(input);
                         readEras(localeName, localeInfo, root);
                         readAmPms(localeName, localeInfo, root);
                         readMonths(localeName, localeInfo, root);
@@ -158,50 +162,49 @@ public class CLDRReader {
     }
 
     private void readLanguages(String localeCode, CLDRLocale locale, InputStream input) {
-        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
-        JsonObject languagesJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("localeDisplayNames").getAsJsonObject().get("languages").getAsJsonObject();
-        for (Map.Entry<String, JsonElement> property : languagesJson.entrySet()) {
+        var root = parse(input).asObject();
+        var languagesJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("localeDisplayNames").asObject().get("languages").asObject();
+        for (var property : languagesJson.entrySet()) {
             String language = property.getKey();
             if (availableLanguages.contains(language)) {
-                locale.languages.put(language, property.getValue().getAsString());
+                locale.languages.put(language, property.getValue().asString());
             }
         }
     }
 
     private void readCountries(String localeCode, CLDRLocale locale, InputStream input) {
-        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
-        JsonObject countriesJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("localeDisplayNames").getAsJsonObject().get("territories").getAsJsonObject();
-        for (Map.Entry<String, JsonElement> property : countriesJson.entrySet()) {
+        var root = parse(input).asObject();
+        var countriesJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("localeDisplayNames").asObject().get("territories").asObject();
+        for (var property : countriesJson.entrySet()) {
             String country = property.getKey();
             if (availableCountries.contains(country)) {
-                locale.territories.put(country, property.getValue().getAsString());
+                locale.territories.put(country, property.getValue().asString());
             }
         }
     }
 
     private void readTimeZones(String localeCode, CLDRLocale locale, InputStream input) {
-        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
-        JsonObject zonesJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("dates").getAsJsonObject().get("timeZoneNames").getAsJsonObject().get("zone")
-                .getAsJsonObject();
-        List<CLDRTimeZone> timeZones = new ArrayList<>();
-        for (Map.Entry<String, JsonElement> area : zonesJson.entrySet()) {
-            String areaName = area.getKey();
-            for (Map.Entry<String, JsonElement> location : area.getValue().getAsJsonObject().entrySet()) {
-                String locationName = location.getKey();
-                JsonElement city = location.getValue().getAsJsonObject().get("exemplarCity");
+        var root = parse(input).asObject();
+        var zonesJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("dates").asObject().get("timeZoneNames").asObject().get("zone")
+                .asObject();
+        var timeZones = new ArrayList<CLDRTimeZone>();
+        for (var area : zonesJson.entrySet()) {
+            var areaName = area.getKey();
+            for (var location : area.getValue().asObject().entrySet()) {
+                var locationName = location.getKey();
+                var city = location.getValue().asObject().get("exemplarCity");
                 if (city != null) {
-                    CLDRTimeZone tz = new CLDRTimeZone(areaName, locationName, city.getAsString());
+                    var tz = new CLDRTimeZone(areaName, locationName, city.asString());
                     timeZones.add(tz);
                 } else {
-                    for (Map.Entry<String, JsonElement> sublocation : location.getValue()
-                            .getAsJsonObject().entrySet()) {
-                        city = location.getValue().getAsJsonObject().get("exemplarCity");
+                    for (var sublocation : location.getValue().asObject().entrySet()) {
+                        city = location.getValue().asObject().get("exemplarCity");
                         if (city != null) {
-                            CLDRTimeZone tz = new CLDRTimeZone(areaName, locationName + "/" + sublocation.getKey(),
-                                    city.getAsString());
+                            var tz = new CLDRTimeZone(areaName, locationName + "/" + sublocation.getKey(),
+                                    city.asString());
                             timeZones.add(tz);
                         }
                     }
@@ -212,156 +215,155 @@ public class CLDRReader {
     }
 
     private void readCurrencies(String localeCode, CLDRLocale locale, InputStream input) {
-        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
-        JsonObject currenciesJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("numbers").getAsJsonObject().get("currencies").getAsJsonObject();
-        for (Map.Entry<String, JsonElement> currencyEntry : currenciesJson.entrySet()) {
-            String currencyCode = currencyEntry.getKey();
-            JsonObject currencyJson = currencyEntry.getValue().getAsJsonObject();
-            CLDRCurrency currency = new CLDRCurrency();
-            currency.name = currencyJson.get("displayName").getAsString();
+        var root = parse(input).asObject();
+        var currenciesJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("numbers").asObject().get("currencies").asObject();
+        for (var currencyEntry : currenciesJson.entrySet()) {
+            var currencyCode = currencyEntry.getKey();
+            var currencyJson = currencyEntry.getValue().asObject();
+            var currency = new CLDRCurrency();
+            currency.name = currencyJson.get("displayName").asString();
             if (currencyJson.has("symbol")) {
-                currency.symbol = currencyJson.get("symbol").getAsString();
+                currency.symbol = currencyJson.get("symbol").asString();
             }
             locale.currencies.put(currencyCode, currency);
         }
     }
 
     private void readNumbers(String localeCode, CLDRLocale locale, InputStream input) {
-        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
-        JsonObject numbersJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("numbers").getAsJsonObject();
-        String numbering = numbersJson.get("defaultNumberingSystem").getAsString();
-        JsonObject symbolsJson = numbersJson.get("symbols-numberSystem-" + numbering).getAsJsonObject();
-        locale.decimalData.decimalSeparator = symbolsJson.get("decimal").getAsString().charAt(0);
-        locale.decimalData.groupingSeparator = symbolsJson.get("group").getAsString().charAt(0);
-        locale.decimalData.listSeparator = symbolsJson.get("list").getAsString().charAt(0);
-        locale.decimalData.percent = symbolsJson.get("percentSign").getAsString().charAt(0);
-        locale.decimalData.minusSign = symbolsJson.get("minusSign").getAsString().charAt(0);
-        locale.decimalData.exponentSeparator = symbolsJson.get("exponential").getAsString();
-        locale.decimalData.perMille = symbolsJson.get("perMille").getAsString().charAt(0);
-        locale.decimalData.infinity = symbolsJson.get("infinity").getAsString();
-        locale.decimalData.nan = symbolsJson.get("nan").getAsString();
+        var root = parse(input).asObject();
+        var numbersJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("numbers").asObject();
+        String numbering = numbersJson.get("defaultNumberingSystem").asString();
+        var symbolsJson = numbersJson.get("symbols-numberSystem-" + numbering).asObject();
+        locale.decimalData.decimalSeparator = symbolsJson.get("decimal").asString().charAt(0);
+        locale.decimalData.groupingSeparator = symbolsJson.get("group").asString().charAt(0);
+        locale.decimalData.listSeparator = symbolsJson.get("list").asString().charAt(0);
+        locale.decimalData.percent = symbolsJson.get("percentSign").asString().charAt(0);
+        locale.decimalData.minusSign = symbolsJson.get("minusSign").asString().charAt(0);
+        locale.decimalData.exponentSeparator = symbolsJson.get("exponential").asString();
+        locale.decimalData.perMille = symbolsJson.get("perMille").asString().charAt(0);
+        locale.decimalData.infinity = symbolsJson.get("infinity").asString();
+        locale.decimalData.nan = symbolsJson.get("nan").asString();
 
-        JsonObject numberJson = numbersJson.get("decimalFormats-numberSystem-" + numbering).getAsJsonObject();
-        locale.numberFormat = numberJson.get("standard").getAsString();
+        var numberJson = numbersJson.get("decimalFormats-numberSystem-" + numbering).asObject();
+        locale.numberFormat = numberJson.get("standard").asString();
 
-        JsonObject percentJson = numbersJson.get("percentFormats-numberSystem-" + numbering).getAsJsonObject();
-        locale.percentFormat = percentJson.get("standard").getAsString();
+        var percentJson = numbersJson.get("percentFormats-numberSystem-" + numbering).asObject();
+        locale.percentFormat = percentJson.get("standard").asString();
 
-        JsonObject currencyJson = numbersJson.get("currencyFormats-numberSystem-" + numbering).getAsJsonObject();
-        locale.currencyFormat = currencyJson.get("standard").getAsString();
+        var currencyJson = numbersJson.get("currencyFormats-numberSystem-" + numbering).asObject();
+        locale.currencyFormat = currencyJson.get("standard").asString();
     }
 
-    private void readEras(String localeCode, CLDRLocale locale, JsonObject root) {
-        JsonObject erasJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
-                .get("gregorian").getAsJsonObject().get("eras").getAsJsonObject().get("eraAbbr").getAsJsonObject();
-        String bc = erasJson.get("0").getAsString();
-        String ac = erasJson.get("1").getAsString();
+    private void readEras(String localeCode, CLDRLocale locale, JsonObjectValue root) {
+        var erasJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("dates").asObject().get("calendars").asObject()
+                .get("gregorian").asObject().get("eras").asObject().get("eraAbbr").asObject();
+        var bc = erasJson.get("0").asString();
+        var ac = erasJson.get("1").asString();
         locale.eras = new String[] { bc, ac };
     }
 
-    private void readAmPms(String localeCode, CLDRLocale locale, JsonObject root) {
-        JsonObject ampmJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
-                .get("gregorian").getAsJsonObject().get("dayPeriods").getAsJsonObject()
-                .get("format").getAsJsonObject().get("abbreviated").getAsJsonObject();
-        String am = ampmJson.get("am").getAsString();
-        String pm = ampmJson.get("pm").getAsString();
+    private void readAmPms(String localeCode, CLDRLocale locale, JsonObjectValue root) {
+        var ampmJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("dates").asObject().get("calendars").asObject()
+                .get("gregorian").asObject().get("dayPeriods").asObject()
+                .get("format").asObject().get("abbreviated").asObject();
+        String am = ampmJson.get("am").asString();
+        String pm = ampmJson.get("pm").asString();
         locale.dayPeriods = new String[] { am, pm };
     }
 
-    private void readMonths(String localeCode, CLDRLocale locale, JsonObject root) {
-        JsonObject monthsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
-                .get("gregorian").getAsJsonObject().get("months").getAsJsonObject()
-                .get("format").getAsJsonObject().get("wide").getAsJsonObject();
+    private void readMonths(String localeCode, CLDRLocale locale, JsonObjectValue root) {
+        var monthsJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("dates").asObject().get("calendars").asObject()
+                .get("gregorian").asObject().get("months").asObject()
+                .get("format").asObject().get("wide").asObject();
         locale.months = new String[12];
         for (int i = 0; i < 12; ++i) {
-            locale.months[i] = monthsJson.get(String.valueOf(i + 1)).getAsString();
+            locale.months[i] = monthsJson.get(String.valueOf(i + 1)).asString();
         }
     }
 
-    private void readShortMonths(String localeCode, CLDRLocale locale, JsonObject root) {
-        JsonObject monthsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
-                .get("gregorian").getAsJsonObject().get("months").getAsJsonObject()
-                .get("format").getAsJsonObject().get("abbreviated").getAsJsonObject();
+    private void readShortMonths(String localeCode, CLDRLocale locale, JsonObjectValue root) {
+        var monthsJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("dates").asObject().get("calendars").asObject()
+                .get("gregorian").asObject().get("months").asObject()
+                .get("format").asObject().get("abbreviated").asObject();
         locale.shortMonths = new String[12];
         for (int i = 0; i < 12; ++i) {
-            locale.shortMonths[i] = monthsJson.get(String.valueOf(i + 1)).getAsString();
+            locale.shortMonths[i] = monthsJson.get(String.valueOf(i + 1)).asString();
         }
     }
 
-    private void readWeekdays(String localeCode, CLDRLocale locale, JsonObject root) {
-        JsonObject weekdaysJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
-                .get("gregorian").getAsJsonObject().get("days").getAsJsonObject()
-                .get("format").getAsJsonObject().get("wide").getAsJsonObject();
+    private void readWeekdays(String localeCode, CLDRLocale locale, JsonObjectValue root) {
+        var weekdaysJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("dates").asObject().get("calendars").asObject()
+                .get("gregorian").asObject().get("days").asObject()
+                .get("format").asObject().get("wide").asObject();
         locale.weekdays = new String[7];
         for (int i = 0; i < 7; ++i) {
-            locale.weekdays[i] = weekdaysJson.get(weekdayKeys[i]).getAsString();
+            locale.weekdays[i] = weekdaysJson.get(weekdayKeys[i]).asString();
         }
     }
 
-    private void readShortWeekdays(String localeCode, CLDRLocale locale, JsonObject root) {
-        JsonObject weekdaysJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
-                .get("gregorian").getAsJsonObject().get("days").getAsJsonObject()
-                .get("format").getAsJsonObject().get("abbreviated").getAsJsonObject();
+    private void readShortWeekdays(String localeCode, CLDRLocale locale, JsonObjectValue root) {
+        var weekdaysJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("dates").asObject().get("calendars").asObject()
+                .get("gregorian").asObject().get("days").asObject()
+                .get("format").asObject().get("abbreviated").asObject();
         locale.shortWeekdays = new String[7];
         for (int i = 0; i < 7; ++i) {
-            locale.shortWeekdays[i] = weekdaysJson.get(weekdayKeys[i]).getAsString();
+            locale.shortWeekdays[i] = weekdaysJson.get(weekdayKeys[i]).asString();
         }
     }
 
-    private void readDateFormats(String localeCode, CLDRLocale locale, JsonObject root) {
-        JsonObject formatsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
-                .get("gregorian").getAsJsonObject().get("dateFormats").getAsJsonObject();
-        locale.dateFormats = new CLDRDateFormats(formatsJson.get("short").getAsString(),
-                formatsJson.get("medium").getAsString(), formatsJson.get("long").getAsString(),
-                formatsJson.get("full").getAsString());
+    private void readDateFormats(String localeCode, CLDRLocale locale, JsonObjectValue root) {
+        var formatsJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("dates").asObject().get("calendars").asObject()
+                .get("gregorian").asObject().get("dateFormats").asObject();
+        locale.dateFormats = new CLDRDateFormats(formatsJson.get("short").asString(),
+                formatsJson.get("medium").asString(), formatsJson.get("long").asString(),
+                formatsJson.get("full").asString());
     }
 
-    private void readTimeFormats(String localeCode, CLDRLocale locale, JsonObject root) {
-        JsonObject formatsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
-                .get("gregorian").getAsJsonObject().get("timeFormats").getAsJsonObject();
-        locale.timeFormats = new CLDRDateFormats(formatsJson.get("short").getAsString(),
-                formatsJson.get("medium").getAsString(), formatsJson.get("long").getAsString(),
-                formatsJson.get("full").getAsString());
+    private void readTimeFormats(String localeCode, CLDRLocale locale, JsonObjectValue root) {
+        var formatsJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("dates").asObject().get("calendars").asObject()
+                .get("gregorian").asObject().get("timeFormats").asObject();
+        locale.timeFormats = new CLDRDateFormats(formatsJson.get("short").asString(),
+                formatsJson.get("medium").asString(), formatsJson.get("long").asString(),
+                formatsJson.get("full").asString());
     }
 
-    private void readDateTimeFormats(String localeCode, CLDRLocale locale, JsonObject root) {
-        JsonObject formatsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
-                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
-                .get("gregorian").getAsJsonObject().get("dateTimeFormats").getAsJsonObject();
-        locale.dateTimeFormats = new CLDRDateFormats(formatsJson.get("short").getAsString(),
-                formatsJson.get("medium").getAsString(), formatsJson.get("long").getAsString(),
-                formatsJson.get("full").getAsString());
+    private void readDateTimeFormats(String localeCode, CLDRLocale locale, JsonObjectValue root) {
+        var formatsJson = root.get("main").asObject().get(localeCode).asObject()
+                .get("dates").asObject().get("calendars").asObject()
+                .get("gregorian").asObject().get("dateTimeFormats").asObject();
+        locale.dateTimeFormats = new CLDRDateFormats(formatsJson.get("short").asString(),
+                formatsJson.get("medium").asString(), formatsJson.get("long").asString(),
+                formatsJson.get("full").asString());
     }
 
     private void readWeekData(InputStream input) {
-        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
-        JsonObject weekJson = root.get("supplemental").getAsJsonObject().get("weekData").getAsJsonObject();
-        JsonObject minDaysJson = weekJson.get("minDays").getAsJsonObject();
-        for (Map.Entry<String, JsonElement> property : minDaysJson.entrySet()) {
-            minDaysMap.put(property.getKey(), property.getValue().getAsInt());
+        var root = parse(input).asObject();
+        var weekJson = root.get("supplemental").asObject().get("weekData").asObject();
+        var minDaysJson = weekJson.get("minDays").asObject();
+        for (var property : minDaysJson.entrySet()) {
+            minDaysMap.put(property.getKey(), Integer.parseInt(property.getValue().asString()));
         }
-        JsonObject firstDayJson = weekJson.get("firstDay").getAsJsonObject();
-        for (Map.Entry<String, JsonElement> property : firstDayJson.entrySet()) {
-            firstDayMap.put(property.getKey(), getNumericDay(property.getValue().getAsString()));
+        var firstDayJson = weekJson.get("firstDay").asObject();
+        for (var property : firstDayJson.entrySet()) {
+            firstDayMap.put(property.getKey(), getNumericDay(property.getValue().asString()));
         }
     }
 
     private void readLikelySubtags(InputStream input) {
-        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
-        JsonObject likelySubtagsJson = root.get("supplemental").getAsJsonObject().get("likelySubtags")
-                .getAsJsonObject();
-        for (Map.Entry<String, JsonElement> property : likelySubtagsJson.entrySet()) {
-            likelySubtags.put(property.getKey(), property.getValue().getAsString());
+        var root = parse(input).asObject();
+        var likelySubtagsJson = root.get("supplemental").asObject().get("likelySubtags").asObject();
+        for (var property : likelySubtagsJson.entrySet()) {
+            likelySubtags.put(property.getKey(), property.getValue().asString());
         }
     }
 
@@ -419,5 +421,22 @@ public class CLDRReader {
     public Map<String, String> getLikelySubtags() {
         ensureInitialized();
         return Collections.unmodifiableMap(likelySubtags);
+    }
+
+    private JsonValue parse(InputStream input) {
+        var provider = new JsonValueProvider();
+        var visitor = JsonValueParserVisitor.create(provider);
+        parse(visitor, input);
+        return provider.getValue();
+    }
+
+    private void parse(JsonVisitor visitor, InputStream input) {
+        var consumer = new JsonVisitingConsumer(visitor);
+        var parser = new JsonParser(consumer);
+        try {
+            parser.parse(new InputStreamReader(input, StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

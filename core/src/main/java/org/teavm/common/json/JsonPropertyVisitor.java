@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2023 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.c.util.json;
+package org.teavm.common.json;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,8 +26,9 @@ public class JsonPropertyVisitor extends JsonAllErrorVisitor {
         this.skipNonExistentProperties = skipNonExistentProperties;
     }
 
-    public void addProperty(String propertyName, JsonVisitor visitor) {
+    public JsonPropertyVisitor addProperty(String propertyName, JsonVisitor visitor) {
         properties.put(propertyName, visitor);
+        return this;
     }
 
     @Override

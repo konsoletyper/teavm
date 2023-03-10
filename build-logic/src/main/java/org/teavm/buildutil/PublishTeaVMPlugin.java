@@ -34,7 +34,12 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
     public void apply(Project target) {
         target.getPlugins().apply(PublishingPlugin.class);
         target.getPlugins().apply(MavenPublishPlugin.class);
-        target.getPlugins().apply(SigningPlugin.class);
+
+        var publish = Boolean.parseBoolean(target.getProviders().gradleProperty("teavm.mavenCentral.publish")
+                .getOrElse("false"));
+        if (publish) {
+            target.getPlugins().apply(SigningPlugin.class);
+        }
 
         var extension = new ExtensionImpl();
         target.getExtensions().add(PublishTeaVMExtension.class, EXTENSION_NAME, extension);
@@ -45,8 +50,6 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
                     customizePublication(target, publication, extension);
                 });
             });
-            var publish = Boolean.parseBoolean(target.getProviders().gradleProperty("teavm.mavenCentral.publish")
-                    .getOrElse("false"));
             if (publish) {
                 var signing = target.getExtensions().getByType(SigningExtension.class);
                 publishing.getPublications().configureEach(signing::sign);

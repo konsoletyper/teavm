@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2023 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,25 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.c.util.json;
+package org.teavm.common.json;
 
-public abstract class JsonConsumer {
-    public void enterObject(JsonErrorReporter reporter) {
+public abstract class JsonVisitor {
+    public JsonVisitor object(JsonErrorReporter reporter) {
+        return null;
     }
 
-    public void exitObject(JsonErrorReporter reporter) {
+    public JsonVisitor array(JsonErrorReporter reporter) {
+        return null;
     }
 
-    public void enterArray(JsonErrorReporter reporter) {
-    }
-
-    public void exitArray(JsonErrorReporter reporter) {
-    }
-
-    public void enterProperty(JsonErrorReporter reporter, String name) {
-    }
-
-    public void exitProperty(JsonErrorReporter reporter, String name) {
+    public JsonVisitor property(JsonErrorReporter reporter, String name) {
+        return null;
     }
 
     public void stringValue(JsonErrorReporter reporter, String value) {
@@ -47,5 +41,8 @@ public abstract class JsonConsumer {
     }
 
     public void booleanValue(JsonErrorReporter reporter, boolean value) {
+    }
+
+    public void end(JsonErrorReporter reporter) {
     }
 }
