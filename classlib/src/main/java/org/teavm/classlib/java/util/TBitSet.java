@@ -531,10 +531,10 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         public boolean next(IntPredicate consumer) {
             while (current >= 0 && current < end) {
                 boolean test = !consumer.test(current);
-                current = nextSetBit(current + 1);
                 if (test) {
                     return true;
                 }
+                current = nextSetBit(current + 1);
             }
             return false;
         }
