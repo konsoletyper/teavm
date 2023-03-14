@@ -520,16 +520,14 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
 
     private class BitSetStream extends TSimpleIntStreamImpl {
         private int current;
-        private final int end;
 
         private BitSetStream() {
             this.current = length == 0 ? 0 : nextSetBit(0);
-            this.end = length;
         }
 
         @Override
         public boolean next(IntPredicate consumer) {
-            while (current >= 0 && current < end) {
+            while (current >= 0 && current < length) {
                 if (!consumer.test(current)) {
                     return true;
                 }
