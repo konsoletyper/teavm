@@ -524,7 +524,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
 
         private BitSetStream() {
             this.current = length == 0 ? 0 : nextSetBit(0);
-            this.end = length * TInteger.SIZE;
+            this.end = length;
         }
 
         @Override
