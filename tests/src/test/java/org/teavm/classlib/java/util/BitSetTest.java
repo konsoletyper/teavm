@@ -111,6 +111,10 @@ public class BitSetTest {
     public void testStream() {
         assertArrayEquals(new int[] { 0, 1, 2, Long.SIZE + 1, 2 * Long.SIZE, 2 * Long.SIZE + 2, 3 * Long.SIZE + 36 },
                 BitSet.valueOf(new long[] { 7, 2, 5, 1L << 36 }).stream().toArray());
+        BitSet bs = new BitSet();
+        assertEquals(0, bs.stream().count());
+        bs.set(1);
+        assertArrayEquals(new int[] { 1 }, bs.stream().toArray());
     }
 
     @Test

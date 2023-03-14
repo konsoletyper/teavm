@@ -15,9 +15,11 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.function.IntPredicate;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
 import org.teavm.classlib.java.util.stream.TIntStream;
+import org.teavm.classlib.java.util.stream.intimpl.TSimpleIntStreamImpl;
 import org.teavm.interop.Rename;
 
 public class TBitSet extends TObject implements TCloneable, TSerializable {
@@ -513,11 +515,29 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     public TIntStream stream() {
-        return TIntStream.range(0, data.length).flatMap(idx -> {
-            int elem = data[idx];
-            return TIntStream.range(0, Integer.SIZE).filter(pos -> (elem & (1 << pos)) != 0)
-                    .map(pos -> idx * Integer.SIZE + pos);
-        });
+        return new BitSetStream();
+    }
+
+    private class BitSetStream extends TSimpleIntStreamImpl {
+        private int current;
+        private final int end;
+
+        private BitSetStream() {
+            this.current = data.length == 0 || get(0) ? 0 : nextSetBit(0);
+            this.end = length * Integer.SIZE;
+        }
+
+        @Override
+        public boolean next(IntPredicate consumer) {
+            while (current >= 0 && current < end) {
+                boolean test = !consumer.test(current);
+                current = nextSetBit(current + 1);
+                if (test) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     @Rename("clone")
