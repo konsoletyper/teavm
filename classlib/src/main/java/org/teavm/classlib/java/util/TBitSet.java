@@ -15,8 +15,11 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.function.IntPredicate;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
+import org.teavm.classlib.java.util.stream.TIntStream;
+import org.teavm.classlib.java.util.stream.intimpl.TSimpleIntStreamImpl;
 import org.teavm.interop.Rename;
 
 public class TBitSet extends TObject implements TCloneable, TSerializable {
@@ -40,7 +43,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     public static TBitSet valueOf(long[] longs) {
         int[] ints = new int[longs.length * 2];
         for (int i = 0; i < longs.length; ++i) {
-            ints[i * 2 + 1] = (int) longs[i];
+            ints[i * 2] = (int) longs[i];
             ints[i * 2 + 1] = (int) (longs[i] >>> TInteger.SIZE);
         }
         return new TBitSet(ints);
@@ -509,6 +512,29 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         }
         sb.append('}');
         return sb.toString();
+    }
+
+    public TIntStream stream() {
+        return new BitSetStream();
+    }
+
+    private class BitSetStream extends TSimpleIntStreamImpl {
+        private int current;
+
+        private BitSetStream() {
+            this.current = nextSetBit(0);
+        }
+
+        @Override
+        public boolean next(IntPredicate consumer) {
+            while (current >= 0) {
+                if (!consumer.test(current)) {
+                    return true;
+                }
+                current = nextSetBit(current + 1);
+            }
+            return false;
+        }
     }
 
     @Rename("clone")
