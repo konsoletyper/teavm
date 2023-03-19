@@ -20,6 +20,7 @@ Useful links:
 
 Simply clone source code (`git clone https://github.com/konsoletyper/teavm.git`)
 and run Gradle build (`./gradlew publishToMavenLocal` or `gradlew.bat publishToMavenLocal`).
+You should build samples separately, as described in [corresponding readme file](samples/README.md).
 
 
 ### Useful Gradle tasks
