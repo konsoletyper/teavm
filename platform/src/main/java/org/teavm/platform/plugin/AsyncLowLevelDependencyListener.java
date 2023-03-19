@@ -175,56 +175,8 @@ public class AsyncLowLevelDependencyListener extends AbstractDependencyListener 
         call.setArguments(arguments.toArray(new Variable[0]));
         block.add(call);
 
-        if (method.getResultType() == ValueType.VOID) {
-            block.add(new ExitInstruction());
-        } else {
-            Variable result = program.createVariable();
-            call.setReceiver(result);
-            ExitInstruction exit = new ExitInstruction();
-            exit.setValueToReturn(castToObject(block, result, method.getResultType()));
-            block.add(exit);
-        }
+        block.add(new ExitInstruction());
 
         return runMethod;
-    }
-
-    private Variable castToObject(BasicBlock block, Variable value, ValueType type) {
-        if (type instanceof ValueType.Primitive) {
-            InvokeInstruction invoke = new InvokeInstruction();
-            invoke.setType(InvocationType.SPECIAL);
-            invoke.setArguments(value);
-            invoke.setReceiver(block.getProgram().createVariable());
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                    invoke.setMethod(new MethodReference(Boolean.class, "valueOf", boolean.class, Boolean.class));
-                    break;
-                case BYTE:
-                    invoke.setMethod(new MethodReference(Byte.class, "valueOf", byte.class, Byte.class));
-                    break;
-                case SHORT:
-                    invoke.setMethod(new MethodReference(Short.class, "valueOf", short.class, Short.class));
-                    break;
-                case CHARACTER:
-                    invoke.setMethod(new MethodReference(Character.class, "valueOf", char.class, Character.class));
-                    break;
-                case INTEGER:
-                    invoke.setMethod(new MethodReference(Integer.class, "valueOf", int.class, Integer.class));
-                    break;
-                case LONG:
-                    invoke.setMethod(new MethodReference(Long.class, "valueOf", long.class, Long.class));
-                    break;
-                case FLOAT:
-                    invoke.setMethod(new MethodReference(Float.class, "valueOf", float.class, Float.class));
-                    break;
-                case DOUBLE:
-                    invoke.setMethod(new MethodReference(Double.class, "valueOf", double.class, Double.class));
-                    break;
-            }
-
-            block.add(invoke);
-            return invoke.getReceiver();
-        }
-
-        return value;
     }
 }
