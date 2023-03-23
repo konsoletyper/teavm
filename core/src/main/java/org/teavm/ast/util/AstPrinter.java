@@ -34,6 +34,7 @@ import org.teavm.ast.RecursiveVisitor;
 import org.teavm.ast.ReturnStatement;
 import org.teavm.ast.Statement;
 import org.teavm.ast.SwitchStatement;
+import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
@@ -389,6 +390,27 @@ public class AstPrinter {
             } else {
                 sb.append((int) id);
             }
+            newLine();
+        }
+
+        @Override
+        public void visit(TryCatchStatement statement) {
+            sb.append("try");
+            indent();
+            newLine();
+            visit(statement.getProtectedBody());
+            outdent();
+            sb.append("catch ");
+            if (statement.getExceptionType() != null) {
+                var type = statement.getExceptionType();
+                sb.append(" ").append(statement.getExceptionType());
+            }
+            sb.append(" var_" + statement.getExceptionVariable());
+            newLine();
+            indent();
+            visit(statement.getHandler());
+            outdent();
+            sb.append("end");
             newLine();
         }
 

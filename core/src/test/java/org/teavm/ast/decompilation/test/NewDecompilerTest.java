@@ -27,6 +27,7 @@ import static org.teavm.ast.Expr.var;
 import static org.teavm.ast.Statement.assign;
 import static org.teavm.ast.Statement.block;
 import static org.teavm.ast.Statement.cond;
+import static org.teavm.ast.Statement.doTry;
 import static org.teavm.ast.Statement.exitBlock;
 import static org.teavm.ast.Statement.exitFunction;
 import static org.teavm.ast.Statement.loopWhile;
@@ -35,6 +36,7 @@ import static org.teavm.ast.Statement.statementExpr;
 import static org.teavm.ast.Statement.switchClause;
 import static org.teavm.ast.Statement.switchStatement;
 import static org.teavm.model.builder.ProgramBuilder.build;
+import static org.teavm.model.builder.ProgramBuilder.doCatch;
 import static org.teavm.model.builder.ProgramBuilder.exit;
 import static org.teavm.model.builder.ProgramBuilder.ifLessThanZero;
 import static org.teavm.model.builder.ProgramBuilder.intNum;
@@ -45,6 +47,7 @@ import static org.teavm.model.builder.ProgramBuilder.put;
 import static org.teavm.model.builder.ProgramBuilder.set;
 import static org.teavm.model.builder.ProgramBuilder.switchEntry;
 import static org.teavm.model.builder.ProgramBuilder.tableSwitch;
+import static org.teavm.model.builder.ProgramBuilder.doTry;
 import static org.teavm.model.builder.ProgramBuilder.var;
 import java.util.Arrays;
 import java.util.List;
@@ -57,7 +60,7 @@ import org.teavm.model.Program;
 import org.teavm.model.text.ListingBuilder;
 
 public class NewDecompilerTest {
-    private static final MethodReference PRINT = new MethodReference(NewDecompilerTest.class, "print", void.class);
+    private static final MethodReference PRINT_1 = new MethodReference(NewDecompilerTest.class, "print1", void.class);
     private static final MethodReference PRINT_2 = new MethodReference(NewDecompilerTest.class, "print2", void.class);
     private static final MethodReference PRINT_3 = new MethodReference(NewDecompilerTest.class, "print3", void.class);
     private static final MethodReference PRINT_4 = new MethodReference(NewDecompilerTest.class, "print4", void.class);
@@ -142,11 +145,11 @@ public class NewDecompilerTest {
             set(var("a")).constant(2);
             set(var("b")).constant(3);
             set(var("c")).add(intNum(), var("a"), var("b"));
-            invokeStaticMethod(PRINT);
+            invokeStaticMethod(PRINT_1);
             exit(var("c"));
         });
         expect(sequence(
-                statementExpr(invokeStatic(PRINT)),
+                statementExpr(invokeStatic(PRINT_1)),
                 exitFunction(addInt(constant(2), constant(3)))
         ));
     }
@@ -157,12 +160,12 @@ public class NewDecompilerTest {
             set(var("a")).constant(2);
             set(var("b")).constant(3);
             set(var("c")).div(intNum(), var("a"), var("b"));
-            invokeStaticMethod(PRINT);
+            invokeStaticMethod(PRINT_1);
             exit(var("c"));
         });
         expect(sequence(
                 assign(var(2), divInt(constant(2), constant(3))),
-                statementExpr(invokeStatic(PRINT)),
+                statementExpr(invokeStatic(PRINT_1)),
                 exitFunction(var(2))
         ));
     }
@@ -199,7 +202,7 @@ public class NewDecompilerTest {
             ifLessThanZero(var("a"), label("less"), label("greater"));
 
             put(label("less"));
-            invokeStaticMethod(PRINT);
+            invokeStaticMethod(PRINT_1);
             jump(label("join"));
 
             put(label("greater"));
@@ -213,7 +216,7 @@ public class NewDecompilerTest {
         expect(cond(
                 less(constant(2), constant(0)),
                 Arrays.asList(
-                        statementExpr(invokeStatic(PRINT))
+                        statementExpr(invokeStatic(PRINT_1))
                 ),
                 Arrays.asList(
                         statementExpr(invokeStatic(PRINT_2))
@@ -228,7 +231,7 @@ public class NewDecompilerTest {
             ifLessThanZero(var("a"), label("less"), label("join"));
 
             put(label("less"));
-            invokeStaticMethod(PRINT);
+            invokeStaticMethod(PRINT_1);
             jump(label("join"));
 
             put(label("join"));
@@ -238,7 +241,7 @@ public class NewDecompilerTest {
         expect(cond(
                 less(constant(2), constant(0)),
                 Arrays.asList(
-                        statementExpr(invokeStatic(PRINT))
+                        statementExpr(invokeStatic(PRINT_1))
                 )
         ));
     }
@@ -250,7 +253,7 @@ public class NewDecompilerTest {
             ifLessThanZero(var("a"), label("less"), label("greater"));
 
             put(label("less"));
-            invokeStaticMethod(PRINT);
+            invokeStaticMethod(PRINT_1);
             exit();
 
             put(label("greater"));
@@ -261,7 +264,7 @@ public class NewDecompilerTest {
         expect(cond(
                 less(constant(2), constant(0)),
                 Arrays.asList(
-                        statementExpr(invokeStatic(PRINT))
+                        statementExpr(invokeStatic(PRINT_1))
                 ),
                 Arrays.asList(
                         statementExpr(invokeStatic(PRINT_2))
@@ -280,7 +283,7 @@ public class NewDecompilerTest {
             ifLessThanZero(var("b"), label("true"), label("false"));
 
             put(label("true"));
-            invokeStaticMethod(PRINT);
+            invokeStaticMethod(PRINT_1);
             jump(label("joint"));
 
             put(label("false"));
@@ -299,7 +302,7 @@ public class NewDecompilerTest {
                             less(constant(3), constant(0))
                     ),
                     Arrays.asList(
-                            statementExpr(invokeStatic(PRINT))
+                            statementExpr(invokeStatic(PRINT_1))
                     ),
                     Arrays.asList(
                             statementExpr(invokeStatic(PRINT_2))
@@ -321,7 +324,7 @@ public class NewDecompilerTest {
             ifLessThanZero(var("b"), label("true"), label("false"));
 
             put(label("true"));
-            invokeStaticMethod(PRINT);
+            invokeStaticMethod(PRINT_1);
             jump(label("joint"));
 
             put(label("false"));
@@ -342,7 +345,7 @@ public class NewDecompilerTest {
                                     cond(
                                             less(constant(3), constant(0)),
                                             Arrays.asList(
-                                                    statementExpr(invokeStatic(PRINT)),
+                                                    statementExpr(invokeStatic(PRINT_1)),
                                                     exitBlock(label)
                                             )
                                     )
@@ -369,7 +372,7 @@ public class NewDecompilerTest {
             ifLessThanZero(var("c"), label("true"), label("false"));
 
             put(label("true"));
-            invokeStaticMethod(PRINT);
+            invokeStaticMethod(PRINT_1);
             jump(label("joint"));
 
             put(label("false"));
@@ -391,7 +394,7 @@ public class NewDecompilerTest {
                             less(constant(4), constant(0))
                         ),
                         Arrays.asList(
-                                statementExpr(invokeStatic(PRINT))
+                                statementExpr(invokeStatic(PRINT_1))
                         ),
                         Arrays.asList(
                                 statementExpr(invokeStatic(PRINT_2))
@@ -419,7 +422,7 @@ public class NewDecompilerTest {
             jump(label("head"));
 
             put(label("exit"));
-            invokeStaticMethod(PRINT);
+            invokeStaticMethod(PRINT_1);
             exit();
         });
 
@@ -429,7 +432,7 @@ public class NewDecompilerTest {
                         statementExpr(invokeStatic(PRINT_NUM, var(0))),
                         assign(var(0), addInt(var(0), constant(1)))
                 )),
-                statementExpr(invokeStatic(PRINT))
+                statementExpr(invokeStatic(PRINT_1))
         ));
     }
 
@@ -446,7 +449,7 @@ public class NewDecompilerTest {
             );
 
             put(label("first"));
-            invokeStaticMethod(PRINT);
+            invokeStaticMethod(PRINT_1);
             jump(label("end"));
 
             put(label("second"));
@@ -466,7 +469,7 @@ public class NewDecompilerTest {
                 switchStatement(
                         invokeStatic(SUPPLY_INT_1),
                         List.of(statementExpr(invokeStatic(PRINT_3))),
-                        switchClause(new int[] { 1, 2 }, statementExpr(invokeStatic(PRINT))),
+                        switchClause(new int[] { 1, 2 }, statementExpr(invokeStatic(PRINT_1))),
                         switchClause(3, statementExpr(invokeStatic(PRINT_2)))
                 ),
                 statementExpr(invokeStatic(PRINT_4))
@@ -485,7 +488,7 @@ public class NewDecompilerTest {
             );
 
             put(label("first"));
-            invokeStaticMethod(PRINT);
+            invokeStaticMethod(PRINT_1);
             jump(label("second"));
 
             put(label("second"));
@@ -509,11 +512,43 @@ public class NewDecompilerTest {
                                     statementExpr(invokeStatic(PRINT_3)),
                                     exitBlock(label)
                             ),
-                            switchClause(1, statementExpr(invokeStatic(PRINT))),
+                            switchClause(1, statementExpr(invokeStatic(PRINT_1))),
                             switchClause(2)
                     ),
                     statementExpr(invokeStatic(PRINT_2))
                 )),
+                statementExpr(invokeStatic(PRINT_4))
+        ));
+    }
+
+    @Test
+    public void simpleTryCatch() {
+        decompile(() -> {
+            invokeStaticMethod(PRINT_1);
+            jump(label("second"));
+
+            put(label("second"));
+            invokeStaticMethod(PRINT_2);
+            doTry("java.lang.RuntimeException", label("handler"));
+            jump(label("third"));
+
+            put(label("handler"));
+            doCatch(var("e"));
+            invokeStaticMethod(PRINT_3);
+            jump(label("third"));
+
+            put(label("third"));
+            invokeStaticMethod(PRINT_4);
+            exit();
+        });
+
+        expect(sequence(
+                statementExpr(invokeStatic(PRINT_1)),
+                doTry(
+                        statementExpr(invokeStatic(PRINT_2))
+                ).doCatch("java.lang.RuntimeException", 1).with(
+                        statementExpr(invokeStatic(PRINT_3))
+                ),
                 statementExpr(invokeStatic(PRINT_4))
         ));
     }

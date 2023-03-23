@@ -19,11 +19,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.teavm.ast.SwitchClause;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.BinaryInstruction;
 import org.teavm.model.instructions.BinaryOperation;
@@ -167,6 +167,17 @@ public class ProgramBuilder {
 
     private void addInstruction(Instruction instruction) {
         currentBlock.add(instruction);
+    }
+
+    public static void doTry(String exceptionType, BasicBlock handler) {
+        var tryCatch = new TryCatchBlock();
+        tryCatch.setExceptionType(exceptionType);
+        tryCatch.setHandler(handler);
+        currentBuilder.currentBlock.getTryCatchBlocks().add(tryCatch);
+    }
+
+    public static void doCatch(Variable variable) {
+        currentBuilder.currentBlock.setExceptionVariable(variable);
     }
 
     public class SetBuilder {

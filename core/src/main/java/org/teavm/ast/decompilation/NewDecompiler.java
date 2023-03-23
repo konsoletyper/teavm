@@ -119,6 +119,7 @@ public class NewDecompiler {
     private WhileStatement[] loopExits;
     private ObjectIntMap<IdentifiedStatement> identifiedStatementUseCount = new ObjectIntHashMap<>();
     private boolean[] processingLoops;
+    private boolean[] processingTryCatch;
     private boolean[] currentSequenceNodes;
     private List<TryCatchElement> currentTryCatches = new ArrayList<>();
 
@@ -177,6 +178,7 @@ public class NewDecompiler {
         relocatableVars = new Expr[program.variableCount()];
         jumpTargets = new IdentifiedStatement[program.basicBlockCount()];
         processingLoops = new boolean[program.basicBlockCount()];
+        processingTryCatch = new boolean[program.basicBlockCount()];
         currentSequenceNodes = new boolean[program.basicBlockCount()];
         loopExits = new WhileStatement[program.basicBlockCount()];
         calculateVarInfo();
@@ -222,6 +224,7 @@ public class NewDecompiler {
     }
 
     private void calculateResult() {
+        var tryCatchLevel = currentTryCatches.size();
         while (currentBlock != null) {
             if (!processingLoops[currentBlock.getIndex()] && isLoopHead()) {
                 processLoop();
@@ -232,6 +235,7 @@ public class NewDecompiler {
                 }
             }
         }
+        finishTryCatches(tryCatchLevel);
     }
 
     private void applyNewTryCatchStack() {
@@ -244,7 +248,19 @@ public class NewDecompiler {
             }
         }
 
-        while (currentTryCatches.size() > commonSize) {
+        closeTryCatches(commonSize);
+
+        for (var i = commonSize; i < newTryCatches.size(); ++i) {
+            var tryCatch = newTryCatches.get(i);
+            var next = i > 0 ? currentTryCatches.get(i - 1) : null;
+            var element = new TryCatchElement(tryCatch.getExceptionType(), tryCatch.getHandler(),
+                    statements, statements.size(), currentTryCatches.size(), next);
+            currentTryCatches.add(element);
+        }
+    }
+
+    private void closeTryCatches(int targetLevel) {
+        while (currentTryCatches.size() > targetLevel) {
             var tryCatch = currentTryCatches.remove(currentTryCatches.size() - 1);
             var statementsToWrap = tryCatch.targetStatements.subList(tryCatch.start, tryCatch.targetStatements.size());
             var tryCatchStatement = new TryCatchStatement();
@@ -256,16 +272,16 @@ public class NewDecompiler {
             statementsToWrap.clear();
             tryCatch.targetStatements.add(tryCatchStatement);
         }
+    }
 
-        for (var i = commonSize; i < newTryCatches.size(); ++i) {
-            var tryCatch = newTryCatches.get(i);
-            var element = new TryCatchElement(tryCatch.getExceptionType(), tryCatch.getHandler(),
-                    statements, statements.size());
-            currentTryCatches.add(element);
-        }
+    private void finishTryCatches(int initialLevel) {
+        closeTryCatches(initialLevel);
     }
 
     private boolean processTryCatchHeader() {
+        if (processingTryCatch[currentBlock.getIndex()]) {
+            return false;
+        }
         var immediatelyDominatedNodes = domGraph.outgoingEdges(blockEnterNode(currentBlock));
         if (immediatelyDominatedNodes.length == 1) {
             return false;
@@ -285,9 +301,11 @@ public class NewDecompiler {
             blockStatements[i] = blockStatement;
         }
 
+        processingTryCatch[currentBlock.getIndex()] = true;
         var innerStatements = processBlockStatements(blockStatements, childBlocks);
         processBlock(currentBlock, nextBlock, innerStatements);
-        currentBlock = nextBlock;
+        processingTryCatch[currentBlock.getIndex()] = false;
+        currentBlock = childBlocks.length > 0 ? childBlocks[childBlocks.length - 1] : null;
         return true;
     }
 
@@ -1277,14 +1295,19 @@ public class NewDecompiler {
     private static class TryCatchElement {
         final String exceptionType;
         final BasicBlock handler;
-        final List<Statement> targetStatements;
-        final int start;
+        List<Statement> targetStatements;
+        int start;
+        final int level;
+        final TryCatchElement next;
 
-        TryCatchElement(String exceptionType, BasicBlock handler, List<Statement> targetStatements, int start) {
+        TryCatchElement(String exceptionType, BasicBlock handler, List<Statement> targetStatements, int start,
+                int level, TryCatchElement next) {
             this.exceptionType = exceptionType;
             this.handler = handler;
             this.targetStatements = targetStatements;
             this.start = start;
+            this.level = level;
+            this.next = next;
         }
 
         boolean equalTo(TryCatchBlock block) {

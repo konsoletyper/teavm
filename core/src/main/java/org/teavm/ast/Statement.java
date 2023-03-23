@@ -116,4 +116,37 @@ public abstract class Statement {
     public static SwitchClause switchClause(int condition, Statement... statements) {
         return switchClause(new int[] { condition }, statements);
     }
+
+    public static TryCatchStatementBuilder doTry(Statement... statements) {
+        return new TryCatchStatementBuilder(statements);
+    }
+
+    public static class TryCatchStatementBuilder {
+        Statement[] protectedBody;
+
+        TryCatchStatementBuilder(Statement[] protectedBody) {
+            this.protectedBody = protectedBody;
+        }
+
+        public TryCatchStatementBuilder2 doCatch(String type, Integer variable) {
+            var result = new TryCatchStatement();
+            result.getProtectedBody().addAll(Arrays.asList(protectedBody));
+            result.setExceptionType(type);
+            result.setExceptionVariable(variable);
+            return new TryCatchStatementBuilder2(result);
+        }
+    }
+
+    public static class TryCatchStatementBuilder2 {
+        TryCatchStatement statement;
+
+        TryCatchStatementBuilder2(TryCatchStatement statement) {
+            this.statement = statement;
+        }
+
+        public TryCatchStatement with(Statement... statements) {
+            statement.getHandler().addAll(Arrays.asList(statements));
+            return statement;
+        }
+    }
 }
