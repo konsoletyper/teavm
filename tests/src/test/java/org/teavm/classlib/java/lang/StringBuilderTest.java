@@ -64,6 +64,13 @@ public class StringBuilderTest {
     }
 
     @Test
+    public void minIntegerAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(-2147483648);
+        assertEquals("-2147483648", sb.toString());
+    }
+
+    @Test
     public void longAppended() {
         StringBuilder sb = new StringBuilder();
         sb.append(23L);
@@ -96,6 +103,29 @@ public class StringBuilderTest {
         StringBuilder sb = new StringBuilder();
         sb.append(9223372036854775807L);
         assertEquals("9223372036854775807", sb.toString());
+    }
+
+    @Test
+    public void minLongAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(-9223372036854775808L);
+        assertEquals("-9223372036854775808", sb.toString());
+    }
+
+    // This appends the MIN_VALUE argument as an int, not a short.
+    @Test
+    public void minShortAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(Short.MIN_VALUE);
+        assertEquals("-32768", sb.toString());
+    }
+
+    // This appends the MIN_VALUE argument as an int, not a byte.
+    @Test
+    public void minByteAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(Byte.MIN_VALUE);
+        assertEquals("-128", sb.toString());
     }
 
     @Test
