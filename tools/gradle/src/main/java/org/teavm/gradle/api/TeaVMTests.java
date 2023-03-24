@@ -24,11 +24,11 @@ public interface TeaVMTests {
 
     void js(Action<TeaVMJSTests> config);
 
-    void js(@DelegatesTo(TeaVMJSTests.class) Closure<Void> config);
+    void js(@DelegatesTo(TeaVMJSTests.class) Closure<?> config);
 
     TeaVMWasmTests getWasm();
 
     void wasm(Action<TeaVMWasmTests> config);
 
-    void wasm(@DelegatesTo(TeaVMWasmTests.class) Closure<Void> config);
+    void wasm(@DelegatesTo(TeaVMWasmTests.class) Closure<?> config);
 }

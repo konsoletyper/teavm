@@ -42,7 +42,7 @@ class TeaVMTestsImpl implements TeaVMTests {
     }
 
     @Override
-    public void js(Closure<Void> config) {
+    public void js(Closure<?> config) {
         config.rehydrate(getJs(), config.getOwner(), config.getThisObject()).call();
     }
 
@@ -57,7 +57,7 @@ class TeaVMTestsImpl implements TeaVMTests {
     }
 
     @Override
-    public void wasm(Closure<Void> config) {
+    public void wasm(Closure<?> config) {
         config.rehydrate(getWasm(), config.getOwner(), config.getThisObject()).call();
     }
 
