@@ -228,8 +228,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private Process chromeBrowser(String url) {
         return browserTemplate("chrome", url, (profile, params) -> {
+            addChromeCommand(params);
             params.addAll(Arrays.asList(
-                    "google-chrome-stable",
                     "--headless",
                     "--disable-gpu",
                     "--remote-debugging-port=9222",
@@ -241,13 +241,37 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private Process firefoxBrowser(String url) {
         return browserTemplate("firefox", url, (profile, params) -> {
+            addFirefoxCommand(params);
             params.addAll(Arrays.asList(
-                    "firefox",
                     "--headless",
                     "--profile",
                     profile
             ));
         });
+    }
+
+    private void addChromeCommand(List<String> params) {
+        if (isWindows()) {
+            params.add("cmd.exe");
+            params.add("start");
+            params.add("/C");
+            params.add("chrome");
+        } else {
+            params.add("google-chrome-stable");
+        }
+    }
+
+    private void addFirefoxCommand(List<String> params) {
+        if (isWindows()) {
+            params.add("cmd.exe");
+            params.add("/C");
+            params.add("start");
+        }
+        params.add("firefox");
+    }
+
+    private boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().startsWith("windows");
     }
 
     private Process browserTemplate(String name, String url, BiConsumer<String, List<String>> paramsBuilder) {
