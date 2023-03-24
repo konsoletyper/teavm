@@ -104,8 +104,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             positive = false;
             value = -value;
             isMin = value == TInteger.MIN_VALUE;
-        }
-        else {
+        } else {
             isMin = false;
         }
         if (value < radix && !isMin) {
@@ -160,8 +159,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             positive = false;
             value = -value;
             isMin = value == TLong.MIN_VALUE;
-        }
-        else {
+        } else {
             isMin = false;
         }
         if (value < radix && !isMin) {
