@@ -148,22 +148,28 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
 
     protected TAbstractStringBuilder insert(int target, long value, int radix) {
         boolean positive = true;
+        long isMin;
         if (value < 0) {
             positive = false;
             value = -value;
+            isMin = (value & -value) >> 63 | 1L;
         }
-        if (value < radix) {
+        else {
+            isMin = 0L;
+        }
+        if (value < radix && isMin == 0L) {
             if (!positive) {
                 insertSpace(target, target + 2);
                 buffer[target++] = '-';
             } else {
                 insertSpace(target, target + 1);
             }
-            buffer[target++] = Character.forDigit((int) value, radix);
+            buffer[target++] = TCharacter.forDigit((int) value, radix);
         } else {
             int sz = 1;
-            long pos = 1;
-            while (pos * radix > pos && pos * radix <= value) {
+            long pos = -1L;
+            value *= isMin;
+            while (pos * radix < pos && pos * radix >= value) {
                 pos *= radix;
                 ++sz;
             }
@@ -174,7 +180,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             if (!positive) {
                 buffer[target++] = '-';
             }
-            while (pos > 0) {
+            while (pos < 0) {
                 buffer[target++] = TCharacter.forDigit((int) (value / pos), radix);
                 value %= pos;
                 pos /= radix;
