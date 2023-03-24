@@ -148,16 +148,16 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
 
     protected TAbstractStringBuilder insert(int target, long value, int radix) {
         boolean positive = true;
-        long isMin;
+        boolean isMin;
         if (value < 0) {
             positive = false;
             value = -value;
-            isMin = (value & -value) >> 63 | 1L;
+            isMin = value == TLong.MIN_VALUE;
         }
         else {
-            isMin = 0L;
+            isMin = false;
         }
-        if (value < radix && isMin == 0L) {
+        if (value < radix && !isMin) {
             if (!positive) {
                 insertSpace(target, target + 2);
                 buffer[target++] = '-';
@@ -168,7 +168,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         } else {
             int sz = 1;
             long pos = -1L;
-            value *= isMin;
+            value = -value;
             while (pos * radix < pos && pos * radix >= value) {
                 pos *= radix;
                 ++sz;
