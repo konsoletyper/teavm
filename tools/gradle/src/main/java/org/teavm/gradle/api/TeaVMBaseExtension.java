@@ -29,5 +29,5 @@ public interface TeaVMBaseExtension {
 
     void tests(Action<TeaVMTests> config);
 
-    void tests(@DelegatesTo(TeaVMTests.class) Closure<Void> config);
+    void tests(@DelegatesTo(TeaVMTests.class) Closure<?> config);
 }

@@ -123,7 +123,7 @@ class TeaVMBaseExtensionImpl implements TeaVMBaseExtension {
     }
 
     @Override
-    public void tests(Closure<Void> config) {
+    public void tests(Closure<?> config) {
         config.rehydrate(getTests(), config.getOwner(), config.getThisObject()).call();
     }
 }

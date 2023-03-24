@@ -187,14 +187,6 @@ public class TeaVMPlugin implements Plugin<Project> {
         });
     }
 
-    private static String joinPath(String first, String second) {
-        if (first.endsWith("/") || first.isEmpty()) {
-            return first + second;
-        } else {
-            return first + "/" + second;
-        }
-    }
-
     private void applyToTask(TeaVMConfiguration configuration, TeaVMTask task, Configuration toolsConfiguration) {
         task.getMainClass().convention(configuration.getMainClass());
         task.getClasspath().from(task.getProject().getConfigurations().getByName(CLASSPATH_CONFIGURATION_NAME));
