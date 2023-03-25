@@ -359,4 +359,8 @@ public class TLong extends TNumber implements TComparable<TLong> {
     @GeneratedBy(LongNativeGenerator.class)
     @NoSideEffects
     public static native long remainderUnsigned(long dividend, long divisor);
+
+    @GeneratedBy(LongNativeGenerator.class)
+    @NoSideEffects
+    public static native int compareUnsigned(long a, long b);
 }

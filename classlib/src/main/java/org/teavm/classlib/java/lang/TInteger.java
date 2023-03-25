@@ -368,4 +368,8 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     @InjectedBy(IntegerNativeGenerator.class)
     @NoSideEffects
     public static native int remainderUnsigned(int dividend, int divisor);
+
+    @InjectedBy(IntegerNativeGenerator.class)
+    @NoSideEffects
+    public static native int compareUnsigned(int a, int b);
 }

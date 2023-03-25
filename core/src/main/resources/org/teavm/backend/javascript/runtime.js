@@ -879,6 +879,11 @@ var $rt_udiv = function(a, b) {
 var $rt_umod = function(a, b) {
     return ((a >>> 0) % (b >>> 0)) >>> 0;
 };
+var $rt_ucmp = function(a, b) {
+    a >>>= 0;
+    b >>>= 0;
+    return a < b ? -1 : a > b ? 1 : 0;
+};
 function $rt_checkBounds(index, array) {
     if (index < 0 || index >= array.length) {
         $rt_throwAIOOBE();
