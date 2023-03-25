@@ -99,6 +99,10 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
 
     TAbstractStringBuilder insert(int target, int value, int radix) {
         boolean positive = true;
+        // TInteger.MIN_VALUE has special behavior.
+        // Because MIN_VALUE == -MIN_VALUE, and MIN_VALUE < 0, assigning:
+        //   value = -value;
+        // Will not make value negative when it is MIN_VALUE.
         boolean isMin;
         if (value < 0) {
             positive = false;
@@ -107,6 +111,9 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         } else {
             isMin = false;
         }
+        // Here, value is always either non-negative, or MIN_VALUE .
+        // By checking isMin specifically, we can avoid the single-digit
+        // path for MIN_VALUE .
         if (value < radix && !isMin) {
             if (!positive) {
                 insertSpace(target, target + 2);
@@ -116,11 +123,26 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             }
             buffer[target++] = TCharacter.forDigit(value, radix);
         } else {
+            // pos starts negative because we're going to operate on negative
+            // numbers instead of positive ones; read on.
             int pos = -1;
+            // Earlier in the method, if value was negative, we negated it
+            // again. We know it must be either >= radix or == MIN_VALUE .
+            // All numbers between radix and MIN_VALUE inclusive will always
+            // fit in the negative numbers, but NOT in the positive numbers,
+            // because the largest int is 2147483647, but Integer.MIN_VALUE
+            // is -2147483648 (further from zero). So, we have to make value
+            // negative, since we can't make MIN_VALUE positive.
             value = -value;
             int sz = 1;
+            // posLimit appears to be needed here, but not for the long overload.
+            // Some tests without using a limit allowed values to be printed that
+            // were larger than an int should normally be, so the limit seems
+            // rather important.
             int posLimit = TInteger.MIN_VALUE / radix;
 
+            // pos and value are always negative, while radix is always positive.
+            // pos starts at -1, and gets closer to value with each iteration.
             while (pos * radix >= value) {
                 pos *= radix;
                 ++sz;
@@ -136,6 +158,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 buffer[target++] = '-';
             }
             while (pos < 0) {
+                // value / pos should be positive, since both are negative.
                 buffer[target++] = TCharacter.forDigit(value / pos, radix);
                 value %= pos;
                 pos /= radix;
@@ -154,6 +177,10 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
 
     protected TAbstractStringBuilder insert(int target, long value, int radix) {
         boolean positive = true;
+        // TLong.MIN_VALUE has special behavior.
+        // Because MIN_VALUE == -MIN_VALUE, and MIN_VALUE < 0, assigning:
+        //   value = -value;
+        // Will not make value negative when it is MIN_VALUE.
         boolean isMin;
         if (value < 0) {
             positive = false;
@@ -162,6 +189,9 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         } else {
             isMin = false;
         }
+        // Here, value is always either non-negative, or MIN_VALUE .
+        // By checking isMin specifically, we can avoid the single-digit
+        // path for MIN_VALUE .
         if (value < radix && !isMin) {
             if (!positive) {
                 insertSpace(target, target + 2);
@@ -172,8 +202,19 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             buffer[target++] = TCharacter.forDigit((int) value, radix);
         } else {
             int sz = 1;
+            // pos starts negative because we're going to operate on negative
+            // numbers instead of positive ones; read on.
             long pos = -1L;
+            // Earlier in the method, if value was negative, we negated it
+            // again. We know it must be either >= radix or == MIN_VALUE .
+            // All numbers between radix and MIN_VALUE inclusive will always
+            // fit in the negative numbers, but NOT in the positive numbers,
+            // because the largest long is 9223372036854775807, but Long.MIN_VALUE
+            // is -9223372036854775808 (further from zero). So, we have to make
+            // value negative, since we can't make MIN_VALUE positive.
             value = -value;
+            // pos and value are always negative, while radix is always positive.
+            // pos starts at -1, and gets closer to value with each iteration.
             while (pos * radix < pos && pos * radix >= value) {
                 pos *= radix;
                 ++sz;
@@ -186,6 +227,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 buffer[target++] = '-';
             }
             while (pos < 0) {
+                // value / pos should be positive, since both are negative.
                 buffer[target++] = TCharacter.forDigit((int) (value / pos), radix);
                 value %= pos;
                 pos /= radix;
