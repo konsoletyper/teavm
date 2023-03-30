@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.Comparator;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.util.function.TFunction;
 import org.teavm.classlib.java.util.function.TToDoubleFunction;
@@ -56,7 +57,7 @@ public interface TComparator<T> {
             if (r == 0) {
                 U k = keyExtractor.apply(a);
                 U m = keyExtractor.apply(b);
-                r = k != null ? k.compareTo(m) : -m.compareTo(k);
+                r = k.compareTo(m);
             }
             return r;
         };
@@ -102,16 +103,31 @@ public interface TComparator<T> {
         return (a, b) -> {
             U k = keyExtractor.apply(a);
             U m = keyExtractor.apply(b);
-            return k != null ? k.compareTo(m) : -m.compareTo(k);
+            return k.compareTo(m);
         };
     }
 
+    class NaturalOrder implements Comparator<Object> {
+        private static final Comparator<Object> INSTANCE = new NaturalOrder();
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public int compare(Object o1, Object o2) {
+            return ((Comparable<Object>) o1).compareTo(o2);
+        }
+
+        @SuppressWarnings("unchecked")
+        static <T> TComparator<T> instance() {
+            return (TComparator<T>) INSTANCE;
+        }
+    }
+
     static <T extends TComparable<? super T>> TComparator<T> naturalOrder() {
-        return (o1, o2) -> o1 != null ? o1.compareTo(o2) : o2.compareTo(o1);
+        return NaturalOrder.instance();
     }
 
     static <T extends TComparable<? super T>> TComparator<T> reverseOrder() {
-        return (o1, o2) -> o2 != null ? o2.compareTo(o1) : o1.compareTo(o2);
+        return TCollections.reverseOrder();
     }
 
     static <T> TComparator<T> nullsFirst(TComparator<? super T> comparator) {

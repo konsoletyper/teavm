@@ -40,17 +40,6 @@ import org.teavm.classlib.java.util.stream.intimpl.TArrayIntStreamImpl;
 import org.teavm.classlib.java.util.stream.longimpl.TArrayLongStreamImpl;
 
 public class TArrays extends TObject {
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private static final TComparator<Object> NATURAL_ORDER = (o1, o2) -> {
-        if (o1 != null) {
-            return ((TComparable) o1).compareTo(o2);
-        } else if (o2 != null) {
-            return ((TComparable) o2).compareTo(o1);
-        } else {
-            return 0;
-        }
-    };
-
     public static char[] copyOf(char[] array, int length) {
         char[] result = new char[length];
         int sz = TMath.min(length, array.length);
@@ -896,16 +885,16 @@ public class TArrays extends TObject {
     }
 
     public static void sort(Object[] a) {
-        sort(a, NATURAL_ORDER);
+        sort(a, TComparator.NaturalOrder.instance());
     }
 
     public static void sort(Object[] a, int fromIndex, int toIndex) {
-        sort(a, fromIndex, toIndex, NATURAL_ORDER);
+        sort(a, fromIndex, toIndex, TComparator.NaturalOrder.instance());
     }
 
     public static <T> void sort(T[] a, int fromIndex, int toIndex, TComparator<? super T> c) {
         if (c == null) {
-            c = NATURAL_ORDER;
+            c = TComparator.NaturalOrder.instance();
         }
         @SuppressWarnings("unchecked")
         T[] subarray = (T[]) new Object[toIndex - fromIndex];
@@ -924,7 +913,7 @@ public class TArrays extends TObject {
             return;
         }
         if (c == null) {
-            c = NATURAL_ORDER;
+            c = TComparator.NaturalOrder.instance();
         }
         Object[] first = a;
         Object[] second = new Object[a.length];
@@ -1202,7 +1191,7 @@ public class TArrays extends TObject {
     }
 
     public static int binarySearch(Object[] a, int fromIndex, int toIndex, Object key) {
-        return binarySearch(a, fromIndex, toIndex, key, NATURAL_ORDER);
+        return binarySearch(a, fromIndex, toIndex, key, TComparator.NaturalOrder.instance());
     }
 
     public static <T> int binarySearch(T[] a, T key, TComparator<? super T> c) {
@@ -1211,7 +1200,7 @@ public class TArrays extends TObject {
 
     public static <T> int binarySearch(T[] a, int fromIndex, int toIndex, T key, TComparator<? super T> c) {
         if (c == null) {
-            c = NATURAL_ORDER;
+            c = TComparator.NaturalOrder.instance();
         }
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();

@@ -216,7 +216,7 @@ public class TCollections extends TObject {
 
     public static <T> void sort(TList<T> list, TComparator<? super T> c) {
         if (c == null) {
-            c = naturalOrder;
+            c = TComparator.NaturalOrder.instance();
         }
         @SuppressWarnings("unchecked")
         T[] array = (T[]) new Object[list.size()];
@@ -228,7 +228,7 @@ public class TCollections extends TObject {
     }
 
     public static <T extends TComparable<? super T>> void sort(TList<T> list) {
-        sort(list, naturalOrder);
+        sort(list, TComparator.NaturalOrder.instance());
     }
 
     @SuppressWarnings("unchecked")
@@ -244,20 +244,15 @@ public class TCollections extends TObject {
     }
 
     public static <T> int binarySearch(TList<? extends TComparable<? super T>> list, T key) {
-        return binarySearch(list, key, naturalOrder);
+        return binarySearch(list, key, TComparator.NaturalOrder.instance());
     }
-
-    @SuppressWarnings("unchecked")
-    private static TComparator<Object> naturalOrder = (o1, o2) -> o1 != null
-            ? ((TComparable<Object>) o1).compareTo(o2)
-            : -((TComparable<Object>) o2).compareTo(o1);
 
     public static <T> int binarySearch(TList<? extends T> list, T key, TComparator<? super T> c) {
         if (!(list instanceof TRandomAccess)) {
             list = new TArrayList<>(list);
         }
         if (c == null) {
-            c = naturalOrder;
+            c = TComparator.NaturalOrder.instance();
         }
         int l = 0;
         int u = list.size() - 1;
@@ -339,12 +334,12 @@ public class TCollections extends TObject {
     }
 
     public static <T extends Object & TComparable<? super T>> T min(TCollection<? extends T> coll) {
-        return min(coll, naturalOrder);
+        return min(coll, TComparator.NaturalOrder.instance());
     }
 
     public static <T> T min(TCollection<? extends T> coll, TComparator<? super T> comp) {
         if (comp == null) {
-            comp = naturalOrder;
+            comp = TComparator.NaturalOrder.instance();
         }
         TIterator<? extends T> iter = coll.iterator();
         T min = iter.next();
@@ -358,12 +353,12 @@ public class TCollections extends TObject {
     }
 
     public static <T extends Object & TComparable<? super T>> T max(TCollection<? extends T> coll) {
-        return max(coll, naturalOrder);
+        return max(coll, TComparator.NaturalOrder.instance());
     }
 
     public static <T> T max(TCollection<? extends T> coll, TComparator<? super T> comp) {
         if (comp == null) {
-            comp = naturalOrder;
+            comp = TComparator.NaturalOrder.instance();
         }
         TIterator<? extends T> iter = coll.iterator();
         T max = iter.next();
@@ -557,9 +552,7 @@ public class TCollections extends TObject {
         return (TComparator<T>) reverseOrder;
     }
 
-    private static TComparator<Object> reverseOrder = (o1, o2) -> o1 != null
-            ? -((TComparable<Object>) o1).compareTo(o2)
-            : ((TComparable<Object>) o2).compareTo(o1);
+    private static TComparator<Object> reverseOrder = (o1, o2) -> -((TComparable<Object>) o1).compareTo(o2);
 
     public static <T> TComparator<T> reverseOrder(final TComparator<T> cmp) {
         return (o1, o2) -> -cmp.compare(o1, o2);
