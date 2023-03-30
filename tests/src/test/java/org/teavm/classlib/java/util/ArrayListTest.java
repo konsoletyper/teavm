@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import org.junit.Test;
@@ -183,5 +184,18 @@ public class ArrayListTest {
 
         assertEquals("[(this Collection), A]", list.toString());
         assertEquals("[]", new ArrayList().toString());
+    }
+
+    @Test
+    public void testSort() {
+        int size = 10;
+        List<Integer> list = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            list.add(size - 1 - i);
+        }
+        list.sort(Comparator.naturalOrder());
+        for (int i = 0; i < 10; i++) {
+            assertEquals(i, list.get(i).intValue());
+        }
     }
 }

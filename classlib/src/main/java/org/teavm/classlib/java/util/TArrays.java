@@ -40,6 +40,17 @@ import org.teavm.classlib.java.util.stream.intimpl.TArrayIntStreamImpl;
 import org.teavm.classlib.java.util.stream.longimpl.TArrayLongStreamImpl;
 
 public class TArrays extends TObject {
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private static final TComparator<Object> NATURAL_ORDER = (o1, o2) -> {
+        if (o1 != null) {
+            return ((TComparable) o1).compareTo(o2);
+        } else if (o2 != null) {
+            return ((TComparable) o2).compareTo(o1);
+        } else {
+            return 0;
+        }
+    };
+
     public static char[] copyOf(char[] array, int length) {
         char[] result = new char[length];
         int sz = TMath.min(length, array.length);
@@ -885,27 +896,17 @@ public class TArrays extends TObject {
     }
 
     public static void sort(Object[] a) {
-        sort(a, new NaturalOrder());
+        sort(a, NATURAL_ORDER);
     }
 
     public static void sort(Object[] a, int fromIndex, int toIndex) {
-        sort(a, fromIndex, toIndex, new NaturalOrder());
-    }
-
-    private static class NaturalOrder implements TComparator<Object> {
-        @SuppressWarnings({ "rawtypes", "unchecked" })
-        @Override public int compare(Object o1, Object o2) {
-            if (o1 != null) {
-                return ((TComparable) o1).compareTo(o2);
-            } else if (o2 != null) {
-                return ((TComparable) o2).compareTo(o1);
-            } else {
-                return 0;
-            }
-        }
+        sort(a, fromIndex, toIndex, NATURAL_ORDER);
     }
 
     public static <T> void sort(T[] a, int fromIndex, int toIndex, TComparator<? super T> c) {
+        if (c == null) {
+            c = NATURAL_ORDER;
+        }
         @SuppressWarnings("unchecked")
         T[] subarray = (T[]) new Object[toIndex - fromIndex];
         for (int i = fromIndex; i < toIndex; ++i) {
@@ -921,6 +922,9 @@ public class TArrays extends TObject {
     public static <T> void sort(T[] a, TComparator<? super T> c) {
         if (a.length == 0) {
             return;
+        }
+        if (c == null) {
+            c = NATURAL_ORDER;
         }
         Object[] first = a;
         Object[] second = new Object[a.length];
@@ -1198,7 +1202,7 @@ public class TArrays extends TObject {
     }
 
     public static int binarySearch(Object[] a, int fromIndex, int toIndex, Object key) {
-        return binarySearch(a, fromIndex, toIndex, key, new NaturalOrder());
+        return binarySearch(a, fromIndex, toIndex, key, NATURAL_ORDER);
     }
 
     public static <T> int binarySearch(T[] a, T key, TComparator<? super T> c) {
@@ -1206,6 +1210,9 @@ public class TArrays extends TObject {
     }
 
     public static <T> int binarySearch(T[] a, int fromIndex, int toIndex, T key, TComparator<? super T> c) {
+        if (c == null) {
+            c = NATURAL_ORDER;
+        }
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }

@@ -129,6 +129,7 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
     public void clear() {
         Arrays.fill(array, 0, size, null);
         size = 0;
+        ++modCount;
     }
 
     @Override
@@ -209,5 +210,11 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
         }
         buffer.append(array[length] == this ? "(this Collection)" : array[length]);
         return buffer.append(']').toString();
+    }
+
+    @Override
+    public void sort(TComparator<? super E> comp) {
+        TArrays.sort(array, 0, size, comp);
+        modCount++;
     }
 }
