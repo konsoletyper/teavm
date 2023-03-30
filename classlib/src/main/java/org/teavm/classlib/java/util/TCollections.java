@@ -552,7 +552,7 @@ public class TCollections extends TObject {
         return (TComparator<T>) reverseOrder;
     }
 
-    private static TComparator<Object> reverseOrder = (o1, o2) -> -((TComparable<Object>) o1).compareTo(o2);
+    private static TComparator<Object> reverseOrder = (o1, o2) -> ((TComparable<Object>) o2).compareTo(o1);
 
     public static <T> TComparator<T> reverseOrder(final TComparator<T> cmp) {
         return (o1, o2) -> -cmp.compare(o1, o2);

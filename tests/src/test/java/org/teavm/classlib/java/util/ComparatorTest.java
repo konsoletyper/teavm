@@ -28,13 +28,17 @@ import org.teavm.junit.WholeClassCompilation;
 @WholeClassCompilation
 public class ComparatorTest {
     @Test
-    public void naturalOrder() {
+    public void naturalReverseOrder() {
         Integer i = 2;
         Integer j = 3;
         Comparator<Integer> comp = Comparator.naturalOrder();
         assertTrue(comp.compare(i, j) < 0);
         assertEquals(0, comp.compare(i, i));
         assertTrue(comp.compare(j, i) > 0);
+        Comparator<Integer> rev = Comparator.reverseOrder();
+        assertTrue(rev.compare(i, j) > 0);
+        assertEquals(0, rev.compare(i, i));
+        assertTrue(rev.compare(j, i) < 0);
         try {
             comp.compare(i, null);
             fail("Expected NPE for comparing with null");
