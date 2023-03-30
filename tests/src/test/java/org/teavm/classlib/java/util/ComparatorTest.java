@@ -53,11 +53,15 @@ public class ComparatorTest {
     public void testComparing() {
         Point a = new Point(1, 1);
         Point b = new Point(1, 2);
-        Point c = new Point(1, null);
+        Point c = new Point(2, 1);
+        Point d = new Point(1, null);
         Comparator<Point> comp = Comparator.comparing(Point::getX).thenComparing(Point::getY);
+        assertTrue(comp.compare(a, c) < 1);
         assertTrue(comp.compare(a, b) < 1);
+        assertTrue(comp.compare(b, c) < 1);
+        assertEquals(0, comp.compare(a, a));
         try {
-            comp.compare(a, c);
+            comp.compare(a, d);
             fail("Expected NPE for comparing null fields");
         } catch (NullPointerException e) {
             // OK
