@@ -40,7 +40,7 @@ tasks {
         sinceBuild.set("201")
         untilBuild.set("231.*")
     }
-    jar {
+    instrumentedJar {
         archiveFileName.set("teavm-plugin.jar")
     }
     buildSearchableOptions {
