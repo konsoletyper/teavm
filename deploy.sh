@@ -61,7 +61,7 @@ function deploy_teavm {
 <?xml version="1.0" encoding="UTF-8"?>
 <plugins>
   <plugin id="org.teavm.idea" url="https://teavm.org/idea/teavm-idea-$TEAVM_DEPLOY_VERSION_FULL.zip" version="$TEAVM_DEPLOY_VERSION_FULL">
-    <idea-version since-build="201.*" until-build="232.*" />
+    <idea-version since-build="201.*"/>
     <description>TeaVM support</description>
   </plugin>
 </plugins>
