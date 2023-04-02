@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.util;
 
-import java.util.Comparator;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.util.function.TFunction;
 import org.teavm.classlib.java.util.function.TToDoubleFunction;
@@ -107,8 +106,8 @@ public interface TComparator<T> {
         };
     }
 
-    class NaturalOrder implements Comparator<Object> {
-        private static final Comparator<Object> INSTANCE = new NaturalOrder();
+    class NaturalOrder implements TComparator<Object> {
+        private static final TComparator<Object> INSTANCE = new NaturalOrder();
 
         @Override
         @SuppressWarnings("unchecked")
