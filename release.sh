@@ -17,7 +17,7 @@
 mkdir -p build-dir
 
 git fetch
-git archive master | tar -x -C build-dir || { echo 'Git archive failed' ; exit 1; }
+git archive release-0.8.x | tar -x -C build-dir || { echo 'Git archive failed' ; exit 1; }
 
 TEAVM_RELEASE_VERSION=$1
 
@@ -33,7 +33,7 @@ function release_teavm {
   GRADLE+=" -Psigning.secretKeyRingFile=$HOME/.gnupg/secring.gpg"
   GRADLE+=" -PossrhUsername=$TEAVM_SONATYPE_LOGIN"
   GRADLE+=" -PossrhPassword=$TEAVM_SONATYPE_PASSWORD"
-  GRADLE+=" -Pteavm.idea.publishToken='$TEAVM_INTELLIJ_TOKEN'"
+  GRADLE+=" -Pteavm.idea.publishToken=$TEAVM_INTELLIJ_TOKEN"
 
   $GRADLE build -x test || { echo 'Build failed' ; return 1; }
   $GRADLE --max-workers 1 publish publishPlugin publishPlugins || { echo 'Release failed' ; return 1; }
