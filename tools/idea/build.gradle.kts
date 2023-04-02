@@ -22,13 +22,13 @@ plugins {
 intellij {
     version.set(libs.versions.idea.asProvider().get())
     type.set("IC")
+    updateSinceUntilBuild.set(false)
 
     plugins.set(listOf(
             "java",
             "org.intellij.scala:${libs.versions.idea.scala.get()}",
             "org.jetbrains.kotlin"
     ))
-
 }
 
 dependencies {
@@ -36,10 +36,6 @@ dependencies {
 }
 
 tasks {
-    patchPluginXml {
-        sinceBuild.set("201")
-        untilBuild.set("231.*")
-    }
     instrumentedJar {
         archiveFileName.set("teavm-plugin.jar")
     }
