@@ -28,23 +28,25 @@ dependencies {
     implementation(project(":tools:core"))
 }
 
+pluginBundle {
+    website = "https://teavm.org"
+    vcsUrl = "https://github.com/konsoletyper/teavm"
+    tags = listOf("teavm", "javascript", "webassembly", "compiler", "aot-compiler")
+}
+
 gradlePlugin {
-    website.set("https://teavm.org")
-    vcsUrl.set("https://github.com/konsoletyper/teavm")
     plugins {
         create("TeaVMPlugin") {
             id = "org.teavm"
             implementationClass = "org.teavm.gradle.TeaVMPlugin"
             displayName = "TeaVM application plugin"
             description = "Installs TeaVM compilation tasks, configurations and source sets"
-            tags.set(listOf("teavm", "javascript", "webassembly", "compiler", "aot-compiler"))
         }
         create("TeaVMLibraryPlugin") {
             id = "org.teavm.library"
             implementationClass = "org.teavm.gradle.TeaVMLibraryPlugin"
             displayName = "TeaVM library plugin"
             description = "Installs TeaVM DSL for consuming TeaVM libraries and running tests in a browser"
-            tags.set(listOf("teavm", "javascript", "webassembly", "compiler", "aot-compiler"))
         }
     }
 }
