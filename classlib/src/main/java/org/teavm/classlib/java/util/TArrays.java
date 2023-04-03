@@ -22,7 +22,6 @@ import java.util.function.IntFunction;
 import java.util.function.IntToDoubleFunction;
 import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
-import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TDouble;
 import org.teavm.classlib.java.lang.TFloat;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
