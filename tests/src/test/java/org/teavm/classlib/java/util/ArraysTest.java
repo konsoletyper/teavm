@@ -37,6 +37,7 @@ public class ArraysTest {
         assertEquals(Integer.valueOf(5), array[3]);
         assertEquals(Integer.valueOf(6), array[4]);
         assertEquals(Integer.valueOf(7), array[5]);
+        Arrays.sort(array, null); // NPE check
     }
 
     @Test
@@ -50,6 +51,7 @@ public class ArraysTest {
         assertEquals(-3, Arrays.binarySearch(array, 5));
         assertEquals(-8, Arrays.binarySearch(array, 15));
         assertEquals(-9, Arrays.binarySearch(array, 17));
+        assertEquals(3, Arrays.binarySearch(array, 8, null)); // NPE check
     }
 
     @Test

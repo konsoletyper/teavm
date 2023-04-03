@@ -32,14 +32,14 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.teavm.backend.c.util.json.JsonAllErrorVisitor;
-import org.teavm.backend.c.util.json.JsonArrayVisitor;
-import org.teavm.backend.c.util.json.JsonErrorReporter;
-import org.teavm.backend.c.util.json.JsonObjectVisitor;
-import org.teavm.backend.c.util.json.JsonParser;
-import org.teavm.backend.c.util.json.JsonPropertyVisitor;
-import org.teavm.backend.c.util.json.JsonVisitingConsumer;
-import org.teavm.backend.c.util.json.JsonVisitor;
+import org.teavm.common.json.JsonAllErrorVisitor;
+import org.teavm.common.json.JsonArrayVisitor;
+import org.teavm.common.json.JsonErrorReporter;
+import org.teavm.common.json.JsonObjectVisitor;
+import org.teavm.common.json.JsonParser;
+import org.teavm.common.json.JsonPropertyVisitor;
+import org.teavm.common.json.JsonVisitingConsumer;
+import org.teavm.common.json.JsonVisitor;
 
 public final class HeapDumpConverter {
     private static byte[] buffer = new byte[8];

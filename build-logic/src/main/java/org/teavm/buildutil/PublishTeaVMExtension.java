@@ -19,4 +19,8 @@ public interface PublishTeaVMExtension {
     String getArtifactId();
 
     void setArtifactId(String artifactId);
+
+    String getPackaging();
+
+    void setPackaging(String packaging);
 }

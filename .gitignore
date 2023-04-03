@@ -1,9 +1,9 @@
 # output dir
-target
 build
 /build-dir
 /build-cache
 /deploy-with-env.sh
+/release-with-env.sh
 /.gradle
 /build-logic/.gradle
 /relocated
@@ -33,5 +33,3 @@ local.properties
 !.idea/codeStyles
 !.idea/copyright
 !.idea/checkstyle-idea.xml
-
-dependency-reduced-pom.xml

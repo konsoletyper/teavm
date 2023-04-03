@@ -83,13 +83,15 @@ gradle.afterProject {
     extensions.findByType<PublishingExtension>()?.apply {
         publications.all {
             if (this is MavenPublication) {
-                pom { setupPom() }
+                pom { setupPom(this@afterProject) }
             }
         }
     }
 }
 
-fun MavenPom.setupPom() {
+fun MavenPom.setupPom(project: Project) {
+    name.set(project.description)
+    description.set(project.description)
     licenses {
         license {
             name.set("The Apache Software License, Version 2.0")

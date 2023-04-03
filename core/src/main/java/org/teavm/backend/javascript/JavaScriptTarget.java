@@ -295,6 +295,9 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             includeStackTraceMethods(dependencyAnalyzer);
         }
 
+        dependencyAnalyzer.linkMethod(new MethodReference(Throwable.class, "getMessage", String.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(Throwable.class, "getCause", Throwable.class)).use();
+
         dependencyAnalyzer.addDependencyListener(new AbstractDependencyListener() {
             @Override
             public void methodReached(DependencyAgent agent, MethodDependency method) {

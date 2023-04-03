@@ -30,6 +30,11 @@ public class LongNativeGenerator implements Generator {
                         .append(context.getParameterName(2)).append(");").softNewLine();
                 context.useLongLibrary();
                 break;
+            case "compareUnsigned":
+                writer.append("return Long_ucompare(").append(context.getParameterName(1)).append(", ")
+                        .append(context.getParameterName(2)).append(");").softNewLine();
+                context.useLongLibrary();
+                break;
             case "divideUnsigned":
                 writer.append("return Long_udiv(").append(context.getParameterName(1)).append(", ")
                         .append(context.getParameterName(2)).append(");").softNewLine();

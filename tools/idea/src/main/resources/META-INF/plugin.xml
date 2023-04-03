@@ -1,6 +1,6 @@
 <idea-plugin>
   <id>org.teavm.idea</id>
-  <name>TeaVM IDEA Integration</name>
+  <name>TeaVM Integration</name>
   <version>${project.version}</version>
   <vendor email="info@teavm.org" url="http://teavm.org">TeaVM community</vendor>
 
@@ -16,7 +16,7 @@
     ]]>
   </change-notes>
 
-  <idea-version since-build="201.8743.12"/>
+  <idea-version since-build="201.8743"/>
 
   <extensions defaultExtensionNs="com.intellij">
 

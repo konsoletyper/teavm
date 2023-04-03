@@ -119,7 +119,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     }
 
     @Override
-    public void js(Closure<Void> action) {
+    public void js(Closure<?> action) {
         action.rehydrate(getJs(), action.getOwner(), action.getThisObject()).call();
     }
 
@@ -134,7 +134,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     }
 
     @Override
-    public void wasm(Closure<Void> action) {
+    public void wasm(Closure<?> action) {
         action.rehydrate(getWasm(), action.getOwner(), action.getThisObject()).call();
     }
 
@@ -149,7 +149,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     }
 
     @Override
-    public void wasi(Closure<Void> action) {
+    public void wasi(Closure<?> action) {
         action.rehydrate(getWasi(), action.getOwner(), action.getThisObject()).call();
     }
 
@@ -164,7 +164,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     }
 
     @Override
-    public void c(Closure<Void> action) {
+    public void c(Closure<?> action) {
         action.rehydrate(getC(), action.getOwner(), action.getThisObject()).call();
     }
 
@@ -179,7 +179,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     }
 
     @Override
-    public void all(Closure<Void> action) {
+    public void all(Closure<?> action) {
         action.rehydrate(getAll(), action.getOwner(), action.getThisObject()).call();
     }
 

@@ -103,7 +103,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             positive = false;
             value = -value;
         }
-        if (value < radix) {
+        if (Integer.compareUnsigned(value, radix) < 0) {
             if (!positive) {
                 insertSpace(target, target + 2);
                 buffer[target++] = '-';
@@ -114,11 +114,11 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         } else {
             int pos = 1;
             int sz = 1;
-            int posLimit = TInteger.MAX_VALUE / radix;
-            while (pos * radix <= value) {
+            var posLimit = Integer.divideUnsigned(Integer.MAX_VALUE, radix);
+            while (Integer.compareUnsigned(pos * radix, value) <= 0) {
                 pos *= radix;
                 ++sz;
-                if (pos > posLimit) {
+                if (Integer.compareUnsigned(pos, posLimit) >= 0) {
                     break;
                 }
             }
@@ -130,9 +130,9 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 buffer[target++] = '-';
             }
             while (pos > 0) {
-                buffer[target++] = TCharacter.forDigit(value / pos, radix);
-                value %= pos;
-                pos /= radix;
+                buffer[target++] = TCharacter.forDigit(Integer.divideUnsigned(value, pos), radix);
+                value = Integer.remainderUnsigned(value, pos);
+                pos = Integer.divideUnsigned(pos, radix);
             }
         }
         return this;
@@ -152,7 +152,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             positive = false;
             value = -value;
         }
-        if (value < radix) {
+        if (Long.compareUnsigned(value, radix) < 0) {
             if (!positive) {
                 insertSpace(target, target + 2);
                 buffer[target++] = '-';
@@ -163,9 +163,13 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         } else {
             int sz = 1;
             long pos = 1;
-            while (pos * radix > pos && pos * radix <= value) {
+            var posLimit = Long.divideUnsigned(Long.MAX_VALUE, radix);
+            while (Long.compareUnsigned(pos * radix, value) <= 0) {
                 pos *= radix;
                 ++sz;
+                if (Long.compareUnsigned(pos, posLimit) > 0) {
+                    break;
+                }
             }
             if (!positive) {
                 ++sz;
@@ -175,9 +179,9 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 buffer[target++] = '-';
             }
             while (pos > 0) {
-                buffer[target++] = TCharacter.forDigit((int) (value / pos), radix);
-                value %= pos;
-                pos /= radix;
+                buffer[target++] = TCharacter.forDigit((int) Long.divideUnsigned(value, pos), radix);
+                value = Long.remainderUnsigned(value, pos);
+                pos = Long.divideUnsigned(pos, radix);
             }
         }
         return this;

@@ -22,7 +22,6 @@ import java.util.function.IntFunction;
 import java.util.function.IntToDoubleFunction;
 import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
-import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TDouble;
 import org.teavm.classlib.java.lang.TFloat;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
@@ -217,6 +216,9 @@ public class TArrays extends TObject {
     }
 
     public static String toString(TObject[] a) {
+        if (a == null) {
+            return "null";
+        }
         TStringBuilder sb = new TStringBuilder();
         sb.append("[");
         for (int i = 0; i < a.length; ++i) {
@@ -230,6 +232,9 @@ public class TArrays extends TObject {
     }
 
     public static String toString(boolean[] a) {
+        if (a == null) {
+            return "null";
+        }
         TStringBuilder sb = new TStringBuilder();
         sb.append("[");
         for (int i = 0; i < a.length; ++i) {
@@ -243,6 +248,9 @@ public class TArrays extends TObject {
     }
 
     public static String toString(byte[] a) {
+        if (a == null) {
+            return "null";
+        }
         TStringBuilder sb = new TStringBuilder();
         sb.append("[");
         for (int i = 0; i < a.length; ++i) {
@@ -256,6 +264,9 @@ public class TArrays extends TObject {
     }
 
     public static String toString(short[] a) {
+        if (a == null) {
+            return "null";
+        }
         TStringBuilder sb = new TStringBuilder();
         sb.append("[");
         for (int i = 0; i < a.length; ++i) {
@@ -269,6 +280,9 @@ public class TArrays extends TObject {
     }
 
     public static String toString(char[] a) {
+        if (a == null) {
+            return "null";
+        }
         TStringBuilder sb = new TStringBuilder();
         sb.append("[");
         for (int i = 0; i < a.length; ++i) {
@@ -282,6 +296,9 @@ public class TArrays extends TObject {
     }
 
     public static String toString(int[] a) {
+        if (a == null) {
+            return "null";
+        }
         TStringBuilder sb = new TStringBuilder();
         sb.append("[");
         for (int i = 0; i < a.length; ++i) {
@@ -295,6 +312,9 @@ public class TArrays extends TObject {
     }
 
     public static String toString(long[] a) {
+        if (a == null) {
+            return "null";
+        }
         TStringBuilder sb = new TStringBuilder();
         sb.append("[");
         for (int i = 0; i < a.length; ++i) {
@@ -308,6 +328,9 @@ public class TArrays extends TObject {
     }
 
     public static String toString(float[] a) {
+        if (a == null) {
+            return "null";
+        }
         TStringBuilder sb = new TStringBuilder();
         sb.append("[");
         for (int i = 0; i < a.length; ++i) {
@@ -321,6 +344,9 @@ public class TArrays extends TObject {
     }
 
     public static String toString(double[] a) {
+        if (a == null) {
+            return "null";
+        }
         TStringBuilder sb = new TStringBuilder();
         sb.append("[");
         for (int i = 0; i < a.length; ++i) {
@@ -885,27 +911,17 @@ public class TArrays extends TObject {
     }
 
     public static void sort(Object[] a) {
-        sort(a, new NaturalOrder());
+        sort(a, TComparator.NaturalOrder.instance());
     }
 
     public static void sort(Object[] a, int fromIndex, int toIndex) {
-        sort(a, fromIndex, toIndex, new NaturalOrder());
-    }
-
-    private static class NaturalOrder implements TComparator<Object> {
-        @SuppressWarnings({ "rawtypes", "unchecked" })
-        @Override public int compare(Object o1, Object o2) {
-            if (o1 != null) {
-                return ((TComparable) o1).compareTo(o2);
-            } else if (o2 != null) {
-                return ((TComparable) o2).compareTo(o1);
-            } else {
-                return 0;
-            }
-        }
+        sort(a, fromIndex, toIndex, TComparator.NaturalOrder.instance());
     }
 
     public static <T> void sort(T[] a, int fromIndex, int toIndex, TComparator<? super T> c) {
+        if (c == null) {
+            c = TComparator.NaturalOrder.instance();
+        }
         @SuppressWarnings("unchecked")
         T[] subarray = (T[]) new Object[toIndex - fromIndex];
         for (int i = fromIndex; i < toIndex; ++i) {
@@ -921,6 +937,9 @@ public class TArrays extends TObject {
     public static <T> void sort(T[] a, TComparator<? super T> c) {
         if (a.length == 0) {
             return;
+        }
+        if (c == null) {
+            c = TComparator.NaturalOrder.instance();
         }
         Object[] first = a;
         Object[] second = new Object[a.length];
@@ -1198,7 +1217,7 @@ public class TArrays extends TObject {
     }
 
     public static int binarySearch(Object[] a, int fromIndex, int toIndex, Object key) {
-        return binarySearch(a, fromIndex, toIndex, key, new NaturalOrder());
+        return binarySearch(a, fromIndex, toIndex, key, TComparator.NaturalOrder.instance());
     }
 
     public static <T> int binarySearch(T[] a, T key, TComparator<? super T> c) {
@@ -1206,6 +1225,9 @@ public class TArrays extends TObject {
     }
 
     public static <T> int binarySearch(T[] a, int fromIndex, int toIndex, T key, TComparator<? super T> c) {
+        if (c == null) {
+            c = TComparator.NaturalOrder.instance();
+        }
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }
@@ -1552,6 +1574,9 @@ public class TArrays extends TObject {
     }
 
     public static String deepToString(Object[] a) {
+        if (a == null) {
+            return "null";
+        }
         StringBuilder sb = new StringBuilder();
         deepToString(a, sb, new TArrayList<>());
         return sb.toString();

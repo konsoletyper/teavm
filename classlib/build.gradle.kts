@@ -29,7 +29,6 @@ dependencies {
     api(project(":jso:impl"))
     api(project(":metaprogramming:impl"))
     api(libs.commons.io)
-    api(libs.gson)
     api(libs.jzlib)
     api(libs.jodaTime)
 

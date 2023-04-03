@@ -99,8 +99,7 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
     public int indexOf(Object o) {
         int sz = size();
         for (int i = 0; i < sz; ++i) {
-            Object e = get(i);
-            if (o == null ? e == null : o.equals(e)) {
+            if (TObjects.equals(o, get(i))) {
                 return i;
             }
         }
@@ -111,8 +110,7 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
     public int lastIndexOf(Object o) {
         int sz = size();
         for (int i = sz - 1; i >= 0; --i) {
-            Object e = get(i);
-            if (o == null ? e == null : o.equals(e)) {
+            if (TObjects.equals(o, get(i))) {
                 return i;
             }
         }

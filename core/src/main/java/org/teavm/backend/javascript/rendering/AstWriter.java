@@ -66,6 +66,7 @@ import org.mozilla.javascript.ast.SwitchStatement;
 import org.mozilla.javascript.ast.ThrowStatement;
 import org.mozilla.javascript.ast.TryStatement;
 import org.mozilla.javascript.ast.UnaryExpression;
+import org.mozilla.javascript.ast.UpdateExpression;
 import org.mozilla.javascript.ast.VariableDeclaration;
 import org.mozilla.javascript.ast.VariableInitializer;
 import org.mozilla.javascript.ast.WhileLoop;
@@ -294,6 +295,8 @@ public class AstWriter {
                     printInfix((InfixExpression) node, precedence);
                 } else if (node instanceof UnaryExpression) {
                     printUnary((UnaryExpression) node, precedence);
+                } else if (node instanceof UpdateExpression) {
+                    printUnary((UpdateExpression) node, precedence);
                 }
                 break;
         }
@@ -730,6 +733,29 @@ public class AstWriter {
     }
 
     private void printUnary(UnaryExpression node, int precedence) throws IOException {
+        int innerPrecedence = PRECEDENCE_PREFIX;
+
+        if (innerPrecedence > precedence) {
+            writer.append('(');
+        }
+
+        String op = AstNode.operatorToString(node.getType());
+        if (op.startsWith("-")) {
+            writer.append(' ');
+        }
+        writer.append(op);
+        if (requiresWhitespaces(node.getType())) {
+            writer.append(' ');
+        }
+
+        print(node.getOperand(), innerPrecedence);
+
+        if (innerPrecedence > precedence) {
+            writer.append(')');
+        }
+    }
+
+    private void printUnary(UpdateExpression node, int precedence) throws IOException {
         int innerPrecedence = node.isPostfix() ? PRECEDENCE_POSTFIX : PRECEDENCE_PREFIX;
 
         if (innerPrecedence > precedence) {

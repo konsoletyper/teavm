@@ -83,6 +83,10 @@ public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializabl
         version = 0;
     }
 
+    public TPriorityQueue(TComparator<? super E> comparator) {
+        this(16, comparator);
+    }
+
     public TPriorityQueue(int initialCapacity, TComparator<? super E> comparator) {
         if (initialCapacity < 1) {
             throw new TIllegalArgumentException();
