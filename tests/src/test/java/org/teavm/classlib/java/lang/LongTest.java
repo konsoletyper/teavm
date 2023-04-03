@@ -65,4 +65,25 @@ public class LongTest {
             assertEquals(1, Long.bitCount(1L << i));
         }
     }
+
+    @Test
+    public void toStringRadix16() {
+        assertEquals("17", Long.toString(23, 16));
+        assertEquals("1e240", Long.toString(123456, 16));
+        assertEquals("-17", Long.toString(-23, 16));
+        assertEquals("7fffffffffffffff", Long.toString(Long.MAX_VALUE, 16));
+        assertEquals("-8000000000000000", Long.toString(Long.MIN_VALUE, 16));
+    }
+
+    @Test
+    public void toStringRadix2() {
+        assertEquals("10111", Long.toString(23, 2));
+        assertEquals("11110001001000000", Long.toString(123456, 2));
+        assertEquals("-10111", Long.toString(-23, 2));
+        assertEquals("111111111111111111111111111111111111111111111111111111111111111",
+                Long.toString(Long.MAX_VALUE, 2));
+        // TODO: looks like there's a bug in compiler. Fix and uncomment
+        /*assertEquals("-1000000000000000000000000000000000000000000000000000000000000000",
+                Long.toString(Long.MIN_VALUE, 2));*/
+    }
 }

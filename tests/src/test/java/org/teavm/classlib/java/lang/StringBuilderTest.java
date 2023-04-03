@@ -19,303 +19,102 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class StringBuilderTest {
     @Test
     public void integerAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(23);
-        assertEquals("23", sb.toString());
+        var sb = new StringBuilder();
+        sb.append(23)
+                .append(" ").append(123456)
+                .append(" ").append(-23)
+                .append(" ").append(Integer.MAX_VALUE)
+                .append(" ").append(Integer.MIN_VALUE);
+        assertEquals("23 123456 -23 2147483647 -2147483648", sb.toString());
     }
 
     @Test
     public void integerInserted() {
-        StringBuilder sb = new StringBuilder("[]");
+        var sb = new StringBuilder("[]");
         sb.insert(1, 23);
         assertEquals("[23]", sb.toString());
+
         sb = new StringBuilder("[]");
         sb.insert(1, 10);
         assertEquals("[10]", sb.toString());
+
         sb = new StringBuilder("[]");
         sb.insert(1, 100);
         assertEquals("[100]", sb.toString());
     }
 
     @Test
-    public void largeIntegerAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(123456);
-        assertEquals("123456", sb.toString());
-    }
-
-    @Test
-    public void negativeIntegerAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(-23);
-        assertEquals("-23", sb.toString());
-    }
-
-    @Test
-    public void maxIntegerAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(2147483647);
-        assertEquals("2147483647", sb.toString());
-    }
-
-    @Test
     public void longAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(23L);
-        assertEquals("23", sb.toString());
-    }
-
-    @Test
-    public void longAppended2() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(2971215073L);
-        assertEquals("2971215073", sb.toString());
-    }
-
-    @Test
-    public void negativeLongAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(-23L);
-        assertEquals("-23", sb.toString());
-    }
-
-    @Test
-    public void largeLongAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(12345678901234L);
-        assertEquals("12345678901234", sb.toString());
-    }
-
-    @Test
-    public void maxLongAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(9223372036854775807L);
-        assertEquals("9223372036854775807", sb.toString());
+        var sb = new StringBuilder();
+        sb.append(23L)
+                .append(" ").append(2971215073L)
+                .append(" ").append(-23L)
+                .append(" ").append(12345678901234L)
+                .append(" ").append(Long.MAX_VALUE)
+                .append(" ").append(Long.MIN_VALUE);
+        assertEquals("23 2971215073 -23 12345678901234 9223372036854775807 -9223372036854775808", sb.toString());
     }
 
     @Test
     public void floatAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(1.234E25F);
-        assertEquals("1.234E25", sb.toString());
-    }
-
-    @Test
-    public void floatAppended2() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(9.8765E30F);
-        assertEquals("9.8765E30", sb.toString());
-    }
-
-    @Test
-    public void negativeFloatAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(-1.234E25F);
-        assertEquals("-1.234E25", sb.toString());
-    }
-
-    @Test
-    public void negativeFloatAppended2() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(9.8765E30F);
-        assertEquals("9.8765E30", sb.toString());
-    }
-
-    @Test
-    public void maxFloatAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(3.402823E38f);
-        assertEquals("3.402823E38", sb.toString());
-    }
-
-    @Test
-    public void smallFloatAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(1.234E-25F);
-        assertEquals("1.234E-25", sb.toString());
-    }
-
-    @Test
-    public void smallFloatAppended2() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(9.8764E-30F);
-        assertEquals("9.8764E-30", sb.toString());
-    }
-
-    @Test
-    public void negativeSmallFloatAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(-1.234E-25F);
-        assertEquals("-1.234E-25", sb.toString());
-    }
-
-    @Test
-    public void negativeSmallFloatAppended2() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(-9.8764E-30F);
-        assertEquals("-9.8764E-30", sb.toString());
-    }
-
-    @Test
-    public void minFloatAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(1.17549E-38f);
-        assertEquals("1.17549E-38", sb.toString());
-    }
-
-    @Test
-    public void normalFloatAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(1200f);
-        assertEquals("1200.0", sb.toString());
-    }
-
-    @Test
-    public void normalSmallFloatAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(0.023f);
-        assertEquals("0.023", sb.toString());
-    }
-
-    @Test
-    public void zeroFloatAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(0f);
-        assertEquals("0.0", sb.toString());
-    }
-
-    @Test
-    public void oneFloatAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(1f);
-        assertEquals("1.0", sb.toString());
-    }
-
-    @Test
-    public void nanFloatAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Float.NaN);
-        assertEquals("NaN", sb.toString());
-    }
-
-    @Test
-    public void positiveInfinityAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Float.POSITIVE_INFINITY);
-        assertEquals("Infinity", sb.toString());
-    }
-
-    @Test
-    public void negativeInfinityAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Float.NEGATIVE_INFINITY);
-        assertEquals("-Infinity", sb.toString());
+        var sb = new StringBuilder();
+        sb.append(1.234E25F)
+                .append(" ").append(9.8765E30F)
+                .append(" ").append(-1.234E25F)
+                .append(" ").append(-9.8765E30F)
+                .append(" ").append(3.402823E38f)
+                .append(" ").append(1.234E-25F)
+                .append(" ").append(9.8764E-30F)
+                .append(" ").append(-1.234E-25F)
+                .append(" ").append(-9.8764E-30F)
+                .append(" ").append(1.17549E-38f)
+                .append(" ").append(1200f)
+                .append(" ").append(0.023f)
+                .append(" ").append(0f)
+                .append(" ").append(1f)
+                .append(" ").append(Float.NaN)
+                .append(" ").append(Float.POSITIVE_INFINITY)
+                .append(" ").append(Float.NEGATIVE_INFINITY);
+        assertEquals("1.234E25 9.8765E30 -1.234E25 -9.8765E30 3.402823E38"
+                + " 1.234E-25 9.8764E-30 -1.234E-25 -9.8764E-30 1.17549E-38"
+                + " 1200.0 0.023 0.0 1.0 NaN Infinity -Infinity", sb.toString());
     }
 
     @Test
     public void doubleAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(1.23456789E150);
-        assertEquals("1.23456789E150", sb.toString());
-    }
-
-    @Test
-    public void powTenDoubleAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(10.0);
-        assertEquals("10.0", sb.toString());
-        sb.setLength(0);
-        sb.append(20.0);
-        assertEquals("20.0", sb.toString());
-        sb.setLength(0);
-        sb.append(100.0);
-        assertEquals("100.0", sb.toString());
-        sb.setLength(0);
-        sb.append(1000.0);
-        assertEquals("1000.0", sb.toString());
-        sb.setLength(0);
-        sb.append(0.1);
-        assertEquals("0.1", sb.toString());
-        sb.setLength(0);
-        sb.append(0.01);
-        assertEquals("0.01", sb.toString());
-        sb.setLength(0);
-        sb.append(1e20);
-        assertEquals("1.0E20", sb.toString());
-        sb.setLength(0);
-        sb.append(2e20);
-        assertEquals("2.0E20", sb.toString());
-        sb.setLength(0);
-        sb.append(1e-12);
-        assertEquals("1.0E-12", sb.toString());
-    }
-
-    @Test
-    public void negativeDoubleAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(-1.23456789E150);
-        assertEquals("-1.23456789E150", sb.toString());
-    }
-
-    @Test
-    public void smallDoubleAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(1.23456789E-150);
-        assertEquals("1.23456789E-150", sb.toString());
-    }
-
-    @Test
-    public void maxDoubleAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(1.79769313486231E308);
-        assertEquals("1.79769313486231E308", sb.toString());
-    }
-
-    @Test
-    public void minDoubleAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(3E-308);
-        assertEquals("3.0E-308", sb.toString());
-    }
-
-    @Test
-    public void zeroDoubleAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(0);
-        assertEquals("0", sb.toString());
-    }
-
-    @Test
-    public void doubleInfinityAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Double.POSITIVE_INFINITY);
-        assertEquals("Infinity", sb.toString());
-    }
-
-    @Test
-    public void doubleNaNAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Double.NaN);
-        assertEquals("NaN", sb.toString());
-    }
-
-    @Test
-    public void normalDoubleAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(1200.0);
-        assertEquals("1200.0", sb.toString());
-    }
-
-    @Test
-    public void normalSmallDoubleAppended() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(0.023);
-        assertEquals("0.023", sb.toString());
+        var sb = new StringBuilder();
+        sb.append(1.23456789E150)
+                .append(" ").append(10.0)
+                .append(" ").append(20.0)
+                .append(" ").append(100.0)
+                .append(" ").append(1000.0)
+                .append(" ").append(0.1)
+                .append(" ").append(0.01)
+                .append(" ").append(1e20)
+                .append(" ").append(2e20)
+                .append(" ").append(1e-12)
+                .append(" ").append(-1.23456789E150)
+                .append(" ").append(1.23456789E-150)
+                .append(" ").append(1.79769313486231E308)
+                .append(" ").append(3E-308)
+                .append(" ").append(1200.0)
+                .append(" ").append(0.023)
+                .append(" ").append(0.0)
+                .append(" ").append(1.0)
+                .append(" ").append(Double.NaN)
+                .append(" ").append(Double.POSITIVE_INFINITY)
+                .append(" ").append(Double.NEGATIVE_INFINITY);
+        assertEquals("1.23456789E150 10.0 20.0 100.0 1000.0 0.1 0.01 1.0E20 2.0E20 1.0E-12"
+                + " -1.23456789E150 1.23456789E-150 1.79769313486231E308 3.0E-308"
+                + " 1200.0 0.023"
+                + " 0.0 1.0 NaN Infinity -Infinity", sb.toString());
     }
 
     @Test
