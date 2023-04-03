@@ -87,10 +87,6 @@ public class Decompiler {
         final int end;
         final int start;
         final List<TryCatchBookmark> tryCatches = new ArrayList<>();
-        int nodeToRestore;
-        Block nodeBackup;
-        int nodeToRestore2 = -1;
-        Block nodeBackup2;
 
         Block(IdentifiedStatement statement, List<Statement> body, int start, int end) {
             this.statement = statement;
