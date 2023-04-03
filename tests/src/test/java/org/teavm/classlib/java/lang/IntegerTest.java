@@ -178,7 +178,6 @@ public class IntegerTest {
         assertEquals("11110001001000000", Integer.toString(123456, 2));
         assertEquals("-10111", Integer.toString(-23, 2));
         assertEquals("1111111111111111111111111111111", Integer.toString(Integer.MAX_VALUE, 2));
-        // TODO: looks like there's a bug in compiler. Fix and uncomment
-        //assertEquals("-10000000000000000000000000000000", Integer.toString(Integer.MIN_VALUE, 2));
+        assertEquals("-10000000000000000000000000000000", Integer.toString(Integer.MIN_VALUE, 2));
     }
 }
