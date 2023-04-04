@@ -559,6 +559,11 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
         return buffer[index];
     }
 
+    @Override
+    public boolean isEmpty() {
+        return length == 0;
+    }
+
     protected TAbstractStringBuilder append(TCharSequence s, int start, int end) {
         return insert(length, s, start, end);
     }
