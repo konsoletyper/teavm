@@ -91,6 +91,10 @@ public abstract class JSArray<T extends JSObject> implements JSArrayReader<T> {
     @NoSideEffects
     public static native <T extends JSObject> JSArray<T> create(int size);
 
+    @JSBody(params = "object", script = "return Array.isArray(object);")
+    @NoSideEffects
+    public static native boolean isArray(JSObject object);
+
     @SafeVarargs
     public static <S extends JSObject> JSArray<S> of(S... items) {
         JSArray<S> array = create(items.length);

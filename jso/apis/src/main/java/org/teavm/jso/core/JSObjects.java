@@ -27,6 +27,14 @@ public final class JSObjects {
     @NoSideEffects
     public static native String[] getOwnPropertyNames(JSObject object);
 
+    @JSBody(params = "object", script = "return Object.keys(object);")
+    @NoSideEffects
+    public static native String[] keys(JSObject object);
+
+    @JSBody(params = "object", script = "return Object.values(object);")
+    @NoSideEffects
+    public static native JSObject[] values(JSObject object);
+
     @JSBody(script = "return {};")
     @NoSideEffects
     public static native <T extends JSObject> T create();
