@@ -42,6 +42,10 @@ public abstract class Statement {
         return stmt;
     }
 
+    public static ReturnStatement exitFunction() {
+        return exitFunction(null);
+    }
+
     public static ReturnStatement exitFunction(Expr result) {
         var stmt = new ReturnStatement();
         stmt.setResult(result);

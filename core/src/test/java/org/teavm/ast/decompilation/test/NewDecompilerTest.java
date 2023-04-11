@@ -553,6 +553,39 @@ public class NewDecompilerTest {
         ));
     }
 
+    @Test
+    public void simpleReturningTryCatch() {
+        decompile(() -> {
+            invokeStaticMethod(PRINT_1);
+            jump(label("second"));
+
+            put(label("second"));
+            invokeStaticMethod(PRINT_2);
+            doTry("java.lang.RuntimeException", label("handler"));
+            jump(label("third"));
+
+            put(label("handler"));
+            doCatch(var("e"));
+            invokeStaticMethod(PRINT_3);
+            exit();
+
+            put(label("third"));
+            invokeStaticMethod(PRINT_4);
+            exit();
+        });
+
+        expect(sequence(
+                statementExpr(invokeStatic(PRINT_1)),
+                doTry(
+                        statementExpr(invokeStatic(PRINT_2))
+                ).doCatch("java.lang.RuntimeException", 1).with(
+                        statementExpr(invokeStatic(PRINT_3)),
+                        exitFunction(null)
+                ),
+                statementExpr(invokeStatic(PRINT_4))
+        ));
+    }
+
     private void decompile(Runnable r) {
         program = build(r);
         statement = decompiler.decompile(program);
