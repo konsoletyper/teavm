@@ -119,7 +119,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private static final String OPTIMIZED = "teavm.junit.optimized";
     private static final String FAST_ANALYSIS = "teavm.junit.fastAnalysis";
 
-    private static final int stopTimeout = 15000;
     private Class<?> testClass;
     private boolean isWholeClassCompilation;
     private ClassHolderSource classSource;
