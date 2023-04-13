@@ -82,8 +82,7 @@ public class LongTest {
         assertEquals("-10111", Long.toString(-23, 2));
         assertEquals("111111111111111111111111111111111111111111111111111111111111111",
                 Long.toString(Long.MAX_VALUE, 2));
-        // TODO: looks like there's a bug in compiler. Fix and uncomment
-        /*assertEquals("-1000000000000000000000000000000000000000000000000000000000000000",
-                Long.toString(Long.MIN_VALUE, 2));*/
+        assertEquals("-1000000000000000000000000000000000000000000000000000000000000000",
+                Long.toString(Long.MIN_VALUE, 2));
     }
 }

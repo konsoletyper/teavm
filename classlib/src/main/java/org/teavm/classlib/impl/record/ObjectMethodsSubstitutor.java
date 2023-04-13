@@ -54,7 +54,7 @@ public class ObjectMethodsSubstitutor implements BootstrapMethodSubstitutor {
             pe.constant(1).propagateTo(result);
             pe.jump(joint);
         });
-        ConditionProducer classCondition = () -> thisVar.isNull()
+        ConditionProducer classCondition = () -> thatVar.isNull()
                 .or(() -> thatVar.invokeVirtual("getClass", Class.class).isNotSame(pe.constant(type)));
         pe.when(classCondition).thenDo(() -> {
             pe.constant(0).propagateTo(result);

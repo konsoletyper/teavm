@@ -24,11 +24,11 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
         super();
     }
 
-    public TStringBuilder(TString value) {
+    public TStringBuilder(String value) {
         super(value);
     }
 
-    public TStringBuilder(TCharSequence value) {
+    public TStringBuilder(CharSequence value) {
         super(value);
     }
 

@@ -151,6 +151,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return characters.length;
     }
 
+    @Override
     public boolean isEmpty() {
         return characters.length == 0;
     }

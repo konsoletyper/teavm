@@ -20,6 +20,8 @@ public interface TCharSequence {
 
     char charAt(int index);
 
+    boolean isEmpty();
+
     TCharSequence subSequence(int start, int end);
 
     @Override

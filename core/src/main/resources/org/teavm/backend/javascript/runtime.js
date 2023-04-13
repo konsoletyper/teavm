@@ -714,14 +714,18 @@ if (typeof Reflect === 'object') {
         },
         message: {
             get: function() {
-                var javaException = this[$rt_javaExceptionProp];
-                if (typeof javaException === 'object') {
-                    var javaMessage = $rt_throwableMessage(javaException);
-                    if (typeof javaMessage === "object") {
-                        return javaMessage.toString();
+                try {
+                    var javaException = this[$rt_javaExceptionProp];
+                    if (typeof javaException === 'object') {
+                        var javaMessage = $rt_throwableMessage(javaException);
+                        if (typeof javaMessage === "object") {
+                            return javaMessage !== null ? javaMessage.toString() : null;
+                        }
                     }
+                    return this[defaultMessage];
+                } catch (e) {
+                    return "Exception occurred trying to extract Java exception message: " + e
                 }
-                return this[defaultMessage];
             }
         }
     });
