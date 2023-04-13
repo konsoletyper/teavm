@@ -122,6 +122,8 @@ public class NewDecompiler {
     private boolean[] processingTryCatch;
     private boolean[] currentSequenceNodes;
     private List<TryCatchElement> currentTryCatches = new ArrayList<>();
+    private boolean[] processedTryCatchHandlers = new boolean[0];
+    private boolean[] visitedBlocks = new boolean[0];
 
     public Statement decompile(Program program) {
         this.program = program;
@@ -229,6 +231,7 @@ public class NewDecompiler {
             if (!processingLoops[currentBlock.getIndex()] && isLoopHead()) {
                 processLoop();
             } else if (!processTryCatchHeader()) {
+                visitedBlocks[currentBlock.getIndex()] = true;
                 applyNewTryCatchStack();
                 for (var instruction : currentBlock) {
                     instruction.acceptVisitor(instructionDecompiler);
@@ -268,7 +271,10 @@ public class NewDecompiler {
             tryCatchStatement.setExceptionType(tryCatch.exceptionType);
             var exceptionVariable = tryCatch.handler.getExceptionVariable();
             tryCatchStatement.setExceptionVariable(exceptionVariable != null ? exceptionVariable.getRegister() : -1);
-            addJumpStatement(tryCatchStatement.getHandler(), tryCatch.handler, nextBlock);
+            var jumpTarget = getJumpTarget(tryCatch.handler);
+            var breakStatement = new BreakStatement();
+            breakStatement.setTarget(jumpTarget);
+            tryCatchStatement.getHandler().add(breakStatement);
             statementsToWrap.clear();
             tryCatch.targetStatements.add(tryCatchStatement);
         }
@@ -302,11 +308,22 @@ public class NewDecompiler {
         }
 
         processingTryCatch[currentBlock.getIndex()] = true;
-        var innerStatements = processBlockStatements(blockStatements, childBlocks);
-        processBlock(currentBlock, nextBlock, innerStatements);
+        processTryBlockStatements(blockStatements, childBlocks);
         processingTryCatch[currentBlock.getIndex()] = false;
         currentBlock = childBlocks.length > 0 ? childBlocks[childBlocks.length - 1] : null;
         return true;
+    }
+
+    private void processTryBlockStatements(BlockStatement[] blockStatements, BasicBlock[] childBlocks) {
+        for (int i = 0; i < childBlocks.length - 1; ++i) {
+            var prevBlockStatement = blockStatements[i];
+            var childBlock = childBlocks[i];
+            processBlock(childBlock, childBlocks[i + 1], prevBlockStatement.getBody());
+            var blockStatement = blockStatements[i + 1];
+            addChildBlock(prevBlockStatement, blockStatement.getBody());
+        }
+        var lastBlockStatement = blockStatements[blockStatements.length - 1];
+        addChildBlock(lastBlockStatement, statements);
     }
 
     private void processLoop() {
@@ -731,7 +748,8 @@ public class NewDecompiler {
         currentBlock = childBlocks.length > 0 ? childBlocks[childBlocks.length - 1] : null;
     }
 
-    private List<Statement> processBlockStatements(BlockStatement[] blockStatements, BasicBlock[] childBlocks) {
+    private void processBlockStatements(BlockStatement[] blockStatements, BasicBlock[] childBlocks,
+            Statement mainStatement) {
         if (blockStatements.length > 0) {
             for (int i = 0; i < childBlocks.length - 1; ++i) {
                 var prevBlockStatement = blockStatements[i];
@@ -744,15 +762,10 @@ public class NewDecompiler {
             var lastBlockStatement = blockStatements[blockStatements.length - 1];
             optimizeConditionalBlock(lastBlockStatement);
             addChildBlock(lastBlockStatement, statements);
-            return blockStatements[0].getBody();
+            blockStatements[0].getBody().add(mainStatement);
         } else {
-            return statements;
+            statements.add(mainStatement);
         }
-    }
-
-    private void processBlockStatements(BlockStatement[] blockStatements, BasicBlock[] childBlocks,
-            Statement mainStatement) {
-        processBlockStatements(blockStatements, childBlocks).add(mainStatement);
     }
 
     private static class SwitchClauseProto {
