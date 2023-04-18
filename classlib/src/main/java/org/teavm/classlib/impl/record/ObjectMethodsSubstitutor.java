@@ -156,7 +156,9 @@ public class ObjectMethodsSubstitutor implements BootstrapMethodSubstitutor {
     private ValueEmitter substituteToString(DynamicCallSite callSite, ProgramEmitter pe) {
         ValueEmitter thisVar = callSite.getArguments().get(0);
         String names = callSite.getBootstrapArguments().get(1).getString();
-        ValueEmitter resultVar = pe.construct(StringBuilder.class, pe.constant("["));
+        ValueEmitter resultVar = pe.construct(StringBuilder.class, pe.constant(((ValueType.Object) thisVar.getType()).getSimpleName()));
+
+        resultVar.invokeVirtual("append", StringBuilder.class, pe.constant("["));
 
         int argIndex = 2;
         int index = 0;
