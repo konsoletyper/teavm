@@ -164,8 +164,6 @@ public class ObjectMethodsSubstitutor implements BootstrapMethodSubstitutor {
         }
         ValueEmitter resultVar = pe.construct(StringBuilder.class, pe.constant(simpleName + "["));
 
-        resultVar.invokeVirtual("append", StringBuilder.class, pe.constant("["));
-
         int argIndex = 2;
         int index = 0;
         while (index < names.length()) {
