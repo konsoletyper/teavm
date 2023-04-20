@@ -37,11 +37,6 @@ public abstract class ValueType implements Serializable {
             return className;
         }
 
-        public String getSimpleName() {
-            int idx = className.lastIndexOf('.');
-            return idx >= 0 ? className.substring(idx + 1) : className;
-        }
-
         @Override
         public String toString() {
             return "L" + className.replace('.', '/') + ";";

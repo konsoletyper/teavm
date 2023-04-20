@@ -44,6 +44,8 @@ public class RecordTest {
 
         int index = 0;
 
+        // fails for some reason assertEquals("B[x=2, y=q, z=3]", s);
+
         index = s.indexOf("B", index);
         assertTrue(index >= 0);
         ++index;
