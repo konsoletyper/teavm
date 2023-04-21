@@ -17,7 +17,6 @@ package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
-import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 
 public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TSerializable, TNavigableMap<K, V> {
@@ -105,12 +104,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     public TTreeMap(TComparator<? super K> comparator) {
         this.originalComparator = comparator;
         if (comparator == null) {
-            comparator = new TComparator<Object>() {
-                @SuppressWarnings("unchecked") @Override public int compare(Object o1, Object o2) {
-                    return o1 != null ? ((TComparable<Object>) o1).compareTo(o2)
-                            : ((TComparable<Object>) o2).compareTo(o1);
-                }
-            };
+            comparator = TComparator.NaturalOrder.instance();
         }
         this.comparator = comparator;
     }
