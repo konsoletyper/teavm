@@ -44,6 +44,10 @@ public class RecordTest {
 
         int index = 0;
 
+        index = s.indexOf("B", index);
+        assertTrue(index >= 0);
+        ++index;
+
         index = s.indexOf("x", index);
         assertTrue(index > 0);
         ++index;
