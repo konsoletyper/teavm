@@ -878,6 +878,9 @@ public class BitSetTest {
 
         bs.set(2, 2);
         assertFalse("Bit got set incorrectly ", bs.get(2));
+
+        bs = new BitSet();
+        bs.set(0, 0);
     }
 
     @Test
