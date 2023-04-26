@@ -24,13 +24,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import org.teavm.ast.BlockStatement;
-import org.teavm.ast.BreakStatement;
-import org.teavm.ast.Expr;
-import org.teavm.ast.ReturnStatement;
-import org.teavm.ast.Statement;
-import org.teavm.ast.SwitchClause;
-import org.teavm.ast.SwitchStatement;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
@@ -61,7 +54,7 @@ public class Restructurization {
     private boolean[] processingLoops;
     private boolean[] processingTryCatch;
     private boolean[] currentSequenceNodes;
-    private boolean[] visitedBlocks = new boolean[0];
+    private RewindVisitor rewindVisitor = new RewindVisitor();
 
     public Block apply(Program program) {
         this.program = program;
@@ -69,7 +62,7 @@ public class Restructurization {
         currentBlock = program.basicBlockAt(0);
         nextBlock = null;
         calculateResult();
-        var result = first(currentStatement);
+        var result = rewindVisitor.rewind(currentStatement);
         cleanup();
         return result;
     }
@@ -130,10 +123,10 @@ public class Restructurization {
             if (!processingLoops[currentBlock.getIndex()] && isLoopHead()) {
                 processLoop();
             } else if (!processTryCatchHeader()) {
-                visitedBlocks[currentBlock.getIndex()] = true;
-                for (var instruction : currentBlock) {
-                    instruction.acceptVisitor(instructionDecompiler);
-                }
+                var simpleBlock = new SimpleBlock();
+                simpleBlock.basicBlock = currentBlock;
+                append(simpleBlock);
+                currentBlock.getLastInstruction().acceptVisitor(instructionDecompiler);
             }
         }
     }
@@ -376,24 +369,22 @@ public class Restructurization {
         var blockAfterIf = firstChildBlock != null ? firstChildBlock : nextBlock;
         var ifStatement = new IfBlock();
 
-        ifStatement.condition = new SimpleCondition(condition);
+        ifStatement.condition = condition;
 
-        ifStatement.thenBlock = ownsTrueBranch
+        ifStatement.thenBody = ownsTrueBranch
                 ? processBlock(ifTrue, blockAfterIf)
                 : getJumpStatement(ifTrue, blockAfterIf);
 
-        ifStatement.elseBlock = ownsTrueBranch
+        ifStatement.elseBody = ownsTrueBranch
                 ? processBlock(ifFalse, blockAfterIf)
                 : getJumpStatement(ifFalse, blockAfterIf);
-
-        optimizeIf(ifStatement);
 
         processBlockStatements(blockStatements, childBlocks, ifStatement);
 
         currentBlock = childBlocks.length > 0 ? childBlocks[childBlocks.length - 1] : null;
     }
 
-    private void switchBranch(Expr condition, SwitchInstruction instruction) {
+    private void switchBranch(SwitchInstruction instruction) {
         int sourceNode = blockExitNode(currentBlock);
         var immediatelyDominatedNodes = domGraph.outgoingEdges(sourceNode);
         var childBlockCount = immediatelyDominatedNodes.length;
@@ -433,36 +424,38 @@ public class Restructurization {
 
         var firstChildBlock = childBlocks.length > 0 ? childBlocks[0] : null;
         var blockAfterSwitch = firstChildBlock != null ? firstChildBlock : nextBlock;
-        var switchStatement = new SwitchStatement();
-        switchStatement.setValue(condition);
+        var switchStatement = new SwitchBlock();
+        switchStatement.condition = instruction.getCondition();
+        var entries = new ArrayList<SwitchBlockEntry>();
 
         var clausesByBlock = new SwitchClauseProto[program.basicBlockCount()];
         var clauses = new ArrayList<SwitchClauseProto>();
         for (var entry : instruction.getEntries()) {
             var clause = clausesByBlock[entry.getTarget().getIndex()];
             if (clause == null) {
-                clause = new SwitchClauseProto(new SwitchClause());
+                clause = new SwitchClauseProto(new SwitchBlockEntry());
                 clausesByBlock[entry.getTarget().getIndex()] = clause;
                 clauses.add(clause);
-                switchStatement.getClauses().add(clause.clause);
+                entries.add(clause.entry);
                 if (dom.dominates(sourceNode, blockEnterNode(entry.getTarget()))
                         && isRegularBranch[entry.getTarget().getIndex()]) {
-                    processBlock(entry.getTarget(), blockAfterSwitch, clause.clause.getBody());
+                    clause.entry.body = processBlock(entry.getTarget(), blockAfterSwitch);
                 } else {
-                    addJumpStatement(clause.clause.getBody(), entry.getTarget(), blockAfterSwitch);
+                    clause.entry.body = getJumpStatement(entry.getTarget(), blockAfterSwitch);
                 }
             }
             clause.conditions.add(entry.getCondition());
         }
+        switchStatement.entries = List.of(entries.toArray(new SwitchBlockEntry[0]));
 
         if (dom.dominates(sourceNode, blockEnterNode(instruction.getDefaultTarget()))) {
-            processBlock(instruction.getDefaultTarget(), blockAfterSwitch, switchStatement.getDefaultClause());
+            switchStatement.defaultBody = processBlock(instruction.getDefaultTarget(), blockAfterSwitch);
         } else {
-            addJumpStatement(switchStatement.getDefaultClause(), instruction.getDefaultTarget(), blockAfterSwitch);
+            switchStatement.defaultBody = getJumpStatement(instruction.getDefaultTarget(), blockAfterSwitch);
         }
 
         for (var clause : clauses) {
-            clause.clause.setConditions(clause.conditions.toArray());
+            clause.entry.matchValues = clause.conditions.toArray();
         }
 
         processBlockStatements(blockStatements, childBlocks, switchStatement);
@@ -483,19 +476,19 @@ public class Restructurization {
             }
             var lastBlockStatement = blockStatements[blockStatements.length - 1];
             optimizeConditionalBlock(lastBlockStatement);
-            currentStatement = addChildBlock(lastBlockStatement, currentStatement);
             blockStatements[0].body = append(blockStatements[0].body, mainStatement);
+            currentStatement = addChildBlock(lastBlockStatement, currentStatement);
         } else {
             append(mainStatement);
         }
     }
 
     private static class SwitchClauseProto {
-        final SwitchClause clause;
+        final SwitchBlockEntry entry;
         final IntArrayList conditions = new IntArrayList();
 
-        SwitchClauseProto(SwitchClause clause) {
-            this.clause = clause;
+        SwitchClauseProto(SwitchBlockEntry entry) {
+            this.entry = entry;
         }
     }
 
@@ -523,49 +516,19 @@ public class Restructurization {
             return false;
         }
         var nestedIf = (IfBlock) statement.getBody();
-        if (nestedIf.thenBlock == null) {
+        if (nestedIf.thenBody == null) {
             return false;
         }
-        var last = nestedIf.thenBlock;
+        var last = nestedIf.thenBody;
         if (!(last instanceof BreakBlock)) {
             return false;
         }
-        if (((BreakBlock) last).getBlock() != statement) {
+        if (((BreakBlock) last).getTarget() != statement) {
             return false;
         }
-        nestedIf.thenBlock = nestedIf.thenBlock.previous;
-        nestedIf.elseBlock = append(nestedIf.elseBlock, statement.next);
+        nestedIf.thenBody = nestedIf.thenBody.previous;
+        nestedIf.elseBody = append(nestedIf.elseBody, statement.next);
         identifiedStatementUseCount.put(statement, identifiedStatementUseCount.get(statement) - 1);
-        optimizeIf(nestedIf);
-        return true;
-    }
-
-    private boolean optimizeIf(IfBlock statement) {
-        return invertIf(statement) | mergeNestedIfs(statement);
-    }
-
-    private boolean invertIf(IfBlock statement) {
-        if (statement.thenBlock != null || statement.elseBlock == null) {
-            return false;
-        }
-        statement.thenBlock = statement.elseBlock;
-        statement.elseBlock = null;
-        statement.inverted = !statement.inverted;
-        return true;
-    }
-
-    private boolean mergeNestedIfs(IfBlock statement) {
-        if (statement.elseBlock != null || !(statement.thenBlock instanceof IfBlock)
-                || statement.thenBlock.previous != null) {
-            return false;
-        }
-        var nestedIf = (IfBlock) statement.thenBlock;
-        if (nestedIf.elseBlock != null) {
-            return false;
-        }
-        statement.thenBlock = nestedIf.thenBlock;
-        statement.elseBlock = nestedIf.elseBlock;
-        statement.condition = new AndCondition(statement.condition, nestedIf.condition);
         return true;
     }
 
@@ -583,7 +546,7 @@ public class Restructurization {
         }
         var targetStatement = getJumpTarget(target);
         var breakStatement = new BreakBlock();
-        breakStatement.block = targetStatement;
+        breakStatement.target = targetStatement;
         return breakStatement;
     }
 

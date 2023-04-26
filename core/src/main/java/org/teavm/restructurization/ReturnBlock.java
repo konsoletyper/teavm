@@ -23,4 +23,9 @@ public class ReturnBlock extends Block {
     public Variable getValue() {
         return value;
     }
+
+    @Override
+    public void acceptVisitor(BlockVisitor visitor) {
+        visitor.visit(this);
+    }
 }

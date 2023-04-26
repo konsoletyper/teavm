@@ -15,25 +15,27 @@
  */
 package org.teavm.restructurization;
 
-public class IfBlock extends LabeledBlock {
-    Condition condition;
-    boolean inverted;
-    Block thenBlock;
-    Block elseBlock;
+import org.teavm.model.Instruction;
 
-    public Condition getCondition() {
+public class IfBlock extends LabeledBlock {
+    Instruction condition;
+    Block thenBody;
+    Block elseBody;
+
+    public Instruction getCondition() {
         return condition;
     }
 
-    public boolean isInverted() {
-        return inverted;
+    public Block getThenBody() {
+        return thenBody;
     }
 
-    public Block getThenBlock() {
-        return thenBlock;
+    public Block getElseBody() {
+        return elseBody;
     }
 
-    public Block getElseBlock() {
-        return elseBlock;
+    @Override
+    public void acceptVisitor(BlockVisitor visitor) {
+        visitor.visit(this);
     }
 }

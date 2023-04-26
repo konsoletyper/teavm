@@ -18,10 +18,10 @@ package org.teavm.restructurization;
 import java.util.List;
 import org.teavm.model.Variable;
 
-public class SwitchBlock extends Block {
+public class SwitchBlock extends LabeledBlock {
     Variable condition;
     List<SwitchBlockEntry> entries;
-    Block defaultBlock;
+    Block defaultBody;
 
     public Variable getCondition() {
         return condition;
@@ -31,7 +31,12 @@ public class SwitchBlock extends Block {
         return entries;
     }
 
-    public Block getDefaultBlock() {
-        return defaultBlock;
+    public Block getDefaultBody() {
+        return defaultBody;
+    }
+
+    @Override
+    public void acceptVisitor(BlockVisitor visitor) {
+        visitor.visit(this);
     }
 }

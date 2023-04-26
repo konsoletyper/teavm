@@ -15,6 +15,24 @@
  */
 package org.teavm.restructurization;
 
-public abstract class Condition {
-    abstract Condition invert();
+public interface BlockVisitor {
+    void visit(SimpleBlock block);
+
+    void visit(BreakBlock block);
+
+    void visit(ContinueBlock block);
+
+    void visit(ReturnBlock block);
+
+    void visit(ThrowBlock block);
+
+    void visit(SimpleLabeledBlock block);
+
+    void visit(SwitchBlock block);
+
+    void visit(IfBlock block);
+
+    void visit(LoopBlock block);
+
+    void visit(TryBlock block);
 }

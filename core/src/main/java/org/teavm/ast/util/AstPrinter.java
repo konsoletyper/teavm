@@ -15,7 +15,6 @@
  */
 package org.teavm.ast.util;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,18 +37,17 @@ import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
+import org.teavm.common.CommonIndentPrinter;
 import org.teavm.model.MethodReference;
 
 public class AstPrinter {
-    private StringBuilder sb = new StringBuilder();
-    private int indentLevel;
-    private int lastLineIndex;
+    private CommonIndentPrinter sb = new CommonIndentPrinter();
     private Map<IdentifiedStatement, Integer> blockIds = new HashMap<>();
 
     public String print(Statement statement) {
         statement.acceptVisitor(visitor);
         var result = sb.toString();
-        sb.setLength(0);
+        sb.clear();
         blockIds.clear();
         return result;
     }
@@ -57,32 +55,8 @@ public class AstPrinter {
     public String print(Expr expr) {
         expr.acceptVisitor(visitor);
         var result = sb.toString();
-        sb.setLength(0);
+        sb.clear();
         return result;
-    }
-
-    private void newLine() {
-        sb.append("\n");
-        for (int i = 0; i < indentLevel; ++i) {
-            sb.append("    ");
-        }
-        lastLineIndex = sb.length();
-    }
-
-    private void indent() {
-        indentLevel++;
-        if (lastLineIndex == sb.length()) {
-            sb.append("    ");
-            lastLineIndex = sb.length();
-        }
-    }
-
-    private void outdent() {
-        indentLevel--;
-        if (lastLineIndex == sb.length()) {
-            sb.setLength(sb.length() - 4);
-            lastLineIndex = sb.length();
-        }
     }
 
     private RecursiveVisitor visitor = new RecursiveVisitor() {
@@ -96,8 +70,7 @@ public class AstPrinter {
 
         private void print(Statement statement) {
             if (statement == null) {
-                sb.append("[null]");
-                newLine();
+                sb.append("[null]").newLine();
             } else {
                 statement.acceptVisitor(this);
             }
@@ -272,7 +245,7 @@ public class AstPrinter {
                 sb.append(" ");
                 print(statement.getResult());
             }
-            newLine();
+            sb.newLine();
         }
 
         @Override
@@ -283,26 +256,23 @@ public class AstPrinter {
                 sb.append(" ");
             }
             print(statement.getRightValue());
-            newLine();
+            sb.newLine();
         }
 
         @Override
         public void visit(ConditionalStatement statement) {
             sb.append("if ");
             print(statement.getCondition());
-            newLine();
-            indent();
+            sb.newLine().indent();
             visit(statement.getConsequent());
-            outdent();
+            sb.outdent();
             if (!statement.getAlternative().isEmpty()) {
                 sb.append("else");
-                newLine();
-                indent();
+                sb.newLine().indent();
                 visit(statement.getAlternative());
-                outdent();
+                sb.outdent();
             }
-            sb.append("end");
-            newLine();
+            sb.append("end").newLine();
         }
 
         @Override
@@ -310,12 +280,9 @@ public class AstPrinter {
             int id = blockIds.size();
             blockIds.put(statement, id);
             sb.append("block ").append(id);
-            newLine();
-            indent();
+            sb.newLine().indent();
             visit(statement.getBody());
-            outdent();
-            sb.append("end");
-            newLine();
+            sb.outdent().append("end").newLine();
         }
 
         @Override
@@ -325,9 +292,9 @@ public class AstPrinter {
             if (id == null) {
                 sb.append("<null>");
             } else {
-                sb.append((int) id);
+                sb.append(id);
             }
-            newLine();
+            sb.newLine();
         }
 
         @Override
@@ -339,12 +306,9 @@ public class AstPrinter {
                 sb.append(" while ");
                 print(statement.getCondition());
             }
-            indent();
-            newLine();
+            sb.indent().newLine();
             visit(statement.getBody());
-            outdent();
-            sb.append("end");
-            newLine();
+            sb.outdent().append("end").newLine();
         }
 
         @Override
@@ -353,32 +317,22 @@ public class AstPrinter {
             blockIds.put(statement, id);
             sb.append("switch ").append(id).append(" of ");
             print(statement.getValue());
-            indent();
-            newLine();
+            sb.indent().newLine();
             for (var clause : statement.getClauses()) {
                 sb.append("case");
                 for (var condition : clause.getConditions()) {
                     sb.append(" ").append(condition);
-                    indent();
-                    newLine();
+                    sb.indent().newLine();
                     visit(clause.getBody());
-                    outdent();
-                    sb.append("end");
-                    newLine();
+                    sb.outdent().append("end").newLine();
                 }
             }
 
-            sb.append("default");
-            indent();
-            newLine();
+            sb.append("default").indent().newLine();
             visit(statement.getDefaultClause());
-            outdent();
-            sb.append("end");
-            newLine();
+            sb.outdent().append("end").newLine();
 
-            outdent();
-            sb.append("end");
-            newLine();
+            sb.outdent().append("end").newLine();
         }
 
         @Override
@@ -388,30 +342,22 @@ public class AstPrinter {
             if (id == null) {
                 sb.append("<null>");
             } else {
-                sb.append((int) id);
+                sb.append(id);
             }
-            newLine();
+            sb.newLine();
         }
 
         @Override
         public void visit(TryCatchStatement statement) {
-            sb.append("try");
-            indent();
-            newLine();
+            sb.append("try").indent().newLine();
             visit(statement.getProtectedBody());
-            outdent();
-            sb.append("catch ");
+            sb.outdent().append("catch ");
             if (statement.getExceptionType() != null) {
-                var type = statement.getExceptionType();
                 sb.append(" ").append(statement.getExceptionType());
             }
-            sb.append(" var_" + statement.getExceptionVariable());
-            newLine();
-            indent();
+            sb.append(" var_" + statement.getExceptionVariable()).newLine().indent();
             visit(statement.getHandler());
-            outdent();
-            sb.append("end");
-            newLine();
+            sb.outdent().append("end").newLine();
         }
 
         private void binary(BinaryExpr expr, String op) {

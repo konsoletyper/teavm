@@ -29,6 +29,7 @@ import org.teavm.model.instructions.BinaryInstruction;
 import org.teavm.model.instructions.BinaryOperation;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
@@ -112,6 +113,11 @@ public class ProgramBuilder {
     public static void exit(Variable value) {
         var instruction = new ExitInstruction();
         instruction.setValueToReturn(value);
+        append(instruction);
+    }
+
+    public static void nop() {
+        var instruction = new EmptyInstruction();
         append(instruction);
     }
 

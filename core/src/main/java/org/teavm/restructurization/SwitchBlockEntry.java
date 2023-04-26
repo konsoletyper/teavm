@@ -16,14 +16,14 @@
 package org.teavm.restructurization;
 
 public class SwitchBlockEntry {
-    int[] values;
-    Block block;
+    int[] matchValues;
+    Block body;
 
-    public int[] getValues() {
-        return values.clone();
+    public int[] getMatchValues() {
+        return matchValues.clone();
     }
 
-    public Block getBlock() {
-        return block;
+    public Block getBody() {
+        return body;
     }
 }

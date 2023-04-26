@@ -40,4 +40,11 @@ public abstract class Block {
         block.previous = this;
         next = block;
     }
+
+    public abstract void acceptVisitor(BlockVisitor visitor);
+
+    @Override
+    public String toString() {
+        return new BlockPrinter().print(this);
+    }
 }

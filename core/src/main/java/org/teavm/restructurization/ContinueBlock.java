@@ -16,9 +16,14 @@
 package org.teavm.restructurization;
 
 public class ContinueBlock extends Block {
-    LoopBlock block;
+    LoopBlock target;
 
-    public LabeledBlock getBlock() {
-        return block;
+    public LabeledBlock getTarget() {
+        return target;
+    }
+
+    @Override
+    public void acceptVisitor(BlockVisitor visitor) {
+        visitor.visit(this);
     }
 }

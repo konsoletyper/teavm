@@ -23,4 +23,9 @@ public class ThrowBlock extends Block {
     public Variable getException() {
         return exception;
     }
+
+    @Override
+    public void acceptVisitor(BlockVisitor visitor) {
+        visitor.visit(this);
+    }
 }

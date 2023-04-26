@@ -97,6 +97,8 @@ import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.UsageExtractor;
+import org.teavm.restructurization.Block;
+import org.teavm.restructurization.Restructurization;
 
 public class NewDecompiler {
     private Program program;
@@ -126,6 +128,7 @@ public class NewDecompiler {
     private boolean[] visitedBlocks = new boolean[0];
 
     public Statement decompile(Program program) {
+        var restructurization = new Restructurization();
         this.program = program;
         prepare();
         currentBlock = program.basicBlockAt(0);

@@ -15,5 +15,17 @@
  */
 package org.teavm.restructurization;
 
+import org.teavm.model.BasicBlock;
+
 public class SimpleBlock extends Block {
+    BasicBlock basicBlock;
+
+    public BasicBlock getBasicBlock() {
+        return basicBlock;
+    }
+
+    @Override
+    public void acceptVisitor(BlockVisitor visitor) {
+        visitor.visit(this);
+    }
 }

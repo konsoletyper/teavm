@@ -21,4 +21,9 @@ public class LoopBlock extends LabeledBlock {
     public Block getBody() {
         return body;
     }
+
+    @Override
+    public void acceptVisitor(BlockVisitor visitor) {
+        visitor.visit(this);
+    }
 }
