@@ -64,8 +64,17 @@ public class BlockBuilder {
     }
 
     public static IfBuilder cond(Instruction insn, Consumer<LabeledBuilder> builder) {
+        return cond(insn, false, builder);
+    }
+
+    public static IfBuilder invCond(Instruction insn, Consumer<LabeledBuilder> builder) {
+        return cond(insn, true, builder);
+    }
+
+    private static IfBuilder cond(Instruction insn, boolean inverted, Consumer<LabeledBuilder> builder) {
         var ifBlock = new IfBlock();
         ifBlock.condition = insn;
+        ifBlock.inverted = inverted;
         append(ifBlock);
         var labeledBuilder = new LabeledBuilder(ifBlock);
         ifBlock.thenBody = build(() -> builder.accept(labeledBuilder));

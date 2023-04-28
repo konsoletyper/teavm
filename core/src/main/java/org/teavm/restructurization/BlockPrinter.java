@@ -41,6 +41,9 @@ public class BlockPrinter {
     }
 
     private void visitMany(Block block) {
+        if (block != null) {
+            block = block.first;
+        }
         while (block != null) {
             block.acceptVisitor(visitor);
             block = block.getNext();
@@ -111,7 +114,11 @@ public class BlockPrinter {
         @Override
         public void visit(IfBlock block) {
             start(block);
-            sb.append(identifiers.get(block)).append(": if {").newLine().indent();
+            sb.append(identifiers.get(block)).append(": if");
+            if (block.inverted) {
+                sb.append("!");
+            }
+            sb.append(" {").newLine().indent();
             visitMany(block.getThenBody());
             sb.outdent().append("}");
             if (block.getElseBody() != null) {

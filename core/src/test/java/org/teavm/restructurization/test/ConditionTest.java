@@ -17,14 +17,13 @@ package org.teavm.restructurization.test;
 
 import static org.teavm.model.builder.ProgramBuilder.exit;
 import static org.teavm.model.builder.ProgramBuilder.ifLessThanZero;
-import static org.teavm.model.builder.ProgramBuilder.invokeStaticMethod;
 import static org.teavm.model.builder.ProgramBuilder.jump;
 import static org.teavm.model.builder.ProgramBuilder.label;
 import static org.teavm.model.builder.ProgramBuilder.nop;
 import static org.teavm.model.builder.ProgramBuilder.put;
-import static org.teavm.model.builder.ProgramBuilder.set;
 import static org.teavm.model.builder.ProgramBuilder.var;
 import static org.teavm.restructurization.BlockBuilder.cond;
+import static org.teavm.restructurization.BlockBuilder.labeled;
 import static org.teavm.restructurization.BlockBuilder.ret;
 import static org.teavm.restructurization.BlockBuilder.simple;
 import org.junit.Test;
@@ -33,7 +32,7 @@ public class ConditionTest extends BaseRestructurizationTest {
     @Test
     public void simpleCond() {
         restructurize(() -> {
-            set(var("a")).constant(2);
+            nop();
             ifLessThanZero(var("a"), label("less"), label("greater"));
 
             put(label("less"));
@@ -63,7 +62,7 @@ public class ConditionTest extends BaseRestructurizationTest {
     @Test
     public void simpleConditionWithOneBranch() {
         restructurize(() -> {
-            set(var("a")).constant(2);
+            nop();
             ifLessThanZero(var("a"), label("less"), label("join"));
 
             put(label("less"));
@@ -75,10 +74,78 @@ public class ConditionTest extends BaseRestructurizationTest {
         });
 
         check(() -> {
+            simple(block(0));
             cond(terminator(0), c -> {
                 simple(block(1));
             });
             simple(block(2));
+            ret();
+        });
+    }
+
+    @Test
+    public void simpleConditionWithEachBranchReturning() {
+        restructurize(() -> {
+            nop();
+            ifLessThanZero(var("a"), label("less"), label("greater"));
+
+            put(label("less"));
+            nop();
+            exit();
+
+            put(label("greater"));
+            nop();
+            exit();
+        });
+
+        check(() -> {
+            simple(block(0));
+            cond(terminator(0), c -> {
+                simple(block(1));
+                ret();
+            }).otherwise(c -> {
+                simple(block(2));
+                ret();
+            });
+        });
+    }
+
+    @Test
+    public void shortCircuit() {
+        restructurize(() -> {
+            nop();
+            ifLessThanZero(var("a"), label("next"), label("false"));
+
+            put(label("next"));
+            nop();
+            ifLessThanZero(var("b"), label("true"), label("false"));
+
+            put(label("true"));
+            nop();
+            jump(label("joint"));
+
+            put(label("false"));
+            nop();
+            jump(label("joint"));
+
+            put(label("joint"));
+            nop();
+            exit();
+        });
+
+        check(() -> {
+            simple(block(0));
+            labeled(b1 -> {
+                cond(terminator(0), b2 -> {
+                    simple(block(1));
+                    cond(terminator(1), b3 -> {
+                        simple(block(2));
+                        b1.br();
+                    });
+                });
+                simple(block(3));
+            });
+            simple(block(4));
             ret();
         });
     }

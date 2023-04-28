@@ -19,11 +19,16 @@ import org.teavm.model.Instruction;
 
 public class IfBlock extends LabeledBlock {
     Instruction condition;
+    boolean inverted;
     Block thenBody;
     Block elseBody;
 
     public Instruction getCondition() {
         return condition;
+    }
+
+    public boolean isInverted() {
+        return inverted;
     }
 
     public Block getThenBody() {

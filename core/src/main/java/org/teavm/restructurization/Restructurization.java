@@ -50,8 +50,8 @@ public class Restructurization {
     private LabeledBlock[] jumpTargets;
     private BasicBlock nextBlock;
     private LoopBlock[] loopExits;
+    private LoopBlock[] loops;
     private ObjectIntMap<LabeledBlock> identifiedStatementUseCount = new ObjectIntHashMap<>();
-    private boolean[] processingLoops;
     private boolean[] processingTryCatch;
     private boolean[] currentSequenceNodes;
     private RewindVisitor rewindVisitor = new RewindVisitor();
@@ -101,10 +101,10 @@ public class Restructurization {
         dom = GraphUtils.buildDominatorTree(cfg);
         domGraph = GraphUtils.buildDominatorGraph(dom, cfg.size());
         jumpTargets = new LabeledBlock[program.basicBlockCount()];
-        processingLoops = new boolean[program.basicBlockCount()];
         processingTryCatch = new boolean[program.basicBlockCount()];
         currentSequenceNodes = new boolean[program.basicBlockCount()];
         loopExits = new LoopBlock[program.basicBlockCount()];
+        loops = new LoopBlock[program.basicBlockCount()];
     }
 
     private void cleanup() {
@@ -116,11 +116,17 @@ public class Restructurization {
         jumpTargets = null;
         currentSequenceNodes = null;
         loopExits = null;
+        loops = null;
     }
 
     private void calculateResult() {
         while (currentBlock != null) {
-            if (!processingLoops[currentBlock.getIndex()] && isLoopHead()) {
+            if (loopExits[currentBlock.getIndex()] != null) {
+                var jump = new BreakBlock();
+                jump.target = loopExits[currentBlock.getIndex()];
+                append(jump);
+                break;
+            } else if (loops[currentBlock.getIndex()] == null && isLoopHead()) {
                 processLoop();
             } else if (!processTryCatchHeader()) {
                 var simpleBlock = new SimpleBlock();
@@ -186,10 +192,13 @@ public class Restructurization {
             loopExits[loopExit.getIndex()] = loop;
         }
         nextBlock = currentBlock;
+        var loopHead = currentBlock;
         jumpTargets[currentBlock.getIndex()] = loop;
-        processingLoops[currentBlock.getIndex()] = true;
+        loops[loopHead.getIndex()] = loop;
+        currentStatement = null;
         calculateResult();
-        loop.body = currentStatement != null ? currentStatement.first : null;
+        loops[loopHead.getIndex()] = null;
+        loop.body = currentStatement;
         currentBlock = loopExit;
 
         currentStatement = currentStatementBackup;
@@ -333,6 +342,14 @@ public class Restructurization {
     }
 
     private void branch(Instruction condition, BasicBlock ifTrue, BasicBlock ifFalse) {
+        if (loopExits[ifTrue.getIndex()] != null) {
+            loopExitBranch(condition, false, ifTrue, ifTrue);
+            return;
+        } else if (loopExits[ifFalse.getIndex()] != null) {
+            loopExitBranch(condition, true, ifFalse, ifTrue);
+            return;
+        }
+
         int sourceNode = blockExitNode(currentBlock);
         var immediatelyDominatedNodes = domGraph.outgoingEdges(sourceNode);
         boolean ownsTrueBranch = ownsBranch(ifTrue);
@@ -375,13 +392,25 @@ public class Restructurization {
                 ? processBlock(ifTrue, blockAfterIf)
                 : getJumpStatement(ifTrue, blockAfterIf);
 
-        ifStatement.elseBody = ownsTrueBranch
+        ifStatement.elseBody = ownsFalseBranch
                 ? processBlock(ifFalse, blockAfterIf)
                 : getJumpStatement(ifFalse, blockAfterIf);
 
+        optimizeIf(ifStatement);
         processBlockStatements(blockStatements, childBlocks, ifStatement);
 
         currentBlock = childBlocks.length > 0 ? childBlocks[childBlocks.length - 1] : null;
+    }
+
+    private void loopExitBranch(Instruction condition, boolean inverted, BasicBlock loopExit, BasicBlock next) {
+        var ifStatement = new IfBlock();
+        ifStatement.condition = condition;
+        ifStatement.inverted = inverted;
+        var breakStatement = new BreakBlock();
+        breakStatement.target = loopExits[loopExit.getIndex()];
+        ifStatement.thenBody = breakStatement;
+        append(ifStatement);
+        currentBlock = next;
     }
 
     private void switchBranch(SwitchInstruction instruction) {
@@ -466,6 +495,7 @@ public class Restructurization {
     private void processBlockStatements(SimpleLabeledBlock[] blockStatements, BasicBlock[] childBlocks,
             LabeledBlock mainStatement) {
         if (blockStatements.length > 0) {
+            blockStatements[0].body = append(blockStatements[0].body, mainStatement);
             for (int i = 0; i < childBlocks.length - 1; ++i) {
                 var prevBlockStatement = blockStatements[i];
                 optimizeConditionalBlock(prevBlockStatement);
@@ -476,7 +506,6 @@ public class Restructurization {
             }
             var lastBlockStatement = blockStatements[blockStatements.length - 1];
             optimizeConditionalBlock(lastBlockStatement);
-            blockStatements[0].body = append(blockStatements[0].body, mainStatement);
             currentStatement = addChildBlock(lastBlockStatement, currentStatement);
         } else {
             append(mainStatement);
@@ -494,13 +523,16 @@ public class Restructurization {
 
     private Block addChildBlock(SimpleLabeledBlock blockStatement, Block containing) {
         if (identifiedStatementUseCount.get(blockStatement) > 0) {
-            return containing.append(blockStatement);
+            return append(containing, blockStatement);
         } else {
-            return containing.append(first(blockStatement.getBody()));
+            return append(containing, first(blockStatement.getBody()));
         }
     }
 
     private boolean ownsBranch(BasicBlock branch) {
+        if (loopExits[branch.getIndex()] != null || loops[branch.getIndex()] != null) {
+            return false;
+        }
         return dom.immediateDominatorOf(blockEnterNode(branch)) == blockExitNode(currentBlock)
                 && enteringBlockCount(branch) == 1;
     }
@@ -529,6 +561,21 @@ public class Restructurization {
         nestedIf.thenBody = nestedIf.thenBody.previous;
         nestedIf.elseBody = append(nestedIf.elseBody, statement.next);
         identifiedStatementUseCount.put(statement, identifiedStatementUseCount.get(statement) - 1);
+        optimizeIf(nestedIf);
+        return true;
+    }
+
+    private boolean optimizeIf(IfBlock statement) {
+        return invertIf(statement);
+    }
+
+    private boolean invertIf(IfBlock statement) {
+        if (statement.elseBody == null || statement.thenBody != null) {
+            return false;
+        }
+        statement.inverted = !statement.inverted;
+        statement.thenBody = statement.elseBody;
+        statement.elseBody = null;
         return true;
     }
 
@@ -543,6 +590,11 @@ public class Restructurization {
     private Block getJumpStatement(BasicBlock target, BasicBlock nextBlock) {
         if (target == nextBlock) {
             return null;
+        }
+        if (loops[target.getIndex()] != null) {
+            var contStatement = new ContinueBlock();
+            contStatement.target = loops[target.getIndex()];
+            return contStatement;
         }
         var targetStatement = getJumpTarget(target);
         var breakStatement = new BreakBlock();
@@ -572,10 +624,11 @@ public class Restructurization {
         public void visit(JumpInstruction insn) {
             int sourceNode = blockExitNode(currentBlock);
             int targetNode = blockEnterNode(insn.getTarget());
-            if (dom.immediateDominatorOf(targetNode) == sourceNode) {
-                currentBlock = insn.getTarget();
-            } else {
+            if (loopExits[insn.getTarget().getIndex()] != null
+                    || dom.immediateDominatorOf(targetNode) != sourceNode) {
                 exitCurrentDominator(insn.getTarget());
+            } else {
+                currentBlock = insn.getTarget();
             }
         }
 
