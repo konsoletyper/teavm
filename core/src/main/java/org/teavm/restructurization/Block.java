@@ -19,6 +19,7 @@ public abstract class Block {
     Block next;
     Block first = this;
     Block previous;
+    TryCatchNode[] tryCatches;
 
     public Block getNext() {
         return next;

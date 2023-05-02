@@ -88,9 +88,10 @@ public class BlockBuilder {
         loop.body = build(() -> builder.accept(labeledBuilder));
     }
 
-    public static SwitchBuilder sw(Consumer<LabeledBuilder> builder) {
+    public static SwitchBuilder sw(Variable condition, Consumer<LabeledBuilder> builder) {
         var sw = new SwitchBlock();
         var list = new ArrayList<SwitchBlockEntry>();
+        sw.condition = condition;
         sw.entries = list;
         append(sw);
         var labeledBuilder = new LabeledBuilder(sw);
@@ -129,15 +130,16 @@ public class BlockBuilder {
             this.entries = entries;
         }
 
-        public void entry(int condition, Consumer<LabeledBuilder> builder) {
-            entry(new int[] { condition }, builder);
+        public SwitchBuilder entry(int condition, Consumer<LabeledBuilder> builder) {
+            return entry(new int[] { condition }, builder);
         }
 
-        public void entry(int[] conditions, Consumer<LabeledBuilder> builder) {
+        public SwitchBuilder entry(int[] conditions, Consumer<LabeledBuilder> builder) {
             var entry = new SwitchBlockEntry();
             entries.add(entry);
             entry.matchValues = conditions;
             entry.body = build(() -> builder.accept(labeledBuilder));
+            return this;
         }
     }
 

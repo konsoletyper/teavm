@@ -132,9 +132,37 @@ public class Restructurization {
                 var simpleBlock = new SimpleBlock();
                 simpleBlock.basicBlock = currentBlock;
                 append(simpleBlock);
+                simpleBlock.tryCatches = new TryCatchNode[currentBlock.getTryCatchBlocks().size()];
+                for (int i = 0; i < currentBlock.getTryCatchBlocks().size(); ++i) {
+                    var tryCatch = currentBlock.getTryCatchBlocks().get(i);
+                    simpleBlock.tryCatches[i] = new TryCatchNode(tryCatch.getExceptionType(), tryCatch.getHandler());
+                }
                 currentBlock.getLastInstruction().acceptVisitor(instructionDecompiler);
             }
         }
+    }
+
+    private Block processTryCatches(Block block) {
+        if (block == null) {
+            return null;
+        }
+
+        var current = block.first;
+        var commonSize = current.tryCatches.length;
+        var initialTryCatches = block.tryCatches;
+        var result = current;
+        current = current.next;
+        while (current != null) {
+            var next = current.next;
+            var minSize = Math.min(result.tryCatches.length, current.tryCatches.length);
+            while (minSize > 0 && !result.tryCatches[minSize - 1].sameAs(current.tryCatches[minSize])) {
+                --minSize;
+            }
+
+            commonSize = Math.min(commonSize, minSize);
+            current = next;
+        }
+        return result;
     }
 
     private boolean processTryCatchHeader() {

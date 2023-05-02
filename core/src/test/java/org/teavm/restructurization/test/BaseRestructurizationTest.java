@@ -20,6 +20,7 @@ import static org.teavm.model.builder.ProgramBuilder.build;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
 import org.teavm.model.Program;
+import org.teavm.model.Variable;
 import org.teavm.model.text.ListingBuilder;
 import org.teavm.restructurization.Block;
 import org.teavm.restructurization.BlockBuilder;
@@ -51,5 +52,9 @@ public abstract class BaseRestructurizationTest {
 
     protected BasicBlock block(int index) {
         return program.basicBlockAt(index);
+    }
+
+    protected Variable variable(int index) {
+        return program.variableAt(index);
     }
 }
