@@ -712,16 +712,20 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
 
-        Program optimizedProgram = !cacheStatus.isStaleMethod(method.getReference())
-                ? programCache.get(method.getReference(), cacheStatus)
-                : null;
-        if (optimizedProgram == null) {
-            optimizedProgram = optimizeMethodCacheMiss(method, ProgramUtils.copy(method.getProgram()));
-            Program finalProgram = optimizedProgram;
-            programCache.store(method.getReference(), finalProgram,
-                    () -> programDependencyExtractor.extractDependencies(finalProgram));
+        try {
+            Program optimizedProgram = !cacheStatus.isStaleMethod(method.getReference())
+                    ? programCache.get(method.getReference(), cacheStatus)
+                    : null;
+            if (optimizedProgram == null) {
+                optimizedProgram = optimizeMethodCacheMiss(method, ProgramUtils.copy(method.getProgram()));
+                Program finalProgram = optimizedProgram;
+                programCache.store(method.getReference(), finalProgram,
+                        () -> programDependencyExtractor.extractDependencies(finalProgram));
+            }
+            method.setProgram(optimizedProgram);
+        } catch (Throwable e) {
+            throw new RuntimeException(String.format("Unable to optimize method %s", method.getDescriptor()), e);
         }
-        method.setProgram(optimizedProgram);
     }
 
     private Program optimizeMethodCacheMiss(MethodHolder method, Program optimizedProgram) {
