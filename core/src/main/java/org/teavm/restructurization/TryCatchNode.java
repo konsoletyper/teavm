@@ -16,14 +16,16 @@
 package org.teavm.restructurization;
 
 import java.util.Objects;
-import org.teavm.model.BasicBlock;
+import org.teavm.model.Variable;
 
 class TryCatchNode {
     String exceptionType;
-    BasicBlock handler;
+    Variable variable;
+    LabeledBlock handler;
 
-    TryCatchNode(String exceptionType, BasicBlock handler) {
+    TryCatchNode(String exceptionType, Variable variable, LabeledBlock handler) {
         this.exceptionType = exceptionType;
+        this.variable = variable;
         this.handler = handler;
     }
 

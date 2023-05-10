@@ -17,7 +17,7 @@ package org.teavm.restructurization;
 
 import org.teavm.model.Variable;
 
-public class TryBlock {
+public class TryBlock extends Block {
     Block tryBlock;
     String exceptionType;
     Variable exception;
@@ -37,5 +37,10 @@ public class TryBlock {
 
     public Block getCatchBlock() {
         return catchBlock;
+    }
+
+    @Override
+    public void acceptVisitor(BlockVisitor visitor) {
+        visitor.visit(this);
     }
 }

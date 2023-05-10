@@ -99,6 +99,12 @@ public class BlockBuilder {
         return new SwitchBuilder(labeledBuilder, list);
     }
 
+    public static TryBuilder tryBlock(Runnable builder) {
+        var tryBlock = new TryBlock();
+        tryBlock.catchBlock = build(builder);
+        return new TryBuilder(tryBlock);
+    }
+
     private static void append(Block next) {
         block = block != null ? block.append(next) : next;
     }
@@ -154,6 +160,20 @@ public class BlockBuilder {
             var brBlock = new BreakBlock();
             brBlock.target = target;
             append(brBlock);
+        }
+    }
+
+    public static class TryBuilder {
+        private TryBlock tryBlock;
+
+        private TryBuilder(TryBlock tryBlock) {
+            this.tryBlock = tryBlock;
+        }
+
+        public void catchException(String type, Variable var, Runnable builder) {
+            tryBlock.exceptionType = type;
+            tryBlock.exception = var;
+            tryBlock.catchBlock = build(builder);
         }
     }
 }

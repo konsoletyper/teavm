@@ -55,6 +55,7 @@ public class Restructurization {
     private boolean[] processingTryCatch;
     private boolean[] currentSequenceNodes;
     private RewindVisitor rewindVisitor = new RewindVisitor();
+    private TryCatchProcessor tryCatchProcessor = new TryCatchProcessor();
 
     public Block apply(Program program) {
         this.program = program;
@@ -135,34 +136,20 @@ public class Restructurization {
                 simpleBlock.tryCatches = new TryCatchNode[currentBlock.getTryCatchBlocks().size()];
                 for (int i = 0; i < currentBlock.getTryCatchBlocks().size(); ++i) {
                     var tryCatch = currentBlock.getTryCatchBlocks().get(i);
-                    simpleBlock.tryCatches[i] = new TryCatchNode(tryCatch.getExceptionType(), tryCatch.getHandler());
+                    simpleBlock.tryCatches[i] = new TryCatchNode(
+                            tryCatch.getExceptionType(),
+                            tryCatch.getProtectedBlock().getExceptionVariable(),
+                            jumpTargets[tryCatch.getHandler().getIndex()]
+                    );
                 }
                 currentBlock.getLastInstruction().acceptVisitor(instructionDecompiler);
             }
         }
+        currentStatement = processTryCatches(currentStatement);
     }
 
     private Block processTryCatches(Block block) {
-        if (block == null) {
-            return null;
-        }
-
-        var current = block.first;
-        var commonSize = current.tryCatches.length;
-        var initialTryCatches = block.tryCatches;
-        var result = current;
-        current = current.next;
-        while (current != null) {
-            var next = current.next;
-            var minSize = Math.min(result.tryCatches.length, current.tryCatches.length);
-            while (minSize > 0 && !result.tryCatches[minSize - 1].sameAs(current.tryCatches[minSize])) {
-                --minSize;
-            }
-
-            commonSize = Math.min(commonSize, minSize);
-            current = next;
-        }
-        return result;
+        return tryCatchProcessor.processTryCatches(block);
     }
 
     private boolean processTryCatchHeader() {
@@ -200,6 +187,8 @@ public class Restructurization {
             var prevBlockStatement = blockStatements[i];
             var childBlock = childBlocks[i];
             prevBlockStatement.body = processBlock(childBlock, childBlocks[i + 1]);
+            prevBlockStatement.tryCatches = prevBlockStatement.body.tryCatches;
+            prevBlockStatement.body.tryCatches = null;
             var blockStatement = blockStatements[i + 1];
             blockStatement.body = addChildBlock(prevBlockStatement, blockStatement.body);
         }
@@ -627,6 +616,7 @@ public class Restructurization {
         var targetStatement = getJumpTarget(target);
         var breakStatement = new BreakBlock();
         breakStatement.target = targetStatement;
+        breakStatement.tryCatches = currentStatement.tryCatches;
         return breakStatement;
     }
 

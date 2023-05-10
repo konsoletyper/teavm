@@ -42,6 +42,17 @@ public abstract class Block {
         next = block;
     }
 
+    void detach() {
+        if (previous != null) {
+            previous.next = null;
+        }
+        var block = this;
+        while (block != null) {
+            block.first = this;
+            block = block.next;
+        }
+    }
+
     public abstract void acceptVisitor(BlockVisitor visitor);
 
     @Override
