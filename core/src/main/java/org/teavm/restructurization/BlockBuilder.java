@@ -101,7 +101,8 @@ public class BlockBuilder {
 
     public static TryBuilder tryBlock(Runnable builder) {
         var tryBlock = new TryBlock();
-        tryBlock.catchBlock = build(builder);
+        tryBlock.tryBlock = build(builder);
+        append(tryBlock);
         return new TryBuilder(tryBlock);
     }
 

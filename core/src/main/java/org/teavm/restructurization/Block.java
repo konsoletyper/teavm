@@ -42,14 +42,24 @@ public abstract class Block {
         next = block;
     }
 
-    void detach() {
+    void detach(Block untilBlock) {
         if (previous != null) {
             previous.next = null;
         }
         var block = this;
-        while (block != null) {
+        while (block != untilBlock) {
             block.first = this;
             block = block.next;
+        }
+        if (block != null) {
+            if (block.previous != null) {
+                block.previous.next = null;
+            }
+            block.previous = null;
+            while (block != null) {
+                block.first = untilBlock;
+                block = block.next;
+            }
         }
     }
 

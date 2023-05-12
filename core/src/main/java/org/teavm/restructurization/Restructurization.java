@@ -55,7 +55,7 @@ public class Restructurization {
     private boolean[] processingTryCatch;
     private boolean[] currentSequenceNodes;
     private RewindVisitor rewindVisitor = new RewindVisitor();
-    private TryCatchProcessor tryCatchProcessor = new TryCatchProcessor();
+    private TryCatchProcessor tryCatchProcessor = new TryCatchProcessor(identifiedStatementUseCount);
 
     public Block apply(Program program) {
         this.program = program;
@@ -138,18 +138,13 @@ public class Restructurization {
                     var tryCatch = currentBlock.getTryCatchBlocks().get(i);
                     simpleBlock.tryCatches[i] = new TryCatchNode(
                             tryCatch.getExceptionType(),
-                            tryCatch.getProtectedBlock().getExceptionVariable(),
+                            tryCatch.getHandler().getExceptionVariable(),
                             jumpTargets[tryCatch.getHandler().getIndex()]
                     );
                 }
                 currentBlock.getLastInstruction().acceptVisitor(instructionDecompiler);
             }
         }
-        currentStatement = processTryCatches(currentStatement);
-    }
-
-    private Block processTryCatches(Block block) {
-        return tryCatchProcessor.processTryCatches(block);
     }
 
     private boolean processTryCatchHeader() {
@@ -166,6 +161,8 @@ public class Restructurization {
         for (int i = 0; i < childBlocks.length; i++) {
             childBlocks[i] = owningBlock(immediatelyDominatedNodes[i]);
         }
+
+        Arrays.sort(childBlocks, Comparator.comparing(b -> dfs[blockEnterNode(b)]));
 
         var blockStatements = new SimpleLabeledBlock[childBlockCount];
         for (int i = 0; i < childBlocks.length; i++) {
@@ -186,10 +183,8 @@ public class Restructurization {
         for (int i = 0; i < childBlocks.length - 1; ++i) {
             var prevBlockStatement = blockStatements[i];
             var childBlock = childBlocks[i];
-            prevBlockStatement.body = processBlock(childBlock, childBlocks[i + 1]);
-            prevBlockStatement.tryCatches = prevBlockStatement.body.tryCatches;
-            prevBlockStatement.body.tryCatches = null;
             var blockStatement = blockStatements[i + 1];
+            prevBlockStatement.body = append(prevBlockStatement.body, processBlock(childBlock, childBlocks[i + 1]));
             blockStatement.body = addChildBlock(prevBlockStatement, blockStatement.body);
         }
         var lastBlockStatement = blockStatements[blockStatements.length - 1];
@@ -355,7 +350,7 @@ public class Restructurization {
     }
 
     private Block append(Block block, Block next) {
-        return block == null ? next : block.append(next);
+        return block == null ? next : block.append(next.first);
     }
 
     private void branch(Instruction condition, BasicBlock ifTrue, BasicBlock ifFalse) {
@@ -389,7 +384,7 @@ public class Restructurization {
             }
             childBlocks[j++] = childBlock;
         }
-        Arrays.sort(childBlocks, Comparator.comparing(b -> dfs[b.getIndex()]));
+        Arrays.sort(childBlocks, Comparator.comparing(b -> dfs[blockEnterNode(b)]));
 
         var blockStatements = new SimpleLabeledBlock[childBlockCount];
         for (int i = 0; i < childBlocks.length; i++) {
@@ -458,7 +453,7 @@ public class Restructurization {
             }
             childBlocks[j++] = childBlock;
         }
-        Arrays.sort(childBlocks, Comparator.comparing(b -> dfs[b.getIndex()]));
+        Arrays.sort(childBlocks, Comparator.comparing(b -> dfs[blockEnterNode(b)]));
 
         var blockStatements = new SimpleLabeledBlock[childBlockCount];
         for (int i = 0; i < childBlocks.length; i++) {
@@ -510,7 +505,7 @@ public class Restructurization {
     }
 
     private void processBlockStatements(SimpleLabeledBlock[] blockStatements, BasicBlock[] childBlocks,
-            LabeledBlock mainStatement) {
+            Block mainStatement) {
         if (blockStatements.length > 0) {
             blockStatements[0].body = append(blockStatements[0].body, mainStatement);
             for (int i = 0; i < childBlocks.length - 1; ++i) {
@@ -540,10 +535,17 @@ public class Restructurization {
 
     private Block addChildBlock(SimpleLabeledBlock blockStatement, Block containing) {
         if (identifiedStatementUseCount.get(blockStatement) > 0) {
-            return append(containing, blockStatement);
+            return append(containing, transferTryCatches(blockStatement));
         } else {
-            return append(containing, first(blockStatement.getBody()));
+            return append(containing, blockStatement.getBody());
         }
+    }
+
+    private SimpleLabeledBlock transferTryCatches(SimpleLabeledBlock statement) {
+        statement.body = tryCatchProcessor.processTryCatches(statement.body);
+        statement.tryCatches = tryCatchProcessor.collectTryCatches();
+        TryCatchProcessor.clearTryCatches(statement.body.first);
+        return statement;
     }
 
     private boolean ownsBranch(BasicBlock branch) {

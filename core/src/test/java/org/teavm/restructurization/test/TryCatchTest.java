@@ -23,6 +23,7 @@ import static org.teavm.model.builder.ProgramBuilder.label;
 import static org.teavm.model.builder.ProgramBuilder.nop;
 import static org.teavm.model.builder.ProgramBuilder.put;
 import static org.teavm.model.builder.ProgramBuilder.var;
+import static org.teavm.restructurization.BlockBuilder.ret;
 import static org.teavm.restructurization.BlockBuilder.simple;
 import static org.teavm.restructurization.BlockBuilder.tryBlock;
 import org.junit.Test;
@@ -63,6 +64,7 @@ public class TryCatchTest extends BaseRestructurizationTest {
                 simple(block(3));
             });
             simple(block(4));
+            ret();
         });
     }
 }

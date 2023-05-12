@@ -58,12 +58,12 @@ public class BlockPrinter {
 
         @Override
         public void visit(BreakBlock block) {
-            sb.append("break ").append(identifiers.get(block.getTarget())).newLine();
+            sb.append("break ").append(getIdentifier(block.getTarget())).newLine();
         }
 
         @Override
         public void visit(ContinueBlock block) {
-            sb.append("continue ").append(identifiers.get(block.getTarget())).newLine();
+            sb.append("continue ").append(getIdentifier(block.getTarget())).newLine();
         }
 
         @Override
@@ -83,7 +83,7 @@ public class BlockPrinter {
         @Override
         public void visit(SimpleLabeledBlock block) {
             start(block);
-            sb.append(identifiers.get(block)).append(": {").newLine().indent();
+            sb.append(getIdentifier(block)).append(": {").newLine().indent();
             visitMany(block.getBody());
             sb.outdent().append("}").newLine();
             end(block);
@@ -92,7 +92,7 @@ public class BlockPrinter {
         @Override
         public void visit(SwitchBlock block) {
             start(block);
-            sb.append(identifiers.get(block)).append(": switch").append(block.getCondition().getIndex())
+            sb.append(getIdentifier(block)).append(": switch").append(block.getCondition().getIndex())
                     .append(" {").newLine().indent();
             for (var entry : block.getEntries()) {
                 for (var value : entry.getMatchValues()) {
@@ -114,7 +114,7 @@ public class BlockPrinter {
         @Override
         public void visit(IfBlock block) {
             start(block);
-            sb.append(identifiers.get(block)).append(": if");
+            sb.append(getIdentifier(block)).append(": if");
             if (block.inverted) {
                 sb.append("!");
             }
@@ -133,7 +133,7 @@ public class BlockPrinter {
         @Override
         public void visit(LoopBlock block) {
             start(block);
-            sb.append(identifiers.get(block)).append(": loop {").newLine().indent();
+            sb.append(getIdentifier(block)).append(": loop {").newLine().indent();
             visitMany(block.getBody());
             sb.outdent().append("}").newLine();
             end(block);
@@ -141,7 +141,16 @@ public class BlockPrinter {
 
         @Override
         public void visit(TryBlock block) {
-
+            sb.append("try {").newLine().indent();
+            visitMany(block.getTryBlock());
+            sb.outdent().append("} catch (").append(block.getExceptionType()).append(" ")
+                    .append(block.getException().getIndex()).append(") {").indent().newLine();
+            visitMany(block.getCatchBlock());
+            sb.outdent().append("}").newLine();
         }
     };
+
+    private int getIdentifier(LabeledBlock block) {
+        return identifiers.getOrDefault(block, -1);
+    }
 }
