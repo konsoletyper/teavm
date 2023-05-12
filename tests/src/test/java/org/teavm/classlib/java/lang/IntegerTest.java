@@ -27,6 +27,13 @@ import org.teavm.junit.WholeClassCompilation;
 @WholeClassCompilation
 public class IntegerTest {
     @Test
+    public void testRightUnsignedShift() {
+        assertEquals(1 << 31, Integer.MIN_VALUE >>> 0);
+        assertEquals(0, Integer.numberOfLeadingZeros(-1));
+        // TODO this test fails assertEquals(1 << 31, Integer.MIN_VALUE >>> Integer.numberOfLeadingZeros(-1));
+    }
+
+    @Test
     public void parsesInteger() {
         assertEquals(0, Integer.parseInt("0", 10));
         assertEquals(473, Integer.parseInt("473", 10));
@@ -78,6 +85,7 @@ public class IntegerTest {
 
     @Test
     public void numberOfLeadingZerosComputed() {
+        assertEquals(0, Integer.numberOfLeadingZeros(-1));
         assertEquals(1, Integer.numberOfLeadingZeros(0x40000000));
         assertEquals(1, Integer.numberOfLeadingZeros(0x40000123));
         assertEquals(1, Integer.numberOfLeadingZeros(0x7FFFFFFF));
