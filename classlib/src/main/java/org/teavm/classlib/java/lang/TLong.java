@@ -238,10 +238,6 @@ public class TLong extends TNumber implements TComparable<TLong> {
         }
     }
 
-    public static long highestOneBit(long i) {
-        return 0x8000000000000000L >>> numberOfLeadingZeros(i);
-    }
-
     public static int numberOfLeadingZeros(long i) {
         if (i == 0) {
             return SIZE;
@@ -306,9 +302,12 @@ public class TLong extends TNumber implements TComparable<TLong> {
         return SIZE - n - 1;
     }
 
+    public static long highestOneBit(long i) {
+        return i & (0x8000000000000000L >>> numberOfLeadingZeros(i));
+    }
 
     public static long lowestOneBit(long i) {
-        return 1L << numberOfTrailingZeros(i);
+        return -i & i;
     }
 
     public static int bitCount(long i) {

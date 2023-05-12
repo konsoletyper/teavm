@@ -105,6 +105,20 @@ public class IntegerTest {
     }
 
     @Test
+    public void highestOneBit() {
+        assertEquals(1 << 31, Integer.highestOneBit(-1));
+        assertEquals(1 << 31, Integer.highestOneBit(Integer.MIN_VALUE));
+        assertEquals(16, Integer.highestOneBit(31));
+    }
+
+    @Test
+    public void lowestOneBit() {
+        assertEquals(0, Integer.lowestOneBit(0));
+        assertEquals(2, Integer.lowestOneBit(50));
+        assertEquals(1, Integer.lowestOneBit(-1));
+    }
+
+    @Test
     public void bitsCounted() {
         assertEquals(0, Integer.bitCount(0));
         assertEquals(1, Integer.bitCount(1));
@@ -140,7 +154,6 @@ public class IntegerTest {
         assertTrue(Integer.compare(Integer.MAX_VALUE, Integer.MIN_VALUE) > 0);
         assertTrue(Integer.compare(Integer.MIN_VALUE, Integer.MAX_VALUE) < 0);
     }
-
 
     @Test
     public void getFromSystemProperty() {

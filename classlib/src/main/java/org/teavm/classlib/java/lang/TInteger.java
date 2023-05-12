@@ -316,11 +316,11 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     }
 
     public static int highestOneBit(int i) {
-        return 0x80000000 >>> numberOfLeadingZeros(i);
+        return i & (0x80000000 >>> numberOfLeadingZeros(i));
     }
 
     public static int lowestOneBit(int i) {
-        return 1 << numberOfTrailingZeros(i);
+        return -i & i;
     }
 
     public static int bitCount(int i) {
