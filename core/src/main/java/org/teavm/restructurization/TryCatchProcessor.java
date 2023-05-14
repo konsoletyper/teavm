@@ -23,7 +23,6 @@ import java.util.List;
 class TryCatchProcessor {
     private ObjectIntMap<LabeledBlock> identifiedStatementUseCount;
     private List<Block> openingBlocks = new ArrayList<>();
-    private List<TryCatchNode> tryCatchStack = new ArrayList<>();
     private Block result;
     private Block current;
 
@@ -42,9 +41,10 @@ class TryCatchProcessor {
         int minSize = result.tryCatches.length;
         while (current != null) {
             var next = current.next;
-            var commonSize = Math.min(result.tryCatches.length, current.tryCatches.length);
-            while (commonSize > 0 && !result.tryCatches[commonSize - 1].sameAs(current.tryCatches[commonSize - 1])) {
-                --commonSize;
+            var commonSize = 0;
+            while (commonSize < result.tryCatches.length && commonSize < current.tryCatches.length
+                    && result.tryCatches[commonSize].sameAs(current.tryCatches[commonSize])) {
+                ++commonSize;
             }
             minSize = Math.min(minSize, commonSize);
             popOld(commonSize, current);
@@ -58,13 +58,8 @@ class TryCatchProcessor {
 
         var resultBlock = result;
         cleanup();
-        return resultBlock;
-    }
 
-    TryCatchNode[] collectTryCatches() {
-        var result = tryCatchStack.toArray(new TryCatchNode[0]);
-        tryCatchStack.clear();
-        return result;
+        return resultBlock;
     }
 
     private void popOld(int size, Block untilBlock) {
@@ -74,15 +69,12 @@ class TryCatchProcessor {
         while (openingBlocks.size() > size) {
             var from = openingBlocks.size();
             block = openingBlocks.remove(openingBlocks.size() - 1);
-            tryCatchStack.remove(tryCatchStack.size() - 1);
             while (openingBlocks.size() > size && openingBlocks.get(openingBlocks.size() - 1) == block) {
                 openingBlocks.remove(openingBlocks.size() - 1);
-                tryCatchStack.remove(tryCatchStack.size() - 1);
             }
 
             block.detach(untilBlock);
             untilBlock = null;
-            clearTryCatches(block);
             for (var i = from - 1; i >= openingBlocks.size(); --i) {
                 var tryCatch = initialTryCatches[i];
                 var tryBlock = new TryBlock();
@@ -93,6 +85,7 @@ class TryCatchProcessor {
                 tryBlock.catchBlock = br;
                 tryBlock.exception = tryCatch.variable;
                 tryBlock.exceptionType = tryCatch.exceptionType;
+                tryBlock.tryCatches = Arrays.copyOf(result.tryCatches, i);
                 block = tryBlock;
             }
         }
@@ -111,14 +104,6 @@ class TryCatchProcessor {
     private void pushNew() {
         while (openingBlocks.size() < current.tryCatches.length) {
             openingBlocks.add(result);
-            tryCatchStack.add(current.tryCatches[tryCatchStack.size()]);
-        }
-    }
-
-    static void clearTryCatches(Block block) {
-        while (block != null) {
-            block.tryCatches = null;
-            block = block.next;
         }
     }
 

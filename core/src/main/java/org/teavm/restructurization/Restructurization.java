@@ -164,12 +164,12 @@ public class Restructurization {
 
         Arrays.sort(childBlocks, Comparator.comparing(b -> dfs[blockEnterNode(b)]));
 
-        var blockStatements = new SimpleLabeledBlock[childBlockCount];
-        for (int i = 0; i < childBlocks.length; i++) {
+        var blockStatements = new SimpleLabeledBlock[childBlockCount - 1];
+        for (int i = 1; i < childBlocks.length; i++) {
             var childBlock = childBlocks[i];
             var blockStatement = new SimpleLabeledBlock();
             jumpTargets[childBlock.getIndex()] = blockStatement;
-            blockStatements[i] = blockStatement;
+            blockStatements[i - 1] = blockStatement;
         }
 
         processingTryCatch[currentBlock.getIndex()] = true;
@@ -180,15 +180,42 @@ public class Restructurization {
     }
 
     private void processTryBlockStatements(SimpleLabeledBlock[] blockStatements, BasicBlock[] childBlocks) {
+        Block result = null;;
         for (int i = 0; i < childBlocks.length - 1; ++i) {
-            var prevBlockStatement = blockStatements[i];
             var childBlock = childBlocks[i];
-            var blockStatement = blockStatements[i + 1];
-            prevBlockStatement.body = append(prevBlockStatement.body, processBlock(childBlock, childBlocks[i + 1]));
-            blockStatement.body = addChildBlock(prevBlockStatement, blockStatement.body);
+            var nextChildBlock = childBlocks[i + 1];
+            var statement = processBlock(childBlock, nextChildBlock);
+            result = append(result, statement);
+            var blockStatement = blockStatements[i];
+            result = closeTryCatches(result, blockStatement);
+            blockStatement.body = result;
+            result = blockStatement;
         }
-        var lastBlockStatement = blockStatements[blockStatements.length - 1];
-        currentStatement = addChildBlock(lastBlockStatement, currentStatement);
+        currentStatement = append(currentStatement, result);
+    }
+
+    private Block closeTryCatches(Block block, SimpleLabeledBlock handlerContainer) {
+        if (block == null) {
+            return null;
+        }
+        int index;
+        for (index = 0; index < block.tryCatches.length; ++index) {
+            if (block.tryCatches[index].handler == handlerContainer) {
+                break;
+            }
+        }
+        for (var i = block.tryCatches.length - 1; i >= index; --i) {
+            var tryBlock = new TryBlock();
+            tryBlock.tryBlock = block;
+            var br = new BreakBlock();
+            br.target = block.tryCatches[index].handler;
+            tryBlock.catchBlock = br;
+            tryBlock.tryCatches = Arrays.copyOf(block.tryCatches, i);
+            tryBlock.exceptionType = block.tryCatches[index].exceptionType;
+            tryBlock.exception = block.tryCatches[index].variable;
+            block = tryBlock;
+        }
+        return block;
     }
 
     private void processLoop() {
@@ -219,10 +246,6 @@ public class Restructurization {
         if (loopExit != null) {
             loopExits[loopExit.getIndex()] = null;
         }
-    }
-
-    private static Block first(Block block) {
-        return block != null ? block.first : null;
     }
 
     private BasicBlock getBestExit() {
@@ -534,17 +557,24 @@ public class Restructurization {
     }
 
     private Block addChildBlock(SimpleLabeledBlock blockStatement, Block containing) {
-        if (identifiedStatementUseCount.get(blockStatement) > 0) {
-            return append(containing, transferTryCatches(blockStatement));
-        } else {
-            return append(containing, blockStatement.getBody());
+        var result = append(containing, transferTryCatches(blockStatement));
+        if (result instanceof SimpleLabeledBlock) {
+            var labeledBlock = (SimpleLabeledBlock) result;
+            if (identifiedStatementUseCount.get(labeledBlock) == 0) {
+                if (labeledBlock.previous != null) {
+                    labeledBlock.previous.append(labeledBlock.body.first);
+                    tryCatchProcessor.processTryCatches(labeledBlock.body.first);
+                } else {
+                    result = labeledBlock.body;
+                }
+            }
         }
+        return result;
     }
 
     private SimpleLabeledBlock transferTryCatches(SimpleLabeledBlock statement) {
         statement.body = tryCatchProcessor.processTryCatches(statement.body);
-        statement.tryCatches = tryCatchProcessor.collectTryCatches();
-        TryCatchProcessor.clearTryCatches(statement.body.first);
+        statement.tryCatches = statement.body.tryCatches;
         return statement;
     }
 
