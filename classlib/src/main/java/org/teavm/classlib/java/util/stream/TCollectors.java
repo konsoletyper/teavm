@@ -152,7 +152,7 @@ public final class TCollectors {
 
         if (downstream.characteristics().contains(TCollector.Characteristics.IDENTITY_FINISH)) {
             return TCollector.of(castFactory(mapFactory), mapAppender, mapMerger,
-                    TCollectors.castFunction(Function.identity()), TCollector.Characteristics.IDENTITY_FINISH);
+                    castFunction(Function.identity()), TCollector.Characteristics.IDENTITY_FINISH);
         } else {
             Function<I, I> replacer = castFunction(downstream.finisher());
             Function<Map<K, I>, M> finisher = toReplace -> {
