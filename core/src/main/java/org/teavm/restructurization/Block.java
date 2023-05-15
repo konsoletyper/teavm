@@ -19,7 +19,7 @@ public abstract class Block {
     Block next;
     Block first = this;
     Block previous;
-    TryCatchNode[] tryCatches;
+    TryCatchNode tryCatch;
 
     public Block getNext() {
         return next;
@@ -42,24 +42,14 @@ public abstract class Block {
         next = block;
     }
 
-    void detach(Block untilBlock) {
+    void detach() {
         if (previous != null) {
             previous.next = null;
         }
         var block = this;
-        while (block != untilBlock) {
+        while (block != null) {
             block.first = this;
             block = block.next;
-        }
-        if (block != null) {
-            if (block.previous != null) {
-                block.previous.next = null;
-            }
-            block.previous = null;
-            while (block != null) {
-                block.first = untilBlock;
-                block = block.next;
-            }
         }
     }
 

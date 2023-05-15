@@ -22,11 +22,15 @@ class TryCatchNode {
     String exceptionType;
     Variable variable;
     LabeledBlock handler;
+    Block openingBlock;
+    TryCatchNode containing;
 
-    TryCatchNode(String exceptionType, Variable variable, LabeledBlock handler) {
+    TryCatchNode(String exceptionType, Variable variable, LabeledBlock handler, Block openingBlock, TryCatchNode containing) {
         this.exceptionType = exceptionType;
         this.variable = variable;
         this.handler = handler;
+        this.openingBlock = openingBlock;
+        this.containing = containing;
     }
 
     boolean sameAs(TryCatchNode other) {

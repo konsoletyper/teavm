@@ -17,11 +17,14 @@ package org.teavm.restructurization;
 
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
+import java.util.HashSet;
+import java.util.Set;
 import org.teavm.common.CommonIndentPrinter;
 
 public class BlockPrinter {
     private CommonIndentPrinter sb = new CommonIndentPrinter();
     private ObjectIntMap<LabeledBlock> identifiers = new ObjectIntHashMap<>();
+    private Set<Block> visitingBlocks = new HashSet<>();
     private int identifierGen;
 
     public String print(Block block) {
@@ -44,8 +47,14 @@ public class BlockPrinter {
         if (block != null) {
             block = block.first;
         }
+        if (visitingBlocks.contains(block)) {
+            sb.append("error: recursion").newLine();
+            return;
+        }
         while (block != null) {
+            visitingBlocks.add(block);
             block.acceptVisitor(visitor);
+            visitingBlocks.remove(block);
             block = block.getNext();
         }
     }

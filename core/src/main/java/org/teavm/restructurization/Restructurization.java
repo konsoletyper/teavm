@@ -21,6 +21,7 @@ import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -51,11 +52,10 @@ public class Restructurization {
     private BasicBlock nextBlock;
     private LoopBlock[] loopExits;
     private LoopBlock[] loops;
-    private ObjectIntMap<LabeledBlock> identifiedStatementUseCount = new ObjectIntHashMap<>();
+    private ObjectIntMap<LabeledBlock> labeledBlockUsages = new ObjectIntHashMap<>();
     private boolean[] processingTryCatch;
     private boolean[] currentSequenceNodes;
     private RewindVisitor rewindVisitor = new RewindVisitor();
-    private TryCatchProcessor tryCatchProcessor = new TryCatchProcessor(identifiedStatementUseCount);
 
     public Block apply(Program program) {
         this.program = program;
@@ -132,16 +132,17 @@ public class Restructurization {
             } else if (!processTryCatchHeader()) {
                 var simpleBlock = new SimpleBlock();
                 simpleBlock.basicBlock = currentBlock;
-                append(simpleBlock);
-                simpleBlock.tryCatches = new TryCatchNode[currentBlock.getTryCatchBlocks().size()];
                 for (int i = 0; i < currentBlock.getTryCatchBlocks().size(); ++i) {
                     var tryCatch = currentBlock.getTryCatchBlocks().get(i);
-                    simpleBlock.tryCatches[i] = new TryCatchNode(
+                    simpleBlock.tryCatch = new TryCatchNode(
                             tryCatch.getExceptionType(),
                             tryCatch.getHandler().getExceptionVariable(),
-                            jumpTargets[tryCatch.getHandler().getIndex()]
+                            jumpTargets[tryCatch.getHandler().getIndex()],
+                            simpleBlock,
+                            simpleBlock.tryCatch
                     );
                 }
+                append(simpleBlock);
                 currentBlock.getLastInstruction().acceptVisitor(instructionDecompiler);
             }
         }
@@ -180,42 +181,49 @@ public class Restructurization {
     }
 
     private void processTryBlockStatements(SimpleLabeledBlock[] blockStatements, BasicBlock[] childBlocks) {
-        Block result = null;;
-        for (int i = 0; i < childBlocks.length - 1; ++i) {
+        var result = processBlock(childBlocks[0], childBlocks[1]);
+        for (int i = 1; i < childBlocks.length - 1; ++i) {
             var childBlock = childBlocks[i];
             var nextChildBlock = childBlocks[i + 1];
             var statement = processBlock(childBlock, nextChildBlock);
-            result = append(result, statement);
-            var blockStatement = blockStatements[i];
-            result = closeTryCatches(result, blockStatement);
+            firstBlockToBalance = result;
+            secondBlockToBalance = statement;
+            balanceTryCatch();
+            result = firstBlockToBalance;
+            statement = secondBlockToBalance;
+            firstBlockToBalance = null;
+            secondBlockToBalance = null;
+            var blockStatement = blockStatements[i - 1];
             blockStatement.body = result;
-            result = blockStatement;
+            blockStatement.tryCatch = result.tryCatch;
+            result = appendTryCatchOptimized(blockStatement, statement);
         }
+        var finalBlockStatement = blockStatements[blockStatements.length - 1];
+        finalBlockStatement.body = result;
+        finalBlockStatement.body.tryCatch = result.tryCatch;
+        result = finalBlockStatement;
         currentStatement = append(currentStatement, result);
     }
 
-    private Block closeTryCatches(Block block, SimpleLabeledBlock handlerContainer) {
-        if (block == null) {
-            return null;
+    private Block appendTryCatchOptimized(SimpleLabeledBlock labeledStatement, Block next) {
+        if (!(labeledStatement.body instanceof TryBlock)) {
+            return append(labeledStatement, next);
         }
-        int index;
-        for (index = 0; index < block.tryCatches.length; ++index) {
-            if (block.tryCatches[index].handler == handlerContainer) {
-                break;
-            }
+        var tryBlock = (TryBlock) labeledStatement.body;
+        if (!(tryBlock.catchBlock instanceof BreakBlock)) {
+            return append(labeledStatement, next);
         }
-        for (var i = block.tryCatches.length - 1; i >= index; --i) {
-            var tryBlock = new TryBlock();
-            tryBlock.tryBlock = block;
-            var br = new BreakBlock();
-            br.target = block.tryCatches[index].handler;
-            tryBlock.catchBlock = br;
-            tryBlock.tryCatches = Arrays.copyOf(block.tryCatches, i);
-            tryBlock.exceptionType = block.tryCatches[index].exceptionType;
-            tryBlock.exception = block.tryCatches[index].variable;
-            block = tryBlock;
+        var br = (BreakBlock) tryBlock.catchBlock;
+        if (br.target != labeledStatement) {
+            return append(labeledStatement, next);
         }
-        return block;
+
+        tryBlock.catchBlock = next;
+        if (decreaseUsage(labeledStatement)) {
+            return tryBlock;
+        }
+
+        return append(labeledStatement, next);
     }
 
     private void processLoop() {
@@ -359,6 +367,7 @@ public class Restructurization {
         nextBlock = next;
         currentStatement = null;
         calculateResult();
+        closeTryCatchSequence(currentStatement);
         var result = currentStatement;
 
         currentBlock = currentBlockBackup;
@@ -369,7 +378,7 @@ public class Restructurization {
     }
 
     private void append(Block block) {
-        currentStatement = append(currentStatement, block);
+        currentStatement = appendWithTryCatch(currentStatement, block);
     }
 
     private Block append(Block block, Block next) {
@@ -530,21 +539,28 @@ public class Restructurization {
     private void processBlockStatements(SimpleLabeledBlock[] blockStatements, BasicBlock[] childBlocks,
             Block mainStatement) {
         if (blockStatements.length > 0) {
+            var result = mainStatement;
             blockStatements[0].body = append(blockStatements[0].body, mainStatement);
             for (int i = 0; i < childBlocks.length - 1; ++i) {
-                var prevBlockStatement = blockStatements[i];
-                optimizeConditionalBlock(prevBlockStatement);
-                var blockStatement = blockStatements[i + 1];
-                blockStatement.body = addChildBlock(prevBlockStatement, blockStatement.body);
-                var childBlock = childBlocks[i];
-                blockStatement.body = append(blockStatement.body, processBlock(childBlock, childBlocks[i + 1]));
+                result = wrapWithLabeledStatement(result, blockStatements[i]);
+                var next = processBlock(childBlocks[i], childBlocks[i + 1]);
+                result = appendWithTryCatch(result, next);
             }
-            var lastBlockStatement = blockStatements[blockStatements.length - 1];
-            optimizeConditionalBlock(lastBlockStatement);
-            currentStatement = addChildBlock(lastBlockStatement, currentStatement);
+            result = wrapWithLabeledStatement(result, blockStatements[blockStatements.length - 1]);
+            currentStatement = appendWithTryCatch(currentStatement, result);
         } else {
             append(mainStatement);
         }
+    }
+
+    private Block wrapWithLabeledStatement(Block statement, SimpleLabeledBlock blockStatement) {
+        if (labeledBlockUsages.get(blockStatement) > 0) {
+            blockStatement.body = statement;
+            blockStatement.tryCatch = statement.tryCatch;
+            optimizeConditionalBlock(blockStatement);
+            statement = blockStatement;
+        }
+        return statement;
     }
 
     private static class SwitchClauseProto {
@@ -554,28 +570,6 @@ public class Restructurization {
         SwitchClauseProto(SwitchBlockEntry entry) {
             this.entry = entry;
         }
-    }
-
-    private Block addChildBlock(SimpleLabeledBlock blockStatement, Block containing) {
-        var result = append(containing, transferTryCatches(blockStatement));
-        if (result instanceof SimpleLabeledBlock) {
-            var labeledBlock = (SimpleLabeledBlock) result;
-            if (identifiedStatementUseCount.get(labeledBlock) == 0) {
-                if (labeledBlock.previous != null) {
-                    labeledBlock.previous.append(labeledBlock.body.first);
-                    tryCatchProcessor.processTryCatches(labeledBlock.body.first);
-                } else {
-                    result = labeledBlock.body;
-                }
-            }
-        }
-        return result;
-    }
-
-    private SimpleLabeledBlock transferTryCatches(SimpleLabeledBlock statement) {
-        statement.body = tryCatchProcessor.processTryCatches(statement.body);
-        statement.tryCatches = statement.body.tryCatches;
-        return statement;
     }
 
     private boolean ownsBranch(BasicBlock branch) {
@@ -609,7 +603,7 @@ public class Restructurization {
         }
         nestedIf.thenBody = nestedIf.thenBody.previous;
         nestedIf.elseBody = append(nestedIf.elseBody, statement.next);
-        identifiedStatementUseCount.put(statement, identifiedStatementUseCount.get(statement) - 1);
+        decreaseUsage(statement);
         optimizeIf(nestedIf);
         return true;
     }
@@ -648,15 +642,114 @@ public class Restructurization {
         var targetStatement = getJumpTarget(target);
         var breakStatement = new BreakBlock();
         breakStatement.target = targetStatement;
-        breakStatement.tryCatches = currentStatement.tryCatches;
+        breakStatement.tryCatch = currentStatement.tryCatch;
         return breakStatement;
     }
 
     private LabeledBlock getJumpTarget(BasicBlock target) {
         var targetStatement = jumpTargets[target.getIndex()];
-        int count = identifiedStatementUseCount.get(targetStatement);
-        identifiedStatementUseCount.put(targetStatement, count + 1);
+        increaseUsage(targetStatement);
         return targetStatement;
+    }
+
+    private Block appendWithTryCatch(Block first, Block second) {
+        if (first == null) {
+            return second;
+        }
+        firstBlockToBalance = first;
+        secondBlockToBalance = second;
+        balanceTryCatch();
+        first = firstBlockToBalance;
+        second = secondBlockToBalance;
+        firstBlockToBalance = null;
+        secondBlockToBalance = null;
+        return append(first, second.first);
+    }
+
+    private void balanceTryCatch() {
+        if (firstBlockToBalance == null || secondBlockToBalance == null) {
+            return;
+        }
+        collectTryCatchStack(firstBlockToBalance.tryCatch, firstTryCatchStack);
+        collectTryCatchStack(secondBlockToBalance.tryCatch, secondTryCatchStack);
+
+        var minSize = Math.min(firstTryCatchStack.size(), secondTryCatchStack.size());
+        var commonSize = 0;
+        while (commonSize < minSize
+                && firstTryCatchStack.get(commonSize).sameAs(secondTryCatchStack.get(commonSize))) {
+            ++commonSize;
+        }
+
+        firstBlockToBalance = popOld(firstBlockToBalance, firstTryCatchStack.size() - commonSize);
+        secondBlockToBalance.tryCatch = firstBlockToBalance.tryCatch;
+
+        for (var i = commonSize; i < secondTryCatchStack.size(); ++i) {
+            var node = secondTryCatchStack.get(i);
+            secondBlockToBalance.tryCatch = new TryCatchNode(node.exceptionType, node.variable,
+                    node.handler, secondBlockToBalance, secondBlockToBalance.tryCatch);
+        }
+
+        firstTryCatchStack.clear();
+        secondTryCatchStack.clear();
+    }
+
+    private Block firstBlockToBalance;
+    private Block secondBlockToBalance;
+
+    private void closeTryCatchSequence(Block block) {
+        var first = block.first;
+        if (first == block) {
+            return;
+        }
+        while (block.tryCatch != first.tryCatch) {
+            block = popOld(block, 1);
+        }
+    }
+
+    private Block popOld(Block block, int count) {
+        while (count-- > 0) {
+            var tryBlock = new TryBlock();
+            tryBlock.tryBlock = block;
+            var previous = block.tryCatch.openingBlock.previous;
+            if (previous != null) {
+                block.tryCatch.openingBlock.detach();
+            }
+            var br = new BreakBlock();
+            br.target = block.tryCatch.handler;
+            increaseUsage(br.target);
+            tryBlock.catchBlock = br;
+            tryBlock.exception = block.tryCatch.variable;
+            tryBlock.exceptionType = block.tryCatch.exceptionType;
+            tryBlock.tryCatch = block.tryCatch.containing;
+            block = append(previous, tryBlock);
+        }
+        return block;
+    }
+
+    private void collectTryCatchStack(TryCatchNode node, List<TryCatchNode> result) {
+        while (node != null) {
+            result.add(node);
+            node = node.containing;
+        }
+        Collections.reverse(result);
+    }
+
+    private List<TryCatchNode> firstTryCatchStack = new ArrayList<>();
+    private List<TryCatchNode> secondTryCatchStack = new ArrayList<>();
+
+    private void increaseUsage(LabeledBlock block) {
+        labeledBlockUsages.put(block, labeledBlockUsages.get(block) + 1);
+    }
+
+    private boolean decreaseUsage(LabeledBlock block) {
+        var newCount = labeledBlockUsages.get(block) + 1;
+        if (newCount == 0) {
+            labeledBlockUsages.remove(block);
+            return true;
+        } else {
+            labeledBlockUsages.put(block, newCount);
+            return false;
+        }
     }
 
     private InstructionVisitor instructionDecompiler = new AbstractInstructionVisitor() {
