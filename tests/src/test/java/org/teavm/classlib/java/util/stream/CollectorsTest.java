@@ -78,4 +78,16 @@ public class CollectorsTest {
         assertEquals(expected,
                 IntStream.range(1, 4).boxed().collect(Collectors.toMap(Function.identity(), Function.identity())));
     }
+
+    @Test
+    public void groupingBy() {
+        List<Integer> numbers = List.of(1, 2, 2, 3, 3, 3, 4, 4, 4, 4);
+        assertEquals(Map.of(1, List.of(1), 2, List.of(2, 2),
+                        3, List.of(3, 3, 3), 4, List.of(4, 4, 4, 4)),
+                numbers.stream().collect(Collectors.groupingBy(Function.identity())));
+        assertEquals(Map.of(1, 1, 2, 4, 3, 9, 4, 16),
+                numbers.stream().collect(Collectors.groupingBy(Function.identity(),
+                        Collectors.collectingAndThen(Collectors.toList(),
+                                l -> l.stream().mapToInt(i -> i).sum()))));
+    }
 }
