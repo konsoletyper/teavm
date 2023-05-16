@@ -124,6 +124,55 @@ public final class TCollectors {
                 TCollector.Characteristics.IDENTITY_FINISH);
     }
 
+    public static <E, K> TCollector<E, ?, Map<K, List<E>>> groupingBy(Function<? super E, ? extends K> keyExtractor) {
+        return groupingBy(keyExtractor, toList());
+    }
+
+    public static <E, K, V, I> TCollector<E, ?, Map<K, V>> groupingBy(
+            Function<? super E, ? extends K> keyExtractor,
+            TCollector<? super E, I, V> downstream) {
+        return groupingBy(keyExtractor, HashMap::new, downstream);
+    }
+
+    public static <E, K, V, I, M extends Map<K, V>> TCollector<E, ?, M> groupingBy(
+            Function<? super E, ? extends K> keyExtractor,
+            Supplier<M> mapFactory,
+            TCollector<? super E, I, V> downstream) {
+        BiConsumer<Map<K, I>, E> mapAppender = (m, t) -> {
+            K key = keyExtractor.apply(t);
+            I container = m.computeIfAbsent(key, k -> downstream.supplier().get());
+            downstream.accumulator().accept(container, t);
+        };
+        BinaryOperator<Map<K, I>> mapMerger = (m1, m2) -> {
+            for (Map.Entry<K, I> e : m2.entrySet()) {
+                m1.merge(e.getKey(), e.getValue(), downstream.combiner());
+            }
+            return m1;
+        };
+
+        if (downstream.characteristics().contains(TCollector.Characteristics.IDENTITY_FINISH)) {
+            return TCollector.of(castFactory(mapFactory), mapAppender, mapMerger,
+                    castFunction(Function.identity()), TCollector.Characteristics.IDENTITY_FINISH);
+        } else {
+            Function<I, I> replacer = castFunction(downstream.finisher());
+            Function<Map<K, I>, M> finisher = toReplace -> {
+                toReplace.replaceAll((k, v) -> replacer.apply(v));
+                return (M) toReplace;
+            };
+            return TCollector.of(castFactory(mapFactory), mapAppender, mapMerger, finisher);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <A, C> Supplier<A> castFactory(Supplier<C> supp) {
+        return (Supplier<A>) supp;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <A, B, C, D> Function<A, B> castFunction(Function<C, D> func) {
+        return (Function<A, B>) func;
+    }
+
     public static <T, A, R, K> TCollector<T, A, K> collectingAndThen(
             TCollector<T, A, R> downstream,
             Function<R, K> finisher) {
