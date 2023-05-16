@@ -202,6 +202,14 @@ public class StringTest {
     }
 
     @Test
+    public void stripWorks() {
+        assertEquals("ab", "  ab   ".strip());
+        assertEquals("ab", "ab".strip());
+        assertEquals("", "  \t".strip());
+        assertEquals("ab", "\t\n \u2008ab\r\f".strip());
+    }
+
+    @Test
     public void convertedToCharArray() {
         char[] array = "123".toCharArray();
         assertEquals(3, array.length);
