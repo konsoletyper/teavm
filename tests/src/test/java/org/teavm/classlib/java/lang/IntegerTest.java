@@ -28,9 +28,8 @@ import org.teavm.junit.WholeClassCompilation;
 public class IntegerTest {
     @Test
     public void testRightUnsignedShift() {
-        assertEquals(1 << 31, Integer.MIN_VALUE >>> 0);
-        assertEquals(0, Integer.numberOfLeadingZeros(-1));
-        // TODO this test fails assertEquals(1 << 31, Integer.MIN_VALUE >>> Integer.numberOfLeadingZeros(-1));
+        assertEquals(1 << 31, Integer.MIN_VALUE >>> Integer.parseInt("0"));
+        assertEquals(-1, -1 >>> Integer.parseInt("0"));
     }
 
     @Test
