@@ -475,6 +475,18 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return substring(lower, upper + 1);
     }
 
+    public TString strip() {
+        var lower = 0;
+        var upper = length() - 1;
+        while (lower <= upper && Character.isWhitespace(charAt(lower))) {
+            ++lower;
+        }
+        while (lower <= upper && Character.isWhitespace(charAt(upper))) {
+            --upper;
+        }
+        return substring(lower, upper + 1);
+    }
+
     @Override
     public String toString() {
         return (String) (Object) this;

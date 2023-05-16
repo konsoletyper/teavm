@@ -170,6 +170,14 @@ public interface TMap<K, V> {
         }
     }
 
+    default void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        TIterator<Entry<K, V>> iterator = entrySet().iterator();
+        while (iterator.hasNext()) {
+            TMap.Entry<K, V> next = iterator.next();
+            next.setValue(function.apply(next.getKey(), next.getValue()));
+        }
+    }
+
     static <K, V> TMap<K, V> of() {
         return TCollections.emptyMap();
     }

@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import static org.teavm.classlib.impl.IntegerUtil.toUnsignedLogRadixString;
+import java.util.Objects;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.interop.NoSideEffects;
 
@@ -39,39 +40,54 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     public static long parseLong(String s, int radix) throws TNumberFormatException {
+        if (s == null) {
+            throw new TNumberFormatException("String is null");
+        }
+        return parseLongImpl(s, 0, s.length(), radix);
+    }
+
+    public static long parseLong(CharSequence s, int beginIndex, int endIndex, int radix)
+            throws TNumberFormatException {
+        return parseLongImpl(Objects.requireNonNull(s), beginIndex, endIndex, radix);
+    }
+
+    private static long parseLongImpl(CharSequence s, int beginIndex, int endIndex, int radix)
+            throws TNumberFormatException {
         if (radix < TCharacter.MIN_RADIX || radix > TCharacter.MAX_RADIX) {
             throw new TNumberFormatException("Illegal radix: " + radix);
         }
-        if (s == null || s.isEmpty()) {
-            throw new TNumberFormatException("String is null or empty");
+        if (beginIndex == endIndex) {
+            throw new TNumberFormatException("String is empty");
         }
         boolean negative = false;
-        int index = 0;
-        switch (s.charAt(0)) {
+        int index = beginIndex;
+        switch (s.charAt(index)) {
             case '-':
                 negative = true;
-                index = 1;
+                index++;
                 break;
             case '+':
-                index = 1;
+                index++;
                 break;
         }
         long value = 0;
-        while (index < s.length()) {
+        while (index < endIndex) {
             int digit = TCharacter.getNumericValue(s.charAt(index++));
             if (digit < 0) {
-                throw new TNumberFormatException("String contains invalid digits: " + s);
+                throw new TNumberFormatException("String contains invalid digits: "
+                        + s.subSequence(beginIndex, endIndex));
             }
             if (digit >= radix) {
-                throw new TNumberFormatException("String contains digits out of radix " + radix
-                        + ": " + s);
+                throw new TNumberFormatException("String contains digits out of radix " + radix + ": "
+                        + s.subSequence(beginIndex, endIndex));
             }
             value = radix * value + digit;
             if (value < 0) {
-                if (index == s.length() && value == MIN_VALUE && negative) {
+                if (index == endIndex && value == MIN_VALUE && negative) {
                     return MIN_VALUE;
                 }
-                throw new TNumberFormatException("The value is too big for int type: " + s);
+                throw new TNumberFormatException("The value is too big for int type: "
+                        + s.subSequence(beginIndex, endIndex));
             }
         }
         return negative ? -value : value;

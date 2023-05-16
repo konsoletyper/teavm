@@ -755,7 +755,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     visitBinary(expr, ">>", false);
                     break;
                 case UNSIGNED_RIGHT_SHIFT:
-                    visitBinary(expr, ">>>", false);
+                    // JavaScript not casts -2147483648 >>> 0 to 2147483648, which is not 32 bit integer.
+                    visitBinary(expr, ">>>", true);
                     break;
             }
         }

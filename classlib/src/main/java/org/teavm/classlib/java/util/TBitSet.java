@@ -169,6 +169,9 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         if (fromIndex > toIndex) {
             throw new TIndexOutOfBoundsException();
         }
+        if (fromIndex == toIndex) {
+            return;
+        }
         int fromDataIndex = fromIndex / 32;
         int toDataIndex = toIndex / 32;
         if (toIndex > length) {
@@ -224,6 +227,9 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
             return;
         }
         toIndex = TMath.min(length, toIndex);
+        if (fromIndex == toIndex) {
+            return;
+        }
         int fromDataIndex = fromIndex / 32;
         int toDataIndex = toIndex / 32;
         if (fromDataIndex == toDataIndex) {

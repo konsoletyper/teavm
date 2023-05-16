@@ -21,9 +21,20 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class LongTest {
+
+    @Test
+    public void parsesLongInSubstring() {
+        assertEquals(0, Long.parseLong("[0]", 1, 2, 10));
+        assertEquals(473, Long.parseLong("[473]", 1, 4, 10));
+        assertEquals(42, Long.parseLong("[+42]", 1, 4, 10));
+        assertEquals(-255, Long.parseLong("[-FF]", 1, 4, 16));
+    }
+
     @Test
     public void compares() {
         assertTrue(Long.compare(10, 5) > 0);
