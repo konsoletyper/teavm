@@ -34,6 +34,7 @@ package org.teavm.classlib.java.util;
 
 import java.util.Arrays;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
@@ -659,6 +660,23 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                 HashEntry<K, V> entry = elementData[i];
                 while (entry != null) {
                     action.accept(entry.key, entry.value);
+                    entry = entry.next;
+                    if (prevModCount != modCount) {
+                        throw new TConcurrentModificationException();
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        if (elementCount > 0) {
+            int prevModCount = modCount;
+            for (int i = 0; i < elementData.length; i++) {
+                HashEntry<K, V> entry = elementData[i];
+                while (entry != null) {
+                    entry.value = function.apply(entry.key, entry.value);
                     entry = entry.next;
                     if (prevModCount != modCount) {
                         throw new TConcurrentModificationException();

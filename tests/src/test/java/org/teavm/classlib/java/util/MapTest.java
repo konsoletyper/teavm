@@ -20,7 +20,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -121,5 +123,16 @@ public class MapTest {
         for (String e : expectedCopy) {
             assertNull("Iterator did not return all of expected elements", e);
         }
+    }
+
+    @Test
+    public void testReplaceAll() {
+        Map<String, Integer> base = Map.of("a", 1, "b", 2);
+        Map<String, Integer> hashMap = new HashMap<>(base);
+        Map<String, Integer> treeMap = new TreeMap<>(base);
+        hashMap.replaceAll((k, v) -> v * 10);
+        treeMap.replaceAll((k, v) -> v * 10);
+        assertEquals(Map.of("a", 10, "b", 20), hashMap);
+        assertEquals(Map.of("a", 10, "b", 20), treeMap);
     }
 }

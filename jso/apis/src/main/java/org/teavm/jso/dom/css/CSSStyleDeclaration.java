@@ -40,9 +40,5 @@ public interface CSSStyleDeclaration extends JSObject {
 
     void setProperty(String property, String value, String priority);
 
-    void setPropertyValue(String property, String value);
-
-    void setPropertyPriority(String property, String priority);
-
     String removeProperty(String property);
 }
