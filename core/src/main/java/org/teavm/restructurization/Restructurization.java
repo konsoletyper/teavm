@@ -56,6 +56,7 @@ public class Restructurization {
     private boolean[] processingTryCatch;
     private boolean[] currentSequenceNodes;
     private RewindVisitor rewindVisitor = new RewindVisitor();
+    private LastBreakRemoval lastBreakRemoval = new LastBreakRemoval();
 
     public Block apply(Program program) {
         this.program = program;
@@ -201,21 +202,21 @@ public class Restructurization {
         var finalBlockStatement = blockStatements[blockStatements.length - 1];
         finalBlockStatement.body = result;
         finalBlockStatement.body.tryCatch = result.tryCatch;
-        result = finalBlockStatement;
+        result = optimizeLabeledStatement(finalBlockStatement);
         currentStatement = append(currentStatement, result);
     }
 
     private Block appendTryCatchOptimized(SimpleLabeledBlock labeledStatement, Block next) {
         if (!(labeledStatement.body instanceof TryBlock)) {
-            return append(labeledStatement, next);
+            return append(optimizeLabeledStatement(labeledStatement), next);
         }
         var tryBlock = (TryBlock) labeledStatement.body;
         if (!(tryBlock.catchBlock instanceof BreakBlock)) {
-            return append(labeledStatement, next);
+            return append(optimizeLabeledStatement(labeledStatement), next);
         }
         var br = (BreakBlock) tryBlock.catchBlock;
         if (br.target != labeledStatement) {
-            return append(labeledStatement, next);
+            return append(optimizeLabeledStatement(labeledStatement), next);
         }
 
         tryBlock.catchBlock = next;
@@ -223,7 +224,21 @@ public class Restructurization {
             return tryBlock;
         }
 
-        return append(labeledStatement, next);
+        return optimizeLabeledStatement(labeledStatement);
+    }
+
+    private Block optimizeLabeledStatement(SimpleLabeledBlock statement) {
+        Block result = statement;
+        lastBreakRemoval.target = statement;
+        statement.body = lastBreakRemoval.apply(statement.body);
+        lastBreakRemoval.target = null;
+        if (lastBreakRemoval.removeCount > 0) {
+            if (decreaseUsage(statement, lastBreakRemoval.removeCount)) {
+                result = statement.body;
+            }
+            lastBreakRemoval.removeCount = 0;
+        }
+        return result;
     }
 
     private void processLoop() {
@@ -742,7 +757,11 @@ public class Restructurization {
     }
 
     private boolean decreaseUsage(LabeledBlock block) {
-        var newCount = labeledBlockUsages.get(block) + 1;
+        return decreaseUsage(block, 1);
+    }
+
+    private boolean decreaseUsage(LabeledBlock block, int amount) {
+        var newCount = labeledBlockUsages.get(block) - amount;
         if (newCount == 0) {
             labeledBlockUsages.remove(block);
             return true;

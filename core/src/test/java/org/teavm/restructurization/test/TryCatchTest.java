@@ -67,4 +67,44 @@ public class TryCatchTest extends BaseRestructurizationTest {
             ret();
         });
     }
+
+    @Test
+    public void simpleTryCatchWithReturn() {
+        restructurize(() -> {
+            nop();
+            jump(label("first"));
+
+            put(label("first"));
+            nop();
+            doTry("java.lang.RuntimeException", label("handler"));
+            jump(label("second"));
+
+            put(label("second"));
+            nop();
+            doTry("java.lang.RuntimeException", label("handler"));
+            jump(label("third"));
+
+            put(label("handler"));
+            doCatch(var("e"));
+            nop();
+            exit();
+
+            put(label("third"));
+            nop();
+            exit();
+        });
+
+        check(() -> {
+            simple(block(0));
+            tryBlock(() -> {
+                simple(block(1));
+                simple(block(2));
+            }).catchException("java.lang.RuntimeException", variable(0), () -> {
+                simple(block(3));
+                ret();
+            });
+            simple(block(4));
+            ret();
+        });
+    }
 }
