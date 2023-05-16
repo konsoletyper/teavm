@@ -180,4 +180,9 @@ public class IntegerTest {
         assertEquals("1111111111111111111111111111111", Integer.toString(Integer.MAX_VALUE, 2));
         assertEquals("-10000000000000000000000000000000", Integer.toString(Integer.MIN_VALUE, 2));
     }
+
+    @Test
+    public void unsignedRightShift() {
+        assertEquals(Integer.MIN_VALUE, Integer.MIN_VALUE >>> Integer.parseInt("0"));
+    }
 }
