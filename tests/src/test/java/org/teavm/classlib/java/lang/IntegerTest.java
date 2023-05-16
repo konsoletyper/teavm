@@ -39,6 +39,14 @@ public class IntegerTest {
     }
 
     @Test
+    public void parsesIntegerInSubstring() {
+        assertEquals(0, Integer.parseInt("[0]", 1, 2, 10));
+        assertEquals(473, Integer.parseInt("[473]", 1, 4, 10));
+        assertEquals(42, Integer.parseInt("[+42]", 1, 4, 10));
+        assertEquals(-255, Integer.parseInt("[-FF]", 1, 4, 16));
+    }
+
+    @Test
     public void parsesMinInteger() {
         assertEquals(-2147483648, Integer.parseInt("-2147483648", 10));
         assertEquals(-2147483648, Integer.parseInt("-80000000", 16));
@@ -140,7 +148,6 @@ public class IntegerTest {
         assertTrue(Integer.compare(Integer.MAX_VALUE, Integer.MIN_VALUE) > 0);
         assertTrue(Integer.compare(Integer.MIN_VALUE, Integer.MAX_VALUE) < 0);
     }
-
 
     @Test
     public void getFromSystemProperty() {
