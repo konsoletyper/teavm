@@ -123,6 +123,7 @@ public class IntegerTest {
     public void highestOneBit() {
         assertEquals(1 << 31, Integer.highestOneBit(-1));
         assertEquals(1 << 31, Integer.highestOneBit(Integer.MIN_VALUE));
+        assertEquals(0, Integer.highestOneBit(0));
         assertEquals(16, Integer.highestOneBit(31));
     }
 

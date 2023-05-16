@@ -68,6 +68,7 @@ public class LongTest {
     public void highestOneBit() {
         assertEquals(1L << 63, Long.highestOneBit(-1L));
         assertEquals(1L << 63, Long.highestOneBit(Long.MIN_VALUE));
+        assertEquals(0, Long.highestOneBit(0L));
         assertEquals(16L, Long.highestOneBit(31L));
     }
 
