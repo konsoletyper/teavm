@@ -70,6 +70,7 @@ public class RuntimeRenderer {
             renderRuntimeUnwrapString();
             renderRuntimeObjcls();
             renderRuntimeThrowablecls();
+            renderRuntimeThrowableMethods();
             renderRuntimeNullCheck();
             renderRuntimeIntern();
             renderRuntimeThreads();
@@ -201,6 +202,18 @@ public class RuntimeRenderer {
             writer.appendClass("java.lang.Object");
         }
         writer.append(";").softNewLine().outdent().append("}").newLine();
+    }
+
+    private void renderRuntimeThrowableMethods() throws IOException {
+        writer.append("function $rt_throwableMessage(t)").ws().append("{").indent().softNewLine();
+        writer.append("return ");
+        writer.appendMethodBody(Throwable.class, "getMessage", String.class).append("(t);").softNewLine();
+        writer.outdent().append("}").newLine();
+
+        writer.append("function $rt_throwableCause(t)").ws().append("{").indent().softNewLine();
+        writer.append("return ");
+        writer.appendMethodBody(Throwable.class, "getCause", Throwable.class).append("(t);").softNewLine();
+        writer.outdent().append("}").newLine();
     }
 
     private void renderRuntimeThreads() throws IOException {

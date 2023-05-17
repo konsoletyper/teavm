@@ -27,5 +27,5 @@ dependencies {
 }
 
 teavmPublish {
-    artifactId = "teavm-c-inremental"
+    artifactId = "teavm-c-incremental"
 }

@@ -15,6 +15,8 @@
  */
 package org.teavm.gradle.api;
 
+import groovy.lang.Closure;
+import groovy.lang.DelegatesTo;
 import org.gradle.api.Action;
 import org.gradle.api.provider.Provider;
 
@@ -26,4 +28,6 @@ public interface TeaVMBaseExtension {
     TeaVMTests getTests();
 
     void tests(Action<TeaVMTests> config);
+
+    void tests(@DelegatesTo(TeaVMTests.class) Closure<?> config);
 }

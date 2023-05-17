@@ -22,6 +22,7 @@ var Long_ge;
 var Long_lt;
 var Long_le;
 var Long_compare;
+var Long_ucompare;
 var Long_add;
 var Long_sub;
 var Long_inc;
@@ -175,6 +176,18 @@ if (typeof BigInt !== 'function') {
 
     Long_compare = function(a, b) {
         var r = a.hi - b.hi;
+        if (r !== 0) {
+            return r;
+        }
+        r = (a.lo >>> 1) - (b.lo >>> 1);
+        if (r !== 0) {
+            return r;
+        }
+        return (a.lo & 1) - (b.lo & 1);
+    }
+
+    Long_ucompare = function(a, b) {
+        var r = $rt_ucmp(a.hi, b.hi);
         if (r !== 0) {
             return r;
         }
@@ -606,6 +619,11 @@ if (typeof BigInt !== 'function') {
     }
 
     Long_compare = function(a, b) {
+        return a < b ? -1 : a > b ? 1 : 0;
+    }
+    Long_ucompare = function(a, b) {
+        a = BigInt.asUintN(64, a);
+        b = BigInt.asUintN(64, b);
         return a < b ? -1 : a > b ? 1 : 0;
     }
 

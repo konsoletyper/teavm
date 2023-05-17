@@ -119,7 +119,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private static final String OPTIMIZED = "teavm.junit.optimized";
     private static final String FAST_ANALYSIS = "teavm.junit.fastAnalysis";
 
-    private static final int stopTimeout = 15000;
     private Class<?> testClass;
     private boolean isWholeClassCompilation;
     private ClassHolderSource classSource;
@@ -228,8 +227,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private Process chromeBrowser(String url) {
         return browserTemplate("chrome", url, (profile, params) -> {
+            addChromeCommand(params);
             params.addAll(Arrays.asList(
-                    "google-chrome-stable",
                     "--headless",
                     "--disable-gpu",
                     "--remote-debugging-port=9222",
@@ -241,13 +240,47 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private Process firefoxBrowser(String url) {
         return browserTemplate("firefox", url, (profile, params) -> {
+            addFirefoxCommand(params);
             params.addAll(Arrays.asList(
-                    "firefox",
                     "--headless",
                     "--profile",
                     profile
             ));
         });
+    }
+
+    private void addChromeCommand(List<String> params) {
+        if (isMacos()) {
+            params.add("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome");
+        } else if (isWindows()) {
+            params.add("cmd.exe");
+            params.add("start");
+            params.add("/C");
+            params.add("chrome");
+        } else {
+            params.add("google-chrome-stable");
+        }
+    }
+
+    private void addFirefoxCommand(List<String> params) {
+        if (isMacos()) {
+            params.add("/Applications/Firefox.app/Contents/MacOS/firefox");
+            return;
+        }
+        if (isWindows()) {
+            params.add("cmd.exe");
+            params.add("/C");
+            params.add("start");
+        }
+        params.add("firefox");
+    }
+
+    private boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().startsWith("windows");
+    }
+
+    private boolean isMacos() {
+        return System.getProperty("os.name").toLowerCase().startsWith("mac");
     }
 
     private Process browserTemplate(String name, String url, BiConsumer<String, List<String>> paramsBuilder) {

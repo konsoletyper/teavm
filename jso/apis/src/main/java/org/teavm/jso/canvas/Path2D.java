@@ -15,11 +15,11 @@
  */
 package org.teavm.jso.canvas;
 
-import netscape.javascript.JSObject;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSObject;
 
-public abstract class Path2D extends JSObject {
+public abstract class Path2D implements JSObject {
     private Path2D() {
     }
 

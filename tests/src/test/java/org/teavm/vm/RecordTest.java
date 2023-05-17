@@ -16,6 +16,7 @@
 package org.teavm.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -26,6 +27,7 @@ import org.teavm.junit.TeaVMTestRunner;
 public class RecordTest {
     @Test
     public void equalsMethod() {
+        assertFalse(new A(2, "q").equals(null));
         assertEquals(new A(2, "q"), new A(2, "q"));
         assertNotEquals(new A(2, "q"), new A(3, "q"));
         assertNotEquals(new A(2, "q"), new A(2, "w"));
@@ -41,6 +43,10 @@ public class RecordTest {
         String s = new B(2, "q", 3L).toString();
 
         int index = 0;
+
+        index = s.indexOf("B", index);
+        assertTrue(index >= 0);
+        ++index;
 
         index = s.indexOf("x", index);
         assertTrue(index > 0);

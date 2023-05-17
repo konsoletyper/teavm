@@ -173,12 +173,6 @@ public class TeaVMPlugin implements Plugin<Project> {
                         spec.from(project.files(outDir.map(dir -> new File(dir, relPath.get()))));
                         spec.setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE);
                     }));
-                    task.with(project.copySpec(spec -> {
-                        spec.into(relPath.map(path -> joinPath("WEB-INF", path)));
-                        spec.include("*.teavmdbg");
-                        spec.from(project.files(outDir.map(dir -> new File(dir, relPath.get()))));
-                        spec.setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE);
-                    }));
                 }
                 if (wasmAddedToWebApp) {
                     task.dependsOn(project.getTasks().named(WASM_TASK_NAME));
@@ -191,14 +185,6 @@ public class TeaVMPlugin implements Plugin<Project> {
                 }
             }
         });
-    }
-
-    private static String joinPath(String first, String second) {
-        if (first.endsWith("/") || first.isEmpty()) {
-            return first + second;
-        } else {
-            return first + "/" + second;
-        }
     }
 
     private void applyToTask(TeaVMConfiguration configuration, TeaVMTask task, Configuration toolsConfiguration) {

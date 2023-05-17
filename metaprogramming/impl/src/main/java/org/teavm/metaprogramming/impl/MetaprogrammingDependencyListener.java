@@ -42,7 +42,7 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
     @Override
     public void started(DependencyAgent agent) {
         proxyClassLoader = new MetaprogrammingClassLoader(agent.getClassLoader());
-        describer = new MethodDescriber(agent.getDiagnostics(), agent.getClassSource());
+        describer = new MethodDescriber(MetaprogrammingImpl.createDiagnostics(), agent.getClassSource());
 
         MetaprogrammingImpl.classLoader = proxyClassLoader;
         MetaprogrammingImpl.classSource = agent.getClassSource();

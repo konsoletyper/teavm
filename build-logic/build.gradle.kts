@@ -52,6 +52,10 @@ gradlePlugin {
             id = "mavenPlugin"
             implementationClass = "org.teavm.buildutil.MavenPluginPlugin"
         }
+        create("javaVersion") {
+            id = "javaVersion"
+            implementationClass = "org.teavm.buildutil.JavaVersionPlugin"
+        }
     }
 }
 
@@ -61,9 +65,7 @@ checkstyle {
 }
 
 java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
-    }
+    sourceCompatibility = JavaVersion.VERSION_11
 }
 
 val generatedConfigDir = project.layout.buildDirectory.dir("generated/config").get()
@@ -85,6 +87,9 @@ val generateConfig by tasks.registering {
         """.trimIndent())
     }
 }
-tasks.compileJava.configure { dependsOn(generateConfig) }
+tasks.compileJava.configure {
+    dependsOn(generateConfig)
+    options.encoding = "UTF-8"
+}
 
 sourceSets.main.configure { java.srcDir(generatedConfigDir) }

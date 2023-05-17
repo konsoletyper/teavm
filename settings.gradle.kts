@@ -59,6 +59,17 @@ gradle.allprojects {
     version = teavmVersion
 }
 
+gradle.allprojects {
+    apply(plugin = "javaVersion")
+
+    tasks.withType<JavaCompile>().configureEach {
+        options.encoding = "UTF-8"
+    }
+    tasks.withType<Javadoc>().configureEach {
+        options.encoding = "UTF-8"
+    }
+}
+
 gradle.afterProject {
     val java = extensions.findByType<JavaPluginExtension>()
     if (java != null) {
@@ -67,23 +78,20 @@ gradle.afterProject {
             toolVersion = extensions.getByType<VersionCatalogsExtension>().named("libs")
                     .findVersion("checkstyle").get().requiredVersion
         }
-        java.toolchain {
-            if (!languageVersion.isPresent) {
-                languageVersion.set(JavaLanguageVersion.of(11))
-            }
-        }
     }
 
     extensions.findByType<PublishingExtension>()?.apply {
         publications.all {
             if (this is MavenPublication) {
-                pom { setupPom() }
+                pom { setupPom(this@afterProject) }
             }
         }
     }
 }
 
-fun MavenPom.setupPom() {
+fun MavenPom.setupPom(project: Project) {
+    name.set(project.description)
+    description.set(project.description)
     licenses {
         license {
             name.set("The Apache Software License, Version 2.0")

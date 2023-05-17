@@ -15,6 +15,7 @@
  */
 package org.teavm.gradle;
 
+import groovy.lang.Closure;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -102,13 +103,14 @@ class TeaVMBaseExtensionImpl implements TeaVMBaseExtension {
 
     @Override
     public Provider<String> property(String name) {
-        return properties.map(p -> {
+        var gradleName = "teavm." + name;
+        return project.getProviders().systemProperty(gradleName).orElse(properties.map(p -> {
             var result = p.getProperty(name);
             if (result != null) {
                 return result;
             }
-            return project.getProviders().gradleProperty("teavm." + name).getOrElse(null);
-        });
+            return project.getRootProject().getProviders().gradleProperty(gradleName).getOrElse(null);
+        }));
     }
 
     @Override
@@ -119,5 +121,10 @@ class TeaVMBaseExtensionImpl implements TeaVMBaseExtension {
     @Override
     public void tests(Action<TeaVMTests> config) {
         config.execute(tests);
+    }
+
+    @Override
+    public void tests(Closure<?> config) {
+        config.rehydrate(getTests(), config.getOwner(), config.getThisObject()).call();
     }
 }

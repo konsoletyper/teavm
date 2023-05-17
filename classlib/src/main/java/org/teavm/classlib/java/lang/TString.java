@@ -151,6 +151,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return characters.length;
     }
 
+    @Override
     public boolean isEmpty() {
         return characters.length == 0;
     }
@@ -469,6 +470,18 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             ++lower;
         }
         while (lower <= upper && charAt(upper) <= ' ') {
+            --upper;
+        }
+        return substring(lower, upper + 1);
+    }
+
+    public TString strip() {
+        var lower = 0;
+        var upper = length() - 1;
+        while (lower <= upper && Character.isWhitespace(charAt(lower))) {
+            ++lower;
+        }
+        while (lower <= upper && Character.isWhitespace(charAt(upper))) {
             --upper;
         }
         return substring(lower, upper + 1);

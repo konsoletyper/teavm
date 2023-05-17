@@ -21,11 +21,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryExpr;
@@ -66,7 +64,6 @@ import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
-import org.teavm.ast.VariableNode;
 import org.teavm.ast.WhileStatement;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
 import org.teavm.backend.javascript.codegen.SourceWriter;
@@ -98,14 +95,12 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     private DeferredCallSite prevCallSite;
     private boolean end;
     private final Map<String, String> blockIdMap = new HashMap<>();
-    private final List<String> cachedVariableNames = new ArrayList<>();
-    private final Set<String> usedVariableNames = new HashSet<>();
-    private MethodNode currentMethod;
     private int currentPart;
     private List<String> blockIds = new ArrayList<>();
     private IntIndexedContainer blockIndexMap = new IntArrayList();
     private boolean longLibraryUsed;
     private static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
+    private VariableNameGenerator variableNameGenerator;
 
     public StatementRenderer(RenderingContext context, SourceWriter writer) {
         this.context = context;
@@ -114,11 +109,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         this.minifying = context.isMinifying();
         this.naming = context.getNaming();
         this.debugEmitter = context.getDebugEmitter();
-        if (!minifying) {
-            usedVariableNames.add("$tmp");
-            usedVariableNames.add("$ptr");
-            usedVariableNames.add("$thread");
-        }
+        variableNameGenerator = new VariableNameGenerator(minifying);
     }
 
     public boolean isLongLibraryUsed() {
@@ -134,7 +125,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     }
 
     public void setCurrentMethod(MethodNode currentMethod) {
-        this.currentMethod = currentMethod;
+        variableNameGenerator.setCurrentMethod(currentMethod);
     }
 
     public void setCurrentPart(int currentPart) {
@@ -492,38 +483,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     }
 
     public String variableName(int index) {
-        while (index >= cachedVariableNames.size()) {
-            cachedVariableNames.add(null);
-        }
-        String name = cachedVariableNames.get(index);
-        if (name == null) {
-            name = generateVariableName(index);
-            cachedVariableNames.set(index, name);
-        }
-        return name;
-    }
-
-    private String generateVariableName(int index) {
-        if (!minifying) {
-            VariableNode variable = currentMethod != null && index < currentMethod.getVariables().size()
-                    ? currentMethod.getVariables().get(index)
-                    : null;
-            if (variable != null && variable.getName() != null) {
-                String result = "$" + RenderingUtil.escapeName(variable.getName());
-                if (RenderingUtil.KEYWORDS.contains(result) || !usedVariableNames.add(result)) {
-                    String base = result;
-                    int suffix = 0;
-                    do {
-                        result = base + "_" + suffix++;
-                    } while (!usedVariableNames.add(result));
-                }
-                return result;
-            } else {
-                return "var$" + index;
-            }
-        } else {
-            return RenderingUtil.indexToId(index);
-        }
+        return variableNameGenerator.variableName(index);
     }
 
     private void visitBinary(BinaryExpr expr, String op, boolean guarded) {
@@ -795,7 +755,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     visitBinary(expr, ">>", false);
                     break;
                 case UNSIGNED_RIGHT_SHIFT:
-                    visitBinary(expr, ">>>", false);
+                    // JavaScript not casts -2147483648 >>> 0 to 2147483648, which is not 32 bit integer.
+                    visitBinary(expr, ">>>", true);
                     break;
             }
         }

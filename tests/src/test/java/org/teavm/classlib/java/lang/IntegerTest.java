@@ -21,9 +21,17 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class IntegerTest {
+    @Test
+    public void testRightUnsignedShift() {
+        assertEquals(1 << 31, Integer.MIN_VALUE >>> Integer.parseInt("0"));
+        assertEquals(-1, -1 >>> Integer.parseInt("0"));
+    }
+
     @Test
     public void parsesInteger() {
         assertEquals(0, Integer.parseInt("0", 10));
@@ -34,6 +42,14 @@ public class IntegerTest {
         assertEquals(102, Integer.parseInt("1100110", 2));
         assertEquals(2147483647, Integer.parseInt("2147483647", 10));
         assertEquals(411787, Integer.parseInt("Kona", 27));
+    }
+
+    @Test
+    public void parsesIntegerInSubstring() {
+        assertEquals(0, Integer.parseInt("[0]", 1, 2, 10));
+        assertEquals(473, Integer.parseInt("[473]", 1, 4, 10));
+        assertEquals(42, Integer.parseInt("[+42]", 1, 4, 10));
+        assertEquals(-255, Integer.parseInt("[-FF]", 1, 4, 16));
     }
 
     @Test
@@ -76,6 +92,7 @@ public class IntegerTest {
 
     @Test
     public void numberOfLeadingZerosComputed() {
+        assertEquals(0, Integer.numberOfLeadingZeros(-1));
         assertEquals(1, Integer.numberOfLeadingZeros(0x40000000));
         assertEquals(1, Integer.numberOfLeadingZeros(0x40000123));
         assertEquals(1, Integer.numberOfLeadingZeros(0x7FFFFFFF));
@@ -100,6 +117,21 @@ public class IntegerTest {
         assertEquals(0,  Integer.numberOfTrailingZeros(0x12300003));
         assertEquals(0,  Integer.numberOfTrailingZeros(0xFFFFFFFF));
         assertEquals(32, Integer.numberOfTrailingZeros(0));
+    }
+
+    @Test
+    public void highestOneBit() {
+        assertEquals(1 << 31, Integer.highestOneBit(-1));
+        assertEquals(1 << 31, Integer.highestOneBit(Integer.MIN_VALUE));
+        assertEquals(0, Integer.highestOneBit(0));
+        assertEquals(16, Integer.highestOneBit(31));
+    }
+
+    @Test
+    public void lowestOneBit() {
+        assertEquals(0, Integer.lowestOneBit(0));
+        assertEquals(2, Integer.lowestOneBit(50));
+        assertEquals(1, Integer.lowestOneBit(-1));
     }
 
     @Test
@@ -139,7 +171,6 @@ public class IntegerTest {
         assertTrue(Integer.compare(Integer.MIN_VALUE, Integer.MAX_VALUE) < 0);
     }
 
-
     @Test
     public void getFromSystemProperty() {
         System.setProperty("test.foo", "23");
@@ -159,5 +190,28 @@ public class IntegerTest {
         assertEquals("11", Integer.toHexString(17));
         assertEquals("ff", Integer.toHexString(255));
         assertEquals("ffffffff", Integer.toHexString(-1));
+    }
+
+    @Test
+    public void toStringRadix16() {
+        assertEquals("17", Integer.toString(23, 16));
+        assertEquals("1e240", Integer.toString(123456, 16));
+        assertEquals("-17", Integer.toString(-23, 16));
+        assertEquals("7fffffff", Integer.toString(Integer.MAX_VALUE, 16));
+        assertEquals("-80000000", Integer.toString(Integer.MIN_VALUE, 16));
+    }
+
+    @Test
+    public void toStringRadix2() {
+        assertEquals("10111", Integer.toString(23, 2));
+        assertEquals("11110001001000000", Integer.toString(123456, 2));
+        assertEquals("-10111", Integer.toString(-23, 2));
+        assertEquals("1111111111111111111111111111111", Integer.toString(Integer.MAX_VALUE, 2));
+        assertEquals("-10000000000000000000000000000000", Integer.toString(Integer.MIN_VALUE, 2));
+    }
+
+    @Test
+    public void unsignedRightShift() {
+        assertEquals(Integer.MIN_VALUE, Integer.MIN_VALUE >>> Integer.parseInt("0"));
     }
 }

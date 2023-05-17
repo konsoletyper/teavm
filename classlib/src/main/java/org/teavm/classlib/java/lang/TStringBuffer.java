@@ -24,11 +24,11 @@ public class TStringBuffer extends TAbstractStringBuilder implements TAppendable
         super();
     }
 
-    public TStringBuffer(TString value) {
+    public TStringBuffer(String value) {
         super(value);
     }
 
-    public TStringBuffer(TCharSequence value) {
+    public TStringBuffer(CharSequence value) {
         super(value);
     }
 

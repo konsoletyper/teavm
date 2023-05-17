@@ -336,33 +336,37 @@ class WasmValueImpl extends Value {
                 return Collections.emptyMap();
             }
             var properties = new LinkedHashMap<String, Variable>();
-            for (var field : cls.instanceFields()) {
-                long longValue;
-                switch (field.type()) {
-                    case BOOLEAN:
-                    case BYTE:
-                        longValue = data[field.address()];
-                        break;
-                    case SHORT:
-                    case CHAR:
-                        longValue = readShort(data, field.address());
-                        break;
-                    case INT:
-                    case FLOAT:
-                    case ADDRESS:
-                    case OBJECT:
-                        longValue = readInt(data, field.address());
-                        break;
-                    case LONG:
-                    case DOUBLE:
-                        longValue = readLong(data, field.address());
-                        break;
-                    default:
-                        longValue = 0;
-                        break;
+            var ancestorCls = cls;
+            while (ancestorCls != null) {
+                for (var field : ancestorCls.instanceFields()) {
+                    long longValue;
+                    switch (field.type()) {
+                        case BOOLEAN:
+                        case BYTE:
+                            longValue = data[field.address()];
+                            break;
+                        case SHORT:
+                        case CHAR:
+                            longValue = readShort(data, field.address());
+                            break;
+                        case INT:
+                        case FLOAT:
+                        case ADDRESS:
+                        case OBJECT:
+                            longValue = readInt(data, field.address());
+                            break;
+                        case LONG:
+                        case DOUBLE:
+                            longValue = readLong(data, field.address());
+                            break;
+                        default:
+                            longValue = 0;
+                            break;
+                    }
+                    var value = new WasmValueImpl(debugger, debugInfo, field.type(), callFrame, longValue);
+                    properties.put(field.name(), new Variable(field.name(), value));
                 }
-                var value = new WasmValueImpl(debugger, debugInfo, field.type(), callFrame, longValue);
-                properties.put(field.name(), new Variable(field.name(), value));
+                ancestorCls = ancestorCls.superclass();
             }
             addCommonProperties(properties, cls);
             return properties;

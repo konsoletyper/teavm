@@ -15,6 +15,7 @@
  */
 package org.teavm.gradle;
 
+import groovy.lang.Closure;
 import org.gradle.api.Action;
 import org.gradle.api.model.ObjectFactory;
 import org.teavm.gradle.api.TeaVMJSTests;
@@ -41,6 +42,11 @@ class TeaVMTestsImpl implements TeaVMTests {
     }
 
     @Override
+    public void js(Closure<?> config) {
+        config.rehydrate(getJs(), config.getOwner(), config.getThisObject()).call();
+    }
+
+    @Override
     public TeaVMWasmTests getWasm() {
         return wasm;
     }
@@ -48,6 +54,11 @@ class TeaVMTestsImpl implements TeaVMTests {
     @Override
     public void wasm(Action<TeaVMWasmTests> config) {
         config.execute(wasm);
+    }
+
+    @Override
+    public void wasm(Closure<?> config) {
+        config.rehydrate(getWasm(), config.getOwner(), config.getThisObject()).call();
     }
 
     void configure(TeaVMBaseExtensionImpl extension) {

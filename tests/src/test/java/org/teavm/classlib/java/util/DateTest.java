@@ -34,4 +34,14 @@ public class DateTest {
         assertEquals(4, date.getDate());
         assertEquals(115, date.getYear());
     }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void setsUTC() {
+        long epochTime = Date.UTC(2023, 1, 20, 10, 0, 0);
+        Date date = new Date(epochTime);
+        assertEquals(2023, date.getYear());
+        assertEquals(1, date.getMonth());
+        assertEquals(20, date.getDate());
+    }
 }

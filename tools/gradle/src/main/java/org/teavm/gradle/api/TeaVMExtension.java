@@ -15,6 +15,8 @@
  */
 package org.teavm.gradle.api;
 
+import groovy.lang.Closure;
+import groovy.lang.DelegatesTo;
 import org.gradle.api.Action;
 
 public interface TeaVMExtension extends TeaVMBaseExtension {
@@ -22,19 +24,29 @@ public interface TeaVMExtension extends TeaVMBaseExtension {
 
     void js(Action<TeaVMJSConfiguration> action);
 
+    void js(@DelegatesTo(TeaVMJSConfiguration.class) Closure<?> action);
+
     TeaVMWasmConfiguration getWasm();
 
     void wasm(Action<TeaVMWasmConfiguration> action);
+
+    void wasm(@DelegatesTo(TeaVMWasmConfiguration.class) Closure<?> action);
 
     TeaVMWasiConfiguration getWasi();
 
     void wasi(Action<TeaVMWasiConfiguration> action);
 
+    void wasi(@DelegatesTo(TeaVMWasiConfiguration.class) Closure<?> action);
+
     TeaVMCConfiguration getC();
 
     void c(Action<TeaVMCConfiguration> action);
 
+    void c(@DelegatesTo(TeaVMCConfiguration.class) Closure<?> action);
+
     TeaVMCommonConfiguration getAll();
 
     void all(Action<TeaVMCommonConfiguration> action);
+
+    void all(@DelegatesTo(TeaVMCommonConfiguration.class) Closure<?> action);
 }

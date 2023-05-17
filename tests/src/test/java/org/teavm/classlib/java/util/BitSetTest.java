@@ -47,6 +47,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -96,6 +97,24 @@ public class BitSetTest {
                 }
             }
         }
+    }
+
+    @Test
+    public void constructFromLongs() {
+        BitSet bs = BitSet.valueOf(new long[] { 7, 2, 5, 1L << 36 });
+        assertTrue(bs.get(0) && bs.get(1) && bs.get(2) && bs.get(Long.SIZE + 1)
+                && bs.get(2 * Long.SIZE) && bs.get(2 * Long.SIZE + 2) && bs.get(3 * Long.SIZE + 36));
+        assertFalse(bs.get(3) || bs.get(Long.SIZE + 6) || bs.get(2 * Long.SIZE + 15) || bs.get(3 * Long.SIZE));
+    }
+
+    @Test
+    public void testStream() {
+        assertArrayEquals(new int[] { 0, 1, 2, Long.SIZE + 1, 2 * Long.SIZE, 2 * Long.SIZE + 2, 3 * Long.SIZE + 36 },
+                BitSet.valueOf(new long[] { 7, 2, 5, 1L << 36 }).stream().toArray());
+        BitSet bs = new BitSet();
+        assertEquals(0, bs.stream().count());
+        bs.set(1);
+        assertArrayEquals(new int[] { 1 }, bs.stream().toArray());
     }
 
     @Test
@@ -859,6 +878,9 @@ public class BitSetTest {
 
         bs.set(2, 2);
         assertFalse("Bit got set incorrectly ", bs.get(2));
+
+        bs = new BitSet();
+        bs.set(0, 0);
     }
 
     @Test

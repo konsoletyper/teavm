@@ -54,7 +54,7 @@ public class ObjectMethodsSubstitutor implements BootstrapMethodSubstitutor {
             pe.constant(1).propagateTo(result);
             pe.jump(joint);
         });
-        ConditionProducer classCondition = () -> thisVar.isNull()
+        ConditionProducer classCondition = () -> thatVar.isNull()
                 .or(() -> thatVar.invokeVirtual("getClass", Class.class).isNotSame(pe.constant(type)));
         pe.when(classCondition).thenDo(() -> {
             pe.constant(0).propagateTo(result);
@@ -156,7 +156,13 @@ public class ObjectMethodsSubstitutor implements BootstrapMethodSubstitutor {
     private ValueEmitter substituteToString(DynamicCallSite callSite, ProgramEmitter pe) {
         ValueEmitter thisVar = callSite.getArguments().get(0);
         String names = callSite.getBootstrapArguments().get(1).getString();
-        ValueEmitter resultVar = pe.construct(StringBuilder.class, pe.constant("["));
+        String className = ((ValueType.Object) thisVar.getType()).getClassName();
+        String simpleName = callSite.getAgent().getClassSource().get(className).getSimpleName();
+        if (simpleName == null) {
+            int idx = className.lastIndexOf('.');
+            simpleName = idx >= 0 ? className.substring(idx + 1) : className;
+        }
+        ValueEmitter resultVar = pe.construct(StringBuilder.class, pe.constant(simpleName + "["));
 
         int argIndex = 2;
         int index = 0;

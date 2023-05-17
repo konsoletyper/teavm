@@ -119,7 +119,7 @@ public class CompositeMethodGenerator {
     }
 
     CompositeMethodGenerator(VariableContext varContext, Program program) {
-        this.diagnostics = MetaprogrammingImpl.agent.getDiagnostics();
+        this.diagnostics = MetaprogrammingImpl.createDiagnostics();
         this.program = program;
         this.varContext = varContext;
     }

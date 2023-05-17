@@ -38,6 +38,13 @@ public class IntegerNativeGenerator implements Injector {
                 context.writeExpr(context.getArgument(1));
                 context.getWriter().append(")");
                 break;
+            case "compareUnsigned":
+                context.getWriter().append("$rt_ucmp(");
+                context.writeExpr(context.getArgument(0));
+                context.getWriter().append(",").ws();
+                context.writeExpr(context.getArgument(1));
+                context.getWriter().append(")");
+                break;
         }
     }
 }

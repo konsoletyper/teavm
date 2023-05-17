@@ -15,6 +15,7 @@
  */
 package org.teavm.gradle;
 
+import groovy.lang.Closure;
 import java.io.File;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
@@ -118,6 +119,11 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     }
 
     @Override
+    public void js(Closure<?> action) {
+        action.rehydrate(getJs(), action.getOwner(), action.getThisObject()).call();
+    }
+
+    @Override
     public TeaVMWasmConfiguration getWasm() {
         return wasm;
     }
@@ -125,6 +131,11 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     @Override
     public void wasm(Action<TeaVMWasmConfiguration> action) {
         action.execute(getWasm());
+    }
+
+    @Override
+    public void wasm(Closure<?> action) {
+        action.rehydrate(getWasm(), action.getOwner(), action.getThisObject()).call();
     }
 
     @Override
@@ -138,6 +149,11 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     }
 
     @Override
+    public void wasi(Closure<?> action) {
+        action.rehydrate(getWasi(), action.getOwner(), action.getThisObject()).call();
+    }
+
+    @Override
     public TeaVMCConfiguration getC() {
         return c;
     }
@@ -148,6 +164,11 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     }
 
     @Override
+    public void c(Closure<?> action) {
+        action.rehydrate(getC(), action.getOwner(), action.getThisObject()).call();
+    }
+
+    @Override
     public TeaVMCommonConfiguration getAll() {
         return all;
     }
@@ -155,6 +176,11 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     @Override
     public void all(Action<TeaVMCommonConfiguration> action) {
         action.execute(getAll());
+    }
+
+    @Override
+    public void all(Closure<?> action) {
+        action.rehydrate(getAll(), action.getOwner(), action.getThisObject()).call();
     }
 
     private void inherit(TeaVMCommonConfiguration target, TeaVMCommonConfiguration source) {
