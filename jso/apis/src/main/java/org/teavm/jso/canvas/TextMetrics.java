@@ -20,7 +20,7 @@ import org.teavm.jso.JSProperty;
 
 public interface TextMetrics extends JSObject {
     @JSProperty
-    int getWidth();
+    double getWidth();
 
     @JSProperty
     double getActualBoundingBoxAscent();
