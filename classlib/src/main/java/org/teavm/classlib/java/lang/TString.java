@@ -733,4 +733,21 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         }
         return sb.toString();
     }
+
+    public String repeat(int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (count == 1) {
+            return this.toString();
+        }
+        if (characters.length == 0 || count == 0) {
+            return "";
+        }
+        TStringBuilder builder = new TStringBuilder();
+        for (int i = 0; i < count; i++) {
+            builder.append(this.toString());
+        }
+        return builder.toString();
+    }
 }

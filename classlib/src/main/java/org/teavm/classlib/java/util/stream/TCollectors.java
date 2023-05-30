@@ -18,11 +18,13 @@ package org.teavm.classlib.java.util.stream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -187,4 +189,68 @@ public final class TCollectors {
                 newCharacteristics);
     }
 
+    private static class Reducer<T> {
+        private final BinaryOperator<T> op;
+        private boolean present;
+        private T value;
+
+        private Reducer(BinaryOperator<T> op) {
+            this.op = op;
+        }
+
+        private Reducer(BinaryOperator<T> op, T value) {
+            this.op = op;
+            consume(value);
+        }
+
+        private void consume(T t) {
+            if (present) {
+                value = op.apply(value, t);
+            } else {
+                value = t;
+                present = true;
+            }
+        }
+
+        private Reducer<T> merge(Reducer<T> other) {
+            if (other.present) {
+                consume(other.value);
+            }
+            return this;
+        }
+
+        private Optional<T> getOpt() {
+            return present ? Optional.of(value) : Optional.empty();
+        }
+
+        private T get() {
+            return value;
+        }
+    }
+
+    public static <T> TCollector<T, ?, Optional<T>> reducing(BinaryOperator<T> op) {
+        return TCollector.of(() -> new Reducer<>(op), Reducer::consume, Reducer::merge, Reducer::getOpt);
+    }
+
+    public static <T> TCollector<T, ?, T> reducing(T identity, BinaryOperator<T> op) {
+        return TCollector.of(() -> new Reducer<>(op, identity), Reducer::consume, Reducer::merge, Reducer::get);
+    }
+
+    public static <T, U> TCollector<T, ?, U> reducing(U identity,
+            Function<? super T, ? extends U> mapper, BinaryOperator<U> op) {
+        return TCollector.of(() -> new Reducer<>(op, identity),
+                (red, t) -> red.consume(mapper.apply(t)), Reducer::merge, Reducer::get);
+    }
+
+    public static <T> TCollector<T, ?, Optional<T>> minBy(Comparator<? super T> comparator) {
+        return reducing(BinaryOperator.minBy(comparator));
+    }
+
+    public static <T> TCollector<T, ?, Optional<T>> maxBy(Comparator<? super T> comparator) {
+        return reducing(BinaryOperator.maxBy(comparator));
+    }
+
+    public static <T> TCollector<T, ?, Long> counting() {
+        return reducing(0L, e -> 1L, Long::sum);
+    }
 }
