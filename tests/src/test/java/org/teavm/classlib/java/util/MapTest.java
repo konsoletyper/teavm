@@ -54,6 +54,16 @@ public class MapTest {
                         Map.entry("p", 9), Map.entry("a", 10)));
     }
 
+    @Test
+    public void copyOfWorks() {
+        testOf(new String[0], Map.copyOf(new HashMap<>()));
+        testOf(new String[] { "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "a" },
+                Map.copyOf(
+                        Map.ofEntries(Map.entry("q", 0), Map.entry("w", 1), Map.entry("e", 2), Map.entry("r", 3),
+                        Map.entry("t", 4), Map.entry("y", 5), Map.entry("u", 6), Map.entry("i", 7), Map.entry("o", 8),
+                        Map.entry("p", 9), Map.entry("a", 10))));
+    }
+
     private void testOf(String[] expected, Map<String, Integer> actual) {
         if (actual.size() != expected.length) {
             fail("Expected size is " + expected.length + ", actual size is " + actual.size());

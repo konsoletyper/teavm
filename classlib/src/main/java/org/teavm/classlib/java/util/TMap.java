@@ -294,4 +294,8 @@ public interface TMap<K, V> {
     static <K, V> TMap.Entry<K, V> entry(K k, V v) {
         return new TTemplateCollections.ImmutableEntry<>(requireNonNull(k), requireNonNull(v));
     }
+
+    static <K, V> TMap<K, V> copyOf(TMap<? extends K, ? extends V> map) {
+        return new TTemplateCollections.NEtriesMap<>(map);
+    }
 }
