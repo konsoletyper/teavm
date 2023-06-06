@@ -744,7 +744,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         if (characters.length == 0 || count == 0) {
             return "";
         }
-        TStringBuilder builder = new TStringBuilder();
+        TStringBuilder builder = new TStringBuilder(characters.length * count);
         for (int i = 0; i < count; i++) {
             builder.append(this.toString());
         }
