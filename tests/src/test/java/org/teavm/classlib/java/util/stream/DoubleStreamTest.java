@@ -337,7 +337,7 @@ public class DoubleStreamTest {
     }
 
     @Test
-    public void summaryDouble() {
+    public void summaryStatistics() {
         DoubleSummaryStatistics statistics = DoubleStream.of(1.0, 2.0, 3.0).summaryStatistics();
         assertEquals(3L, statistics.getCount());
         assertEquals(2.0, statistics.getAverage(), 0.0);
