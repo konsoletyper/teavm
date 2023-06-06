@@ -29,6 +29,7 @@ import java.util.function.DoubleToLongFunction;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.ObjDoubleConsumer;
 import java.util.function.Supplier;
+import org.teavm.classlib.java.util.TDoubleSummaryStatistics;
 import org.teavm.classlib.java.util.stream.doubleimpl.TArrayDoubleStreamImpl;
 import org.teavm.classlib.java.util.stream.doubleimpl.TDoubleStreamBuilder;
 import org.teavm.classlib.java.util.stream.doubleimpl.TEmptyDoubleStreamImpl;
@@ -94,6 +95,8 @@ public interface TDoubleStream extends TBaseStream<Double, TDoubleStream> {
     long count();
 
     OptionalDouble average();
+
+    TDoubleSummaryStatistics summaryStatistics();
 
     boolean anyMatch(DoublePredicate predicate);
 

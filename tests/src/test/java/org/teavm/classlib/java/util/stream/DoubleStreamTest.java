@@ -24,6 +24,7 @@ import static org.teavm.classlib.java.util.stream.Helper.testDoubleStream;
 import static org.teavm.classlib.java.util.stream.Helper.testIntStream;
 import static org.teavm.classlib.java.util.stream.Helper.testIntegerStream;
 import static org.teavm.classlib.java.util.stream.Helper.testLongStream;
+import java.util.DoubleSummaryStatistics;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
 import java.util.stream.DoubleStream;
@@ -333,5 +334,21 @@ public class DoubleStreamTest {
     public void average() {
         assertEquals(2.5, DoubleStream.of(1, 2, 3, 4).average().getAsDouble(), 0.001);
         assertFalse(DoubleStream.empty().average().isPresent());
+    }
+
+    @Test
+    public void summaryDouble() {
+        DoubleSummaryStatistics statistics = DoubleStream.of(1.0, 2.0, 3.0).summaryStatistics();
+        assertEquals(3L, statistics.getCount());
+        assertEquals(2.0, statistics.getAverage(), 0.0);
+        assertEquals(1.0, statistics.getMin(), 0.0);
+        assertEquals(3.0, statistics.getMax(), 0.0);
+        assertEquals(6.0, statistics.getSum(), 0.0);
+        DoubleSummaryStatistics empty = DoubleStream.empty().summaryStatistics();
+        assertEquals(0L, empty.getCount());
+        assertEquals(0.0, empty.getAverage(), 0.0);
+        assertEquals(Double.POSITIVE_INFINITY, empty.getMin(), 0.0);
+        assertEquals(Double.NEGATIVE_INFINITY, empty.getMax(), 0.0);
+        assertEquals(0.0, empty.getSum(), 0.0);
     }
 }

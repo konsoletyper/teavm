@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.util;
 
-import java.util.stream.DoubleStream;
 import org.teavm.classlib.java.util.function.TDoubleConsumer;
 
 public class TDoubleSummaryStatistics implements TDoubleConsumer {
@@ -34,10 +33,11 @@ public class TDoubleSummaryStatistics implements TDoubleConsumer {
         if (count == 0L) {
             return;
         }
-        // All NaN or non NaN // TODO fix
-        var ncount = DoubleStream.of(min, max, sum).filter(Double::isNaN).count();
-        if (ncount > 0 && ncount < 3) {
-            throw new IllegalArgumentException("Some, not all, of the minimum, maximum, or sum is NaN");
+        boolean minNan = Double.isNaN(min);
+        boolean maxNan = Double.isNaN(max);
+        boolean sumNan = Double.isNaN(sum);
+        if ((!minNan || !maxNan || !sumNan) && (minNan || maxNan || sumNan)) {
+            throw new IllegalArgumentException();
         }
 
         this.count = count;
