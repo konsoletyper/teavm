@@ -295,7 +295,12 @@ public interface TMap<K, V> {
         return new TTemplateCollections.ImmutableEntry<>(requireNonNull(k), requireNonNull(v));
     }
 
+    @SuppressWarnings("unchecked")
     static <K, V> TMap<K, V> copyOf(TMap<? extends K, ? extends V> map) {
-        return new TTemplateCollections.NEtriesMap<>(map);
+        if (map instanceof TTemplateCollections.NEtriesMap) {
+            return (TTemplateCollections.NEtriesMap<K, V>) map;
+        } else {
+            return new TTemplateCollections.NEtriesMap<>(map);
+        }
     }
 }
