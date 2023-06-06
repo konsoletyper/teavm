@@ -114,4 +114,24 @@ public class CollectorsTest {
         assertEquals(Optional.empty(), Stream.<String>empty()
                 .collect(Collectors.minBy(Comparator.naturalOrder())));
     }
+
+    @Test
+    public void summaryInt() {
+        
+    }
+
+    @Test
+    public void summaryLong() {
+
+    }
+
+    @Test
+    public void summaryDouble() {
+
+    }
+
+    @Test
+    public void teeing() {
+
+    }
 }
