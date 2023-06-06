@@ -210,6 +210,26 @@ public class StringTest {
     }
 
     @Test
+    public void stripLeadingWorks() {
+        assertEquals("ab   ", "  ab   ".stripLeading());
+        assertEquals("ab   ", "ab   ".stripLeading());
+        assertEquals("ab", "ab".stripLeading());
+        assertEquals("a b", "a b".stripLeading());
+        assertEquals("", "  \t".stripLeading());
+        assertEquals("ab", "\t\n \u2008\r\fab".stripLeading());
+    }
+
+    @Test
+    public void stripTrailingWorks() {
+        assertEquals("  ab", "  ab   ".stripTrailing());
+        assertEquals("  ab", "  ab".stripTrailing());
+        assertEquals("ab", "ab".stripTrailing());
+        assertEquals("a b", "a b".stripTrailing());
+        assertEquals("", "  \t".stripTrailing());
+        assertEquals("ab", "ab\t\n \u2008\r\f".stripTrailing());
+    }
+
+    @Test
     public void convertedToCharArray() {
         char[] array = "123".toCharArray();
         assertEquals(3, array.length);

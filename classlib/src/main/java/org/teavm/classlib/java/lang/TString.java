@@ -487,6 +487,22 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return substring(lower, upper + 1);
     }
 
+    public TString stripLeading() {
+        var lower = 0;
+        while (lower < length() && Character.isWhitespace(charAt(lower))) {
+            ++lower;
+        }
+        return substring(lower, length());
+    }
+
+    public TString stripTrailing() {
+        var upper = length() - 1;
+        while (0 <= upper && Character.isWhitespace(charAt(upper))) {
+            --upper;
+        }
+        return substring(0, upper + 1);
+    }
+
     @Override
     public String toString() {
         return (String) (Object) this;
@@ -732,5 +748,22 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             sb.append(iter.next());
         }
         return sb.toString();
+    }
+
+    public String repeat(int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (count == 1) {
+            return this.toString();
+        }
+        if (characters.length == 0 || count == 0) {
+            return "";
+        }
+        TStringBuilder builder = new TStringBuilder(characters.length * count);
+        for (int i = 0; i < count; i++) {
+            builder.append(this.toString());
+        }
+        return builder.toString();
     }
 }
