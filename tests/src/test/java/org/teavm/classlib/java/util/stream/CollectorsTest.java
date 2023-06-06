@@ -18,10 +18,12 @@ package org.teavm.classlib.java.util.stream;
 import static org.junit.Assert.assertEquals;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -89,5 +91,27 @@ public class CollectorsTest {
                 numbers.stream().collect(Collectors.groupingBy(Function.identity(),
                         Collectors.collectingAndThen(Collectors.toList(),
                                 l -> l.stream().mapToInt(i -> i).sum()))));
+    }
+
+    @Test
+    public void reducing() {
+        assertEquals(Optional.of("abc"), Stream.of("a", "b", "c")
+                .collect(Collectors.reducing(String::concat)));
+        assertEquals(Optional.empty(), Stream.<String>empty()
+                .collect(Collectors.reducing(String::concat)));
+        assertEquals("abc", Stream.of("a", "b", "c")
+                .collect(Collectors.reducing("", String::concat)));
+        assertEquals("aabbcc", Stream.of("a", "b", "c")
+                .collect(Collectors.reducing("", s -> s.repeat(2), String::concat)));
+    }
+
+    @Test
+    public void minMax() {
+        assertEquals(Optional.of("a"), Stream.of("a", "bb", "ccc")
+                .collect(Collectors.minBy(Comparator.comparing(String::length))));
+        assertEquals(Optional.of("ccc"), Stream.of("a", "bb", "ccc")
+                .collect(Collectors.maxBy(Comparator.naturalOrder())));
+        assertEquals(Optional.empty(), Stream.<String>empty()
+                .collect(Collectors.minBy(Comparator.naturalOrder())));
     }
 }
