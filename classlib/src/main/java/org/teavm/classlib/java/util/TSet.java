@@ -73,4 +73,8 @@ public interface TSet<E> extends TCollection<E> {
     static <E> TSet<E> of(E... elements) {
         return new TTemplateCollections.NElementSet<>(elements);
     }
+
+    static <E> TSet<E> copyOf(TCollection<E> collection) {
+        return new TTemplateCollections.NElementSet<>(collection);
+    }
 }

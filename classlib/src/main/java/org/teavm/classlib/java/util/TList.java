@@ -155,4 +155,8 @@ public interface TList<E> extends TCollection<E> {
         }
         return new TTemplateCollections.ImmutableArrayList<>(elements.clone());
     }
+
+    static <E> TList<E> copyOf(TCollection<? extends E> collection) {
+        return new TTemplateCollections.ImmutableArrayList<>(collection);
+    }
 }
