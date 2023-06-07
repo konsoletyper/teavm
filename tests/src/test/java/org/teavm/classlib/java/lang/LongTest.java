@@ -65,6 +65,21 @@ public class LongTest {
     }
 
     @Test
+    public void highestOneBit() {
+        assertEquals(1L << 63, Long.highestOneBit(-1L));
+        assertEquals(1L << 63, Long.highestOneBit(Long.MIN_VALUE));
+        assertEquals(0, Long.highestOneBit(0L));
+        assertEquals(16L, Long.highestOneBit(31L));
+    }
+
+    @Test
+    public void lowestOneBit() {
+        assertEquals(0L, Long.lowestOneBit(0L));
+        assertEquals(2L, Long.lowestOneBit(50L));
+        assertEquals(1L, Long.lowestOneBit(-1L));
+    }
+
+    @Test
     public void bitsCounted() {
         assertEquals(39, Long.bitCount(2587208649207147453L));
         assertEquals(0, Long.bitCount(0));

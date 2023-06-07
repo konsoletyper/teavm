@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2023 ihromant.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,30 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.canvas;
+package org.teavm.classlib.java.util.stream.doubleimpl;
 
-import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
+import java.util.function.DoublePredicate;
+import org.teavm.classlib.java.util.TDoubleSummaryStatistics;
 
-public interface TextMetrics extends JSObject {
-    @JSProperty
-    double getWidth();
+public class TSummaryDoubleConsumer implements DoublePredicate {
+    final TDoubleSummaryStatistics stat = new TDoubleSummaryStatistics();
 
-    @JSProperty
-    double getActualBoundingBoxAscent();
-
-    @JSProperty
-    double getActualBoundingBoxDescent();
-
-    @JSProperty
-    double getActualBoundingBoxLeft();
-
-    @JSProperty
-    double getActualBoundingBoxRight();
-
-    @JSProperty
-    double getFontBoundingBoxAscent();
-
-    @JSProperty
-    double getFontBoundingBoxDescent();
+    @Override
+    public boolean test(double value) {
+        stat.accept(value);
+        return true;
+    }
 }

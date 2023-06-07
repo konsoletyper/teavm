@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.util.Iterator;
 import java.util.Locale;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.java.io.TSerializable;
@@ -33,12 +32,14 @@ import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.NoSideEffects;
 
 public class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
+    private static final char[] EMPTY_CHARS = new char[0];
+    private static final TString EMPTY = new TString();
     public static final TComparator<TString> CASE_INSENSITIVE_ORDER = (o1, o2) -> o1.compareToIgnoreCase(o2);
     private char[] characters;
     private transient int hashCode;
 
     public TString() {
-        this.characters = new char[0];
+        this.characters = EMPTY_CHARS;
     }
 
     public TString(TString other) {
@@ -57,6 +58,12 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         for (int i = 0; i < count; ++i) {
             this.characters[i] = value[i + offset];
         }
+    }
+
+    static TString fromArray(char[] characters) {
+        var s = new TString();
+        s.characters = characters;
+        return s;
     }
 
     public TString(byte[] bytes, int offset, int length, TString charsetName) throws TUnsupportedEncodingException {
@@ -157,7 +164,6 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
     
     public boolean isBlank() {
-        
         for (int i = 0; i < characters.length; i++) {
             if (characters[i] != ' ') {
                 return false;
@@ -392,6 +398,12 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         if (beginIndex > endIndex) {
             throw new TIndexOutOfBoundsException();
         }
+        if (beginIndex == endIndex) {
+            return EMPTY;
+        }
+        if (beginIndex == 0 && endIndex == length()) {
+            return this;
+        }
         return new TString(characters, beginIndex, endIndex - beginIndex);
     }
 
@@ -408,7 +420,11 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         if (str.isEmpty()) {
             return this;
         }
-        char[] buffer = new char[length() + str.length()];
+        if (isEmpty()) {
+            return str;
+        }
+
+        var buffer = new char[length() + str.length()];
         int index = 0;
         for (int i = 0; i < length(); ++i) {
             buffer[index++] = charAt(i);
@@ -416,18 +432,18 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         for (int i = 0; i < str.length(); ++i) {
             buffer[index++] = str.charAt(i);
         }
-        return new TString(buffer);
+        return TString.fromArray(buffer);
     }
 
     public TString replace(char oldChar, char newChar) {
         if (oldChar == newChar) {
             return this;
         }
-        char[] buffer = new char[length()];
+        var buffer = new char[length()];
         for (int i = 0; i < length(); ++i) {
             buffer[i] = charAt(i) == oldChar ? newChar : charAt(i);
         }
-        return new TString(buffer);
+        return TString.fromArray(buffer);
     }
 
     public boolean contains(TCharSequence s) {
@@ -445,7 +461,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public String replace(TCharSequence target, TCharSequence replacement) {
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         int sz = length() - target.length();
         int i = 0;
         outer:
@@ -485,6 +501,22 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             --upper;
         }
         return substring(lower, upper + 1);
+    }
+
+    public TString stripLeading() {
+        var lower = 0;
+        while (lower < length() && Character.isWhitespace(charAt(lower))) {
+            ++lower;
+        }
+        return substring(lower, length());
+    }
+
+    public TString stripTrailing() {
+        var upper = length() - 1;
+        while (0 <= upper && Character.isWhitespace(charAt(upper))) {
+            --upper;
+        }
+        return substring(0, upper + 1);
     }
 
     @Override
@@ -690,19 +722,19 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return new TFormatter(l).format(format, args).toString();
     }
 
-    public static String join(CharSequence delimiter, CharSequence... elements) {
+    public static TString join(CharSequence delimiter, CharSequence... elements) {
         if (elements.length == 0) {
-            return "";
+            return EMPTY;
         }
         int resultLength = 0;
-        for (CharSequence element : elements) {
+        for (var element : elements) {
             resultLength += element.length();
         }
         resultLength += (elements.length - 1) * delimiter.length();
 
-        char[] chars = new char[resultLength];
+        var chars = new char[resultLength];
         int index = 0;
-        CharSequence firstElement = elements[0];
+        var firstElement = elements[0];
         for (int i = 0; i < firstElement.length(); ++i) {
             chars[index++] = firstElement.charAt(i);
         }
@@ -710,27 +742,46 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             for (int j = 0; j < delimiter.length(); ++j) {
                 chars[index++] = delimiter.charAt(j);
             }
-            CharSequence element = elements[i];
+            var element = elements[i];
             for (int j = 0; j < element.length(); ++j) {
                 chars[index++] = element.charAt(j);
             }
         }
 
-        return new String(chars);
+        return TString.fromArray(chars);
     }
 
     public static String join(CharSequence delimiter, Iterable<? extends CharSequence> elements) {
-        Iterator<? extends CharSequence> iter = elements.iterator();
+        var iter = elements.iterator();
         if (!iter.hasNext()) {
             return "";
         }
 
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         sb.append(iter.next());
         while (iter.hasNext()) {
             sb.append(delimiter);
             sb.append(iter.next());
         }
         return sb.toString();
+    }
+
+    public TString repeat(int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (count == 1) {
+            return this;
+        }
+        if (characters.length == 0 || count == 0) {
+            return EMPTY;
+        }
+        var chars = new char[characters.length * count];
+        var j = 0;
+        for (int i = 0; i < count; i++) {
+            getChars(0, length(), chars, j);
+            j += length();
+        }
+        return TString.fromArray(chars);
     }
 }

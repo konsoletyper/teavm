@@ -32,6 +32,7 @@ import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Supplier;
+import org.teavm.classlib.java.util.TIntSummaryStatistics;
 import org.teavm.classlib.java.util.stream.TDoubleStream;
 import org.teavm.classlib.java.util.stream.TIntStream;
 import org.teavm.classlib.java.util.stream.TLongStream;
@@ -207,6 +208,15 @@ public abstract class TSimpleIntStreamImpl implements TIntStream {
             // go on
         }
         return consumer.count > 0 ? OptionalDouble.of(consumer.sum / consumer.count) : OptionalDouble.empty();
+    }
+
+    @Override
+    public TIntSummaryStatistics summaryStatistics() {
+        TSummaryIntConsumer consumer = new TSummaryIntConsumer();
+        while (next(consumer)) {
+            // go on
+        }
+        return consumer.stat;
     }
 
     @Override

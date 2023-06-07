@@ -30,6 +30,7 @@ import java.util.function.LongToIntFunction;
 import java.util.function.LongUnaryOperator;
 import java.util.function.ObjLongConsumer;
 import java.util.function.Supplier;
+import org.teavm.classlib.java.util.TLongSummaryStatistics;
 import org.teavm.classlib.java.util.stream.longimpl.TArrayLongStreamImpl;
 import org.teavm.classlib.java.util.stream.longimpl.TEmptyLongStreamImpl;
 import org.teavm.classlib.java.util.stream.longimpl.TGenerateLongStream;
@@ -96,6 +97,8 @@ public interface TLongStream extends TBaseStream<Long, TLongStream> {
     long count();
 
     OptionalDouble average();
+
+    TLongSummaryStatistics summaryStatistics();
 
     boolean anyMatch(LongPredicate predicate);
 

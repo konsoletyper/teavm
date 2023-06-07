@@ -61,7 +61,9 @@
     <module name="MethodName">
       <property name="format" value="^(([A-Z][A-Z0-9]+)|([a-z][a-z0-9]*))([A-Z][a-z0-9]*)*"/>
     </module>
-    <module name="MethodTypeParameterName"/>
+    <module name="MethodTypeParameterName">
+      <property name="format" value="^[A-Z][A-Z0-9]*$"/>
+    </module>
     <module name="PackageName"/>
     <module name="ParameterName"/>
     <module name="StaticVariableName"/>
