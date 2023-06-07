@@ -22,9 +22,7 @@ import java.util.Comparator;
 import java.util.DoubleSummaryStatistics;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IntSummaryStatistics;
 import java.util.List;
-import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -34,8 +32,10 @@ import java.util.stream.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class CollectorsTest {
     @Test
     public void joining() {
@@ -120,15 +120,15 @@ public class CollectorsTest {
 
     @Test
     public void summaryInt() {
-        assertEquals(Integer.valueOf(6), Stream.of("a", "bb", "ccc").collect(Collectors.summingInt(String::length)));
-        assertEquals(Double.valueOf(2.0), Stream.of("a", "bb", "ccc").collect(Collectors.averagingInt(String::length)));
-        IntSummaryStatistics statistics = Stream.of("a", "bb", "ccc").collect(Collectors.summarizingInt(String::length));
+        assertEquals(6L, (int) Stream.of("a", "bb", "ccc").collect(Collectors.summingInt(String::length)));
+        assertEquals(2.0, Stream.of("a", "bb", "ccc").collect(Collectors.averagingInt(String::length)), 0.001);
+        var statistics = Stream.of("a", "bb", "ccc").collect(Collectors.summarizingInt(String::length));
         assertEquals(3L, statistics.getCount());
         assertEquals(2.0, statistics.getAverage(), 0.0);
         assertEquals(1, statistics.getMin());
         assertEquals(3, statistics.getMax());
         assertEquals(6L, statistics.getSum());
-        IntSummaryStatistics empty = Stream.<String>of().collect(Collectors.summarizingInt(String::length));
+        var empty = Stream.<String>of().collect(Collectors.summarizingInt(String::length));
         assertEquals(0L, empty.getCount());
         assertEquals(0.0, empty.getAverage(), 0.0);
         assertEquals(Integer.MAX_VALUE, empty.getMin());
@@ -138,15 +138,15 @@ public class CollectorsTest {
 
     @Test
     public void summaryLong() {
-        assertEquals(Long.valueOf(6L), Stream.of("a", "bb", "ccc").collect(Collectors.summingLong(String::length)));
-        assertEquals(Double.valueOf(2.0), Stream.of("a", "bb", "ccc").collect(Collectors.averagingLong(String::length)));
-        LongSummaryStatistics statistics = Stream.of("a", "bb", "ccc").collect(Collectors.summarizingLong(String::length));
+        assertEquals(6L, (long) Stream.of("a", "bb", "ccc").collect(Collectors.summingLong(String::length)));
+        assertEquals(2.0, Stream.of("a", "bb", "ccc").collect(Collectors.averagingLong(String::length)), 0.001);
+        var statistics = Stream.of("a", "bb", "ccc").collect(Collectors.summarizingLong(String::length));
         assertEquals(3L, statistics.getCount());
         assertEquals(2.0, statistics.getAverage(), 0.0);
         assertEquals(1L, statistics.getMin());
         assertEquals(3L, statistics.getMax());
         assertEquals(6L, statistics.getSum());
-        LongSummaryStatistics empty = Stream.<String>of().collect(Collectors.summarizingLong(String::length));
+        var empty = Stream.<String>of().collect(Collectors.summarizingLong(String::length));
         assertEquals(0L, empty.getCount());
         assertEquals(0.0, empty.getAverage(), 0.0);
         assertEquals(Long.MAX_VALUE, empty.getMin());
@@ -156,9 +156,9 @@ public class CollectorsTest {
 
     @Test
     public void summaryDouble() {
-        assertEquals(Double.valueOf(6.0), Stream.of("a", "bb", "ccc").collect(Collectors.summingDouble(String::length)));
-        assertEquals(Double.valueOf(2.0), Stream.of("a", "bb", "ccc").collect(Collectors.averagingDouble(String::length)));
-        DoubleSummaryStatistics statistics = Stream.of("a", "bb", "ccc").collect(Collectors.summarizingDouble(String::length));
+        assertEquals(6.0, Stream.of("a", "bb", "ccc").collect(Collectors.summingDouble(String::length)), 0.001);
+        assertEquals(2.0, Stream.of("a", "bb", "ccc").collect(Collectors.averagingDouble(String::length)), 0.001);
+        var statistics = Stream.of("a", "bb", "ccc").collect(Collectors.summarizingDouble(String::length));
         assertEquals(3L, statistics.getCount());
         assertEquals(2.0, statistics.getAverage(), 0.0);
         assertEquals(1.0, statistics.getMin(), 0.0);
@@ -174,7 +174,8 @@ public class CollectorsTest {
 
     @Test
     public void teeing() {
-        assertEquals(Double.valueOf(3.0d), Stream.of("a", "bb", "ccc").collect(Collectors.teeing(Collectors.summingInt(String::length),
+        assertEquals(Double.valueOf(3.0d), Stream.of("a", "bb", "ccc")
+                .collect(Collectors.teeing(Collectors.summingInt(String::length),
                 Collectors.averagingInt(String::length), (sum, avg) -> sum / avg)));
     }
 }
