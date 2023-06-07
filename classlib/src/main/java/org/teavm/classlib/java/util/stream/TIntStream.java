@@ -30,6 +30,7 @@ import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Supplier;
+import org.teavm.classlib.java.util.TIntSummaryStatistics;
 import org.teavm.classlib.java.util.stream.intimpl.TArrayIntStreamImpl;
 import org.teavm.classlib.java.util.stream.intimpl.TEmptyIntStreamImpl;
 import org.teavm.classlib.java.util.stream.intimpl.TGenerateIntStream;
@@ -96,6 +97,8 @@ public interface TIntStream extends TBaseStream<Integer, TIntStream> {
     long count();
 
     OptionalDouble average();
+
+    TIntSummaryStatistics summaryStatistics();
 
     boolean anyMatch(IntPredicate predicate);
 

@@ -31,6 +31,7 @@ import java.util.function.DoubleToLongFunction;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.ObjDoubleConsumer;
 import java.util.function.Supplier;
+import org.teavm.classlib.java.util.TDoubleSummaryStatistics;
 import org.teavm.classlib.java.util.stream.TDoubleStream;
 import org.teavm.classlib.java.util.stream.TIntStream;
 import org.teavm.classlib.java.util.stream.TLongStream;
@@ -206,6 +207,15 @@ public abstract class TSimpleDoubleStreamImpl implements TDoubleStream {
             // go on
         }
         return consumer.count > 0 ? OptionalDouble.of(consumer.sum / consumer.count) : OptionalDouble.empty();
+    }
+
+    @Override
+    public TDoubleSummaryStatistics summaryStatistics() {
+        TSummaryDoubleConsumer consumer = new TSummaryDoubleConsumer();
+        while (next(consumer)) {
+            // go on
+        }
+        return consumer.stat;
     }
 
     @Override

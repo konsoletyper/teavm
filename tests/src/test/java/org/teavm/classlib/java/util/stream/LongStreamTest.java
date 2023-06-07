@@ -24,6 +24,7 @@ import static org.teavm.classlib.java.util.stream.Helper.testDoubleStream;
 import static org.teavm.classlib.java.util.stream.Helper.testIntStream;
 import static org.teavm.classlib.java.util.stream.Helper.testIntegerStream;
 import static org.teavm.classlib.java.util.stream.Helper.testLongStream;
+import java.util.LongSummaryStatistics;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
 import java.util.stream.LongStream;
@@ -330,5 +331,21 @@ public class LongStreamTest {
         sb.setLength(0);
         LongStream.rangeClosed(1, 4).forEach(appendLongNumbersTo(sb));
         assertEquals("1;2;3;4;", sb.toString());
+    }
+
+    @Test
+    public void summaryStatistics() {
+        LongSummaryStatistics statistics = LongStream.of(1L, 2L, 3L).summaryStatistics();
+        assertEquals(3L, statistics.getCount());
+        assertEquals(2.0, statistics.getAverage(), 0.0);
+        assertEquals(1L, statistics.getMin());
+        assertEquals(3L, statistics.getMax());
+        assertEquals(6L, statistics.getSum());
+        LongSummaryStatistics empty = LongStream.empty().summaryStatistics();
+        assertEquals(0L, empty.getCount());
+        assertEquals(0.0, empty.getAverage(), 0.0);
+        assertEquals(Long.MAX_VALUE, empty.getMin());
+        assertEquals(Long.MIN_VALUE, empty.getMax());
+        assertEquals(0L, empty.getSum());
     }
 }
