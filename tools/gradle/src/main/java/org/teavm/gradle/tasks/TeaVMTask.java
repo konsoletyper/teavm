@@ -17,7 +17,6 @@ package org.teavm.gradle.tasks;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URLClassLoader;
 import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.util.ArrayList;
@@ -104,7 +103,7 @@ public abstract class TeaVMTask extends DefaultTask {
         if (getOutOfProcess().get()) {
             executeInSeparateProcess();
         } else {
-            executeWithBuilder(new InProcessBuildStrategy(URLClassLoader::new));
+            executeWithBuilder(new InProcessBuildStrategy());
         }
     }
 

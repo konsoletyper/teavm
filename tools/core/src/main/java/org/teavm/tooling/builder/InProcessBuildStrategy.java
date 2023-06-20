@@ -16,14 +16,15 @@
 package org.teavm.tooling.builder;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.callgraph.CallGraph;
@@ -40,7 +41,6 @@ import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMProgressListener;
 
 public class InProcessBuildStrategy implements BuildStrategy {
-    private final ClassLoaderFactory classLoaderFactory;
     private List<String> classPathEntries = new ArrayList<>();
     private TeaVMTargetType targetType;
     private String mainClass;
@@ -70,10 +70,6 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private boolean shortFileNames;
     private boolean assertionsRemoved;
-
-    public InProcessBuildStrategy(ClassLoaderFactory classLoaderFactory) {
-        this.classLoaderFactory = classLoaderFactory;
-    }
 
     @Override
     public void init() {
@@ -242,7 +238,8 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setEntryPointName(entryPointName);
         tool.setTargetDirectory(new File(targetDirectory));
         tool.setTargetFileName(targetFileName);
-        tool.setClassLoader(buildClassLoader());
+        var classLoader = buildClassLoader();
+        tool.setClassLoader(classLoader);
         tool.setOptimizationLevel(optimizationLevel);
         tool.setFastDependencyAnalysis(fastDependencyAnalysis);
 
@@ -273,11 +270,12 @@ public class InProcessBuildStrategy implements BuildStrategy {
 
         try {
             tool.generate();
-        } catch (TeaVMToolException | RuntimeException | Error e) {
+            classLoader.close();
+        } catch (TeaVMToolException | RuntimeException | Error | IOException e) {
             throw new BuildException(e);
         }
 
-        Set<String> generatedFiles = tool.getGeneratedFiles().stream()
+        var generatedFiles = tool.getGeneratedFiles().stream()
                 .map(File::getAbsolutePath)
                 .collect(Collectors.toSet());
 
@@ -285,7 +283,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
                 tool.getProblemProvider(), tool.getClasses(), tool.getUsedResources(), generatedFiles);
     }
 
-    private ClassLoader buildClassLoader() {
+    private URLClassLoader buildClassLoader() {
         URL[] urls = classPathEntries.stream().map(entry -> {
             try {
                 return new File(entry).toURI().toURL();
@@ -294,7 +292,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
             }
         }).toArray(URL[]::new);
 
-        return classLoaderFactory.create(urls, InProcessBuildStrategy.class.getClassLoader());
+        return new URLClassLoader(urls, InProcessBuildStrategy.class.getClassLoader());
     }
 
     static class InProcessBuildResult implements BuildResult {
