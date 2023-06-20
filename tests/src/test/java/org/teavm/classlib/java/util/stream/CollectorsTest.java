@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -177,5 +178,13 @@ public class CollectorsTest {
         assertEquals(Double.valueOf(3.0d), Stream.of("a", "bb", "ccc")
                 .collect(Collectors.teeing(Collectors.summingInt(String::length),
                 Collectors.averagingInt(String::length), (sum, avg) -> sum / avg)));
+    }
+
+    @Test
+    public void partitioningBy() {
+        Map<Boolean, Set<Integer>> grouped = IntStream.range(0, 10).boxed()
+                .collect(Collectors.partitioningBy(i -> i % 2 == 0, Collectors.toSet()));
+        assertEquals(Set.of(1, 3, 5, 7, 9), grouped.get(false));
+        assertEquals(Set.of(0, 2, 4, 6, 8), grouped.get(true));
     }
 }
