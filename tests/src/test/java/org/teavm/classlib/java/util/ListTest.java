@@ -19,6 +19,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,6 +48,24 @@ public class ListTest {
                 List.of("q", "w", "e", "r", "t", "y", "u", "i", "o", "p"));
         testOf(new String[] { "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "a" },
                 List.of("q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "a"));
+    }
+
+    @Test
+    public void copyOfWorks() {
+        testOf(new String[0], List.copyOf(new ArrayList<>()));
+        testOf(new String[] { "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "a" },
+                List.copyOf(Arrays.asList("q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "a")));
+
+        try {
+            // copyOf() must throw a NullPointerException on any 'null' element.
+            List<String> listWithNull = new ArrayList<>(1);
+            listWithNull.add(null);
+
+            List.copyOf(listWithNull);
+            fail("Expected NullPointerException");
+        } catch (NullPointerException e) {
+            // ok
+        }
     }
 
     private void testOf(String[] expected, List<String> actual) {

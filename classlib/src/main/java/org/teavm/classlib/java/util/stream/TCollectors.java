@@ -27,9 +27,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
+import org.teavm.classlib.java.util.TDoubleSummaryStatistics;
+import org.teavm.classlib.java.util.TIntSummaryStatistics;
+import org.teavm.classlib.java.util.TLongSummaryStatistics;
 import org.teavm.classlib.java.util.TObjects;
 
 public final class TCollectors {
@@ -95,7 +102,7 @@ public final class TCollectors {
                     }
                 },
                 (m1, m2) -> {
-                    for (Map.Entry<K, V> e : m2.entrySet()) {
+                    for (var e : m2.entrySet()) {
                         V newV = TObjects.requireNonNull(e.getValue());
                         V oldV = m1.putIfAbsent(e.getKey(), newV);
                         if (oldV != null) {
@@ -118,7 +125,7 @@ public final class TCollectors {
         return TCollector.of(mapFactory,
                 (map, el) -> map.merge(keyMapper.apply(el), valueMapper.apply(el), mergeFunction),
                 (m1, m2) -> {
-                    for (Map.Entry<K, V> e : m2.entrySet()) {
+                    for (var e : m2.entrySet()) {
                         m1.merge(e.getKey(), e.getValue(), mergeFunction);
                     }
                     return m1;
@@ -146,7 +153,7 @@ public final class TCollectors {
             downstream.accumulator().accept(container, t);
         };
         BinaryOperator<Map<K, I>> mapMerger = (m1, m2) -> {
-            for (Map.Entry<K, I> e : m2.entrySet()) {
+            for (var e : m2.entrySet()) {
                 m1.merge(e.getKey(), e.getValue(), downstream.combiner());
             }
             return m1;
@@ -159,7 +166,9 @@ public final class TCollectors {
             Function<I, I> replacer = castFunction(downstream.finisher());
             Function<Map<K, I>, M> finisher = toReplace -> {
                 toReplace.replaceAll((k, v) -> replacer.apply(v));
-                return (M) toReplace;
+                @SuppressWarnings("unchecked")
+                var result = (M) toReplace;
+                return result;
             };
             return TCollector.of(castFactory(mapFactory), mapAppender, mapMerger, finisher);
         }
@@ -179,7 +188,7 @@ public final class TCollectors {
             TCollector<T, A, R> downstream,
             Function<R, K> finisher) {
 
-        EnumSet<TCollector.Characteristics> newCharacteristics = EnumSet.copyOf(downstream.characteristics());
+        var newCharacteristics = EnumSet.copyOf(downstream.characteristics());
         newCharacteristics.remove(TCollector.Characteristics.IDENTITY_FINISH);
 
         return new TCollectorImpl<>(downstream.supplier(),
@@ -252,5 +261,100 @@ public final class TCollectors {
 
     public static <T> TCollector<T, ?, Long> counting() {
         return reducing(0L, e -> 1L, Long::sum);
+    }
+
+    public static <T> TCollector<T, ?, Integer> summingInt(ToIntFunction<? super T> mapper) {
+        return TCollector.of(
+                () -> new int[1],
+                (a, t) -> a[0] = a[0] + mapper.applyAsInt(t),
+                (a, b) -> {
+                    a[0] = a[0] + b[0];
+                    return a;
+                },
+                a -> a[0]);
+    }
+
+    public static <T> TCollector<T, ?, Long> summingLong(ToLongFunction<? super T> mapper) {
+        return collectingAndThen(summarizingLong(mapper), TLongSummaryStatistics::getSum);
+    }
+
+    public static <T> TCollector<T, ?, Double> summingDouble(ToDoubleFunction<? super T> mapper) {
+        return collectingAndThen(summarizingDouble(mapper), TDoubleSummaryStatistics::getSum);
+    }
+
+    public static <T> TCollector<T, ?, Double> averagingInt(ToIntFunction<? super T> mapper) {
+        return collectingAndThen(summarizingInt(mapper), TIntSummaryStatistics::getAverage);
+    }
+
+    public static <T> TCollector<T, ?, Double> averagingLong(ToLongFunction<? super T> mapper) {
+        return collectingAndThen(summarizingLong(mapper), TLongSummaryStatistics::getAverage);
+    }
+
+    public static <T> TCollector<T, ?, Double> averagingDouble(ToDoubleFunction<? super T> mapper) {
+        return collectingAndThen(summarizingDouble(mapper), TDoubleSummaryStatistics::getAverage);
+    }
+
+    public static <T> TCollector<T, ?, TIntSummaryStatistics> summarizingInt(ToIntFunction<? super T> mapper) {
+        return TCollector.of(
+                TIntSummaryStatistics::new,
+                (r, t) -> r.accept(mapper.applyAsInt(t)),
+                (l, r) -> {
+                    l.combine(r);
+                    return l;
+                },
+                TCollector.Characteristics.IDENTITY_FINISH
+        );
+    }
+
+    public static <T> TCollector<T, ?, TLongSummaryStatistics> summarizingLong(ToLongFunction<? super T> mapper) {
+        return TCollector.of(
+                TLongSummaryStatistics::new,
+                (r, t) -> r.accept(mapper.applyAsLong(t)),
+                (l, r) -> {
+                    l.combine(r);
+                    return l;
+                },
+                TCollector.Characteristics.IDENTITY_FINISH
+        );
+    }
+
+    public static <T> TCollector<T, ?, TDoubleSummaryStatistics> summarizingDouble(ToDoubleFunction<? super T> mapper) {
+        return TCollector.of(
+                TDoubleSummaryStatistics::new,
+                (r, t) -> r.accept(mapper.applyAsDouble(t)),
+                (l, r) -> {
+                    l.combine(r);
+                    return l;
+                },
+                TCollector.Characteristics.IDENTITY_FINISH
+        );
+    }
+
+    private static <T, A1, A2, R1, R2, R> TCollector<T, ?, R> teeingUnwrap(TCollector<? super T, A1, R1> left,
+            TCollector<? super T, A2, R2> right, BiFunction<? super R1, ? super R2, R> merger) {
+        return TCollector.of(() -> new Pair<>(left.supplier().get(), right.supplier().get()),
+                (p, t) -> {
+                    left.accumulator().accept(p.a, t);
+                    right.accumulator().accept(p.b, t);
+                }, (p1, p2) -> {
+                    p1.a = left.combiner().apply(p1.a, p2.a);
+                    p2.b = right.combiner().apply(p1.b, p2.b);
+                    return p1;
+                }, p -> merger.apply(left.finisher().apply(p.a), right.finisher().apply(p.b)));
+    }
+
+    public static <T, R1, R2, R> TCollector<T, ?, R> teeing(TCollector<? super T, ?, R1> left,
+            TCollector<? super T, ?, R2> right, BiFunction<? super R1, ? super R2, R> merger) {
+        return teeingUnwrap(left, right, merger);
+    }
+
+    private static class Pair<A, B> {
+        private A a;
+        private B b;
+
+        private Pair(A a, B b) {
+            this.a = a;
+            this.b = b;
+        }
     }
 }

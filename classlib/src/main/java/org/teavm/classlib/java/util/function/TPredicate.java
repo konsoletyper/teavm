@@ -33,7 +33,11 @@ public interface TPredicate<T> {
         return t -> test(t) || other.test(t);
     }
 
-    default TPredicate<T> isEqual(Object targetRef) {
+    static <T> TPredicate<T> isEqual(Object targetRef) {
         return t -> TObjects.equals(t, targetRef);
+    }
+
+    static <T> TPredicate<T> not(TPredicate<? super T> target) {
+        return (TPredicate<T>) target.negate();
     }
 }

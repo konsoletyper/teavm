@@ -20,6 +20,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import org.junit.Test;
@@ -59,6 +61,24 @@ public class SetTest {
         expectIAE(() -> Set.of("q", "w", "e", "r", "t", "y", "u", "i", "q"));
         expectIAE(() -> Set.of("q", "w", "e", "r", "t", "y", "u", "i", "o", "q"));
         expectIAE(() -> Set.of("q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "q"));
+    }
+
+    @Test
+    public void copyOfWorks() {
+        testOf(new String[0], Set.copyOf(new HashSet<>()));
+        testOf(new String[] { "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "a" },
+                Set.copyOf(Arrays.asList("q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "a")));
+        // Duplicates must be silently removed by copyOf(). Unlike of() where they throw an exception.
+        testOf(new String[] { "q", "e", "r", "u", "i", "o", "p" },
+                Set.copyOf(Arrays.asList("q", "q", "e", "r", "q", "q", "u", "i", "o", "p", "q")));
+
+        try {
+            // copyOf() must throw a NullPointerException on any 'null' element.
+            Set.copyOf(Arrays.asList("q", "q", "e", "r", "q", "q", "u", "i", "o", "p", "q", null));
+            fail("Expected NullPointerException");
+        } catch (NullPointerException e) {
+            // ok
+        }
     }
 
     private void expectIAE(Runnable r) {
