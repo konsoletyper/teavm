@@ -56,7 +56,7 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
     abstract void putElement(int index, short value);
 
     public TShortBuffer get(short[] dst, int offset, int length) {
-        if (offset < 0 || offset >= dst.length) {
+        if (offset < 0 || offset > dst.length) {
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
         }
         if (offset + length > dst.length) {
@@ -105,7 +105,7 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
         if (remaining() < length) {
             throw new TBufferOverflowException();
         }
-        if (offset < 0 || offset >= src.length) {
+        if (offset < 0 || offset > src.length) {
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + src.length + ")");
         }
         if (offset + length > src.length) {
