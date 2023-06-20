@@ -362,19 +362,16 @@ public final class TCollectors {
     public static <T, A, R> TCollector<T, ?, Map<Boolean, R>> partitioningBy(Predicate<? super T> predicate,
             TCollector<? super T, A, R> downstream) {
         BiConsumer<A, ? super T> acc = downstream.accumulator();
-        BiConsumer<A, T> falseAcc = (res, el) -> {
-            if (!predicate.test(el)) {
-                acc.accept(res, el);
-            }
-        };
-        BiConsumer<A, T> trueAcc = (res, el) -> {
-            if (predicate.test(el)) {
-                acc.accept(res, el);
-            }
-        };
-        return teeing(
-                TCollector.of(downstream.supplier(), falseAcc, downstream.combiner(), downstream.finisher()),
-                TCollector.of(downstream.supplier(), trueAcc, downstream.combiner(), downstream.finisher()),
+        return teeing(TCollector.of(downstream.supplier(), (res, el) -> {
+                    if (!predicate.test(el)) {
+                        acc.accept(res, el);
+                    }
+                }, downstream.combiner(), downstream.finisher()),
+                TCollector.of(downstream.supplier(), (res1, el1) -> {
+                    if (predicate.test(el1)) {
+                        acc.accept(res1, el1);
+                    }
+                }, downstream.combiner(), downstream.finisher()),
                 (fls, tr) -> Map.of(false, fls, true, tr));
     }
 
