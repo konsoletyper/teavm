@@ -372,4 +372,11 @@ public class DoubleBufferTest {
         buffer.reset();
         assertThat(buffer.position(), is(1));
     }
+
+    @Test
+    public void putEmptyArray() {
+        DoubleBuffer db = DoubleBuffer.allocate(0);
+        db.put(new double[0]);
+        db.get(new double[0]);
+    }
 }
