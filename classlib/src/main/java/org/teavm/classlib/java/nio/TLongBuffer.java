@@ -56,7 +56,7 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
     abstract void putElement(int index, long value);
 
     public TLongBuffer get(long[] dst, int offset, int length) {
-        if (offset < 0 || offset >= dst.length) {
+        if (offset < 0 || offset > dst.length) {
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
         }
         if (offset + length > dst.length) {
@@ -105,7 +105,7 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
         if (remaining() < length) {
             throw new TBufferOverflowException();
         }
-        if (offset < 0 || offset >= src.length) {
+        if (offset < 0 || offset > src.length) {
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + src.length + ")");
         }
         if (offset + length > src.length) {

@@ -641,4 +641,11 @@ public class ByteBufferTest {
             // expected
         }
     }
+
+    @Test
+    public void putGetEmptyArray() {
+        ByteBuffer bb = ByteBuffer.allocate(0);
+        bb.put(new byte[0]);
+        bb.get(new byte[0]);
+    }
 }
