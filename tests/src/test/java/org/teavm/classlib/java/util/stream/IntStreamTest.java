@@ -344,4 +344,14 @@ public class IntStreamTest {
         assertEquals(Integer.MIN_VALUE, empty.getMax());
         assertEquals(0L, empty.getSum());
     }
+
+    @Test
+    public void mapMultiWorks() {
+        int[] mapped = IntStream.rangeClosed(0, 3).mapMulti((cnt, cons) -> {
+            for (int i = 0; i < cnt; i++) {
+                cons.accept(cnt);
+            }
+        }).toArray();
+        assertArrayEquals(new int[] {1, 2, 2, 3, 3, 3}, mapped);
+    }
 }
