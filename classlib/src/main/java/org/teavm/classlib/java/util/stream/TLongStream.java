@@ -43,7 +43,8 @@ import org.teavm.classlib.java.util.stream.longimpl.TSingleLongStreamImpl;
 import org.teavm.classlib.java.util.stream.longimpl.TSpecializedConcatLongStream;
 
 public interface TLongStream extends TBaseStream<Long, TLongStream> {
-    interface Builder {
+    interface Builder extends LongConsumer {
+        @Override
         void accept(long t);
 
         default Builder add(long t) {
@@ -65,6 +66,14 @@ public interface TLongStream extends TBaseStream<Long, TLongStream> {
     TDoubleStream mapToDouble(LongToDoubleFunction mapper);
 
     TLongStream flatMap(LongFunction<? extends TLongStream> mapper);
+
+    default TLongStream mapMulti(LongMapMultiConsumer mapper) {
+        return flatMap(e -> {
+            Builder builder = builder();
+            mapper.accept(e, builder);
+            return builder.build();
+        });
+    }
 
     TLongStream distinct();
 
@@ -158,5 +167,10 @@ public interface TLongStream extends TBaseStream<Long, TLongStream> {
         } else {
             return new TGenericConcatLongStream(a, b);
         }
+    }
+
+    @FunctionalInterface
+    interface LongMapMultiConsumer {
+        void accept(long value, LongConsumer lc);
     }
 }

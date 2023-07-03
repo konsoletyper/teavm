@@ -440,4 +440,21 @@ public class StreamTest {
             // ok
         }
     }
+
+    @Test
+    public void mapMultiWorks() {
+        String[] mapped = Stream.of(" a ", "", "   bb       ").<String>mapMulti((s, cons) -> {
+            String trim = s.trim();
+            if (!trim.isEmpty()) {
+                cons.accept(trim);
+            }
+        }).toArray(String[]::new);
+        assertArrayEquals(new String[] {"a", "bb"}, mapped);
+        int[] mappedInt = Stream.of("a", "", "bb").mapMultiToInt((s, cons) -> {
+            if (s.length() % 2 == 0) {
+                cons.accept(s.length());
+            }
+        }).toArray();
+        assertArrayEquals(new int[] {0, 2}, mappedInt);
+    }
 }
