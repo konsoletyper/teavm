@@ -20,16 +20,25 @@ import java.util.function.IntUnaryOperator;
 
 public class TIterateIntStream extends TSimpleIntStreamImpl {
     private int value;
+    private IntPredicate pr;
     private IntUnaryOperator f;
 
     public TIterateIntStream(int value, IntUnaryOperator f) {
+        this(value, t -> true, f);
+    }
+
+    public TIterateIntStream(int value, IntPredicate pr, IntUnaryOperator f) {
         this.value = value;
+        this.pr = pr;
         this.f = f;
     }
 
     @Override
     public boolean next(IntPredicate consumer) {
         while (true) {
+            if (!pr.test(value)) {
+                return false;
+            }
             int valueToReport = value;
             value = f.applyAsInt(value);
             if (!consumer.test(valueToReport)) {

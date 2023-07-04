@@ -149,6 +149,10 @@ public interface TLongStream extends TBaseStream<Long, TLongStream> {
         return new TIterateLongStream(seed, f);
     }
 
+    static TLongStream iterate(long seed, LongPredicate pr, LongUnaryOperator f) {
+        return new TIterateLongStream(seed, pr, f);
+    }
+
     static TLongStream generate(LongSupplier s) {
         return new TGenerateLongStream(s);
     }

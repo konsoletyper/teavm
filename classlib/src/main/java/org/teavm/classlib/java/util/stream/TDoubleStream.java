@@ -145,6 +145,10 @@ public interface TDoubleStream extends TBaseStream<Double, TDoubleStream> {
         return new TIterateDoubleStream(seed, f);
     }
 
+    static TDoubleStream iterate(double seed, DoublePredicate pr, DoubleUnaryOperator f) {
+        return new TIterateDoubleStream(seed, pr, f);
+    }
+
     static TDoubleStream generate(DoubleSupplier s) {
         return new TGenerateDoubleStream(s);
     }
