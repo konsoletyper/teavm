@@ -432,4 +432,11 @@ public class CharBufferTest {
         buffer.put("TeaVM");
         assertThat(buffer.flip().toString(), is("TeaVM"));
     }
+
+    @Test
+    public void putGetEmptyArray() {
+        CharBuffer cb = CharBuffer.allocate(0);
+        cb.put("");
+        cb.get(new char[0]);
+    }
 }

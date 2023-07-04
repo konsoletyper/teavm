@@ -372,4 +372,11 @@ public class FloatBufferTest {
         buffer.reset();
         assertThat(buffer.position(), is(1));
     }
+
+    @Test
+    public void putEmptyArray() {
+        FloatBuffer fb = FloatBuffer.allocate(0);
+        fb.put(new float[0]);
+        fb.get(new float[0]);
+    }
 }

@@ -30,6 +30,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
@@ -356,5 +357,25 @@ public final class TCollectors {
             this.a = a;
             this.b = b;
         }
+    }
+
+    public static <T, A, R> TCollector<T, ?, Map<Boolean, R>> partitioningBy(Predicate<? super T> predicate,
+            TCollector<? super T, A, R> downstream) {
+        BiConsumer<A, ? super T> acc = downstream.accumulator();
+        return teeing(TCollector.of(downstream.supplier(), (res, el) -> {
+                    if (!predicate.test(el)) {
+                        acc.accept(res, el);
+                    }
+                }, downstream.combiner(), downstream.finisher()),
+                TCollector.of(downstream.supplier(), (res1, el1) -> {
+                    if (predicate.test(el1)) {
+                        acc.accept(res1, el1);
+                    }
+                }, downstream.combiner(), downstream.finisher()),
+                (fls, tr) -> Map.of(false, fls, true, tr));
+    }
+
+    public static <T> TCollector<T, ?, Map<Boolean, List<T>>> partitioningBy(Predicate<? super T> predicate) {
+        return partitioningBy(predicate, toList());
     }
 }

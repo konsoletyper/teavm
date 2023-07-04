@@ -372,4 +372,11 @@ public class ShortBufferTest {
         buffer.reset();
         assertThat(buffer.position(), is(1));
     }
+
+    @Test
+    public void putEmptyArray() {
+        ShortBuffer sb = ShortBuffer.allocate(0);
+        sb.put(new short[0]);
+        sb.get(new short[0]);
+    }
 }

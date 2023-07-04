@@ -386,4 +386,11 @@ public class IntBufferTest {
         buffer.reset();
         assertThat(buffer.position(), is(1));
     }
+
+    @Test
+    public void putEmptyArray() {
+        IntBuffer ib = IntBuffer.allocate(0);
+        ib.put(new int[0]);
+        ib.get(new int[0]);
+    }
 }

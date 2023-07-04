@@ -22,8 +22,11 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
 import java.util.function.Function;
+import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
+import java.util.function.LongConsumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
@@ -42,7 +45,8 @@ import org.teavm.classlib.java.util.stream.impl.TSpecializedConcatStream;
 import org.teavm.classlib.java.util.stream.impl.TStreamBuilder;
 
 public interface TStream<T> extends TBaseStream<T, TStream<T>> {
-    interface Builder<T> {
+    interface Builder<T> extends Consumer<T> {
+        @Override
         void accept(T t);
 
         default Builder<T> add(T t) {
@@ -70,6 +74,38 @@ public interface TStream<T> extends TBaseStream<T, TStream<T>> {
     TLongStream flatMapToLong(Function<? super T, ? extends TLongStream> mapper);
 
     TDoubleStream flatMapToDouble(Function<? super T, ? extends TDoubleStream> mapper);
+
+    default <R> TStream<R> mapMulti(BiConsumer<? super T, ? super Consumer<R>> mapper) {
+        return flatMap(e -> {
+            TStream.Builder<R> builder = builder();
+            mapper.accept(e, builder);
+            return builder.build();
+        });
+    }
+
+    default TIntStream mapMultiToInt(BiConsumer<? super T, ? super IntConsumer> mapper) {
+        return flatMapToInt(e -> {
+            TIntStream.Builder builder = TIntStream.builder();
+            mapper.accept(e, builder);
+            return builder.build();
+        });
+    }
+
+    default TLongStream mapMultiToLong(BiConsumer<? super T, ? super LongConsumer> mapper) {
+        return flatMapToLong(e -> {
+            TLongStream.Builder builder = TLongStream.builder();
+            mapper.accept(e, builder);
+            return builder.build();
+        });
+    }
+
+    default TDoubleStream mapMultiToDouble(BiConsumer<? super T, ? super DoubleConsumer> mapper) {
+        return flatMapToDouble(e -> {
+            TDoubleStream.Builder builder = TDoubleStream.builder();
+            mapper.accept(e, builder);
+            return builder.build();
+        });
+    }
 
     TStream<T> distinct();
 

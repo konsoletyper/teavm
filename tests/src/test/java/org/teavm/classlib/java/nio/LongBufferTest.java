@@ -372,4 +372,11 @@ public class LongBufferTest {
         buffer.reset();
         assertThat(buffer.position(), is(1));
     }
+
+    @Test
+    public void putEmptyArray() {
+        LongBuffer lb = LongBuffer.allocate(0);
+        lb.put(new long[0]);
+        lb.get(new long[0]);
+    }
 }

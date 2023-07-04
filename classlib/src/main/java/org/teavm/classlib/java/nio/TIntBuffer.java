@@ -56,7 +56,7 @@ public abstract class TIntBuffer extends TBuffer implements Comparable<TIntBuffe
     abstract void putElement(int index, int value);
 
     public TIntBuffer get(int[] dst, int offset, int length) {
-        if (offset < 0 || offset >= dst.length) {
+        if (offset < 0 || offset > dst.length) {
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
         }
         if (offset + length > dst.length) {
@@ -105,7 +105,7 @@ public abstract class TIntBuffer extends TBuffer implements Comparable<TIntBuffe
         if (remaining() < length) {
             throw new TBufferOverflowException();
         }
-        if (offset < 0 || offset >= src.length) {
+        if (offset < 0 || offset > src.length) {
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + src.length + ")");
         }
         if (offset + length > src.length) {
