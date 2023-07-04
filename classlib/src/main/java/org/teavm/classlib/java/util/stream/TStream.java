@@ -119,6 +119,8 @@ public interface TStream<T> extends TBaseStream<T, TStream<T>> {
 
     TStream<T> takeWhile(Predicate<? super T> predicate);
 
+    TStream<T> dropWhile(Predicate<? super T> predicate);
+
     TStream<T> skip(long n);
 
     void forEach(Consumer<? super T> action);

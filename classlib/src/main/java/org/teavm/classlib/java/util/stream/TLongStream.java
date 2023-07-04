@@ -83,6 +83,10 @@ public interface TLongStream extends TBaseStream<Long, TLongStream> {
 
     TLongStream limit(long maxSize);
 
+    TLongStream takeWhile(LongPredicate predicate);
+
+    TLongStream dropWhile(LongPredicate predicate);
+
     TLongStream skip(long n);
 
     void forEach(LongConsumer action);

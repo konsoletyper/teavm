@@ -92,6 +92,16 @@ public abstract class TSimpleIntStreamImpl implements TIntStream {
     }
 
     @Override
+    public TIntStream takeWhile(IntPredicate predicate) {
+        return new TTakeWhileIntStream(this, predicate);
+    }
+
+    @Override
+    public TIntStream dropWhile(IntPredicate predicate) {
+        return new TDropWhileIntStream(this, predicate);
+    }
+
+    @Override
     public TIntStream skip(long n) {
         return new TSkippingIntStreamImpl(this, (int) n);
     }
