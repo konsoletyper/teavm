@@ -43,7 +43,8 @@ import org.teavm.classlib.java.util.stream.intimpl.TSingleIntStreamImpl;
 import org.teavm.classlib.java.util.stream.intimpl.TSpecializedConcatIntStream;
 
 public interface TIntStream extends TBaseStream<Integer, TIntStream> {
-    interface Builder {
+    interface Builder extends IntConsumer {
+        @Override
         void accept(int t);
 
         default Builder add(int t) {
@@ -65,6 +66,14 @@ public interface TIntStream extends TBaseStream<Integer, TIntStream> {
     TDoubleStream mapToDouble(IntToDoubleFunction mapper);
 
     TIntStream flatMap(IntFunction<? extends TIntStream> mapper);
+
+    default TIntStream mapMulti(IntMapMultiConsumer mapper) {
+        return flatMap(e -> {
+            Builder builder = builder();
+            mapper.accept(e, builder);
+            return builder.build();
+        });
+    }
 
     TIntStream distinct();
 
@@ -160,5 +169,10 @@ public interface TIntStream extends TBaseStream<Integer, TIntStream> {
         } else {
             return new TGenericConcatIntStream(a, b);
         }
+    }
+
+    @FunctionalInterface
+    interface IntMapMultiConsumer {
+        void accept(int value, IntConsumer ic);
     }
 }
