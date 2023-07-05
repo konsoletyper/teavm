@@ -81,6 +81,10 @@ public interface TDoubleStream extends TBaseStream<Double, TDoubleStream> {
 
     TDoubleStream limit(long maxSize);
 
+    TDoubleStream takeWhile(DoublePredicate predicate);
+
+    TDoubleStream dropWhile(DoublePredicate predicate);
+
     TDoubleStream skip(long n);
 
     void forEach(DoubleConsumer action);

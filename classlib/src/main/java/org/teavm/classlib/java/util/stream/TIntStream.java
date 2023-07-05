@@ -83,6 +83,10 @@ public interface TIntStream extends TBaseStream<Integer, TIntStream> {
 
     TIntStream limit(long maxSize);
 
+    TIntStream takeWhile(IntPredicate predicate);
+
+    TIntStream dropWhile(IntPredicate predicate);
+
     TIntStream skip(long n);
 
     void forEach(IntConsumer action);

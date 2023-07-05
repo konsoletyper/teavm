@@ -397,10 +397,30 @@ public class StreamTest {
     }
 
     @Test
+    public void dropWhileWorks() {
+        var sb = new StringBuilder();
+        Stream.of(1, 2, 3, 4, 0, 5, 6).dropWhile(n -> n < 4).forEach(sb::append);
+        assertEquals("4056", sb.toString());
+        sb = new StringBuilder();
+        Stream.of(1, 2, 3, 4, 0, 5, 6).dropWhile(n -> n < 7).forEach(sb::append);
+        assertEquals("", sb.toString());
+    }
+
+    @Test
     public void takeWhileWithOtherStreamOps() {
         var sb = new StringBuilder();
         Stream.of(1, 2, 3, 4, 0, 5, 6).takeWhile(i -> i < 4).filter(i -> i % 2 != 0).forEach(sb::append);
         assertEquals("13", sb.toString());
+    }
+
+    @Test
+    public void dropWhileWithOtherStreamOps() {
+        var sb = new StringBuilder();
+        Stream.of(1, 2, 3, 4, 0, 5, 6).dropWhile(i -> i < 4).filter(i -> i % 2 == 0).forEach(sb::append);
+        assertEquals("406", sb.toString());
+        sb = new StringBuilder();
+        Stream.of(1, 2, 3, 4, 0, 5, 6).dropWhile(i -> i < 7).filter(i -> i % 2 == 0).forEach(sb::append);
+        assertEquals("", sb.toString());
     }
 
     @Test
