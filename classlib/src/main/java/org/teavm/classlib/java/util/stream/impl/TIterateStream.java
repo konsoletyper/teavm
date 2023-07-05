@@ -20,16 +20,25 @@ import java.util.function.UnaryOperator;
 
 public class TIterateStream<T> extends TSimpleStreamImpl<T> {
     private T value;
+    private Predicate<? super T> pr;
     private UnaryOperator<T> f;
 
     public TIterateStream(T value, UnaryOperator<T> f) {
+        this(value, t -> true, f);
+    }
+
+    public TIterateStream(T value, Predicate<? super T> pr, UnaryOperator<T> f) {
         this.value = value;
+        this.pr = pr;
         this.f = f;
     }
 
     @Override
     public boolean next(Predicate<? super T> consumer) {
         while (true) {
+            if (!pr.test(value)) {
+                return false;
+            }
             T valueToReport = value;
             value = f.apply(value);
             if (!consumer.test(valueToReport)) {

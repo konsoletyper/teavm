@@ -457,4 +457,15 @@ public class StreamTest {
         }).toArray();
         assertArrayEquals(new int[] {0, 2}, mappedInt);
     }
+
+    @Test
+    public void iterateWorks() {
+        for (int c = 0; c < 10; c++) {
+            int cnt = c;
+            int sum = Stream.iterate(1, i -> i < 2 * cnt, i -> i + 2).mapToInt(Integer::intValue).sum();
+            assertEquals(cnt * cnt, sum);
+        }
+        List<String> repetitions = Stream.iterate("", s -> s.length() < 5, s -> s + "a").toList();
+        assertEquals(List.of("", "a", "aa", "aaa", "aaaa"), repetitions);
+    }
 }

@@ -176,6 +176,10 @@ public interface TStream<T> extends TBaseStream<T, TStream<T>> {
         return new TIterateStream<>(seed, f);
     }
 
+    static <T> TStream<T> iterate(T seed, Predicate<? super T> pr, UnaryOperator<T> f) {
+        return new TIterateStream<>(seed, pr, f);
+    }
+
     static <T> TStream<T> generate(Supplier<T> s) {
         return new TGenerateStream<>(s);
     }
