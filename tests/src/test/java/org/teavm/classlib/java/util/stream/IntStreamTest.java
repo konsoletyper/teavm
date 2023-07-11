@@ -109,6 +109,34 @@ public class IntStreamTest {
     }
 
     @Test
+    public void takeWhileWorks() {
+        assertArrayEquals(new int[] { 1, 2, 3 },
+                IntStream.of(1, 2, 3, 4, 0, 5, 6).takeWhile(n -> n < 4).toArray());
+    }
+
+    @Test
+    public void dropWhileWorks() {
+        assertArrayEquals(new int[] { 4, 0, 5, 6 },
+                IntStream.of(1, 2, 3, 4, 0, 5, 6).dropWhile(n -> n < 4).toArray());
+        assertArrayEquals(new int[] {},
+                IntStream.of(1, 2, 3, 4, 0, 5, 6).dropWhile(n -> n < 7).toArray());
+    }
+
+    @Test
+    public void takeWhileWithOtherStreamOps() {
+        assertArrayEquals(new int[] { 1, 3 },
+                IntStream.of(1, 2, 3, 4, 0, 5, 6).takeWhile(i -> i < 4).filter(i -> i % 2 != 0).toArray());
+    }
+
+    @Test
+    public void dropWhileWithOtherStreamOps() {
+        assertArrayEquals(new int[] { 4, 0, 6 },
+                IntStream.of(1, 2, 3, 4, 0, 5, 6).dropWhile(i -> i < 4).filter(i -> i % 2 == 0).toArray());
+        assertArrayEquals(new int[] {},
+                IntStream.of(1, 2, 3, 4, 0, 5, 6).dropWhile(i -> i < 7).filter(i -> i % 2 == 0).toArray());
+    }
+
+    @Test
     public void limitWorks() {
         for (int i = 0; i <= 3; ++i) {
             int index = i;

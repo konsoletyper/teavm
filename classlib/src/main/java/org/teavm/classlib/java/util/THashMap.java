@@ -404,8 +404,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     final HashEntry<K, V> findNonNullKeyEntry(Object key, int index, int keyHash) {
         HashEntry<K, V> m = elementData[index];
-        while (m != null
-                && (m.origKeyHash != keyHash || !areEqualKeys(key, m.key))) {
+        while (m != null && (m.origKeyHash != keyHash || !areEqualKeys(key, m.key))) {
             m = m.next;
         }
         return m;
@@ -496,13 +495,6 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         V result = entry.value;
         entry.value = value;
         return result;
-    }
-
-    HashEntry<K, V> createEntry(K key, int index, V value) {
-        HashEntry<K, V> entry = new HashEntry<>(key, value);
-        entry.next = elementData[index];
-        elementData[index] = entry;
-        return entry;
     }
 
     HashEntry<K, V> createHashedEntry(K key, int index, int hash) {

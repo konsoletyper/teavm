@@ -119,6 +119,8 @@ public interface TStream<T> extends TBaseStream<T, TStream<T>> {
 
     TStream<T> takeWhile(Predicate<? super T> predicate);
 
+    TStream<T> dropWhile(Predicate<? super T> predicate);
+
     TStream<T> skip(long n);
 
     void forEach(Consumer<? super T> action);
@@ -174,6 +176,10 @@ public interface TStream<T> extends TBaseStream<T, TStream<T>> {
 
     static <T> TStream<T> iterate(T seed, UnaryOperator<T> f) {
         return new TIterateStream<>(seed, f);
+    }
+
+    static <T> TStream<T> iterate(T seed, Predicate<? super T> pr, UnaryOperator<T> f) {
+        return new TIterateStream<>(seed, pr, f);
     }
 
     static <T> TStream<T> generate(Supplier<T> s) {

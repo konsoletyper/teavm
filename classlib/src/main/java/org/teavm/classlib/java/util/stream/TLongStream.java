@@ -83,6 +83,10 @@ public interface TLongStream extends TBaseStream<Long, TLongStream> {
 
     TLongStream limit(long maxSize);
 
+    TLongStream takeWhile(LongPredicate predicate);
+
+    TLongStream dropWhile(LongPredicate predicate);
+
     TLongStream skip(long n);
 
     void forEach(LongConsumer action);
@@ -147,6 +151,10 @@ public interface TLongStream extends TBaseStream<Long, TLongStream> {
 
     static TLongStream iterate(long seed, LongUnaryOperator f) {
         return new TIterateLongStream(seed, f);
+    }
+
+    static TLongStream iterate(long seed, LongPredicate pr, LongUnaryOperator f) {
+        return new TIterateLongStream(seed, pr, f);
     }
 
     static TLongStream generate(LongSupplier s) {

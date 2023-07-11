@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2023 ihromant.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,34 +16,31 @@
 package org.teavm.classlib.java.util.stream.intimpl;
 
 import java.util.function.IntPredicate;
-import java.util.function.IntUnaryOperator;
 
-public class TIterateIntStream extends TSimpleIntStreamImpl {
-    private int value;
-    private IntPredicate pr;
-    private IntUnaryOperator f;
+public class TTakeWhileIntStream extends TWrappingIntStreamImpl {
+    private IntPredicate predicate;
 
-    public TIterateIntStream(int value, IntUnaryOperator f) {
-        this(value, t -> true, f);
-    }
+    /* set to `true` as soon as we see a value `v` in the source stream for which `predicate.test(v)` is false */
+    private boolean isStopped;
 
-    public TIterateIntStream(int value, IntPredicate pr, IntUnaryOperator f) {
-        this.value = value;
-        this.pr = pr;
-        this.f = f;
+    TTakeWhileIntStream(TSimpleIntStreamImpl innerStream, IntPredicate predicate) {
+        super(innerStream);
+        this.predicate = predicate;
     }
 
     @Override
-    public boolean next(IntPredicate consumer) {
-        while (true) {
-            if (!pr.test(value)) {
+    protected IntPredicate wrap(IntPredicate consumer) {
+        return t -> {
+            if (isStopped) {
                 return false;
             }
-            int valueToReport = value;
-            value = f.applyAsInt(value);
-            if (!consumer.test(valueToReport)) {
-                return true;
+
+            if (predicate.test(t)) {
+                return consumer.test(t);
+            } else {
+                isStopped = true;
+                return false;
             }
-        }
+        };
     }
 }

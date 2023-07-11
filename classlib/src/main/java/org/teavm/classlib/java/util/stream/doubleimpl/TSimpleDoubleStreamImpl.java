@@ -91,6 +91,16 @@ public abstract class TSimpleDoubleStreamImpl implements TDoubleStream {
     }
 
     @Override
+    public TDoubleStream takeWhile(DoublePredicate predicate) {
+        return new TTakeWhileDoubleStream(this, predicate);
+    }
+
+    @Override
+    public TDoubleStream dropWhile(DoublePredicate predicate) {
+        return new TDropWhileDoubleStream(this, predicate);
+    }
+
+    @Override
     public TDoubleStream skip(long n) {
         return new TSkippingDoubleStreamImpl(this, (int) n);
     }

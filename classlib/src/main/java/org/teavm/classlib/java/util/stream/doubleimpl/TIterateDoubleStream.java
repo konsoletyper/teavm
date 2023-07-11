@@ -20,16 +20,25 @@ import java.util.function.DoubleUnaryOperator;
 
 public class TIterateDoubleStream extends TSimpleDoubleStreamImpl {
     private double value;
+    private DoublePredicate pr;
     private DoubleUnaryOperator f;
 
     public TIterateDoubleStream(double value, DoubleUnaryOperator f) {
+        this(value, t -> true, f);
+    }
+
+    public TIterateDoubleStream(double value, DoublePredicate pr, DoubleUnaryOperator f) {
         this.value = value;
+        this.pr = pr;
         this.f = f;
     }
 
     @Override
     public boolean next(DoublePredicate consumer) {
         while (true) {
+            if (!pr.test(value)) {
+                return false;
+            }
             double valueToReport = value;
             value = f.applyAsDouble(value);
             if (!consumer.test(valueToReport)) {

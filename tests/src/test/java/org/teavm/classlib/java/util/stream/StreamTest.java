@@ -397,10 +397,30 @@ public class StreamTest {
     }
 
     @Test
+    public void dropWhileWorks() {
+        var sb = new StringBuilder();
+        Stream.of(1, 2, 3, 4, 0, 5, 6).dropWhile(n -> n < 4).forEach(sb::append);
+        assertEquals("4056", sb.toString());
+        sb = new StringBuilder();
+        Stream.of(1, 2, 3, 4, 0, 5, 6).dropWhile(n -> n < 7).forEach(sb::append);
+        assertEquals("", sb.toString());
+    }
+
+    @Test
     public void takeWhileWithOtherStreamOps() {
         var sb = new StringBuilder();
         Stream.of(1, 2, 3, 4, 0, 5, 6).takeWhile(i -> i < 4).filter(i -> i % 2 != 0).forEach(sb::append);
         assertEquals("13", sb.toString());
+    }
+
+    @Test
+    public void dropWhileWithOtherStreamOps() {
+        var sb = new StringBuilder();
+        Stream.of(1, 2, 3, 4, 0, 5, 6).dropWhile(i -> i < 4).filter(i -> i % 2 == 0).forEach(sb::append);
+        assertEquals("406", sb.toString());
+        sb = new StringBuilder();
+        Stream.of(1, 2, 3, 4, 0, 5, 6).dropWhile(i -> i < 7).filter(i -> i % 2 == 0).forEach(sb::append);
+        assertEquals("", sb.toString());
     }
 
     @Test
@@ -456,5 +476,16 @@ public class StreamTest {
             }
         }).toArray();
         assertArrayEquals(new int[] {0, 2}, mappedInt);
+    }
+
+    @Test
+    public void iterateWorks() {
+        for (int c = 0; c < 10; c++) {
+            int cnt = c;
+            int sum = Stream.iterate(1, i -> i < 2 * cnt, i -> i + 2).mapToInt(Integer::intValue).sum();
+            assertEquals(cnt * cnt, sum);
+        }
+        List<String> repetitions = Stream.iterate("", s -> s.length() < 5, s -> s + "a").toList();
+        assertEquals(List.of("", "a", "aa", "aaa", "aaaa"), repetitions);
     }
 }
