@@ -57,7 +57,7 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
         writer.append("for (var i = 0; i < " + length + "; i = (i + 1) | 0) {").indent().softNewLine();
         writer.append(dest + ".data[" + destPos + "++] = " + src + ".data[" + srcPos + "++];").softNewLine();
         writer.outdent().append("}").softNewLine();
-        writer.outdent().append("} else {").indent().softNewLine();
+        writer.outdent().append("}").ws().append("else").ws().append("{").indent().softNewLine();
         writer.append(srcPos + " = (" + srcPos + " + " + length + ") | 0;").softNewLine();
         writer.append(destPos + " = (" + destPos + " + " + length + ") | 0;").softNewLine();
         writer.append("for (var i = 0; i < " + length + "; i = (i + 1) | 0) {").indent().softNewLine();
