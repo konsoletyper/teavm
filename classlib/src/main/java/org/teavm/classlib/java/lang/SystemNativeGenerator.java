@@ -53,6 +53,16 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
         String dest = context.getParameterName(3);
         String destPos = context.getParameterName(4);
         String length = context.getParameterName(5);
+        writer.append("if").ws().append("(").append(length).ws().append("===").ws().append("0)").ws().append("{")
+                .indent().softNewLine();
+        writer.append("return;").ws().softNewLine();
+        writer.outdent().append("}").ws().append("else ");
+        writer.append("if").ws().append("(typeof " + src + ".data.buffer").ws().append("!==").ws()
+                .append("'undefined')").ws().append("{").indent().softNewLine();
+        writer.append(dest + ".data.set(" + src + ".data.subarray(" + srcPos + ",").ws()
+                .append(srcPos).ws().append("+").ws().append(length).append("),").ws()
+                .append(destPos).append(");").softNewLine();
+        writer.outdent().append("}").ws().append("else ");
         writer.append("if (" + src + " !== " +  dest + " || " + destPos + " < " + srcPos + ") {").indent().newLine();
         writer.append("for (var i = 0; i < " + length + "; i = (i + 1) | 0) {").indent().softNewLine();
         writer.append(dest + ".data[" + destPos + "++] = " + src + ".data[" + srcPos + "++];").softNewLine();

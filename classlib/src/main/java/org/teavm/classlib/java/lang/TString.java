@@ -47,17 +47,12 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString(char[] characters) {
-        this.characters = new char[characters.length];
-        for (int i = 0; i < characters.length; ++i) {
-            this.characters[i] = characters[i];
-        }
+        this(characters, 0, characters.length);
     }
 
     public TString(char[] value, int offset, int count) {
         this.characters = new char[count];
-        for (int i = 0; i < count; ++i) {
-            this.characters[i] = value[i + offset];
-        }
+        System.arraycopy(value, offset, this.characters, 0, count);
     }
 
     static TString fromArray(char[] characters) {
@@ -177,9 +172,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
                 || dstBegin + (srcEnd - srcBegin) > dst.length) {
             throw new TIndexOutOfBoundsException();
         }
-        while (srcBegin < srcEnd) {
-            dst[dstBegin++] = charAt(srcBegin++);
-        }
+        System.arraycopy(characters, srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
     public boolean contentEquals(TStringBuffer buffer) {
