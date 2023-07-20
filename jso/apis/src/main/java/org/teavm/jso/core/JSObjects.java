@@ -61,4 +61,8 @@ public final class JSObjects {
     @JSBody(params = { "object", "name" }, script = "return name in object;")
     @NoSideEffects
     public static native boolean hasProperty(JSObject object, String name);
+
+    @JSBody(params = "object", script = "return Object.getPrototypeOf(object);")
+    @NoSideEffects
+    public static native JSObject getPrototypeOf(JSObject object);
 }

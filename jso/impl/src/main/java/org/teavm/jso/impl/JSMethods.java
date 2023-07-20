@@ -16,7 +16,6 @@
 package org.teavm.jso.impl;
 
 import java.util.Arrays;
-import java.util.function.Function;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSArrayReader;
@@ -37,29 +36,29 @@ final class JSMethods {
     public static final MethodReference ARRAY_DATA = new MethodReference(JS.class, "arrayData",
             Object.class, JSObject.class);
     public static final MethodReference ARRAY_MAPPER = new MethodReference(JS.class, "arrayMapper",
-            Function.class, Function.class);
+            JS.WrapFunction.class, JS.WrapFunction.class);
     public static final MethodReference BOOLEAN_ARRAY_WRAPPER = new MethodReference(JS.class, "booleanArrayWrapper",
-            Function.class);
+            JS.WrapFunction.class);
     public static final MethodReference BYTE_ARRAY_WRAPPER = new MethodReference(JS.class, "byteArrayWrapper",
-            Function.class);
+            JS.WrapFunction.class);
     public static final MethodReference SHORT_ARRAY_WRAPPER = new MethodReference(JS.class, "shortArrayWrapper",
-            Function.class);
+            JS.WrapFunction.class);
     public static final MethodReference CHAR_ARRAY_WRAPPER = new MethodReference(JS.class, "charArrayWrapper",
-            Function.class);
+            JS.WrapFunction.class);
     public static final MethodReference INT_ARRAY_WRAPPER = new MethodReference(JS.class, "intArrayWrapper",
-            Function.class);
+            JS.WrapFunction.class);
     public static final MethodReference FLOAT_ARRAY_WRAPPER = new MethodReference(JS.class, "floatArrayWrapper",
-            Function.class);
+            JS.WrapFunction.class);
     public static final MethodReference DOUBLE_ARRAY_WRAPPER = new MethodReference(JS.class, "doubleArrayWrapper",
-            Function.class);
+            JS.WrapFunction.class);
     public static final MethodReference STRING_ARRAY_WRAPPER = new MethodReference(JS.class, "stringArrayWrapper",
-            Function.class);
+            JS.WrapFunction.class);
     public static final MethodReference ARRAY_WRAPPER = new MethodReference(JS.class, "arrayWrapper",
-            Function.class);
+            JS.WrapFunction.class);
     public static final MethodReference ARRAY_UNMAPPER = new MethodReference(JS.class, "arrayUnmapper",
-            Class.class, Function.class, Function.class);
+            Class.class, JS.UnwrapFunction.class, JS.UnwrapFunction.class);
     public static final MethodReference UNMAP_ARRAY = new MethodReference(JS.class, "unmapArray", Class.class,
-            JSArrayReader.class, Function.class, Object[].class);
+            JSArrayReader.class, JS.UnwrapFunction.class, Object[].class);
     public static final MethodReference UNWRAP_BOOLEAN_ARRAY = new MethodReference(JS.class, "unwrapBooleanArray",
             JSArrayReader.class, boolean[].class);
     public static final MethodReference UNWRAP_BYTE_ARRAY = new MethodReference(JS.class, "unwrapByteArray",
@@ -79,23 +78,23 @@ final class JSMethods {
     public static final MethodReference UNWRAP_ARRAY = new MethodReference(JS.class, "unwrapArray", Class.class,
             JSArrayReader.class, JSObject[].class);
     public static final MethodReference BOOLEAN_ARRAY_UNWRAPPER = new MethodReference(JS.class,
-            "booleanArrayUnwrapper", Function.class);
+            "booleanArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference BYTE_ARRAY_UNWRAPPER = new MethodReference(JS.class,
-            "byteArrayUnwrapper", Function.class);
+            "byteArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference SHORT_ARRAY_UNWRAPPER = new MethodReference(JS.class,
-            "shortArrayUnwrapper", Function.class);
+            "shortArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference CHAR_ARRAY_UNWRAPPER = new MethodReference(JS.class,
-            "charArrayUnwrapper", Function.class);
+            "charArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference INT_ARRAY_UNWRAPPER = new MethodReference(JS.class,
-            "intArrayUnwrapper", Function.class);
+            "intArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference FLOAT_ARRAY_UNWRAPPER = new MethodReference(JS.class,
-            "floatArrayUnwrapper", Function.class);
+            "floatArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference DOUBLE_ARRAY_UNWRAPPER = new MethodReference(JS.class,
-            "doubleArrayUnwrapper", Function.class);
+            "doubleArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference STRING_ARRAY_UNWRAPPER = new MethodReference(JS.class,
-            "stringArrayUnwrapper", Function.class);
+            "stringArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference ARRAY_UNWRAPPER = new MethodReference(JS.class,
-            "arrayUnwrapper", Class.class, Function.class);
+            "arrayUnwrapper", Class.class, JS.UnwrapFunction.class);
 
     public static final MethodReference DATA_TO_BYTE_ARRAY = new MethodReference(JS.class,
             "dataToByteArray", JSObject.class, byte[].class);

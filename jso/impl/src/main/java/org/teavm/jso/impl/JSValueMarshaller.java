@@ -17,7 +17,6 @@ package org.teavm.jso.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
@@ -153,7 +152,7 @@ class JSValueMarshaller {
 
             insn = new InvokeInstruction();
             insn.setMethod(referenceCache.getCached(new MethodReference(JS.class.getName(), "map",
-                    getWrappedType(type), ValueType.parse(Function.class), getWrapperType(type))));
+                    getWrappedType(type), ValueType.parse(JS.WrapFunction.class), getWrapperType(type))));
             insn.setArguments(var, function);
             insn.setReceiver(result);
             insn.setType(InvocationType.SPECIAL);
@@ -334,8 +333,8 @@ class JSValueMarshaller {
 
         if (insn.getMethod().parameterCount() == 2) {
             Variable cls = program.createVariable();
-            ClassConstantInstruction clsInsn = new ClassConstantInstruction();
-            clsInsn.setConstant(type);
+            var clsInsn = new ClassConstantInstruction();
+            clsInsn.setConstant(JSClassProcessor.processType(typeHelper, type));
             clsInsn.setLocation(location.getSourceLocation());
             clsInsn.setReceiver(cls);
             replacement.add(clsInsn);
@@ -358,8 +357,8 @@ class JSValueMarshaller {
 
         if (insn.getMethod().parameterCount() == 1) {
             Variable cls = program.createVariable();
-            ClassConstantInstruction clsInsn = new ClassConstantInstruction();
-            clsInsn.setConstant(type);
+            var clsInsn = new ClassConstantInstruction();
+            clsInsn.setConstant(JSClassProcessor.processType(typeHelper, type));
             clsInsn.setLocation(location.getSourceLocation());
             clsInsn.setReceiver(cls);
             replacement.add(clsInsn);
@@ -373,8 +372,8 @@ class JSValueMarshaller {
             type = ValueType.arrayOf(type);
             Variable cls = program.createVariable();
 
-            ClassConstantInstruction clsInsn = new ClassConstantInstruction();
-            clsInsn.setConstant(type);
+            var clsInsn = new ClassConstantInstruction();
+            clsInsn.setConstant(JSClassProcessor.processType(typeHelper, type));
             clsInsn.setLocation(location.getSourceLocation());
             clsInsn.setReceiver(cls);
             replacement.add(clsInsn);
@@ -389,8 +388,8 @@ class JSValueMarshaller {
         }
 
         Variable cls = program.createVariable();
-        ClassConstantInstruction clsInsn = new ClassConstantInstruction();
-        clsInsn.setConstant(ValueType.arrayOf(type));
+        var clsInsn = new ClassConstantInstruction();
+        clsInsn.setConstant(JSClassProcessor.processType(typeHelper, ValueType.arrayOf(type)));
         clsInsn.setLocation(location.getSourceLocation());
         clsInsn.setReceiver(cls);
         replacement.add(clsInsn);

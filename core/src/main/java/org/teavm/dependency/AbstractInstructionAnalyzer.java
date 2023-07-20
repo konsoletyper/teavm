@@ -233,6 +233,7 @@ abstract class AbstractInstructionAnalyzer extends AbstractInstructionReader {
         if (className != null) {
             getAnalyzer().linkClass(className);
         }
+        getAnalyzer().linkClass("java.lang.ClassCastException");
     }
 
     @Override

@@ -58,21 +58,40 @@ import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
+import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.GetElementInstruction;
+import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.IsInstanceInstruction;
+import org.teavm.model.instructions.PutElementInstruction;
+import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 
 class JSClassProcessor {
     private static final String NO_SIDE_EFFECTS = NoSideEffects.class.getName();
+    private static final MethodReference WRAP = new MethodReference(JSWrapper.class, "wrap", Object.class,
+            Object.class);
+    private static final MethodReference MAYBE_WRAP = new MethodReference(JSWrapper.class, "maybeWrap", Object.class,
+            Object.class);
+    private static final MethodReference UNWRAP = new MethodReference(JSWrapper.class, "unwrap", Object.class,
+            JSObject.class);
+    private static final MethodReference MAYBE_UNWRAP = new MethodReference(JSWrapper.class, "maybeUnwrap",
+            Object.class, JSObject.class);
+    private static final MethodReference IS_JS = new MethodReference(JSWrapper.class, "isJs",
+            Object.class, boolean.class);
     private final ClassReaderSource classSource;
     private final JSBodyRepository repository;
     private final JavaInvocationProcessor javaInvocationProcessor;
     private Program program;
+    private JSTypeInference types;
     private final List<Instruction> replacement = new ArrayList<>();
     private final JSTypeHelper typeHelper;
     private final Diagnostics diagnostics;
@@ -206,37 +225,157 @@ class JSClassProcessor {
 
     void processProgram(MethodHolder methodToProcess) {
         setCurrentProgram(methodToProcess.getProgram());
+        types = new JSTypeInference(typeHelper, program, methodToProcess.getReference());
+        types.ensure();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            for (Instruction insn : block) {
+            var block = program.basicBlockAt(i);
+            for (var insn : block) {
                 if (insn instanceof CastInstruction) {
                     replacement.clear();
-                    CallLocation callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
+                    var callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
                     if (processCast((CastInstruction) insn, callLocation)) {
                         insn.insertNextAll(replacement);
                         insn.delete();
                     }
+                } else if (insn instanceof IsInstanceInstruction) {
+                    processIsInstance((IsInstanceInstruction) insn);
                 } else if (insn instanceof InvokeInstruction) {
-                    InvokeInstruction invoke = (InvokeInstruction) insn;
+                    var invoke = (InvokeInstruction) insn;
+                    processInvokeArgs(invoke);
 
-                    MethodReader method = getMethod(invoke.getMethod().getClassName(),
-                            invoke.getMethod().getDescriptor());
+                    var method = getMethod(invoke.getMethod().getClassName(), invoke.getMethod().getDescriptor());
                     if (method == null) {
                         continue;
                     }
-                    CallLocation callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
+                    var callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
                     replacement.clear();
                     if (processInvocation(method, callLocation, invoke, methodToProcess)) {
                         insn.insertNextAll(replacement);
                         insn.delete();
                     }
+                } else if (insn instanceof PutFieldInstruction) {
+                    processPutField((PutFieldInstruction) insn);
+                } else if (insn instanceof GetElementInstruction) {
+                    processGetFromArray((GetElementInstruction) insn);
+                } else if (insn instanceof PutElementInstruction) {
+                    processPutIntoArray((PutElementInstruction) insn);
+                } else if (insn instanceof ConstructArrayInstruction) {
+                    processConstructArray((ConstructArrayInstruction) insn);
+                } else if (insn instanceof ExitInstruction) {
+                    var exit = (ExitInstruction) insn;
+                    exit.setValueToReturn(wrapJsAsJava(insn, exit.getValueToReturn(),
+                            methodToProcess.getResultType()));
+                } else if (insn instanceof ClassConstantInstruction) {
+                    processClassConstant((ClassConstantInstruction) insn);
                 }
             }
         }
     }
 
+    private void processInvokeArgs(InvokeInstruction invoke) {
+        if (typeHelper.isJavaScriptClass(invoke.getMethod().getClassName())) {
+            return;
+        }
+        Variable[] newArgs = null;
+        for (var i = 0; i < invoke.getArguments().size(); ++i) {
+            var type = invoke.getMethod().parameterType(i);
+            var arg = invoke.getArguments().get(i);
+            var newArg = wrapJsAsJava(invoke, arg, type);
+            if (newArg != arg) {
+                if (newArgs == null) {
+                    newArgs = invoke.getArguments().toArray(new Variable[0]);
+                }
+                newArgs[i] = newArg;
+            }
+        }
+        if (newArgs != null) {
+            invoke.setArguments(newArgs);
+        }
+
+        if (invoke.getInstance() != null) {
+            invoke.setInstance(wrapJsAsJava(invoke, invoke.getInstance(),
+                    ValueType.object(invoke.getMethod().getClassName())));
+        }
+    }
+
+    private void processPutField(PutFieldInstruction putField) {
+        putField.setValue(wrapJsAsJava(putField, putField.getValue(), putField.getFieldType()));
+    }
+
+    private void processGetFromArray(GetElementInstruction insn) {
+        if (insn.getType() != ArrayElementType.OBJECT) {
+            return;
+        }
+
+        var type = types.typeOf(insn.getReceiver());
+        if (type == JSType.JS || type == JSType.MIXED) {
+            var unwrap = new InvokeInstruction();
+            unwrap.setType(InvocationType.SPECIAL);
+            unwrap.setMethod(type == JSType.MIXED ? MAYBE_UNWRAP : UNWRAP);
+            unwrap.setArguments(program.createVariable());
+            unwrap.setReceiver(insn.getReceiver());
+            unwrap.setLocation(insn.getLocation());
+            insn.setReceiver(unwrap.getArguments().get(0));
+            insn.insertNext(unwrap);
+        }
+    }
+
+    private void processPutIntoArray(PutElementInstruction insn) {
+        if (insn.getType() != ArrayElementType.OBJECT) {
+            return;
+        }
+
+        var type = types.typeOf(insn.getValue());
+        if (type == JSType.JS || type == JSType.MIXED) {
+            var wrap = new InvokeInstruction();
+            wrap.setType(InvocationType.SPECIAL);
+            wrap.setMethod(type == JSType.MIXED ? MAYBE_WRAP : WRAP);
+            wrap.setArguments(insn.getValue());
+            wrap.setReceiver(program.createVariable());
+            wrap.setLocation(insn.getLocation());
+            insn.setValue(wrap.getReceiver());
+            insn.insertPrevious(wrap);
+        }
+    }
+
+    private void processConstructArray(ConstructArrayInstruction insn) {
+        insn.setItemType(processType(insn.getItemType()));
+    }
+
+    private void processClassConstant(ClassConstantInstruction insn) {
+        insn.setConstant(processType(insn.getConstant()));
+    }
+
+    private ValueType processType(ValueType type) {
+        return processType(typeHelper, type);
+    }
+
+    static ValueType processType(JSTypeHelper typeHelper, ValueType type) {
+        var originalType = type;
+        var degree = 0;
+        while (type instanceof ValueType.Array) {
+            degree++;
+            type = ((ValueType.Array) type).getItemType();
+        }
+        if (!(type instanceof ValueType.Object)) {
+            return originalType;
+        }
+
+        var className = ((ValueType.Object) type).getClassName();
+        if (!typeHelper.isJavaScriptClass(className)) {
+            return originalType;
+        }
+
+        type = ValueType.object(JSWrapper.class.getName());
+        while (degree-- > 0) {
+            type = ValueType.arrayOf(type);
+        }
+        return type;
+    }
+
     private boolean processCast(CastInstruction cast, CallLocation location) {
         if (!(cast.getTargetType() instanceof ValueType.Object)) {
+            cast.setTargetType(processType(cast.getTargetType()));
             return false;
         }
 
@@ -244,6 +383,9 @@ class JSClassProcessor {
         if (!typeHelper.isJavaScriptClass(targetClassName)) {
             return false;
         }
+
+        cast.setValue(unwrapJavaToJs(cast, cast.getValue()));
+
         ClassReader targetClass = classSource.get(targetClassName);
         if (targetClass.getAnnotations().get(JSFunctor.class.getName()) == null) {
             AssignInstruction assign = new AssignInstruction();
@@ -255,13 +397,82 @@ class JSClassProcessor {
         }
 
         Variable result = marshaller.unwrapFunctor(location, cast.getValue(), targetClass);
-        AssignInstruction assign = new AssignInstruction();
+        var assign = new AssignInstruction();
         assign.setLocation(location.getSourceLocation());
         assign.setAssignee(result);
         assign.setReceiver(cast.getReceiver());
         replacement.add(assign);
 
         return true;
+    }
+
+    private void processIsInstance(IsInstanceInstruction isInstance) {
+        if (!(isInstance.getType() instanceof ValueType.Object)) {
+            isInstance.setType(processType(isInstance.getType()));
+            return;
+        }
+
+        String targetClassName = ((ValueType.Object) isInstance.getType()).getClassName();
+        if (!typeHelper.isJavaScriptClass(targetClassName)) {
+            return;
+        }
+
+        var type = types.typeOf(isInstance.getValue());
+        if (type == JSType.JS) {
+            var replacement = new IntegerConstantInstruction();
+            replacement.setConstant(1);
+            replacement.setReceiver(isInstance.getReceiver());
+            replacement.setLocation(isInstance.getLocation());
+            isInstance.replace(replacement);
+            return;
+        }
+
+        var replacement = new InvokeInstruction();
+        replacement.setType(InvocationType.SPECIAL);
+        replacement.setMethod(IS_JS);
+        replacement.setArguments(isInstance.getValue());
+        replacement.setReceiver(isInstance.getReceiver());
+        replacement.setLocation(isInstance.getLocation());
+        isInstance.replace(replacement);
+    }
+
+    private Variable wrapJsAsJava(Instruction instruction, Variable var, ValueType type) {
+        if (!(type instanceof ValueType.Object)) {
+            return var;
+        }
+
+        var cls = ((ValueType.Object) type).getClassName();
+        if (typeHelper.isJavaScriptClass(cls)) {
+            return var;
+        }
+
+        var varType = types.typeOf(var);
+        if (varType != JSType.JS && varType != JSType.MIXED) {
+            return var;
+        }
+        var wrap = new InvokeInstruction();
+        wrap.setType(InvocationType.SPECIAL);
+        wrap.setMethod(varType == JSType.JS ? WRAP : MAYBE_WRAP);
+        wrap.setArguments(var);
+        wrap.setReceiver(program.createVariable());
+        wrap.setLocation(instruction.getLocation());
+        instruction.insertPrevious(wrap);
+        return wrap.getReceiver();
+    }
+
+    private Variable unwrapJavaToJs(Instruction instruction, Variable var) {
+        var varType = types.typeOf(var);
+        if (varType != JSType.JAVA && varType != JSType.MIXED) {
+            return var;
+        }
+        var unwrap = new InvokeInstruction();
+        unwrap.setType(InvocationType.SPECIAL);
+        unwrap.setMethod(varType == JSType.JAVA ? UNWRAP : MAYBE_UNWRAP);
+        unwrap.setArguments(var);
+        unwrap.setReceiver(program.createVariable());
+        unwrap.setLocation(instruction.getLocation());
+        instruction.insertPrevious(unwrap);
+        return unwrap.getReceiver();
     }
 
     private boolean processInvocation(MethodReader method, CallLocation callLocation, InvokeInstruction invoke,

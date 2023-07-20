@@ -16,7 +16,6 @@
 package org.teavm.jso.impl;
 
 import java.lang.reflect.Array;
-import java.util.function.Function;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.dependency.PluggableDependency;
@@ -148,11 +147,11 @@ final class JS {
         return result;
     }
 
-    public static <T extends JSObject> Function<T[], JSArray<T>> arrayWrapper() {
+    public static <T extends JSObject> WrapFunction<T[], JSArray<T>> arrayWrapper() {
         return JS::wrap;
     }
 
-    public static <T extends JSObject, S> JSArray<T> map(S[] array, Function<S, T> f) {
+    public static <T extends JSObject, S> JSArray<T> map(S[] array, WrapFunction<S, T> f) {
         if (array == null) {
             return null;
         }
@@ -163,7 +162,15 @@ final class JS {
         return result;
     }
 
-    public static <T extends JSObject, S> Function<S[], JSArray<T>> arrayMapper(Function<S, T> f) {
+    public interface WrapFunction<S, T extends JSObject> {
+        T apply(S obj);
+    }
+
+    public interface UnwrapFunction<S extends JSObject, T> {
+        T apply(S obj);
+    }
+
+    public static <T extends JSObject, S> WrapFunction<S[], JSArray<T>> arrayMapper(WrapFunction<S, T> f) {
         return array -> map(array, f);
     }
 
@@ -178,7 +185,7 @@ final class JS {
         return result;
     }
 
-    public static Function<boolean[], JSArray<JSBoolean>> booleanArrayWrapper() {
+    public static WrapFunction<boolean[], JSArray<JSBoolean>> booleanArrayWrapper() {
         return JS::wrap;
     }
 
@@ -193,7 +200,7 @@ final class JS {
         return result;
     }
 
-    public static Function<byte[], JSArray<JSNumber>> byteArrayWrapper() {
+    public static WrapFunction<byte[], JSArray<JSNumber>> byteArrayWrapper() {
         return JS::wrap;
     }
 
@@ -208,7 +215,7 @@ final class JS {
         return result;
     }
 
-    public static Function<short[], JSArray<JSNumber>> shortArrayWrapper() {
+    public static WrapFunction<short[], JSArray<JSNumber>> shortArrayWrapper() {
         return JS::wrap;
     }
 
@@ -223,7 +230,7 @@ final class JS {
         return result;
     }
 
-    public static Function<char[], JSArray<JSNumber>> charArrayWrapper() {
+    public static WrapFunction<char[], JSArray<JSNumber>> charArrayWrapper() {
         return JS::wrap;
     }
 
@@ -238,7 +245,7 @@ final class JS {
         return result;
     }
 
-    public static Function<int[], JSArray<JSNumber>> intArrayWrapper() {
+    public static WrapFunction<int[], JSArray<JSNumber>> intArrayWrapper() {
         return JS::wrap;
     }
 
@@ -253,7 +260,7 @@ final class JS {
         return result;
     }
 
-    public static Function<String[], JSArray<JSString>> stringArrayWrapper() {
+    public static WrapFunction<String[], JSArray<JSString>> stringArrayWrapper() {
         return JS::wrap;
     }
 
@@ -268,7 +275,7 @@ final class JS {
         return result;
     }
 
-    public static Function<float[], JSArray<JSNumber>> floatArrayWrapper() {
+    public static WrapFunction<float[], JSArray<JSNumber>> floatArrayWrapper() {
         return JS::wrap;
     }
 
@@ -283,7 +290,7 @@ final class JS {
         return result;
     }
 
-    public static Function<double[], JSArray<JSNumber>> doubleArrayWrapper() {
+    public static WrapFunction<double[], JSArray<JSNumber>> doubleArrayWrapper() {
         return JS::wrap;
     }
 
@@ -299,11 +306,12 @@ final class JS {
         return result;
     }
 
-    public static <T extends JSObject> Function<JSArrayReader<T>, T[]> arrayUnwrapper(Class<T> type) {
+    public static <T extends JSObject> UnwrapFunction<JSArrayReader<T>, T[]> arrayUnwrapper(Class<T> type) {
         return array -> unwrapArray(type, array);
     }
 
-    public static <S extends JSObject, T> T[] unmapArray(Class<T> type, JSArrayReader<S> array, Function<S, T> f) {
+    public static <S extends JSObject, T> T[] unmapArray(Class<T> type, JSArrayReader<S> array,
+            UnwrapFunction<S, T> f) {
         if (array == null) {
             return null;
         }
@@ -315,7 +323,8 @@ final class JS {
         return result;
     }
 
-    public static <T, S extends JSObject> Function<JSArray<S>, T[]> arrayUnmapper(Class<T> type, Function<S, T> f) {
+    public static <T, S extends JSObject> UnwrapFunction<JSArray<S>, T[]> arrayUnmapper(Class<T> type,
+            UnwrapFunction<S, T> f) {
         return array -> unmapArray(type, array, f);
     }
 
@@ -330,7 +339,7 @@ final class JS {
         return result;
     }
 
-    public static Function<JSArrayReader<JSBoolean>, boolean[]> booleanArrayUnwrapper() {
+    public static UnwrapFunction<JSArrayReader<JSBoolean>, boolean[]> booleanArrayUnwrapper() {
         return JS::unwrapBooleanArray;
     }
 
@@ -345,7 +354,7 @@ final class JS {
         return result;
     }
 
-    public static Function<JSArrayReader<JSNumber>, byte[]> byteArrayUnwrapper() {
+    public static UnwrapFunction<JSArrayReader<JSNumber>, byte[]> byteArrayUnwrapper() {
         return JS::unwrapByteArray;
     }
 
@@ -360,7 +369,7 @@ final class JS {
         return result;
     }
 
-    public static Function<JSArrayReader<JSNumber>, short[]> shortArrayUnwrapper() {
+    public static UnwrapFunction<JSArrayReader<JSNumber>, short[]> shortArrayUnwrapper() {
         return JS::unwrapShortArray;
     }
 
@@ -375,7 +384,7 @@ final class JS {
         return result;
     }
 
-    public static Function<JSArrayReader<JSNumber>, int[]> intArrayUnwrapper() {
+    public static UnwrapFunction<JSArrayReader<JSNumber>, int[]> intArrayUnwrapper() {
         return JS::unwrapIntArray;
     }
 
@@ -390,7 +399,7 @@ final class JS {
         return result;
     }
 
-    public static Function<JSArrayReader<JSNumber>, char[]> charArrayUnwrapper() {
+    public static UnwrapFunction<JSArrayReader<JSNumber>, char[]> charArrayUnwrapper() {
         return JS::unwrapCharArray;
     }
 
@@ -405,7 +414,7 @@ final class JS {
         return result;
     }
 
-    public static Function<JSArrayReader<JSNumber>, float[]> floatArrayUnwrapper() {
+    public static UnwrapFunction<JSArrayReader<JSNumber>, float[]> floatArrayUnwrapper() {
         return JS::unwrapFloatArray;
     }
 
@@ -420,7 +429,7 @@ final class JS {
         return result;
     }
 
-    public static Function<JSArrayReader<JSNumber>, double[]> doubleArrayUnwrapper() {
+    public static UnwrapFunction<JSArrayReader<JSNumber>, double[]> doubleArrayUnwrapper() {
         return JS::unwrapDoubleArray;
     }
 
@@ -435,7 +444,7 @@ final class JS {
         return result;
     }
 
-    public static Function<JSArrayReader<JSString>, String[]> stringArrayUnwrapper() {
+    public static UnwrapFunction<JSArrayReader<JSString>, String[]> stringArrayUnwrapper() {
         return JS::unwrapStringArray;
     }
 

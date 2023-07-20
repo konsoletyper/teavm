@@ -23,8 +23,6 @@ import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TInstantiationException;
 import org.teavm.classlib.java.lang.TObject;
-import org.teavm.platform.PlatformObject;
-import org.teavm.platform.PlatformSequence;
 
 public class TConstructor<T> extends TAccessibleObject implements TMember {
     private TClass<T> declaringClass;
@@ -113,8 +111,8 @@ public class TConstructor<T> extends TAccessibleObject implements TMember {
             }
         }
 
-        PlatformSequence<PlatformObject> jsArgs = Converter.arrayFromJava(initargs);
-        PlatformObject instance = declaringClass.newEmptyInstance();
+        var jsArgs = Converter.arrayFromJava(initargs);
+        var instance = declaringClass.newEmptyInstance();
         callable.call(instance, jsArgs);
         return (T) Converter.toJava(instance);
     }

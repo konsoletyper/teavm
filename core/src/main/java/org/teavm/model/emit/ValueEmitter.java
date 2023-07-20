@@ -111,7 +111,7 @@ public class ValueEmitter {
         String className = ((ValueType.Object) type).getClassName();
         PutFieldInstruction insn = new PutFieldInstruction();
         insn.setField(new FieldReference(className, name));
-        insn.setFieldType(type);
+        insn.setFieldType(value.type);
         insn.setInstance(variable);
         insn.setValue(value.getVariable());
         pe.addInstruction(insn);
