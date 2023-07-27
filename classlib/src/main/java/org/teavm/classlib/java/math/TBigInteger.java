@@ -836,6 +836,20 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
         return TLogical.andNot(this, val);
     }
 
+    public byte byteValueExact() {
+        if (numberLength > 1 || bitLength() > 7) {
+            throw new ArithmeticException("BigInteger out of byte range");
+        }
+        return byteValue();
+    }
+
+    public short shortValueExact() {
+        if (numberLength > 1 || bitLength() > 15) {
+            throw new ArithmeticException("BigInteger out of short range");
+        }
+        return shortValue();
+    }
+
     /**
      * Returns this {@code BigInteger} as an int value. If {@code this} is too
      * big to be represented as an int, then {@code this} % 2^32 is returned.
@@ -845,6 +859,21 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
     @Override
     public int intValue() {
         return sign * digits[0];
+    }
+
+    /**
+     * Returns this {@code BigInter} as an int value.
+     *
+     * @return this {@code BigInteger} as an int value.
+     * @see #intValue
+     * @throws ArithmeticException
+     *             if {@code this} is too big to be represented as an int.
+     */
+    public int intValueExact() {
+        if (numberLength > 1 || bitLength() > 31) {
+            throw new ArithmeticException("BigInteger out of int range");
+        }
+        return intValue();
     }
 
     /**
@@ -858,6 +887,21 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
         long value = (numberLength > 1) ? (((long) digits[1]) << 32) | (digits[0] & 0xFFFFFFFFL)
                 : (digits[0] & 0xFFFFFFFFL);
         return sign * value;
+    }
+
+    /**
+     * Returns this {@code BigInter} as an long value.
+     *
+     * @return this {@code BigInteger} as a long value.
+     * @throws ArithmeticException
+     *             if {@code this} is too big to be represented as a long.
+     * @see #longValue
+     */
+    public long longValueExact() {
+        if (numberLength > 2 || bitLength() > 63) {
+            throw new ArithmeticException("BigInteger out of long range");
+        }
+        return longValue();
     }
 
     /**
@@ -1100,6 +1144,76 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
             return getPowerOfTwo(x * exp).multiply(this.shiftRight(x).pow(exp));
         }
         return TMultiplication.pow(this, exp);
+    }
+
+    /**
+     * Returns a new {@code BigInteger} whose value is the biggest integer
+     * {@code n} such that {@code n * n <= this}.
+     *
+     * @implNote This implementation follows the ideas in Henry S. Warren, Jr.,
+     * Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 279-282.
+     *
+     * @return {@code floor(sqrt(this))}
+     * @throws ArithmeticException if {@code this} is negative.
+     */
+    public TBigInteger sqrt() {
+        if (sign < 0) {
+            throw new ArithmeticException("Negative BigInteger");
+        }
+
+        // Trivial cases
+        if (equals(ZERO)) {
+            return ZERO;
+        } else if (compareTo(valueOf(4)) < 0) {
+            return ONE;
+        }
+
+        // BigInteger fits into long, so do calculation directly
+        if (bitLength() < 64) {
+            // Estimate using existing sqrt implementation for double
+            long val = longValueExact();
+            long candidate = (long) Math.floor(Math.sqrt(val));
+
+            // Improve estimate using Newton's method
+            do {
+                long next = (candidate + val / candidate) >> 1;
+                if (next >= candidate) {
+                    // found convergence candidate if stopped to decrease
+                    return valueOf(candidate);
+                }
+
+                candidate = next;
+            } while (true);
+        }
+
+        // Shift BigInteger into long range to use existing sqrt implementation
+        // and then shift back into the initial range for a rough estimate
+
+        long shiftCount = bitLength() - 63;
+        if (shiftCount % 2 == 1) {
+            shiftCount += 1;
+        }
+
+        if ((shiftCount & 0xFFFFFFFF00000000L) > 0) {
+            throw new ArithmeticException("integer overflow");
+        }
+
+        double shiftedVal = shiftRight((int) shiftCount).doubleValue();
+        TBigInteger candidate = valueOf((long) Math.ceil(Math.sqrt(shiftedVal)));
+
+        candidate = candidate.shiftLeft((int) shiftCount >> 1);
+
+        // Improve estimate using Newton's method
+        do {
+            // next = (candidate + this/candidate) >> 1;
+            TBigInteger next = candidate.add(this.divide(candidate)).shiftRight(1);
+            if (next.compareTo(candidate) >= 0) {
+                // found convergence candidate if stopped to decrease
+                return candidate;
+            }
+
+            candidate = next;
+        } while (true);
     }
 
     /**
