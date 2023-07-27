@@ -215,6 +215,10 @@ public class TreeMapTest {
         Set<Object> key2 = map2.keySet();
         assertTrue("keySet() is identical", key2 != keys);
         assertEquals("keySet() was not cloned", "key2", key2.iterator().next());
+        @SuppressWarnings("unchecked")
+        Map<Object, Object> map3 = (Map<Object, Object>) map.clone();
+        map3.put("key2", "value2");
+        assertFalse("Original map modified through clone", map.containsKey("key2"));
     }
 
     @Test
