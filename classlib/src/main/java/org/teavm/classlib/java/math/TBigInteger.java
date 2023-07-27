@@ -68,6 +68,11 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
     public static final TBigInteger ONE = new TBigInteger(1, 1);
 
     /**
+     * The {@code BigInteger} constant 2.
+     */
+    public static final TBigInteger TWO = new TBigInteger(1, 2);
+
+    /**
      * The {@code BigInteger} constant 10.
      */
     public static final TBigInteger TEN = new TBigInteger(1, 10);
@@ -85,7 +90,7 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
     static final int LESS = -1;
 
     /** All the {@code BigInteger} numbers in the range [0,10] are cached. */
-    static final TBigInteger[] SMALL_VALUES = { ZERO, ONE, new TBigInteger(1, 2), new TBigInteger(1, 3),
+    static final TBigInteger[] SMALL_VALUES = { ZERO, ONE, TWO, new TBigInteger(1, 3),
             new TBigInteger(1, 4), new TBigInteger(1, 5), new TBigInteger(1, 6), new TBigInteger(1, 7),
             new TBigInteger(1, 8), new TBigInteger(1, 9), TEN };
 
