@@ -15,9 +15,9 @@
  */
 package org.teavm.classlib.java.text;
 
+import java.math.RoundingMode;
 import java.util.Objects;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
-import org.teavm.classlib.java.math.TRoundingMode;
 import org.teavm.classlib.java.util.TCurrency;
 import org.teavm.classlib.java.util.TLocale;
 
@@ -30,7 +30,7 @@ public abstract class TNumberFormat extends TFormat {
     private int minimumIntegerDigits = 1;
     private int maximumFractionDigits = 3;
     private int minimumFractionDigits;
-    private TRoundingMode roundingMode = TRoundingMode.HALF_EVEN;
+    private RoundingMode roundingMode = RoundingMode.HALF_EVEN;
     TCurrency currency = TCurrency.getInstance(TLocale.getDefault());
 
     public TNumberFormat() {
@@ -238,11 +238,11 @@ public abstract class TNumberFormat extends TFormat {
         parseIntegerOnly = value;
     }
 
-    public TRoundingMode getRoundingMode() {
+    public RoundingMode getRoundingMode() {
         return roundingMode;
     }
 
-    public void setRoundingMode(TRoundingMode roundingMode) {
+    public void setRoundingMode(RoundingMode roundingMode) {
         this.roundingMode = roundingMode;
     }
 
