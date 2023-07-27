@@ -117,7 +117,7 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
      * @param rnd
      *            is an optional random generator to be used.
      * @throws IllegalArgumentException
-     *             if {@code numBits} < 0.
+     *             if {@code numBits < 0}.
      */
     public TBigInteger(int numBits, Random rnd) {
         if (numBits < 0) {
@@ -152,7 +152,7 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
      * @param rnd
      *            is an optional random generator to be used.
      * @throws ArithmeticException
-     *             if {@code bitLength} < 2.
+     *             if {@code bitLength < 2}.
      */
     public TBigInteger(int bitLength, int certainty, Random rnd) {
         if (bitLength < 2) {
@@ -575,9 +575,9 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
 
     /**
      * Returns a new {@code BigInteger} whose value is {@code this << n}. The
-     * result is equivalent to {@code this * 2^n} if n >= 0. The shift distance
-     * may be negative which means that {@code this} is shifted right. The
-     * result then corresponds to {@code floor(this / 2^(-n))}.
+     * result is equivalent to {@code this * 2^n} if {@code n >= 0}. The shift
+     * distance may be negative which means that {@code this} is shifted right.
+     * The result then corresponds to {@code floor(this / 2^(-n))}.
      * <p>
      * <b>Implementation Note:</b> Usage of this method on negative values is
      * not recommended as the current implementation is not efficient.
@@ -1459,7 +1459,7 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
      * Tests whether this {@code BigInteger} is probably prime. If {@code true}
      * is returned, then this is prime with a probability beyond
      * (1-1/2^certainty). If {@code false} is returned, then this is definitely
-     * composite. If the argument {@code certainty} <= 0, then this method
+     * composite. If the argument {@code certainty <= 0}, then this method
      * returns true.
      *
      * @param certainty
@@ -1472,11 +1472,11 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
     }
 
     /**
-     * Returns the smallest integer x > {@code this} which is probably prime as
+     * Returns the smallest integer {@code x > this} which is probably prime as
      * a {@code BigInteger} instance. The probability that the returned
      * {@code BigInteger} is prime is beyond (1-1/2^80).
      *
-     * @return smallest integer > {@code this} which is robably prime.
+     * @return smallest integer &gt; {@code this} which is robably prime.
      * @throws ArithmeticException
      *             if {@code this < 0}.
      */
