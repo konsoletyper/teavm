@@ -15,12 +15,17 @@
  */
 package org.teavm.classlib.java.util;
 
+import org.teavm.classlib.java.lang.TCloneNotSupportedException;
+import org.teavm.classlib.java.lang.TCloneable;
+import org.teavm.classlib.java.lang.TObject;
+import org.teavm.interop.Rename;
+
 /**
  *
  * @author Alexey Andreev
  * @param <E>
  */
-public class TTreeSet<E> extends TAbstractSet<E> implements TNavigableSet<E> {
+public class TTreeSet<E> extends TAbstractSet<E> implements TCloneable, TNavigableSet<E> {
     private static final Object VALUE = new Object();
     private TTreeMap<E, Object> map;
 
@@ -64,6 +69,25 @@ public class TTreeSet<E> extends TAbstractSet<E> implements TNavigableSet<E> {
     @Override
     public TIterator<E> iterator() {
         return map.keySet().iterator();
+    }
+
+    /**
+     * Returns a new {@code TreeSet} with the same elements and size as this
+     * {@code TreeSet}.
+     *
+     * @return a shallow copy of this {@code TreeSet}.
+     * @see java.lang.Cloneable
+     */
+    @Rename("clone")
+    @SuppressWarnings("unchecked")
+    public TObject clone0() {
+        try {
+            TTreeSet<E> clone = (TTreeSet<E>) super.clone();
+            clone.map = (TTreeMap<E, Object>) map.clone();
+            return clone;
+        } catch (TCloneNotSupportedException e) {
+            return null;
+        }
     }
 
     @Override
@@ -166,5 +190,10 @@ public class TTreeSet<E> extends TAbstractSet<E> implements TNavigableSet<E> {
     @Override
     public TNavigableSet<E> tailSet(E fromElement, boolean inclusive) {
         return map.tailMap(fromElement, inclusive).navigableKeySet();
+    }
+
+    @Override
+    public Object clone() {
+        return new TTreeSet<>(this);
     }
 }
