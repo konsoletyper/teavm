@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.io.TSerializable;
+import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TCloneable;
 
 public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TSerializable, TNavigableMap<K, V> {
@@ -558,10 +559,19 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Object clone() {
-        TTreeMap<?, ?> copy = (TTreeMap<?, ?>) super.clone();
-        copy.cachedEntrySet = null;
-        return copy;
+        try {
+            TTreeMap<K, V> map = (TTreeMap<K, V>) super.clone();
+            map.root = null;
+            map.modCount = 0;
+            map.cachedEntrySet = null;
+            map.putAll(this);
+
+            return map;
+        } catch (TCloneNotSupportedException e) {
+            return null;
+        }
     }
 
     static class EntrySet<K, V> extends TAbstractSet<Entry<K, V>> implements TSequencedSet<Entry<K, V>> {
