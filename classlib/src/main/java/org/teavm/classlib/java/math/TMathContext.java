@@ -144,7 +144,7 @@ public final class TMathContext implements Serializable {
      *            new {@code MathContext}.
      * @throws IllegalArgumentException
      *             if the string is not in the correct format or if the
-     *             precision specified is < 0.
+     *             precision specified is &lt; 0.
      */
     public TMathContext(String val) {
         char[] charVal = val.toCharArray();
