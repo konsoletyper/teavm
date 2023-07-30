@@ -48,6 +48,12 @@ class JSDependencyListener extends AbstractDependencyListener {
         ClassReader cls = agent.getClassSource().get(className);
         for (MethodReader method : cls.getMethods()) {
             AnnotationReader exposeAnnot = method.getAnnotations().get(JSMethodToExpose.class.getName());
+            if (exposeAnnot == null) {
+                exposeAnnot = method.getAnnotations().get(JSGetterToExpose.class.getName());
+            }
+            if (exposeAnnot == null) {
+                exposeAnnot = method.getAnnotations().get(JSSetterToExpose.class.getName());
+            }
             if (exposeAnnot != null) {
                 MethodDependency methodDep = agent.linkMethod(method.getReference());
                 methodDep.getVariable(0).propagate(agent.getType(className));

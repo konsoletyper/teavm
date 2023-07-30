@@ -17,7 +17,6 @@ package org.teavm.jso.impl;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.RenderingManager;
 import org.teavm.backend.javascript.spi.VirtualMethodContributor;
@@ -54,20 +53,35 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
         writer.append("var c;").softNewLine();
         for (String className : classSource.getClassNames()) {
             ClassReader classReader = classSource.get(className);
-            Map<MethodDescriptor, String> methods = new HashMap<>();
-            for (MethodReader method : classReader.getMethods()) {
-                String methodAlias = getPublicAlias(method);
+            var methods = new HashMap<String, MethodDescriptor>();
+            var properties = new HashMap<String, PropertyInfo>();
+            for (var method : classReader.getMethods()) {
+                var methodAlias = getPublicAlias(method);
                 if (methodAlias != null) {
-                    methods.put(method.getDescriptor(), methodAlias);
+                    switch (methodAlias.kind) {
+                        case METHOD:
+                            methods.put(methodAlias.name, method.getDescriptor());
+                            break;
+                        case GETTER: {
+                            var propInfo = properties.computeIfAbsent(methodAlias.name, k -> new PropertyInfo());
+                            propInfo.getter = method.getDescriptor();
+                            break;
+                        }
+                        case SETTER: {
+                            var propInfo = properties.computeIfAbsent(methodAlias.name, k -> new PropertyInfo());
+                            propInfo.setter = method.getDescriptor();
+                            break;
+                        }
+                    }
                 }
             }
-            if (methods.isEmpty()) {
+            if (methods.isEmpty() && properties.isEmpty()) {
                 continue;
             }
 
             boolean first = true;
-            for (Map.Entry<MethodDescriptor, String> aliasEntry : methods.entrySet()) {
-                if (classReader.getMethod(aliasEntry.getKey()) == null) {
+            for (var aliasEntry : methods.entrySet()) {
+                if (classReader.getMethod(aliasEntry.getValue()) == null) {
                     continue;
                 }
                 if (first) {
@@ -75,12 +89,33 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
                             .softNewLine();
                     first = false;
                 }
-                if (isKeyword(aliasEntry.getValue())) {
-                    writer.append("c[\"").append(aliasEntry.getValue()).append("\"]");
+                if (isKeyword(aliasEntry.getKey())) {
+                    writer.append("c[\"").append(aliasEntry.getKey()).append("\"]");
                 } else {
-                    writer.append("c.").append(aliasEntry.getValue());
+                    writer.append("c.").append(aliasEntry.getKey());
                 }
-                writer.ws().append("=").ws().append("c.").appendMethod(aliasEntry.getKey()).append(";").softNewLine();
+                writer.ws().append("=").ws().append("c.").appendMethod(aliasEntry.getValue())
+                        .append(";").softNewLine();
+            }
+            for (var aliasEntry : properties.entrySet()) {
+                var propInfo = aliasEntry.getValue();
+                if (propInfo.getter == null || classReader.getMethod(propInfo.getter) == null) {
+                    continue;
+                }
+                if (first) {
+                    writer.append("c").ws().append("=").ws().appendClass(className).append(".prototype;")
+                            .softNewLine();
+                    first = false;
+                }
+                writer.append("Object.defineProperty(c,")
+                        .ws().append("\"").append(aliasEntry.getKey()).append("\",")
+                        .ws().append("{").indent().softNewLine();
+                writer.append("get:").ws().append("c.").appendMethod(propInfo.getter);
+                if (propInfo.setter != null && classReader.getMethod(propInfo.setter) != null) {
+                    writer.append(",").softNewLine();
+                    writer.append("set:").ws().append("c.").appendMethod(propInfo.setter);
+                }
+                writer.softNewLine().outdent().append("});").softNewLine();
             }
 
             FieldReader functorField = getFunctorField(classReader);
@@ -101,9 +136,23 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
         return false;
     }
 
-    private String getPublicAlias(MethodReader method) {
-        AnnotationReader annot = method.getAnnotations().get(JSMethodToExpose.class.getName());
-        return annot != null ? annot.getValue("name").getString() : null;
+    private Alias getPublicAlias(MethodReader method) {
+        var annot = method.getAnnotations().get(JSMethodToExpose.class.getName());
+        if (annot != null) {
+            return new Alias(annot.getValue("name").getString(), AliasKind.METHOD);
+        }
+
+        annot = method.getAnnotations().get(JSGetterToExpose.class.getName());
+        if (annot != null) {
+            return new Alias(annot.getValue("name").getString(), AliasKind.GETTER);
+        }
+
+        annot = method.getAnnotations().get(JSSetterToExpose.class.getName());
+        if (annot != null) {
+            return new Alias(annot.getValue("name").getString(), AliasKind.SETTER);
+        }
+
+        return null;
     }
 
     private FieldReader getFunctorField(ClassReader cls) {
@@ -189,5 +238,26 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
 
         MethodReader methodReader = classReader.getMethod(methodRef.getDescriptor());
         return methodReader != null && getPublicAlias(methodReader) != null;
+    }
+
+    static class PropertyInfo {
+        MethodDescriptor getter;
+        MethodDescriptor setter;
+    }
+
+    static class Alias {
+        final String name;
+        final AliasKind kind;
+
+        Alias(String name, AliasKind kind) {
+            this.name = name;
+            this.kind = kind;
+        }
+    }
+
+    enum AliasKind {
+        METHOD,
+        GETTER,
+        SETTER
     }
 }

@@ -20,10 +20,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 @SkipJVM
 public class ExportClass {
     @Test
@@ -32,8 +35,23 @@ public class ExportClass {
         assertEquals("[OK]", callIFromJs(new DerivedSimpleClass()));
     }
 
+    @Test
+    public void classWithPropertiesExported() {
+        var o = new ClassWithProperty("q");
+        assertEquals("q", extractFoo(o));
+
+        setFoo(o);
+        assertEquals("w", o.fooValue);
+    }
+
     @JSBody(params = "a", script = "return a.foo('OK');")
     private static native String callIFromJs(I a);
+
+    @JSBody(params = "a", script = "return a.foo;")
+    private static native String extractFoo(J a);
+
+    @JSBody(params = "a", script = "a.foo = 'w';")
+    private static native String setFoo(J a);
 
     interface I extends JSObject {
         String foo(String a);
@@ -53,4 +71,29 @@ public class ExportClass {
         }
     }
 
+    interface J extends JSObject {
+        @JSProperty
+        String getFoo();
+
+        @JSProperty
+        void setFoo(String value);
+    }
+
+    static class ClassWithProperty implements J {
+        String fooValue;
+
+        ClassWithProperty(String fooValue) {
+            this.fooValue = fooValue;
+        }
+
+        @Override
+        public String getFoo() {
+            return fooValue;
+        }
+
+        @Override
+        public void setFoo(String value) {
+            fooValue = value;
+        }
+    }
 }
