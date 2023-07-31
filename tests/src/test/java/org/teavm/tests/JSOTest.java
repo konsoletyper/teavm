@@ -41,15 +41,15 @@ public class JSOTest {
         assertNotNull(foundProblem);
         Object[] params = foundProblem.getParams();
         assertThat(params[0], is(new MethodReference(JSOTest.class, "jsBodyWithWrongParameter",
-                Object.class, void.class)));
+                A.class, void.class)));
     }
 
     private static void callJSBodyWithWrongParameter() {
-        jsBodyWithWrongParameter(23);
+        jsBodyWithWrongParameter(new A());
     }
 
     @JSBody(params = "param", script = "alert(param.toString());")
-    private static native void jsBodyWithWrongParameter(Object param);
+    private static native void jsBodyWithWrongParameter(A param);
 
     @Test
     public void reportsAboutWrongNonStaticJSBody() {
@@ -69,7 +69,7 @@ public class JSOTest {
         new JSOTest().wrongNonStaticJSBody();
     }
 
-    @JSBody(params = {}, script = "alert(this.toString());")
+    @JSBody(script = "alert(this.toString());")
     private native void wrongNonStaticJSBody();
 
     @Test
@@ -83,7 +83,7 @@ public class JSOTest {
         assertNotNull(foundProblem);
         Object[] params = foundProblem.getParams();
         assertThat(params[0], is(new MethodReference(JSOTest.class, "jsBodyWithWrongReturningType", String.class,
-                Object.class)));
+                A.class)));
     }
 
     private static void callJSBodyWithWrongReturningType() {
@@ -91,7 +91,7 @@ public class JSOTest {
     }
 
     @JSBody(params = "value", script = "return value;")
-    private static native Object jsBodyWithWrongReturningType(String value);
+    private static native A jsBodyWithWrongReturningType(String value);
 
     private List<Problem> build(String methodName) {
         TeaVM vm = new TeaVMBuilder(new JavaScriptTarget()).build();
@@ -100,5 +100,8 @@ public class JSOTest {
         vm.entryPoint(JSOTest.class.getName());
         vm.build(name -> new ByteArrayOutputStream(), "tmp");
         return vm.getProblemProvider().getSevereProblems();
+    }
+
+    public static class A {
     }
 }

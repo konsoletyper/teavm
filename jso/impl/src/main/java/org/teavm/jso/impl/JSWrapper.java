@@ -110,6 +110,15 @@ public final class JSWrapper {
     public static native JSObject directJavaToJs(Object obj);
 
     @NoSideEffects
+    public static native Object directJsToJava(JSObject obj);
+
+    @NoSideEffects
+    public static native JSObject dependencyJavaToJs(Object obj);
+
+    @NoSideEffects
+    public static native Object dependencyJsToJava(JSObject obj);
+
+    @NoSideEffects
     private static native JSObject wrapperToJs(JSWrapper obj);
 
     @NoSideEffects
@@ -117,6 +126,9 @@ public final class JSWrapper {
 
     @NoSideEffects
     public static native boolean isJava(Object obj);
+
+    @NoSideEffects
+    public static native boolean isJava(JSObject obj);
 
     public static JSObject unwrap(Object o) {
         if (o == null) {
@@ -130,6 +142,20 @@ public final class JSWrapper {
             return null;
         }
         return isJava(o) ? unwrap(o) : directJavaToJs(o);
+    }
+
+    public static JSObject javaToJs(Object o) {
+        if (o == null) {
+            return null;
+        }
+        return isJava(o) && o instanceof JSWrapper ? unwrap(o) : dependencyJavaToJs(o);
+    }
+
+    public static Object jsToJava(JSObject o) {
+        if (o == null) {
+            return null;
+        }
+        return !isJava(o) ? wrap(directJsToJava(o)) : dependencyJsToJava(o);
     }
 
     public static boolean isJs(Object o) {

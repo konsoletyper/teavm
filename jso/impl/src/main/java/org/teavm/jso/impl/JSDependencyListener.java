@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.impl;
 
-import java.util.Set;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
@@ -35,7 +34,7 @@ class JSDependencyListener extends AbstractDependencyListener {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
         MethodReference ref = method.getReference();
-        Set<MethodReference> callbackMethods = repository.callbackMethods.get(ref);
+        var callbackMethods = repository.callbackMethods.get(ref);
         if (callbackMethods != null) {
             for (MethodReference callbackMethod : callbackMethods) {
                 agent.linkMethod(callbackMethod).addLocation(new CallLocation(ref)).use();

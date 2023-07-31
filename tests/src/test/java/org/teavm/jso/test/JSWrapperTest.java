@@ -229,9 +229,39 @@ public class JSWrapperTest {
         assertEquals("org.teavm.jso.impl.JSWrapper", field1.getClass().getName());
     }
 
+    @Test
+    public void passJavaToJS() {
+        var a = processObject(new A(23));
+        assertTrue(a instanceof A);
+        assertEquals(23, ((A) a).getX());
+
+        a = processObject(JSString.valueOf("qwe"));
+        assertTrue(a instanceof JSString);
+        assertEquals("qwe", ((JSString) a).stringValue());
+
+        a = processObject(JSNumber.valueOf(23));
+        assertTrue(a instanceof JSString);
+        assertEquals("number", ((JSString) a).stringValue());
+    }
+
     @JSBody(script = "return null;")
     private static native JSObject jsNull();
 
     @JSBody(params = "o", script = "return o === null;")
     private static native boolean isNull(JSObject o);
+
+    @JSBody(params = "o", script = "return typeof o === 'number' ? 'number' : o;")
+    private static native Object processObject(Object o);
+
+    static class A {
+        private int x;
+
+        A(int x) {
+            this.x = x;
+        }
+
+        int getX() {
+            return x;
+        }
+    }
 }

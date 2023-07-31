@@ -55,13 +55,26 @@ public class JSOPlugin implements TeaVMPlugin {
         var wrapperGenerator = new JSWrapperGenerator();
         jsHost.add(new MethodReference(JSWrapper.class, "directJavaToJs", Object.class, JSObject.class),
                 wrapperGenerator);
+        jsHost.add(new MethodReference(JSWrapper.class, "directJsToJava", JSObject.class, Object.class),
+                wrapperGenerator);
+        jsHost.add(new MethodReference(JSWrapper.class, "dependencyJavaToJs", Object.class, JSObject.class),
+                wrapperGenerator);
+        jsHost.add(new MethodReference(JSWrapper.class, "dependencyJsToJava", JSObject.class, Object.class),
+                wrapperGenerator);
         jsHost.add(new MethodReference(JSWrapper.class, "isJava", Object.class, boolean.class),
+                wrapperGenerator);
+        jsHost.add(new MethodReference(JSWrapper.class, "isJava", JSObject.class, boolean.class),
                 wrapperGenerator);
         jsHost.add(new MethodReference(JSWrapper.class, "wrapperToJs", JSWrapper.class, JSObject.class),
                 wrapperGenerator);
         jsHost.add(new MethodReference(JSWrapper.class, "jsToWrapper", JSObject.class, JSWrapper.class),
                 wrapperGenerator);
+
         host.add(new MethodReference(JSWrapper.class, "jsToWrapper", JSObject.class, JSWrapper.class),
+                wrapperGenerator);
+        host.add(new MethodReference(JSWrapper.class, "dependencyJavaToJs", Object.class, JSObject.class),
+                wrapperGenerator);
+        host.add(new MethodReference(JSWrapper.class, "dependencyJsToJava", JSObject.class, Object.class),
                 wrapperGenerator);
 
         TeaVMPluginUtil.handleNatives(host, JS.class);

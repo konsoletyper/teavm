@@ -28,7 +28,7 @@ class JSTypeHelper {
     private Map<String, Boolean> knownJavaScriptClasses = new HashMap<>();
     private Map<String, Boolean> knownJavaScriptImplementations = new HashMap<>();
 
-    public JSTypeHelper(ClassReaderSource classSource) {
+    JSTypeHelper(ClassReaderSource classSource) {
         this.classSource = classSource;
         knownJavaScriptClasses.put(JSObject.class.getName(), true);
     }
@@ -91,7 +91,8 @@ class JSTypeHelper {
             return isSupportedType(((ValueType.Array) type).getItemType());
         } else if (type instanceof ValueType.Object) {
             String typeName = ((ValueType.Object) type).getClassName();
-            return typeName.equals("java.lang.String") || isJavaScriptClass(typeName);
+            return typeName.equals("java.lang.String") || typeName.equals("java.lang.Object")
+                    || isJavaScriptClass(typeName);
         } else {
             return false;
         }

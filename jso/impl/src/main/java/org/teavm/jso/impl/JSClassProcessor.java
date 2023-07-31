@@ -171,8 +171,7 @@ class JSClassProcessor {
                 callerMethod.getModifiers().add(ElementModifier.STATIC);
                 Program program = ProgramUtils.copy(method.getProgram());
                 program.createVariable();
-                InstructionVariableMapper variableMapper = new InstructionVariableMapper(var ->
-                         program.variableAt(var.getIndex() + 1));
+                var variableMapper = new InstructionVariableMapper(var -> program.variableAt(var.getIndex() + 1));
                 for (int i = program.variableCount() - 1; i > 0; --i) {
                     program.variableAt(i).setDebugName(program.variableAt(i - 1).getDebugName());
                     program.variableAt(i).setLabel(program.variableAt(i - 1).getLabel());
@@ -241,12 +240,12 @@ class JSClassProcessor {
                     processIsInstance((IsInstanceInstruction) insn);
                 } else if (insn instanceof InvokeInstruction) {
                     var invoke = (InvokeInstruction) insn;
-                    processInvokeArgs(invoke);
 
                     var method = getMethod(invoke.getMethod().getClassName(), invoke.getMethod().getDescriptor());
                     if (method == null) {
                         continue;
                     }
+                    processInvokeArgs(invoke, method);
                     var callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
                     replacement.clear();
                     if (processInvocation(method, callLocation, invoke, methodToProcess)) {
@@ -272,8 +271,9 @@ class JSClassProcessor {
         }
     }
 
-    private void processInvokeArgs(InvokeInstruction invoke) {
-        if (typeHelper.isJavaScriptClass(invoke.getMethod().getClassName())) {
+    private void processInvokeArgs(InvokeInstruction invoke, MethodReader methodToInvoke) {
+        if (typeHelper.isJavaScriptClass(invoke.getMethod().getClassName())
+                || methodToInvoke.getAnnotations().get(JSBody.class.getName()) != null) {
             return;
         }
         Variable[] newArgs = null;

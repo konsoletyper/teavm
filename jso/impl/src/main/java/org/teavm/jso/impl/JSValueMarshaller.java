@@ -107,6 +107,16 @@ class JSValueMarshaller {
 
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
+            if (className.equals("java.lang.Object")) {
+                var unwrapNative = new InvokeInstruction();
+                unwrapNative.setLocation(location);
+                unwrapNative.setType(InvocationType.SPECIAL);
+                unwrapNative.setMethod(new MethodReference(JSWrapper.class, "javaToJs", Object.class, JSObject.class));
+                unwrapNative.setArguments(var);
+                unwrapNative.setReceiver(program.createVariable());
+                replacement.add(unwrapNative);
+                return unwrapNative.getReceiver();
+            }
             if (!className.equals("java.lang.String")) {
                 return var;
             }
@@ -282,7 +292,16 @@ class JSValueMarshaller {
             }
         } else if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
-            if (className.equals(JSObject.class.getName())) {
+            if (className.equals(Object.class.getName())) {
+                var wrapNative = new InvokeInstruction();
+                wrapNative.setLocation(location.getSourceLocation());
+                wrapNative.setType(InvocationType.SPECIAL);
+                wrapNative.setMethod(new MethodReference(JSWrapper.class, "jsToJava", JSObject.class, Object.class));
+                wrapNative.setArguments(var);
+                wrapNative.setReceiver(program.createVariable());
+                replacement.add(wrapNative);
+                return wrapNative.getReceiver();
+            } else if (className.equals(JSObject.class.getName())) {
                 return var;
             } else if (className.equals("java.lang.String")) {
                 return unwrap(var, "unwrapString", JSMethods.JS_OBJECT, stringType, location.getSourceLocation());
