@@ -20,10 +20,10 @@ import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.BaseTypeInference;
 
-public class JSTypeInference extends BaseTypeInference<JSType> {
+class JSTypeInference extends BaseTypeInference<JSType> {
     private JSTypeHelper typeHelper;
 
-    public JSTypeInference(JSTypeHelper typeHelper, Program program, MethodReference reference) {
+    JSTypeInference(JSTypeHelper typeHelper, Program program, MethodReference reference) {
         super(program, reference);
         this.typeHelper = typeHelper;
     }
