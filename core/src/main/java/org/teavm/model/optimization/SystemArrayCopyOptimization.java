@@ -27,10 +27,11 @@ public class SystemArrayCopyOptimization implements MethodOptimization {
             "arraycopy", Object.class, int.class, Object.class, int.class, int.class, void.class);
     private static final MethodReference FAST_ARRAY_COPY_METHOD = new MethodReference(System.class,
             "fastArraycopy", Object.class, int.class, Object.class, int.class, int.class, void.class);
+    private static final ValueType DEFAULT_TYPE = ValueType.object("java.lang.Object");
 
     @Override
     public boolean optimize(MethodOptimizationContext context, Program program) {
-        TypeInference typeInference = null;
+        var typeInference = new TypeInference(program, context.getMethod().getReference());
         var somethingChanged = false;
         for (var block : program.getBasicBlocks()) {
             for (var instruction : block) {
@@ -38,12 +39,9 @@ public class SystemArrayCopyOptimization implements MethodOptimization {
                     var invoke = (InvokeInstruction) instruction;
                     var method = invoke.getMethod();
                     if (method.equals(ARRAY_COPY_METHOD)) {
-                        if (typeInference == null) {
-                            typeInference = new TypeInference(program, context.getMethod().getReference());
-                        }
                         var sourceType = typeInference.typeOf(invoke.getArguments().get(0));
                         var destType = typeInference.typeOf(invoke.getArguments().get(2));
-                        if (sourceType != null && destType != null) {
+                        if (sourceType instanceof ValueType.Array && destType instanceof ValueType.Array) {
                             if (sourceType.equals(destType)
                                     || context.getHierarchy().isSuperType(destType, sourceType, false)) {
                                 invoke.setMethod(FAST_ARRAY_COPY_METHOD);
@@ -65,24 +63,24 @@ public class SystemArrayCopyOptimization implements MethodOptimization {
         @Override
         public ValueType merge(ValueType a, ValueType b) {
             if (!Objects.equals(a, b)) {
-                return null;
+                return DEFAULT_TYPE;
             }
             return a;
         }
 
         @Override
         public ValueType elementType(ValueType valueType) {
-            return valueType instanceof ValueType.Array ? ((ValueType.Array) valueType).getItemType() : null;
+            return valueType instanceof ValueType.Array ? ((ValueType.Array) valueType).getItemType() : DEFAULT_TYPE;
         }
 
         @Override
         public ValueType nullType() {
-            return null;
+            return DEFAULT_TYPE;
         }
 
         @Override
         public ValueType mapType(ValueType type) {
-            return type instanceof ValueType.Array ? ((ValueType.Array) type).getItemType() : null;
+            return type instanceof ValueType.Array ? type : DEFAULT_TYPE;
         }
     }
 }
