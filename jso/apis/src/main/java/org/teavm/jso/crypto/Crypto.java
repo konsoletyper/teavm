@@ -25,10 +25,10 @@ import org.teavm.jso.typedarrays.Uint8Array;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
 public abstract class Crypto implements JSObject {
-    @JSBody(script = "return window.crypto != null;")
+    @JSBody(script = "return crypto != null;")
     public static native boolean isSupported();
 
-    @JSBody(script = "return window.crypto;")
+    @JSBody(script = "return crypto;")
     public static native Crypto current();
 
     public abstract String randomUUID();
