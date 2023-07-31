@@ -28,7 +28,7 @@ import org.teavm.junit.WholeClassCompilation;
 @RunWith(TeaVMTestRunner.class)
 @WholeClassCompilation
 @SkipJVM
-public class ExportClass {
+public class ExportClassTest {
     @Test
     public void simpleClassExported() {
         assertEquals("(OK)", callIFromJs(new SimpleClass()));
@@ -51,7 +51,7 @@ public class ExportClass {
     private static native String extractFoo(J a);
 
     @JSBody(params = "a", script = "a.foo = 'w';")
-    private static native String setFoo(J a);
+    private static native void setFoo(J a);
 
     interface I extends JSObject {
         String foo(String a);
