@@ -190,9 +190,9 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
     @JSProperty
     public abstract double getDevicePixelRatio();
 
-    @JSBody(params = "s", script = "return window.atob(s);")
+    @JSBody(params = "s", script = "return atob(s);")
     public static native String atob(String s);
 
-    @JSBody(params = "s", script = "return window.btoa(s);")
+    @JSBody(params = "s", script = "return btoa(s);")
     public static native String btoa(String s);
 }
