@@ -102,7 +102,6 @@ import org.teavm.model.util.AsyncMethodFinder;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.RenderingException;
-import org.teavm.vm.TeaVMEntryPoint;
 import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.TeaVMTargetController;
 import org.teavm.vm.spi.RendererListener;
@@ -378,8 +377,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         if (debugEmitterToUse == null) {
             debugEmitterToUse = new DummyDebugInformationEmitter();
         }
-        VirtualMethodContributorContext virtualMethodContributorContext = new VirtualMethodContributorContextImpl(
-                classes);
+        var virtualMethodContributorContext = new VirtualMethodContributorContextImpl(classes);
         RenderingContext renderingContext = new RenderingContext(debugEmitterToUse,
                 controller.getUnprocessedClassSource(), classes,
                 controller.getClassLoader(), controller.getServices(), controller.getProperties(), naming,
@@ -439,17 +437,16 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                 runtimeRenderer.renderHandWrittenRuntime("simpleThread.js");
             }
 
-            for (Map.Entry<? extends String, ? extends TeaVMEntryPoint> entry
-                    : controller.getEntryPoints().entrySet()) {
-                sourceWriter.append(entry.getKey()).ws().append("=").ws();
-                MethodReference ref = entry.getValue().getMethod();
+            for (var entry : controller.getEntryPoints().entrySet()) {
+                sourceWriter.append("$rt_exports.").append(entry.getKey()).ws().append("=").ws();
+                var ref = entry.getValue().getMethod();
                 sourceWriter.append("$rt_mainStarter(").appendMethodBody(ref);
                 sourceWriter.append(");").newLine();
-                sourceWriter.append(entry.getKey()).append(".").append("javaException").ws().append("=").ws()
-                        .append("$rt_javaException;").newLine();
+                sourceWriter.append("$rt_exports.").append(entry.getKey()).append(".").append("javaException")
+                        .ws().append("=").ws().append("$rt_javaException;").newLine();
             }
 
-            for (RendererListener listener : rendererListeners) {
+            for (var listener : rendererListeners) {
                 listener.complete();
             }
 
@@ -464,14 +461,34 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     private void printWrapperStart(SourceWriter writer) throws IOException {
         writer.append("\"use strict\";").newLine();
-        for (String key : controller.getEntryPoints().keySet()) {
-            writer.append("var ").append(key).append(";").softNewLine();
-        }
-        writer.append("(function($rt_globals)").ws().append("{").newLine();
+        printUmdStart(writer);
+        writer.append("function($rt_globals,").ws().append("$rt_exports)").appendBlockStart();
+    }
+
+    private void printUmdStart(SourceWriter writer) throws IOException {
+        writer.append("(function(root,").ws().append("module)").appendBlockStart();
+        writer.appendIf().append("typeof define").ws().append("===").ws().append("'function'")
+                .ws().append("&&").ws().append("define.amd)").appendBlockStart();
+        writer.append("define(['exports'],").ws().append("function(exports)").ws().appendBlockStart();
+        writer.append("module(root,").ws().append("exports);").softNewLine();
+        writer.outdent().append("});").softNewLine();
+
+        writer.appendElseIf().append("typeof exports").ws()
+                .append("===").ws().append("'object'").ws().append("&&").ws()
+                .append("typeof exports.nodeName").ws().append("!==").ws().append("'string')").appendBlockStart();
+        writer.append("module(global,").ws().append("exports);").softNewLine();
+
+        writer.appendElse();
+        writer.append("module(root,").ws().append("root);").softNewLine();
+        writer.appendBlockEnd();
+        writer.outdent().append("}(typeof self").ws().append("!==").ws().append("'undefined'")
+                .ws().append("?").ws().append("self")
+                .ws().append(":").ws().append("this,")
+                .ws();
     }
 
     private void printWrapperEnd(SourceWriter writer) throws IOException {
-        writer.append("})(this);").newLine();
+        writer.outdent().append("}));").newLine();
     }
 
     private void printStats(Renderer renderer, int totalSize) {

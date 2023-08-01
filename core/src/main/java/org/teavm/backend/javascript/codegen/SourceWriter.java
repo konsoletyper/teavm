@@ -47,6 +47,26 @@ public class SourceWriter implements Appendable, LocationProvider {
         return this;
     }
 
+    public SourceWriter appendBlockStart() throws IOException {
+        return ws().append("{").indent().softNewLine();
+    }
+
+    public SourceWriter appendBlockEnd() throws IOException {
+        return outdent().append("}").softNewLine();
+    }
+
+    public SourceWriter appendIf() throws IOException {
+        return append("if").ws().append("(");
+    }
+
+    public SourceWriter appendElseIf() throws IOException {
+        return outdent().append("}").ws().append("else ").appendIf();
+    }
+
+    public SourceWriter appendElse() throws IOException {
+        return outdent().append("}").ws().append("else").appendBlockStart();
+    }
+
     public SourceWriter append(int value) throws IOException {
         return append(String.valueOf(value));
     }
