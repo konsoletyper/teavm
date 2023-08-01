@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2023 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,14 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.javascript;
+package org.teavm.jso.impl;
 
-import org.teavm.common.ServiceRepository;
-import org.teavm.model.ClassReaderSource;
-import org.teavm.model.MethodReference;
+class JsBodyImportInfo {
+    final String alias;
+    final String fromModule;
 
-public interface ProviderContext extends ServiceRepository {
-    MethodReference getMethod();
-
-    ClassReaderSource getClassSource();
+    JsBodyImportInfo(String alias, String fromModule) {
+        this.alias = alias;
+        this.fromModule = fromModule;
+    }
 }

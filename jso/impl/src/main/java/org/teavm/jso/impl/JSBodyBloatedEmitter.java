@@ -26,22 +26,45 @@ class JSBodyBloatedEmitter implements JSBodyEmitter {
     private MethodReference method;
     private String script;
     private String[] parameterNames;
+    private JsBodyImportInfo[] imports;
 
-    public JSBodyBloatedEmitter(boolean isStatic, MethodReference method, String script, String[] parameterNames) {
+    JSBodyBloatedEmitter(boolean isStatic, MethodReference method, String script, String[] parameterNames,
+            JsBodyImportInfo[] imports) {
         this.isStatic = isStatic;
         this.method = method;
         this.script = script;
         this.parameterNames = parameterNames;
+        this.imports = imports;
     }
 
     @Override
     public void emit(InjectorContext context) throws IOException {
-        emit(context.getWriter(), index -> context.writeExpr(context.getArgument(index)));
+        emit(context.getWriter(), new EmissionStrategy() {
+            @Override
+            public void emitArgument(int argument) {
+                context.writeExpr(context.getArgument(argument));
+            }
+
+            @Override
+            public void emitModule(String name) throws IOException {
+                context.getWriter().append(context.importModule(name));
+            }
+        });
     }
 
     @Override
     public void emit(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        emit(writer, index -> writer.append(context.getParameterName(index + 1)));
+        emit(writer, new EmissionStrategy() {
+            @Override
+            public void emitArgument(int argument) throws IOException {
+                writer.append(context.getParameterName(argument + 1));
+            }
+
+            @Override
+            public void emitModule(String name) throws IOException {
+                writer.append(context.importModule(name));
+            }
+        });
     }
 
     private void emit(SourceWriter writer, EmissionStrategy strategy) throws IOException {
@@ -50,22 +73,43 @@ class JSBodyBloatedEmitter implements JSBodyEmitter {
         writer.append("if (!").appendMethodBody(method).append(".$native)").ws().append('{').indent().newLine();
         writer.appendMethodBody(method).append(".$native").ws().append('=').ws().append("function(");
         int count = method.parameterCount();
+
+        var first = true;
         for (int i = 0; i < count; ++i) {
-            if (i > 0) {
+            if (!first) {
                 writer.append(',').ws();
             }
+            first = false;
             writer.append('_').append(i);
+        }
+        for (var i = 0; i < imports.length; ++i) {
+            if (!first) {
+                writer.append(',').ws();
+            }
+            first = false;
+            writer.append("_i").append(i);
         }
         writer.append(')').ws().append('{').softNewLine().indent();
 
         writer.append("return (function(");
+
+        first = true;
         for (int i = 0; i < bodyParamCount; ++i) {
-            if (i > 0) {
+            if (!first) {
                 writer.append(',').ws();
             }
+            first = false;
             String name = parameterNames[i];
             writer.append(name);
         }
+        for (var importInfo : imports) {
+            if (!first) {
+                writer.append(',').ws();
+            }
+            first = false;
+            writer.append(importInfo.alias);
+        }
+
         writer.append(')').ws().append('{').softNewLine().indent();
         writer.append(script).softNewLine();
         writer.outdent().append("})");
@@ -73,12 +117,23 @@ class JSBodyBloatedEmitter implements JSBodyEmitter {
             writer.append(".call");
         }
         writer.append('(');
+
+        first = true;
         for (int i = 0; i < count; ++i) {
-            if (i > 0) {
+            if (!first) {
                 writer.append(',').ws();
             }
+            first = false;
             writer.append('_').append(i);
         }
+        for (var i = 0; i < imports.length; ++i) {
+            if (!first) {
+                writer.append(',').ws();
+            }
+            first = false;
+            writer.append("_i").append(i);
+        }
+
         writer.append(");").softNewLine();
         writer.outdent().append("};").softNewLine();
         writer.appendMethodBody(method).ws().append('=').ws().appendMethodBody(method).append(".$native;")
@@ -97,5 +152,7 @@ class JSBodyBloatedEmitter implements JSBodyEmitter {
 
     interface EmissionStrategy {
         void emitArgument(int argument) throws IOException;
+
+        void emitModule(String name) throws IOException;
     }
 }

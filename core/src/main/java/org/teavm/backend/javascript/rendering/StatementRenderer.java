@@ -1747,5 +1747,10 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         public ListableClassReaderSource getClassSource() {
             return context.getClassSource();
         }
+
+        @Override
+        public String importModule(String name) {
+            return context.importModule(name);
+        }
     }
 }

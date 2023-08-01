@@ -1212,6 +1212,11 @@ public class Renderer implements RenderingManager {
         public boolean isDynamicInitializer(String className) {
             return context.isDynamicInitializer(className);
         }
+
+        @Override
+        public String importModule(String name) {
+            return context.importModule(name);
+        }
     }
 
     private void appendMonitor(StatementRenderer statementRenderer, MethodNode methodNode) throws IOException {

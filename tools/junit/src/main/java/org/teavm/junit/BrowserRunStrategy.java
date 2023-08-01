@@ -25,10 +25,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,7 +67,7 @@ class BrowserRunStrategy implements TestRunStrategy {
     private ConcurrentMap<Integer, CallbackWrapper> awaitingRuns = new ConcurrentHashMap<>();
     private ObjectMapper objectMapper = new ObjectMapper();
 
-    public BrowserRunStrategy(File baseDir, String type, Function<String, Process> browserRunner) {
+    BrowserRunStrategy(File baseDir, String type, Function<String, Process> browserRunner) {
         this.baseDir = baseDir;
         this.type = type;
         this.browserRunner = browserRunner;
@@ -186,6 +187,16 @@ class BrowserRunStrategy implements TestRunStrategy {
         testNode.set("type", nf.textNode(type));
         testNode.set("name", nf.textNode(run.getFileName()));
         testNode.set("file", nf.textNode("tests/" + relPath));
+
+        var additionalJs = additionalJs(run);
+        if (additionalJs.length > 0) {
+            var additionalJsJson = nf.arrayNode();
+            for (var additionalFile : additionalJs) {
+                additionalJsJson.add("resources/" + additionalFile);
+            }
+            testNode.set("additionalFiles", additionalJsJson);
+        }
+
         if (run.getArgument() != null) {
             testNode.set("argument", nf.textNode(run.getArgument()));
         }
@@ -207,6 +218,27 @@ class BrowserRunStrategy implements TestRunStrategy {
         return !callbackWrapper.shouldRepeat;
     }
 
+    private String[] additionalJs(TestRun run) {
+        var result = new LinkedHashSet<String>();
+
+        var method = run.getMethod();
+        var attachAnnot = method.getAnnotation(AttachJavaScript.class);
+        if (attachAnnot != null) {
+            result.addAll(List.of(attachAnnot.value()));
+        }
+
+        var cls = method.getDeclaringClass();
+        while (cls != null) {
+            var classAttachAnnot = cls.getAnnotation(AttachJavaScript.class);
+            if (classAttachAnnot != null) {
+                result.addAll(List.of(attachAnnot.value()));
+            }
+            cls = cls.getSuperclass();
+        }
+
+        return result.toArray(new String[0]);
+    }
+
     class TestCodeServlet extends HttpServlet {
         private WebSocketServletFactory wsFactory;
         private Map<String, String> contentCache = new ConcurrentHashMap<>();
@@ -225,7 +257,7 @@ class BrowserRunStrategy implements TestRunStrategy {
         }
 
         @Override
-        protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
             String path = req.getRequestURI();
             if (path != null) {
                 if (!path.startsWith("/")) {
@@ -270,7 +302,20 @@ class BrowserRunStrategy implements TestRunStrategy {
                                 resp.setContentType("application/wasm");
                             }
                             try (FileInputStream input = new FileInputStream(file)) {
-                                copy(input, resp.getOutputStream());
+                                input.transferTo(resp.getOutputStream());
+                            }
+                            resp.getOutputStream().flush();
+                        }
+                    }
+                    if (path.startsWith("/resources/")) {
+                        var relPath = path.substring("/resources/".length());
+                        var classLoader = BrowserRunStrategy.class.getClassLoader();
+                        try (var input = classLoader.getResourceAsStream(relPath)) {
+                            if (input != null) {
+                                resp.setStatus(HttpServletResponse.SC_OK);
+                                input.transferTo(resp.getOutputStream());
+                            } else {
+                                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
                             }
                             resp.getOutputStream().flush();
                         }
@@ -308,17 +353,6 @@ class BrowserRunStrategy implements TestRunStrategy {
                     return null;
                 }
             });
-        }
-
-        private void copy(InputStream input, OutputStream output) throws IOException {
-            byte[] buffer = new byte[2048];
-            while (true) {
-                int bytes = input.read(buffer);
-                if (bytes < 0) {
-                    break;
-                }
-                output.write(buffer, 0, bytes);
-            }
         }
     }
 

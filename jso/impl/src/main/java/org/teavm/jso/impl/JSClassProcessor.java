@@ -780,10 +780,24 @@ class JSClassProcessor {
         }
         var body = ((FunctionNode) rootNode.getFirstChild()).getBody();
 
+        JsBodyImportInfo[] imports;
+        var importsValue = bodyAnnot.getValue("imports");
+        if (importsValue != null) {
+            var importsList = importsValue.getList();
+            imports = new JsBodyImportInfo[importsList.size()];
+            for (var i = 0; i < importsList.size(); ++i) {
+                var importAnnot = importsList.get(0).getAnnotation();
+                imports[i] = new JsBodyImportInfo(importAnnot.getValue("alias").getString(),
+                        importAnnot.getValue("fromModule").getString());
+            }
+        } else {
+            imports = new JsBodyImportInfo[0];
+        }
+
         repository.methodMap.put(methodToProcess.getReference(), proxyMethod);
         if (errorReporter.hasErrors()) {
             repository.emitters.put(proxyMethod, new JSBodyBloatedEmitter(isStatic, proxyMethod,
-                    script, parameterNames));
+                    script, parameterNames, imports));
         } else {
             var expr = JSBodyInlineUtil.isSuitableForInlining(methodToProcess.getReference(),
                     parameterNames, body);
@@ -793,7 +807,11 @@ class JSClassProcessor {
                 expr = body;
             }
             javaInvocationProcessor.process(location, expr);
-            repository.emitters.put(proxyMethod, new JSBodyAstEmitter(isStatic, expr, rootNode, parameterNames));
+            var emitter = new JSBodyAstEmitter(isStatic, expr, rootNode, parameterNames, imports);
+            repository.emitters.put(proxyMethod, emitter);
+        }
+        if (imports.length > 0) {
+            repository.imports.put(proxyMethod, imports);
         }
     }
 

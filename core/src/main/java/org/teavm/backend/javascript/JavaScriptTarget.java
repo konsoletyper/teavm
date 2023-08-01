@@ -30,8 +30,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import org.teavm.ast.AsyncMethodNode;
@@ -50,11 +52,14 @@ import org.teavm.backend.javascript.decompile.PreparedClass;
 import org.teavm.backend.javascript.decompile.PreparedMethod;
 import org.teavm.backend.javascript.rendering.Renderer;
 import org.teavm.backend.javascript.rendering.RenderingContext;
+import org.teavm.backend.javascript.rendering.RenderingUtil;
 import org.teavm.backend.javascript.rendering.RuntimeRenderer;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
+import org.teavm.backend.javascript.spi.ModuleImporter;
+import org.teavm.backend.javascript.spi.ModuleImporterContext;
 import org.teavm.backend.javascript.spi.VirtualMethodContributor;
 import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
 import org.teavm.cache.AstCacheEntry;
@@ -68,6 +73,7 @@ import org.teavm.debugging.information.SourceLocation;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyAnalyzer;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.DependencyType;
 import org.teavm.dependency.MethodDependency;
@@ -83,6 +89,7 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassHolderSource;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -120,6 +127,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private final Map<MethodReference, Injector> methodInjectors = new HashMap<>();
     private final List<Function<ProviderContext, Generator>> generatorProviders = new ArrayList<>();
     private final List<Function<ProviderContext, Injector>> injectorProviders = new ArrayList<>();
+    private final List<Function<ProviderContext, ModuleImporter>> moduleImporterProviders = new ArrayList<>();
     private final List<RendererListener> rendererListeners = new ArrayList<>();
     private DebugInformationEmitter debugEmitter;
     private MethodNodeCache astCache = EmptyMethodNodeCache.INSTANCE;
@@ -131,6 +139,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private boolean strict;
     private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
     private NullCheckInsertion nullCheckInsertion = new NullCheckInsertion(NullCheckFilter.EMPTY);
+    private final Map<String, String> importedModules = new LinkedHashMap<>();
 
     @Override
     public List<ClassHolderTransformer> getTransformers() {
@@ -170,6 +179,11 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     @Override
     public void addInjectorProvider(Function<ProviderContext, Injector> provider) {
         injectorProviders.add(provider);
+    }
+
+    @Override
+    public void addModuleImporterProvider(Function<ProviderContext, ModuleImporter> provider) {
+        moduleImporterProviders.add(provider);
     }
 
     /**
@@ -361,6 +375,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     private void emit(ListableClassHolderSource classes, Writer writer, BuildTarget target) {
         List<PreparedClass> clsNodes = modelToAst(classes);
+        prepareModules(classes);
         if (controller.wasCancelled()) {
             return;
         }
@@ -382,7 +397,13 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                 controller.getUnprocessedClassSource(), classes,
                 controller.getClassLoader(), controller.getServices(), controller.getProperties(), naming,
                 controller.getDependencyInfo(), m -> isVirtual(virtualMethodContributorContext, m),
-                controller.getClassInitializerInfo(), strict);
+                controller.getClassInitializerInfo(), strict
+        ) {
+            @Override
+            public String importModule(String name) {
+                return JavaScriptTarget.this.importModule(name);
+            }
+        };
         renderingContext.setMinifying(obfuscated);
         Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
                 controller.getDiagnostics(), renderingContext);
@@ -404,7 +425,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             renderer.setDebugEmitter(debugEmitter);
         }
         renderer.getDebugEmitter().setLocationProvider(sourceWriter);
-        for (Map.Entry<MethodReference, Injector> entry : methodInjectors.entrySet()) {
+        for (var entry : methodInjectors.entrySet()) {
             renderingContext.addInjector(entry.getKey(), entry.getValue());
         }
         try {
@@ -462,21 +483,45 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private void printWrapperStart(SourceWriter writer) throws IOException {
         writer.append("\"use strict\";").newLine();
         printUmdStart(writer);
-        writer.append("function($rt_globals,").ws().append("$rt_exports)").appendBlockStart();
+        writer.append("function($rt_globals,").ws().append("$rt_exports");
+        for (var moduleName : importedModules.values()) {
+            writer.append(",").ws().appendFunction(moduleName);
+        }
+        writer.append(")").appendBlockStart();
+    }
+
+    private String importModule(String name) {
+        return importedModules.get(name);
     }
 
     private void printUmdStart(SourceWriter writer) throws IOException {
         writer.append("(function(root,").ws().append("module)").appendBlockStart();
         writer.appendIf().append("typeof define").ws().append("===").ws().append("'function'")
                 .ws().append("&&").ws().append("define.amd)").appendBlockStart();
-        writer.append("define(['exports'],").ws().append("function(exports)").ws().appendBlockStart();
-        writer.append("module(root,").ws().append("exports);").softNewLine();
+        writer.append("define(['exports'");
+        for (var moduleName : importedModules.keySet()) {
+            writer.append(',').ws().append('"').append(RenderingUtil.escapeString(moduleName)).append('"');
+        }
+        writer.append("],").ws().append("function(exports");
+        for (var moduleAlias : importedModules.values()) {
+            writer.append(',').ws().appendFunction(moduleAlias);
+        }
+        writer.append(")").ws().appendBlockStart();
+        writer.append("module(root,").ws().append("exports");
+        for (var moduleAlias : importedModules.values()) {
+            writer.append(',').ws().appendFunction(moduleAlias);
+        }
+        writer.append(");").softNewLine();
         writer.outdent().append("});").softNewLine();
 
         writer.appendElseIf().append("typeof exports").ws()
                 .append("===").ws().append("'object'").ws().append("&&").ws()
                 .append("typeof exports.nodeName").ws().append("!==").ws().append("'string')").appendBlockStart();
-        writer.append("module(global,").ws().append("exports);").softNewLine();
+        writer.append("module(global,").ws().append("exports");
+        for (var moduleName : importedModules.keySet()) {
+            writer.append(',').ws().append("require(\"").append(RenderingUtil.escapeString(moduleName)).append("\")");
+        }
+        writer.append(");").softNewLine();
 
         writer.appendElse();
         writer.append("module(root,").ws().append("root);").softNewLine();
@@ -517,6 +562,28 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     private String getSizeWithPercentage(int size, int totalSize) {
         return STATS_NUM_FORMAT.format(size) + " (" + STATS_PERCENT_FORMAT.format((double) size / totalSize) + ")";
+    }
+
+    private void prepareModules(ListableClassHolderSource classes) {
+        var context = new ImporterContext(classes);
+        for (var className : classes.getClassNames()) {
+            var cls = classes.get(className);
+            for (var method : cls.getMethods()) {
+                if (method.getModifiers().contains(ElementModifier.ABSTRACT)) {
+                    continue;
+                }
+
+                var providerContext = new ProviderContextImpl(method.getReference());
+                for (var provider : moduleImporterProviders) {
+                    var importer = provider.apply(providerContext);
+                    if (importer != null) {
+                        context.method = method;
+                        importer.importModules(context);
+                        context.method = null;
+                    }
+                }
+            }
+        }
     }
 
     private List<PreparedClass> modelToAst(ListableClassHolderSource classes) {
@@ -676,7 +743,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         boolean found = false;
         ProviderContext context = new ProviderContextImpl(method.getReference());
-        for (Function<ProviderContext, Generator> provider : generatorProviders) {
+        for (var provider : generatorProviders) {
             Generator generator = provider.apply(context);
             if (generator != null) {
                 methodGenerators.put(method.getReference(), generator);
@@ -684,7 +751,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                 break;
             }
         }
-        for (Function<ProviderContext, Injector> provider : injectorProviders) {
+        for (var provider : injectorProviders) {
             Injector injector = provider.apply(context);
             if (injector != null) {
                 methodInjectors.put(method.getReference(), injector);
@@ -756,6 +823,11 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         public ClassReaderSource getClassSource() {
             return controller.getUnprocessedClassSource();
         }
+
+        @Override
+        public <T> T getService(Class<T> type) {
+            return controller.getServices().getService(type);
+        }
     }
 
     @PlatformMarker
@@ -818,6 +890,50 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         @Override
         public ClassReaderSource getClassSource() {
             return classSource;
+        }
+    }
+
+    class ImporterContext implements ModuleImporterContext {
+        private ListableClassReaderSource classSource;
+        MethodReader method;
+
+        ImporterContext(ListableClassReaderSource classSource) {
+            this.classSource = classSource;
+        }
+
+        @Override
+        public MethodReader getMethod() {
+            return method;
+        }
+
+        @Override
+        public void importModule(String name) {
+            importedModules.computeIfAbsent(name, n -> "$rt_import_" + importedModules.size());
+        }
+
+        @Override
+        public ListableClassReaderSource getClassSource() {
+            return classSource;
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return controller.getClassLoader();
+        }
+
+        @Override
+        public Properties getProperties() {
+            return JavaScriptTarget.this.controller.getProperties();
+        }
+
+        @Override
+        public DependencyInfo getDependency() {
+            return controller.getDependencyInfo();
+        }
+
+        @Override
+        public <T> T getService(Class<T> type) {
+            return controller.getServices().getService(type);
         }
     }
 }

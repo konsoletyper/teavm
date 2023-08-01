@@ -32,12 +32,15 @@ class JSBodyAstEmitter implements JSBodyEmitter {
     private AstNode ast;
     private AstNode rootAst;
     private String[] parameterNames;
+    private JsBodyImportInfo[] imports;
 
-    JSBodyAstEmitter(boolean isStatic, AstNode ast, AstNode rootAst, String[] parameterNames) {
+    JSBodyAstEmitter(boolean isStatic, AstNode ast, AstNode rootAst, String[] parameterNames,
+            JsBodyImportInfo[] imports) {
         this.isStatic = isStatic;
         this.ast = ast;
         this.rootAst = rootAst;
         this.parameterNames = parameterNames;
+        this.imports = imports;
     }
 
     @Override
@@ -53,6 +56,10 @@ class JSBodyAstEmitter implements JSBodyEmitter {
             int index = paramIndex++;
             astWriter.declareNameEmitter(parameterNames[i],
                     prec -> context.writeExpr(context.getArgument(index), convert(prec)));
+        }
+        for (var importInfo : imports) {
+            astWriter.declareNameEmitter(importInfo.alias,
+                    prec -> context.getWriter().appendFunction(context.importModule(importInfo.fromModule)));
         }
         astWriter.hoist(rootAst);
         astWriter.print(ast, convert(context.getPrecedence()));
@@ -148,9 +155,13 @@ class JSBodyAstEmitter implements JSBodyEmitter {
             int index = paramIndex++;
             astWriter.declareNameEmitter("this", prec -> writer.append(context.getParameterName(index)));
         }
-        for (int i = 0; i < parameterNames.length; ++i) {
+        for (var parameterName : parameterNames) {
             int index = paramIndex++;
-            astWriter.declareNameEmitter(parameterNames[i], prec -> writer.append(context.getParameterName(index)));
+            astWriter.declareNameEmitter(parameterName, prec -> writer.append(context.getParameterName(index)));
+        }
+        for (var importInfo : imports) {
+            astWriter.declareNameEmitter(importInfo.alias,
+                    prec -> writer.appendFunction(context.importModule(importInfo.fromModule)));
         }
         astWriter.hoist(rootAst);
         if (ast instanceof Block) {

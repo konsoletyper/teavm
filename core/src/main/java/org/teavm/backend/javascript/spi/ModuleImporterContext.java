@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2023 konsoletyper.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,21 +16,15 @@
 package org.teavm.backend.javascript.spi;
 
 import java.util.Properties;
-import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.DependencyInfo;
-import org.teavm.diagnostics.Diagnostics;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ListableClassReaderSource;
-import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
+import org.teavm.model.MethodReader;
 
-public interface GeneratorContext extends ServiceRepository {
-    String getParameterName(int index);
+public interface ModuleImporterContext extends ServiceRepository {
+    MethodReader getMethod();
 
-    String importModule(String name);
-
-    ClassReaderSource getInitialClassSource();
+    void importModule(String name);
 
     ListableClassReaderSource getClassSource();
 
@@ -38,19 +32,5 @@ public interface GeneratorContext extends ServiceRepository {
 
     Properties getProperties();
 
-    boolean isAsync();
-
-    boolean isAsync(MethodReference method);
-
-    boolean isAsyncFamily(MethodReference method);
-
-    Diagnostics getDiagnostics();
-
     DependencyInfo getDependency();
-
-    void typeToClassString(SourceWriter writer, ValueType type);
-
-    void useLongLibrary();
-
-    boolean isDynamicInitializer(String className);
 }

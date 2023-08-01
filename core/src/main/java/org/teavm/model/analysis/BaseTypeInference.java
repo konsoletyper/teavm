@@ -106,7 +106,7 @@ public abstract class BaseTypeInference<T> {
                 continue;
             }
             type = doMerge(type, formerType);
-            if (Objects.equals(type, formerType)) {
+            if (Objects.equals(type, formerType) || type == null) {
                 continue;
             }
             types[variable] = type;
