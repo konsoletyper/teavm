@@ -62,37 +62,37 @@ public final class JSWrapper {
         if (wrappers != null) {
             var type = JSObjects.typeOf(js);
             if (type.equals("object") || type.equals("function")) {
-                var existingRef = wrappers.get(js);
-                var existing = !JSObjects.isUndefined(existingRef) ? existingRef.deref() : JSObjects.undefined();
+                var existingRef = get(wrappers, js);
+                var existing = !JSObjects.isUndefined(existingRef) ? deref(existingRef) : JSObjects.undefined();
                 if (JSObjects.isUndefined(existing)) {
                     var wrapper = new JSWrapper(js);
-                    wrappers.set(js, JSWeakRef.create(wrapperToJs(wrapper)));
+                    set(wrappers, js, createWeakRef(wrapperToJs(wrapper)));
                     return wrapper;
                 } else {
                     return jsToWrapper(existing);
                 }
             } else if (type.equals("string")) {
                 var jsString = (JSString) js;
-                var existingRef = stringWrappers.get(jsString);
-                var existing = !JSObjects.isUndefined(existingRef) ? existingRef.deref() : JSObjects.undefined();
+                var existingRef = get(stringWrappers, jsString);
+                var existing = !JSObjects.isUndefined(existingRef) ? deref(existingRef) : JSObjects.undefined();
                 if (JSObjects.isUndefined(existing)) {
                     var wrapper = new JSWrapper(js);
                     var wrapperAsJs = wrapperToJs(wrapper);
-                    stringWrappers.set(jsString, JSWeakRef.create(wrapperAsJs));
-                    stringFinalizationRegistry.register(wrapperAsJs, jsString);
+                    set(stringWrappers, jsString, createWeakRef(wrapperAsJs));
+                    register(stringFinalizationRegistry, wrapperAsJs, jsString);
                     return wrapper;
                 } else {
                     return jsToWrapper(existing);
                 }
             } else if (type.equals("number")) {
                 var jsNumber = (JSNumber) js;
-                var existingRef = numberWrappers.get(jsNumber);
-                var existing = !JSObjects.isUndefined(existingRef) ? existingRef.deref() : JSObjects.undefined();
+                var existingRef = get(numberWrappers, jsNumber);
+                var existing = !JSObjects.isUndefined(existingRef) ? deref(existingRef) : JSObjects.undefined();
                 if (JSObjects.isUndefined(existing)) {
                     var wrapper = new JSWrapper(js);
                     var wrapperAsJs = wrapperToJs(wrapper);
-                    numberWrappers.set(jsNumber, JSWeakRef.create(wrapperAsJs));
-                    numberFinalizationRegistry.register(wrapperAsJs, jsNumber);
+                    set(numberWrappers, jsNumber, createWeakRef(wrapperAsJs));
+                    register(numberFinalizationRegistry, wrapperAsJs, jsNumber);
                     return wrapper;
                 } else {
                     return jsToWrapper(existing);
@@ -102,6 +102,37 @@ public final class JSWrapper {
         return new JSWrapper(js);
     }
 
+    @JSBody(params = "target", script = "return new WeakRef(target);")
+    @NoSideEffects
+    private static native JSWeakRef<JSObject> createWeakRef(JSObject target);
+
+    @JSBody(params = "target", script = "return target.deref();")
+    @NoSideEffects
+    private static native JSObject deref(JSWeakRef<JSObject> target);
+
+    @JSBody(params = { "registry", "target", "token" }, script = "return registry.register(target, token);")
+    @NoSideEffects
+    private static native void register(JSFinalizationRegistry registry, JSObject target, JSObject token);
+
+    @JSBody(params = { "map", "key" }, script = "return map.get(key);")
+    @NoSideEffects
+    private static native JSWeakRef<JSObject> get(JSMap<? extends JSObject, JSWeakRef<JSObject>> map, JSObject key);
+
+    @JSBody(params = { "map", "key", "value" }, script = "map.set(key, value);")
+    @NoSideEffects
+    private static native void set(JSMap<? extends JSObject, JSWeakRef<JSObject>> map, JSObject key, JSObject value);
+
+    @JSBody(params = { "map", "key" }, script = "return map.get(key);")
+    @NoSideEffects
+    private static native JSWeakRef<JSObject> get(JSWeakMap<? extends JSObject, JSWeakRef<JSObject>> map,
+            JSObject key);
+
+    @JSBody(params = { "map", "key", "value" }, script = "map.set(key, value);")
+    @NoSideEffects
+    private static native void set(JSWeakMap<? extends JSObject, JSWeakRef<JSObject>> map, JSObject key,
+            JSObject value);
+
+    @NoSideEffects
     public static Object maybeWrap(Object o) {
         return o == null || isJava(o) ? o : wrap(o);
     }

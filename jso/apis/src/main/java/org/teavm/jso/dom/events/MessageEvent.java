@@ -15,13 +15,12 @@
  */
 package org.teavm.jso.dom.events;
 
-import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 
 public interface MessageEvent extends Event {
     @JSProperty
-    JSObject getData();
+    Object getData();
 
     @JSProperty("data")
     String getDataAsString();

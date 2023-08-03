@@ -19,7 +19,7 @@ import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 
-public abstract class JSWeakMap<K extends JSObject, V extends JSObject> implements JSObject {
+public abstract class JSWeakMap<K, V> implements JSObject {
     public abstract V get(K key);
 
     public abstract boolean has(K key);
@@ -30,5 +30,9 @@ public abstract class JSWeakMap<K extends JSObject, V extends JSObject> implemen
 
     @JSBody(script = "return new WeakMap();")
     @NoSideEffects
-    public static native <K extends JSObject, V extends JSObject> JSWeakMap<K, V> create();
+    public static native <K, V> JSWeakMap<K, V> create();
+
+    @JSBody(script = "return typeof WeakMap !== 'undefined';")
+    @NoSideEffects
+    public static native boolean isSupported();
 }

@@ -16,15 +16,9 @@
 package org.teavm.jso.core;
 
 import org.teavm.jso.JSFunctor;
-import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- * @param <T>
- */
 @JSFunctor
 @FunctionalInterface
-public interface JSSortFunction<T extends JSObject> {
+public interface JSSortFunction<T> {
     int compare(T a, T b);
 }

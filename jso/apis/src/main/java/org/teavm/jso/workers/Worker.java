@@ -16,7 +16,6 @@
 package org.teavm.jso.workers;
 
 import org.teavm.jso.JSBody;
-import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MessageEvent;
@@ -28,7 +27,7 @@ public abstract class Worker implements AbstractWorker {
     @JSProperty("onmessage")
     public abstract void onMessage(EventListener<MessageEvent> listener);
 
-    public abstract void postMessage(JSObject message);
+    public abstract void postMessage(Object message);
 
     public abstract void terminate();
 }

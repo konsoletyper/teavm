@@ -19,12 +19,12 @@ import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 
-public abstract class JSWeakRef<T extends JSObject> implements JSObject {
+public abstract class JSWeakRef<T> implements JSObject {
     public abstract T deref();
 
     @JSBody(params = "value", script = "return new WeakRef(value);")
     @NoSideEffects
-    public static native <T extends JSObject> JSWeakRef<T> create(T value);
+    public static native <T> JSWeakRef<T> create(T value);
 
     @JSBody(script = "return typeof WeakRef !== 'undefined';")
     @NoSideEffects

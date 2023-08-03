@@ -20,7 +20,7 @@ import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-public interface JSArrayReader<T extends JSObject> extends JSObject {
+public interface JSArrayReader<T> extends JSObject {
     @JSProperty
     @NoSideEffects
     int getLength();

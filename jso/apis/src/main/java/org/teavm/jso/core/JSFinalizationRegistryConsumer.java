@@ -20,5 +20,5 @@ import org.teavm.jso.JSObject;
 
 @JSFunctor
 public interface JSFinalizationRegistryConsumer extends JSObject {
-    void accept(JSObject obj);
+    void accept(Object obj);
 }
