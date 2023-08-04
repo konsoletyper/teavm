@@ -40,7 +40,7 @@ public class JSWrapperGenerator implements Injector, DependencyPlugin {
                 break;
             case "isJava":
                 context.writeExpr(context.getArgument(0));
-                context.getWriter().append(" instanceof ").appendFunction("$rt_objcls").append("()");
+                context.getWriter().append(" instanceof ").append("$rt_objcls").append("()");
                 break;
         }
     }
