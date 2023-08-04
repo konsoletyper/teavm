@@ -15,6 +15,8 @@
  */
 package org.teavm.jso.impl;
 
+import org.teavm.jso.JSBody;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
@@ -22,10 +24,12 @@ import org.teavm.model.analysis.BaseTypeInference;
 
 class JSTypeInference extends BaseTypeInference<JSType> {
     private JSTypeHelper typeHelper;
+    private ClassReaderSource classes;
 
-    JSTypeInference(JSTypeHelper typeHelper, Program program, MethodReference reference) {
+    JSTypeInference(JSTypeHelper typeHelper, ClassReaderSource classes, Program program, MethodReference reference) {
         super(program, reference);
         this.typeHelper = typeHelper;
+        this.classes = classes;
     }
 
     @Override
@@ -78,5 +82,21 @@ class JSTypeInference extends BaseTypeInference<JSType> {
     @Override
     protected JSType elementType(JSType jsType) {
         return jsType instanceof JSType.ArrayType ? ((JSType.ArrayType) jsType).elementType : JSType.MIXED;
+    }
+
+    @Override
+    protected JSType methodReturnType(MethodReference methodRef) {
+        if (!methodRef.getReturnType().isObject(Object.class)) {
+            return mapType(methodRef.getReturnType());
+        }
+        return isJsMethod(methodRef) ? JSType.MIXED : JSType.JAVA;
+    }
+
+    private boolean isJsMethod(MethodReference methodRef) {
+        if (typeHelper.isJavaScriptClass(methodRef.getClassName())) {
+            return true;
+        }
+        var method = classes.resolveImplementation(methodRef);
+        return method != null && method.getAnnotations().get(JSBody.class.getName()) != null;
     }
 }

@@ -160,6 +160,10 @@ public abstract class BaseTypeInference<T> {
 
     protected abstract T elementType(T t);
 
+    protected T methodReturnType(MethodReference methodRef) {
+        return mapType(methodRef.getReturnType());
+    }
+
     private class InitialTypeVisitor extends AbstractInstructionVisitor {
         private GraphBuilder graphBuilder;
         private GraphBuilder arrayGraphBuilder;
@@ -280,7 +284,7 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(InvokeInstruction insn) {
-            type(insn.getReceiver(), insn.getMethod().getReturnType());
+            type(insn.getReceiver(), methodReturnType(insn.getMethod()));
         }
 
         @Override
@@ -336,6 +340,12 @@ public abstract class BaseTypeInference<T> {
                 if (t != null) {
                     types[target.getIndex()] = t;
                 }
+            }
+        }
+
+        void type(Variable target, T type) {
+            if (target != null && type != null) {
+                types[target.getIndex()] = type;
             }
         }
     }

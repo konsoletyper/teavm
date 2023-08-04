@@ -224,7 +224,7 @@ class JSClassProcessor {
 
     void processProgram(MethodHolder methodToProcess) {
         setCurrentProgram(methodToProcess.getProgram());
-        types = new JSTypeInference(typeHelper, program, methodToProcess.getReference());
+        types = new JSTypeInference(typeHelper, classSource, program, methodToProcess.getReference());
         types.ensure();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             var block = program.basicBlockAt(i);
@@ -565,7 +565,8 @@ class JSClassProcessor {
         newInvoke.setArguments(newArgs.toArray(new Variable[0]));
         replacement.add(newInvoke);
         if (result != null) {
-            result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType(), returnByRef);
+            result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType(), returnByRef,
+                    canBeOnlyJava(invoke.getReceiver()));
             copyVar(result, invoke.getReceiver(), invoke.getLocation());
         }
 
@@ -585,7 +586,8 @@ class JSClassProcessor {
             Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
             addPropertyGet(propertyName, invoke.getInstance(), result, invoke.getLocation(), pure);
             if (result != null) {
-                result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType(), false);
+                result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType(), false,
+                        canBeOnlyJava(invoke.getReceiver()));
                 copyVar(result, invoke.getReceiver(), invoke.getLocation());
             }
             return true;
@@ -617,7 +619,8 @@ class JSClassProcessor {
             addIndexerGet(invoke.getInstance(), marshaller.wrapArgument(callLocation, invoke.getArguments().get(0),
                     method.parameterType(0), false), result, invoke.getLocation());
             if (result != null) {
-                result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType(), false);
+                result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType(), false,
+                        canBeOnlyJava(invoke.getReceiver()));
                 copyVar(result, invoke.getReceiver(), invoke.getLocation());
             }
             return true;
@@ -665,6 +668,11 @@ class JSClassProcessor {
         return true;
     }
 
+    private boolean canBeOnlyJava(Variable variable) {
+        var type = types.typeOf(variable);
+        return type != JSType.JS && type != JSType.MIXED;
+    }
+
     private boolean processMethod(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
         String name = method.getName();
 
@@ -699,7 +707,8 @@ class JSClassProcessor {
         newInvoke.setArguments(newArguments.toArray(new Variable[0]));
         replacement.add(newInvoke);
         if (result != null) {
-            result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType(), false);
+            result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType(), false,
+                    canBeOnlyJava(invoke.getReceiver()));
             copyVar(result, invoke.getReceiver(), invoke.getLocation());
         }
 
@@ -880,12 +889,12 @@ class JSClassProcessor {
         replacement.clear();
         if (!callee.hasModifier(ElementModifier.STATIC)) {
             insn.setInstance(marshaller.unwrapReturnValue(location, program.variableAt(paramIndex++),
-                    ValueType.object(calleeRef.getClassName()), false));
+                    ValueType.object(calleeRef.getClassName()), false, true));
         }
         Variable[] args = new Variable[callee.parameterCount()];
         for (int i = 0; i < callee.parameterCount(); ++i) {
             args[i] = marshaller.unwrapReturnValue(location, program.variableAt(paramIndex++),
-                    callee.parameterType(i), false);
+                    callee.parameterType(i), false, true);
         }
         insn.setArguments(args);
         if (callee.getResultType() != ValueType.VOID) {

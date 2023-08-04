@@ -37,6 +37,10 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 
 class JSValueMarshaller {
+    private static final MethodReference JS_TO_JAVA = new MethodReference(JSWrapper.class, "jsToJava",
+            JSObject.class, Object.class);
+    private static final MethodReference LIGHTWEIGHT_JS_TO_JAVA = new MethodReference(JSWrapper.class,
+            "dependencyJsToJava", JSObject.class, Object.class);
     private static final ValueType stringType = ValueType.parse(String.class);
     private ReferenceCache referenceCache = new ReferenceCache();
     private Diagnostics diagnostics;
@@ -225,7 +229,8 @@ class JSValueMarshaller {
         return JSMethods.ARRAY_WRAPPER;
     }
 
-    Variable unwrapReturnValue(CallLocation location, Variable var, ValueType type, boolean byRef) {
+    Variable unwrapReturnValue(CallLocation location, Variable var, ValueType type, boolean byRef,
+            boolean strictJava) {
         if (byRef) {
             return unwrapByRef(location, var, type);
         }
@@ -237,7 +242,7 @@ class JSValueMarshaller {
                 return unwrapFunctor(location, var, cls);
             }
         }
-        return unwrap(location, var, type);
+        return unwrap(location, var, type, strictJava);
     }
 
     private Variable unwrapByRef(CallLocation location, Variable var, ValueType type) {
@@ -263,7 +268,7 @@ class JSValueMarshaller {
         return invokeMethod(location, JSMethods.DATA_TO_ARRAY, var);
     }
 
-    Variable unwrap(CallLocation location, Variable var, ValueType type) {
+    Variable unwrap(CallLocation location, Variable var, ValueType type, boolean strictJava) {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
@@ -296,7 +301,7 @@ class JSValueMarshaller {
                 var wrapNative = new InvokeInstruction();
                 wrapNative.setLocation(location.getSourceLocation());
                 wrapNative.setType(InvocationType.SPECIAL);
-                wrapNative.setMethod(new MethodReference(JSWrapper.class, "jsToJava", JSObject.class, Object.class));
+                wrapNative.setMethod(strictJava ? JS_TO_JAVA : LIGHTWEIGHT_JS_TO_JAVA);
                 wrapNative.setArguments(var);
                 wrapNative.setReceiver(program.createVariable());
                 replacement.add(wrapNative);

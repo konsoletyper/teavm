@@ -16,6 +16,7 @@
 package org.teavm.jso.impl;
 
 import java.io.IOException;
+import org.teavm.backend.javascript.rendering.Precedence;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.dependency.DependencyAgent;
@@ -36,11 +37,17 @@ public class JSWrapperGenerator implements Injector, DependencyPlugin {
             case "dependencyJsToJava":
             case "wrapperToJs":
             case "jsToWrapper":
-                context.writeExpr(context.getArgument(0));
+                context.writeExpr(context.getArgument(0), context.getPrecedence());
                 break;
             case "isJava":
+                if (context.getPrecedence().ordinal() >= Precedence.COMPARISON.ordinal()) {
+                    context.getWriter().append("(");
+                }
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().append(" instanceof ").append("$rt_objcls").append("()");
+                if (context.getPrecedence().ordinal() >= Precedence.COMPARISON.ordinal()) {
+                    context.getWriter().append(")");
+                }
                 break;
         }
     }

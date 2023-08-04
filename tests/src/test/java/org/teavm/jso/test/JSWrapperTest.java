@@ -232,10 +232,12 @@ public class JSWrapperTest {
     @Test
     public void passJavaToJS() {
         var a = processObject(new A(23));
+        assertEquals("A(23)", a.toString());
         assertTrue(a instanceof A);
         assertEquals(23, ((A) a).getX());
 
         a = processObject(JSString.valueOf("qwe"));
+        assertEquals("qwe", a.toString());
         assertTrue(a instanceof JSString);
         assertEquals("qwe", ((JSString) a).stringValue());
 
@@ -262,6 +264,11 @@ public class JSWrapperTest {
 
         int getX() {
             return x;
+        }
+
+        @Override
+        public String toString() {
+            return "A(" + x + ")";
         }
     }
 }
