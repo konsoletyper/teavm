@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -50,6 +53,11 @@ import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.codegen.SourceWriterBuilder;
 import org.teavm.backend.javascript.decompile.PreparedClass;
 import org.teavm.backend.javascript.decompile.PreparedMethod;
+import org.teavm.backend.javascript.intrinsics.ref.ReferenceQueueGenerator;
+import org.teavm.backend.javascript.intrinsics.ref.ReferenceQueueTransformer;
+import org.teavm.backend.javascript.intrinsics.ref.WeakReferenceDependencyListener;
+import org.teavm.backend.javascript.intrinsics.ref.WeakReferenceGenerator;
+import org.teavm.backend.javascript.intrinsics.ref.WeakReferenceTransformer;
 import org.teavm.backend.javascript.rendering.Renderer;
 import org.teavm.backend.javascript.rendering.RenderingContext;
 import org.teavm.backend.javascript.rendering.RenderingUtil;
@@ -143,7 +151,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     @Override
     public List<ClassHolderTransformer> getTransformers() {
-        return Collections.emptyList();
+        return List.of(
+                new WeakReferenceTransformer(),
+                new ReferenceQueueTransformer()
+        );
     }
 
     @Override
@@ -154,6 +165,16 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     @Override
     public void setController(TeaVMTargetController controller) {
         this.controller = controller;
+
+        var weakRefGenerator = new WeakReferenceGenerator();
+        methodGenerators.put(new MethodReference(WeakReference.class, "<init>", Object.class,
+                ReferenceQueue.class, void.class), weakRefGenerator);
+        methodGenerators.put(new MethodReference(WeakReference.class, "get", Object.class), weakRefGenerator);
+        methodGenerators.put(new MethodReference(WeakReference.class, "clear", void.class), weakRefGenerator);
+
+        var refQueueGenerator = new ReferenceQueueGenerator();
+        methodGenerators.put(new MethodReference(ReferenceQueue.class, "<init>", void.class), refQueueGenerator);
+        methodGenerators.put(new MethodReference(ReferenceQueue.class, "poll", Reference.class), refQueueGenerator);
     }
 
     @Override
@@ -321,6 +342,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                 }
             }
         });
+
+        dependencyAnalyzer.addDependencyListener(new WeakReferenceDependencyListener());
     }
 
     public static void includeStackTraceMethods(DependencyAnalyzer dependencyAnalyzer) {
