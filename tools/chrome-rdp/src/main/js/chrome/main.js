@@ -10,7 +10,7 @@ class DebuggerAgent {
         this.port = 0;
         this.disconnectCallbacks = null;
 
-        this.debuggee = { tabId : tab.id };
+        this.debuggee = { tabId: tab.id };
         this.port = port;
         this.tab = tab;
         debuggerAgentMap[tab.id] = this;
@@ -87,9 +87,9 @@ class DebuggerAgent {
         chrome.debugger.sendCommand(this.debuggee, message.method, message.params, response => {
             if (message.id) {
                 const responseToServer = {
-                    id : message.id,
-                    result : response,
-                    error : response ? void 0 : chrome.runtime.lastError
+                    id: message.id,
+                    result: response,
+                    error: response ? void 0 : chrome.runtime.lastError
                 };
                 this.sendMessage(responseToServer);
             }
@@ -151,7 +151,7 @@ chrome.debugger.onEvent.addListener((source, method, params) => {
     if (!agent) {
         return;
     }
-    const message = { method : method, params : params };
+    const message = { method: method, params: params };
     if (agent.pendingMessages) {
         agent.pendingMessages.push(message);
     } else if (agent.connection) {
