@@ -37,6 +37,8 @@ public class WasmRuntimeIntrinsic implements WasmIntrinsic {
         switch (methodReference.getName()) {
             case "gt":
             case "lt":
+            case "gtu":
+            case "ltu":
             case "initStack":
                 return true;
             default:
@@ -52,6 +54,12 @@ public class WasmRuntimeIntrinsic implements WasmIntrinsic {
                         invocation, manager);
             case "gt":
                 return comparison(WasmIntBinaryOperation.GT_SIGNED, WasmFloatBinaryOperation.GT,
+                        invocation, manager);
+            case "ltu":
+                return comparison(WasmIntBinaryOperation.LT_UNSIGNED, WasmFloatBinaryOperation.LT,
+                        invocation, manager);
+            case "gtu":
+                return comparison(WasmIntBinaryOperation.GT_UNSIGNED, WasmFloatBinaryOperation.GT,
                         invocation, manager);
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());

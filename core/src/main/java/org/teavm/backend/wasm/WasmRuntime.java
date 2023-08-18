@@ -31,6 +31,10 @@ public final class WasmRuntime {
         return gt(a, b) ? 1 : lt(a, b) ? -1 : 0;
     }
 
+    public static int compareUnsigned(int a, int b) {
+        return gtu(a, b) ? 1 : ltu(a, b) ? -1 : 0;
+    }
+
     public static int compare(long a, long b) {
         return gt(a, b) ? 1 : lt(a, b) ? -1 : 0;
     }
@@ -54,6 +58,10 @@ public final class WasmRuntime {
     private static native boolean lt(int a, int b);
 
     private static native boolean gt(int a, int b);
+
+    private static native boolean ltu(int a, int b);
+
+    private static native boolean gtu(int a, int b);
 
     private static native boolean lt(long a, long b);
 
