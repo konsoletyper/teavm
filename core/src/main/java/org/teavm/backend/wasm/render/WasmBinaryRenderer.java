@@ -61,10 +61,11 @@ public class WasmBinaryRenderer {
     private DwarfFunctionGenerator dwarfFunctionGen;
     private DebugLines debugLines;
     private DebugVariables debugVariables;
+    private WasmBinaryStatsCollector statsCollector;
 
     public WasmBinaryRenderer(WasmBinaryWriter output, WasmBinaryVersion version, boolean obfuscated,
             DwarfGenerator dwarfGenerator, DwarfClassGenerator dwarfClassGen, DebugLines debugLines,
-            DebugVariables debugVariables) {
+            DebugVariables debugVariables, WasmBinaryStatsCollector statsCollector) {
         this.output = output;
         this.version = version;
         this.obfuscated = obfuscated;
@@ -72,6 +73,7 @@ public class WasmBinaryRenderer {
         dwarfFunctionGen = dwarfClassGen != null ? new DwarfFunctionGenerator(dwarfClassGen, dwarfGenerator) : null;
         this.debugLines = debugLines;
         this.debugVariables = debugVariables;
+        this.statsCollector = statsCollector;
     }
 
     public void render(WasmModule module) {
@@ -279,8 +281,13 @@ public class WasmBinaryRenderer {
         section.writeLEB(functions.size());
         for (var function : functions) {
             var body = renderFunction(function, section.getPosition() + 4);
+            var startPos = section.getPosition();
             section.writeLEB4(body.length);
             section.writeBytes(body);
+            var size = section.getPosition() - startPos;
+            if (function.getJavaMethod() != null) {
+                statsCollector.addClassCodeSize(function.getJavaMethod().getClassName(), size);
+            }
         }
 
         if (dwarfGenerator != null) {
@@ -441,6 +448,7 @@ public class WasmBinaryRenderer {
     }
 
     private void writeSection(int id, String name, byte[] data) {
+        var start = output.getPosition();
         output.writeByte(id);
         int length = data.length;
         if (id == 0) {
@@ -452,5 +460,7 @@ public class WasmBinaryRenderer {
         }
 
         output.writeBytes(data);
+
+        statsCollector.addSectionSize(name, output.getPosition() - start);
     }
 }

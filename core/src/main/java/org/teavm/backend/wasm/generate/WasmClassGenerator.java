@@ -33,6 +33,7 @@ import org.teavm.backend.wasm.binary.DataType;
 import org.teavm.backend.wasm.binary.DataValue;
 import org.teavm.backend.wasm.debug.DebugClassLayout;
 import org.teavm.backend.wasm.debug.info.FieldType;
+import org.teavm.backend.wasm.render.WasmBinaryStatsCollector;
 import org.teavm.common.IntegerArray;
 import org.teavm.interop.Address;
 import org.teavm.interop.Function;
@@ -100,6 +101,7 @@ public class WasmClassGenerator {
     private ClassMetadataRequirements metadataRequirements;
     private ClassInitializerInfo classInitializerInfo;
     private DwarfClassGenerator dwarfClassGenerator;
+    private WasmBinaryStatsCollector statsCollector;
 
     private static final int CLASS_SIZE = 1;
     private static final int CLASS_FLAGS = 2;
@@ -121,18 +123,19 @@ public class WasmClassGenerator {
             VirtualTableProvider vtableProvider, TagRegistry tagRegistry, BinaryWriter binaryWriter,
             NameProvider names, ClassMetadataRequirements metadataRequirements,
             ClassInitializerInfo classInitializerInfo, Characteristics characteristics,
-            DwarfClassGenerator dwarfClassGenerator) {
+            DwarfClassGenerator dwarfClassGenerator, WasmBinaryStatsCollector statsCollector) {
         this.processedClassSource = processedClassSource;
         this.classSource = classSource;
         this.vtableProvider = vtableProvider;
         this.tagRegistry = tagRegistry;
         this.binaryWriter = binaryWriter;
-        this.stringPool = new WasmStringPool(this, binaryWriter);
+        this.stringPool = new WasmStringPool(this, binaryWriter, statsCollector);
         this.names = names;
         this.metadataRequirements = metadataRequirements;
         this.classInitializerInfo = classInitializerInfo;
         this.characteristics = characteristics;
         this.dwarfClassGenerator = dwarfClassGenerator;
+        this.statsCollector = statsCollector;
     }
 
     public WasmStringPool getStringPool() {
@@ -193,6 +196,8 @@ public class WasmClassGenerator {
                 calculateLayout(cls, binaryData, dwarfClass);
                 if (binaryData.start >= 0) {
                     binaryData.start = binaryWriter.append(createStructure(binaryData));
+                    var size = binaryWriter.getAddress() - binaryData.start;
+                    statsCollector.addClassMetadataSize(className, size);
                 }
                 if (dwarfClass != null) {
                     dwarfClass.setSize(binaryData.size);
