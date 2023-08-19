@@ -565,7 +565,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         if (cEmitted) {
             emitC(module, buildTarget, getBaseName(outputName) + ".wasm.c");
         }
-        if (statsCollector != null) {
+        if (this.statsCollector != null) {
             writeStats(buildTarget, outputName);
         }
 
