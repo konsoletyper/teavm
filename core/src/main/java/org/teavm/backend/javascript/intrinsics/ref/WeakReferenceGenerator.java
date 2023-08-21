@@ -58,7 +58,7 @@ public class WeakReferenceGenerator implements Generator {
         writer.append(context.getParameterName(2)).append(".")
                 .appendField(new FieldReference(ReferenceQueue.class.getName(), "registry"))
                 .append(".").append("register(").append(context.getParameterName(1))
-                .append(",").ws().append("value);").softNewLine();
+                .append(",").ws().append(context.getParameterName(0)).append(");").softNewLine();
         writer.appendBlockEnd();
     }
 

@@ -21,6 +21,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.concurrent.ArrayBlockingQueue;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,26 +37,29 @@ public class WeakReferenceTest {
 
     @Test
     @Ignore
-    public void deref() {
+    public void deref() throws InterruptedException {
         var ref = createAndTestRef(null);
 
         for (var i = 0; i < 100; ++i) {
-            lastNode = createNodes(18);
+            lastNode = createNodes(20);
+            Thread.sleep(1);
             if (ref.get() == null) {
                 break;
             }
+            assertNotNull(lastNode);
         }
         assertNull(ref.get());
     }
 
     @Test
     @Ignore
-    public void refQueue() {
+    public void refQueue() throws InterruptedException {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);
         var hasValue = false;
         for (var i = 0; i < 100; ++i) {
-            lastNode = createNodes(18);
+            lastNode = createNodes(20);
+            Thread.sleep(1);
             var polledRef = queue.poll();
             if (polledRef != null) {
                 hasValue = true;
@@ -64,13 +68,41 @@ public class WeakReferenceTest {
             } else {
                 assertNotNull(ref.get());
             }
+            assertNotNull(lastNode);
         }
         assertTrue(hasValue);
     }
 
+    @Test
+    public void queueRemove() throws InterruptedException {
+        var queue = new ReferenceQueue<>();
+        var ref = createAndTestRef(queue);
+        var threadQueue = new ArrayBlockingQueue<>(4);
+        var thread = new Thread(() -> {
+            try {
+                threadQueue.add(queue.remove());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
+        Object value = null;
+        for (var i = 0; i < 100; ++i) {
+            lastNode = createNodes(20);
+            Thread.sleep(1);
+            value = threadQueue.poll();
+            if (value != null) {
+                break;
+            }
+            assertNotNull(lastNode);
+        }
+        assertSame(ref, value);
+    }
+
     private WeakReference<Object> createAndTestRef(ReferenceQueue<Object> queue) {
-        var obj = new byte[4 * 1024 * 1024];
-        var ref = new WeakReference<Object>(obj, queue);
+        var obj = new Object();
+        var ref = new WeakReference<>(obj, queue);
         assertSame(obj, ref.get());
         return ref;
     }
@@ -96,7 +128,6 @@ public class WeakReferenceTest {
     private class Node {
         Node left;
         Node right;
-        byte[] data = new byte[64];
 
         Node(Node left, Node right) {
             this.left = left;

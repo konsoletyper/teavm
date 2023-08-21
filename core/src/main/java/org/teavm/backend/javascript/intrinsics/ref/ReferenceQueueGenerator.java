@@ -16,6 +16,7 @@
 package org.teavm.backend.javascript.intrinsics.ref;
 
 import java.io.IOException;
+import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
@@ -27,6 +28,8 @@ public class ReferenceQueueGenerator implements Generator {
     private static final FieldReference INNER_FIELD = new FieldReference(ReferenceQueue.class.getName(), "inner");
     private static final FieldReference REGISTRY_FIELD = new FieldReference(ReferenceQueue.class.getName(),
             "registry");
+    private static final MethodReference REPORT_METHOD = new MethodReference(ReferenceQueue.class,
+            "reportNext", Reference.class, boolean.class);
 
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
@@ -43,10 +46,14 @@ public class ReferenceQueueGenerator implements Generator {
     private void generateInitMethod(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append(context.getParameterName(0)).append(".").appendField(INNER_FIELD).ws().append("=")
                 .ws().append("[];").softNewLine();
+
         writer.append(context.getParameterName(0)).append(".").appendField(REGISTRY_FIELD).ws().append("=")
-                .ws().append("new $rt_globals.FinalizationRegistry(x").ws().append("=>").ws()
-                .append(context.getParameterName(0)).appendField(INNER_FIELD)
-                .append(".push(x));").softNewLine();
+                .ws().append("new $rt_globals.FinalizationRegistry(ref").ws().append("=>").appendBlockStart();
+        writer.appendIf().append("!").appendMethodBody(REPORT_METHOD).append("(")
+                .append(context.getParameterName(0)).append(",").ws().append("ref))").ws();
+        writer.append(context.getParameterName(0)).append(".").appendField(INNER_FIELD)
+                .append(".push(ref)").softNewLine();
+        writer.appendBlockEnd().append(");").softNewLine();
     }
 
     private void generatePollMethod(GeneratorContext context, SourceWriter writer) throws IOException {

@@ -20,37 +20,56 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
 public class WeakReferenceDependencyListener extends AbstractDependencyListener {
+    private DependencyNode initRef;
+
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
+        initRef = agent.createNode();
         if (method.getMethod().getOwnerName().equals(WeakReference.class.getName())) {
             referenceMethodReached(agent, method);
         } else if (method.getMethod().getOwnerName().equals(ReferenceQueue.class.getName())) {
-            agent.linkField(new FieldReference(ReferenceQueue.class.getName(), "inner"));
-            agent.linkField(new FieldReference(ReferenceQueue.class.getName(), "registry"));
+            queueMethodReached(agent, method);
         }
     }
 
     private void referenceMethodReached(DependencyAgent agent, MethodDependency method) {
         switch (method.getMethod().getName()) {
             case "<init>": {
-                if (method.getParameterCount() == 2) {
+                if (method.getParameterCount() == 3) {
                     var field = agent.linkField(new FieldReference(method.getMethod().getOwnerName(), "value"));
-                    method.getVariable(1).connect(field.getValue());
-                    var pollResult = agent
-                            .linkMethod(new MethodReference(ReferenceQueue.class, "poll", Reference.class))
-                            .getResult();
-                    method.getVariable(0).connect(pollResult);
+                    method.getVariable(2).connect(field.getValue());
+                    method.getVariable(1).connect(initRef);
                 }
                 break;
             }
             case "get": {
                 var field = agent.linkField(new FieldReference(method.getMethod().getOwnerName(), "value"));
                 field.getValue().connect(method.getResult());
+                break;
+            }
+        }
+    }
+
+    private void queueMethodReached(DependencyAgent agent, MethodDependency method) {
+        switch (method.getMethod().getName()) {
+            case "poll":
+                initRef.connect(method.getResult());
+                break;
+            case "<init>":
+                agent.linkField(new FieldReference(ReferenceQueue.class.getName(), "inner"));
+                agent.linkField(new FieldReference(ReferenceQueue.class.getName(), "registry"));
+                break;
+            case "registerCallback": {
+                var reportMethod = agent.linkMethod(new MethodReference(ReferenceQueue.class,
+                        "reportNext", Reference.class, boolean.class));
+                initRef.connect(reportMethod.getVariable(1));
+                reportMethod.use();
                 break;
             }
         }
