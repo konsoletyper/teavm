@@ -610,10 +610,35 @@ public class CodeSectionParser {
                 codeListener.convert(WasmType.INT64, WasmType.FLOAT64, false, true);
                 break;
 
+            case 0xFC:
+                return parseExtExpr();
+
             default:
                 return false;
         }
         return true;
+    }
+
+    private boolean parseExtExpr() {
+        switch (readLEB()) {
+            case 10: {
+                if (data[ptr++] != 0 || data[ptr++] != 0) {
+                    return false;
+                }
+                codeListener.memoryCopy();
+                return true;
+            }
+            case 11: {
+                if (data[ptr++] != 0) {
+                    return false;
+                }
+                codeListener.memoryFill();
+                return true;
+            }
+
+            default:
+                return false;
+        }
     }
 
     private boolean parseBlock(boolean isLoop) {

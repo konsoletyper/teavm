@@ -35,6 +35,10 @@ public final class WasmRuntime {
         return gtu(a, b) ? 1 : ltu(a, b) ? -1 : 0;
     }
 
+    public static int compareUnsigned(long a, long b) {
+        return gtu(a, b) ? 1 : ltu(a, b) ? -1 : 0;
+    }
+
     public static int compare(long a, long b) {
         return gt(a, b) ? 1 : lt(a, b) ? -1 : 0;
     }
@@ -66,6 +70,10 @@ public final class WasmRuntime {
     private static native boolean lt(long a, long b);
 
     private static native boolean gt(long a, long b);
+
+    private static native boolean ltu(long a, long b);
+
+    private static native boolean gtu(long a, long b);
 
     private static native boolean lt(float a, float b);
 
@@ -113,167 +121,6 @@ public final class WasmRuntime {
     }
 
     public static void fill(Address address, byte value, int count) {
-        int value4 = (value & 0xFF << 24) | (value & 0xFF << 16) | (value & 0xFF << 8) | (value & 0xFF);
-        int start = address.toInt();
-
-        int alignedStart = start >>> 2 << 2;
-        address = Address.fromInt(alignedStart);
-        switch (start - alignedStart) {
-            case 0:
-                address.putInt(value4);
-                break;
-            case 1:
-                address.add(1).putByte(value);
-                address.add(2).putByte(value);
-                address.add(3).putByte(value);
-                break;
-            case 2:
-                address.add(2).putByte(value);
-                address.add(3).putByte(value);
-                break;
-            case 3:
-                address.add(3).putByte(value);
-                break;
-        }
-
-        int end = start + count;
-        int alignedEnd = end >>> 2 << 2;
-        address = Address.fromInt(alignedEnd);
-        switch (end - alignedEnd) {
-            case 0:
-                break;
-            case 1:
-                address.putByte(value);
-                break;
-            case 2:
-                address.putByte(value);
-                address.add(1).putByte(value);
-                break;
-            case 3:
-                address.putByte(value);
-                address.add(1).putByte(value);
-                address.add(2).putByte(value);
-                break;
-        }
-
-        for (address = Address.fromInt(alignedStart + 4); address.toInt() < alignedEnd; address = address.add(4)) {
-            address.putInt(value4);
-        }
-    }
-
-    public static void moveMemoryBlock(Address source, Address target, int count) {
-        if (count < 8) {
-            slowMemoryMove(source, target, count);
-            return;
-        }
-        int diff = source.toInt() - target.toInt();
-        if (diff == 0) {
-            return;
-        }
-        if ((diff & 3) != 0) {
-            slowMemoryMove(source, target, count);
-            return;
-        }
-
-        Address alignedSourceStart = Address.fromInt(source.toInt() >>> 2 << 2);
-        Address alignedTargetStart = Address.fromInt(target.toInt() >>> 2 << 2);
-
-        Address alignedSourceEnd = Address.fromInt((source.toInt() + count) >>> 2 << 2);
-        Address alignedTargetEnd = Address.fromInt((target.toInt() + count) >>> 2 << 2);
-
-        if (source.toInt() > target.toInt()) {
-            switch (source.toInt() - alignedSourceStart.toInt()) {
-                case 0:
-                    alignedTargetStart.putInt(alignedSourceStart.getInt());
-                    break;
-                case 1:
-                    alignedTargetStart.add(1).putByte(alignedSourceStart.add(1).getByte());
-                    alignedTargetStart.add(2).putShort(alignedSourceStart.add(2).getShort());
-                    break;
-                case 2:
-                    alignedTargetStart.add(2).putShort(alignedSourceStart.add(2).getShort());
-                    break;
-                case 3:
-                    alignedTargetStart.add(3).putByte(alignedSourceStart.add(3).getByte());
-                    break;
-            }
-
-            alignedSourceStart = alignedSourceStart.add(4);
-            alignedTargetStart = alignedTargetStart.add(4);
-
-            while (alignedSourceStart.toInt() < alignedSourceEnd.toInt()) {
-                alignedTargetStart.putInt(alignedSourceStart.getInt());
-                alignedSourceStart = alignedSourceStart.add(4);
-                alignedTargetStart = alignedTargetStart.add(4);
-            }
-
-            switch (source.toInt() + count - alignedSourceEnd.toInt()) {
-                case 0:
-                    break;
-                case 1:
-                    alignedTargetEnd.putByte(alignedSourceEnd.getByte());
-                    break;
-                case 2:
-                    alignedTargetEnd.putShort(alignedSourceEnd.getShort());
-                    break;
-                case 3:
-                    alignedTargetEnd.putShort(alignedSourceEnd.getShort());
-                    alignedTargetEnd.add(2).putByte(alignedSourceEnd.add(2).getByte());
-                    break;
-            }
-        } else {
-            switch (source.toInt() + count - alignedSourceEnd.toInt()) {
-                case 0:
-                    break;
-                case 1:
-                    alignedTargetEnd.putByte(alignedSourceEnd.getByte());
-                    break;
-                case 2:
-                    alignedTargetEnd.putShort(alignedSourceEnd.getShort());
-                    break;
-                case 3:
-                    alignedTargetEnd.add(2).putByte(alignedSourceEnd.add(2).getByte());
-                    alignedTargetEnd.putShort(alignedSourceEnd.getShort());
-                    break;
-            }
-
-            while (alignedSourceEnd.toInt() > alignedSourceStart.toInt()) {
-                alignedSourceEnd = alignedSourceEnd.add(-4);
-                alignedTargetEnd = alignedTargetEnd.add(-4);
-                alignedTargetEnd.putInt(alignedSourceEnd.getInt());
-            }
-
-            switch (source.toInt() - alignedSourceStart.toInt()) {
-                case 1:
-                    alignedTargetStart.add(-2).putShort(alignedSourceStart.add(-2).getShort());
-                    alignedTargetStart.add(-3).putByte(alignedSourceStart.add(-3).getByte());
-                    break;
-                case 2:
-                    alignedTargetStart.add(-2).putShort(alignedSourceStart.add(-2).getShort());
-                    break;
-                case 3:
-                    alignedTargetStart.add(-1).putByte(alignedSourceStart.add(-1).getByte());
-                    break;
-            }
-        }
-    }
-
-    private static void slowMemoryMove(Address source, Address target, int count) {
-        if (source.toInt() > target.toInt()) {
-            while (count-- > 0) {
-                target.putByte(source.getByte());
-                target = target.add(1);
-                source = source.add(1);
-            }
-        } else {
-            source = source.add(count);
-            target = target.add(count);
-            while (count-- > 0) {
-                target = target.add(-1);
-                source = source.add(-1);
-                target.putByte(source.getByte());
-            }
-        }
     }
 
     public static Address allocStack(int size) {

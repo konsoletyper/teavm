@@ -15,12 +15,11 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import java.util.stream.Collectors;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
-import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmCopy;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.expression.WasmFill;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
@@ -59,16 +58,26 @@ public class AllocatorIntrinsic implements WasmIntrinsic {
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
         switch (invocation.getMethod().getName()) {
-            case "fill":
-            case "fillZero":
+            case "fill": {
+                var fill = new WasmFill();
+                fill.setIndex(manager.generate(invocation.getArguments().get(0)));
+                fill.setValue(manager.generate(invocation.getArguments().get(1)));
+                fill.setCount(manager.generate(invocation.getArguments().get(2)));
+                return fill;
+            }
+            case "fillZero": {
+                var fill = new WasmFill();
+                fill.setIndex(manager.generate(invocation.getArguments().get(0)));
+                fill.setValue(new WasmInt32Constant(0));
+                fill.setCount(manager.generate(invocation.getArguments().get(1)));
+                return fill;
+            }
             case "moveMemoryBlock": {
-                MethodReference delegateMethod = new MethodReference(WasmRuntime.class.getName(),
-                        invocation.getMethod().getDescriptor());
-                WasmCall call = new WasmCall(manager.getNames().forMethod(delegateMethod));
-                call.getArguments().addAll(invocation.getArguments().stream()
-                        .map(manager::generate)
-                        .collect(Collectors.toList()));
-                return call;
+                var copy = new WasmCopy();
+                copy.setSourceIndex(manager.generate(invocation.getArguments().get(0)));
+                copy.setDestinationIndex(manager.generate(invocation.getArguments().get(1)));
+                copy.setCount(manager.generate(invocation.getArguments().get(2)));
+                return copy;
             }
             case "isInitialized": {
                 WasmExpression pointer = manager.generate(invocation.getArguments().get(0));

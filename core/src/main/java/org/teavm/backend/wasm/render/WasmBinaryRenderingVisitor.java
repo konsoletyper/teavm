@@ -30,9 +30,11 @@ import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
+import org.teavm.backend.wasm.model.expression.WasmCopy;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmExpressionVisitor;
+import org.teavm.backend.wasm.model.expression.WasmFill;
 import org.teavm.backend.wasm.model.expression.WasmFloat32Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloat64Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinary;
@@ -912,6 +914,29 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         writer.writeByte(0x40);
         writer.writeByte(0);
         popLocation();
+    }
+
+    @Override
+    public void visit(WasmFill expression) {
+        pushLocation(expression);
+        expression.getIndex().acceptVisitor(this);
+        expression.getValue().acceptVisitor(this);
+        expression.getCount().acceptVisitor(this);
+        writer.writeByte(0xFC);
+        writer.writeLEB(11);
+        writer.writeByte(0);
+    }
+
+    @Override
+    public void visit(WasmCopy expression) {
+        pushLocation(expression);
+        expression.getDestinationIndex().acceptVisitor(this);
+        expression.getSourceIndex().acceptVisitor(this);
+        expression.getCount().acceptVisitor(this);
+        writer.writeByte(0xFC);
+        writer.writeLEB(10);
+        writer.writeByte(0);
+        writer.writeByte(0);
     }
 
     private int alignment(int value) {

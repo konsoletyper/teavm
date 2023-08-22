@@ -319,6 +319,11 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             var method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
             dependencyAnalyzer.linkMethod(method).use();
         }
+        for (Class<?> type : Arrays.asList(int.class, long.class)) {
+            var method = new MethodReference(WasmRuntime.class, "compareUnsigned", type, type, int.class);
+            dependencyAnalyzer.linkMethod(method).use();
+        }
+
         for (Class<?> type : Arrays.asList(float.class, double.class)) {
             var method = new MethodReference(WasmRuntime.class, "remainder", type, type, type);
             dependencyAnalyzer.linkMethod(method).use();
@@ -326,12 +331,6 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "align", Address.class, int.class,
                 Address.class)).use();
-        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "fill", Address.class, int.class,
-                int.class, void.class)).use();
-        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "fillZero", Address.class, int.class,
-                void.class)).use();
-        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "moveMemoryBlock", Address.class,
-                Address.class, int.class, void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "allocStack",
                 int.class, Address.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "getStackTop", Address.class)).use();
