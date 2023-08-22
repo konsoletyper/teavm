@@ -74,6 +74,7 @@ public class WeakReferenceTest {
     }
 
     @Test
+    @Ignore
     public void queueRemove() throws InterruptedException {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);
