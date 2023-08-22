@@ -41,7 +41,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -128,7 +127,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private File outputDir;
     private Map<Method, Description> descriptions = new HashMap<>();
     private static Map<RunKind, RunnerKindInfo> runners = new HashMap<>();
-    private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
     private CountDownLatch latch;
     private List<Method> filteredChildren;
     private ReferenceCache referenceCache = new ReferenceCache();
@@ -1043,14 +1041,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 info.runner.init();
             }
             info.runner.run(run);
-        }
-    }
-
-    private static void cleanupRunner(RunKind kind) {
-        synchronized (TeaVMTestRunner.class) {
-            RunnerKindInfo info = runners.get(kind);
-            info.runner.stop();
-            info.runner = null;
         }
     }
 
