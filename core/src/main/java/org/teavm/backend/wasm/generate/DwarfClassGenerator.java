@@ -20,7 +20,6 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_ATE_FLOAT;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_ATE_SIGNED;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_ATE_UTF;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_BYTE_SIZE;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_DECLARATION;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_ENCODING;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_LOCATION;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_NAME;
@@ -28,7 +27,6 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_DATA1;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_DATA2;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_EXPRLOC;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_FLAG_PRESENT;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_REF4;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_STRP;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_OP_ADDR;
@@ -38,7 +36,6 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_CLASS_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_INHERITANCE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_NAMESPACE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_POINTER_TYPE;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_SUBPROGRAM;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_UNSPECIFIED_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_VARIABLE;
 import java.util.ArrayList;
@@ -51,6 +48,7 @@ import org.teavm.backend.wasm.debug.info.VariableType;
 import org.teavm.backend.wasm.dwarf.DwarfAbbreviation;
 import org.teavm.backend.wasm.dwarf.DwarfInfoWriter;
 import org.teavm.backend.wasm.dwarf.DwarfPlaceholder;
+import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.PrimitiveType;
 import org.teavm.model.ValueType;
@@ -65,7 +63,6 @@ public class DwarfClassGenerator {
     private DwarfAbbreviation nsAbbrev;
     private DwarfAbbreviation classTypeAbbrev;
     private DwarfAbbreviation inheritanceAbbrev;
-    private DwarfAbbreviation methodAbbrev;
     private DwarfPlaceholder[] primitiveTypes = new DwarfPlaceholder[PrimitiveType.values().length];
     private DwarfPlaceholder unspecifiedType;
     private DwarfAbbreviation baseTypeAbbrev;
@@ -73,10 +70,12 @@ public class DwarfClassGenerator {
     private DwarfAbbreviation variableAbbrev;
     private List<Runnable> postponedWrites = new ArrayList<>();
     private ClassType classClass;
+    private DwarfFunctionGenerator functionGen;
 
     public DwarfClassGenerator(DwarfInfoWriter writer, DwarfStrings strings) {
         this.writer = writer;
         this.strings = strings;
+        functionGen = new DwarfFunctionGenerator(this, writer, strings);
     }
 
     public void flushTypes() {
@@ -115,16 +114,6 @@ public class DwarfClassGenerator {
             subprogram.write();
         }
         flushTypes();
-    }
-
-    private DwarfAbbreviation getMethodAbbrev() {
-        if (methodAbbrev == null) {
-            methodAbbrev = writer.abbreviation(DW_TAG_SUBPROGRAM, true, data -> {
-                data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
-                data.writeLEB(DW_AT_DECLARATION).writeLEB(DW_FORM_FLAG_PRESENT);
-            });
-        }
-        return methodAbbrev;
     }
 
     private DwarfAbbreviation getNsAbbrev() {
@@ -391,18 +380,19 @@ public class DwarfClassGenerator {
         public final String name;
         public boolean isStatic;
         public final MethodDescriptor descriptor;
-        public final DwarfPlaceholder ref;
+        public int startOffset;
+        public int endOffset;
+        public WasmFunction function;
 
         private Subprogram(String name, MethodDescriptor descriptor) {
             this.name = name;
             this.descriptor = descriptor;
-            ref = writer.placeholder(4);
         }
 
         private void write() {
-            writer.mark(ref).tag(getMethodAbbrev());
-            writer.writeInt(strings.stringRef(name));
-            writer.emptyTag();
+            if (function != null) {
+                functionGen.writeContent(this);
+            }
         }
     }
 }

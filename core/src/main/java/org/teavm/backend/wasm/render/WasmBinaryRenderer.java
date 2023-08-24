@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 import org.teavm.backend.wasm.debug.DebugLines;
 import org.teavm.backend.wasm.debug.DebugVariables;
 import org.teavm.backend.wasm.generate.DwarfClassGenerator;
-import org.teavm.backend.wasm.generate.DwarfFunctionGenerator;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
 import org.teavm.backend.wasm.model.WasmCustomSection;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -58,7 +57,7 @@ public class WasmBinaryRenderer {
     private Map<String, Integer> functionIndexes = new HashMap<>();
     private boolean obfuscated;
     private DwarfGenerator dwarfGenerator;
-    private DwarfFunctionGenerator dwarfFunctionGen;
+    private DwarfClassGenerator dwarfClassGen;
     private DebugLines debugLines;
     private DebugVariables debugVariables;
     private WasmBinaryStatsCollector statsCollector;
@@ -70,7 +69,7 @@ public class WasmBinaryRenderer {
         this.version = version;
         this.obfuscated = obfuscated;
         this.dwarfGenerator = dwarfGenerator;
-        dwarfFunctionGen = dwarfClassGen != null ? new DwarfFunctionGenerator(dwarfClassGen, dwarfGenerator) : null;
+        this.dwarfClassGen = dwarfClassGen;
         this.debugLines = debugLines;
         this.debugVariables = debugVariables;
         this.statsCollector = statsCollector;
@@ -300,8 +299,10 @@ public class WasmBinaryRenderer {
     private byte[] renderFunction(WasmFunction function, int offset) {
         var code = new WasmBinaryWriter();
 
-        if (dwarfFunctionGen != null) {
-            dwarfFunctionGen.begin(function, offset);
+        var dwarfSubprogram = dwarfClassGen != null ? dwarfClassGen.getSubprogram(function.getName()) : null;
+        if (dwarfSubprogram != null) {
+            dwarfSubprogram.startOffset = offset - 4;
+            dwarfSubprogram.function = function;
         }
         if (debugLines != null && function.getJavaMethod() != null) {
             debugLines.start(function.getJavaMethod());
@@ -343,8 +344,8 @@ public class WasmBinaryRenderer {
 
         code.writeByte(0x0B);
 
-        if (dwarfFunctionGen != null) {
-            dwarfFunctionGen.end(code.getPosition());
+        if (dwarfSubprogram != null) {
+            dwarfSubprogram.endOffset = code.getPosition() + offset;
         }
         if (debugVariables != null) {
             writeDebugVariables(function, offset, code.getPosition());
