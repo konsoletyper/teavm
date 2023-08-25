@@ -54,6 +54,7 @@ public final class DwarfConstants {
     public static final int DW_ATE_UTF = 0x10;
 
     public static final int DW_LANG_JAVA = 0x0b;
+    public static final int DW_LANG_C_PLUS_PLUS = 0x04;
 
     public static final int DW_CHILDREN_YES = 1;
     public static final int DW_CHILDREN_NO = 0;
