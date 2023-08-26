@@ -15,21 +15,17 @@
  */
 package org.teavm.backend.wasm.generate;
 
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_ACCESS_PUBLIC;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_ATE_BOOLEAN;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_ATE_FLOAT;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_ATE_SIGNED;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_ATE_UTF;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_ACCESSIBILITY;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_BYTE_SIZE;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_CALLING_CONVENTION;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_CONTAINING_TYPE;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_DATA_LOCATION;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_DATA_MEMBER_LOCATION;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_ENCODING;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_LOCATION;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_NAME;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_TYPE;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_CC_PASS_BY_REFERENCE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_DATA1;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_DATA2;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_EXPRLOC;
@@ -38,13 +34,16 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_STRP;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_OP_ADDR;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_OP_DEREF;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_OP_LIT3;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_OP_PUSH_OBJECT_ADDRESS;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_OP_SHL;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_OP_STACK_VALUE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_BASE_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_CLASS_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_INHERITANCE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_MEMBER;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_NAMESPACE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_POINTER_TYPE;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_STRUCTURE_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_UNSPECIFIED_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_VARIABLE;
 import java.util.ArrayList;
@@ -82,11 +81,33 @@ public class DwarfClassGenerator {
     private List<Runnable> postponedWrites = new ArrayList<>();
     private ClassType classClass;
     private DwarfFunctionGenerator functionGen;
+    private DwarfPlaceholder fakeClassPtrStruct;
 
     public DwarfClassGenerator(DwarfInfoWriter writer, DwarfStrings strings) {
         this.writer = writer;
         this.strings = strings;
         functionGen = new DwarfFunctionGenerator(this, writer, strings);
+        fakeClassPtrStruct = writer.placeholder(4);
+    }
+
+    private void createFakeClassPtrStruct() {
+        var abbrev = writer.abbreviation(DW_TAG_STRUCTURE_TYPE, true, data -> {
+            data.writeLEB(DW_AT_DATA_LOCATION).writeLEB(DW_FORM_EXPRLOC);
+        });
+
+        writer.mark(fakeClassPtrStruct).tag(abbrev);
+
+        var ops = new Blob();
+        ops.writeByte(DW_OP_PUSH_OBJECT_ADDRESS).writeByte(DW_OP_DEREF).writeByte(DW_OP_LIT3).writeByte(DW_OP_SHL);
+        writer.writeLEB(ops.size());
+        ops.newReader(writer::write).readRemaining();
+
+        writer.tag(getImmutableMemberAbbrev());
+        writer.writeInt(strings.stringRef("value"));
+        writer.ref(classClass.getPointerPtr(), Blob::writeInt);
+        writer.writeShort(0);
+
+        writer.emptyTag();
     }
 
     public void flushTypes() {
@@ -124,6 +145,7 @@ public class DwarfClassGenerator {
 
     public void write() {
         classClass = getClass("java.lang.Class");
+        createFakeClassPtrStruct();
         root.writeChildren();
         for (var subprogram : rootSubprograms) {
             subprogram.write();
@@ -144,9 +166,7 @@ public class DwarfClassGenerator {
         if (classTypeAbbrev == null) {
             classTypeAbbrev = writer.abbreviation(DW_TAG_CLASS_TYPE, true, data -> {
                 data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
-                data.writeLEB(DW_AT_CONTAINING_TYPE).writeLEB(DW_FORM_REF4);
                 data.writeLEB(DW_AT_BYTE_SIZE).writeLEB(DW_FORM_DATA2);
-                data.writeLEB(DW_AT_CALLING_CONVENTION).writeLEB(DW_FORM_DATA1);
             });
         }
         return classTypeAbbrev;
@@ -166,8 +186,7 @@ public class DwarfClassGenerator {
             immutableMemberAbbrev = writer.abbreviation(DW_TAG_MEMBER, false, data -> {
                 data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
                 data.writeLEB(DW_AT_TYPE).writeLEB(DW_FORM_REF4);
-                data.writeLEB(DW_AT_DATA_MEMBER_LOCATION).writeLEB(DW_FORM_EXPRLOC);
-                data.writeLEB(DW_AT_ACCESSIBILITY).writeLEB(DW_FORM_DATA1);
+                data.writeLEB(DW_AT_DATA_MEMBER_LOCATION).writeLEB(DW_FORM_DATA2);
             });
         }
         return immutableMemberAbbrev;
@@ -179,7 +198,6 @@ public class DwarfClassGenerator {
                 data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
                 data.writeLEB(DW_AT_TYPE).writeLEB(DW_FORM_REF4);
                 data.writeLEB(DW_AT_DATA_MEMBER_LOCATION).writeLEB(DW_FORM_DATA2);
-                data.writeLEB(DW_AT_ACCESSIBILITY).writeLEB(DW_FORM_DATA1);
             });
         }
         return memberAbbrev;
@@ -410,9 +428,7 @@ public class DwarfClassGenerator {
         private void write() {
             writer.mark(ptr).tag(getClassTypeAbbrev());
             writer.writeInt(strings.stringRef(name));
-            writer.ref(ptr, Blob::writeInt);
             writer.writeShort(size);
-            writer.writeByte(DW_CC_PASS_BY_REFERENCE);
             if (superclass != null) {
                 writer.tag(getInheritanceAbbrev()).ref(superclass.ptr, Blob::writeInt);
             }
@@ -428,7 +444,7 @@ public class DwarfClassGenerator {
                 writer.writeInt(strings.stringRef("__classData__"));
                 writer.ref(classClass.getPointerPtr(), Blob::writeInt);
                 var ops = new Blob();
-                ops.writeByte(DW_OP_ADDR).writeInt(pointer);
+                ops.writeByte(DW_OP_ADDR).writeInt(pointer).writeByte(DW_OP_STACK_VALUE);
                 writer.writeLEB(ops.size());
                 ops.newReader(writer::write).readRemaining();
             }
@@ -442,12 +458,8 @@ public class DwarfClassGenerator {
         private void writeClassPointerField() {
             writer.tag(getImmutableMemberAbbrev());
             writer.writeInt(strings.stringRef("__class__"));
-            writer.ref(classClass.ptr, Blob::writeInt);
-            var ops = new Blob();
-            ops.writeByte(DW_OP_DEREF).writeByte(DW_OP_LIT3).writeByte(DW_OP_SHL);
-            writer.writeLEB(ops.size());
-            ops.newReader(writer::write).readRemaining();
-            writer.writeByte(DW_ACCESS_PUBLIC);
+            writer.ref(fakeClassPtrStruct, Blob::writeInt);
+            writer.writeShort(0);
         }
 
         private void writeFields() {
@@ -504,7 +516,6 @@ public class DwarfClassGenerator {
             writer.writeInt(strings.stringRef(name));
             writer.ref(getTypePtr(type), Blob::writeInt);
             writer.writeShort(offset);
-            writer.writeByte(DW_ACCESS_PUBLIC);
         }
     }
 

@@ -25,6 +25,7 @@ public final class DwarfConstants {
     public static final int DW_TAG_MEMBER = 0x0d;
     public static final int DW_TAG_POINTER_TYPE = 0x0F;
     public static final int DW_TAG_COMPILE_UNIT = 0x11;
+    public static final int DW_TAG_STRUCTURE_TYPE = 0x13;
     public static final int DW_TAG_INHERITANCE = 0x1C;
     public static final int DW_TAG_BASE_TYPE = 0x24;
     public static final int DW_TAG_SUBPROGRAM = 0x2E;
@@ -48,6 +49,7 @@ public final class DwarfConstants {
     public static final int DW_AT_ENCODING = 0x3E;
     public static final int DW_AT_SPECIFICATION = 0x47;
     public static final int DW_AT_TYPE = 0x49;
+    public static final int DW_AT_DATA_LOCATION = 0x50;
     public static final int DW_AT_LINKAGE_NAME = 0x6E;
 
     public static final int DW_ATE_ADDRESS = 0x01;
@@ -84,6 +86,7 @@ public final class DwarfConstants {
     public static final int DW_OP_SHL = 0x24;
     public static final int DW_OP_LIT0 = 0x30;
     public static final int DW_OP_LIT3 = 0x33;
+    public static final int DW_OP_PUSH_OBJECT_ADDRESS = 0x97;
     public static final int DW_OP_STACK_VALUE = 0x9F;
     public static final int DW_OP_WASM_LOCATION = 0xED;
 
