@@ -83,6 +83,9 @@ public class DwarfFunctionGenerator {
 
             var operations = new Blob();
             operations.writeByte(DW_OP_WASM_LOCATION).writeByte(0).writeLEB(i + 1);
+            if (local.getJavaType() == VariableType.OBJECT) {
+                operations.writeByte(DW_OP_STACK_VALUE);
+            }
             writer.writeLEB(operations.size());
             operations.newReader(writer::write).readRemaining();
         }

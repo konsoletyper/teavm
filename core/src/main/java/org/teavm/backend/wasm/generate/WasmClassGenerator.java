@@ -545,11 +545,20 @@ public class WasmClassGenerator {
                 if (field.getInitialValue() != null) {
                     setInitialValue(field.getType(), value, field.getInitialValue());
                 }
-                data.fieldLayout.put(field.getName(), binaryWriter.append(value));
+                var address = binaryWriter.append(value);
+                data.fieldLayout.put(field.getName(), address);
+                if (dwarfClass != null) {
+                    dwarfClass.registerStaticField(field.getName(), field.getType(), address);
+                    dwarfClassGenerator.getTypePtr(field.getType());
+                }
             } else {
                 int offset = align(data.size, desiredAlignment);
                 data.fieldLayout.put(field.getName(), offset);
                 data.size = offset + desiredAlignment;
+                if (dwarfClass != null) {
+                    dwarfClass.registerField(field.getName(), field.getType(), offset);
+                    dwarfClassGenerator.getTypePtr(field.getType());
+                }
             }
             if (data.alignment == 0) {
                 data.alignment = desiredAlignment;
@@ -720,7 +729,6 @@ public class WasmClassGenerator {
             } else if (data.type instanceof ValueType.Object) {
                 var className = ((ValueType.Object) data.type).getClassName();
                 if (className.equals("java.lang.Class")) {
-                    int headerSize = 8;
                     debug.startClass(className, indexes.get(ValueType.object("java.lang.Object")), data.start, 60);
                     debug.instanceField("size", 8, FieldType.INT);
                     debug.instanceField("flags", 12, FieldType.INT);
