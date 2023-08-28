@@ -48,6 +48,35 @@ public class DwarfFunctionGenerator {
         this.strings = strings;
     }
 
+    public void prepareContent(DwarfClassGenerator.Subprogram subprogram) {
+        if (subprogram.function == null || subprogram.function.getName() == null) {
+            return;
+        }
+        var descriptor = subprogram.descriptor;
+        if (descriptor == null) {
+            return;
+        }
+        var function = subprogram.function;
+
+        var offset = subprogram.isStatic ? 0 : 1;
+        int count = Math.min(function.getLocalVariables().size() - offset, descriptor.parameterCount());
+        for (var i = 0; i < count; ++i) {
+            var local = function.getLocalVariables().get(i + offset);
+            if (local.getName() == null) {
+                continue;
+            }
+            classGen.getTypePtr(descriptor.parameterType(i));
+        }
+
+        for (var i = count + offset; i < function.getLocalVariables().size(); ++i) {
+            var local = function.getLocalVariables().get(i);
+            if (local.getName() == null || local.getJavaType() == null) {
+                continue;
+            }
+            classGen.getTypePtr(local.getJavaType());
+        }
+    }
+
     public void writeContent(DwarfClassGenerator.Subprogram subprogram) {
         if (subprogram.function.getName() == null) {
             return;

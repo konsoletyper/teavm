@@ -46,11 +46,13 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_POINTER_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_STRUCTURE_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_UNSPECIFIED_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_VARIABLE;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import org.teavm.backend.wasm.blob.Blob;
 import org.teavm.backend.wasm.debug.info.VariableType;
 import org.teavm.backend.wasm.dwarf.DwarfAbbreviation;
@@ -82,6 +84,7 @@ public class DwarfClassGenerator {
     private ClassType classClass;
     private DwarfFunctionGenerator functionGen;
     private DwarfPlaceholder fakeClassPtrStruct;
+    private Queue<Subprogram> subprogramsToPrepare = new ArrayDeque<>();
 
     public DwarfClassGenerator(DwarfInfoWriter writer, DwarfStrings strings) {
         this.writer = writer;
@@ -137,6 +140,7 @@ public class DwarfClassGenerator {
 
     public void registerSubprogram(String functionName, Subprogram subprogram) {
         subprogramsByFunctionName.put(functionName, subprogram);
+        subprogramsToPrepare.add(subprogram);
     }
 
     public Subprogram getSubprogram(String functionName) {
@@ -146,6 +150,12 @@ public class DwarfClassGenerator {
     public void write() {
         classClass = getClass("java.lang.Class");
         createFakeClassPtrStruct();
+        for (var subprogram : rootSubprograms) {
+            subprogram.prepare();
+        }
+        while (!subprogramsToPrepare.isEmpty()) {
+            subprogramsToPrepare.remove().prepare();
+        }
         root.writeChildren();
         for (var subprogram : rootSubprograms) {
             subprogram.write();
@@ -482,6 +492,12 @@ public class DwarfClassGenerator {
         private Subprogram(String name, MethodDescriptor descriptor) {
             this.name = name;
             this.descriptor = descriptor;
+        }
+
+        private void prepare() {
+            if (functionGen != null) {
+                functionGen.prepareContent(this);
+            }
         }
 
         private void write() {
