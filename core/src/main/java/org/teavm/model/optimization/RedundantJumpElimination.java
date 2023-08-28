@@ -71,24 +71,25 @@ public class RedundantJumpElimination implements MethodOptimization {
                 assign.setAssignee(incoming.getValue());
                 block.add(assign);
             }
-            while (target.getFirstInstruction() != null) {
-                Instruction instruction = target.getFirstInstruction();
-                instruction.delete();
-                block.add(instruction);
-            }
 
-            Instruction lastInsn = block.getLastInstruction();
+            var lastInsn = target.getLastInstruction();
             if (lastInsn != null) {
                 lastInsn.acceptVisitor(transitionExtractor);
-                BasicBlock[] successors = transitionExtractor.getTargets();
+                var successors = transitionExtractor.getTargets();
                 if (successors != null) {
-                    for (BasicBlock successor : successors) {
+                    for (var successor : successors) {
                         successor.getPhis().stream()
                                 .flatMap(phi -> phi.getIncomings().stream())
                                 .filter(incoming -> incoming.getSource() == target)
                                 .forEach(incoming -> incoming.setSource(block));
                     }
                 }
+            }
+
+            while (target.getFirstInstruction() != null) {
+                Instruction instruction = target.getFirstInstruction();
+                instruction.delete();
+                block.add(instruction);
             }
 
             for (TryCatchBlock tryCatch : target.getTryCatchBlocks()) {

@@ -17,7 +17,6 @@ package org.teavm.backend.lowlevel.transform;
 
 import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntIntHashMap;
-import com.carrotsearch.hppc.IntIntMap;
 import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,6 +56,7 @@ import org.teavm.model.instructions.MonitorEnterInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.instructions.SwitchTableEntry;
+import org.teavm.model.optimization.RedundantJumpElimination;
 import org.teavm.model.util.BasicBlockMapper;
 import org.teavm.model.util.BasicBlockSplitter;
 import org.teavm.model.util.DefinitionExtractor;
@@ -125,6 +125,7 @@ public class CoroutineTransformation {
         }
         splitter.fixProgram();
         processIrreducibleCfg();
+        RedundantJumpElimination.optimize(program);
     }
 
     private void createSplitPrologue() {
@@ -485,9 +486,9 @@ public class CoroutineTransformation {
         @Override
         public int[] split(int[] domain, int[] nodes) {
             int[] copies = new int[nodes.length];
-            IntIntMap map = new IntIntHashMap();
+            var map = new IntIntHashMap();
             IntSet nodeSet = IntHashSet.from(nodes);
-            List<List<Incoming>> outputs = ProgramUtils.getPhiOutputs(program);
+            var outputs = ProgramUtils.getPhiOutputs(program);
             for (int i = 0; i < nodes.length; ++i) {
                 int node = nodes[i];
                 BasicBlock block = program.basicBlockAt(node);
@@ -497,7 +498,7 @@ public class CoroutineTransformation {
                 map.put(node, copies[i] + 1);
             }
 
-            BasicBlockMapper copyBlockMapper = new BasicBlockMapper((int block) -> {
+            var copyBlockMapper = new BasicBlockMapper((int block) -> {
                 int mappedIndex = map.get(block);
                 return mappedIndex == 0 ? block : mappedIndex - 1;
             });
@@ -508,6 +509,7 @@ public class CoroutineTransformation {
                 copyBlockMapper.transformWithoutPhis(program.basicBlockAt(domainNode));
             }
 
+            var domainSet = IntHashSet.from(domain);
             for (int i = 0; i < nodes.length; ++i) {
                 int node = nodes[i];
                 BasicBlock blockCopy = program.basicBlockAt(copies[i]);
@@ -518,6 +520,15 @@ public class CoroutineTransformation {
                         outputCopy.setValue(output.getValue());
                         output.getPhi().getIncomings().add(outputCopy);
                     }
+                }
+
+                var block = program.basicBlockAt(node);
+                for (var phi : block.getPhis()) {
+                    phi.getIncomings().removeIf(incoming -> domainSet.contains(incoming.getSource().getIndex()));
+                }
+
+                for (var phi : blockCopy.getPhis()) {
+                    phi.getIncomings().removeIf(incoming -> !domainSet.contains(incoming.getSource().getIndex()));
                 }
             }
 
