@@ -105,6 +105,7 @@ public class CoroutineTransformation {
         for (BasicBlock block : program.getBasicBlocks()) {
             if (hasSplitInstructions(block)) {
                 hasJob = true;
+                break;
             }
         }
         if (!hasJob) {
@@ -124,7 +125,6 @@ public class CoroutineTransformation {
         }
         splitter.fixProgram();
         processIrreducibleCfg();
-        new PhiUpdater().updatePhis(program, methodReference.parameterCount() + 1);
     }
 
     private void createSplitPrologue() {
