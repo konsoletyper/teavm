@@ -43,7 +43,7 @@ tasks.test {
     systemProperty("teavm.junit.threads", "1")
     val browser = providers.gradleProperty("teavm.tests.browser").orElse("browser-chrome").get()
 
-    systemProperty("teavm.junit.js", providers.gradleProperty("teavm.tests.wasm").orElse("true").get())
+    systemProperty("teavm.junit.js", providers.gradleProperty("teavm.tests.js").orElse("true").get())
     systemProperty("teavm.junit.js.runner", browser)
     systemProperty("teavm.junit.minified", providers.gradleProperty("teavm.tests.minified").orElse("false").get())
     systemProperty("teavm.junit.optimized", providers.gradleProperty("teavm.tests.optimized").orElse("false").get())
