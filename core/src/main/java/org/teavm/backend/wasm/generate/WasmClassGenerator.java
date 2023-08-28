@@ -65,6 +65,7 @@ public class WasmClassGenerator {
     private BinaryWriter binaryWriter;
     private Map<MethodReference, Integer> functions = new HashMap<>();
     private List<String> functionTable = new ArrayList<>();
+    private ObjectIntMap<String> functionIdMap = new ObjectIntHashMap<>();
     private VirtualTableProvider vtableProvider;
     private TagRegistry tagRegistry;
     private WasmStringPool stringPool;
@@ -222,9 +223,8 @@ public class WasmClassGenerator {
             binaryData.data = wrapper.getValue(0);
             binaryData.data.setInt(CLASS_SIZE, 4);
             binaryData.data.setAddress(CLASS_ITEM_TYPE, itemBinaryData.start);
-            binaryData.data.setInt(CLASS_IS_INSTANCE, functionTable.size());
+            binaryData.data.setInt(CLASS_IS_INSTANCE, getFunctionPointer(names.forSupertypeFunction(type)));
             binaryData.data.setInt(CLASS_CANARY, RuntimeClass.computeCanary(4, 0));
-            functionTable.add(names.forSupertypeFunction(type));
             binaryData.data.setAddress(CLASS_NAME, stringPool.getStringPointer(type.toString().replace('/', '.')));
             binaryData.data.setAddress(CLASS_SIMPLE_NAME, 0);
             binaryData.data.setInt(CLASS_INIT, -1);
@@ -238,10 +238,9 @@ public class WasmClassGenerator {
     private DataValue createPrimitiveClassData(DataValue value, int size, ValueType type) {
         value.setInt(CLASS_SIZE, size);
         value.setInt(CLASS_FLAGS, RuntimeClass.PRIMITIVE);
-        value.setInt(CLASS_IS_INSTANCE, functionTable.size());
+        value.setInt(CLASS_IS_INSTANCE, getFunctionPointer(names.forSupertypeFunction(type)));
         value.setAddress(CLASS_SIMPLE_NAME, 0);
         value.setInt(CLASS_INIT, -1);
-        functionTable.add(names.forSupertypeFunction(type));
 
         String name;
         if (type == ValueType.VOID) {
@@ -282,8 +281,18 @@ public class WasmClassGenerator {
         return value;
     }
 
-    public List<String> getFunctionTable() {
+    public Iterable<? extends String> getFunctionTable() {
         return functionTable;
+    }
+
+    public int getFunctionPointer(String name) {
+        var result = functionIdMap.getOrDefault(name, -1);
+        if (result < 0) {
+            result = functionTable.size();
+            functionTable.add(name);
+            functionIdMap.put(name, result);
+        }
+        return result;
     }
 
     private DataValue createStructure(ClassBinaryData binaryData) {
@@ -316,8 +325,7 @@ public class WasmClassGenerator {
         header.setInt(CLASS_CANARY, RuntimeClass.computeCanary(occupiedSize, tag));
         int nameAddress = requirements.name() ? stringPool.getStringPointer(name) : 0;
         header.setAddress(CLASS_NAME, nameAddress);
-        header.setInt(CLASS_IS_INSTANCE, functionTable.size());
-        functionTable.add(names.forSupertypeFunction(ValueType.object(name)));
+        header.setInt(CLASS_IS_INSTANCE, getFunctionPointer(names.forSupertypeFunction(ValueType.object(name))));
         header.setAddress(CLASS_PARENT, parentPtr);
 
         ClassReader cls = processedClassSource.get(name);
@@ -372,8 +380,7 @@ public class WasmClassGenerator {
         if (cls != null && binaryData.start >= 0
                 && cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID)) != null
                 && classInitializerInfo.isDynamicInitializer(name)) {
-            header.setInt(CLASS_INIT, functionTable.size());
-            functionTable.add(names.forClassInitializer(name));
+            header.setInt(CLASS_INIT, getFunctionPointer(names.forClassInitializer(name)));
         } else {
             header.setInt(CLASS_INIT, -1);
         }
@@ -450,11 +457,8 @@ public class WasmClassGenerator {
                 if (method != null) {
                     VirtualTableEntry entry = vtable.getEntry(method);
                     if (entry != null) {
-                        methodIndex = functions.computeIfAbsent(entry.getImplementor(), implementor -> {
-                            int result = functionTable.size();
-                            functionTable.add(names.forMethod(implementor));
-                            return result;
-                        });
+                        methodIndex = functions.computeIfAbsent(entry.getImplementor(),
+                                implementor -> getFunctionPointer(names.forMethod(implementor)));
                     }
                 }
 

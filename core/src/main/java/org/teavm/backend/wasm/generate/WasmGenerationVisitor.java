@@ -1654,6 +1654,16 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         public int getStaticField(FieldReference field) {
             return classGenerator.getFieldOffset(field);
         }
+
+        @Override
+        public int getClassPointer(ValueType type) {
+            return classGenerator.getClassPointer(type);
+        }
+
+        @Override
+        public int getFunctionPointer(String name) {
+            return classGenerator.getFunctionPointer(name);
+        }
     };
 
     private WasmLocal getTemporary(WasmType type) {

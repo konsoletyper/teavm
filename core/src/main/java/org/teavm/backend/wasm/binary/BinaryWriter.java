@@ -18,6 +18,8 @@ package org.teavm.backend.wasm.binary;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 
 public class BinaryWriter {
     private int address;
@@ -172,5 +174,71 @@ public class BinaryWriter {
         result[offset++] = (byte) (v >> 48);
         result[offset++] = (byte) (v >> 56);
         return offset;
+    }
+
+    public <T> int writeMap(T[] keys, ToIntFunction<T> hashCodeF, ToLongFunction<T> keyWriter,
+            ToLongFunction<T> valueWriter) {
+        int tableSize = keys.length * 2;
+        int maxTableSize = Math.min(keys.length * 5 / 2, tableSize + 10);
+
+        Object[] bestTable = null;
+        int bestCollisionRatio = 0;
+        while (tableSize <= maxTableSize) {
+            var table = new Object[tableSize];
+            int maxCollisionRatio = 0;
+            for (var key : keys) {
+                int hashCode = hashCodeF.applyAsInt(key);
+                int collisionRatio = 0;
+                while (true) {
+                    int index = mod(hashCode++, table.length);
+                    if (table[index] == null) {
+                        table[index] = key;
+                        break;
+                    }
+                    collisionRatio++;
+                }
+                maxCollisionRatio = Math.max(maxCollisionRatio, collisionRatio);
+            }
+
+            if (bestTable == null || bestCollisionRatio > maxCollisionRatio) {
+                bestCollisionRatio = maxCollisionRatio;
+                bestTable = table;
+            }
+
+            tableSize++;
+        }
+
+        var sizeValue = DataPrimitives.ADDRESS.createValue();
+        int start = append(sizeValue);
+        sizeValue.setAddress(0, bestTable.length);
+
+        var keyValues = new DataValue[bestTable.length];
+        var valueValues = new DataValue[bestTable.length];
+        for (int i = 0; i < bestTable.length; ++i) {
+            var keyValue = DataPrimitives.ADDRESS.createValue();
+            var valueValue = DataPrimitives.ADDRESS.createValue();
+            append(keyValue);
+            append(valueValue);
+            keyValues[i] = keyValue;
+            valueValues[i] = valueValue;
+        }
+        for (int i = 0; i < bestTable.length; ++i) {
+            @SuppressWarnings("unchecked")
+            var key = (T) bestTable[i];
+            if (key != null) {
+                keyValues[i].setAddress(0, keyWriter.applyAsLong(key));
+                valueValues[i].setAddress(0, valueWriter.applyAsLong(key));
+            }
+        }
+
+        return start;
+    }
+
+    private static int mod(int a, int b) {
+        a %= b;
+        if (a < 0) {
+            a += b;
+        }
+        return a;
     }
 }

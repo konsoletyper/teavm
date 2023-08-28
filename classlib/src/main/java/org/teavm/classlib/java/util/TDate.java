@@ -31,14 +31,13 @@ public class TDate implements TComparable<TDate> {
     private long value;
 
     static {
-        if (PlatformDetector.isLowLevel()) {
+        if (PlatformDetector.isC()) {
             initLowLevel();
         }
     }
 
     @Import(name = "teavm_date_init")
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
     @NoSideEffects
     @Unmanaged
     private static native void initLowLevel();

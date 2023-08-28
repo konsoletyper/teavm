@@ -348,6 +348,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 String[].class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "lookupResource", Address.class,
                 String.class, Address.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "lookupResource", Address.class,
+                int.class, Address.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "printString",
                 String.class, void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "printInt",
@@ -408,6 +410,10 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
 
         dependencyAnalyzer.addDependencyListener(new StringsDependencyListener());
+
+        for (var intrinsic : additionalIntrinsics) {
+            intrinsic.contributeDependencies(dependencyAnalyzer);
+        }
     }
 
     @Override

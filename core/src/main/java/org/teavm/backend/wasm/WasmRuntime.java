@@ -234,6 +234,7 @@ public final class WasmRuntime {
         return resource.add(Address.sizeOf());
     }
 
+    @Unmanaged
     public static Address lookupResource(Address map, String string) {
         RuntimeString runtimeString = Address.ofObject(string).toStructure();
         int hashCode = hashCode(runtimeString);
@@ -255,6 +256,30 @@ public final class WasmRuntime {
         }
         return null;
     }
+
+    @Unmanaged
+    public static Address lookupResource(Address map, Address key) {
+        int sz = map.getInt();
+        Address content = contentStart(map);
+        var hash = key.toInt();
+        for (int i = 0; i < sz; ++i) {
+            int index = (hash + i) % sz;
+            if (index < 0) {
+                index += sz;
+            }
+            var entry = content.add(index * Address.sizeOf() * 2);
+            var entryKey = entry.getAddress();
+            if (entryKey == null) {
+                return null;
+            }
+            if (key == entryKey) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    public static native void callFunctionFromTable(int index, RuntimeObject instance);
 
     static class RuntimeString extends RuntimeObject {
         char[] characters;
