@@ -21,6 +21,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.CharArrayReader;
 import java.io.IOException;
+import java.nio.CharBuffer;
+import java.nio.ReadOnlyBufferException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -148,5 +150,36 @@ public class CharArrayReaderTest {
 
         assertEquals("Failed to skip correct number of chars", 5L, skipped);
         assertEquals("Skip skipped wrong chars", 'W', cr.read());
+    }
+
+    @Test
+    public void readIntoBuffer() throws IOException {
+        cr = new CharArrayReader(hw);
+        var buffer = CharBuffer.allocate(100);
+        assertEquals(10, cr.read(buffer));
+        buffer.flip();
+        assertEquals("HelloWorld", buffer.toString());
+        buffer.limit(20);
+        assertEquals(0, buffer.get(10));
+
+        cr = new CharArrayReader(hw);
+        var array = new char[100];
+        buffer = CharBuffer.wrap(array, 10, 80);
+        assertEquals(10, cr.read(buffer));
+        assertEquals("HelloWorld", new String(array, 10, 10));
+
+        cr = new CharArrayReader(hw);
+        buffer = CharBuffer.allocate(5);
+        assertEquals(5, cr.read(buffer));
+        buffer.flip();
+        assertEquals("Hello", buffer.toString());
+
+        cr = new CharArrayReader(hw);
+        try {
+            cr.read(CharBuffer.allocate(10).asReadOnlyBuffer());
+            fail("Expected exception not thrown");
+        } catch (ReadOnlyBufferException e) {
+            // ok
+        }
     }
 }

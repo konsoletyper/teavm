@@ -109,7 +109,11 @@ public class ArrayGenerator implements WasmMethodGenerator {
             MethodReference methodRef = new MethodReference(wrapper, "valueOf",
                     primitiveTypes[i], ValueType.object(wrapper));
             ClassReader cls = context.getClassSource().get(methodRef.getClassName());
-            if (cls == null || cls.getMethod(methodRef.getDescriptor()) == null) {
+            if (cls == null) {
+                continue;
+            }
+            var valueOfMethod = cls.getMethod(methodRef.getDescriptor());
+            if (valueOfMethod == null || valueOfMethod.getProgram() == null) {
                 continue;
             }
 

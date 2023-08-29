@@ -253,7 +253,23 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
 
     public abstract TLongBuffer asLongBuffer();
 
+    public abstract float getFloat();
+
+    public abstract TByteBuffer putFloat(float value);
+
+    public abstract float getFloat(int index);
+
+    public abstract TByteBuffer putFloat(int index, float value);
+
     public abstract TFloatBuffer asFloatBuffer();
+
+    public abstract double getDouble();
+
+    public abstract TByteBuffer putDouble(double value);
+
+    public abstract double getDouble(int index);
+
+    public abstract TByteBuffer putDouble(int index, double value);
 
     public abstract TDoubleBuffer asDoubleBuffer();
 

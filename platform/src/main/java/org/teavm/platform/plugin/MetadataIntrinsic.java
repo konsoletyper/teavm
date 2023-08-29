@@ -120,61 +120,12 @@ class MetadataIntrinsic implements WasmIntrinsic {
     }
 
     private int writeResource(BinaryWriter writer, WasmStringPool stringPool, ResourceMap<?> resourceMap) {
-        String[] keys = resourceMap.keys();
-        int tableSize = keys.length * 2;
-        int maxTableSize = Math.min(keys.length * 5 / 2, tableSize + 10);
-
-        String[] bestTable = null;
-        int bestCollisionRatio = 0;
-        while (tableSize <= maxTableSize) {
-            String[] table = new String[tableSize];
-            int maxCollisionRatio = 0;
-            for (String key : keys) {
-                int hashCode = key.hashCode();
-                int collisionRatio = 0;
-                while (true) {
-                    int index = mod(hashCode++, table.length);
-                    if (table[index] == null) {
-                        table[index] = key;
-                        break;
-                    }
-                    collisionRatio++;
-                }
-                maxCollisionRatio = Math.max(maxCollisionRatio, collisionRatio);
-            }
-
-            if (bestTable == null || bestCollisionRatio > maxCollisionRatio) {
-                bestCollisionRatio = maxCollisionRatio;
-                bestTable = table;
-            }
-
-            tableSize++;
-        }
-
-
-        DataValue sizeValue = DataPrimitives.ADDRESS.createValue();
-        int start = writer.append(sizeValue);
-        sizeValue.setAddress(0, bestTable.length);
-
-        DataValue[] keyValues = new DataValue[bestTable.length];
-        DataValue[] valueValues = new DataValue[bestTable.length];
-        for (int i = 0; i < bestTable.length; ++i) {
-            DataValue keyValue = DataPrimitives.ADDRESS.createValue();
-            DataValue valueValue = DataPrimitives.ADDRESS.createValue();
-            writer.append(keyValue);
-            writer.append(valueValue);
-            keyValues[i] = keyValue;
-            valueValues[i] = valueValue;
-        }
-        for (int i = 0; i < bestTable.length; ++i) {
-            String key = bestTable[i];
-            if (key != null) {
-                keyValues[i].setAddress(0, stringPool.getStringPointer(key));
-                valueValues[i].setAddress(0, writeValue(writer, stringPool, resourceMap.get(key)));
-            }
-        }
-
-        return start;
+        return writer.writeMap(
+                resourceMap.keys(),
+                String::hashCode,
+                stringPool::getStringPointer,
+                key -> writeValue(writer, stringPool, resourceMap.get(key))
+        );
     }
 
     private int writeResource(BinaryWriter writer, WasmStringPool stringPool, ResourceArray<?> resourceArray) {
@@ -193,14 +144,6 @@ class MetadataIntrinsic implements WasmIntrinsic {
         }
 
         return start;
-    }
-
-    private static int mod(int a, int b) {
-        a %= b;
-        if (a < 0) {
-            a += b;
-        }
-        return a;
     }
 
     private void writeValueTo(BinaryWriter writer, WasmStringPool stringPool, Class<?> type, DataValue target,

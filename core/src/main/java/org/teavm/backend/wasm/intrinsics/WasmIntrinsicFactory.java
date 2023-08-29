@@ -15,7 +15,12 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
+import org.teavm.dependency.DependencyAnalyzer;
+
 @FunctionalInterface
 public interface WasmIntrinsicFactory {
     WasmIntrinsic create(WasmIntrinsicFactoryContext context);
+
+    default void contributeDependencies(DependencyAnalyzer analyzer) {
+    }
 }

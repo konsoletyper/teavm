@@ -103,6 +103,12 @@ public interface CodeListener {
     default void memoryGrow() {
     }
 
+    default void memoryFill() {
+    }
+
+    default void memoryCopy() {
+    }
+
     default void int32Constant(int value) {
     }
 

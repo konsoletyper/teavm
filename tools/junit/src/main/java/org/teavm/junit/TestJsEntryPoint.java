@@ -52,6 +52,6 @@ final class TestJsEntryPoint {
         }
     }
 
-    @JSBody(params = "e", script = "window.teavmException = e")
+    @JSBody(params = "e", script = "teavmException = e")
     private static native void saveJavaException(String e);
 }

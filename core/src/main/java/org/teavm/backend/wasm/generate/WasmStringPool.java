@@ -22,6 +22,7 @@ import org.teavm.backend.wasm.binary.DataArray;
 import org.teavm.backend.wasm.binary.DataPrimitives;
 import org.teavm.backend.wasm.binary.DataStructure;
 import org.teavm.backend.wasm.binary.DataValue;
+import org.teavm.backend.wasm.render.WasmBinaryStatsCollector;
 import org.teavm.model.ValueType;
 import org.teavm.runtime.RuntimeObject;
 
@@ -38,10 +39,13 @@ public class WasmStringPool {
             DataPrimitives.ADDRESS, /* monitor */
             DataPrimitives.ADDRESS, /* characters */
             DataPrimitives.INT /* hash code */);
+    private WasmBinaryStatsCollector statsCollector;
 
-    public WasmStringPool(WasmClassGenerator classGenerator, BinaryWriter binaryWriter) {
+    public WasmStringPool(WasmClassGenerator classGenerator, BinaryWriter binaryWriter,
+            WasmBinaryStatsCollector statsCollector) {
         this.classGenerator = classGenerator;
         this.binaryWriter = binaryWriter;
+        this.statsCollector = statsCollector;
     }
 
     public int getStringPointer(String value) {
@@ -54,6 +58,8 @@ public class WasmStringPool {
     }
 
     private int generateStringPointer(String value) {
+        var start = binaryWriter.getAddress();
+
         DataArray charactersType = new DataArray(DataPrimitives.SHORT, value.length());
         DataStructure wrapperType = new DataStructure((byte) 0, arrayHeaderType, charactersType);
         DataValue wrapper = wrapperType.createValue();
@@ -72,6 +78,9 @@ public class WasmStringPool {
         classPointer = classGenerator.getClassPointer(ValueType.object(String.class.getName()));
         stringObject.setInt(0, (classPointer >>> 3) | RuntimeObject.GC_MARKED);
         stringObject.setAddress(2, binaryWriter.append(wrapper));
+
+        var size = binaryWriter.getAddress() - start;
+        statsCollector.addStringsSize(size);
 
         return stringPointer;
     }

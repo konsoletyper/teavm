@@ -90,6 +90,7 @@ import org.teavm.model.optimization.RedundantJumpElimination;
 import org.teavm.model.optimization.RedundantNullCheckElimination;
 import org.teavm.model.optimization.RepeatedFieldReadElimination;
 import org.teavm.model.optimization.ScalarReplacement;
+import org.teavm.model.optimization.SystemArrayCopyOptimization;
 import org.teavm.model.optimization.UnreachableBasicBlockElimination;
 import org.teavm.model.optimization.UnusedVariableElimination;
 import org.teavm.model.text.ListingBuilder;
@@ -375,6 +376,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return !cancelled;
         });
         target.contributeDependencies(dependencyAnalyzer);
+        dependencyAnalyzer.addDependencyListener(new StdlibDependencyListener());
         dependencyAnalyzer.processDependencies();
         if (wasCancelled() || !diagnostics.getSevereProblems().isEmpty()) {
             return;
@@ -782,6 +784,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         public ClassReaderSource getClassSource() {
             return dependencyAnalyzer.getClassSource();
         }
+
+        @Override
+        public ClassHierarchy getHierarchy() {
+            return dependencyAnalyzer.getClassHierarchy();
+        }
     }
 
     private List<MethodOptimization> getOptimizations() {
@@ -806,6 +813,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         optimizations.add(new ClassInitElimination());
         optimizations.add(new UnreachableBasicBlockElimination());
         optimizations.add(new UnusedVariableElimination());
+        optimizations.add(new SystemArrayCopyOptimization());
         return optimizations;
     }
 

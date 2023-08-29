@@ -52,7 +52,7 @@ TeaVM.wasm = function() {
         let length = instance.exports.teavm_arrayLength(arrayPtr);
         let arrayData = new DataView(memory, instance.exports.teavm_charArrayData(arrayPtr), length * 2);
         for (let i = 0; i < length; ++i) {
-            putwchar(arrayData.memory.getUint16(i * 2, true));
+            putwchar(arrayData.getUint16(i * 2, true));
         }
     }
     function logInt(i) {

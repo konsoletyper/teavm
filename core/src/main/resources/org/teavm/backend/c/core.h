@@ -129,6 +129,9 @@ extern void teavm_throwArrayIndexOutOfBoundsException();
 static inline int32_t teavm_compare_i32(int32_t a, int32_t b) {
     return a > b ? INT32_C(1) : a < b ? INT32_C(-1) : INT32_C(0);
 }
+static inline int32_t teavm_compare_u32(int32_t a, int32_t b) {
+    return (uint32_t) a > (uint32_t) b ? INT32_C(1) : (uint32_t) a < (uint32_t) b ? INT32_C(-1) : INT32_C(0);
+}
 static inline int32_t teavm_compare_i64(int64_t a, int64_t b) {
     return a > b ? INT32_C(1) : a < b ? INT32_C(-1) : INT32_C(0);
 }

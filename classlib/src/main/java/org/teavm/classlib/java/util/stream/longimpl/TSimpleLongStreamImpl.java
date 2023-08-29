@@ -92,6 +92,16 @@ public abstract class TSimpleLongStreamImpl implements TLongStream {
     }
 
     @Override
+    public TLongStream takeWhile(LongPredicate predicate) {
+        return new TTakeWhileLongStream(this, predicate);
+    }
+
+    @Override
+    public TLongStream dropWhile(LongPredicate predicate) {
+        return new TDropWhileLongStream(this, predicate);
+    }
+
+    @Override
     public TLongStream skip(long n) {
         return new TSkippingLongStreamImpl(this, (int) n);
     }

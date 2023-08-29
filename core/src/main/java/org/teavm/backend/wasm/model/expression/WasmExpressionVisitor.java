@@ -75,4 +75,8 @@ public interface WasmExpressionVisitor {
     void visit(WasmStoreFloat64 expression);
 
     void visit(WasmMemoryGrow expression);
+
+    void visit(WasmFill expression);
+
+    void visit(WasmCopy expression);
 }

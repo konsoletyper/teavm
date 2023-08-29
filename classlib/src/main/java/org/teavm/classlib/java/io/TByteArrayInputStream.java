@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
+import java.util.Arrays;
 import org.teavm.classlib.java.lang.TMath;
 
 public class TByteArrayInputStream extends TInputStream {
@@ -77,5 +79,15 @@ public class TByteArrayInputStream extends TInputStream {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public byte[] readAllBytes() throws IOException {
+        return Arrays.copyOfRange(buf, pos, count);
+    }
+
+    @Override
+    public byte[] readNBytes(int len) throws IOException {
+        return Arrays.copyOfRange(buf, pos, Math.min(count, pos + len));
     }
 }

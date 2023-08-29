@@ -24,6 +24,7 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.FieldReference;
+import org.teavm.model.ValueType;
 
 public interface WasmIntrinsicManager {
     WasmExpression generate(Expr expr);
@@ -39,6 +40,10 @@ public interface WasmIntrinsicManager {
     WasmLocal getTemporary(WasmType type);
 
     int getStaticField(FieldReference field);
+
+    int getClassPointer(ValueType type);
+
+    int getFunctionPointer(String name);
 
     void releaseTemporary(WasmLocal local);
 }

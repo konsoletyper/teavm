@@ -20,12 +20,6 @@ import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TUnsupportedOperationException;
 
-/**
- *
- * @author Alexey Andreev
- * @param <K>
- * @param <V>
- */
 public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
     public static class SimpleEntry<K, V> implements TMap.Entry<K, V>, TSerializable {
         private K key;
@@ -131,8 +125,8 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
         }
     }
 
-    TSet<K> cachedKeySet;
-    TCollection<V> cachedValues;
+    transient TSet<K> cachedKeySet;
+    transient TCollection<V> cachedValues;
 
     protected TAbstractMap() {
     }

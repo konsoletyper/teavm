@@ -27,7 +27,7 @@ public abstract class JSError implements JSObject {
             + "} catch (e) {"
                 + "return catchClause(e);"
             + "}")
-    public static native <T extends JSObject> T catchNative(TryClause<T> tryClause, CatchClause<T> catchClause);
+    public static native <T> T catchNative(TryClause<T> tryClause, CatchClause<T> catchClause);
 
     @JSBody(params = "object", script = "return object instanceof Error;")
     public static native boolean isError(JSObject object);
@@ -42,12 +42,12 @@ public abstract class JSError implements JSObject {
     public abstract String getName();
 
     @JSFunctor
-    public interface TryClause<T extends JSObject> extends JSObject {
+    public interface TryClause<T> extends JSObject {
         T run();
     }
 
     @JSFunctor
-    public interface CatchClause<T extends JSObject> extends JSObject {
+    public interface CatchClause<T> extends JSObject {
         T accept(JSObject e);
     }
 }

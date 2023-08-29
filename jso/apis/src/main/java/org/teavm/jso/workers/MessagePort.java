@@ -15,14 +15,13 @@
  */
 package org.teavm.jso.workers;
 
-import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.EventTarget;
 import org.teavm.jso.dom.events.MessageEvent;
 
 public interface MessagePort extends EventTarget {
-    void postMessage(JSObject message);
+    void postMessage(Object message);
 
     void start();
 

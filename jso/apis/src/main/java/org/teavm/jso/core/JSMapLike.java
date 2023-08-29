@@ -18,7 +18,7 @@ package org.teavm.jso.core;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
 
-public interface JSMapLike<T extends JSObject> extends JSObject {
+public interface JSMapLike<T> extends JSObject {
     @JSIndexer
     T get(String key);
 

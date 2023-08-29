@@ -18,10 +18,9 @@ package org.teavm.jso.core;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
-import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-public abstract class JSArray<T extends JSObject> implements JSArrayReader<T> {
+public abstract class JSArray<T> implements JSArrayReader<T> {
     private JSArray() {
     }
 
@@ -85,18 +84,18 @@ public abstract class JSArray<T extends JSObject> implements JSArrayReader<T> {
 
     @JSBody(script = "return new Array();")
     @NoSideEffects
-    public static native <T extends JSObject> JSArray<T> create();
+    public static native <T> JSArray<T> create();
 
     @JSBody(params = "size", script = "return new Array(size);")
     @NoSideEffects
-    public static native <T extends JSObject> JSArray<T> create(int size);
+    public static native <T> JSArray<T> create(int size);
 
     @JSBody(params = "object", script = "return Array.isArray(object);")
     @NoSideEffects
-    public static native boolean isArray(JSObject object);
+    public static native boolean isArray(Object object);
 
     @SafeVarargs
-    public static <S extends JSObject> JSArray<S> of(S... items) {
+    public static <S> JSArray<S> of(S... items) {
         JSArray<S> array = create(items.length);
         for (int i = 0; i < items.length; ++i) {
             array.set(i, items[i]);

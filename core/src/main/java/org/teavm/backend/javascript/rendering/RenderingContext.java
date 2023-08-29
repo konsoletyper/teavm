@@ -47,7 +47,7 @@ import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.ClassInitializerInfo;
 
-public class RenderingContext {
+public abstract class RenderingContext {
     private final DebugInformationEmitter debugEmitter;
     private ClassReaderSource initialClassSource;
     private ListableClassReaderSource classSource;
@@ -405,6 +405,8 @@ public class RenderingContext {
     public boolean isStrict() {
         return strict;
     }
+
+    public abstract String importModule(String name);
 
     @PlatformMarker
     private static boolean isBootstrap() {

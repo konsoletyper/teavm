@@ -121,23 +121,25 @@ public class JCLComparisonBuilder {
         var packageMap = new HashMap<String, JCLPackage>();
         var classSource = new ClasspathClassHolderSource(classLoader, new ReferenceCache());
         visitor = new JCLComparisonVisitor(classSource, packageMap);
-        try {
-            var fs = FileSystems.getFileSystem(URI.create("jrt:/"));
-            var p = fs.getPath("modules/java.base/java");
-            Files.walkFileTree(p, new SimpleFileVisitor<>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    if (validateName(file.getFileName().toString())) {
-                        try (InputStream input = Files.newInputStream(file)) {
-                            compareClass(input);
+        for (var moduleName : List.of("java.base", "java.logging")) {
+            try {
+                var fs = FileSystems.getFileSystem(URI.create("jrt:/"));
+                var p = fs.getPath("modules/" + moduleName + "/java");
+                Files.walkFileTree(p, new SimpleFileVisitor<>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        if (validateName(file.getFileName().toString())) {
+                            try (InputStream input = Files.newInputStream(file)) {
+                                compareClass(input);
+                            }
                         }
+                        return FileVisitResult.CONTINUE;
                     }
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-            System.out.println();
-        } catch (FileSystemNotFoundException ex) {
-            System.out.println("Could not read my modules (perhaps not Java 9?).");
+                });
+                System.out.println();
+            } catch (FileSystemNotFoundException ex) {
+                System.out.println("Could not read my modules (perhaps not Java 9?).");
+            }
         }
 
         for (JCLPackage pkg : packageMap.values()) {

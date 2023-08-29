@@ -50,7 +50,6 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
     private static final int MAX_PORT = 1 << 16;
     private static final String DAEMON_MESSAGE_PREFIX = "TeaVM daemon port: ";
     private static final String INCREMENTAL_PROPERTY = "teavm.daemon.incremental";
-    private static final String DEBUG_PORT_PROPERTY = "teavm.daemon.debug.port";
     private boolean incremental;
     private int port;
     private Registry registry;
@@ -269,6 +268,11 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
 
     public static DaemonInfo start(boolean incremental, int daemonMemory, DaemonLog log,
             String... classPathEntries) throws IOException {
+        return start(0, incremental, daemonMemory, log, classPathEntries);
+    }
+
+    public static DaemonInfo start(int debugPort, boolean incremental, int daemonMemory, DaemonLog log,
+            String... classPathEntries) throws IOException {
         String javaHome = System.getProperty("java.home");
         String javaCommand = javaHome + "/bin/java";
         String classPath = String.join(File.pathSeparator, classPathEntries);
@@ -278,8 +282,7 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
                 "-D" + INCREMENTAL_PROPERTY + "=" + incremental,
                 "-Xmx" + daemonMemory + "m"));
 
-        String debugPort = System.getProperty(DEBUG_PORT_PROPERTY);
-        if (debugPort != null) {
+        if (debugPort != 0) {
             arguments.add("-agentlib:jdwp=transport=dt_socket,quiet=y,server=y,address=" + debugPort + ",suspend=y");
         }
 

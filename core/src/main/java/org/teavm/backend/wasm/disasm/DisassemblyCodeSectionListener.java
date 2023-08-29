@@ -382,6 +382,16 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
         writer.address(address).write("memory.grow").eol();
     }
 
+    @Override
+    public void memoryFill() {
+        writer.address(address).write("memory.fill").eol();
+    }
+
+    @Override
+    public void memoryCopy() {
+        writer.address(address).write("memory.copy").eol();
+    }
+
     private void writeMemArg(int align, int defaultAlign, int offset) {
         var needsComma = false;
         if (align != defaultAlign) {

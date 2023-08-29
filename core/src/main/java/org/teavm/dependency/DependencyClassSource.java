@@ -63,9 +63,6 @@ class DependencyClassSource implements ClassHolderSource {
             throw new IllegalArgumentException("Class " + cls.getName() + " is already defined");
         }
         if (!transformers.isEmpty()) {
-            for (ClassHolderTransformer transformer : transformers) {
-                transformer.transformClass(cls, transformContext);
-            }
             cls = ModelUtils.copyClass(cls);
         }
         generatedClasses.put(cls.getName(), cls);

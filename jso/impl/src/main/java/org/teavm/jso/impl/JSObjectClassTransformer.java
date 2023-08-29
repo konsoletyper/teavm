@@ -25,6 +25,7 @@ import java.util.Set;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationReader;
@@ -129,7 +130,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
 
             for (int i = 0; i < method.parameterCount(); ++i) {
                 variablesToPass[i] = marshaller.unwrapReturnValue(callLocation, variablesToPass[i],
-                        method.parameterType(i), false);
+                        method.parameterType(i), false, true);
             }
 
             basicBlock.addAll(marshallInstructions);
@@ -154,9 +155,21 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
 
             classHolder.addMethod(exportedMethod);
 
-            String publicAlias = classToExpose.methods.get(method);
-            AnnotationHolder annot = new AnnotationHolder(JSMethodToExpose.class.getName());
-            annot.getValues().put("name", new AnnotationValue(publicAlias));
+            var export = classToExpose.methods.get(method);
+            String annotationName;
+            switch (export.kind) {
+                case GETTER:
+                    annotationName = JSGetterToExpose.class.getName();
+                    break;
+                case SETTER:
+                    annotationName = JSSetterToExpose.class.getName();
+                    break;
+                default:
+                    annotationName = JSMethodToExpose.class.getName();
+                    break;
+            }
+            AnnotationHolder annot = new AnnotationHolder(annotationName);
+            annot.getValues().put("name", new AnnotationValue(export.alias));
             exportedMethod.getAnnotations().add(annot);
 
             if (methodRef.equals(functorMethod)) {
@@ -189,8 +202,8 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         }
         if (cls.getParent() != null) {
             ExposedClass parent = getExposedClass(cls.getParent());
-            exposedCls.inheritedMethods.putAll(parent.inheritedMethods);
-            exposedCls.inheritedMethods.putAll(parent.methods);
+            exposedCls.inheritedMethods.addAll(parent.inheritedMethods);
+            exposedCls.inheritedMethods.addAll(parent.methods.keySet());
             exposedCls.implementedInterfaces.addAll(parent.implementedInterfaces);
         }
         addInterfaces(exposedCls, cls);
@@ -213,10 +226,12 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
                             || (method.getProgram() != null && method.getProgram().basicBlockCount() > 0)) {
                         continue;
                     }
-                    if (!exposedCls.inheritedMethods.containsKey(method.getDescriptor())) {
-                        String name = method.getName();
+                    if (!exposedCls.inheritedMethods.contains(method.getDescriptor())) {
+                        String name = null;
+                        MethodKind kind = MethodKind.METHOD;
                         AnnotationReader methodAnnot = method.getAnnotations().get(JSMethod.class.getName());
                         if (methodAnnot != null) {
+                            name = method.getName();
                             AnnotationValue nameVal = methodAnnot.getValue("value");
                             if (nameVal != null) {
                                 String nameStr = nameVal.getString();
@@ -224,8 +239,43 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
                                     name = nameStr;
                                 }
                             }
+                        } else {
+                            var propertyAnnot = method.getAnnotations().get(JSProperty.class.getName());
+                            if (propertyAnnot != null) {
+                                AnnotationValue nameVal = propertyAnnot.getValue("value");
+                                if (nameVal != null) {
+                                    String nameStr = nameVal.getString();
+                                    if (!nameStr.isEmpty()) {
+                                        name = nameStr;
+                                    }
+                                }
+                                String expectedPrefix;
+                                if (method.parameterCount() == 0) {
+                                    if (method.getResultType() == ValueType.BOOLEAN) {
+                                        expectedPrefix = "is";
+                                    } else {
+                                        expectedPrefix = "get";
+                                    }
+                                    kind = MethodKind.GETTER;
+                                } else {
+                                    expectedPrefix = "set";
+                                    kind = MethodKind.SETTER;
+                                }
+
+                                if (name == null) {
+                                    name = method.getName();
+                                    if (name.startsWith(expectedPrefix) && name.length() > expectedPrefix.length()
+                                            && Character.isUpperCase(name.charAt(expectedPrefix.length()))) {
+                                        name = Character.toLowerCase(name.charAt(expectedPrefix.length()))
+                                                + name.substring(expectedPrefix.length() + 1);
+                                    }
+                                }
+                            }
                         }
-                        exposedCls.methods.put(method.getDescriptor(), name);
+                        if (name == null) {
+                            name = method.getName();
+                        }
+                        exposedCls.methods.put(method.getDescriptor(), new MethodExport(name, kind));
                     }
                 }
             }
@@ -256,8 +306,24 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     }
 
     static class ExposedClass {
-        Map<MethodDescriptor, String> inheritedMethods = new HashMap<>();
-        Map<MethodDescriptor, String> methods = new HashMap<>();
+        Set<MethodDescriptor> inheritedMethods = new HashSet<>();
+        Map<MethodDescriptor, MethodExport> methods = new HashMap<>();
         Set<String> implementedInterfaces = new HashSet<>();
+    }
+
+    enum MethodKind {
+        METHOD,
+        GETTER,
+        SETTER
+    }
+
+    static class MethodExport {
+        final String alias;
+        final MethodKind kind;
+
+        MethodExport(String alias, MethodKind kind) {
+            this.alias = alias;
+            this.kind = kind;
+        }
     }
 }

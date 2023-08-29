@@ -27,10 +27,12 @@ import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
+import org.teavm.backend.wasm.model.expression.WasmCopy;
 import org.teavm.backend.wasm.model.expression.WasmDefaultExpressionVisitor;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmExpressionVisitor;
+import org.teavm.backend.wasm.model.expression.WasmFill;
 import org.teavm.backend.wasm.model.expression.WasmFloat32Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloat64Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinary;
@@ -599,6 +601,24 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmMemoryGrow expression) {
         open().append("memory.grow");
         line(expression.getAmount());
+        close();
+    }
+
+    @Override
+    public void visit(WasmCopy expression) {
+        open().append("memory.copy");
+        line(expression.getDestinationIndex());
+        line(expression.getSourceIndex());
+        line(expression.getCount());
+        close();
+    }
+
+    @Override
+    public void visit(WasmFill expression) {
+        open().append("memory.fill");
+        line(expression.getIndex());
+        line(expression.getValue());
+        line(expression.getCount());
         close();
     }
 

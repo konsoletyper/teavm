@@ -20,16 +20,25 @@ import java.util.function.LongUnaryOperator;
 
 public class TIterateLongStream extends TSimpleLongStreamImpl {
     private long value;
+    private LongPredicate pr;
     private LongUnaryOperator f;
 
     public TIterateLongStream(long value, LongUnaryOperator f) {
+        this(value, t -> true, f);
+    }
+
+    public TIterateLongStream(long value, LongPredicate pr, LongUnaryOperator f) {
         this.value = value;
+        this.pr = pr;
         this.f = f;
     }
 
     @Override
     public boolean next(LongPredicate consumer) {
         while (true) {
+            if (!pr.test(value)) {
+                return false;
+            }
             long valueToReport = value;
             value = f.applyAsLong(value);
             if (!consumer.test(valueToReport)) {

@@ -19,33 +19,31 @@ import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-public interface JSFunction extends JSObject {
+public abstract class JSFunction implements JSObject {
     @JSProperty
-    int getLength();
+    public abstract int getLength();
 
     @JSProperty
-    String getName();
+    public abstract String getName();
 
-    JSObject call(JSObject thisArg);
+    public abstract Object call(Object thisArg);
 
-    JSObject call(JSObject thisArg, JSObject a);
+    public abstract Object call(Object thisArg, Object a);
 
-    JSObject call(JSObject thisArg, JSObject a, JSObject b);
+    public abstract Object call(Object thisArg, Object a, Object b);
 
-    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c);
+    public abstract Object call(Object thisArg, Object a, Object b, Object c);
 
-    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c,
-            JSObject d);
+    public abstract Object call(Object thisArg, Object a, Object b, Object c, Object d);
 
-    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e);
+    public abstract Object call(Object thisArg, Object a, Object b, Object c, Object d, Object e);
 
-    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f);
+    public abstract Object call(Object thisArg, Object a, Object b, Object c, Object d, Object e, Object f);
 
-    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
-            JSObject g);
+    public abstract Object call(Object thisArg, Object a, Object b, Object c, Object d, Object e, Object f, Object g);
 
-    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
-            JSObject g, JSObject h);
+    public abstract Object call(Object thisArg, Object a, Object b, Object c, Object d, Object e, Object f, Object g,
+            Object h);
 
-    JSObject apply(JSObject thisArg, @JSByRef JSObject[] arguments);
+    public abstract Object apply(Object thisArg, @JSByRef Object[] arguments);
 }

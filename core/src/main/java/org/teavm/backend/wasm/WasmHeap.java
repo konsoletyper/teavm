@@ -19,6 +19,7 @@ import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.interop.Address;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Unmanaged;
+import org.teavm.runtime.Allocator;
 
 @StaticInit
 @Unmanaged
@@ -99,11 +100,11 @@ public final class WasmHeap {
             memoryLimit = newMemoryLimit;
         }
         if (storageSize > 0) {
-            WasmRuntime.moveMemoryBlock(storageAddress, newStorageAddress, storageSize);
+            Allocator.moveMemoryBlock(storageAddress, newStorageAddress, storageSize);
         }
         if (regionsSize > 0) {
-            WasmRuntime.moveMemoryBlock(cardTable, newCardTable, regionsCount);
-            WasmRuntime.moveMemoryBlock(regionsAddress, newRegionsAddress, regionsSize);
+            Allocator.moveMemoryBlock(cardTable, newCardTable, regionsCount);
+            Allocator.moveMemoryBlock(regionsAddress, newRegionsAddress, regionsSize);
         }
 
         storageAddress = newStorageAddress;

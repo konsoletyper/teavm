@@ -83,6 +83,10 @@ public interface TIntStream extends TBaseStream<Integer, TIntStream> {
 
     TIntStream limit(long maxSize);
 
+    TIntStream takeWhile(IntPredicate predicate);
+
+    TIntStream dropWhile(IntPredicate predicate);
+
     TIntStream skip(long n);
 
     void forEach(IntConsumer action);
@@ -149,6 +153,10 @@ public interface TIntStream extends TBaseStream<Integer, TIntStream> {
 
     static TIntStream iterate(int seed, IntUnaryOperator f) {
         return new TIterateIntStream(seed, f);
+    }
+
+    static TIntStream iterate(int seed, IntPredicate pr, IntUnaryOperator f) {
+        return new TIterateIntStream(seed, pr, f);
     }
 
     static TIntStream generate(IntSupplier s) {

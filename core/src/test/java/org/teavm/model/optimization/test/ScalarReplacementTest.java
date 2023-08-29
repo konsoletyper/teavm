@@ -20,6 +20,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.teavm.dependency.DependencyInfo;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ListingParseUtils;
@@ -114,6 +115,11 @@ public class ScalarReplacementTest {
 
             @Override
             public ClassReaderSource getClassSource() {
+                return null;
+            }
+
+            @Override
+            public ClassHierarchy getHierarchy() {
                 return null;
             }
         };

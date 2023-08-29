@@ -22,10 +22,11 @@ import java.util.Set;
 import org.teavm.model.MethodReference;
 
 class JSBodyRepository {
-    public final Map<MethodReference, JSBodyEmitter> emitters = new HashMap<>();
-    public final Map<MethodReference, MethodReference> methodMap = new HashMap<>();
-    public final Set<MethodReference> processedMethods = new HashSet<>();
-    public final Set<MethodReference> inlineMethods = new HashSet<>();
-    public final Map<MethodReference, MethodReference> callbackCallees = new HashMap<>();
-    public final Map<MethodReference, Set<MethodReference>> callbackMethods = new HashMap<>();
+    final Map<MethodReference, JSBodyEmitter> emitters = new HashMap<>();
+    final Map<MethodReference, JsBodyImportInfo[]> imports = new HashMap<>();
+    final Map<MethodReference, MethodReference> methodMap = new HashMap<>();
+    final Set<MethodReference> processedMethods = new HashSet<>();
+    final Set<MethodReference> inlineMethods = new HashSet<>();
+    final Map<MethodReference, MethodReference> callbackCallees = new HashMap<>();
+    final Map<MethodReference, Set<MethodReference>> callbackMethods = new HashMap<>();
 }
