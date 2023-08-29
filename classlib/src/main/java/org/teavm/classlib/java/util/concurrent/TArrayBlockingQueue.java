@@ -447,7 +447,7 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
         TThread.currentThread().interruptHandler = handler;
     }
 
-    class WaitHandler implements PlatformRunnable, TThreadInterruptHandler, EventQueue.Event {
+    static class WaitHandler implements PlatformRunnable, TThreadInterruptHandler, EventQueue.Event {
         AsyncCallback<Boolean> callback;
         boolean complete;
         int timerId;

@@ -29,6 +29,7 @@ import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
@@ -97,6 +98,9 @@ public abstract class TeaVMTask extends DefaultTask {
 
     @Classpath
     public abstract ConfigurableFileCollection getDaemonClasspath();
+    
+    @Internal
+    public abstract Property<Integer> getDaemonDebugPort();
 
     @TaskAction
     public void execute() throws BuildException, IOException, NotBoundException {
@@ -108,7 +112,8 @@ public abstract class TeaVMTask extends DefaultTask {
     }
 
     private void executeInSeparateProcess() throws BuildException, IOException, NotBoundException {
-        var daemon = BuildDaemon.start(false, getProcessMemory().get(), new DaemonLogImpl(),
+        var debugPort = getDaemonDebugPort().isPresent() ? getDaemonDebugPort().get() : 0;
+        var daemon = BuildDaemon.start(debugPort, false, getProcessMemory().get(), new DaemonLogImpl(),
                 createDaemonClassPath());
 
         try {

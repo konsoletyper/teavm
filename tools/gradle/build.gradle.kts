@@ -64,6 +64,7 @@ val configPath = project.layout.buildDirectory.dir("generated/sources/config")
 
 val createConfig by tasks.registering {
     outputs.dir(configPath)
+    inputs.property("version", project.version)
     val baseDir = configPath.get().asFile
     val jso = findArtifactCoordinates(":jso:core")
     val jsoApis = findArtifactCoordinates(":jso:apis")

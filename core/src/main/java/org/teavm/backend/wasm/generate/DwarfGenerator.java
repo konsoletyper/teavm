@@ -26,7 +26,7 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_ADDR;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_DATA2;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_SEC_OFFSET;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_STRP;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_LANG_JAVA;
+import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_LANG_C_PLUS_PLUS;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_COMPILE_UNIT;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_UT_COMPILE;
 import java.util.ArrayList;
@@ -82,7 +82,7 @@ public class DwarfGenerator {
             data.writeLEB(DW_AT_HIGH_PC).writeLEB(DW_FORM_ADDR);
         }));
         infoWriter.writeInt(strings.stringRef("TeaVM"));
-        infoWriter.writeShort(DW_LANG_JAVA);
+        infoWriter.writeShort(DW_LANG_C_PLUS_PLUS);
         infoWriter.writeInt(strings.stringRef("classes.wasm"));
         infoWriter.writeInt(0);
         infoWriter.writeInt(0);

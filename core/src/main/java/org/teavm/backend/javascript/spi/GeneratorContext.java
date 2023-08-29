@@ -28,6 +28,8 @@ import org.teavm.model.ValueType;
 public interface GeneratorContext extends ServiceRepository {
     String getParameterName(int index);
 
+    String importModule(String name);
+
     ClassReaderSource getInitialClassSource();
 
     ListableClassReaderSource getClassSource();

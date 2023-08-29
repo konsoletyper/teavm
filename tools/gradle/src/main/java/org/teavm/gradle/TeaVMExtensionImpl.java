@@ -66,7 +66,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         js.getTargetFileName().convention(project.provider(() -> project.getName() + ".js"));
         js.getAddedToWebApp().convention(property("js.addedToWebApp").map(Boolean::parseBoolean).orElse(false));
         js.getOptimization().convention(property("js.optimization").map(OptimizationLevel::valueOf)
-                .orElse(OptimizationLevel.AGGRESSIVE));
+                .orElse(OptimizationLevel.BALANCED));
     }
 
     private void setupWasmDefaults() {

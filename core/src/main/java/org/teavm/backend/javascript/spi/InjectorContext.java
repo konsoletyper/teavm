@@ -27,6 +27,8 @@ import org.teavm.model.ValueType;
 public interface InjectorContext extends ServiceRepository {
     Expr getArgument(int index);
 
+    String importModule(String name);
+
     int argumentCount();
 
     boolean isMinifying();

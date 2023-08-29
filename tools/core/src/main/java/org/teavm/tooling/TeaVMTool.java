@@ -76,7 +76,7 @@ public class TeaVMTool {
     private String targetFileName = "";
     private boolean obfuscated = true;
     private boolean strict;
-    private int maxTopLevelNames = 10000;
+    private int maxTopLevelNames = 1000000;
     private String mainClass;
     private String entryPointName = "main";
     private Properties properties = new Properties();

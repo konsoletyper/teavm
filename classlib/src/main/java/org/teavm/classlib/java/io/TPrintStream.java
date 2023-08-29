@@ -208,12 +208,12 @@ public class TPrintStream extends TFilterOutputStream {
     }
 
     public void println(char c) {
-        sb.append(c);
+        sb.append(c).append('\n');
         printSB();
     }
 
     public void println(boolean b) {
-        sb.append(b);
+        sb.append(b).append('\n');
         printSB();
     }
 

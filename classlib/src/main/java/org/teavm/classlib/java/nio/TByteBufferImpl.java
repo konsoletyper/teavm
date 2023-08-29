@@ -353,6 +353,46 @@ class TByteBufferImpl extends TByteBuffer {
     }
 
     @Override
+    public float getFloat() {
+        return Float.intBitsToFloat(getInt());
+    }
+
+    @Override
+    public TByteBuffer putFloat(float value) {
+        return putInt(Float.floatToRawIntBits(value));
+    }
+
+    @Override
+    public TByteBuffer putFloat(int index, float value) {
+        return putInt(index, Float.floatToRawIntBits(value));
+    }
+
+    @Override
+    public float getFloat(int index) {
+        return Float.intBitsToFloat(getInt(index));
+    }
+
+    @Override
+    public double getDouble() {
+        return Double.longBitsToDouble(getLong());
+    }
+
+    @Override
+    public TByteBuffer putDouble(double value) {
+        return putLong(Double.doubleToLongBits(value));
+    }
+
+    @Override
+    public double getDouble(int index) {
+        return Double.longBitsToDouble(getLong(index));
+    }
+
+    @Override
+    public TByteBuffer putDouble(int index, double value) {
+        return putLong(index, Double.doubleToLongBits(value));
+    }
+
+    @Override
     public long getLong() {
         if (position + 7 >= limit) {
             throw new TBufferUnderflowException();

@@ -19,7 +19,6 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_HIGH_PC;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_LOCATION;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_LOW_PC;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_NAME;
-import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_SPECIFICATION;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_AT_TYPE;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_ADDR;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_FORM_EXPRLOC;
@@ -31,63 +30,75 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_FORMAL_PARAMETE
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_SUBPROGRAM;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_VARIABLE;
 import org.teavm.backend.wasm.blob.Blob;
-import org.teavm.backend.wasm.blob.Marker;
 import org.teavm.backend.wasm.debug.info.VariableType;
 import org.teavm.backend.wasm.dwarf.DwarfAbbreviation;
-import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.dwarf.DwarfInfoWriter;
 
 public class DwarfFunctionGenerator {
     private DwarfClassGenerator classGen;
-    private DwarfGenerator generator;
-    private WasmFunction function;
-    private int offset;
-    private Marker endProgramMarker;
+    private DwarfInfoWriter writer;
+    private DwarfStrings strings;
     private DwarfAbbreviation methodAbbrev;
-    private DwarfAbbreviation functionAbbrev;
     private DwarfAbbreviation parameterAbbrev;
     private DwarfAbbreviation variableAbbrev;
-    private DwarfClassGenerator.Subprogram subprogram;
 
-    public DwarfFunctionGenerator(DwarfClassGenerator classGen, DwarfGenerator generator) {
+    public DwarfFunctionGenerator(DwarfClassGenerator classGen, DwarfInfoWriter writer, DwarfStrings strings) {
         this.classGen = classGen;
-        this.generator = generator;
+        this.writer = writer;
+        this.strings = strings;
     }
 
-    public void begin(WasmFunction function, int offset) {
-        if (function.getName() == null) {
-            return;
-        }
-
-        subprogram = classGen.getSubprogram(function.getName());
-        var writer = generator.getInfoWriter();
-        var strings = generator.strings;
-        writer.tag(subprogram != null ? getMethodAbbrev() : getFunctionAbbrev());
-        if (subprogram != null) {
-            writer.ref(subprogram.ref, Blob::writeInt);
-        } else {
-            writer.writeInt(strings.stringRef(subprogram != null ? subprogram.name : function.getName()));
-        }
-        writer.writeInt(offset);
-        endProgramMarker = writer.marker();
-        writer.skip(4);
-
-        this.function = function;
-        this.offset = offset;
-
-        writeLocals();
-    }
-
-    private void writeLocals() {
-        if (subprogram == null) {
+    public void prepareContent(DwarfClassGenerator.Subprogram subprogram) {
+        if (subprogram.function == null || subprogram.function.getName() == null) {
             return;
         }
         var descriptor = subprogram.descriptor;
         if (descriptor == null) {
             return;
         }
+        var function = subprogram.function;
 
-        var writer = generator.getInfoWriter();
-        var strings = generator.strings;
+        var offset = subprogram.isStatic ? 0 : 1;
+        int count = Math.min(function.getLocalVariables().size() - offset, descriptor.parameterCount());
+        for (var i = 0; i < count; ++i) {
+            var local = function.getLocalVariables().get(i + offset);
+            if (local.getName() == null) {
+                continue;
+            }
+            classGen.getTypePtr(descriptor.parameterType(i));
+        }
+
+        for (var i = count + offset; i < function.getLocalVariables().size(); ++i) {
+            var local = function.getLocalVariables().get(i);
+            if (local.getName() == null || local.getJavaType() == null) {
+                continue;
+            }
+            classGen.getTypePtr(local.getJavaType());
+        }
+    }
+
+    public void writeContent(DwarfClassGenerator.Subprogram subprogram) {
+        if (subprogram.function.getName() == null) {
+            return;
+        }
+
+        writer.tag(getMethodAbbrev());
+        writer.writeInt(strings.stringRef(subprogram.name));
+        writer.writeInt(subprogram.startOffset);
+        writer.writeInt(subprogram.endOffset);
+
+        writeLocals(subprogram);
+
+        writer.emptyTag();
+    }
+
+    private void writeLocals(DwarfClassGenerator.Subprogram subprogram) {
+        var descriptor = subprogram.descriptor;
+        if (descriptor == null) {
+            return;
+        }
+
+        var function = subprogram.function;
         var offset = subprogram.isStatic ? 0 : 1;
         int count = Math.min(function.getLocalVariables().size() - offset, descriptor.parameterCount());
         for (var i = 0; i < count; ++i) {
@@ -101,6 +112,9 @@ public class DwarfFunctionGenerator {
 
             var operations = new Blob();
             operations.writeByte(DW_OP_WASM_LOCATION).writeByte(0).writeLEB(i + 1);
+            if (local.getJavaType() == VariableType.OBJECT) {
+                operations.writeByte(DW_OP_STACK_VALUE);
+            }
             writer.writeLEB(operations.size());
             operations.newReader(writer::write).readRemaining();
         }
@@ -124,29 +138,10 @@ public class DwarfFunctionGenerator {
         }
     }
 
-    public void end(int size) {
-        if (function == null) {
-            return;
-        }
-
-        var writer = generator.getInfoWriter();
-        if (endProgramMarker != null) {
-            var backup = writer.marker();
-            endProgramMarker.rewind();
-            writer.writeInt(offset + size);
-            backup.rewind();
-        }
-        writer.emptyTag();
-        classGen.flushTypes();
-        subprogram = null;
-        endProgramMarker = null;
-        function = null;
-    }
-
     private DwarfAbbreviation getMethodAbbrev() {
         if (methodAbbrev == null) {
-            methodAbbrev = generator.getInfoWriter().abbreviation(DW_TAG_SUBPROGRAM, true, data -> {
-                data.writeLEB(DW_AT_SPECIFICATION).writeLEB(DW_FORM_REF4);
+            methodAbbrev = writer.abbreviation(DW_TAG_SUBPROGRAM, true, data -> {
+                data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
                 data.writeLEB(DW_AT_LOW_PC).writeLEB(DW_FORM_ADDR);
                 data.writeLEB(DW_AT_HIGH_PC).writeLEB(DW_FORM_ADDR);
             });
@@ -154,20 +149,9 @@ public class DwarfFunctionGenerator {
         return methodAbbrev;
     }
 
-    private DwarfAbbreviation getFunctionAbbrev() {
-        if (functionAbbrev == null) {
-            functionAbbrev = generator.getInfoWriter().abbreviation(DW_TAG_SUBPROGRAM, true, data -> {
-                data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
-                data.writeLEB(DW_AT_LOW_PC).writeLEB(DW_FORM_ADDR);
-                data.writeLEB(DW_AT_HIGH_PC).writeLEB(DW_FORM_ADDR);
-            });
-        }
-        return functionAbbrev;
-    }
-
     private DwarfAbbreviation getParameterAbbrev() {
         if (parameterAbbrev == null) {
-            parameterAbbrev = generator.getInfoWriter().abbreviation(DW_TAG_FORMAL_PARAMETER, false, data -> {
+            parameterAbbrev = writer.abbreviation(DW_TAG_FORMAL_PARAMETER, false, data -> {
                 data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
                 data.writeLEB(DW_AT_TYPE).writeLEB(DW_FORM_REF4);
                 data.writeLEB(DW_AT_LOCATION).writeLEB(DW_FORM_EXPRLOC);
@@ -178,7 +162,7 @@ public class DwarfFunctionGenerator {
 
     private DwarfAbbreviation getVariableAbbrev() {
         if (variableAbbrev == null) {
-            variableAbbrev = generator.getInfoWriter().abbreviation(DW_TAG_VARIABLE, false, data -> {
+            variableAbbrev = writer.abbreviation(DW_TAG_VARIABLE, false, data -> {
                 data.writeLEB(DW_AT_NAME).writeLEB(DW_FORM_STRP);
                 data.writeLEB(DW_AT_TYPE).writeLEB(DW_FORM_REF4);
                 data.writeLEB(DW_AT_LOCATION).writeLEB(DW_FORM_EXPRLOC);

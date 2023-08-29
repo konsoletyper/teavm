@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.AccessLevel;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
@@ -153,6 +154,11 @@ public class RepeatedFieldReadEliminationTest {
             @Override
             public ClassReaderSource getClassSource() {
                 return classSource;
+            }
+
+            @Override
+            public ClassHierarchy getHierarchy() {
+                return null;
             }
         };
 

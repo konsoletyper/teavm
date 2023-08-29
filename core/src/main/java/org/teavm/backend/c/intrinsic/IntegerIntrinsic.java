@@ -27,6 +27,7 @@ public class IntegerIntrinsic implements Intrinsic {
         switch (method.getName()) {
             case "divideUnsigned":
             case "remainderUnsigned":
+            case "compareUnsigned":
                 return true;
             default:
                 return false;
@@ -41,6 +42,13 @@ public class IntegerIntrinsic implements Intrinsic {
                 break;
             case "remainderUnsigned":
                 writeBinary(context, invocation, "%");
+                break;
+            case "compareUnsigned":
+                context.writer().print("teavm_compare_u32(");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(", ");
+                context.emit(invocation.getArguments().get(1));
+                context.writer().print(")");
                 break;
         }
     }

@@ -316,8 +316,8 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
     }
 
     public void removeIncomingsFrom(BasicBlock predecessor) {
-        for (Phi phi : getPhis()) {
-            List<Incoming> incomings = phi.getIncomings();
+        for (var phi : getPhis()) {
+            var incomings = phi.getIncomings();
             for (int i = 0; i < incomings.size(); ++i) {
                 if (incomings.get(i).getSource() == predecessor) {
                     incomings.remove(i--);

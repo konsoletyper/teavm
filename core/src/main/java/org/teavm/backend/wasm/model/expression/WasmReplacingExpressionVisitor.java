@@ -227,4 +227,28 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
         expression.getAmount().acceptVisitor(this);
         expression.setAmount(mapper.apply(expression.getAmount()));
     }
+
+    @Override
+    public void visit(WasmFill expression) {
+        expression.getIndex().acceptVisitor(this);
+        expression.setIndex(mapper.apply(expression.getIndex()));
+
+        expression.getValue().acceptVisitor(this);
+        expression.setValue(mapper.apply(expression.getValue()));
+
+        expression.getCount().acceptVisitor(this);
+        expression.setCount(mapper.apply(expression.getCount()));
+    }
+
+    @Override
+    public void visit(WasmCopy expression) {
+        expression.getSourceIndex().acceptVisitor(this);
+        expression.setSourceIndex(mapper.apply(expression.getSourceIndex()));
+
+        expression.getDestinationIndex().acceptVisitor(this);
+        expression.setDestinationIndex(mapper.apply(expression.getDestinationIndex()));
+
+        expression.getCount().acceptVisitor(this);
+        expression.setCount(mapper.apply(expression.getCount()));
+    }
 }

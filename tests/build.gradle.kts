@@ -39,11 +39,23 @@ dependencies {
 }
 
 tasks.test {
-    systemProperty("teavm.junit.target", "${project.buildDir.absolutePath }/js-tests")
-    systemProperty("teavm.junit.js.runner", "browser-chrome")
+    systemProperty("teavm.junit.target", "${project.buildDir.absolutePath }/teavm-tests")
     systemProperty("teavm.junit.threads", "1")
-    systemProperty("teavm.junit.minified", providers.gradleProperty("teavm.tests.minified"))
-    systemProperty("teavm.junit.optimized", providers.gradleProperty("teavm.tests.optimized"))
-    systemProperty("teavm.junit.js.decodeStack", providers.gradleProperty("teavm.tests.decodeStack"))
+    val browser = providers.gradleProperty("teavm.tests.browser").orElse("browser-chrome").get()
+
+    systemProperty("teavm.junit.js", providers.gradleProperty("teavm.tests.js").orElse("true").get())
+    systemProperty("teavm.junit.js.runner", browser)
+    systemProperty("teavm.junit.minified", providers.gradleProperty("teavm.tests.minified").orElse("false").get())
+    systemProperty("teavm.junit.optimized", providers.gradleProperty("teavm.tests.optimized").orElse("false").get())
+    systemProperty("teavm.junit.js.decodeStack", providers.gradleProperty("teavm.tests.decodeStack")
+            .orElse("false").get())
+
+    systemProperty("teavm.junit.wasm", providers.gradleProperty("teavm.tests.wasm").orElse("false").get())
+    systemProperty("teavm.junit.wasm.runner", browser)
+
+    systemProperty("teavm.junit.wasi", providers.gradleProperty("teavm.tests.wasi").orElse("false").get())
+    systemProperty("teavm.junit.wasi.runner", providers.gradleProperty("teavm.tests.wasi.runner")
+            .orElse("./run-wasi.sh").get())
+
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
 }

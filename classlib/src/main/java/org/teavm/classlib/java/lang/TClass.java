@@ -47,6 +47,7 @@ import org.teavm.interop.Unmanaged;
 import org.teavm.jso.core.JSArray;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
+import org.teavm.platform.PlatformObject;
 import org.teavm.platform.PlatformSequence;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
@@ -402,7 +403,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement, TType {
 
     @InjectedBy(ClassGenerator.class)
     @PluggableDependency(ClassGenerator.class)
-    public native <T> T newEmptyInstance();
+    public native PlatformObject newEmptyInstance();
 
     @SuppressWarnings({ "raw", "unchecked" })
     public TConstructor<?>[] getDeclaredConstructors() throws TSecurityException {

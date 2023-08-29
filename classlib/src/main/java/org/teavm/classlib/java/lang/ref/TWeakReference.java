@@ -19,7 +19,7 @@ public class TWeakReference<T> extends TReference<T> {
     private T value;
 
     public TWeakReference(T value) {
-        this.value = value;
+        this(value, null);
     }
 
     public TWeakReference(T value, @SuppressWarnings("unused") TReferenceQueue<T> queue) {

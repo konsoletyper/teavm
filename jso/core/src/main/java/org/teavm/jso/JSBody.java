@@ -133,4 +133,6 @@ public @interface JSBody {
      * <p>JavaScript code.</p>
      */
     String script();
+
+    JSBodyImport[] imports() default {};
 }

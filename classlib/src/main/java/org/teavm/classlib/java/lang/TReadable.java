@@ -15,9 +15,9 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.classlib.java.io.TIOException;
+import java.io.IOException;
 import org.teavm.classlib.java.nio.TCharBuffer;
 
 public interface TReadable {
-    int read(TCharBuffer cb) throws TIOException;
+    int read(TCharBuffer cb) throws IOException;
 }

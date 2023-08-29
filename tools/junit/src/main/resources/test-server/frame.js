@@ -20,7 +20,8 @@ window.addEventListener("message", event => {
     let request = event.data;
     switch (request.type) {
         case "JAVASCRIPT":
-            appendFiles([request.file], 0, () => {
+            const files = request.additionalFiles ? [...request.additionalFiles, request.file] : [request.file];
+            appendFiles(files, 0, () => {
                 launchTest(request.argument, response => {
                     event.source.postMessage(response, "*");
                 });

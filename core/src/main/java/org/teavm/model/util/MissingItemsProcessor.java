@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.teavm.dependency.DependencyInfo;
@@ -54,9 +55,9 @@ public class MissingItemsProcessor {
     }
 
     public void processClass(ClassHolder cls) {
-        for (MethodHolder method : cls.getMethods()) {
+        for (var method : cls.getMethods()) {
             if (reachableMethods.contains(method.getReference()) && method.getProgram() != null) {
-                MethodDependencyInfo methodDep = dependencyInfo.getMethod(method.getReference());
+                var methodDep = dependencyInfo.getMethod(method.getReference());
                 if (methodDep != null && methodDep.isUsed()) {
                     processMethod(method);
                 }
@@ -76,7 +77,7 @@ public class MissingItemsProcessor {
             BasicBlock block = program.basicBlockAt(i);
             instructionsToAdd.clear();
             boolean missing = false;
-            for (Instruction insn : block) {
+            for (var insn : block) {
                 insn.acceptVisitor(instructionProcessor);
                 if (!instructionsToAdd.isEmpty()) {
                     wasModified = true;
@@ -86,7 +87,7 @@ public class MissingItemsProcessor {
                 }
             }
             if (!missing) {
-                for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                for (var tryCatch : block.getTryCatchBlocks()) {
                     checkClass(null, tryCatch.getExceptionType());
                 }
             }
@@ -97,14 +98,42 @@ public class MissingItemsProcessor {
     }
 
     private void truncateBlock(Instruction instruction) {
-        TransitionExtractor transitionExtractor = new TransitionExtractor();
-        BasicBlock block = instruction.getBasicBlock();
+        var transitionExtractor = new TransitionExtractor();
+        var block = instruction.getBasicBlock();
         if (block.getLastInstruction() != null) {
             block.getLastInstruction().acceptVisitor(transitionExtractor);
         }
-        for (BasicBlock successor : transitionExtractor.getTargets()) {
+        for (var successor : transitionExtractor.getTargets()) {
             successor.removeIncomingsFrom(block);
         }
+
+        if (!block.getTryCatchBlocks().isEmpty()) {
+            var handlers = new LinkedHashSet<BasicBlock>();
+            for (var tryCatch : block.getTryCatchBlocks()) {
+                handlers.add(tryCatch.getHandler());
+            }
+
+            var next = instruction;
+            var assignExtractor = new AssignmentExtractor();
+            while (next != null) {
+                next.acceptVisitor(assignExtractor);
+                var definition = assignExtractor.getResult();
+                if (definition != null) {
+                    for (var handler : handlers) {
+                        for (var phi : handler.getPhis()) {
+                            for (var iter = phi.getIncomings().iterator(); iter.hasNext();) {
+                                var incoming = iter.next();
+                                if (incoming.getSource() == block && incoming.getValue() == definition) {
+                                    iter.remove();
+                                }
+                            }
+                        }
+                    }
+                }
+                next = next.getNext();
+            }
+        }
+
         while (instruction.getNext() != null) {
             instruction.getNext().delete();
         }

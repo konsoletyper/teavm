@@ -23,6 +23,7 @@ import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinary;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
+import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
@@ -37,7 +38,10 @@ public class WasmRuntimeIntrinsic implements WasmIntrinsic {
         switch (methodReference.getName()) {
             case "gt":
             case "lt":
+            case "gtu":
+            case "ltu":
             case "initStack":
+            case "callFunctionFromTable":
                 return true;
             default:
                 return false;
@@ -53,6 +57,17 @@ public class WasmRuntimeIntrinsic implements WasmIntrinsic {
             case "gt":
                 return comparison(WasmIntBinaryOperation.GT_SIGNED, WasmFloatBinaryOperation.GT,
                         invocation, manager);
+            case "ltu":
+                return comparison(WasmIntBinaryOperation.LT_UNSIGNED, WasmFloatBinaryOperation.LT,
+                        invocation, manager);
+            case "gtu":
+                return comparison(WasmIntBinaryOperation.GT_UNSIGNED, WasmFloatBinaryOperation.GT,
+                        invocation, manager);
+            case "callFunctionFromTable": {
+                var call = new WasmIndirectCall(manager.generate(invocation.getArguments().get(0)));
+                call.getArguments().add(manager.generate(invocation.getArguments().get(1)));
+                return call;
+            }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }

@@ -32,9 +32,11 @@ import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
+import org.teavm.backend.wasm.model.expression.WasmCopy;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmExpressionVisitor;
+import org.teavm.backend.wasm.model.expression.WasmFill;
 import org.teavm.backend.wasm.model.expression.WasmFloat32Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloat64Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinary;
@@ -1055,6 +1057,48 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         }
 
         result.addLine("wasm_heap = realloc(wasm_heap, wasm_heap_size);");
+        value = result;
+    }
+
+    @Override
+    public void visit(WasmFill expression) {
+        var result = new CExpression();
+
+        expression.getIndex().acceptVisitor(this);
+        var dest = value;
+
+        expression.getValue().acceptVisitor(this);
+        var v = value;
+
+        expression.getValue().acceptVisitor(this);
+        var num = value;
+
+        result.getLines().addAll(dest.getLines());
+        result.getLines().addAll(v.getLines());
+        result.getLines().addAll(num.getLines());
+
+        result.addLine("memset(" + dest.getText() + ", " + v.getText() + ", " + num.getText() + ");");
+        value = result;
+    }
+
+    @Override
+    public void visit(WasmCopy expression) {
+        var result = new CExpression();
+
+        expression.getDestinationIndex().acceptVisitor(this);
+        var dest = value;
+
+        expression.getSourceIndex().acceptVisitor(this);
+        var src = value;
+
+        expression.getCount().acceptVisitor(this);
+        var num = value;
+
+        result.getLines().addAll(dest.getLines());
+        result.getLines().addAll(src.getLines());
+        result.getLines().addAll(num.getLines());
+
+        result.addLine("memcpy(" + dest.getText() + ", " + src.getText() + ", " + num.getText() + ");");
         value = result;
     }
 

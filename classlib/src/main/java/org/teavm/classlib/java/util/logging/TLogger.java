@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util.logging;
 
+import java.util.function.Supplier;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TInteger;
 import org.teavm.classlib.java.lang.TObject;
@@ -143,32 +144,126 @@ public class TLogger {
         log(record);
     }
 
+    public void log(TLevel level, Supplier<String> msgSupplier) {
+        var record = new TLogRecord(level, msgSupplier.get());
+        log(record);
+    }
+
+    public void log(TLevel level, TThrowable thrown, Supplier<String> msgSupplier) {
+        var record = new TLogRecord(level, msgSupplier.get());
+        record.setThrown(thrown);
+        log(record);
+    }
+
+    public void logp(TLevel level, String sourceClass, String sourceMethod, String msg) {
+        var record = new TLogRecord(level, msg);
+        record.setSourceClassName(sourceClass);
+        record.setSourceMethodName(sourceMethod);
+        log(record);
+    }
+
+    public void logp(TLevel level, String sourceClass, String sourceMethod, String msg, Object[] params) {
+        var record = new TLogRecord(level, msg);
+        record.setSourceClassName(sourceClass);
+        record.setSourceMethodName(sourceMethod);
+        record.setParameters(params);
+        log(record);
+    }
+
+    public void logp(TLevel level, String sourceClass, String sourceMethod, Supplier<String> msgSupplier) {
+        var record = new TLogRecord(level, msgSupplier.get());
+        record.setSourceClassName(sourceClass);
+        record.setSourceMethodName(sourceMethod);
+        log(record);
+    }
+
+    public void logp(TLevel level, String sourceClass, String sourceMethod, String msg, Object param1) {
+        var record = new TLogRecord(level, msg);
+        record.setSourceClassName(sourceClass);
+        record.setSourceMethodName(sourceMethod);
+        record.setParameters(new Object[] { param1 });
+        log(record);
+    }
+
+    public void logp(TLevel level, String sourceClass, String sourceMethod, String msg, TThrowable thrown) {
+        var record = new TLogRecord(level, msg);
+        record.setSourceClassName(sourceClass);
+        record.setSourceMethodName(sourceMethod);
+        record.setThrown(thrown);
+        log(record);
+    }
+
+    public void logp(TLevel level, String sourceClass, String sourceMethod, TThrowable thrown,
+            Supplier<String> msgSupplier) {
+        var record = new TLogRecord(level, msgSupplier.get());
+        record.setSourceClassName(sourceClass);
+        record.setSourceMethodName(sourceMethod);
+        record.setThrown(thrown);
+        log(record);
+    }
+
     public void severe(String msg) {
         log(TLevel.SEVERE, msg);
+    }
+
+    public void severe(Supplier<String> msgSupplier) {
+        severe(msgSupplier.get());
     }
 
     public void warning(String msg) {
         log(TLevel.WARNING, msg);
     }
 
+    public void warning(Supplier<String> msgSupplier) {
+        warning(msgSupplier.get());
+    }
+
     public void info(String msg) {
         log(TLevel.INFO, msg);
+    }
+
+    public void info(Supplier<String> msgSupplier) {
+        info(msgSupplier.get());
     }
 
     public void config(String msg) {
         log(TLevel.CONFIG, msg);
     }
 
+    public void config(Supplier<String> msgSupplier) {
+        config(msgSupplier.get());
+    }
+
     public void fine(String msg) {
         log(TLevel.FINE, msg);
+    }
+
+    public void fine(Supplier<String> msgSupplier) {
+        fine(msgSupplier.get());
     }
 
     public void finer(String msg) {
         log(TLevel.FINER, msg);
     }
 
+    public void finer(Supplier<String> msgSupplier) {
+        finer(msgSupplier.get());
+    }
+
     public void finest(String msg) {
         log(TLevel.FINEST, msg);
+    }
+
+    public void finest(Supplier<String> msgSupplier) {
+        finest(msgSupplier.get());
+    }
+
+    public void throwing(String sourceClass, String sourceMethod, TThrowable thrown) {
+        var record = new TLogRecord(TLevel.FINEST, "THROW");
+        record.setThrown(thrown);
+        record.setSourceClassName(sourceClass);
+        record.setSourceMethodName(sourceMethod);
+        log(record);
     }
 
     public boolean isLoggable(@SuppressWarnings("unused") TLevel level) {
