@@ -206,13 +206,13 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
             buffer[target++] = '.';
             buffer[target++] = '0';
             return this;
-        } else if (TFloat.isNaN(value)) {
+        } else if (Float.isNaN(value)) {
             insertSpace(target, target + 3);
             buffer[target++] = 'N';
             buffer[target++] = 'a';
             buffer[target++] = 'N';
             return this;
-        } else if (TFloat.isInfinite(value)) {
+        } else if (Float.isInfinite(value)) {
             if (value > 0) {
                 insertSpace(target, target + 8);
             } else {
@@ -230,7 +230,7 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
             return this;
         }
 
-        FloatAnalyzer.Result number = Constants.floatAnalysisResult;
+        var number = Constants.floatAnalysisResult;
         FloatAnalyzer.analyze(value, number);
         int mantissa = number.mantissa;
         int exp = number.exponent;
@@ -247,6 +247,8 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
         if (zeros > 0) {
             digits -= zeros;
         }
+        var leadingZeros = 0;
+        var leadingZero = false;
 
         // Handle special case of exponent close to 0
         if (exp < 7 && exp >= -3) {
@@ -255,8 +257,10 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
                 digits = Math.max(digits, intPart + 1);
                 exp = 0;
             } else {
-                mantissa /= Constants.intPowersOfTen[-exp];
-                digits -= exp;
+                intPart = 0;
+                leadingZeros = -exp - 1;
+                leadingZero = true;
+                sz++;
                 exp = 0;
             }
         }
@@ -275,7 +279,7 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
         if (exp != 0 && digits == intPart) {
             digits++;
         }
-        sz += digits;
+        sz += digits + leadingZeros;
 
         // Print mantissa
         insertSpace(target, target + sz);
@@ -283,6 +287,13 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
             buffer[target++] = '-';
         }
         int pos = FloatAnalyzer.MAX_POS;
+        if (leadingZero) {
+            buffer[target++] = '0';
+            buffer[target++] = '.';
+            while (leadingZeros-- > 0) {
+                buffer[target++] = '0';
+            }
+        }
         for (int i = 0; i < digits; ++i) {
             int intDigit;
             if (pos > 0) {
@@ -331,13 +342,13 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
             buffer[target++] = '.';
             buffer[target++] = '0';
             return this;
-        } else if (TDouble.isNaN(value)) {
+        } else if (Double.isNaN(value)) {
             insertSpace(target, target + 3);
             buffer[target++] = 'N';
             buffer[target++] = 'a';
             buffer[target++] = 'N';
             return this;
-        } else if (TDouble.isInfinite(value)) {
+        } else if (Double.isInfinite(value)) {
             if (value > 0) {
                 insertSpace(target, target + 8);
             } else {
@@ -355,7 +366,7 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
             return this;
         }
 
-        DoubleAnalyzer.Result number = Constants.doubleAnalysisResult;
+        var number = Constants.doubleAnalysisResult;
         DoubleAnalyzer.analyze(value, number);
         long mantissa = number.mantissa;
         int exp = number.exponent;
@@ -374,6 +385,8 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
         if (zeros > 0) {
             digits -= zeros;
         }
+        var leadingZeros = 0;
+        var leadingZero = false;
 
         // Handle special case of exponent close to 0
         if (exp < 7 && exp >= -3) {
@@ -382,8 +395,10 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
                 digits = Math.max(digits, intPart + 1);
                 exp = 0;
             } else {
-                mantissa /= Constants.longPowersOfTen[-exp];
-                digits -= exp;
+                intPart = 0;
+                leadingZeros = -exp - 1;
+                leadingZero = true;
+                sz++;
                 exp = 0;
             }
         }
@@ -405,7 +420,7 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
         if (exp != 0 && digits == intPart) {
             digits++;
         }
-        sz += digits;
+        sz += digits + leadingZeros;
 
         // Print mantissa
         insertSpace(target, target + sz);
@@ -413,6 +428,13 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
             buffer[target++] = '-';
         }
         long pos = DoubleAnalyzer.DOUBLE_MAX_POS;
+        if (leadingZero) {
+            buffer[target++] = '0';
+            buffer[target++] = '.';
+            while (leadingZeros-- > 0) {
+                buffer[target++] = '0';
+            }
+        }
         for (int i = 0; i < digits; ++i) {
             int intDigit;
             if (pos > 0) {

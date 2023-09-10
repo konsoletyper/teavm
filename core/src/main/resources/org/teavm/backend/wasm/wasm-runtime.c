@@ -15,10 +15,6 @@ static int32_t wasm_heap_size;
 static int wasm_args;
 static char** wasm_argv;
 
-float teavm_teavm_getNaN() {
-    return NAN;
-}
-
 #define teavmMath_sin sin
 #define teavmMath_cos cos
 #define teavmMath_sqrt sqrt

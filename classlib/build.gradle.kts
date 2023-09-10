@@ -64,3 +64,4 @@ tasks {
 teavmPublish {
     artifactId = "teavm-classlib"
 }
+

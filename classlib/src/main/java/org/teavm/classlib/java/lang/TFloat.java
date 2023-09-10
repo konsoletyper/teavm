@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.impl.text.FloatSynthesizer;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
@@ -23,7 +24,7 @@ import org.teavm.jso.JSBody;
 public class TFloat extends TNumber implements TComparable<TFloat> {
     public static final float POSITIVE_INFINITY = 1 / 0.0f;
     public static final float NEGATIVE_INFINITY = -POSITIVE_INFINITY;
-    public static final float NaN = getNaN();
+    public static final float NaN = 0f / 0f;
     public static final float MAX_VALUE = 0x1.fffffeP+127f;
     public static final float MIN_VALUE = 0x1.0p-126f;
     public static final float MIN_NORMAL = 0x0.000002P-126f;
@@ -41,7 +42,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         this((float) value);
     }
 
-    public TFloat(TString value) throws TNumberFormatException {
+    public TFloat(String value) throws TNumberFormatException {
         this(parseFloat(value));
     }
 
@@ -113,13 +114,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     @Unmanaged
     public static native boolean isFinite(float v);
 
-    @JSBody(script = "return NaN;")
-    @Import(module = "teavm", name = "teavm_getNaN")
-    @NoSideEffects
-    @Unmanaged
-    private static native float getNaN();
-
-    public static float parseFloat(TString string) throws TNumberFormatException {
+    public static float parseFloat(String string) throws TNumberFormatException {
         // TODO: parse infinite and different radix
 
         if (string.isEmpty()) {
@@ -150,7 +145,8 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         char c = string.charAt(index);
 
         int mantissa = 0;
-        int exp = 0;
+        int exp = -1;
+        int mantissaPos = 100000000;
 
         boolean hasOneDigit = false;
         if (c != '.') {
@@ -167,11 +163,11 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
                 if (c < '0' || c > '9') {
                     break;
                 }
-                if (mantissa < (TInteger.MAX_VALUE / 10) - 9) {
-                    mantissa = mantissa * 10 + (c - '0');
-                } else {
-                    ++exp;
+                if (mantissaPos > 0) {
+                    mantissa = mantissa + (mantissaPos * (c - '0'));
+                    mantissaPos = Integer.divideUnsigned(mantissaPos, 10);
                 }
+                ++exp;
                 ++index;
             }
         }
@@ -183,9 +179,11 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
                 if (c < '0' || c > '9') {
                     break;
                 }
-                if (mantissa < (TInteger.MAX_VALUE / 10) - 9) {
-                    mantissa = mantissa * 10 + (c - '0');
-                    --exp;
+                if (mantissa == 0 && c == '0') {
+                    exp--;
+                } else if (mantissaPos > 0) {
+                    mantissa = mantissa + (mantissaPos * (c - '0'));
+                    mantissaPos = Integer.divideUnsigned(mantissaPos, 10);
                 }
                 ++index;
                 hasOneDigit = true;
@@ -229,35 +227,11 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
             }
             exp += numExp;
         }
-        if (exp > 38 || exp == 38 && mantissa > 34028234) {
-            return !negative ? POSITIVE_INFINITY : NEGATIVE_INFINITY;
-        }
-        if (negative) {
-            mantissa = -mantissa;
-        }
-        return mantissa * decimalExponent(exp);
+
+        return FloatSynthesizer.synthesizeFloat(mantissa, exp, negative);
     }
 
-    private static float decimalExponent(int n) {
-        double d;
-        if (n < 0) {
-            d = 0.1;
-            n = -n;
-        } else {
-            d = 10;
-        }
-        double result = 1;
-        while (n != 0) {
-            if (n % 2 != 0) {
-                result *= d;
-            }
-            d *= d;
-            n /= 2;
-        }
-        return (float) result;
-    }
-
-    public static TFloat valueOf(TString s) throws TNumberFormatException {
+    public static TFloat valueOf(String s) throws TNumberFormatException {
         return valueOf(parseFloat(s));
     }
 
