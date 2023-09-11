@@ -28,10 +28,10 @@ public interface TRandomGenerator {
         return TDoubleStream.generate(this::nextDouble);
     }
 
-    default TDoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
-        checkRange(randomNumberOrigin, randomNumberBound);
+    default TDoubleStream doubles(double origin, double bound) {
+        checkRange(origin, bound);
 
-        return TDoubleStream.generate(() -> nextDouble(randomNumberOrigin, randomNumberBound));
+        return TDoubleStream.generate(() -> nextDouble(origin, bound));
     }
 
     default TDoubleStream doubles(long streamSize) {
@@ -40,22 +40,22 @@ public interface TRandomGenerator {
         return doubles().limit(streamSize);
     }
 
-    default TDoubleStream doubles(long streamSize, double randomNumberOrigin,
-            double randomNumberBound) {
+    default TDoubleStream doubles(long streamSize, double origin,
+            double bound) {
         checkStreamSize(streamSize);
-        checkRange(randomNumberOrigin, randomNumberBound);
+        checkRange(origin, bound);
 
-        return doubles(randomNumberOrigin, randomNumberBound).limit(streamSize);
+        return doubles(origin, bound).limit(streamSize);
     }
 
     default TIntStream ints() {
         return TIntStream.generate(this::nextInt);
     }
 
-    default TIntStream ints(int randomNumberOrigin, int randomNumberBound) {
-        checkRange(randomNumberOrigin, randomNumberBound);
+    default TIntStream ints(int origin, int bound) {
+        checkRange(origin, bound);
 
-        return TIntStream.generate(() -> nextInt(randomNumberOrigin, randomNumberBound));
+        return TIntStream.generate(() -> nextInt(origin, bound));
     }
 
     default TIntStream ints(long streamSize) {
@@ -64,22 +64,22 @@ public interface TRandomGenerator {
         return ints().limit(streamSize);
     }
 
-    default TIntStream ints(long streamSize, int randomNumberOrigin,
-            int randomNumberBound) {
+    default TIntStream ints(long streamSize, int origin,
+            int bound) {
         checkStreamSize(streamSize);
-        checkRange(randomNumberOrigin, randomNumberBound);
+        checkRange(origin, bound);
 
-        return ints(randomNumberOrigin, randomNumberBound).limit(streamSize);
+        return ints(origin, bound).limit(streamSize);
     }
 
     default TLongStream longs() {
         return TLongStream.generate(this::nextLong);
     }
 
-    default TLongStream longs(long randomNumberOrigin, long randomNumberBound) {
-        checkRange(randomNumberOrigin, randomNumberBound);
+    default TLongStream longs(long origin, long bound) {
+        checkRange(origin, bound);
 
-        return TLongStream.generate(() -> nextLong(randomNumberOrigin, randomNumberBound));
+        return TLongStream.generate(() -> nextLong(origin, bound));
     }
 
     default TLongStream longs(long streamSize) {
@@ -88,12 +88,12 @@ public interface TRandomGenerator {
         return longs().limit(streamSize);
     }
 
-    default TLongStream longs(long streamSize, long randomNumberOrigin,
-            long randomNumberBound) {
+    default TLongStream longs(long streamSize, long origin,
+            long bound) {
         checkStreamSize(streamSize);
-        checkRange(randomNumberOrigin, randomNumberBound);
+        checkRange(origin, bound);
 
-        return longs(randomNumberOrigin, randomNumberBound).limit(streamSize);
+        return longs(origin, bound).limit(streamSize);
     }
 
     default boolean nextBoolean() {
