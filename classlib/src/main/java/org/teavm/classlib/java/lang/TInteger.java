@@ -22,6 +22,7 @@ import org.teavm.interop.NoSideEffects;
 
 public class TInteger extends TNumber implements TComparable<TInteger> {
     public static final int SIZE = 32;
+    public static final int BYTES = SIZE / Byte.SIZE;
     public static final int MIN_VALUE = 0x80000000;
     public static final int MAX_VALUE = 0x7FFFFFFF;
     public static final Class<Integer> TYPE = int.class;
