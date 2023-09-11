@@ -113,12 +113,20 @@ public interface TRandomGenerator {
 
     default float nextFloat(float bound) {
         checkBound(bound);
-        return boundedNextFloat(this, bound);
+        float r = nextFloat() * bound;
+        if (r >= bound) {
+            r = Math.nextDown(bound);
+        }
+        return r;
     }
 
     default float nextFloat(float origin, float bound) {
         checkRange(origin, bound);
-        return boundedNextFloat(this, origin, bound);
+        float r = nextFloat() * (bound - origin) + origin;
+        if (r >= bound) {
+            r = Math.nextAfter(bound, origin);
+        }
+        return r;
     }
 
     default double nextDouble() {
@@ -127,12 +135,20 @@ public interface TRandomGenerator {
 
     default double nextDouble(double bound) {
         checkBound(bound);
-        return boundedNextDouble(this, bound);
+        double r = nextDouble() * bound;
+        if (r >= bound) {
+            r = Math.nextDown(bound);
+        }
+        return r;
     }
 
     default double nextDouble(double origin, double bound) {
         checkRange(origin, bound);
-        return boundedNextDouble(this, origin, bound);
+        double r = nextDouble() * (bound - origin) + origin;
+        if (r >= bound) {
+            r = Math.nextAfter(bound, origin);
+        }
+        return r;
     }
 
     default int nextInt() {
@@ -141,24 +157,56 @@ public interface TRandomGenerator {
 
     default int nextInt(int bound) {
         checkBound(bound);
-        return boundedNextInt(this, bound);
+        int mask = (Integer.highestOneBit(bound) << 1) - 1;
+        while (true) {
+            int r = nextInt() & mask;
+            if (r < bound) {
+                return r;
+            }
+        }
     }
 
     default int nextInt(int origin, int bound) {
         checkRange(origin, bound);
-        return boundedNextInt(this, origin, bound);
+        int range = bound - origin;
+        if (range > 0) {
+            return nextInt(range) + origin;
+        } else {
+            while (true) {
+                int value = nextInt();
+                if (value >= origin && value < bound) {
+                    return value;
+                }
+            }
+        }
     }
 
     long nextLong();
 
     default long nextLong(long bound) {
         checkBound(bound);
-        return boundedNextLong(this, bound);
+        long mask = (Long.highestOneBit(bound) << 1) - 1;
+        while (true) {
+            long r = nextLong() & mask;
+            if (r < bound) {
+                return r;
+            }
+        }
     }
 
     default long nextLong(long origin, long bound) {
         checkRange(origin, bound);
-        return boundedNextLong(this, origin, bound);
+        long range = bound - origin;
+        if (range > 0) {
+            return nextLong(range) + origin;
+        } else {
+            while (true) {
+                long value = nextLong();
+                if (value >= origin && value < bound) {
+                    return value;
+                }
+            }
+        }
     }
 
     default double nextGaussian() {
@@ -226,86 +274,6 @@ public interface TRandomGenerator {
         if (origin >= bound) {
             throw new IllegalArgumentException();
         }
-    }
-
-    private static long boundedNextLong(TRandomGenerator rng, long origin, long bound) {
-        long range = bound - origin;
-        if (range > 0) {
-            return rng.nextLong(range) + origin;
-        } else {
-            while (true) {
-                long value = rng.nextLong();
-                if (value >= origin && value < bound) {
-                    return value;
-                }
-            }
-        }
-    }
-
-    private static long boundedNextLong(TRandomGenerator rng, long bound) {
-        long mask = (Long.highestOneBit(bound) << 1) - 1;
-        while (true) {
-            long r = rng.nextLong() & mask;
-            if (r < bound) {
-                return r;
-            }
-        }
-    }
-
-    private static int boundedNextInt(TRandomGenerator rng, int origin, int bound) {
-        int range = bound - origin;
-        if (range > 0) {
-            return rng.nextInt(range) + origin;
-        } else {
-            while (true) {
-                int value = rng.nextInt();
-                if (value >= origin && value < bound) {
-                    return value;
-                }
-            }
-        }
-    }
-
-    private static int boundedNextInt(TRandomGenerator rng, int bound) {
-        int mask = (Integer.highestOneBit(bound) << 1) - 1;
-        while (true) {
-            int r = rng.nextInt() & mask;
-            if (r < bound) {
-                return r;
-            }
-        }
-    }
-
-    private static double boundedNextDouble(TRandomGenerator rng, double origin, double bound) {
-        double r = rng.nextDouble() * (bound - origin) + origin;
-        if (r >= bound) {
-            r = Math.nextAfter(bound, origin);
-        }
-        return r;
-    }
-
-    private static double boundedNextDouble(TRandomGenerator rng, double bound) {
-        double r = rng.nextDouble() * bound;
-        if (r >= bound) {
-            r = Math.nextDown(bound);
-        }
-        return r;
-    }
-
-    private static float boundedNextFloat(TRandomGenerator rng, float origin, float bound) {
-        float r = rng.nextFloat() * (bound - origin) + origin;
-        if (r >= bound) {
-            r = Math.nextAfter(bound, origin);
-        }
-        return r;
-    }
-
-    private static float boundedNextFloat(TRandomGenerator rng, float bound) {
-        float r = rng.nextFloat() * bound;
-        if (r >= bound) {
-            r = Math.nextDown(bound);
-        }
-        return r;
     }
 
     static double[] pairGaussian(TRandomGenerator rng) {
