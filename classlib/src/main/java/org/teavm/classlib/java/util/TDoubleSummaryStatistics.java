@@ -36,7 +36,7 @@ public class TDoubleSummaryStatistics implements TDoubleConsumer {
         boolean minNan = Double.isNaN(min);
         boolean maxNan = Double.isNaN(max);
         boolean sumNan = Double.isNaN(sum);
-        if ((!minNan || !maxNan || !sumNan) && (minNan || maxNan || sumNan)) {
+        if (!(minNan && maxNan && sumNan) && (minNan || maxNan || sumNan)) {
             throw new IllegalArgumentException();
         }
 

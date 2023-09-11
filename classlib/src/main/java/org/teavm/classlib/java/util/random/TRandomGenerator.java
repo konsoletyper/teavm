@@ -29,21 +29,21 @@ public interface TRandomGenerator {
     }
 
     default TDoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
-        RandUtils.checkRange(randomNumberOrigin, randomNumberBound);
+        checkRange(randomNumberOrigin, randomNumberBound);
 
         return TDoubleStream.generate(() -> nextDouble(randomNumberOrigin, randomNumberBound));
     }
 
     default TDoubleStream doubles(long streamSize) {
-        RandUtils.checkStreamSize(streamSize);
+        checkStreamSize(streamSize);
 
         return doubles().limit(streamSize);
     }
 
     default TDoubleStream doubles(long streamSize, double randomNumberOrigin,
             double randomNumberBound) {
-        RandUtils.checkStreamSize(streamSize);
-        RandUtils.checkRange(randomNumberOrigin, randomNumberBound);
+        checkStreamSize(streamSize);
+        checkRange(randomNumberOrigin, randomNumberBound);
 
         return doubles(randomNumberOrigin, randomNumberBound).limit(streamSize);
     }
@@ -53,21 +53,21 @@ public interface TRandomGenerator {
     }
 
     default TIntStream ints(int randomNumberOrigin, int randomNumberBound) {
-        RandUtils.checkRange(randomNumberOrigin, randomNumberBound);
+        checkRange(randomNumberOrigin, randomNumberBound);
 
         return TIntStream.generate(() -> nextInt(randomNumberOrigin, randomNumberBound));
     }
 
     default TIntStream ints(long streamSize) {
-        RandUtils.checkStreamSize(streamSize);
+        checkStreamSize(streamSize);
 
         return ints().limit(streamSize);
     }
 
     default TIntStream ints(long streamSize, int randomNumberOrigin,
             int randomNumberBound) {
-        RandUtils.checkStreamSize(streamSize);
-        RandUtils.checkRange(randomNumberOrigin, randomNumberBound);
+        checkStreamSize(streamSize);
+        checkRange(randomNumberOrigin, randomNumberBound);
 
         return ints(randomNumberOrigin, randomNumberBound).limit(streamSize);
     }
@@ -77,21 +77,21 @@ public interface TRandomGenerator {
     }
 
     default TLongStream longs(long randomNumberOrigin, long randomNumberBound) {
-        RandUtils.checkRange(randomNumberOrigin, randomNumberBound);
+        checkRange(randomNumberOrigin, randomNumberBound);
 
         return TLongStream.generate(() -> nextLong(randomNumberOrigin, randomNumberBound));
     }
 
     default TLongStream longs(long streamSize) {
-        RandUtils.checkStreamSize(streamSize);
+        checkStreamSize(streamSize);
 
         return longs().limit(streamSize);
     }
 
     default TLongStream longs(long streamSize, long randomNumberOrigin,
             long randomNumberBound) {
-        RandUtils.checkStreamSize(streamSize);
-        RandUtils.checkRange(randomNumberOrigin, randomNumberBound);
+        checkStreamSize(streamSize);
+        checkRange(randomNumberOrigin, randomNumberBound);
 
         return longs(randomNumberOrigin, randomNumberBound).limit(streamSize);
     }
@@ -121,15 +121,15 @@ public interface TRandomGenerator {
     }
 
     default float nextFloat(float bound) {
-        RandUtils.checkBound(bound);
+        checkBound(bound);
 
-        return RandUtils.boundedNextFloat(this, bound);
+        return boundedNextFloat(this, bound);
     }
 
     default float nextFloat(float origin, float bound) {
-        RandUtils.checkRange(origin, bound);
+        checkRange(origin, bound);
 
-        return RandUtils.boundedNextFloat(this, origin, bound);
+        return boundedNextFloat(this, origin, bound);
     }
 
     default double nextDouble() {
@@ -137,15 +137,15 @@ public interface TRandomGenerator {
     }
 
     default double nextDouble(double bound) {
-        RandUtils.checkBound(bound);
+        checkBound(bound);
 
-        return RandUtils.boundedNextDouble(this, bound);
+        return boundedNextDouble(this, bound);
     }
 
     default double nextDouble(double origin, double bound) {
-        RandUtils.checkRange(origin, bound);
+        checkRange(origin, bound);
 
-        return RandUtils.boundedNextDouble(this, origin, bound);
+        return boundedNextDouble(this, origin, bound);
     }
 
     default int nextInt() {
@@ -153,33 +153,33 @@ public interface TRandomGenerator {
     }
 
     default int nextInt(int bound) {
-        RandUtils.checkBound(bound);
+        checkBound(bound);
 
-        return RandUtils.boundedNextInt(this, bound);
+        return boundedNextInt(this, bound);
     }
 
     default int nextInt(int origin, int bound) {
-        RandUtils.checkRange(origin, bound);
+        checkRange(origin, bound);
 
-        return RandUtils.boundedNextInt(this, origin, bound);
+        return boundedNextInt(this, origin, bound);
     }
 
     long nextLong();
 
     default long nextLong(long bound) {
-        RandUtils.checkBound(bound);
+        checkBound(bound);
 
-        return RandUtils.boundedNextLong(this, bound);
+        return boundedNextLong(this, bound);
     }
 
     default long nextLong(long origin, long bound) {
-        RandUtils.checkRange(origin, bound);
+        checkRange(origin, bound);
 
-        return RandUtils.boundedNextLong(this, origin, bound);
+        return boundedNextLong(this, origin, bound);
     }
 
     default double nextGaussian() {
-        return RandUtils.pairGaussian(this)[0];
+        return pairGaussian(this)[0];
     }
 
     default double nextGaussian(double mean, double stddev) {
@@ -187,5 +187,171 @@ public interface TRandomGenerator {
             throw new IllegalArgumentException();
         }
         return mean + stddev * nextGaussian();
+    }
+
+    //********************************** UTILITY *************************************************//
+
+    private static void checkStreamSize(long streamSize) {
+        if (streamSize < 0L) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private static void checkBound(float bound) {
+        if (!(bound > 0.0 && bound < Float.POSITIVE_INFINITY)) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private static void checkBound(double bound) {
+        if (!(bound > 0.0 && bound < Double.POSITIVE_INFINITY)) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private static void checkBound(int bound) {
+        if (bound <= 0) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private static void checkBound(long bound) {
+        if (bound <= 0) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private static void checkRange(float origin, float bound) {
+        if (!(origin < bound && (bound - origin) < Float.POSITIVE_INFINITY)) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private static void checkRange(double origin, double bound) {
+        if (!(origin < bound && (bound - origin) < Double.POSITIVE_INFINITY)) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private static void checkRange(int origin, int bound) {
+        if (origin >= bound) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private static void checkRange(long origin, long bound) {
+        if (origin >= bound) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private static long boundedNextLong(TRandomGenerator rng, long origin, long bound) {
+        long range = bound - origin;
+        if (range > 0) {
+            return rng.nextLong(range) + origin;
+        } else {
+            while (true) {
+                long value = rng.nextLong();
+                if (value >= origin && value < bound) {
+                    return value;
+                }
+            }
+        }
+    }
+
+    private static long boundedNextLong(TRandomGenerator rng, long bound) {
+        long mask = (Long.highestOneBit(bound) << 1) - 1;
+        while (true) {
+            long r = rng.nextLong() & mask;
+            if (r < bound) {
+                return r;
+            }
+        }
+    }
+
+    private static int boundedNextInt(TRandomGenerator rng, int origin, int bound) {
+        int range = bound - origin;
+        if (range > 0) {
+            return rng.nextInt(range) + origin;
+        } else {
+            while (true) {
+                int value = rng.nextInt();
+                if (value >= origin && value < bound) {
+                    return value;
+                }
+            }
+        }
+    }
+
+    private static int boundedNextInt(TRandomGenerator rng, int bound) {
+        int mask = (Integer.highestOneBit(bound) << 1) - 1;
+        while (true) {
+            int r = rng.nextInt() & mask;
+            if (r < bound) {
+                return r;
+            }
+        }
+    }
+
+    private static double boundedNextDouble(TRandomGenerator rng, double origin, double bound) {
+        double r = rng.nextDouble();
+        if (origin < bound) {
+            r = r * (bound - origin) + origin;
+            if (r >= bound) {
+                r = Math.nextAfter(bound, origin);
+            }
+        }
+        return r;
+    }
+
+    private static double boundedNextDouble(TRandomGenerator rng, double bound) {
+        // Specialize boundedNextDouble for origin == 0, bound > 0
+        double r = rng.nextDouble();
+        r = r * bound;
+        if (r >= bound) {
+            r = Math.nextDown(bound);
+        }
+        return r;
+    }
+
+    private static float boundedNextFloat(TRandomGenerator rng, float origin, float bound) {
+        float r = rng.nextFloat();
+        if (origin < bound) {
+            r = r * (bound - origin) + origin;
+            if (r >= bound) {
+                r = Math.nextAfter(bound, origin);
+            }
+        }
+        return r;
+    }
+
+    private static float boundedNextFloat(TRandomGenerator rng, float bound) {
+        // Specialize boundedNextFloat for origin == 0, bound > 0
+        float r = rng.nextFloat();
+        r = r * bound;
+        if (r >= bound) {
+            r = Math.nextDown(bound);
+        }
+        return r;
+    }
+
+    static double[] pairGaussian(TRandomGenerator rng) {
+        /*
+         * This implementation uses the polar method to generate two gaussian
+         * values at a time. One is returned, and the other is stored to be returned
+         * next time.
+         */
+        double v1;
+        double v2;
+        double s;
+        do {
+            v1 = 2 * rng.nextDouble() - 1;
+            v2 = 2 * rng.nextDouble() - 1;
+            s = v1 * v1 + v2 * v2;
+        } while (s >= 1 || s == 0);
+
+        double m = StrictMath.sqrt(-2 * StrictMath.log(s) / s);
+
+        return new double[] { v1 * m, v2 * m };
     }
 }

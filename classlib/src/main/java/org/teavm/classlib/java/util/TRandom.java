@@ -19,7 +19,6 @@ import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TObject;
-import org.teavm.classlib.java.util.random.RandUtils;
 import org.teavm.classlib.java.util.random.TRandomGenerator;
 import org.teavm.interop.Import;
 import org.teavm.interop.Unmanaged;
@@ -60,58 +59,6 @@ public class TRandom extends TObject implements TRandomGenerator, TSerializable 
     }
 
     @Override
-    public long nextLong(long bound) {
-        if (bound <= 0) {
-            throw new IllegalArgumentException();
-        }
-        while (true) {
-            long value = nextLong();
-            long result = value % bound;
-            if (value - result + (bound - 1) < 0) {
-                return result;
-            }
-        }
-    }
-
-    @Override
-    public long nextLong(long origin, long bound) {
-        if (origin >= bound) {
-            throw new IllegalArgumentException();
-        }
-        long range = bound - origin;
-        if (range > 0) {
-            return nextLong(range) + origin;
-        } else {
-            while (true) {
-                long value = nextLong();
-                if (value >= origin && value < bound) {
-                    return value;
-                }
-            }
-        }
-    }
-
-    @Override
-    public boolean nextBoolean() {
-        return nextInt() % 2 == 0;
-    }
-
-    @Override
-    public float nextFloat() {
-        return (float) nextDouble();
-    }
-
-    @Override
-    public float nextFloat(float bound) {
-        return (float) nextDouble(bound);
-    }
-
-    @Override
-    public float nextFloat(float origin, float bound) {
-        return (float) nextDouble(origin, bound);
-    }
-
-    @Override
     public double nextDouble() {
         if (PlatformDetector.isC()) {
             return crand();
@@ -142,7 +89,7 @@ public class TRandom extends TObject implements TRandomGenerator, TSerializable 
             return storedGaussian;
         }
 
-        double[] pair = RandUtils.pairGaussian(this);
+        double[] pair = TRandomGenerator.pairGaussian(this);
         haveStoredGaussian = true;
         storedGaussian = pair[1];
 
