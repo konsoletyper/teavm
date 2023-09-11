@@ -205,13 +205,13 @@ public interface TRandomGenerator {
     }
 
     private static void checkRange(float origin, float bound) {
-        if (!(origin < bound && (bound - origin) < Float.POSITIVE_INFINITY)) {
+        if (!(origin < bound && bound - origin < Float.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException();
         }
     }
 
     private static void checkRange(double origin, double bound) {
-        if (!(origin < bound && (bound - origin) < Double.POSITIVE_INFINITY)) {
+        if (!(origin < bound && bound - origin < Double.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException();
         }
     }
