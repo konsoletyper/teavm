@@ -30,13 +30,11 @@ public interface TRandomGenerator {
 
     default TDoubleStream doubles(double origin, double bound) {
         checkRange(origin, bound);
-
         return TDoubleStream.generate(() -> nextDouble(origin, bound));
     }
 
     default TDoubleStream doubles(long streamSize) {
         checkStreamSize(streamSize);
-
         return doubles().limit(streamSize);
     }
 
@@ -44,7 +42,6 @@ public interface TRandomGenerator {
             double bound) {
         checkStreamSize(streamSize);
         checkRange(origin, bound);
-
         return doubles(origin, bound).limit(streamSize);
     }
 
@@ -54,13 +51,11 @@ public interface TRandomGenerator {
 
     default TIntStream ints(int origin, int bound) {
         checkRange(origin, bound);
-
         return TIntStream.generate(() -> nextInt(origin, bound));
     }
 
     default TIntStream ints(long streamSize) {
         checkStreamSize(streamSize);
-
         return ints().limit(streamSize);
     }
 
@@ -68,7 +63,6 @@ public interface TRandomGenerator {
             int bound) {
         checkStreamSize(streamSize);
         checkRange(origin, bound);
-
         return ints(origin, bound).limit(streamSize);
     }
 
@@ -78,13 +72,11 @@ public interface TRandomGenerator {
 
     default TLongStream longs(long origin, long bound) {
         checkRange(origin, bound);
-
         return TLongStream.generate(() -> nextLong(origin, bound));
     }
 
     default TLongStream longs(long streamSize) {
         checkStreamSize(streamSize);
-
         return longs().limit(streamSize);
     }
 
@@ -92,7 +84,6 @@ public interface TRandomGenerator {
             long bound) {
         checkStreamSize(streamSize);
         checkRange(origin, bound);
-
         return longs(origin, bound).limit(streamSize);
     }
 
@@ -122,13 +113,11 @@ public interface TRandomGenerator {
 
     default float nextFloat(float bound) {
         checkBound(bound);
-
         return boundedNextFloat(this, bound);
     }
 
     default float nextFloat(float origin, float bound) {
         checkRange(origin, bound);
-
         return boundedNextFloat(this, origin, bound);
     }
 
@@ -138,13 +127,11 @@ public interface TRandomGenerator {
 
     default double nextDouble(double bound) {
         checkBound(bound);
-
         return boundedNextDouble(this, bound);
     }
 
     default double nextDouble(double origin, double bound) {
         checkRange(origin, bound);
-
         return boundedNextDouble(this, origin, bound);
     }
 
@@ -154,13 +141,11 @@ public interface TRandomGenerator {
 
     default int nextInt(int bound) {
         checkBound(bound);
-
         return boundedNextInt(this, bound);
     }
 
     default int nextInt(int origin, int bound) {
         checkRange(origin, bound);
-
         return boundedNextInt(this, origin, bound);
     }
 
@@ -168,13 +153,11 @@ public interface TRandomGenerator {
 
     default long nextLong(long bound) {
         checkBound(bound);
-
         return boundedNextLong(this, bound);
     }
 
     default long nextLong(long origin, long bound) {
         checkRange(origin, bound);
-
         return boundedNextLong(this, origin, bound);
     }
 
