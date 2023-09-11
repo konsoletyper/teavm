@@ -59,6 +59,11 @@ public class TRandom extends TObject implements TRandomGenerator, TSerializable 
     }
 
     @Override
+    public float nextFloat() {
+        return (float) nextDouble();
+    }
+
+    @Override
     public double nextDouble() {
         if (PlatformDetector.isC()) {
             return crand();
@@ -67,11 +72,6 @@ public class TRandom extends TObject implements TRandomGenerator, TSerializable 
         } else {
             return random();
         }
-    }
-
-    @Override
-    public float nextFloat() {
-        return (float) nextDouble();
     }
 
     @Import(name = "teavm_rand")
