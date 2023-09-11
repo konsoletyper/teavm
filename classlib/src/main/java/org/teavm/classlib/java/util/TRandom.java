@@ -42,7 +42,7 @@ public class TRandom extends TObject implements TRandomGenerator, TSerializable 
 
     @Override
     public int nextInt() {
-        return (int) (nextDouble(0, 4294967296.0) + Integer.MIN_VALUE);
+        return (int) (nextDouble(0, 0x1.0p+32) + Integer.MIN_VALUE);
     }
 
     @Override
