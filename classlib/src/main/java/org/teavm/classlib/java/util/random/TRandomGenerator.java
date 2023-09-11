@@ -277,20 +277,15 @@ public interface TRandomGenerator {
     }
 
     private static double boundedNextDouble(TRandomGenerator rng, double origin, double bound) {
-        double r = rng.nextDouble();
-        if (origin < bound) {
-            r = r * (bound - origin) + origin;
-            if (r >= bound) {
-                r = Math.nextAfter(bound, origin);
-            }
+        double r = rng.nextDouble() * (bound - origin) + origin;
+        if (r >= bound) {
+            r = Math.nextAfter(bound, origin);
         }
         return r;
     }
 
     private static double boundedNextDouble(TRandomGenerator rng, double bound) {
-        // Specialize boundedNextDouble for origin == 0, bound > 0
-        double r = rng.nextDouble();
-        r = r * bound;
+        double r = rng.nextDouble() * bound;
         if (r >= bound) {
             r = Math.nextDown(bound);
         }
@@ -298,20 +293,15 @@ public interface TRandomGenerator {
     }
 
     private static float boundedNextFloat(TRandomGenerator rng, float origin, float bound) {
-        float r = rng.nextFloat();
-        if (origin < bound) {
-            r = r * (bound - origin) + origin;
-            if (r >= bound) {
-                r = Math.nextAfter(bound, origin);
-            }
+        float r = rng.nextFloat() * (bound - origin) + origin;
+        if (r >= bound) {
+            r = Math.nextAfter(bound, origin);
         }
         return r;
     }
 
     private static float boundedNextFloat(TRandomGenerator rng, float bound) {
-        // Specialize boundedNextFloat for origin == 0, bound > 0
-        float r = rng.nextFloat();
-        r = r * bound;
+        float r = rng.nextFloat() * bound;
         if (r >= bound) {
             r = Math.nextDown(bound);
         }
