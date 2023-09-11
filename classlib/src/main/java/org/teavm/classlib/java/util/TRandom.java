@@ -69,6 +69,11 @@ public class TRandom extends TObject implements TRandomGenerator, TSerializable 
         }
     }
 
+    @Override
+    public float nextFloat() {
+        return (float) nextDouble();
+    }
+
     @Import(name = "teavm_rand")
     @Unmanaged
     private static native double crand();
