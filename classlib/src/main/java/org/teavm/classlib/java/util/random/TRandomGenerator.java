@@ -113,20 +113,20 @@ public interface TRandomGenerator {
 
     default float nextFloat(float bound) {
         checkBound(bound);
-        float r = nextFloat() * bound;
-        if (r >= bound) {
-            r = Math.nextDown(bound);
+        float res = nextFloat() * bound;
+        if (res >= bound) {
+            res = Math.nextDown(bound);
         }
-        return r;
+        return res;
     }
 
     default float nextFloat(float origin, float bound) {
         checkRange(origin, bound);
-        float r = nextFloat() * (bound - origin) + origin;
-        if (r >= bound) {
-            r = Math.nextAfter(bound, origin);
+        float res = nextFloat() * (bound - origin) + origin;
+        if (res >= bound) {
+            res = Math.nextAfter(bound, origin);
         }
-        return r;
+        return res;
     }
 
     default double nextDouble() {
@@ -135,20 +135,20 @@ public interface TRandomGenerator {
 
     default double nextDouble(double bound) {
         checkBound(bound);
-        double r = nextDouble() * bound;
-        if (r >= bound) {
-            r = Math.nextDown(bound);
+        double res = nextDouble() * bound;
+        if (res >= bound) {
+            res = Math.nextDown(bound);
         }
-        return r;
+        return res;
     }
 
     default double nextDouble(double origin, double bound) {
         checkRange(origin, bound);
-        double r = nextDouble() * (bound - origin) + origin;
-        if (r >= bound) {
-            r = Math.nextAfter(bound, origin);
+        double res = nextDouble() * (bound - origin) + origin;
+        if (res >= bound) {
+            res = Math.nextAfter(bound, origin);
         }
-        return r;
+        return res;
     }
 
     default int nextInt() {
@@ -159,9 +159,9 @@ public interface TRandomGenerator {
         checkBound(bound);
         int mask = (Integer.highestOneBit(bound) << 1) - 1;
         while (true) {
-            int r = nextInt() & mask;
-            if (r < bound) {
-                return r;
+            int res = nextInt() & mask;
+            if (res < bound) {
+                return res;
             }
         }
     }
@@ -173,9 +173,9 @@ public interface TRandomGenerator {
             return nextInt(range) + origin;
         } else {
             while (true) {
-                int value = nextInt();
-                if (value >= origin && value < bound) {
-                    return value;
+                int res = nextInt();
+                if (res >= origin && res < bound) {
+                    return res;
                 }
             }
         }
@@ -187,9 +187,9 @@ public interface TRandomGenerator {
         checkBound(bound);
         long mask = (Long.highestOneBit(bound) << 1) - 1;
         while (true) {
-            long r = nextLong() & mask;
-            if (r < bound) {
-                return r;
+            long res = nextLong() & mask;
+            if (res < bound) {
+                return res;
             }
         }
     }
@@ -201,9 +201,9 @@ public interface TRandomGenerator {
             return nextLong(range) + origin;
         } else {
             while (true) {
-                long value = nextLong();
-                if (value >= origin && value < bound) {
-                    return value;
+                long res = nextLong();
+                if (res >= origin && res < bound) {
+                    return res;
                 }
             }
         }
