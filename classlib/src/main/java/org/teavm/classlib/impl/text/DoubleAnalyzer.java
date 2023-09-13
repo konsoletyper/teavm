@@ -21,6 +21,7 @@ public final class DoubleAnalyzer {
     static final int MAX_ABS_DEC_EXP = 330;
     public static final int DECIMAL_PRECISION = 18;
     public static final long DOUBLE_MAX_POS = 100000000000000000L;
+    private static final long MAX_MANTISSA = Long.divideUnsigned(-1, 10);
 
     private DoubleAnalyzer() {
     }
@@ -54,13 +55,11 @@ public final class DoubleAnalyzer {
         int mantissaShift = 12 + binExponentCorrection;
 
         long decMantissa = mulAndShiftRight(mantissa, mantissa10Table[decExponent + 1], mantissaShift);
-        if (decMantissa >= 1000000000000000000L) {
-            ++decExponent;
-            binExponentCorrection = exponent - exp10Table[decExponent + 1];
-            mantissaShift = 12 + binExponentCorrection;
-            decMantissa = mulAndShiftRight(mantissa, mantissa10Table[decExponent + 1], mantissaShift);
-        } else if (decMantissa <= 100000000000000000L) {
-            --decExponent;
+        if (decMantissa <= MAX_MANTISSA) {
+            while (Long.compareUnsigned(decMantissa, MAX_MANTISSA) <= 0) {
+                --decExponent;
+                decMantissa = decMantissa * 10 + 9;
+            }
             binExponentCorrection = exponent - exp10Table[decExponent + 1];
             mantissaShift = 12 + binExponentCorrection;
             decMantissa = mulAndShiftRight(mantissa, mantissa10Table[decExponent + 1], mantissaShift);
@@ -72,18 +71,21 @@ public final class DoubleAnalyzer {
 
         var lowerPos = findLowerDistance(decMantissa, decMantissaLow);
         var upperPos = findUpperDistance(decMantissa, decMantissaHi);
-        if (lowerPos > upperPos) {
-            decMantissa = (decMantissa / lowerPos) * lowerPos;
-        } else if (lowerPos < upperPos) {
-            decMantissa = (decMantissa / upperPos) * upperPos + upperPos;
+        var posCmp = Long.compareUnsigned(lowerPos, upperPos);
+        if (posCmp > 0) {
+            decMantissa = Long.divideUnsigned(decMantissa, lowerPos) * lowerPos;
+        } else if (posCmp < 0) {
+            decMantissa = Long.divideUnsigned(decMantissa, upperPos) * upperPos + upperPos;
         } else {
-            decMantissa = ((decMantissa + (upperPos / 2)) / upperPos) * upperPos;
+            decMantissa = Long.divideUnsigned(decMantissa + (upperPos / 2), upperPos) * upperPos;
         }
 
-        if (decMantissa >= 1000000000000000000L) {
-            decExponent++;
-            decMantissa /= 10;
-        } else if (decMantissa < 100000000000000000L) {
+        if (Long.compareUnsigned(decMantissa, 1000000000000000000L) >= 0) {
+            do {
+                decExponent++;
+                decMantissa = Long.divideUnsigned(decMantissa, 10);
+            } while (Long.compareUnsigned(decMantissa, 1000000000000000000L) >= 0);
+        } else if (Long.compareUnsigned(decMantissa, 100000000000000000L) < 0) {
             decExponent--;
             decMantissa *= 10;
         }
@@ -94,7 +96,9 @@ public final class DoubleAnalyzer {
 
     private static long findLowerDistance(long mantissa, long lower) {
         long pos = 1;
-        while (mantissa / (pos * 10) > lower / (pos * 10)) {
+        while (Long.compareUnsigned(
+                Long.divideUnsigned(mantissa, pos * 10),
+                Long.divideUnsigned(lower, pos * 10)) > 0) {
             pos *= 10;
         }
         return pos;
@@ -102,7 +106,9 @@ public final class DoubleAnalyzer {
 
     private static long findUpperDistance(long mantissa, long upper) {
         long pos = 1;
-        while (mantissa / (pos * 10) < upper / (pos * 10)) {
+        while (Long.compareUnsigned(
+                Long.divideUnsigned(mantissa, pos * 10),
+                Long.divideUnsigned(upper, pos * 10)) < 0) {
             pos *= 10;
         }
         return pos;
@@ -128,6 +134,7 @@ public final class DoubleAnalyzer {
 
         long c = (c3 << (32 + shift)) + (c2 << (16 + shift)) + (c1 << shift);
         cm += c0 << 16;
+        // TODO: removing this gives better result in random tests, however toString(1.0) gives '0.5'
         if (((cm >>> (31 - shift)) & 1) != 0) {
             ++c;
         }
