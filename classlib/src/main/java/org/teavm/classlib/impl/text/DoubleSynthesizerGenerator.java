@@ -24,29 +24,26 @@ public final class DoubleSynthesizerGenerator {
     public static void main(String[] args) {
         var mantissaList = new long[660];
         var expList = new long[660];
-        var shift = 122;
 
-        var exp = 0;
+        var binOneShift = 1024 + 256;
+        var binOne = BigInteger.ONE.shiftLeft(binOneShift);
         var dec = BigInteger.valueOf(1000000000000000000L);
-        for (var i = 0; i < 330; ++i) {
-            while (BigInteger.ONE.shiftLeft(shift + exp + 1).divide(dec).bitLength() <= 64) {
-                ++exp;
-            }
-            mantissaList[330 + i] = BigInteger.ONE.shiftLeft(shift + exp).divide(dec).longValue();
+        for (var i = 0; i <= 330; ++i) {
+            var quot = binOne.divide(dec);
+            mantissaList[330 - i] = extractLong(quot);
+            var exp = quot.bitLength() - binOneShift + 57;
+            expList[330 - i] = 1023 + exp;
             dec = dec.multiply(BigInteger.valueOf(10));
-            expList[330 + i] = 1023 - exp;
         }
 
-        exp = 1;
-        dec = BigInteger.valueOf(1000000000000000000L).multiply(BigInteger.ONE.shiftLeft(1024));
-        var q = BigInteger.valueOf(10L);
-        for (var i = 1; i <= 330; ++i) {
-            while (BigInteger.ONE.shiftLeft(shift + 1024 - exp).multiply(q).divide(dec).bitLength() > 64) {
-                ++exp;
-            }
-            mantissaList[330 - i] = BigInteger.ONE.shiftLeft(shift + 1024 - exp).multiply(q).divide(dec).longValue();
-            q = q.multiply(BigInteger.valueOf(10));
-            expList[330 - i] = 1023 + exp;
+        dec = BigInteger.valueOf(1000000000000000000L);
+        var q = BigInteger.TEN;
+        for (var i = 1; i < 330; ++i) {
+            var quot = q.shiftLeft(binOneShift).divide(dec);
+            mantissaList[330 + i] = extractLong(quot);
+            var exp = quot.bitLength() - binOneShift + 57;
+            expList[330 + i] = 1023 + exp;
+            q = q.multiply(BigInteger.TEN);
         }
 
         System.out.println("[mantissa]");
@@ -59,5 +56,9 @@ public final class DoubleSynthesizerGenerator {
         for (var value : expList) {
             System.out.println(value + ",");
         }
+    }
+
+    private static long extractLong(BigInteger n) {
+        return n.shiftRight(n.bitLength() - 65).add(BigInteger.ONE).shiftRight(1).longValue();
     }
 }
