@@ -134,10 +134,6 @@ public final class DoubleAnalyzer {
 
         long c = (c3 << (32 + shift)) + (c2 << (16 + shift)) + (c1 << shift);
         cm += c0 << 16;
-        // TODO: removing this gives better result in random tests, however toString(1.0) gives '0.5'
-        if (((cm >>> (31 - shift)) & 1) != 0) {
-            ++c;
-        }
         c += cm >>> (32 - shift);
 
         return c;

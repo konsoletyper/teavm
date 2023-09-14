@@ -39,6 +39,10 @@ public final class DoubleSynthesizer {
             return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
         binMantissa += 1L << 4;
+        if ((binMantissa & (-1L << 58L)) != 0) {
+            binMantissa >>>= 1;
+            binExp++;
+        }
         if (binExp <= 0) {
             binMantissa >>= Math.min(-binExp + 1, 64);
             binExp = 0;
