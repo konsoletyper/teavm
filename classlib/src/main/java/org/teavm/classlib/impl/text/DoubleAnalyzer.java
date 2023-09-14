@@ -47,7 +47,7 @@ public final class DoubleAnalyzer {
             mantissa |= 1L << 52;
         }
 
-        int decExponent = Arrays.binarySearch(exp10Table, exponent);
+        int decExponent = Arrays.binarySearch(exp10Table, (short) exponent);
         if (decExponent < 0) {
             decExponent = -decExponent;
         }
@@ -810,7 +810,7 @@ public final class DoubleAnalyzer {
             -1468012460592228864L,
     };
 
-    private static int[] exp10Table = {
+    static short[] exp10Table = {
             -70,
             -66,
             -63,
