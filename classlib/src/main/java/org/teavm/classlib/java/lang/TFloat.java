@@ -114,17 +114,17 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     @Unmanaged
     public static native boolean isFinite(float v);
 
-    public static float parseFloat(String string) throws TNumberFormatException {
+    public static float parseFloat(String string) throws NumberFormatException {
         // TODO: parse infinite and different radix
 
         if (string.isEmpty()) {
-            throw new TNumberFormatException();
+            throw new NumberFormatException();
         }
         int start = 0;
         int end = string.length();
         while (string.charAt(start) <= ' ') {
             if (++start == end) {
-                throw new TNumberFormatException();
+                throw new NumberFormatException();
             }
         }
         while (string.charAt(end - 1) <= ' ') {
@@ -140,7 +140,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
             ++index;
         }
         if (index == end) {
-            throw new TNumberFormatException();
+            throw new NumberFormatException();
         }
         char c = string.charAt(index);
 
@@ -152,7 +152,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         if (c != '.') {
             hasOneDigit = true;
             if (c < '0' || c > '9') {
-                throw new TNumberFormatException();
+                throw new NumberFormatException();
             }
 
             while (index < end && string.charAt(index) == '0') {
@@ -189,18 +189,18 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
                 hasOneDigit = true;
             }
             if (!hasOneDigit) {
-                throw new TNumberFormatException();
+                throw new NumberFormatException();
             }
         }
         if (index < end) {
             c = string.charAt(index);
             if (c != 'e' && c != 'E') {
-                throw new TNumberFormatException();
+                throw new NumberFormatException();
             }
             ++index;
             boolean negativeExp = false;
             if (index == end) {
-                throw new TNumberFormatException();
+                throw new NumberFormatException();
             }
             if (string.charAt(index) == '-') {
                 ++index;
@@ -220,7 +220,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
                 ++index;
             }
             if (!hasOneDigit) {
-                throw new TNumberFormatException();
+                throw new NumberFormatException();
             }
             if (negativeExp) {
                 numExp = -numExp;

@@ -24,29 +24,26 @@ public final class FloatSynthesizerGenerator {
     public static void main(String[] args) {
         var mantissaList = new int[100];
         var expList = new int[100];
-        var shift = 57;
 
-        var exp = 0;
+        var binOneShift = 256;
+        var binOne = BigInteger.ONE.shiftLeft(binOneShift);
         var dec = BigInteger.valueOf(100000000);
-        for (var i = 0; i < 50; ++i) {
-            while (BigInteger.ONE.shiftLeft(shift + exp + 1).divide(dec).bitLength() <= 32) {
-                ++exp;
-            }
-            mantissaList[50 + i] = BigInteger.ONE.shiftLeft(shift + exp).divide(dec).intValue();
+        for (var i = 0; i <= 50; ++i) {
+            var quot = binOne.divide(dec);
+            mantissaList[50 - i] = extractInt(quot);
+            var exp = quot.bitLength() - binOneShift + 30;
+            expList[50 - i] = 127 + exp;
             dec = dec.multiply(BigInteger.valueOf(10));
-            expList[50 + i] = 127 - exp;
         }
 
-        exp = 1;
-        dec = BigInteger.valueOf(100000000).multiply(BigInteger.ONE.shiftLeft(128));
-        var q = BigInteger.valueOf(10L);
-        for (var i = 1; i <= 50; ++i) {
-            while (BigInteger.ONE.shiftLeft(shift + 128 - exp).multiply(q).divide(dec).bitLength() > 32) {
-                ++exp;
-            }
-            mantissaList[50 - i] = BigInteger.ONE.shiftLeft(shift + 128 - exp).multiply(q).divide(dec).intValue();
-            q = q.multiply(BigInteger.valueOf(10));
-            expList[50 - i] = 127 + exp;
+        dec = BigInteger.valueOf(100000000);
+        var q = BigInteger.TEN;
+        for (var i = 1; i < 50; ++i) {
+            var quot = q.shiftLeft(binOneShift).divide(dec);
+            mantissaList[50 + i] = extractInt(quot);
+            var exp = quot.bitLength() - binOneShift + 30;
+            expList[50 + i] = 127 + exp;
+            q = q.multiply(BigInteger.TEN);
         }
 
         System.out.println("[mantissa]");
@@ -59,5 +56,9 @@ public final class FloatSynthesizerGenerator {
         for (var value : expList) {
             System.out.println(value + ",");
         }
+    }
+
+    private static int extractInt(BigInteger n) {
+        return n.shiftRight(n.bitLength() - 33).add(BigInteger.ONE).shiftRight(1).intValue();
     }
 }

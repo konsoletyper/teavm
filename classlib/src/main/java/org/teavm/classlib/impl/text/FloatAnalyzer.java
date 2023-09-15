@@ -21,6 +21,7 @@ public final class FloatAnalyzer {
     public static final int PRECISION = 9;
     public static final int MAX_POS = 100000000;
     static final int MAX_ABS_DEC_EXP = 50;
+    private static final int MAX_MANTISSA = Integer.divideUnsigned(-1, 10);
 
     private FloatAnalyzer() {
     }
@@ -54,13 +55,11 @@ public final class FloatAnalyzer {
         int mantissaShift = 9 + binExponentCorrection;
 
         int decMantissa = mulAndShiftRight(mantissa, mantissa10Table[decExponent + 1], mantissaShift);
-        if (decMantissa >= 1000000000) {
-            ++decExponent;
-            binExponentCorrection = exponent - exp10Table[decExponent + 1];
-            mantissaShift = 9 + binExponentCorrection;
-            decMantissa = mulAndShiftRight(mantissa, mantissa10Table[decExponent + 1], mantissaShift);
-        } else if (decMantissa < 100000000) {
-            --decExponent;
+        if (decMantissa < MAX_MANTISSA) {
+            while (Integer.compareUnsigned(decMantissa, MAX_MANTISSA) <= 0) {
+                --decExponent;
+                decMantissa = decMantissa * 10 + 9;
+            }
             binExponentCorrection = exponent - exp10Table[decExponent + 1];
             mantissaShift = 9 + binExponentCorrection;
             decMantissa = mulAndShiftRight(mantissa, mantissa10Table[decExponent + 1], mantissaShift);
@@ -72,18 +71,21 @@ public final class FloatAnalyzer {
 
         var lowerPos = findLowerDistance(decMantissa, decMantissaLow);
         var upperPos = findUpperDistance(decMantissa, decMantissaHi);
-        if (lowerPos > upperPos) {
-            decMantissa = (decMantissa / lowerPos) * lowerPos;
-        } else if (lowerPos < upperPos) {
-            decMantissa = (decMantissa / upperPos) * upperPos + upperPos;
+        var posCmp = Integer.compareUnsigned(lowerPos, upperPos);
+        if (posCmp > 0) {
+            decMantissa = Integer.divideUnsigned(decMantissa, lowerPos) * lowerPos;
+        } else if (posCmp < 0) {
+            decMantissa = Integer.divideUnsigned(decMantissa, upperPos) * upperPos + upperPos;
         } else {
-            decMantissa = ((decMantissa + (upperPos / 2)) / upperPos) * upperPos;
+            decMantissa = Integer.divideUnsigned(decMantissa + (upperPos / 2), upperPos) * upperPos;
         }
 
-        if (decMantissa >= 1000000000) {
-            decExponent++;
-            decMantissa /= 10;
-        } else if (decMantissa < 100000000) {
+        if (Long.compareUnsigned(decMantissa, 1000000000) >= 0) {
+            do {
+                decExponent++;
+                decMantissa = Integer.divideUnsigned(decMantissa, 10);
+            } while (Integer.compareUnsigned(decMantissa, 1000000000) >= 0);
+        } else if (Integer.compareUnsigned(decMantissa, 100000000) < 0) {
             decExponent--;
             decMantissa *= 10;
         }
@@ -94,7 +96,9 @@ public final class FloatAnalyzer {
 
     private static int findLowerDistance(int mantissa, int lower) {
         int pos = 1;
-        while (mantissa / (pos * 10) > lower / (pos * 10)) {
+        while (Integer.compareUnsigned(
+                Integer.divideUnsigned(mantissa, pos * 10),
+                Integer.divideUnsigned(lower, pos * 10)) > 0) {
             pos *= 10;
         }
         return pos;
@@ -102,7 +106,9 @@ public final class FloatAnalyzer {
 
     private static int findUpperDistance(int mantissa, int upper) {
         int pos = 1;
-        while (mantissa / (pos * 10) < upper / (pos * 10)) {
+        while (Integer.compareUnsigned(
+                Integer.divideUnsigned(mantissa, pos * 10),
+                Integer.divideUnsigned(upper, pos * 10)) < 0) {
             pos *= 10;
         }
         return pos;
@@ -110,10 +116,6 @@ public final class FloatAnalyzer {
 
     static int mulAndShiftRight(int a, int b, int shift) {
         var result = (a & 0xFFFFFFFFL) * (b & 0xFFFFFFFFL);
-        var nextBit = ((result >> (31 - shift)) & 1) != 0;
-        if (nextBit) {
-            result += 1L << (31 - shift);
-        }
         return (int) (result >>> (32 - shift));
     }
 
