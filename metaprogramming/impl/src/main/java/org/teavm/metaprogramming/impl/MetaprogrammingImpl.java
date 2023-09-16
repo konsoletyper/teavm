@@ -32,6 +32,7 @@ import org.teavm.metaprogramming.impl.reflect.ReflectClassImpl;
 import org.teavm.metaprogramming.impl.reflect.ReflectContext;
 import org.teavm.metaprogramming.impl.reflect.ReflectFieldImpl;
 import org.teavm.metaprogramming.impl.reflect.ReflectMethodImpl;
+import org.teavm.metaprogramming.impl.reflect.ReflectRecordComponentImpl;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.BasicBlock;
@@ -423,6 +424,8 @@ public final class MetaprogrammingImpl {
                     params[i] = ((ReflectClassImpl<?>) params[i]).type;
                 } else if (params[i] instanceof ReflectFieldImpl) {
                     params[i] = ((ReflectFieldImpl) params[i]).field.getReference();
+                } else if (params[i] instanceof ReflectRecordComponentImpl) {
+                    params[i] = ((ReflectRecordComponentImpl) params[i]).recordComponent.getReference();
                 } else if (params[i] instanceof Class<?>) {
                     params[i] = ValueType.parse((Class<?>) params[i]);
                 }

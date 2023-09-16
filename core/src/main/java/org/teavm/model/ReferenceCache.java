@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class ReferenceCache {
     private Map<String, Map<MethodDescriptor, MethodReference>> referenceCache = new HashMap<>();
-    private Map<FieldReference, FieldReference> fieldRefenceCache = new HashMap<>();
+    private Map<FieldReference, FieldReference> fieldReferenceCache = new HashMap<>();
     private Map<MethodDescriptor, MethodDescriptor> descriptorCache = new HashMap<>();
     private Map<ValueType, ValueType> valueTypeCache = new HashMap<>();
     private Map<GenericValueType, GenericValueType> genericValueTypeCache = new HashMap<>();
@@ -64,7 +64,7 @@ public class ReferenceCache {
     }
 
     public FieldReference getCached(FieldReference reference) {
-        FieldReference result = fieldRefenceCache.get(reference);
+        FieldReference result = fieldReferenceCache.get(reference);
         if (result == null) {
             result = reference;
             String classNameCached = getCached(reference.getClassName());
@@ -72,7 +72,7 @@ public class ReferenceCache {
             if (classNameCached != reference.getClassName() || fieldNameCached != reference.getFieldName()) {
                 result = new FieldReference(classNameCached, fieldNameCached);
             }
-            fieldRefenceCache.put(result, result);
+            fieldReferenceCache.put(result, result);
         }
         return result;
     }

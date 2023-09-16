@@ -31,6 +31,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.InnerClassNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.RecordComponentNode;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
 import org.teavm.model.AccessLevel;
@@ -51,6 +52,7 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.Phi;
 import org.teavm.model.PrimitiveType;
 import org.teavm.model.Program;
+import org.teavm.model.RecordComponentHolder;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
@@ -312,8 +314,7 @@ public class Parser {
             parseSignature(cls, node.signature);
         }
 
-        for (Object obj : node.fields) {
-            FieldNode fieldNode = (FieldNode) obj;
+        for (FieldNode fieldNode : node.fields) {
             FieldHolder field = parseField(fieldNode);
             cls.addField(field);
             field.updateReference(referenceCache);
@@ -324,6 +325,11 @@ public class Parser {
             MethodHolder method = parseMethod(methodNode, fullFileName);
             cls.addMethod(method);
             method.updateReference(referenceCache);
+        }
+        for (RecordComponentNode rcNode : node.recordComponents) {
+            RecordComponentHolder recordComponent = parseRecordComponent(rcNode);
+            cls.addRecordComponent(recordComponent);
+            recordComponent.updateReferences(referenceCache);
         }
 
         if (node.outerClass != null) {
@@ -439,6 +445,28 @@ public class Parser {
         }
 
         return field;
+    }
+
+    public RecordComponentHolder parseRecordComponent(RecordComponentNode node) {
+        RecordComponentHolder rc = new RecordComponentHolder(referenceCache.getCached(node.name));
+        rc.setType(referenceCache.getCached(ValueType.parse(node.descriptor)));
+        enhanceRecordComponentModifiers(rc);
+        parseAnnotations(rc.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
+        if (node.signature != null) {
+            GenericValueType.ParsePosition position = new GenericValueType.ParsePosition();
+            GenericValueType type = GenericValueType.parse(node.signature, position);
+            if (type == null || position.index < node.signature.length()) {
+                throw couldNotParseSignature("field '" + rc.getReference() + "'", node.signature);
+            }
+            rc.setGenericType(type);
+        }
+
+        return rc;
+    }
+
+    private void enhanceRecordComponentModifiers(ElementHolder member) {
+        member.setLevel(AccessLevel.PRIVATE);
+        member.getModifiers().add(ElementModifier.FINAL);
     }
 
     public void parseModifiers(int access, ElementHolder member, int type) {

@@ -29,6 +29,7 @@ import org.teavm.metaprogramming.Value;
 import org.teavm.metaprogramming.impl.reflect.ReflectClassImpl;
 import org.teavm.metaprogramming.impl.reflect.ReflectFieldImpl;
 import org.teavm.metaprogramming.impl.reflect.ReflectMethodImpl;
+import org.teavm.metaprogramming.impl.reflect.ReflectRecordComponentImpl;
 import org.teavm.metaprogramming.reflect.ReflectField;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
 import org.teavm.model.BasicBlock;
@@ -319,6 +320,15 @@ public class CompositeMethodGenerator {
             diagnostics.error(new CallLocation(MetaprogrammingImpl.templateMethod, location),
                     "Can't reference this ReflectField {{f0}} directly except for calling special "
                     + "methods on it", reflectField.field.getReference());
+            NullConstantInstruction insn = new NullConstantInstruction();
+            insn.setReceiver(program.createVariable());
+            add(insn);
+            return insn.getReceiver();
+        } else if (value instanceof ReflectRecordComponentImpl) {
+            ReflectRecordComponentImpl reflectRecordComponent = (ReflectRecordComponentImpl) value;
+            diagnostics.error(new CallLocation(MetaprogrammingImpl.templateMethod, location),
+                    "Can't reference this ReflectRecordComponent {{f0}} directly except for calling special "
+                            + "methods on it", reflectRecordComponent.recordComponent.getReference());
             NullConstantInstruction insn = new NullConstantInstruction();
             insn.setReceiver(program.createVariable());
             add(insn);

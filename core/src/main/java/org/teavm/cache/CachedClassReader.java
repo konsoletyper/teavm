@@ -24,6 +24,7 @@ import org.teavm.model.GenericTypeParameter;
 import org.teavm.model.GenericValueType;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
+import org.teavm.model.RecordComponentReader;
 
 class CachedClassReader extends CachedElement implements ClassReader {
     String parent;
@@ -36,6 +37,7 @@ class CachedClassReader extends CachedElement implements ClassReader {
     Set<GenericValueType.Object> genericInterfaces;
     Map<MethodDescriptor, CachedMethod> methods;
     Map<String, CachedField> fields;
+    Map<String, CachedRecordComponent> recordComponents;
 
     @Override
     public GenericTypeParameter[] getGenericParameters() {
@@ -80,6 +82,11 @@ class CachedClassReader extends CachedElement implements ClassReader {
     @Override
     public Collection<? extends FieldReader> getFields() {
         return fields.values();
+    }
+
+    @Override
+    public Collection<? extends RecordComponentReader> getRecordComponents() {
+        return recordComponents.values();
     }
 
     @Override
