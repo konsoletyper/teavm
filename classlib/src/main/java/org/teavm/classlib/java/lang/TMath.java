@@ -240,7 +240,7 @@ public final class TMath extends TObject {
         if (bits >= 53L << 52L) {
             bits -= 52L << 52L;
         } else {
-            int exponent = (int) bits >> 52;
+            int exponent = (int) (bits >> 52);
             bits = 1L << Math.max(0, exponent - 1);
         }
         return TDouble.longBitsToDouble(bits);
