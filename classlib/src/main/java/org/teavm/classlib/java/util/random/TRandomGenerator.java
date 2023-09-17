@@ -152,7 +152,7 @@ public interface TRandomGenerator {
     }
 
     default int nextInt() {
-        return (int)(nextLong() >>> 32);
+        return (int) (nextLong() >>> 32);
     }
 
     default int nextInt(int bound) {
