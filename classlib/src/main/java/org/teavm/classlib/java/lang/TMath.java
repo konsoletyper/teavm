@@ -215,11 +215,11 @@ public final class TMath extends TObject {
     }
 
     public static float abs(float n) {
-        return n > 0 ? n : -n;
+        return n <= 0.0f ? 0.0f - n : n;
     }
 
     public static double abs(double n) {
-        return n > 0 ? n : -n;
+        return n <= 0.0d ? 0.0d - n : n;
     }
 
     public static double ulp(double d) {

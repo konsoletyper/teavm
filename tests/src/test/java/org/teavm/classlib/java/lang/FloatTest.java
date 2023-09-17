@@ -16,6 +16,8 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
@@ -52,6 +54,12 @@ public class FloatTest {
         assertEquals(0, Float.parseFloat("00000.0000"), 1E-12F);
         assertEquals(4499999285F, Float.parseFloat("4499999285"), 100F);
         assertEquals(0.4499999285F, Float.parseFloat("0.4499999285"), 1E-9F);
+    }
+
+    @Test
+    public void testEquals() {
+        assertNotEquals(Float.valueOf(-0.0f), Float.valueOf(0.0f));
+        assertEquals(Float.valueOf(5.0f), Float.valueOf(5.0f));
     }
 
     @Test

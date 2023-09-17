@@ -221,7 +221,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         if (this == other) {
             return true;
         }
-        return other instanceof TDouble && ((TDouble) other).value == value;
+        return other instanceof TDouble && doubleToLongBits(((TDouble) other).value) == doubleToLongBits(value);
     }
 
     @Override
