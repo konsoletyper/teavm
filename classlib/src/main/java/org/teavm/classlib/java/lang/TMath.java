@@ -343,12 +343,14 @@ public final class TMath extends TObject {
         if (TDouble.isNaN(d)) {
             return d;
         }
+        if (d == 0.0d) {
+            return Double.MIN_VALUE;
+        }
         if (d == TDouble.POSITIVE_INFINITY) {
             return d;
         }
         long bits = TDouble.doubleToLongBits(d);
-        boolean negative = (bits & (1L << 63)) != 0;
-        if (negative) {
+        if (d < 0.0d) {
             bits--;
         } else {
             bits++;
@@ -360,12 +362,14 @@ public final class TMath extends TObject {
         if (TFloat.isNaN(d)) {
             return d;
         }
+        if (d == 0.0f) {
+            return Float.MIN_VALUE;
+        }
         if (d == TFloat.POSITIVE_INFINITY) {
             return d;
         }
         int bits = TFloat.floatToIntBits(d);
-        boolean negative = (bits & (1L << 31)) != 0;
-        if (negative) {
+        if (d < 0.0f) {
             bits--;
         } else {
             bits++;
@@ -377,12 +381,14 @@ public final class TMath extends TObject {
         if (TDouble.isNaN(d)) {
             return d;
         }
+        if (d == 0.0d) {
+            return -Double.MIN_VALUE;
+        }
         if (d == TDouble.NEGATIVE_INFINITY) {
             return d;
         }
         long bits = TDouble.doubleToLongBits(d);
-        boolean negative = (bits & (1L << 63)) != 0;
-        if (negative) {
+        if (d < 0.0d) {
             bits++;
         } else {
             bits--;
@@ -394,12 +400,14 @@ public final class TMath extends TObject {
         if (TFloat.isNaN(d)) {
             return d;
         }
-        if (d == TFloat.POSITIVE_INFINITY) {
+        if (d == 0.0f) {
+            return -Float.MIN_VALUE;
+        }
+        if (d == TFloat.NEGATIVE_INFINITY) {
             return d;
         }
         int bits = TFloat.floatToIntBits(d);
-        boolean negative = (bits & (1L << 31)) != 0;
-        if (negative) {
+        if (d < 0.0f) {
             bits++;
         } else {
             bits--;

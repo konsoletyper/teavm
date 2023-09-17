@@ -66,4 +66,28 @@ public class MathTest {
         assertEquals(-1, Math.round(-1.3));
         assertEquals(-2, Math.round(-1.8));
     }
+
+    @Test
+    public void nextWorks() {
+        assertEquals(-Double.MIN_VALUE, Math.nextDown(0.0), 0.0);
+        assertEquals(Double.MIN_VALUE, Math.nextUp(0.0), 0.0);
+        assertEquals(-Float.MIN_VALUE, Math.nextDown(0.0f), 0.0f);
+        assertEquals(Float.MIN_VALUE, Math.nextUp(0.0f), 0.0f);
+        assertEquals(0.10000000000000002, Math.nextUp(0.1), 0.0);
+        assertEquals(0.9999999999999999, Math.nextDown(1.0), 0.0);
+        assertEquals(-0.09999999999999999, Math.nextUp(-0.1), 0.0);
+        assertEquals(-1.0000000000000002, Math.nextDown(-1.0), 0.0);
+        assertEquals(0.10000001f, Math.nextUp(0.1f), 0.0f);
+        assertEquals(0.99999994f, Math.nextDown(1.0f), 0.0f);
+        assertEquals(-0.099999994f, Math.nextUp(-0.1f), 0.0f);
+        assertEquals(-1.0000001f, Math.nextDown(-1.0f), 0.0f);
+        assertEquals(Float.NEGATIVE_INFINITY, Math.nextDown(Float.NEGATIVE_INFINITY), 0.0f);
+        assertEquals(Float.intBitsToFloat(Float.floatToIntBits(Float.POSITIVE_INFINITY) - 1), Math.nextDown(Float.POSITIVE_INFINITY), 0.0f);
+        assertEquals(Float.POSITIVE_INFINITY, Math.nextUp(Float.POSITIVE_INFINITY), 0.0f);
+        assertEquals(Float.intBitsToFloat(Float.floatToIntBits(Float.NEGATIVE_INFINITY) - 1), Math.nextUp(Float.NEGATIVE_INFINITY), 0.0f);
+        assertEquals(Double.NEGATIVE_INFINITY, Math.nextDown(Double.NEGATIVE_INFINITY), 0.0);
+        assertEquals(Double.longBitsToDouble(Double.doubleToLongBits(Double.POSITIVE_INFINITY) - 1), Math.nextDown(Double.POSITIVE_INFINITY), 0.0);
+        assertEquals(Double.POSITIVE_INFINITY, Math.nextUp(Double.POSITIVE_INFINITY), 0.0);
+        assertEquals(Double.longBitsToDouble(Double.doubleToLongBits(Double.NEGATIVE_INFINITY) - 1), Math.nextUp(Double.NEGATIVE_INFINITY), 0.0);
+    }
 }
