@@ -255,8 +255,8 @@ public final class TMath extends TObject {
 
         int bits = TFloat.floatToIntBits(d);
         bits &= 0x7F800000;
-        if (bits >= 24L << 23L) {
-            bits -= 23L << 23L;
+        if (bits >= 24 << 23) {
+            bits -= 23 << 23;
         } else {
             int exponent = bits >> 23;
             bits = 1 << Math.max(0, exponent - 1);
