@@ -65,7 +65,8 @@ public class RandomTest {
     @Test
     public void testIntegers() {
         Random random = new Random();
-        int[] ints = IntStream.range(0, 10000).map(i -> random.nextInt()).toArray(); // 10 000 enough for almost 100% probability
+        int[] ints = IntStream.range(0, 10000).map(i -> random.nextInt())
+                .toArray(); // 10 000 enough for almost 100% probability
         int ones = IntStream.of(ints).reduce(0, (id, i) -> id | i);
         Set<Integer> unique = Arrays.stream(ints).boxed().collect(Collectors.toSet());
         assertEquals(-1, ones); // all ones present
@@ -90,7 +91,8 @@ public class RandomTest {
         } catch (IllegalArgumentException e) {
             // normal
         }
-        ints = IntStream.range(0, 1000).map(i -> random.nextInt(Integer.MIN_VALUE / 3 * 2, Integer.MAX_VALUE / 3 * 2)).toArray();
+        ints = IntStream.range(0, 1000).map(i -> random.nextInt(Integer.MIN_VALUE / 3 * 2, Integer.MAX_VALUE / 3 * 2))
+                .toArray();
         for (int i : ints) {
             assertTrue(i >= Integer.MIN_VALUE / 3 * 2 && i < Integer.MAX_VALUE / 3 * 2);
         }
@@ -101,7 +103,8 @@ public class RandomTest {
     @Test
     public void testLongs() {
         Random random = new Random();
-        long[] longs = IntStream.range(0, 10000).mapToLong(i -> random.nextLong()).toArray(); // 10 000 enough for almost 100% probability
+        long[] longs = IntStream.range(0, 10000).mapToLong(i -> random.nextLong())
+                .toArray(); // 10 000 enough for almost 100% probability
         long ones = LongStream.of(longs).reduce(0L, (id, i) -> id | i);
         Set<Long> unique = Arrays.stream(longs).boxed().collect(Collectors.toSet());
         assertEquals(-1L, ones); // all ones present
@@ -126,7 +129,8 @@ public class RandomTest {
         } catch (IllegalArgumentException e) {
             // normal
         }
-        longs = IntStream.range(0, 1000).mapToLong(i -> random.nextLong(Long.MIN_VALUE / 3 * 2, Long.MAX_VALUE / 3 * 2)).toArray();
+        longs = IntStream.range(0, 1000).mapToLong(i -> random.nextLong(Long.MIN_VALUE / 3 * 2, Long.MAX_VALUE / 3 * 2))
+                .toArray();
         for (long l : longs) {
             assertTrue(l >= Long.MIN_VALUE / 3 * 2 && l < Long.MAX_VALUE / 3 * 2);
         }
