@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.impl;
 
-import java.util.function.Supplier;
+import java.util.function.DoubleSupplier;
 
 public class RandomUtils {
     public static void checkStreamSize(long streamSize) {
@@ -72,7 +72,7 @@ public class RandomUtils {
         }
     }
 
-    public static double[] pairGaussian(Supplier<Double> rng) {
+    public static double[] pairGaussian(DoubleSupplier rng) {
         /*
          * This implementation uses the polar method to generate two gaussian
          * values at a time. One is returned, and the other is stored to be returned
@@ -82,8 +82,8 @@ public class RandomUtils {
         double v2;
         double s;
         do {
-            v1 = 2 * rng.get() - 1;
-            v2 = 2 * rng.get() - 1;
+            v1 = 2 * rng.getAsDouble() - 1;
+            v2 = 2 * rng.getAsDouble() - 1;
             s = v1 * v1 + v2 * v2;
         } while (s >= 1 || s == 0);
 
