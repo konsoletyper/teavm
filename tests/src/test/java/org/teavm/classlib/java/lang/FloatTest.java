@@ -58,6 +58,7 @@ public class FloatTest {
     public void testEquals() {
         assertNotEquals(Float.valueOf(-0.0f), Float.valueOf(0.0f));
         assertEquals(Float.valueOf(5.0f), Float.valueOf(5.0f));
+        assertEquals(Float.valueOf(Float.NaN), Float.valueOf(Float.NaN));
         assertEquals(Float.valueOf(Float.POSITIVE_INFINITY), Float.valueOf(Float.POSITIVE_INFINITY));
         assertNotEquals(Float.valueOf(Float.NEGATIVE_INFINITY), Float.valueOf(Float.POSITIVE_INFINITY));
         assertEquals(Float.valueOf(Float.NEGATIVE_INFINITY), Float.valueOf(Float.NEGATIVE_INFINITY));
