@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util.random;
 
+import org.teavm.classlib.impl.RandomUtils;
 import org.teavm.classlib.java.util.stream.TDoubleStream;
 import org.teavm.classlib.java.util.stream.TIntStream;
 import org.teavm.classlib.java.util.stream.TLongStream;
@@ -29,19 +30,19 @@ public interface TRandomGenerator {
     }
 
     default TDoubleStream doubles(double origin, double bound) {
-        checkRange(origin, bound);
+        RandomUtils.checkRange(origin, bound);
         return TDoubleStream.generate(() -> nextDouble(origin, bound));
     }
 
     default TDoubleStream doubles(long streamSize) {
-        checkStreamSize(streamSize);
+        RandomUtils.checkStreamSize(streamSize);
         return doubles().limit(streamSize);
     }
 
     default TDoubleStream doubles(long streamSize, double origin,
             double bound) {
-        checkStreamSize(streamSize);
-        checkRange(origin, bound);
+        RandomUtils.checkStreamSize(streamSize);
+        RandomUtils.checkRange(origin, bound);
         return doubles(origin, bound).limit(streamSize);
     }
 
@@ -50,19 +51,19 @@ public interface TRandomGenerator {
     }
 
     default TIntStream ints(int origin, int bound) {
-        checkRange(origin, bound);
+        RandomUtils.checkRange(origin, bound);
         return TIntStream.generate(() -> nextInt(origin, bound));
     }
 
     default TIntStream ints(long streamSize) {
-        checkStreamSize(streamSize);
+        RandomUtils.checkStreamSize(streamSize);
         return ints().limit(streamSize);
     }
 
     default TIntStream ints(long streamSize, int origin,
             int bound) {
-        checkStreamSize(streamSize);
-        checkRange(origin, bound);
+        RandomUtils.checkStreamSize(streamSize);
+        RandomUtils.checkRange(origin, bound);
         return ints(origin, bound).limit(streamSize);
     }
 
@@ -71,19 +72,19 @@ public interface TRandomGenerator {
     }
 
     default TLongStream longs(long origin, long bound) {
-        checkRange(origin, bound);
+        RandomUtils.checkRange(origin, bound);
         return TLongStream.generate(() -> nextLong(origin, bound));
     }
 
     default TLongStream longs(long streamSize) {
-        checkStreamSize(streamSize);
+        RandomUtils.checkStreamSize(streamSize);
         return longs().limit(streamSize);
     }
 
     default TLongStream longs(long streamSize, long origin,
             long bound) {
-        checkStreamSize(streamSize);
-        checkRange(origin, bound);
+        RandomUtils.checkStreamSize(streamSize);
+        RandomUtils.checkRange(origin, bound);
         return longs(origin, bound).limit(streamSize);
     }
 
@@ -112,7 +113,7 @@ public interface TRandomGenerator {
     }
 
     default float nextFloat(float bound) {
-        checkBound(bound);
+        RandomUtils.checkBound(bound);
         float res = nextFloat() * bound;
         if (res >= bound) {
             res = Math.nextDown(bound);
@@ -121,7 +122,7 @@ public interface TRandomGenerator {
     }
 
     default float nextFloat(float origin, float bound) {
-        checkRange(origin, bound);
+        RandomUtils.checkRange(origin, bound);
         float res = nextFloat() * (bound - origin) + origin;
         if (res >= bound) {
             res = Math.nextAfter(bound, origin);
@@ -134,7 +135,7 @@ public interface TRandomGenerator {
     }
 
     default double nextDouble(double bound) {
-        checkBound(bound);
+        RandomUtils.checkBound(bound);
         double res = nextDouble() * bound;
         if (res >= bound) {
             res = Math.nextDown(bound);
@@ -143,7 +144,7 @@ public interface TRandomGenerator {
     }
 
     default double nextDouble(double origin, double bound) {
-        checkRange(origin, bound);
+        RandomUtils.checkRange(origin, bound);
         double res = nextDouble() * (bound - origin) + origin;
         if (res >= bound) {
             res = Math.nextAfter(bound, origin);
@@ -156,7 +157,7 @@ public interface TRandomGenerator {
     }
 
     default int nextInt(int bound) {
-        checkBound(bound);
+        RandomUtils.checkBound(bound);
         int mask = (Integer.highestOneBit(bound) << 1) - 1;
         while (true) {
             int res = nextInt() & mask;
@@ -167,7 +168,7 @@ public interface TRandomGenerator {
     }
 
     default int nextInt(int origin, int bound) {
-        checkRange(origin, bound);
+        RandomUtils.checkRange(origin, bound);
         int range = bound - origin;
         if (range > 0) {
             return nextInt(range) + origin;
@@ -184,7 +185,7 @@ public interface TRandomGenerator {
     long nextLong();
 
     default long nextLong(long bound) {
-        checkBound(bound);
+        RandomUtils.checkBound(bound);
         long mask = (Long.highestOneBit(bound) << 1) - 1;
         while (true) {
             long res = nextLong() & mask;
@@ -195,7 +196,7 @@ public interface TRandomGenerator {
     }
 
     default long nextLong(long origin, long bound) {
-        checkRange(origin, bound);
+        RandomUtils.checkRange(origin, bound);
         long range = bound - origin;
         if (range > 0) {
             return nextLong(range) + origin;
@@ -210,7 +211,7 @@ public interface TRandomGenerator {
     }
 
     default double nextGaussian() {
-        return pairGaussian(this)[0];
+        return RandomUtils.pairGaussian(this::nextDouble)[0];
     }
 
     default double nextGaussian(double mean, double stddev) {
@@ -218,81 +219,5 @@ public interface TRandomGenerator {
             throw new IllegalArgumentException();
         }
         return mean + stddev * nextGaussian();
-    }
-
-    //********************************** UTILITY *************************************************//
-
-    private static void checkStreamSize(long streamSize) {
-        if (streamSize < 0L) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    private static void checkBound(float bound) {
-        if (!(bound > 0.0 && bound < Float.POSITIVE_INFINITY)) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    private static void checkBound(double bound) {
-        if (!(bound > 0.0 && bound < Double.POSITIVE_INFINITY)) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    private static void checkBound(int bound) {
-        if (bound <= 0) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    private static void checkBound(long bound) {
-        if (bound <= 0) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    private static void checkRange(float origin, float bound) {
-        if (!(origin < bound && bound - origin < Float.POSITIVE_INFINITY)) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    private static void checkRange(double origin, double bound) {
-        if (!(origin < bound && bound - origin < Double.POSITIVE_INFINITY)) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    private static void checkRange(int origin, int bound) {
-        if (origin >= bound) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    private static void checkRange(long origin, long bound) {
-        if (origin >= bound) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    static double[] pairGaussian(TRandomGenerator rng) {
-        /*
-         * This implementation uses the polar method to generate two gaussian
-         * values at a time. One is returned, and the other is stored to be returned
-         * next time.
-         */
-        double v1;
-        double v2;
-        double s;
-        do {
-            v1 = 2 * rng.nextDouble() - 1;
-            v2 = 2 * rng.nextDouble() - 1;
-            s = v1 * v1 + v2 * v2;
-        } while (s >= 1 || s == 0);
-
-        double m = StrictMath.sqrt(-2 * StrictMath.log(s) / s);
-
-        return new double[] { v1 * m, v2 * m };
     }
 }

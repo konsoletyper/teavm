@@ -17,6 +17,7 @@ package org.teavm.classlib.java.util;
 
 import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.classlib.impl.RandomUtils;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.util.random.TRandomGenerator;
@@ -94,7 +95,7 @@ public class TRandom extends TObject implements TRandomGenerator, TSerializable 
             return storedGaussian;
         }
 
-        double[] pair = TRandomGenerator.pairGaussian(this);
+        double[] pair = RandomUtils.pairGaussian(this::nextDouble);
         haveStoredGaussian = true;
         storedGaussian = pair[1];
 
