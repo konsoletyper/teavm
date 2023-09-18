@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -77,10 +78,10 @@ public class MathTest {
     public void signumWorks() {
         assertEquals(Double.valueOf(0.0), Double.valueOf(Math.signum(0.0)));
         assertEquals(Double.valueOf(-0.0), Double.valueOf(Math.signum(-0.0)));
-        // after Double.equals fix assertEquals(Double.valueOf(Double.NaN), Double.valueOf(Math.signum(Double.NaN)));
+        assertTrue(Double.isNaN(Math.signum(Double.NaN)));
         assertEquals(Float.valueOf(0.0f), Float.valueOf(Math.signum(0.0f)));
         assertEquals(Float.valueOf(-0.0f), Float.valueOf(Math.signum(-0.0f)));
-        // after Float.equals fix assertEquals(Float.valueOf(Float.NaN), Float.valueOf(Math.signum(Float.NaN)));
+        assertTrue(Float.isNaN(Math.signum(Float.NaN)));
         assertEquals(Double.valueOf(-1.0), Double.valueOf(Math.signum(-Double.MIN_VALUE)));
         assertEquals(Double.valueOf(1.0), Double.valueOf(Math.signum(Double.MIN_VALUE)));
     }
