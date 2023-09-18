@@ -60,6 +60,10 @@ public class DoubleTest {
     public void testEquals() {
         assertNotEquals(Double.valueOf(-0.0), Double.valueOf(0.0));
         assertEquals(Double.valueOf(3.0), Double.valueOf(3.0));
+        assertEquals(Double.valueOf(Double.NaN), Double.valueOf(Double.NaN));
+        assertEquals(Double.valueOf(Double.POSITIVE_INFINITY), Double.valueOf(Double.POSITIVE_INFINITY));
+        assertNotEquals(Double.valueOf(Double.NEGATIVE_INFINITY), Double.valueOf(Double.POSITIVE_INFINITY));
+        assertEquals(Double.valueOf(Double.NEGATIVE_INFINITY), Double.valueOf(Double.NEGATIVE_INFINITY));
     }
 
     @Test
