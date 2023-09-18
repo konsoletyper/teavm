@@ -20,56 +20,10 @@ import java.util.Arrays;
 public final class FloatAnalyzer {
     public static final int PRECISION = 9;
     public static final int MAX_POS = 100000000;
-
-    private static final int MAX_ABS_DEC_EXP = 50;
-    private static final int[] mantissa10Table = new int[MAX_ABS_DEC_EXP * 2];
-    private static final int[] exp10Table = new int[MAX_ABS_DEC_EXP * 2];
+    static final int MAX_ABS_DEC_EXP = 50;
+    private static final int MAX_MANTISSA = Integer.divideUnsigned(-1, 10);
 
     private FloatAnalyzer() {
-    }
-
-    static {
-        int decMantissaOne = 2000000000;
-
-        int mantissa = decMantissaOne;
-        int exponent = 127;
-
-        for (int i = 0; i < MAX_ABS_DEC_EXP; ++i) {
-            mantissa10Table[i + MAX_ABS_DEC_EXP] = Integer.divideUnsigned(mantissa, 20);
-            exp10Table[i + MAX_ABS_DEC_EXP] = exponent;
-
-            mantissa = Integer.divideUnsigned(mantissa, 10);
-            int remainder = Integer.remainderUnsigned(mantissa, 10);
-            while (mantissa <= decMantissaOne && (mantissa & (1 << 31)) == 0) {
-                mantissa <<= 1;
-                exponent++;
-                remainder <<= 1;
-            }
-            mantissa += remainder / 10;
-        }
-
-        int maxMantissa = Integer.MAX_VALUE / 10;
-        mantissa = decMantissaOne;
-        exponent = 127;
-        for (int i = 0; i < MAX_ABS_DEC_EXP; ++i) {
-            int nextMantissa = mantissa;
-            int shift = 0;
-            while (nextMantissa > maxMantissa) {
-                nextMantissa >>= 1;
-                shift++;
-                exponent--;
-            }
-
-            nextMantissa *= 10;
-            if (shift > 0) {
-                long shiftedOffPart = mantissa & ((1 << shift) - 1);
-                nextMantissa += (shiftedOffPart * 10) >> shift;
-            }
-            mantissa = nextMantissa;
-
-            mantissa10Table[MAX_ABS_DEC_EXP - i - 1] = Integer.divideUnsigned(mantissa, 20);
-            exp10Table[MAX_ABS_DEC_EXP - i - 1] = exponent;
-        }
     }
 
     public static void analyze(float d, Result result) {
@@ -83,13 +37,11 @@ public final class FloatAnalyzer {
             return;
         }
 
-        int errorShift = 0;
         if (exponent == 0) {
             mantissa <<= 1;
             while ((mantissa & (1L << 23)) == 0) {
                 mantissa <<= 1;
                 exponent--;
-                ++errorShift;
             }
         } else {
             mantissa |= 1 << 23;
@@ -97,43 +49,43 @@ public final class FloatAnalyzer {
 
         int decExponent = Arrays.binarySearch(exp10Table, exponent);
         if (decExponent < 0) {
-            decExponent = -decExponent - 2;
+            decExponent = -decExponent;
         }
-        int binExponentCorrection = exponent - exp10Table[decExponent];
+        int binExponentCorrection = exponent - exp10Table[decExponent + 1];
         int mantissaShift = 9 + binExponentCorrection;
 
-        int decMantissa = (int) (((long) mantissa * mantissa10Table[decExponent]) >>> (32 - mantissaShift));
-        if (decMantissa >= 1000000000) {
-            ++decExponent;
-            binExponentCorrection = exponent - exp10Table[decExponent];
+        int decMantissa = mulAndShiftRight(mantissa, mantissa10Table[decExponent + 1], mantissaShift);
+        if (decMantissa < MAX_MANTISSA) {
+            while (Integer.compareUnsigned(decMantissa, MAX_MANTISSA) <= 0) {
+                --decExponent;
+                decMantissa = decMantissa * 10 + 9;
+            }
+            binExponentCorrection = exponent - exp10Table[decExponent + 1];
             mantissaShift = 9 + binExponentCorrection;
-            decMantissa = (int) (((long) mantissa * mantissa10Table[decExponent]) >>> (32 - mantissaShift));
+            decMantissa = mulAndShiftRight(mantissa, mantissa10Table[decExponent + 1], mantissaShift);
         }
+        var decMantissaHi = mulAndShiftRight((mantissa << 1) + 1, mantissa10Table[decExponent + 1],
+                mantissaShift - 1);
+        var decMantissaLow = mulAndShiftRight((mantissa << 1) - 1, mantissa10Table[decExponent + 1],
+                mantissaShift - 1);
 
-        errorShift = 31 - mantissaShift - errorShift;
-        int error = errorShift >= 0
-                ? mantissa10Table[decExponent] >>> errorShift
-                : mantissa10Table[decExponent] << (-errorShift);
-        int upError = (error + 1) >> 1;
-        int downError = error >> 1;
-        if (mantissa == (1 << 22)) {
-            downError >>= 2;
-        }
-
-        int lowerPos = findLowerDistanceToZero(decMantissa, downError);
-        int upperPos = findUpperDistanceToZero(decMantissa, upError);
-        if (lowerPos > upperPos) {
-            decMantissa = (decMantissa / lowerPos) * lowerPos;
-        } else if (lowerPos < upperPos) {
-            decMantissa = (decMantissa / upperPos) * upperPos + upperPos;
+        var lowerPos = findLowerDistance(decMantissa, decMantissaLow);
+        var upperPos = findUpperDistance(decMantissa, decMantissaHi);
+        var posCmp = Integer.compareUnsigned(lowerPos, upperPos);
+        if (posCmp > 0) {
+            decMantissa = Integer.divideUnsigned(decMantissa, lowerPos) * lowerPos;
+        } else if (posCmp < 0) {
+            decMantissa = Integer.divideUnsigned(decMantissa, upperPos) * upperPos + upperPos;
         } else {
-            decMantissa = ((decMantissa + upperPos / 2) / upperPos) * upperPos;
+            decMantissa = Integer.divideUnsigned(decMantissa + (upperPos / 2), upperPos) * upperPos;
         }
 
-        if (decMantissa >= 1000000000) {
-            decExponent++;
-            decMantissa /= 10;
-        } else if (decMantissa < 100000000) {
+        if (Long.compareUnsigned(decMantissa, 1000000000) >= 0) {
+            do {
+                decExponent++;
+                decMantissa = Integer.divideUnsigned(decMantissa, 10);
+            } while (Integer.compareUnsigned(decMantissa, 1000000000) >= 0);
+        } else if (Integer.compareUnsigned(decMantissa, 100000000) < 0) {
             decExponent--;
             decMantissa *= 10;
         }
@@ -142,28 +94,29 @@ public final class FloatAnalyzer {
         result.exponent = decExponent - MAX_ABS_DEC_EXP;
     }
 
-    private static int findLowerDistanceToZero(int mantissa, int error) {
-        int pos = 10;
-        while (pos <= error) {
+    private static int findLowerDistance(int mantissa, int lower) {
+        int pos = 1;
+        while (Integer.compareUnsigned(
+                Integer.divideUnsigned(mantissa, pos * 10),
+                Integer.divideUnsigned(lower, pos * 10)) > 0) {
             pos *= 10;
-        }
-        int mantissaRight = mantissa % pos;
-        if (mantissaRight >= error / 2) {
-            pos /= 10;
         }
         return pos;
     }
 
-    private static int findUpperDistanceToZero(int mantissa, int error) {
-        int pos = 10;
-        while (pos <= error) {
+    private static int findUpperDistance(int mantissa, int upper) {
+        int pos = 1;
+        while (Integer.compareUnsigned(
+                Integer.divideUnsigned(mantissa, pos * 10),
+                Integer.divideUnsigned(upper, pos * 10)) < 0) {
             pos *= 10;
         }
-        int mantissaRight = mantissa % pos;
-        if (pos - mantissaRight > error / 2) {
-            pos /= 10;
-        }
         return pos;
+    }
+
+    static int mulAndShiftRight(int a, int b, int shift) {
+        var result = (a & 0xFFFFFFFFL) * (b & 0xFFFFFFFFL);
+        return (int) (result >>> (32 - shift));
     }
 
     public static class Result {
@@ -171,4 +124,212 @@ public final class FloatAnalyzer {
         public int exponent;
         public boolean sign;
     }
+
+    // The code below was generated by FloatAnalyzerGenerator
+
+    private static final int[] mantissa10Table = {
+            -18543760,
+            -873828468,
+            -1558056233,
+            -2105438446,
+            -791721136,
+            -1492370368,
+            -2052889754,
+            -707643228,
+            -1425108042,
+            -1999079893,
+            -621547450,
+            -1356231419,
+            -1943978595,
+            -533385374,
+            -1285701758,
+            -1887554866,
+            -443107408,
+            -1213479385,
+            -1829776968,
+            -350662770,
+            -1139523676,
+            -1770612400,
+            -255999462,
+            -1063793029,
+            -1710027882,
+            -159064234,
+            -986244846,
+            -1647989336,
+            -59802560,
+            -906835507,
+            -1584461865,
+            -2126562952,
+            -825520345,
+            -1519409735,
+            -2074521247,
+            -742253618,
+            -1452796353,
+            -2021230542,
+            -656988489,
+            -1384584251,
+            -1966660860,
+            -569676998,
+            -1314735058,
+            -1910781505,
+            -480270031,
+            -1243209484,
+            -1853561046,
+            -388717296,
+            -1169967296,
+            -1794967296,
+            -294967296,
+            -1094967296,
+            -1734967296,
+            -198967296,
+            -1018167296,
+            -1673527296,
+            -100663296,
+            -939524096,
+            -1610612736,
+            -2147483648,
+            -858993460,
+            -1546188227,
+            -2095944041,
+            -776530088,
+            -1480217529,
+            -2043167483,
+            -692087595,
+            -1412663535,
+            -1989124287,
+            -605618482,
+            -1343488245,
+            -1933784055,
+            -517074110,
+            -1272652747,
+            -1877115657,
+            -426404674,
+            -1200117198,
+            -1819087218,
+            -333559171,
+            -1125840796,
+            -1759666096,
+            -238485376,
+            -1049781760,
+            -1698818867,
+            -141129810,
+            -971897307,
+            -1636511305,
+            -41437710,
+            -892143627,
+            -1572708361,
+            -2117160148,
+            -810475859,
+            -1507374147,
+            -2064892777,
+            -726848065,
+            -1440471911,
+            -2011370988,
+            -641213203,
+            -1371964022,
+            -1956564688,
+    };
+
+    private static final int[] exp10Table = {
+            -37,
+            -34,
+            -31,
+            -28,
+            -24,
+            -21,
+            -18,
+            -14,
+            -11,
+            -8,
+            -4,
+            -1,
+            2,
+            6,
+            9,
+            12,
+            16,
+            19,
+            22,
+            26,
+            29,
+            32,
+            36,
+            39,
+            42,
+            46,
+            49,
+            52,
+            56,
+            59,
+            62,
+            65,
+            69,
+            72,
+            75,
+            79,
+            82,
+            85,
+            89,
+            92,
+            95,
+            99,
+            102,
+            105,
+            109,
+            112,
+            115,
+            119,
+            122,
+            125,
+            129,
+            132,
+            135,
+            139,
+            142,
+            145,
+            149,
+            152,
+            155,
+            158,
+            162,
+            165,
+            168,
+            172,
+            175,
+            178,
+            182,
+            185,
+            188,
+            192,
+            195,
+            198,
+            202,
+            205,
+            208,
+            212,
+            215,
+            218,
+            222,
+            225,
+            228,
+            232,
+            235,
+            238,
+            242,
+            245,
+            248,
+            252,
+            255,
+            258,
+            261,
+            265,
+            268,
+            271,
+            275,
+            278,
+            281,
+            285,
+            288,
+            291,
+    };
 }

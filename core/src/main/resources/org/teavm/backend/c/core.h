@@ -151,10 +151,6 @@ static inline void* teavm_checkcast(void* obj, int32_t (*cls)(TeaVM_Class*)) {
 
 extern double teavm_rand();
 
-static inline float teavm_getNaN() {
-    return NAN;
-}
-
 extern void teavm_beforeInit();
 extern void teavm_afterInitClasses();
 
