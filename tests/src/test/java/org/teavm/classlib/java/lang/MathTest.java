@@ -68,9 +68,9 @@ public class MathTest {
         assertEquals(Double.valueOf(3.0), Double.valueOf(Math.abs(-3.0)));
         assertEquals(Double.valueOf(5.0), Double.valueOf(Math.abs(5.0)));
         assertEquals(Float.valueOf(0.0f), Float.valueOf(Math.abs(-0.0f)));
-        assertEquals(Float.valueOf(0.0f), Float.valueOf(Math.abs(-0.0f)));
         assertEquals(Float.valueOf(0.0f), Float.valueOf(Math.abs(0.0f)));
-        assertEquals(Float.valueOf(0.0f), Float.valueOf(Math.abs(0.0f)));
+        assertEquals(Double.valueOf(0.0), Double.valueOf(Math.abs(-0.0)));
+        assertEquals(Double.valueOf(0.0), Double.valueOf(Math.abs(0.0)));
     }
 
     @Test
