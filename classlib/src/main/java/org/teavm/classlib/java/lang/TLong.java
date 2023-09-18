@@ -25,6 +25,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
     public static final long MAX_VALUE = 0x7FFFFFFFFFFFFFFFL;
     public static final Class<Long> TYPE = long.class;
     public static final int SIZE = 64;
+    public static final int BYTES = SIZE / Byte.SIZE;
     private long value;
 
     public TLong(long value) {
