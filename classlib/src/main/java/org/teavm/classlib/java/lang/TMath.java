@@ -21,6 +21,7 @@ import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
+import org.teavm.jso.JSBody;
 
 @NoSideEffects
 public final class TMath extends TObject {
@@ -214,11 +215,25 @@ public final class TMath extends TObject {
         return n >= 0 ? n : -n;
     }
 
+    @JSBody(params = "d", script = "return Math.abs(d);")
+    @NoSideEffects
+    private static native float jsAbs(float d);
+
     public static float abs(float n) {
+        if (PlatformDetector.isJavaScript()) {
+            return jsAbs(n);
+        }
         return n <= 0.0f ? 0.0f - n : n;
     }
 
+    @JSBody(params = "d", script = "return Math.abs(d);")
+    @NoSideEffects
+    private static native double jsAbs(double d);
+
     public static double abs(double n) {
+        if (PlatformDetector.isJavaScript()) {
+            return jsAbs(n);
+        }
         return n <= 0.0d ? 0.0d - n : n;
     }
 
@@ -264,14 +279,28 @@ public final class TMath extends TObject {
         return TFloat.intBitsToFloat(bits);
     }
 
+    @JSBody(params = "d", script = "return Math.sign(d);")
+    @NoSideEffects
+    private static native double sign(double d);
+
     public static double signum(double d) {
+        if (PlatformDetector.isJavaScript()) {
+            return sign(d);
+        }
         if (d == 0.0 || Double.isNaN(d)) {
             return d;
         }
         return d < 0.0 ? -1.0 : 1.0;
     }
 
+    @JSBody(params = "d", script = "return Math.sign(d);")
+    @NoSideEffects
+    private static native float sign(float d);
+
     public static float signum(float d) {
+        if (PlatformDetector.isJavaScript()) {
+            return sign(d);
+        }
         if (d == 0.0f || Float.isNaN(d)) {
             return d;
         }

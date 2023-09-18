@@ -75,13 +75,12 @@ public class MathTest {
 
     @Test
     public void signumWorks() {
-        // TODO fixme, I suppose that issue is in rt_compare but not sure
-        //assertEquals(Double.valueOf(0.0), Double.valueOf(Math.signum(0.0)));
-        // assertEquals(Double.valueOf(-0.0), Double.valueOf(Math.signum(-0.0)));
-        // assertEquals(Double.valueOf(Double.NaN), Double.valueOf(Math.signum(Double.NaN)));
-        // assertEquals(Float.valueOf(0.0f), Float.valueOf(Math.signum(0.0f)));
-        // assertEquals(Float.valueOf(-0.0f), Float.valueOf(Math.signum(-0.0f)));
-        // assertEquals(Float.valueOf(Float.NaN), Float.valueOf(Math.signum(Float.NaN)));
+        assertEquals(Double.valueOf(0.0), Double.valueOf(Math.signum(0.0)));
+        assertEquals(Double.valueOf(-0.0), Double.valueOf(Math.signum(-0.0)));
+        // after Double.equals fix assertEquals(Double.valueOf(Double.NaN), Double.valueOf(Math.signum(Double.NaN)));
+        assertEquals(Float.valueOf(0.0f), Float.valueOf(Math.signum(0.0f)));
+        assertEquals(Float.valueOf(-0.0f), Float.valueOf(Math.signum(-0.0f)));
+        // after Float.equals fix assertEquals(Float.valueOf(Float.NaN), Float.valueOf(Math.signum(Float.NaN)));
         assertEquals(Double.valueOf(-1.0), Double.valueOf(Math.signum(-Double.MIN_VALUE)));
         assertEquals(Double.valueOf(1.0), Double.valueOf(Math.signum(Double.MIN_VALUE)));
     }
