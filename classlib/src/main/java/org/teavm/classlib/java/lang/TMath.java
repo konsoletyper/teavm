@@ -265,11 +265,17 @@ public final class TMath extends TObject {
     }
 
     public static double signum(double d) {
-        return d > 0 ? 1 : d < -0 ? -1 : d;
+        if (d == 0.0 || Double.isNaN(d)) {
+            return d;
+        }
+        return d < 0.0 ? -1.0 : 1.0;
     }
 
     public static float signum(float d) {
-        return d > 0 ? 1 : d < -0 ? -1 : d;
+        if (d == 0.0f || Float.isNaN(d)) {
+            return d;
+        }
+        return d < 0.0f ? -1.0f : 1.0f;
     }
 
     public static double sinh(double x) {

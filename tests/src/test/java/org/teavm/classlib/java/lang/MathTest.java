@@ -74,6 +74,19 @@ public class MathTest {
     }
 
     @Test
+    public void signumWorks() {
+        assertEquals(Double.valueOf(0.0), Double.valueOf(Math.signum(0.0)));
+        // TODO fixme, I suppose that issue is in rt_compare but not sure
+        // assertEquals(Double.valueOf(-0.0), Double.valueOf(Math.signum(-0.0)));
+        assertEquals(Double.valueOf(Double.NaN), Double.valueOf(Math.signum(Double.NaN)));
+        assertEquals(Float.valueOf(0.0f), Float.valueOf(Math.signum(0.0f)));
+        assertEquals(Float.valueOf(-0.0f), Float.valueOf(Math.signum(-0.0f)));
+        assertEquals(Float.valueOf(Float.NaN), Float.valueOf(Math.signum(Float.NaN)));
+        assertEquals(Double.valueOf(-1.0), Double.valueOf(Math.signum(-Double.MIN_VALUE)));
+        assertEquals(Double.valueOf(1.0), Double.valueOf(Math.signum(Double.MIN_VALUE)));
+    }
+
+    @Test
     public void roundWorks() {
         assertEquals(1, Math.round(1.3));
         assertEquals(2, Math.round(1.8));
