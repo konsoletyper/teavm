@@ -207,11 +207,11 @@ public final class TMath extends TObject {
     }
 
     public static int abs(int n) {
-        return n < 0 ? -n : n;
+        return n >= 0 ? n : -n;
     }
 
     public static long abs(long n) {
-        return n < 0 ? -n : n;
+        return n >= 0 ? n : -n;
     }
 
     public static float abs(float n) {
