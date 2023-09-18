@@ -486,10 +486,10 @@ class TByteBufferImpl extends TByteBuffer {
             array[start + index + 1] = (byte) (value >> 8);
             array[start + index + 2] = (byte) (value >> 16);
             array[start + index + 3] = (byte) (value >> 24);
-            array[start + index + 4] = (byte) (value >> 24);
-            array[start + index + 5] = (byte) (value >> 24);
-            array[start + index + 6] = (byte) (value >> 24);
-            array[start + index + 7] = (byte) (value >> 24);
+            array[start + index + 4] = (byte) (value >> 32);
+            array[start + index + 5] = (byte) (value >> 40);
+            array[start + index + 6] = (byte) (value >> 48);
+            array[start + index + 7] = (byte) (value >> 56);
         }
         return this;
     }

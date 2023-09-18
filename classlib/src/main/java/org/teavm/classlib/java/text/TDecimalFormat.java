@@ -20,10 +20,10 @@ import java.math.BigInteger;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
 import org.teavm.classlib.impl.text.DoubleAnalyzer;
+import org.teavm.classlib.impl.text.DoubleSynthesizer;
 import org.teavm.classlib.impl.text.FloatAnalyzer;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.lang.TArithmeticException;
-import org.teavm.classlib.java.lang.TDouble;
 import org.teavm.classlib.java.util.TLocale;
 
 public class TDecimalFormat extends TNumberFormat {
@@ -494,15 +494,22 @@ public class TDecimalFormat extends TNumberFormat {
             }
         }
 
-        // Expose result
         if (mantissa == 0 && !positive) {
             return -0.0;
         }
         if (exponent == 0) {
             return positive ? mantissa : -mantissa;
         }
-        double result = TDouble.decimalExponent(exponent) * mantissa;
-        return positive ? result : -result;
+
+        exponent += 18;
+        if (mantissa != 0) {
+            while (mantissa / 1000000000000000000L == 0) {
+                mantissa *= 10;
+                exponent--;
+            }
+        }
+
+        return DoubleSynthesizer.synthesizeDouble(mantissa, exponent, !positive);
     }
 
     @Override

@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.util.Random;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -49,9 +50,26 @@ public class DoubleTest {
         assertEquals(0, Double.parseDouble("23E-8000"), 1E-12);
         assertEquals(0, Double.parseDouble("00000"), 1E-12);
         assertEquals(0, Double.parseDouble("00000.0000"), 1E-12);
+        assertEquals("74.92507492507494", Double.toString(Double.parseDouble("74.92507492507494")));
 
         assertEquals(4499999999999888888888888.0, Double.parseDouble("4499999999999888888888888"), 1E9);
         assertEquals(0.4499999999999888888888888, Double.parseDouble("0.4499999999999888888888888"), 1E-15);
+    }
+
+    @Test
+    public void randomDoubles() {
+        var random = new Random();
+        for (var i = 0; i < 10000; ++i) {
+            var n = random.nextLong();
+            var d = Double.longBitsToDouble(n);
+            if (Double.isNaN(d) || Double.isInfinite(d)) {
+                continue;
+            }
+            var actual = Double.parseDouble(Double.toString(d));
+            if (n != Double.doubleToLongBits(actual)) {
+                System.out.println(d + ", " + n + ", " + Double.doubleToLongBits(actual));
+            }
+        }
     }
 
     @Test

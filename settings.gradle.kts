@@ -68,6 +68,11 @@ gradle.allprojects {
     tasks.withType<Javadoc>().configureEach {
         options.encoding = "UTF-8"
     }
+    tasks.withType<JavaExec>().configureEach {
+        if (name.endsWith("main()")) {
+            notCompatibleWithConfigurationCache("JavaExec created by IntelliJ")
+        }
+    }
 }
 
 gradle.afterProject {

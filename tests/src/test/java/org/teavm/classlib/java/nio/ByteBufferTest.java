@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;
 import java.nio.ReadOnlyBufferException;
 import org.junit.Test;
@@ -715,6 +716,17 @@ public class ByteBufferTest {
         } catch (IndexOutOfBoundsException e) {
             // expected
         }
+
+        buffer = ByteBuffer.wrap(array).order(ByteOrder.LITTLE_ENDIAN);
+        buffer.putLong(1, 0x2324252627282930L);
+        assertThat(buffer.get(1), is((byte) 0x30));
+        assertThat(buffer.get(2), is((byte) 0x29));
+        assertThat(buffer.get(3), is((byte) 0x28));
+        assertThat(buffer.get(4), is((byte) 0x27));
+        assertThat(buffer.get(5), is((byte) 0x26));
+        assertThat(buffer.get(6), is((byte) 0x25));
+        assertThat(buffer.get(7), is((byte) 0x24));
+        assertThat(buffer.get(8), is((byte) 0x23));
     }
 
     @Test
