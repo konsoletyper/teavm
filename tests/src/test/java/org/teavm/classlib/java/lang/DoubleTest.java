@@ -138,7 +138,11 @@ public class DoubleTest {
         assertEquals(0, Double.compare(5, 5));
         assertEquals(0, Double.compare(0.0, 0.0));
         assertEquals(0, Double.compare(-0.0, -0.0));
-        // TODO fixme assertEquals(1, Double.compare(0.0, -0.0));
-        // TODO fixme assertEquals(-1, Double.compare(-0.0, 0.0));
+        assertEquals(1, Double.compare(Double.NaN, Double.POSITIVE_INFINITY));
+        assertEquals(-1, Double.compare(Double.POSITIVE_INFINITY, Double.NaN));
+        assertEquals(1, Double.compare(Double.NaN, 0.0));
+        assertEquals(-1, Double.compare(-0.0, Double.NaN));
+        assertEquals(1, Double.compare(0.0, -0.0));
+        assertEquals(-1, Double.compare(-0.0, 0.0));
     }
 }
