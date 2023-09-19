@@ -21,7 +21,6 @@ import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
-import org.teavm.jso.JSBody;
 
 @NoSideEffects
 public final class TMath extends TObject {
@@ -215,26 +214,36 @@ public final class TMath extends TObject {
         return n >= 0 ? n : -n;
     }
 
-    @JSBody(params = "d", script = "return Math.abs(d);")
+    @GeneratedBy(MathNativeGenerator.class)
     @NoSideEffects
-    private static native float jsAbs(float d);
+    private static native float absImpl(float d);
+
+    @Import(name = "fabs")
+    private static native float absC(float d);
 
     public static float abs(float n) {
         if (PlatformDetector.isJavaScript()) {
-            return jsAbs(n);
+            return absImpl(n);
+        } else if (PlatformDetector.isC()) {
+            return absC(n);
         }
-        return n <= 0.0f ? 0.0f - n : n;
+        return n <= 0f ? 0f - n : n;
     }
 
-    @JSBody(params = "d", script = "return Math.abs(d);")
+    @GeneratedBy(MathNativeGenerator.class)
     @NoSideEffects
-    private static native double jsAbs(double d);
+    private static native double absImpl(double d);
+
+    @Import(name = "fabs")
+    private static native double absC(double d);
 
     public static double abs(double n) {
         if (PlatformDetector.isJavaScript()) {
-            return jsAbs(n);
+            return absImpl(n);
+        } else if (PlatformDetector.isC()) {
+            return absC(n);
         }
-        return n <= 0.0d ? 0.0d - n : n;
+        return n <= 0.0 ? 0.0 - n : n;
     }
 
     public static double ulp(double d) {
@@ -279,7 +288,7 @@ public final class TMath extends TObject {
         return TFloat.intBitsToFloat(bits);
     }
 
-    @JSBody(params = "d", script = "return Math.sign(d);")
+    @GeneratedBy(MathNativeGenerator.class)
     @NoSideEffects
     private static native double sign(double d);
 
@@ -287,13 +296,13 @@ public final class TMath extends TObject {
         if (PlatformDetector.isJavaScript()) {
             return sign(d);
         }
-        if (d == 0.0 || Double.isNaN(d)) {
+        if (Double.isNaN(d)) {
             return d;
         }
-        return d < 0.0 ? -1.0 : 1.0;
+        return d < 0 ? -1 : d > 0 ? 1 : d;
     }
 
-    @JSBody(params = "d", script = "return Math.sign(d);")
+    @GeneratedBy(MathNativeGenerator.class)
     @NoSideEffects
     private static native float sign(float d);
 
@@ -301,10 +310,10 @@ public final class TMath extends TObject {
         if (PlatformDetector.isJavaScript()) {
             return sign(d);
         }
-        if (d == 0.0f || Float.isNaN(d)) {
+        if (Double.isNaN(d)) {
             return d;
         }
-        return d < 0.0f ? -1.0f : 1.0f;
+        return d < 0 ? -1 : d > 0 ? 1 : d;
     }
 
     public static double sinh(double x) {
@@ -375,17 +384,11 @@ public final class TMath extends TObject {
     }
 
     public static double nextUp(double d) {
-        if (TDouble.isNaN(d)) {
-            return d;
-        }
-        if (d == 0.0d) {
-            return Double.MIN_VALUE;
-        }
-        if (d == TDouble.POSITIVE_INFINITY) {
+        if (TDouble.isNaN(d) || d == TDouble.POSITIVE_INFINITY) {
             return d;
         }
         long bits = TDouble.doubleToLongBits(d);
-        if (d < 0.0d) {
+        if (d < 0) {
             bits--;
         } else {
             bits++;
@@ -394,17 +397,11 @@ public final class TMath extends TObject {
     }
 
     public static float nextUp(float d) {
-        if (TFloat.isNaN(d)) {
-            return d;
-        }
-        if (d == 0.0f) {
-            return Float.MIN_VALUE;
-        }
-        if (d == TFloat.POSITIVE_INFINITY) {
+        if (TFloat.isNaN(d) || d == TFloat.POSITIVE_INFINITY) {
             return d;
         }
         int bits = TFloat.floatToIntBits(d);
-        if (d < 0.0f) {
+        if (d < 0) {
             bits--;
         } else {
             bits++;
@@ -413,17 +410,14 @@ public final class TMath extends TObject {
     }
 
     public static double nextDown(double d) {
-        if (TDouble.isNaN(d)) {
+        if (TDouble.isNaN(d) || d == TDouble.NEGATIVE_INFINITY) {
             return d;
         }
         if (d == 0.0d) {
             return -Double.MIN_VALUE;
         }
-        if (d == TDouble.NEGATIVE_INFINITY) {
-            return d;
-        }
         long bits = TDouble.doubleToLongBits(d);
-        if (d < 0.0d) {
+        if (d <= 0) {
             bits++;
         } else {
             bits--;
@@ -432,17 +426,14 @@ public final class TMath extends TObject {
     }
 
     public static float nextDown(float d) {
-        if (TFloat.isNaN(d)) {
+        if (TFloat.isNaN(d) || d == TFloat.NEGATIVE_INFINITY) {
             return d;
         }
-        if (d == 0.0f) {
+        if (d == 0) {
             return -Float.MIN_VALUE;
         }
-        if (d == TFloat.NEGATIVE_INFINITY) {
-            return d;
-        }
         int bits = TFloat.floatToIntBits(d);
-        if (d < 0.0f) {
+        if (d <= 0) {
             bits++;
         } else {
             bits--;

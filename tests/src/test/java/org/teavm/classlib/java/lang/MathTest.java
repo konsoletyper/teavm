@@ -76,6 +76,11 @@ public class MathTest {
 
     @Test
     public void signumWorks() {
+        assertEquals(Double.valueOf(1.0), Double.valueOf(Math.signum(3.0)));
+        assertEquals(Double.valueOf(-1.0), Double.valueOf(Math.signum(-4.0)));
+        assertEquals(Float.valueOf(1f), Float.valueOf(Math.signum(3f)));
+        assertEquals(Float.valueOf(-1f), Float.valueOf(Math.signum(-4f)));
+
         assertEquals(Double.valueOf(0.0), Double.valueOf(Math.signum(0.0)));
         assertEquals(Double.valueOf(-0.0), Double.valueOf(Math.signum(-0.0)));
         assertTrue(Double.isNaN(Math.signum(Double.NaN)));
@@ -84,6 +89,9 @@ public class MathTest {
         assertTrue(Float.isNaN(Math.signum(Float.NaN)));
         assertEquals(Double.valueOf(-1.0), Double.valueOf(Math.signum(-Double.MIN_VALUE)));
         assertEquals(Double.valueOf(1.0), Double.valueOf(Math.signum(Double.MIN_VALUE)));
+
+        assertEquals(Float.valueOf(-1), Float.valueOf(Math.signum(Float.NEGATIVE_INFINITY)));
+        assertEquals(Float.valueOf(1), Float.valueOf(Math.signum(Float.POSITIVE_INFINITY)));
     }
 
     @Test
