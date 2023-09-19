@@ -134,8 +134,8 @@ public class DoubleTest {
 
     @Test
     public void compares() {
-        assertTrue(Float.compare(10, 5) > 0);
-        assertTrue(Float.compare(5, 10) < 0);
-        assertTrue(Float.compare(5, 5) == 0);
+        assertTrue(Double.compare(10, 5) > 0);
+        assertTrue(Double.compare(5, 10) < 0);
+        assertTrue(Double.compare(5, 5) == 0);
     }
 }
