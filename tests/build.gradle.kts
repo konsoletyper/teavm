@@ -57,5 +57,9 @@ tasks.test {
     systemProperty("teavm.junit.wasi.runner", providers.gradleProperty("teavm.tests.wasi.runner")
             .orElse("./run-wasi.sh").get())
 
+    systemProperty("teavm.junit.c", providers.gradleProperty("teavm.tests.c").orElse("false").get())
+    systemProperty("teavm.junit.c.compiler", providers.gradleProperty("teavm.tests.c.compiler")
+            .orElse("compile-c-unix-fast.sh").get())
+
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
 }
