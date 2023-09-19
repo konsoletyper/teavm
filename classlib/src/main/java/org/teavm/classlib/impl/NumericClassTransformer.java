@@ -40,12 +40,6 @@ public class NumericClassTransformer implements ClassHolderTransformer {
             case "java.lang.Long":
                 transformLong(cls);
                 break;
-            case "java.lang.Float":
-                transformFloat(cls);
-                break;
-            case "java.lang.Double":
-                transformDouble(cls);
-                break;
         }
     }
 
@@ -55,14 +49,6 @@ public class NumericClassTransformer implements ClassHolderTransformer {
 
     private void transformLong(ClassHolder cls) {
         transformCompareMethod(cls, ValueType.LONG, NumericOperandType.LONG);
-    }
-
-    private void transformFloat(ClassHolder cls) {
-        transformCompareMethod(cls, ValueType.FLOAT, NumericOperandType.FLOAT);
-    }
-
-    private void transformDouble(ClassHolder cls) {
-        transformCompareMethod(cls, ValueType.DOUBLE, NumericOperandType.DOUBLE);
     }
 
     private void transformCompareMethod(ClassHolder cls, ValueType type, NumericOperandType insnType) {

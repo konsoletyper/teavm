@@ -17,7 +17,6 @@ package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.Random;
 import org.junit.Test;
@@ -134,8 +133,15 @@ public class DoubleTest {
 
     @Test
     public void compares() {
-        assertTrue(Double.compare(10, 5) > 0);
-        assertTrue(Double.compare(5, 10) < 0);
-        assertTrue(Double.compare(5, 5) == 0);
+        assertEquals(1, Double.compare(10, 5));
+        assertEquals(-1, Double.compare(5, 10));
+        assertEquals(0, Double.compare(5, 5));
+        assertEquals(0, Double.compare(0.0f, 0.0f));
+        assertEquals(1, Double.compare(Double.NaN, Double.POSITIVE_INFINITY));
+        assertEquals(-1, Double.compare(Double.POSITIVE_INFINITY, Double.NaN));
+        assertEquals(1, Double.compare(Double.NaN, 0.0));
+        assertEquals(-1, Double.compare(-0.0, Double.NaN));
+        assertEquals(1, Double.compare(0.0, -0.0));
+        assertEquals(-1, Double.compare(-0.0, 0.0));
     }
 }

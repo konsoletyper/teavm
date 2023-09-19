@@ -215,7 +215,11 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     }
 
     @NoSideEffects
-    public static native int compare(double a, double b);
+    public static int compare(double a, double b) {
+        var diff = (a > b ? 1 : 0) - (b > a ? 1 : 0);
+        return diff != 0 ? diff : (1 / a > 1 / b ? 1 : 0) - (1 / b > 1 / a ? 1 : 0)
+                + (b == b ? 1 : 0) - (a == a ? 1 : 0);
+    }
 
     @Override
     public int compareTo(TDouble other) {

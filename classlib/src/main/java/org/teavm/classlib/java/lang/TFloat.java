@@ -245,7 +245,11 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     }
 
     @NoSideEffects
-    public static native int compare(float f1, float f2);
+    public static int compare(float a, float b) {
+        var diff = (a > b ? 1 : 0) - (b > a ? 1 : 0);
+        return diff != 0 ? diff : (1 / a > 1 / b ? 1 : 0) - (1 / b > 1 / a ? 1 : 0)
+                + (b == b ? 1 : 0) - (a == a ? 1 : 0);
+    }
 
     @Override
     public int compareTo(TFloat other) {
