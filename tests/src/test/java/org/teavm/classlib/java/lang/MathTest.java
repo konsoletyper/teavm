@@ -106,8 +106,12 @@ public class MathTest {
     public void nextWorks() {
         assertEquals(Double.valueOf(-Double.MIN_VALUE), Double.valueOf(Math.nextDown(0.0)));
         assertEquals(Double.valueOf(Double.MIN_VALUE), Double.valueOf(Math.nextUp(0.0)));
+        assertEquals(Double.valueOf(-Double.MIN_VALUE), Double.valueOf(Math.nextDown(-0.0)));
+        assertEquals(Double.valueOf(Double.MIN_VALUE), Double.valueOf(Math.nextUp(-0.0)));
         assertEquals(Float.valueOf(-Float.MIN_VALUE), Float.valueOf(Math.nextDown(0.0f)));
         assertEquals(Float.valueOf(Float.MIN_VALUE), Float.valueOf(Math.nextUp(0.0f)));
+        assertEquals(Float.valueOf(-Float.MIN_VALUE), Float.valueOf(Math.nextDown(-0.0f)));
+        assertEquals(Float.valueOf(Float.MIN_VALUE), Float.valueOf(Math.nextUp(-0.0f)));
         assertEquals(Double.valueOf(0.10000000000000002), Double.valueOf(Math.nextUp(0.1)));
         assertEquals(Double.valueOf(0.9999999999999999), Double.valueOf(Math.nextDown(1.0)));
         assertEquals(Double.valueOf(-0.09999999999999999), Double.valueOf(Math.nextUp(-0.1)));
