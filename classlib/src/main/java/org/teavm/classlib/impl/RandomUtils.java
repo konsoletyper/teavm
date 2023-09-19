@@ -18,6 +18,9 @@ package org.teavm.classlib.impl;
 import java.util.function.DoubleSupplier;
 
 public class RandomUtils {
+    private RandomUtils() {
+    }
+
     public static void checkStreamSize(long streamSize) {
         if (streamSize < 0L) {
             throw new IllegalArgumentException();
