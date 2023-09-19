@@ -31,6 +31,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     public static final int MAX_EXPONENT = 127;
     public static final int MIN_EXPONENT = -126;
     public static final int SIZE = 32;
+    public static final int BYTES = SIZE / Byte.SIZE;
     public static final Class<Float> TYPE = float.class;
     private float value;
 
@@ -84,7 +85,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         if (this == other) {
             return true;
         }
-        return other instanceof TFloat && ((TFloat) other).value == value;
+        return other instanceof TFloat && floatToIntBits(((TFloat) other).value) == floatToIntBits(value);
     }
 
     @Override

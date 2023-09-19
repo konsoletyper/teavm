@@ -84,6 +84,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     public static final int MIN_CODE_POINT = 0x000000;
     public static final int MAX_CODE_POINT = 0X10FFFF;
     public static final int SIZE = 16;
+    public static final int BYTES = SIZE / Byte.SIZE;
     static final int ERROR = 0xFFFFFFFF;
     private static int[] digitMapping;
     private static int[] titleCaseMapping;

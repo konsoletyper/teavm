@@ -33,6 +33,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     public static final int MAX_EXPONENT = 1023;
     public static final int MIN_EXPONENT = -1022;
     public static final int SIZE = 64;
+    public static final int BYTES = SIZE / Byte.SIZE;
     public static final Class<Double> TYPE = double.class;
     private double value;
 
@@ -200,7 +201,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         if (this == other) {
             return true;
         }
-        return other instanceof TDouble && ((TDouble) other).value == value;
+        return other instanceof TDouble && doubleToLongBits(((TDouble) other).value) == doubleToLongBits(value);
     }
 
     @Override
