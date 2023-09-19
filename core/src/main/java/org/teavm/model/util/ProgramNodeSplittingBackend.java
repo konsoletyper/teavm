@@ -29,16 +29,16 @@ public class ProgramNodeSplittingBackend implements GraphSplittingBackend {
     }
 
     @Override
-    public int[] split(int[] domain, int[] nodes) {
-        int[] copies = new int[nodes.length];
+    public int[] split(int[] remaining, int[] toCopy) {
+        int[] copies = new int[toCopy.length];
         IntIntMap map = new IntIntHashMap();
-        for (int i = 0; i < nodes.length; ++i) {
-            int node = nodes[i];
+        for (int i = 0; i < toCopy.length; ++i) {
+            int node = toCopy[i];
             BasicBlock block = program.basicBlockAt(node);
             BasicBlock blockCopy = program.createBasicBlock();
             ProgramUtils.copyBasicBlock(block, blockCopy);
             copies[i] = blockCopy.getIndex();
-            map.put(nodes[i], copies[i] + 1);
+            map.put(toCopy[i], copies[i] + 1);
         }
         BasicBlockMapper copyBlockMapper = new BasicBlockMapper((int block) -> {
             int mappedIndex = map.get(block);
@@ -47,7 +47,7 @@ public class ProgramNodeSplittingBackend implements GraphSplittingBackend {
         for (int copy : copies) {
             copyBlockMapper.transform(program.basicBlockAt(copy));
         }
-        for (int domainNode : domain) {
+        for (int domainNode : remaining) {
             copyBlockMapper.transform(program.basicBlockAt(domainNode));
         }
         return copies;

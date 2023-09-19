@@ -16,5 +16,5 @@
 package org.teavm.common;
 
 public interface GraphSplittingBackend {
-    int[] split(int[] domain, int[] nodes);
+    int[] split(int[] remaining, int[] toCopy);
 }
