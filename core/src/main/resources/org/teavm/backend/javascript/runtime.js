@@ -24,8 +24,8 @@ function $rt_nextId() {
     return x;
 }
 function $rt_compare(a, b) {
-    var x;
-    return (x = (a > b) - (b > a)) ? x : (1/a > 1/b) - (1/b > 1/a) + (b == b) - (a == a);
+    var diff = (a > b) - (b > a);
+    return diff ? diff : (1/a > 1/b) - (1/b > 1/a) + (b == b) - (a == a);
 }
 function $rt_isInstance(obj, cls) {
     return obj instanceof $rt_objcls() && !!obj.constructor.$meta && $rt_isAssignable(obj.constructor, cls);
