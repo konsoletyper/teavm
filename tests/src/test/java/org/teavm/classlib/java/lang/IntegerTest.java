@@ -167,8 +167,8 @@ public class IntegerTest {
         assertTrue(Integer.compare(10, 5) > 0);
         assertTrue(Integer.compare(5, 10) < 0);
         assertTrue(Integer.compare(5, 5) == 0);
-        assertTrue(Integer.compare(-0, 0) == 0);
-        assertTrue(Integer.compare(-0, -0) == 0);
+        assertTrue(Integer.compare((int) Double.parseDouble("-0.0"), 0) == 0);
+        assertTrue(Integer.compare((int) Double.parseDouble("-0.0"), (int) Double.parseDouble("-0.0")) == 0);
         assertTrue(Integer.compare(0, 0) == 0);
         assertTrue(Integer.compare(Integer.MAX_VALUE, Integer.MIN_VALUE) > 0);
         assertTrue(Integer.compare(Integer.MIN_VALUE, Integer.MAX_VALUE) < 0);
