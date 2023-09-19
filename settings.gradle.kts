@@ -121,8 +121,10 @@ fun MavenPom.setupPom(project: Project) {
 }
 
 extensions.configure<DependencyRelocationExtension> {
-    library("libs", "commons-io") {
-        relocate("org.apache.commons", "org.teavm.apachecommons")
+    for (commonsLib in listOf("commons-io", "commons-cli")) {
+        library("libs", commonsLib) {
+            relocate("org.apache.commons", "org.teavm.apachecommons")
+        }
     }
     for (asmLib in listOf("asm", "asm-tree", "asm-analysis", "asm-commons", "asm-util")) {
         library("libs", asmLib) {
