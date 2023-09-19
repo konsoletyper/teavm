@@ -20,7 +20,7 @@ public class TShort extends TNumber implements TComparable<TShort> {
     public static final short MAX_VALUE = 32767;
     public static final Class<Short> TYPE = short.class;
     public static final int SIZE = 16;
-    public static final int BYTES = 2;
+    public static final int BYTES = SIZE / Byte.SIZE;
     private short value;
 
     public TShort(short value) {

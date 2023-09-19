@@ -28,6 +28,9 @@ public class MathNativeGenerator implements Generator {
         if (name.endsWith("Impl")) {
             name = name.substring(0, name.length() - 4);
         }
+        if (name.equals("signum")) {
+            name = "sign";
+        }
         function(context, writer, "Math." + name, methodRef.parameterCount());
     }
 

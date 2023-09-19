@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import java.util.Random;
 import org.junit.Test;
@@ -53,6 +54,16 @@ public class DoubleTest {
 
         assertEquals(4499999999999888888888888.0, Double.parseDouble("4499999999999888888888888"), 1E9);
         assertEquals(0.4499999999999888888888888, Double.parseDouble("0.4499999999999888888888888"), 1E-15);
+    }
+
+    @Test
+    public void testEquals() {
+        assertNotEquals(Double.valueOf(-0.0), Double.valueOf(0.0));
+        assertEquals(Double.valueOf(3.0), Double.valueOf(3.0));
+        assertEquals(Double.valueOf(Double.NaN), Double.valueOf(Double.NaN));
+        assertEquals(Double.valueOf(Double.POSITIVE_INFINITY), Double.valueOf(Double.POSITIVE_INFINITY));
+        assertNotEquals(Double.valueOf(Double.NEGATIVE_INFINITY), Double.valueOf(Double.POSITIVE_INFINITY));
+        assertEquals(Double.valueOf(Double.NEGATIVE_INFINITY), Double.valueOf(Double.NEGATIVE_INFINITY));
     }
 
     @Test
