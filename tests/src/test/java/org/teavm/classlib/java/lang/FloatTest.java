@@ -16,7 +16,6 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -104,8 +103,16 @@ public class FloatTest {
 
     @Test
     public void compares() {
-        assertTrue(Float.compare(10, 5) > 0);
-        assertTrue(Float.compare(5, 10) < 0);
-        assertTrue(Float.compare(5, 5) == 0);
+        assertEquals(1, Float.compare(10, 5));
+        assertEquals(-1, Float.compare(5, 10));
+        assertEquals(0, Float.compare(5, 5));
+        assertEquals(0, Float.compare(0.0f, 0.0f));
+        assertEquals(0, Float.compare(-0.0f, -0.0f));
+        assertEquals(1, Float.compare(Float.NaN, Float.POSITIVE_INFINITY));
+        assertEquals(-1, Float.compare(Float.POSITIVE_INFINITY, Float.NaN));
+        assertEquals(1, Float.compare(Float.NaN, 0.0f));
+        assertEquals(-1, Float.compare(-0.0f, Float.NaN));
+        assertEquals(1, Float.compare(0.0f, -0.0f));
+        assertEquals(-1, Float.compare(-0.0f, 0.0f));
     }
 }
