@@ -25,6 +25,8 @@ import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
 public class FloatTest {
+    private static final float OTHER_NAN = Float.intBitsToFloat(Float.floatToIntBits(Float.NaN) + 1);
+
     @Test
     public void parsed() {
         assertEquals(23, Float.parseFloat("23"), 1E-12F);
@@ -59,7 +61,6 @@ public class FloatTest {
     public void testEquals() {
         assertNotEquals(Float.valueOf(-0.0f), Float.valueOf(0.0f));
         assertEquals(Float.valueOf(5.0f), Float.valueOf(5.0f));
-        assertEquals(Float.valueOf(Float.NaN), Float.valueOf(Float.NaN));
         assertEquals(Float.valueOf(Float.POSITIVE_INFINITY), Float.valueOf(Float.POSITIVE_INFINITY));
         assertNotEquals(Float.valueOf(Float.NEGATIVE_INFINITY), Float.valueOf(Float.POSITIVE_INFINITY));
         assertEquals(Float.valueOf(Float.NEGATIVE_INFINITY), Float.valueOf(Float.NEGATIVE_INFINITY));
@@ -118,5 +119,17 @@ public class FloatTest {
         assertTrue(Float.compare(10, 5) > 0);
         assertTrue(Float.compare(5, 10) < 0);
         assertTrue(Float.compare(5, 5) == 0);
+    }
+
+    @Test
+    public void testNaN() {
+        assertTrue(Float.isNaN(OTHER_NAN));
+        assertTrue(OTHER_NAN != OTHER_NAN);
+        assertTrue(OTHER_NAN != Double.NaN);
+        assertEquals(Float.valueOf(Float.NaN), Float.valueOf(Float.NaN));
+        assertEquals(Float.valueOf(OTHER_NAN), Float.valueOf(Float.NaN));
+        assertEquals(Float.valueOf(OTHER_NAN), Float.valueOf(OTHER_NAN));
+        assertNotEquals(Float.floatToRawIntBits(OTHER_NAN), Float.floatToRawIntBits(Float.NaN));
+        assertEquals(Float.floatToIntBits(OTHER_NAN), Float.floatToIntBits(Float.NaN));
     }
 }

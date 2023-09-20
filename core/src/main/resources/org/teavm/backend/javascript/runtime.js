@@ -658,10 +658,10 @@ function $rt_eraseClinit(target) {
 
 var $rt_numberConversionView = new DataView(new ArrayBuffer(8));
 
-var $rt_doubleToLongBits;
+var $rt_doubleToRawLongBits;
 var $rt_longBitsToDouble;
 if (typeof BigInt !== 'function') {
-    $rt_doubleToLongBits = function(n) {
+    $rt_doubleToRawLongBits = function(n) {
         $rt_numberConversionView.setFloat64(0, n, true);
         return new Long($rt_numberConversionView.getInt32(0, true), $rt_numberConversionView.getInt32(4, true));
     }
@@ -671,7 +671,7 @@ if (typeof BigInt !== 'function') {
         return $rt_numberConversionView.getFloat64(0, true);
     }
 } else {
-    $rt_doubleToLongBits = function(n) {
+    $rt_doubleToRawLongBits = function(n) {
         $rt_numberConversionView.setFloat64(0, n, true);
         // For compatibility with Safari
         var lo = $rt_numberConversionView.getInt32(0, true);
@@ -688,7 +688,7 @@ if (typeof BigInt !== 'function') {
     }
 }
 
-function $rt_floatToIntBits(n) {
+function $rt_floatToRawIntBits(n) {
     $rt_numberConversionView.setFloat32(0, n);
     return $rt_numberConversionView.getInt32(0);
 }
