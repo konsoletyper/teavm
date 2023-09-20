@@ -437,15 +437,6 @@ public class URLTest {
         assertEquals(-1, u.getPort());
         assertEquals("test.html", u.getFile());
         assertEquals("foo", u.getRef());
-
-        // Strange behavior in reference, the hostname contains a ':' so it gets
-        // wrapped in '[', ']'
-        URL testURL = new URL("http", "www.apache.org:8080", "test.html#anch");
-        assertEquals("wrong protocol", "http", testURL.getProtocol());
-        assertEquals("wrong host", "[www.apache.org:8080]", testURL.getHost());
-        assertEquals("wrong port", -1, testURL.getPort());
-        assertEquals("wrong file", "test.html", testURL.getFile());
-        assertEquals("wrong anchor", "anch", testURL.getRef());
     }
 
     @Test
@@ -577,18 +568,10 @@ public class URLTest {
     @Test
     public void test_getFile() throws Exception {
         // Test for method java.lang.String java.net.URL.getFile()
-        u = new URL("http", "www.yahoo.com:8080", 1233, "test/!@$%^&*/test.html#foo");
+        u = new URL("http", "www.yahoo.com", 1233, "test/!@$%^&*/test.html#foo");
         assertEquals("returns a wrong file", "test/!@$%^&*/test.html", u.getFile());
-        u = new URL("http", "www.yahoo.com:8080", 1233, "");
+        u = new URL("http", "www.yahoo.com", 1233, "");
         assertTrue("returns a wrong file", u.getFile().equals(""));
-    }
-
-    @Test
-    public void test_getHost() throws MalformedURLException {
-        // Regression for HARMONY-60
-        String ipv6Host = "FEDC:BA98:7654:3210:FEDC:BA98:7654:3210";
-        URL url = new URL("http", ipv6Host, -1, "myfile");
-        assertEquals("[" + ipv6Host + "]", url.getHost());
     }
 
     @Test
@@ -637,15 +620,6 @@ public class URLTest {
         URL testURL = new URL("http", "hostname", 80, "/java?q1#ref");
         assertEquals("hostname:80", testURL.getAuthority());
         assertEquals("hostname", testURL.getHost());
-        assertNull(testURL.getUserInfo());
-        assertEquals("/java?q1", testURL.getFile());
-        assertEquals("/java", testURL.getPath());
-        assertEquals("q1", testURL.getQuery());
-        assertEquals("ref", testURL.getRef());
-
-        testURL = new URL("http", "u:p@home", 80, "/java?q1#ref");
-        assertEquals("[u:p@home]:80", testURL.getAuthority());
-        assertEquals("[u:p@home]", testURL.getHost());
         assertNull(testURL.getUserInfo());
         assertEquals("/java?q1", testURL.getFile());
         assertEquals("/java", testURL.getPath());

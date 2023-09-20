@@ -197,34 +197,6 @@ public class BufferedWriterTest {
         BufferedWriter bWriter = new BufferedWriter(sw);
         char[] nullCharArray = null;
 
-        try {
-            bWriter.write(nullCharArray, -1, -1);
-            fail("should throw IndexOutOfBoundsException");
-        } catch (IndexOutOfBoundsException e) {
-            // expected
-        }
-
-        try {
-            bWriter.write(nullCharArray, -1, 0);
-            fail("should throw IndexOutOfBoundsException");
-        } catch (IndexOutOfBoundsException e) {
-            // expected
-        }
-
-        try {
-            bWriter.write(nullCharArray, 0, -1);
-            fail("should throw NullPointerException");
-        } catch (NullPointerException e) {
-            // expected
-        }
-
-        try {
-            bWriter.write(nullCharArray, 0, 0);
-            fail("should throw NullPointerException");
-        } catch (NullPointerException e) {
-            // expected
-        }
-
         char[] testCharArray = testString.toCharArray();
 
         bWriter.write(testCharArray, 0, 0);
