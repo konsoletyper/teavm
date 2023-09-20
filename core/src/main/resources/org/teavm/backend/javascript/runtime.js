@@ -852,13 +852,14 @@ if (typeof BigInt !== "function") {
 } else {
     Long_ZERO = BigInt(0);
     Long_create = function(lo, hi) {
-        return BigInt.asIntN(64, BigInt.asUintN(32, BigInt(lo)) | (BigInt(hi) << BigInt(32)));
+        return BigInt.asIntN(64, BigInt.asUintN(64, BigInt(lo))
+            | BigInt.asUintN(64, (BigInt(hi) << BigInt(32))));
     }
     Long_fromInt = function(val) {
-        return BigInt(val);
+        return BigInt.asIntN(64, BigInt(val | 0));
     }
     Long_fromNumber = function(val) {
-        return BigInt(val >= 0 ? Math.floor(val) : Math.ceil(val));
+        return BigInt.asIntN(64, BigInt(val >= 0 ? Math.floor(val) : Math.ceil(val)));
     }
     Long_toNumber = function(val) {
         return Number(val);
