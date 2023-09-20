@@ -252,15 +252,18 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     @Unmanaged
     public static native boolean isFinite(double v);
 
-    public static long doubleToRawLongBits(double value) {
-        return doubleToLongBits(value);
-    }
-
     @InjectedBy(DoubleGenerator.class)
     @Import(name = "teavm_reinterpretDoubleToLong")
     @NoSideEffects
     @Unmanaged
-    public static native long doubleToLongBits(double value);
+    public static native long doubleToRawLongBits(double value);
+
+    public static long doubleToLongBits(double value) {
+        if (isNaN(value)) {
+            return 0x7ff8000000000000L;
+        }
+        return doubleToRawLongBits(value);
+    }
 
     @InjectedBy(DoubleGenerator.class)
     @Import(name = "teavm_reinterpretLongToDouble")

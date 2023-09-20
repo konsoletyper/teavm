@@ -25,6 +25,8 @@ import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
 public class DoubleTest {
+    public static final double OTHER_NAN = Double.longBitsToDouble(Double.doubleToLongBits(Double.NaN) + 1);
+
     @Test
     public void parsed() {
         assertEquals(23, Double.parseDouble("23"), 1E-12);
@@ -60,7 +62,6 @@ public class DoubleTest {
     public void testEquals() {
         assertNotEquals(Double.valueOf(-0.0), Double.valueOf(0.0));
         assertEquals(Double.valueOf(3.0), Double.valueOf(3.0));
-        assertEquals(Double.valueOf(Double.NaN), Double.valueOf(Double.NaN));
         assertEquals(Double.valueOf(Double.POSITIVE_INFINITY), Double.valueOf(Double.POSITIVE_INFINITY));
         assertNotEquals(Double.valueOf(Double.NEGATIVE_INFINITY), Double.valueOf(Double.POSITIVE_INFINITY));
         assertEquals(Double.valueOf(Double.NEGATIVE_INFINITY), Double.valueOf(Double.NEGATIVE_INFINITY));
@@ -143,5 +144,17 @@ public class DoubleTest {
         assertEquals(-1, Double.compare(-0.0, Double.NaN));
         assertEquals(1, Double.compare(0.0, -0.0));
         assertEquals(-1, Double.compare(-0.0, 0.0));
+    }
+
+    @Test
+    public void testNaN() {
+        assertTrue(Double.isNaN(OTHER_NAN));
+        assertTrue(OTHER_NAN != OTHER_NAN);
+        assertTrue(OTHER_NAN != Double.NaN);
+        assertEquals(Double.valueOf(Double.NaN), Double.valueOf(Double.NaN));
+        assertEquals(Double.valueOf(OTHER_NAN), Double.valueOf(Double.NaN));
+        assertEquals(Double.valueOf(OTHER_NAN), Double.valueOf(OTHER_NAN));
+        assertNotEquals(Double.doubleToRawLongBits(OTHER_NAN), Double.doubleToRawLongBits(Double.NaN));
+        assertEquals(Double.doubleToLongBits(OTHER_NAN), Double.doubleToLongBits(Double.NaN));
     }
 }
