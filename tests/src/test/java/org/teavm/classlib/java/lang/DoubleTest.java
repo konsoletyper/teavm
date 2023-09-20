@@ -26,7 +26,7 @@ import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
 public class DoubleTest {
-    private static final double OTHER_NAN = Double.longBitsToDouble(Double.doubleToLongBits(Double.NaN) + 1);
+    public static final double OTHER_NAN = Double.longBitsToDouble(Double.doubleToLongBits(Double.NaN) + 1);
 
     @Test
     public void parsed() {

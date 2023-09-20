@@ -29,6 +29,7 @@ import java.nio.InvalidMarkException;
 import java.nio.ReadOnlyBufferException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.classlib.java.lang.DoubleTest;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.WholeClassCompilation;
 
@@ -632,6 +633,8 @@ public class ByteBufferTest {
 
         buffer.putDouble(1, 2.0);
         assertArrayEquals(new byte[] { 63, 64, 0, 0, 0, 0, 0, 0, 0, 55, 0, 0, 0, 0, 0, 0 }, array);
+        buffer.putDouble(0, DoubleTest.OTHER_NAN);
+        assertArrayEquals(new byte[] { 127, -8, 0, 0, 0, 0, 0, 1, 0, 55, 0, 0, 0, 0, 0, 0 }, array);
     }
 
     @Test

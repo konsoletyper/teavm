@@ -379,7 +379,7 @@ class TByteBufferImpl extends TByteBuffer {
 
     @Override
     public TByteBuffer putDouble(double value) {
-        return putLong(Double.doubleToLongBits(value));
+        return putLong(Double.doubleToRawLongBits(value));
     }
 
     @Override
@@ -389,7 +389,7 @@ class TByteBufferImpl extends TByteBuffer {
 
     @Override
     public TByteBuffer putDouble(int index, double value) {
-        return putLong(index, Double.doubleToLongBits(value));
+        return putLong(index, Double.doubleToRawLongBits(value));
     }
 
     @Override
