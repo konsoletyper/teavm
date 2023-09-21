@@ -33,7 +33,7 @@ val generateComparison by tasks.register<JavaExec>("generateComparison") {
     inputs.files(tasks["relocateJar"].outputs.files)
     outputs.dir(outputDir)
     classpath = configurations.runtimeClasspath.get() + tasks["relocateJar"].outputs.files
-    mainClass.set("org.teavm.tools.classlibcomparison.JCLComparisonBuilder")
+    mainClass = "org.teavm.tools.classlibcomparison.JCLComparisonBuilder"
     args("-output", outputDir.get().asFile.absolutePath)
 }
 

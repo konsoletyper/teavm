@@ -61,7 +61,7 @@ gradlePlugin {
 
 checkstyle {
     toolVersion = libs.versions.checkstyle.get()
-    configDirectory.set(project.layout.projectDirectory.dir("../config/checkstyle"))
+    configDirectory = project.layout.projectDirectory.dir("../config/checkstyle")
 }
 
 java {

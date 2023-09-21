@@ -29,6 +29,6 @@ dependencies {
 }
 
 tasks.shadowJar {
-    archiveFileName.set("teavm.jar")
+    archiveFileName = "teavm.jar"
     mergeServiceFiles()
 }

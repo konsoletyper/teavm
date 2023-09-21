@@ -95,29 +95,29 @@ gradle.afterProject {
 }
 
 fun MavenPom.setupPom(project: Project) {
-    name.set(project.description)
-    description.set(project.description)
+    name = project.description
+    description = project.description
     licenses {
         license {
-            name.set("The Apache Software License, Version 2.0")
-            url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-            distribution.set("repo")
-            comments.set("A business-friendly OSS license")
+            name = "The Apache Software License, Version 2.0"
+            url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            distribution = "repo"
+            comments = "A business-friendly OSS license"
         }
     }
     developers {
         developer {
-            id.set("konsoletyper")
-            name.set("Alexey Andreev")
-            email.set("konsoletyper@gmail.com")
-            timezone.set("Europe/Berlin")
+            id = "konsoletyper"
+            name = "Alexey Andreev"
+            email = "konsoletyper@gmail.com"
+            timezone = "Europe/Berlin"
         }
     }
     scm {
-        url.set("https://github.com/konsoletyper/teavm")
-        connection.set("scm:git:git@github.com:konsoletyper/teavm.git")
+        url = "https://github.com/konsoletyper/teavm"
+        connection = "scm:git:git@github.com:konsoletyper/teavm.git"
     }
-    url.set("https://teavm.org")
+    url = "https://teavm.org"
 }
 
 extensions.configure<DependencyRelocationExtension> {

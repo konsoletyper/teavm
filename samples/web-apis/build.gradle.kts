@@ -25,6 +25,6 @@ dependencies {
 }
 
 teavm.js {
-    addedToWebApp.set(true)
-    mainClass.set("org.teavm.samples.webapis.Main")
+    addedToWebApp = true
+    mainClass = "org.teavm.samples.webapis.Main"
 }

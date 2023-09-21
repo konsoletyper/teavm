@@ -30,17 +30,17 @@ dependencies {
 
 teavm {
     js {
-        addedToWebApp.set(true)
+        addedToWebApp = true
     }
     wasm {
-        addedToWebApp.set(true)
+        addedToWebApp = true
     }
     wasi {
-        outputDir.set(File(buildDir, "libs/wasi"))
-        relativePathInOutputDir.set("")
+        outputDir = layout.buildDirectory.dir("libs/wasi").get().asFile
+        relativePathInOutputDir = ""
     }
     all {
-        mainClass.set("org.teavm.samples.pi.PiCalculator")
+        mainClass = "org.teavm.samples.pi.PiCalculator"
     }
 }
 
@@ -56,7 +56,7 @@ tasks.assemble {
 val buildNativeLinux by tasks.register<Exec>("buildNativeLinux") {
     group = "build"
     dependsOn(tasks.generateC)
-    inputs.dir(File(buildDir, "generated/teavm/c"))
+    inputs.dir(layout.buildDirectory.dir("generated/teavm/c"))
     inputs.file(project.file("CMakeLists.txt"))
     outputs.file("build/dist/calc_pi")
     executable = "./build-native.sh"

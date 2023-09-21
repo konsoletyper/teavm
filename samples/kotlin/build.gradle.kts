@@ -25,6 +25,6 @@ dependencies {
 }
 
 teavm.js {
-    addedToWebApp.set(true)
-    mainClass.set("org.teavm.samples.kotlin.HelloKt")
+    addedToWebApp = true
+    mainClass = "org.teavm.samples.kotlin.HelloKt"
 }

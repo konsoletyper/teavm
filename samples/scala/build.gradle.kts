@@ -26,6 +26,6 @@ dependencies {
 }
 
 teavm.js {
-    addedToWebApp.set(true)
-    mainClass.set("org.teavm.samples.scala.Client")
+    addedToWebApp = true
+    mainClass = "org.teavm.samples.scala.Client"
 }

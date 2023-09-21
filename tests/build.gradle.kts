@@ -39,7 +39,7 @@ dependencies {
 }
 
 tasks.test {
-    systemProperty("teavm.junit.target", "${project.buildDir.absolutePath }/teavm-tests")
+    systemProperty("teavm.junit.target", layout.buildDirectory.dir("teavm-tests").get().asFile.absolutePath)
     systemProperty("teavm.junit.threads", "1")
     val browser = providers.gradleProperty("teavm.tests.browser").orElse("browser-chrome").get()
 

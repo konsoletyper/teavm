@@ -37,15 +37,15 @@ dependencies {
 }
 
 tasks {
-    val generatedClassesDir = File(buildDir, "generated/classes/java/main")
+    val generatedClassesDir = layout.buildDirectory.dir("generated/classes/java/main")
     val generateTzCache by registering(JavaExec::class) {
-        val outputFile = File(generatedClassesDir, "org/teavm/classlib/impl/tz/cache")
+        val outputFile = generatedClassesDir.map { it.dir( "org/teavm/classlib/impl/tz/cache") }
         classpath(sourceSets.main.get().runtimeClasspath, sourceSets.main.get().compileClasspath)
         outputs.file(outputFile)
         inputs.files(sourceSets.main.get().runtimeClasspath)
         dependsOn(compileJava)
-        mainClass.set("org.teavm.classlib.impl.tz.TimeZoneCache")
-        args(outputFile.absolutePath)
+        mainClass = "org.teavm.classlib.impl.tz.TimeZoneCache"
+        args(outputFile.get().asFile.absolutePath)
     }
     jar {
         dependsOn(generateTzCache)

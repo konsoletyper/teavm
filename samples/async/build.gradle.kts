@@ -30,8 +30,8 @@ dependencies {
 }
 
 teavm.js {
-    addedToWebApp.set(true)
-    mainClass.set("org.teavm.samples.async.AsyncProgram")
+    addedToWebApp = true
+    mainClass = "org.teavm.samples.async.AsyncProgram"
 }
 
 tasks.war {

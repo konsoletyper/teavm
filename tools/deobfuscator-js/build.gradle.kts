@@ -35,37 +35,37 @@ dependencies {
 }
 
 val generateJs by tasks.register<JavaExec>("generateJs") {
-    outputs.dir(File(buildDir, "teavm"))
+    outputs.dir(layout.buildDirectory.dir("teavm"))
     dependsOn(tasks.classes)
     classpath += configurations["teavmCompile"]
     classpath += java.sourceSets.main.get().output.classesDirs
-    mainClass.set("org.teavm.tooling.deobfuscate.js.Compiler")
+    mainClass = "org.teavm.tooling.deobfuscate.js.Compiler"
     args(
         "org.teavm.tooling.deobfuscate.js.Deobfuscator",
         "\$teavm_deobfuscator",
-        File(buildDir, "teavm").absolutePath,
+        layout.buildDirectory.dir("teavm").get().asFile.absolutePath,
         "deobfuscator.js"
     )
 }
 
 val generateLibJs by tasks.register<JavaExec>("generateLibJs") {
-    outputs.dir(File(buildDir, "teavm-lib"))
+    outputs.dir(layout.buildDirectory.dir("teavm-lib"))
     dependsOn(tasks.classes)
     classpath += configurations["teavmCompile"]
     classpath += java.sourceSets.main.get().output.classesDirs
-    mainClass.set("org.teavm.tooling.deobfuscate.js.Compiler")
+    mainClass = "org.teavm.tooling.deobfuscate.js.Compiler"
     args(
         "org.teavm.tooling.deobfuscate.js.DeobfuscatorLib",
         "deobfuscator",
-        File(buildDir, "teavm-lib").absolutePath,
+        layout.buildDirectory.dir("teavm-lib").get().asFile.absolutePath,
         "deobfuscator-lib.js",
     )
 }
 
 val zipWithJs by tasks.register<Jar>("zipWithJs") {
     dependsOn(generateJs, generateLibJs)
-    archiveClassifier.set("js")
-    from(File(buildDir, "teavm"), File(buildDir, "teavm-lib"))
+    archiveClassifier = "js"
+    from(layout.buildDirectory.dir("teavm"), layout.buildDirectory.dir("teavm-lib"))
     entryCompression = ZipEntryCompression.DEFLATED
 }
 

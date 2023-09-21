@@ -85,7 +85,7 @@ gradle.afterProject {
         extensions.configure<CheckstyleExtension> {
             toolVersion = extensions.getByType<VersionCatalogsExtension>().named("libs")
                     .findVersion("checkstyle").get().requiredVersion
-            configDirectory.set(File(settings.rootDir, "../config/checkstyle"))
+            configDirectory = File(settings.rootDir, "../config/checkstyle")
         }
         java.sourceCompatibility = JavaVersion.VERSION_11
         java.targetCompatibility = JavaVersion.VERSION_11
