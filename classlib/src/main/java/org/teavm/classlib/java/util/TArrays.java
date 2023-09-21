@@ -22,10 +22,7 @@ import java.util.function.IntFunction;
 import java.util.function.IntToDoubleFunction;
 import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
-import org.teavm.classlib.java.lang.TDouble;
-import org.teavm.classlib.java.lang.TFloat;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
-import org.teavm.classlib.java.lang.TInteger;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TStringBuilder;
@@ -1395,10 +1392,9 @@ public class TArrays extends TObject {
         if (a == null) {
             return 0;
         }
-        int hash = 0xA5A537FC;
+        int hash = 1;
         for (int i = 0; i < a.length; ++i) {
-            int h = a[i] ? 0x12345678 : 0x87654321;
-            hash = TInteger.rotateLeft(h, 4) ^ TInteger.rotateRight(h, 7) ^ TInteger.rotateLeft(hash, 13);
+            hash = 31 * hash + Boolean.hashCode(a[i]);
         }
         return hash;
     }
@@ -1407,10 +1403,9 @@ public class TArrays extends TObject {
         if (a == null) {
             return 0;
         }
-        int hash = 0xA5A537FC;
+        int hash = 1;
         for (int i = 0; i < a.length; ++i) {
-            int h = (int) (a[i] >>> 32) ^ (int) a[i];
-            hash = TInteger.rotateLeft(h, 4) ^ TInteger.rotateRight(h, 7) ^ TInteger.rotateLeft(hash, 13);
+            hash = 31 * hash + Long.hashCode(a[i]);
         }
         return hash;
     }
@@ -1421,7 +1416,7 @@ public class TArrays extends TObject {
         }
         int hash = 1;
         for (int i = 0; i < a.length; ++i) {
-            hash = 31 * hash + a[i];
+            hash = 31 * hash + Integer.hashCode(a[i]);
         }
         return hash;
     }
@@ -1432,7 +1427,7 @@ public class TArrays extends TObject {
         }
         int hash = 1;
         for (int i = 0; i < a.length; ++i) {
-            hash = 31 * hash + a[i];
+            hash = 31 * hash + Byte.hashCode(a[i]);
         }
         return hash;
     }
@@ -1443,7 +1438,7 @@ public class TArrays extends TObject {
         }
         int hash = 1;
         for (int i = 0; i < a.length; ++i) {
-            hash = 31 * hash + a[i];
+            hash = 31 * hash + Short.hashCode(a[i]);
         }
         return hash;
     }
@@ -1454,7 +1449,7 @@ public class TArrays extends TObject {
         }
         int hash = 1;
         for (int i = 0; i < a.length; ++i) {
-            hash = 31 * hash + a[i];
+            hash = 31 * hash + Character.hashCode(a[i]);
         }
         return hash;
     }
@@ -1463,10 +1458,9 @@ public class TArrays extends TObject {
         if (a == null) {
             return 0;
         }
-        int hash = 0xA5A537FC;
+        int hash = 1;
         for (int i = 0; i < a.length; ++i) {
-            int h = TFloat.floatToIntBits(a[i]);
-            hash = TInteger.rotateLeft(h, 4) ^ TInteger.rotateRight(h, 7) ^ TInteger.rotateLeft(hash, 13);
+            hash = 31 * hash + Float.hashCode(a[i]);
         }
         return hash;
     }
@@ -1475,11 +1469,9 @@ public class TArrays extends TObject {
         if (a == null) {
             return 0;
         }
-        int hash = 0xA5A537FC;
+        int hash = 1;
         for (int i = 0; i < a.length; ++i) {
-            long lh = TDouble.doubleToLongBits(a[i]);
-            int h = (int) lh ^ (int) (lh >> 32);
-            hash = TInteger.rotateLeft(h, 4) ^ TInteger.rotateRight(h, 7) ^ TInteger.rotateLeft(hash, 13);
+            hash = 31 * hash + Double.hashCode(a[i]);
         }
         return hash;
     }
@@ -1488,10 +1480,9 @@ public class TArrays extends TObject {
         if (a == null) {
             return 0;
         }
-        int hash = 0xA5A537FC;
+        int hash = 1;
         for (int i = 0; i < a.length; ++i) {
-            int h = TObjects.hashCode(a[i]) ^ 0x1F7A58E0;
-            hash = TInteger.rotateLeft(h, 4) ^ TInteger.rotateRight(h, 7) ^ TInteger.rotateLeft(hash, 13);
+            hash = 31 * hash + Objects.hashCode(a[i]);
         }
         return hash;
     }
@@ -1500,7 +1491,7 @@ public class TArrays extends TObject {
         if (a == null) {
             return 0;
         }
-        int hash = 0xA5A537FC;
+        int hash = 1;
         for (int i = 0; i < a.length; ++i) {
             Object el = a[i];
             int h;
@@ -1523,9 +1514,9 @@ public class TArrays extends TObject {
             } else if (a[i] instanceof Object[]) {
                 h = deepHashCode((Object[]) el);
             } else {
-                h = TObjects.hashCode(el) ^ 0x1F7A58E0;
+                h = Objects.hashCode(el);
             }
-            hash = TInteger.rotateLeft(h, 4) ^ TInteger.rotateRight(h, 7) ^ TInteger.rotateLeft(hash, 13);
+            hash = 31 * hash + h;
         }
         return hash;
     }

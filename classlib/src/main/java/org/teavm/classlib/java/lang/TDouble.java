@@ -35,7 +35,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     public static final int SIZE = 64;
     public static final int BYTES = SIZE / Byte.SIZE;
     public static final Class<Double> TYPE = double.class;
-    private double value;
+    private final double value;
 
     public TDouble(double value) {
         this.value = value;

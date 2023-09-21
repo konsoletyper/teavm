@@ -26,9 +26,9 @@ import org.teavm.junit.TeaVMTestRunner;
 public class BooleanTest {
     @Test
     public void parsesBoolean() {
-        assertEquals(true, new Boolean("TruE"));
-        assertEquals(false, new Boolean("False"));
-        assertEquals(false, new Boolean("True15"));
+        assertEquals(true, Boolean.parseBoolean("TruE"));
+        assertEquals(false, Boolean.parseBoolean("False"));
+        assertEquals(false, Boolean.parseBoolean("True15"));
     }
 
     @Test
@@ -64,5 +64,13 @@ public class BooleanTest {
     public void hashCodeTest() {
         assertEquals(Boolean.hashCode(true), Boolean.TRUE.hashCode());
         assertEquals(Boolean.hashCode(false), Boolean.FALSE.hashCode());
+    }
+
+    @Test
+    public void compares() {
+        assertEquals(0, Boolean.compare(false, false));
+        assertEquals(-1, Boolean.compare(false, true));
+        assertEquals(1, Boolean.compare(true, false));
+        assertEquals(0, Boolean.compare(true, true));
     }
 }

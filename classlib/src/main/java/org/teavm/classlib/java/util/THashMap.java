@@ -33,6 +33,7 @@
 package org.teavm.classlib.java.util;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -60,7 +61,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         HashEntry(K theKey, V theValue) {
             super(theKey, theValue);
-            origKeyHash = theKey == null ? 0 : computeHashCode(theKey);
+            origKeyHash = Objects.hashCode(theKey);
         }
 
         @Override
@@ -395,7 +396,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         if (key == null) {
             m = findNullKeyEntry();
         } else {
-            int hash = computeHashCode(key);
+            int hash = key.hashCode();
             int index = hash & (elementData.length - 1);
             m = findNonNullKeyEntry(key, index, hash);
         }
@@ -480,7 +481,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                 }
             }
         } else {
-            int hash = computeHashCode(key);
+            int hash = key.hashCode();
             int index = hash & (elementData.length - 1);
             entry = findNonNullKeyEntry(key, index, hash);
             if (entry == null) {
@@ -576,7 +577,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         HashEntry<K, V> entry;
         HashEntry<K, V> last = null;
         if (key != null) {
-            int hash = computeHashCode(key);
+            int hash = key.hashCode();
             index = hash & (elementData.length - 1);
             entry = elementData[index];
             while (entry != null && !(entry.origKeyHash == hash && areEqualKeys(key, entry.key))) {
@@ -676,10 +677,6 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                 }
             }
         }
-    }
-
-    static int computeHashCode(Object key) {
-        return key.hashCode();
     }
 
     static boolean areEqualKeys(Object key1, Object key2) {

@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.Consumer;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
@@ -210,6 +211,15 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
         }
         buffer.append(array[length] == this ? "(this Collection)" : array[length]);
         return buffer.append(']').toString();
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 1;
+        for (int i = 0; i < size; i++) {
+            result = 31 * result + Objects.hashCode(array[i]);
+        }
+        return result;
     }
 
     @Override

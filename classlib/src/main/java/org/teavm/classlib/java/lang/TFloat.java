@@ -33,7 +33,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     public static final int SIZE = 32;
     public static final int BYTES = SIZE / Byte.SIZE;
     public static final Class<Float> TYPE = float.class;
-    private float value;
+    private final float value;
 
     public TFloat(float value) {
         this.value = value;

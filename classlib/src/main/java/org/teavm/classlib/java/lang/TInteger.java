@@ -27,7 +27,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     public static final int MAX_VALUE = 0x7FFFFFFF;
     public static final Class<Integer> TYPE = int.class;
     private static TInteger[] integerCache;
-    private int value;
+    private final int value;
 
     public TInteger(int value) {
         this.value = value;
@@ -45,7 +45,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     }
 
     public static int hashCode(int value) {
-        return (value >>> 4) ^ (value << 28) ^ (value << 8) ^ (value >>> 24);
+        return value;
     }
 
     public static String toHexString(int i) {
