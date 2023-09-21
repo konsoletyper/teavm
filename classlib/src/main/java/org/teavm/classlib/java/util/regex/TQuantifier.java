@@ -83,7 +83,7 @@ class TQuantifier extends TSpecialToken implements Cloneable {
 
     @Override
     public String toString() {
-        return "{" + min + "," + ((max == Integer.MAX_VALUE) ? "" : new Integer(max).toString()) + "}";
+        return "{" + min + "," + ((max == Integer.MAX_VALUE) ? "" : Integer.toString(max)) + "}";
     }
 
     @Override

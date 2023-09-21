@@ -275,8 +275,8 @@ public abstract class TDateFormat extends TFormat {
         protected Field(String fieldName, int calendarField) {
             super(fieldName);
             this.calendarField = calendarField;
-            if (calendarField != -1 && table.get(new Integer(calendarField)) == null) {
-                table.put(new Integer(calendarField), this);
+            if (calendarField != -1 && table.get(calendarField) == null) {
+                table.put(calendarField, this);
             }
         }
 
@@ -289,7 +289,7 @@ public abstract class TDateFormat extends TFormat {
                 throw new IllegalArgumentException();
             }
 
-            return table.get(new Integer(calendarField));
+            return table.get(calendarField);
         }
     }
 }

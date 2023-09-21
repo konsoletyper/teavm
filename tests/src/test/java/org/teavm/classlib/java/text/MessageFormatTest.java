@@ -109,7 +109,7 @@ public class MessageFormatTest {
         buffer.append(" def ");
         buffer.append(DateFormat.getDateInstance().format(date));
         buffer.append(" ghi ");
-        buffer.append(NumberFormat.getInstance().format(new Double(7.2)));
+        buffer.append(NumberFormat.getInstance().format(7.2));
         buffer.append(" jkl high mnop 123");
         assertTrue("Wrong answer:\n" + result + "\n" + buffer, result.equals(buffer.toString()));
 

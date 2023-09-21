@@ -63,7 +63,7 @@ abstract class TAbstractSet {
 
     protected boolean isSecondPassVisited;
 
-    protected String index = new Integer(TAbstractSet.counter++).toString();
+    protected String index = Integer.toString(TAbstractSet.counter++);
 
     private int type;
 

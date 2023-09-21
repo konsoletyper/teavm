@@ -49,7 +49,7 @@ public class DependencyTestData {
     }
 
     public static void arrays() {
-        Object[] array = { new String("123"), new Integer(123), String.class };
+        Object[] array = { new String("123"), 123, String.class };
         MetaAssertions.assertTypes(array[0], String.class, Integer.class, Class.class);
     }
 
