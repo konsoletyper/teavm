@@ -88,11 +88,11 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
     }
 
     public static boolean logicalAnd(boolean a, boolean b) {
-        return a && b;
+        return a & b;
     }
 
     public static boolean logicalOr(boolean a, boolean b) {
-        return a || b;
+        return a | b;
     }
 
     public static boolean logicalXor(boolean a, boolean b) {
