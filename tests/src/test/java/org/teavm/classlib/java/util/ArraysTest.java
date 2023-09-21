@@ -16,11 +16,14 @@
 package org.teavm.classlib.java.util;
 
 import static org.junit.Assert.assertEquals;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.classlib.java.lang.DoubleTest;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.WholeClassCompilation;
 
@@ -123,5 +126,34 @@ public class ArraysTest {
 
         result = Arrays.stream(array, 0, 2).mapToObj(Double::toString).collect(Collectors.joining(","));
         assertEquals("23.0,42.0", result);
+    }
+
+    @Test
+    public void testHashcode() {
+        assertEquals(List.of(1, 2, 3).hashCode(), Arrays.hashCode(new int[] { 1, 2, 3 }));
+        assertEquals(List.of(1L, 2L, 3L).hashCode(), Arrays.hashCode(new long[] { 1L, 2L, 3L }));
+        assertEquals(List.of(1.0f, 2.0f, 3.0f).hashCode(), Arrays.hashCode(new float[] { 1.0f, 2.0f, 3.0f }));
+        assertEquals(List.of(1.0, 2.0, 3.0).hashCode(), Arrays.hashCode(new double[] { 1.0, 2.0, 3.0 }));
+        assertEquals(List.of(false, true, false).hashCode(), Arrays.hashCode(new boolean[] { false, true, false }));
+        assertEquals(List.of((byte) 1, (byte) 2).hashCode(), Arrays.hashCode(new byte[] { (byte) 1, (byte) 2 }));
+        assertEquals(List.of((short) 1, (short) 2).hashCode(), Arrays.hashCode(new short[] { (short) 1, (short) 2 }));
+        assertEquals(List.of('a', 'b', 'c').hashCode(), Arrays.hashCode(new char[] { 'a', 'b', 'c' }));
+        assertEquals(List.of(List.of('a', 'b'), List.of('c')).hashCode(),
+                Arrays.deepHashCode(new char[][] { { 'a', 'b' }, { 'c' } }));
+        List<Object> testList = new ArrayList<>();
+        List<Optional<Integer>> innerList = new ArrayList<>();
+        innerList.add(Optional.empty());
+        innerList.add(null);
+        innerList.add(Optional.of(5));
+        testList.add(innerList);
+        testList.add(null);
+        testList.add(List.of(Optional.of(3), Optional.empty()));
+        testList.add(6);
+        assertEquals(testList.hashCode(), Arrays.deepHashCode(new Object[] {
+                new Object[] { Optional.empty(), null, Optional.of(5) },
+                null,
+                new Object[] { Optional.of(3), Optional.empty() },
+                6
+        }));
     }
 }

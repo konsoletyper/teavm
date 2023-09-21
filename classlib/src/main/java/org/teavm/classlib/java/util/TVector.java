@@ -17,6 +17,7 @@ package org.teavm.classlib.java.util;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.Objects;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TCloneable;
@@ -194,7 +195,7 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
             while (it.hasNext()) {
                 Object e1 = elementData[index++];
                 Object e2 = it.next();
-                if (!(e1 == null ? e2 == null : e1.equals(e2))) {
+                if (!Objects.equals(e1, e2)) {
                     return false;
                 }
             }
@@ -268,7 +269,7 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
     public synchronized int hashCode() {
         int result = 1;
         for (int i = 0; i < elementCount; i++) {
-            result = (31 * result) + (elementData[i] == null ? 0 : elementData[i].hashCode());
+            result = 31 * result + Objects.hashCode(elementData[i]);
         }
         return result;
     }

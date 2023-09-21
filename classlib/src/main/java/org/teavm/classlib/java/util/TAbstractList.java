@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.Objects;
 import org.teavm.classlib.java.lang.*;
 import org.teavm.interop.Rename;
 
@@ -161,7 +162,7 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
         int hashCode = 1;
         for (TIterator<? extends E> iter = iterator(); iter.hasNext();) {
             E elem = iter.next();
-            hashCode = 31 * hashCode + (elem != null ? elem.hashCode() : 0);
+            hashCode = 31 * hashCode + Objects.hashCode(elem);
         }
         return hashCode;
     }

@@ -21,7 +21,7 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
     public static final TBoolean TRUE = new TBoolean(true);
     public static final TBoolean FALSE = new TBoolean(false);
     public static final Class<Boolean> TYPE = boolean.class;
-    private boolean value;
+    private final boolean value;
 
     public TBoolean(boolean value) {
         this.value = value;
@@ -37,16 +37,7 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
     }
 
     public static int compare(boolean x, boolean y) {
-        if (x) {
-            if (!y) {
-                return 1;
-            }
-        } else {
-            if (y) {
-                return -1;
-            }
-        }
-        return 0;
+        return x == y ? 0 : x ? 1 : -1;
     }
 
     public static boolean parseBoolean(String s) {
@@ -97,11 +88,11 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
     }
 
     public static boolean logicalAnd(boolean a, boolean b) {
-        return a & b;
+        return a && b;
     }
 
     public static boolean logicalOr(boolean a, boolean b) {
-        return a | b;
+        return a || b;
     }
 
     public static boolean logicalXor(boolean a, boolean b) {

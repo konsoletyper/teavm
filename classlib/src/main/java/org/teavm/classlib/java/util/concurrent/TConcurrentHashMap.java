@@ -421,7 +421,7 @@ public class TConcurrentHashMap<K, V> extends TAbstractMap<K, V>
 
     @Override
     public V putIfAbsent(K key, V value) {
-        var hash = computeHashCode(key);
+        var hash = Objects.hashCode(key);
         var entry = getEntry(key, hash);
 
         if (entry != null) {
@@ -453,7 +453,7 @@ public class TConcurrentHashMap<K, V> extends TAbstractMap<K, V>
     public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
         Objects.requireNonNull(mappingFunction);
 
-        var hash = computeHashCode(key);
+        var hash = Objects.hashCode(key);
         var entry = getEntry(key, hash);
         if (entry != null) {
             return entry.getValue();
@@ -472,7 +472,7 @@ public class TConcurrentHashMap<K, V> extends TAbstractMap<K, V>
 
     @Override
     public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        int hash = computeHashCode(key);
+        int hash = Objects.hashCode(key);
 
         V newValue = null;
         var newValueComputed = false;
@@ -499,7 +499,7 @@ public class TConcurrentHashMap<K, V> extends TAbstractMap<K, V>
 
     @Override
     public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        var hash = computeHashCode(key);
+        var hash = Objects.hashCode(key);
 
         while (true) {
             var entry = getEntry(key, hash);
@@ -530,7 +530,7 @@ public class TConcurrentHashMap<K, V> extends TAbstractMap<K, V>
     }
 
     private HashEntry<K, V> getEntry(Object key) {
-        return getEntry(key, computeHashCode(key));
+        return getEntry(key, Objects.hashCode(key));
     }
 
     private HashEntry<K, V> getEntry(Object key, int hash) {
@@ -575,7 +575,7 @@ public class TConcurrentHashMap<K, V> extends TAbstractMap<K, V>
     }
 
     private HashEntry<K, V> getEntryByKeyAndValue(Object key, Object value) {
-        var hash = computeHashCode(key);
+        var hash = Objects.hashCode(key);
         repeatTable:
         do {
             var table = elementData;
@@ -667,7 +667,7 @@ public class TConcurrentHashMap<K, V> extends TAbstractMap<K, V>
     }
 
     private V putImpl(K key, V value) {
-        var hash = computeHashCode(key);
+        var hash = Objects.hashCode(key);
         var entry = getEntry(key, hash);
         var index = computeIndex(hash);
 
@@ -787,10 +787,6 @@ public class TConcurrentHashMap<K, V> extends TAbstractMap<K, V>
             };
         }
         return cachedValues;
-    }
-
-    private static int computeHashCode(Object key) {
-        return key == null ? 0 : key.hashCode();
     }
 
     private static boolean areEqualKeys(Object key1, Object key2) {

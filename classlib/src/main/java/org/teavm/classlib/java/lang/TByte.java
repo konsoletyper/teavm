@@ -21,7 +21,7 @@ public class TByte extends TNumber implements TComparable<TByte> {
     public static final Class<Byte> TYPE = byte.class;
     public static final int SIZE = 8;
     public static final int BYTES = 1;
-    private byte value;
+    private final byte value;
 
     public TByte(byte value) {
         this.value = value;

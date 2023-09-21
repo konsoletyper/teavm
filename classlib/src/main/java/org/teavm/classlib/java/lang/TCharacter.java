@@ -91,7 +91,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     private static int[] upperCaseMapping;
     private static int[] lowerCaseMapping;
     private static UnicodeHelper.Range[] classMapping;
-    private char value;
+    private final char value;
     private static TCharacter[] characterCache = new TCharacter[128];
     private static final int SURROGATE_NEUTRAL_BIT_MASK = 0xF800;
     private static final int SURROGATE_BITS = 0xD800;
@@ -136,6 +136,10 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
 
     @Override
     public int hashCode() {
+        return hashCode(value);
+    }
+
+    public static int hashCode(char value) {
         return value;
     }
 

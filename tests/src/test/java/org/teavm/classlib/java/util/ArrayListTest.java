@@ -16,10 +16,13 @@
 package org.teavm.classlib.java.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.ConcurrentModificationException;
+import java.util.LinkedList;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -197,5 +200,12 @@ public class ArrayListTest {
         for (int i = 0; i < size; i++) {
             assertEquals(i, list.get(i).intValue());
         }
+    }
+
+    @Test
+    public void hashCodeEquals() {
+        assertEquals(956197, new ArrayList<>(Arrays.asList(1, 3, null, 2)).hashCode());
+        assertEquals(new LinkedList<>(Arrays.asList(1, 3, null, 2)), new ArrayList<>(Arrays.asList(1, 3, null, 2)));
+        assertNotEquals(new ArrayList<>(Arrays.asList(1, 3, 2)), new ArrayList<>(Arrays.asList(1, 3, null, 2)));
     }
 }
