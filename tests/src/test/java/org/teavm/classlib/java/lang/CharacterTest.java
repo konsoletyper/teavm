@@ -71,4 +71,10 @@ public class CharacterTest {
         assertEquals('Ü', Character.toUpperCase('ü'));
         assertEquals('Ü', Character.toUpperCase('Ü'));
     }
+
+    @Test
+    public void reverseBytes() {
+        assertEquals((char) 12405, Character.reverseBytes((char) 30000));
+        assertEquals((char) -12150, Character.reverseBytes((char) -30000));
+    }
 }

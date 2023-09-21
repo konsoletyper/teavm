@@ -133,6 +133,6 @@ public class TShort extends TNumber implements TComparable<TShort> {
     }
 
     public static short reverseBytes(short i) {
-        return (short) ((i << 8) | (i >>> 8));
+        return (short) ((i << 8) | ((i & 0xFF00) >> 8));
     }
 }

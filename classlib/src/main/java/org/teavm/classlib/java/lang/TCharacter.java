@@ -734,6 +734,6 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static char reverseBytes(char ch) {
-        return (char) ((ch >> 8) | (ch << 8));
+        return (char) (((ch & 0xFF00) >> 8) | (ch << 8));
     }
 }
