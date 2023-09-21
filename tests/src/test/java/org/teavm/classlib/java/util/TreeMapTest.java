@@ -126,9 +126,8 @@ public class TreeMapTest {
     public TreeMapTest() {
         tm = new TreeMap<>();
         for (int i = 0; i < objArray.length; i++) {
-            Object x = new Integer(i);
-            objArray[i] = x;
-            tm.put(x.toString(), x);
+            objArray[i] = i;
+            tm.put(Integer.toString(i), i);
         }
     }
 
@@ -139,12 +138,12 @@ public class TreeMapTest {
         TreeMap<Object, Object> reversedTreeMap = new TreeMap<>(comp);
         assertTrue("TreeMap answered incorrect comparator", reversedTreeMap
                 .comparator() == comp);
-        reversedTreeMap.put(new Integer(1).toString(), new Integer(1));
-        reversedTreeMap.put(new Integer(2).toString(), new Integer(2));
+        reversedTreeMap.put(Integer.toString(1), 1);
+        reversedTreeMap.put(Integer.toString(2), 2);
         assertTrue("TreeMap does not use comparator (firstKey was incorrect)",
-                reversedTreeMap.firstKey().equals(new Integer(2).toString()));
+                reversedTreeMap.firstKey().equals(Integer.toString(2)));
         assertTrue("TreeMap does not use comparator (lastKey was incorrect)",
-                reversedTreeMap.lastKey().equals(new Integer(1).toString()));
+                reversedTreeMap.lastKey().equals(Integer.toString(1)));
     }
 
     @Test
@@ -162,15 +161,15 @@ public class TreeMapTest {
         // Test for method java.util.TreeMap(java.util.SortedMap)
         Comparator<Object> comp = new ReversedComparator();
         TreeMap<Object, Object> reversedTreeMap = new TreeMap<>(comp);
-        reversedTreeMap.put(new Integer(1).toString(), new Integer(1));
-        reversedTreeMap.put(new Integer(2).toString(), new Integer(2));
+        reversedTreeMap.put(Integer.toString(1), 1);
+        reversedTreeMap.put(Integer.toString(2), 2);
         TreeMap<Object, Object> anotherTreeMap = new TreeMap<>(reversedTreeMap);
         assertTrue("New tree map does not answer correct comparator",
                 anotherTreeMap.comparator() == comp);
         assertTrue("TreeMap does not use comparator (firstKey was incorrect)",
-                anotherTreeMap.firstKey().equals(new Integer(2).toString()));
+                anotherTreeMap.firstKey().equals(Integer.toString(2)));
         assertTrue("TreeMap does not use comparator (lastKey was incorrect)",
-                anotherTreeMap.lastKey().equals(new Integer(1).toString()));
+                anotherTreeMap.lastKey().equals(Integer.toString(1)));
     }
 
     @Test
@@ -219,12 +218,12 @@ public class TreeMapTest {
         Comparator<Object> comp = new ReversedComparator();
         TreeMap<Object, Object> reversedTreeMap = new TreeMap<>(comp);
         assertTrue("TreeMap answered incorrect comparator", reversedTreeMap.comparator() == comp);
-        reversedTreeMap.put(new Integer(1).toString(), new Integer(1));
-        reversedTreeMap.put(new Integer(2).toString(), new Integer(2));
+        reversedTreeMap.put(Integer.toString(1), 1);
+        reversedTreeMap.put(Integer.toString(2), 2);
         assertTrue("TreeMap does not use comparator (firstKey was incorrect)",
-                reversedTreeMap.firstKey().equals(new Integer(2).toString()));
+                reversedTreeMap.firstKey().equals(Integer.toString(2)));
         assertTrue("TreeMap does not use comparator (lastKey was incorrect)",
-                reversedTreeMap.lastKey().equals(new Integer(1).toString()));
+                reversedTreeMap.lastKey().equals(Integer.toString(1)));
     }
 
     @Test
@@ -280,7 +279,7 @@ public class TreeMapTest {
         Map<Object, Object> head = tm.headMap("100");
         assertEquals("Returned map of incorrect size", 3, head.size());
         assertTrue("Returned incorrect elements", head.containsKey("0")
-                && head.containsValue(new Integer("1"))
+                && head.containsValue(Integer.parseInt("1"))
                 && head.containsKey("10"));
 
         // Regression for Harmony-1026
@@ -377,7 +376,7 @@ public class TreeMapTest {
         Set<Object> ks = tm.keySet();
         assertTrue("Returned set of incorrect size", ks.size() == objArray.length);
         for (int i = 0; i < tm.size(); i++) {
-            assertTrue("Returned set is missing keys", ks.contains(new Integer(i).toString()));
+            assertTrue("Returned set is missing keys", ks.contains(Integer.toString(i)));
         }
     }
 
@@ -396,7 +395,7 @@ public class TreeMapTest {
         assertTrue("Failed to put mapping", tm.get("Hello") == o);
 
         tm = new TreeMap<>();
-        assertNull(tm.put(new Integer(1), new Object()));
+        assertNull(tm.put(1, new Object()));
     }
 
     @Test
@@ -567,9 +566,9 @@ public class TreeMapTest {
             myTreeMap.put(objArray[i], objArray[i]);
         }
         Collection<Object> values = myTreeMap.values();
-        values.remove(new Integer(0));
+        values.remove(0);
         assertTrue("Removing from the values collection should remove from the original map",
-                !myTreeMap.containsValue(new Integer(0)));
+                !myTreeMap.containsValue(0));
     }
 
     /*

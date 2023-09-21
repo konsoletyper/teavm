@@ -146,7 +146,7 @@ public class HashtableTest {
         // Test for method java.util.Hashtable(java.util.Map)
         Map<String, Object> map = new TreeMap<>();
         Object firstVal = "Gabba";
-        Object secondVal = new Integer(5);
+        Object secondVal = 5;
         map.put("Gah", firstVal);
         map.put("Ooga", secondVal);
         Hashtable<String, Object> ht = new Hashtable<>(map);
@@ -386,9 +386,9 @@ public class HashtableTest {
         }
 
         Map<Integer, String> map = new Hashtable<>(101);
-        map.put(new Integer(1), "1");
-        map.put(new Integer(102), "102");
-        map.put(new Integer(203), "203");
+        map.put(1, "1");
+        map.put(102, "102");
+        map.put(203, "203");
         Iterator<Integer> it = map.keySet().iterator();
         Integer remove1 = it.next();
         it.remove();
@@ -402,15 +402,15 @@ public class HashtableTest {
         assertTrue("Wrong contents", map.keySet().iterator().next().equals(list.get(0)));
 
         Map<Integer, String> map2 = new Hashtable<>(101);
-        map2.put(new Integer(1), "1");
-        map2.put(new Integer(4), "4");
+        map2.put(1, "1");
+        map2.put(4, "4");
         Iterator<Integer> it2 = map2.keySet().iterator();
         Integer remove3 = it2.next();
         Integer next;
         if (remove3.intValue() == 1) {
-            next = new Integer(4);
+            next = 4;
         } else {
-            next = new Integer(1);
+            next = 1;
         }
         it2.hasNext();
         it2.remove();
@@ -476,7 +476,7 @@ public class HashtableTest {
         // Test for method java.lang.Object
         // java.util.Hashtable.put(java.lang.Object, java.lang.Object)
         Hashtable<String, Integer> h = hashtableClone(ht100);
-        Integer key = new Integer(100);
+        Integer key = 100;
         h.put("Value 100", key);
         assertTrue("Key/Value not inserted", h.size() == 1 && (h.contains(key)));
     }
@@ -558,13 +558,13 @@ public class HashtableTest {
 
         Hashtable<Integer, Integer> myHashtable = new Hashtable<>();
         for (int i = 0; i < 100; i++) {
-            myHashtable.put(new Integer(i), new Integer(i));
+            myHashtable.put(i, i);
         }
         Collection<Integer> values = myHashtable.values();
         new UnmodifiableCollectionTestSupport(values).runTest();
-        values.remove(new Integer(0));
+        values.remove(0);
         assertTrue("Removing from the values collection should remove from the original map",
-                !myHashtable.containsValue(new Integer(0)));
+                !myHashtable.containsValue(0));
     }
 
     @Test
