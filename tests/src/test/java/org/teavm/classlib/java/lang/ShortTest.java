@@ -50,4 +50,10 @@ public class ShortTest {
     public void bytes() {
         assertEquals(2, Short.BYTES);
     }
+
+    @Test
+    public void reverseBytes() {
+        assertEquals((short) 12405, Short.reverseBytes((short) 30000));
+        assertEquals((short) -12150, Short.reverseBytes((short) -30000));
+    }
 }
