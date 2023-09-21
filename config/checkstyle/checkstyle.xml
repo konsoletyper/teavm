@@ -29,7 +29,6 @@
     <module name="RightCurly"/>
     <module name="HideUtilityClassConstructor"/>
     <module name="EmptyStatement"/>
-    <module name="EqualsHashCode"/>
     <module name="InnerAssignment"/>
     <module name="SimplifyBooleanExpression"/>
     <module name="SimplifyBooleanReturn"/>
