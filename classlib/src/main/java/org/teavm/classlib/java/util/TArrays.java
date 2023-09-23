@@ -1253,6 +1253,25 @@ public class TArrays extends TObject {
         }
     }
 
+    private static int mismatchImpl(long[] a, int aStart, long[] a2, int a2Start, int length) {
+        for (int i = 0; i < length; ++i) {
+            if (a[i + aStart] != a2[i + a2Start]) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static int mismatch(long[] a, long[] a2) {
+        int length = Math.min(a.length, a2.length);
+        if (a == a2) {
+            return -1;
+        }
+
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
+        return mismatch < 0 && a.length != a2.length ? length : mismatch;
+    }
+
     public static boolean equals(long[] a, long[] a2) {
         if (a == a2) {
             return true;
@@ -1260,12 +1279,46 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        for (int i = 0; i < a.length; ++i) {
-            if (a[i] != a2[i]) {
-                return false;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
+    }
+
+    public static int mismatch(long[] a, int aFromIndex, int aToIndex, long[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        int mismatch = mismatchImpl(a, aFromIndex, b, bFromIndex, length);
+        return mismatch < 0 && aLength != bLength ? length : mismatch;
+    }
+
+    public static boolean equals(long[] a, int aFromIndex, int aToIndex, long[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
+    }
+
+    private static int mismatchImpl(int[] a, int aStart, int[] a2, int a2Start, int length) {
+        for (int i = 0; i < length; ++i) {
+            if (a[i + aStart] != a2[i + a2Start]) {
+                return i;
             }
         }
-        return true;
+        return -1;
+    }
+
+    public static int mismatch(int[] a, int[] a2) {
+        int length = Math.min(a.length, a2.length);
+        if (a == a2) {
+            return -1;
+        }
+
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
+        return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
     public static boolean equals(int[] a, int[] a2) {
@@ -1275,12 +1328,46 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        for (int i = 0; i < a.length; ++i) {
-            if (a[i] != a2[i]) {
-                return false;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
+    }
+
+    public static int mismatch(int[] a, int aFromIndex, int aToIndex, int[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        int mismatch = mismatchImpl(a, aFromIndex, b, bFromIndex, length);
+        return mismatch < 0 && aLength != bLength ? length : mismatch;
+    }
+
+    public static boolean equals(int[] a, int aFromIndex, int aToIndex, int[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
+    }
+
+    private static int mismatchImpl(short[] a, int aStart, short[] a2, int a2Start, int length) {
+        for (int i = 0; i < length; ++i) {
+            if (a[i + aStart] != a2[i + a2Start]) {
+                return i;
             }
         }
-        return true;
+        return -1;
+    }
+
+    public static int mismatch(short[] a, short[] a2) {
+        int length = Math.min(a.length, a2.length);
+        if (a == a2) {
+            return -1;
+        }
+
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
+        return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
     public static boolean equals(short[] a, short[] a2) {
@@ -1290,12 +1377,46 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        for (int i = 0; i < a.length; ++i) {
-            if (a[i] != a2[i]) {
-                return false;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
+    }
+
+    public static int mismatch(short[] a, int aFromIndex, int aToIndex, short[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        int mismatch = mismatchImpl(a, aFromIndex, b, bFromIndex, length);
+        return mismatch < 0 && aLength != bLength ? length : mismatch;
+    }
+
+    public static boolean equals(short[] a, int aFromIndex, int aToIndex, short[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
+    }
+
+    private static int mismatchImpl(char[] a, int aStart, char[] a2, int a2Start, int length) {
+        for (int i = 0; i < length; ++i) {
+            if (a[i + aStart] != a2[i + a2Start]) {
+                return i;
             }
         }
-        return true;
+        return -1;
+    }
+
+    public static int mismatch(char[] a, char[] a2) {
+        int length = Math.min(a.length, a2.length);
+        if (a == a2) {
+            return -1;
+        }
+
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
+        return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
     public static boolean equals(char[] a, char[] a2) {
@@ -1305,12 +1426,46 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        for (int i = 0; i < a.length; ++i) {
-            if (a[i] != a2[i]) {
-                return false;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
+    }
+
+    public static int mismatch(char[] a, int aFromIndex, int aToIndex, char[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        int mismatch = mismatchImpl(a, aFromIndex, b, bFromIndex, length);
+        return mismatch < 0 && aLength != bLength ? length : mismatch;
+    }
+
+    public static boolean equals(char[] a, int aFromIndex, int aToIndex, char[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
+    }
+
+    private static int mismatchImpl(byte[] a, int aStart, byte[] a2, int a2Start, int length) {
+        for (int i = 0; i < length; ++i) {
+            if (a[i + aStart] != a2[i + a2Start]) {
+                return i;
             }
         }
-        return true;
+        return -1;
+    }
+
+    public static int mismatch(byte[] a, byte[] a2) {
+        int length = Math.min(a.length, a2.length);
+        if (a == a2) {
+            return -1;
+        }
+
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
+        return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
     public static boolean equals(byte[] a, byte[] a2) {
@@ -1320,12 +1475,46 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        for (int i = 0; i < a.length; ++i) {
-            if (a[i] != a2[i]) {
-                return false;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
+    }
+
+    public static int mismatch(byte[] a, int aFromIndex, int aToIndex, byte[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        int mismatch = mismatchImpl(a, aFromIndex, b, bFromIndex, length);
+        return mismatch < 0 && aLength != bLength ? length : mismatch;
+    }
+
+    public static boolean equals(byte[] a, int aFromIndex, int aToIndex, byte[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
+    }
+
+    private static int mismatchImpl(float[] a, int aStart, float[] a2, int a2Start, int length) {
+        for (int i = 0; i < length; ++i) {
+            if (a[i + aStart] != a2[i + a2Start]) {
+                return i;
             }
         }
-        return true;
+        return -1;
+    }
+
+    public static int mismatch(float[] a, float[] a2) {
+        int length = Math.min(a.length, a2.length);
+        if (a == a2) {
+            return -1;
+        }
+
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
+        return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
     public static boolean equals(float[] a, float[] a2) {
@@ -1335,12 +1524,46 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        for (int i = 0; i < a.length; ++i) {
-            if (a[i] != a2[i]) {
-                return false;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
+    }
+
+    public static int mismatch(float[] a, int aFromIndex, int aToIndex, float[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        int mismatch = mismatchImpl(a, aFromIndex, b, bFromIndex, length);
+        return mismatch < 0 && aLength != bLength ? length : mismatch;
+    }
+
+    public static boolean equals(float[] a, int aFromIndex, int aToIndex, float[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
+    }
+
+    private static int mismatchImpl(double[] a, int aStart, double[] a2, int a2Start, int length) {
+        for (int i = 0; i < length; ++i) {
+            if (a[i + aStart] != a2[i + a2Start]) {
+                return i;
             }
         }
-        return true;
+        return -1;
+    }
+
+    public static int mismatch(double[] a, double[] a2) {
+        int length = Math.min(a.length, a2.length);
+        if (a == a2) {
+            return -1;
+        }
+
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
+        return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
     public static boolean equals(double[] a, double[] a2) {
@@ -1350,12 +1573,46 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        for (int i = 0; i < a.length; ++i) {
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
+    }
+
+    public static int mismatch(double[] a, int aFromIndex, int aToIndex, double[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        int mismatch = mismatchImpl(a, aFromIndex, b, bFromIndex, length);
+        return mismatch < 0 && aLength != bLength ? length : mismatch;
+    }
+
+    public static boolean equals(double[] a, int aFromIndex, int aToIndex, double[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
+    }
+
+    private static int mismatchImpl(boolean[] a, boolean[] a2, int length) {
+        for (int i = 0; i < length; ++i) {
             if (a[i] != a2[i]) {
-                return false;
+                return i;
             }
         }
-        return true;
+        return -1;
+    }
+
+    public static int mismatch(boolean[] a, boolean[] a2) {
+        int length = Math.min(a.length, a2.length);
+        if (a == a2) {
+            return -1;
+        }
+
+        int mismatch = mismatchImpl(a, a2, length);
+        return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
     public static boolean equals(boolean[] a, boolean[] a2) {
@@ -1365,12 +1622,55 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        for (int i = 0; i < a.length; ++i) {
-            if (a[i] != a2[i]) {
-                return false;
+        return mismatchImpl(a, a2, a.length) < 0;
+    }
+
+    private static int mismatchImpl(boolean[] a, int aStart, boolean[] a2, int a2Start, int length) {
+        for (int i = 0; i < length; ++i) {
+            if (a[i + aStart] != a2[i + a2Start]) {
+                return i;
             }
         }
-        return true;
+        return -1;
+    }
+
+    public static int mismatch(boolean[] a, int aFromIndex, int aToIndex, boolean[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        int mismatch = mismatchImpl(a, aFromIndex, b, bFromIndex, length);
+        return mismatch < 0 && aLength != bLength ? length : mismatch;
+    }
+
+    public static boolean equals(boolean[] a, int aFromIndex, int aToIndex, boolean[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
+    }
+
+    private static int mismatchImpl(Object[] a, int aStart, Object[] a2, int a2Start, int length) {
+        for (int i = 0; i < length; ++i) {
+            if (!Objects.equals(a[i + aStart], a2[i + a2Start])) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static int mismatch(Object[] a, Object[] a2) {
+        int length = Math.min(a.length, a2.length);
+        if (a == a2) {
+            return -1;
+        }
+
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
+        return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
     public static boolean equals(Object[] a, Object[] a2) {
@@ -1380,12 +1680,27 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        for (int i = 0; i < a.length; ++i) {
-            if (!Objects.equals(a[i], a2[i])) {
-                return false;
-            }
-        }
-        return true;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
+    }
+
+    public static int mismatch(Object[] a, int aFromIndex, int aToIndex, Object[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        int length = Math.min(aLength, bLength);
+        int mismatch = mismatchImpl(a, aFromIndex, b, bFromIndex, length);
+        return mismatch < 0 && aLength != bLength ? length : mismatch;
+    }
+
+    public static boolean equals(Object[] a, int aFromIndex, int aToIndex, Object[] b, int bFromIndex, int bToIndex) {
+        checkInBounds(a.length, aFromIndex, aToIndex);
+        checkInBounds(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
     }
 
     public static int hashCode(boolean[] a) {
@@ -1604,9 +1919,7 @@ public class TArrays extends TObject {
     }
 
     public static <T> TStream<T> stream(T[] array, int startInclusive, int endExclusive) {
-        if (startInclusive < 0 || endExclusive < startInclusive || endExclusive > array.length) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+        checkInBounds(array.length, startInclusive, endExclusive);
         return new TArrayStreamImpl<>(array, startInclusive, endExclusive);
     }
 
@@ -1615,9 +1928,7 @@ public class TArrays extends TObject {
     }
 
     public static TIntStream stream(int[] array, int startInclusive, int endExclusive) {
-        if (startInclusive < 0 || endExclusive < startInclusive || endExclusive > array.length) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+        checkInBounds(array.length, startInclusive, endExclusive);
         return new TArrayIntStreamImpl(array, startInclusive, endExclusive);
     }
 
@@ -1626,9 +1937,7 @@ public class TArrays extends TObject {
     }
 
     public static TLongStream stream(long[] array, int startInclusive, int endExclusive) {
-        if (startInclusive < 0 || endExclusive < startInclusive || endExclusive > array.length) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+        checkInBounds(array.length, startInclusive, endExclusive);
         return new TArrayLongStreamImpl(array, startInclusive, endExclusive);
     }
 
@@ -1637,9 +1946,7 @@ public class TArrays extends TObject {
     }
 
     public static TDoubleStream stream(double[] array, int startInclusive, int endExclusive) {
-        if (startInclusive < 0 || endExclusive < startInclusive || endExclusive > array.length) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
+        checkInBounds(array.length, startInclusive, endExclusive);
         return new TArrayDoubleStreamImpl(array, startInclusive, endExclusive);
     }
 
@@ -1664,6 +1971,12 @@ public class TArrays extends TObject {
     public static void setAll(double[] array, IntToDoubleFunction generator) {
         for (int i = 0; i < array.length; ++i) {
             array[i] = generator.applyAsDouble(i);
+        }
+    }
+
+    private static void checkInBounds(int length, int startInclusive, int endExclusive) {
+        if (startInclusive < 0 || endExclusive < startInclusive || endExclusive > length) {
+            throw new ArrayIndexOutOfBoundsException();
         }
     }
 }

@@ -16,6 +16,8 @@
 package org.teavm.classlib.java.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -154,5 +156,50 @@ public class ArraysTest {
                 new Object[] { Optional.of(3), Optional.empty() },
                 6
         }));
+    }
+
+    @Test
+    public void testArrayEquals() {
+        int[] array = { 1, 2, 3 };
+        int[] equal = { 1, 2, 3 };
+        int[] shorter = { 1, 2 };
+        int[] different = { 3, 1, 2 };
+
+        // Simple equals
+        assertTrue(Arrays.equals(array, array));
+        assertTrue(Arrays.equals(array, equal));
+
+        // Equal to null
+        assertTrue(Arrays.equals((int[]) null, null));
+        assertFalse(Arrays.equals(null, array));
+        assertFalse(Arrays.equals(array, null));
+
+        // Not equal
+        assertFalse(Arrays.equals(array, shorter));
+        assertFalse(Arrays.equals(array, different));
+
+        // Slices
+        assertTrue(Arrays.equals(array, 0, 1, shorter, 0, 1));
+        assertTrue(Arrays.equals(array, 0, 1, different, 1, 2));
+    }
+
+    @Test
+    public void testMismatch() {
+        int[] array = { 1, 2, 3 };
+        int[] equal = { 1, 2, 3 };
+        int[] shorter = { 1, 2 };
+        int[] different = { 3, 1, 2 };
+
+        // Simple equals
+        assertEquals(-1, Arrays.mismatch(array, array));
+        assertEquals(-1, Arrays.mismatch(array, equal));
+
+        // Not equal
+        assertEquals(2, Arrays.mismatch(array, shorter));
+        assertEquals(0, Arrays.mismatch(array, different));
+
+        // Slices
+        assertEquals(-1, Arrays.mismatch(array, 0, 1, shorter, 0, 1));
+        assertEquals(-1, Arrays.mismatch(array, 0, 1, different, 1, 2));
     }
 }
