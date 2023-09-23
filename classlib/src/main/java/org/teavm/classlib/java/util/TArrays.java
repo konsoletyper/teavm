@@ -1253,9 +1253,9 @@ public class TArrays extends TObject {
         }
     }
 
-    private static int mismatchImpl(long[] a, long[] a2, int length) {
+    private static int mismatchImpl(long[] a, int aStart, long[] a2, int a2Start, int length) {
         for (int i = 0; i < length; ++i) {
-            if (a[i] != a2[i]) {
+            if (a[i + aStart] != a2[i + a2Start]) {
                 return i;
             }
         }
@@ -1268,7 +1268,7 @@ public class TArrays extends TObject {
             return -1;
         }
 
-        int mismatch = mismatchImpl(a, a2, length);
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
         return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
@@ -1279,16 +1279,7 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        return mismatchImpl(a, a2, a.length) < 0;
-    }
-
-    private static int mismatchImpl(long[] a, int aStart, long[] a2, int a2Start, int length) {
-        for (int i = 0; i < length; ++i) {
-            if (a[i + aStart] != a2[i + a2Start]) {
-                return i;
-            }
-        }
-        return -1;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
     }
 
     public static int mismatch(long[] a, int aFromIndex, int aToIndex, long[] b, int bFromIndex, int bToIndex) {
@@ -1311,9 +1302,9 @@ public class TArrays extends TObject {
         return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
     }
 
-    private static int mismatchImpl(int[] a, int[] a2, int length) {
+    private static int mismatchImpl(int[] a, int aStart, int[] a2, int a2Start, int length) {
         for (int i = 0; i < length; ++i) {
-            if (a[i] != a2[i]) {
+            if (a[i + aStart] != a2[i + a2Start]) {
                 return i;
             }
         }
@@ -1326,7 +1317,7 @@ public class TArrays extends TObject {
             return -1;
         }
 
-        int mismatch = mismatchImpl(a, a2, length);
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
         return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
@@ -1337,16 +1328,7 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        return mismatchImpl(a, a2, a.length) < 0;
-    }
-
-    private static int mismatchImpl(int[] a, int aStart, int[] a2, int a2Start, int length) {
-        for (int i = 0; i < length; ++i) {
-            if (a[i + aStart] != a2[i + a2Start]) {
-                return i;
-            }
-        }
-        return -1;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
     }
 
     public static int mismatch(int[] a, int aFromIndex, int aToIndex, int[] b, int bFromIndex, int bToIndex) {
@@ -1369,9 +1351,9 @@ public class TArrays extends TObject {
         return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
     }
 
-    private static int mismatchImpl(short[] a, short[] a2, int length) {
+    private static int mismatchImpl(short[] a, int aStart, short[] a2, int a2Start, int length) {
         for (int i = 0; i < length; ++i) {
-            if (a[i] != a2[i]) {
+            if (a[i + aStart] != a2[i + a2Start]) {
                 return i;
             }
         }
@@ -1384,7 +1366,7 @@ public class TArrays extends TObject {
             return -1;
         }
 
-        int mismatch = mismatchImpl(a, a2, length);
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
         return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
@@ -1395,16 +1377,7 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        return mismatchImpl(a, a2, a.length) < 0;
-    }
-
-    private static int mismatchImpl(short[] a, int aStart, short[] a2, int a2Start, int length) {
-        for (int i = 0; i < length; ++i) {
-            if (a[i + aStart] != a2[i + a2Start]) {
-                return i;
-            }
-        }
-        return -1;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
     }
 
     public static int mismatch(short[] a, int aFromIndex, int aToIndex, short[] b, int bFromIndex, int bToIndex) {
@@ -1427,9 +1400,9 @@ public class TArrays extends TObject {
         return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
     }
 
-    private static int mismatchImpl(char[] a, char[] a2, int length) {
+    private static int mismatchImpl(char[] a, int aStart, char[] a2, int a2Start, int length) {
         for (int i = 0; i < length; ++i) {
-            if (a[i] != a2[i]) {
+            if (a[i + aStart] != a2[i + a2Start]) {
                 return i;
             }
         }
@@ -1442,7 +1415,7 @@ public class TArrays extends TObject {
             return -1;
         }
 
-        int mismatch = mismatchImpl(a, a2, length);
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
         return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
@@ -1453,16 +1426,7 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        return mismatchImpl(a, a2, a.length) < 0;
-    }
-
-    private static int mismatchImpl(char[] a, int aStart, char[] a2, int a2Start, int length) {
-        for (int i = 0; i < length; ++i) {
-            if (a[i + aStart] != a2[i + a2Start]) {
-                return i;
-            }
-        }
-        return -1;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
     }
 
     public static int mismatch(char[] a, int aFromIndex, int aToIndex, char[] b, int bFromIndex, int bToIndex) {
@@ -1485,9 +1449,9 @@ public class TArrays extends TObject {
         return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
     }
 
-    private static int mismatchImpl(byte[] a, byte[] a2, int length) {
+    private static int mismatchImpl(byte[] a, int aStart, byte[] a2, int a2Start, int length) {
         for (int i = 0; i < length; ++i) {
-            if (a[i] != a2[i]) {
+            if (a[i + aStart] != a2[i + a2Start]) {
                 return i;
             }
         }
@@ -1500,7 +1464,7 @@ public class TArrays extends TObject {
             return -1;
         }
 
-        int mismatch = mismatchImpl(a, a2, length);
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
         return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
@@ -1511,16 +1475,7 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        return mismatchImpl(a, a2, a.length) < 0;
-    }
-
-    private static int mismatchImpl(byte[] a, int aStart, byte[] a2, int a2Start, int length) {
-        for (int i = 0; i < length; ++i) {
-            if (a[i + aStart] != a2[i + a2Start]) {
-                return i;
-            }
-        }
-        return -1;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
     }
 
     public static int mismatch(byte[] a, int aFromIndex, int aToIndex, byte[] b, int bFromIndex, int bToIndex) {
@@ -1543,9 +1498,9 @@ public class TArrays extends TObject {
         return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
     }
 
-    private static int mismatchImpl(float[] a, float[] a2, int length) {
+    private static int mismatchImpl(float[] a, int aStart, float[] a2, int a2Start, int length) {
         for (int i = 0; i < length; ++i) {
-            if (a[i] != a2[i]) {
+            if (a[i + aStart] != a2[i + a2Start]) {
                 return i;
             }
         }
@@ -1558,7 +1513,7 @@ public class TArrays extends TObject {
             return -1;
         }
 
-        int mismatch = mismatchImpl(a, a2, length);
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
         return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
@@ -1569,16 +1524,7 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        return mismatchImpl(a, a2, a.length) < 0;
-    }
-
-    private static int mismatchImpl(float[] a, int aStart, float[] a2, int a2Start, int length) {
-        for (int i = 0; i < length; ++i) {
-            if (a[i + aStart] != a2[i + a2Start]) {
-                return i;
-            }
-        }
-        return -1;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
     }
 
     public static int mismatch(float[] a, int aFromIndex, int aToIndex, float[] b, int bFromIndex, int bToIndex) {
@@ -1601,9 +1547,9 @@ public class TArrays extends TObject {
         return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
     }
 
-    private static int mismatchImpl(double[] a, double[] a2, int length) {
+    private static int mismatchImpl(double[] a, int aStart, double[] a2, int a2Start, int length) {
         for (int i = 0; i < length; ++i) {
-            if (a[i] != a2[i]) {
+            if (a[i + aStart] != a2[i + a2Start]) {
                 return i;
             }
         }
@@ -1616,7 +1562,7 @@ public class TArrays extends TObject {
             return -1;
         }
 
-        int mismatch = mismatchImpl(a, a2, length);
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
         return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
@@ -1627,16 +1573,7 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        return mismatchImpl(a, a2, a.length) < 0;
-    }
-
-    private static int mismatchImpl(double[] a, int aStart, double[] a2, int a2Start, int length) {
-        for (int i = 0; i < length; ++i) {
-            if (a[i + aStart] != a2[i + a2Start]) {
-                return i;
-            }
-        }
-        return -1;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
     }
 
     public static int mismatch(double[] a, int aFromIndex, int aToIndex, double[] b, int bFromIndex, int bToIndex) {
@@ -1717,9 +1654,9 @@ public class TArrays extends TObject {
         return aLength == bLength && mismatchImpl(a, aFromIndex, b, bFromIndex, aLength) < 0;
     }
 
-    private static int mismatchImpl(Object[] a, Object[] a2, int length) {
+    private static int mismatchImpl(Object[] a, int aStart, Object[] a2, int a2Start, int length) {
         for (int i = 0; i < length; ++i) {
-            if (!Objects.equals(a[i], a2[i])) {
+            if (!Objects.equals(a[i + aStart], a2[i + a2Start])) {
                 return i;
             }
         }
@@ -1732,7 +1669,7 @@ public class TArrays extends TObject {
             return -1;
         }
 
-        int mismatch = mismatchImpl(a, a2, length);
+        int mismatch = mismatchImpl(a, 0, a2, 0, length);
         return mismatch < 0 && a.length != a2.length ? length : mismatch;
     }
 
@@ -1743,16 +1680,7 @@ public class TArrays extends TObject {
         if (a == null || a2 == null || a.length != a2.length) {
             return false;
         }
-        return mismatchImpl(a, a2, a.length) < 0;
-    }
-
-    private static int mismatchImpl(Object[] a, int aStart, Object[] a2, int a2Start, int length) {
-        for (int i = 0; i < length; ++i) {
-            if (!Objects.equals(a[i + aStart], a2[i + a2Start])) {
-                return i;
-            }
-        }
-        return -1;
+        return mismatchImpl(a, 0, a2, 0, a.length) < 0;
     }
 
     public static int mismatch(Object[] a, int aFromIndex, int aToIndex, Object[] b, int bFromIndex, int bToIndex) {
