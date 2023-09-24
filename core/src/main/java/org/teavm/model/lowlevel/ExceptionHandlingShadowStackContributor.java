@@ -17,7 +17,6 @@ package org.teavm.model.lowlevel;
 
 import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntObjectHashMap;
-import com.carrotsearch.hppc.IntObjectMap;
 import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -151,16 +150,16 @@ public class ExceptionHandlingShadowStackContributor {
 
     private int contributeToBasicBlock(BasicBlock block) {
         int[] currentJointSources = new int[program.variableCount()];
-        IntObjectMap<int[]> jointReceiverMaps = new IntObjectHashMap<>();
+        var jointReceiverMaps = new IntObjectHashMap<int[]>();
         Arrays.fill(currentJointSources, -1);
 
         IntSet variablesDefinedHere = new IntHashSet();
 
-        for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+        for (var tryCatch : block.getTryCatchBlocks()) {
             int[] jointReceiverMap = new int[program.variableCount()];
             Arrays.fill(jointReceiverMap, -1);
             for (Phi phi : tryCatch.getHandler().getPhis()) {
-                List<Variable> sourceVariables = phi.getIncomings().stream()
+                var sourceVariables = phi.getIncomings().stream()
                         .filter(incoming -> incoming.getSource() == tryCatch.getProtectedBlock())
                         .map(incoming -> incoming.getValue())
                         .collect(Collectors.toList());
@@ -198,7 +197,7 @@ public class ExceptionHandlingShadowStackContributor {
             variablesDefinedHere.add(definedVar.getIndex());
         }
 
-        DefinitionExtractor defExtractor = new DefinitionExtractor();
+        var defExtractor = new DefinitionExtractor();
         List<BasicBlock> blocksToClearHandlers = new ArrayList<>();
         blocksToClearHandlers.add(block);
         BasicBlock initialBlock = block;
@@ -252,11 +251,11 @@ public class ExceptionHandlingShadowStackContributor {
                     }
                 }
 
-                CallSiteLocation[] locations = CallSiteLocation.fromTextLocation(insn.getLocation(), method);
-                CallSiteDescriptor callSite = new CallSiteDescriptor(callSiteIdGen++, locations);
+                var locations = CallSiteLocation.fromTextLocation(insn.getLocation(), method);
+                var callSite = new CallSiteDescriptor(callSiteIdGen++, locations);
                 callSites.add(callSite);
-                List<Instruction> pre = setLocation(getInstructionsBeforeCallSite(callSite), insn.getLocation());
-                List<Instruction> post = getInstructionsAfterCallSite(initialBlock, block, next, callSite,
+                var pre = setLocation(getInstructionsBeforeCallSite(callSite), insn.getLocation());
+                var post = getInstructionsAfterCallSite(initialBlock, block, next, callSite,
                         currentJointSources, variablesDefinedHere);
                 post = setLocation(post, insn.getLocation());
                 block.getLastInstruction().insertPreviousAll(pre);
@@ -271,7 +270,7 @@ public class ExceptionHandlingShadowStackContributor {
             }
         }
 
-        fixOutgoingPhis(initialBlock, block, currentJointSources, variablesDefinedHere);
+        removeOutgoingPhis(block);
         for (BasicBlock blockToClear : blocksToClearHandlers) {
             blockToClear.getTryCatchBlocks().clear();
         }
@@ -422,7 +421,7 @@ public class ExceptionHandlingShadowStackContributor {
                 List<Incoming> additionalIncomings = new ArrayList<>();
                 for (int i = 0; i < phi.getIncomings().size(); i++) {
                     Incoming incoming = phi.getIncomings().get(i);
-                    if (incoming.getSource() != block || incoming.getSource() == newBlock) {
+                    if (incoming.getSource() != block) {
                         continue;
                     }
                     if (incoming.getValue().getIndex() == value) {
@@ -438,6 +437,18 @@ public class ExceptionHandlingShadowStackContributor {
                 }
 
                 phi.getIncomings().addAll(additionalIncomings);
+            }
+        }
+    }
+
+    private void removeOutgoingPhis(BasicBlock block) {
+        for (var tryCatch : block.getTryCatchBlocks()) {
+            for (var iterator = tryCatch.getHandler().getPhis().iterator(); iterator.hasNext();) {
+                var phi = iterator.next();
+                phi.getIncomings().removeIf(incoming -> incoming.getSource() == block);
+                if (phi.getIncomings().isEmpty()) {
+                    iterator.remove();
+                }
             }
         }
     }

@@ -55,8 +55,7 @@ public class ShadowStackTransformer {
         boolean exceptions;
         if (exceptionHandling) {
             List<CallSiteDescriptor> callSites = new ArrayList<>();
-            ExceptionHandlingShadowStackContributor exceptionContributor =
-                    new ExceptionHandlingShadowStackContributor(characteristics, callSites,
+            var exceptionContributor = new ExceptionHandlingShadowStackContributor(characteristics, callSites,
                             method.getReference(), program);
             exceptionContributor.callSiteIdGen = callSiteIdGen;
             exceptions = exceptionContributor.contribute();

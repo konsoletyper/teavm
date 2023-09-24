@@ -163,6 +163,7 @@ import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.model.util.AsyncMethodFinder;
+import org.teavm.model.util.TransitionExtractor;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.EventQueue;
 import org.teavm.runtime.ExceptionHandling;
@@ -440,7 +441,23 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 .apply(program, method.getReference());
         checkTransformation.apply(program, method.getResultType());
         shadowStackTransformer.apply(program, method);
+        checkPhis(program, method);
         writeBarrierInsertion.apply(program);
+    }
+
+    private void checkPhis(Program program, MethodReader method) {
+        var transitionExtractor = new TransitionExtractor();
+        for (var block : program.getBasicBlocks()) {
+            for (var phi : block.getPhis()) {
+                for (var incoming : phi.getIncomings()) {
+                    incoming.getSource().getLastInstruction().acceptVisitor(transitionExtractor);
+                    if (!Arrays.asList(transitionExtractor.getTargets()).contains(block)) {
+                        throw new RuntimeException("Method " + method.getReference() + ", block "
+                                + block.getIndex() + ", from " + incoming.getSource().getIndex());
+                    }
+                }
+            }
+        }
     }
 
     @Override
