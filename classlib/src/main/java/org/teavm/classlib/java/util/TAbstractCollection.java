@@ -32,7 +32,7 @@ public abstract class TAbstractCollection<E> extends TObject implements TCollect
     public boolean contains(Object o) {
         for (TIterator<E> iter = iterator(); iter.hasNext();) {
             E e = iter.next();
-            if (e == null ? o == null : e.equals(o)) {
+            if (TObjects.equals(e, o)) {
                 return true;
             }
         }
@@ -76,7 +76,7 @@ public abstract class TAbstractCollection<E> extends TObject implements TCollect
     public boolean remove(Object o) {
         for (TIterator<E> iter = iterator(); iter.hasNext();) {
             E e = iter.next();
-            if (e == null ? o == null : e.equals(o)) {
+            if (TObjects.equals(e, o)) {
                 iter.remove();
                 return true;
             }

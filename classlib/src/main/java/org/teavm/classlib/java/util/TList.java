@@ -18,7 +18,7 @@ package org.teavm.classlib.java.util;
 import java.util.Objects;
 import org.teavm.classlib.java.util.function.TUnaryOperator;
 
-public interface TList<E> extends TCollection<E> {
+public interface TList<E> extends TSequencedCollection<E> {
     boolean addAll(int index, TCollection<? extends E> c);
 
     E get(int index);
@@ -48,6 +48,94 @@ public interface TList<E> extends TCollection<E> {
 
     default void sort(TComparator<? super E> c) {
         TCollections.sort(this, c);
+    }
+
+    @Override
+    default void addFirst(E e) {
+        add(0, e);
+    }
+
+    @Override
+    default void addLast(E e) {
+        add(e);
+    }
+
+    @Override
+    default E getFirst() {
+        if (isEmpty()) {
+            throw new TNoSuchElementException();
+        }
+        return get(0);
+    }
+
+    @Override
+    default E getLast() {
+        if (isEmpty()) {
+            throw new TNoSuchElementException();
+        }
+        return get(this.size() - 1);
+    }
+
+    @Override
+    default E removeFirst() {
+        if (isEmpty()) {
+            throw new TNoSuchElementException();
+        }
+        return remove(0);
+    }
+
+    @Override
+    default E removeLast() {
+        if (isEmpty()) {
+            throw new TNoSuchElementException();
+        }
+        return remove(this.size() - 1);
+    }
+
+    @Override
+    default TList<E> reversed() {
+        return new TAbstractList<>() {
+            @Override
+            public E get(int index) {
+                return TList.this.get(size() - index - 1);
+            }
+
+            @Override
+            public int size() {
+                return TList.this.size();
+            }
+
+            @Override
+            public int indexOf(Object o) {
+                return size() - super.lastIndexOf(o) - 1;
+            }
+
+            @Override
+            public int lastIndexOf(Object o) {
+                return size() - super.indexOf(o) - 1;
+            }
+
+            @Override
+            public E set(int index, E element) {
+                return super.set(size() - index - 1, element);
+            }
+
+            @Override
+            public void add(int index, E element) {
+                super.add(size() - index - 1, element);
+            }
+
+            @Override
+            public E remove(int index) {
+                return super.remove(size() - index - 1);
+            }
+
+            @Override
+            public TList<E> subList(int fromIndex, int toIndex) {
+                int size = size();
+                return super.subList(size - toIndex - 1, size - fromIndex - 1).reversed();
+            }
+        };
     }
 
     static <E> TList<E> of() {
