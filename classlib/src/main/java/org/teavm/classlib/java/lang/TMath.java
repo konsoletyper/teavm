@@ -344,17 +344,13 @@ public final class TMath extends TObject {
     }
 
     public static float copySign(float magnitude, float sign) {
-        if (sign == 0 || sign == -0) {
-            return sign;
-        }
-        return (sign > 0) == (magnitude > 0) ? magnitude : -magnitude;
+        return Float.intBitsToFloat((Float.floatToRawIntBits(sign) & 0x80000000) |
+                (Float.floatToRawIntBits(magnitude) & 0x7FFFFFFF));
     }
 
     public static double copySign(double magnitude, double sign) {
-        if (sign == 0 || sign == -0) {
-            return sign;
-        }
-        return (sign > 0) == (magnitude > 0) ? magnitude : -magnitude;
+        return Double.longBitsToDouble((Double.doubleToRawLongBits(sign) & 0x8000000000000000L)
+                | (Double.doubleToRawLongBits(magnitude) & 0x7FFFFFFFFFFFFFFFL));
     }
 
     public static int getExponent(double d) {

@@ -95,6 +95,20 @@ public class MathTest {
     }
 
     @Test
+    public void copySignWorks() {
+        assertEquals(1.0, Math.copySign(1.0, 0.0), 1E-12);
+        assertEquals(-1.0, Math.copySign(1.0, -0.0), 1E-12);
+        assertEquals(1.0, Math.copySign(1.0, Double.NaN), 1E-12);
+        assertEquals(Double.NaN, Math.copySign(Double.NaN, -1.0), 1E-12);
+        assertEquals(Double.POSITIVE_INFINITY, Math.copySign(Double.NEGATIVE_INFINITY, 1.0), 1E-12);
+        assertEquals(1.0f, Math.copySign(1.0f, 0.0f), 1E-6f);
+        assertEquals(-1.0f, Math.copySign(1.0f, -0.0f), 1E-6f);
+        assertEquals(1.0f, Math.copySign(1.0f, Float.NaN), 1E-6f);
+        assertEquals(Float.NaN, Math.copySign(Float.NaN, -1.0f), 1E-6f);
+        assertEquals(Float.POSITIVE_INFINITY, Math.copySign(Float.NEGATIVE_INFINITY, 1.0f), 1E-6f);
+    }
+
+    @Test
     public void roundWorks() {
         assertEquals(1, Math.round(1.3));
         assertEquals(2, Math.round(1.8));
