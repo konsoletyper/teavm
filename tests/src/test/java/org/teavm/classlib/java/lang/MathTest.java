@@ -96,16 +96,16 @@ public class MathTest {
 
     @Test
     public void copySignWorks() {
-        assertEquals(1.0, Math.copySign(1.0, 0.0), 1E-12);
-        assertEquals(-1.0, Math.copySign(1.0, -0.0), 1E-12);
-        assertEquals(1.0, Math.copySign(1.0, Double.NaN), 1E-12);
-        assertEquals(Double.NaN, Math.copySign(Double.NaN, -1.0), 1E-12);
-        assertEquals(Double.POSITIVE_INFINITY, Math.copySign(Double.NEGATIVE_INFINITY, 1.0), 1E-12);
-        assertEquals(1.0f, Math.copySign(1.0f, 0.0f), 1E-6f);
-        assertEquals(-1.0f, Math.copySign(1.0f, -0.0f), 1E-6f);
-        assertEquals(1.0f, Math.copySign(1.0f, Float.NaN), 1E-6f);
-        assertEquals(Float.NaN, Math.copySign(Float.NaN, -1.0f), 1E-6f);
-        assertEquals(Float.POSITIVE_INFINITY, Math.copySign(Float.NEGATIVE_INFINITY, 1.0f), 1E-6f);
+        assertEquals(Double.valueOf(1.0), Double.valueOf(Math.copySign(1.0, 0.0)));
+        assertEquals(Double.valueOf(-1.0), Double.valueOf(Math.copySign(1.0, -0.0)));
+        assertEquals(Double.valueOf(1.0), Double.valueOf(Math.copySign(1.0, Double.NaN)));
+        assertEquals(Double.valueOf(Double.NaN), Double.valueOf(Math.copySign(Double.NaN, -1.0)));
+        assertEquals(Double.valueOf(Double.POSITIVE_INFINITY), Double.valueOf(Math.copySign(Double.NEGATIVE_INFINITY, 1.0)));
+        assertEquals(Float.valueOf(1.0f), Float.valueOf(Math.copySign(1.0f, 0.0f)));
+        assertEquals(Float.valueOf(-1.0f), Float.valueOf(Math.copySign(1.0f, -0.0f)));
+        assertEquals(Float.valueOf(1.0f), Float.valueOf(Math.copySign(1.0f, Float.NaN)));
+        assertEquals(Float.valueOf(Float.NaN), Float.valueOf(Math.copySign(Float.NaN, -1.0f)));
+        assertEquals(Float.valueOf(Float.POSITIVE_INFINITY), Float.valueOf(Math.copySign(Float.NEGATIVE_INFINITY, 1.0f)));
     }
 
     @Test
