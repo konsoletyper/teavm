@@ -344,8 +344,8 @@ public final class TMath extends TObject {
     }
 
     public static float copySign(float magnitude, float sign) {
-        return Float.intBitsToFloat((Float.floatToRawIntBits(sign) & Integer.MIN_VALUE) |
-                (Float.floatToRawIntBits(magnitude) & Integer.MAX_VALUE));
+        return Float.intBitsToFloat((Float.floatToRawIntBits(sign) & Integer.MIN_VALUE)
+                | (Float.floatToRawIntBits(magnitude) & Integer.MAX_VALUE));
     }
 
     public static double copySign(double magnitude, double sign) {
