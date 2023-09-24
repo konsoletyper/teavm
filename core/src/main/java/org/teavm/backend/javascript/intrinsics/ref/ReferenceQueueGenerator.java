@@ -47,6 +47,12 @@ public class ReferenceQueueGenerator implements Generator {
         writer.append(context.getParameterName(0)).append(".").appendField(INNER_FIELD).ws().append("=")
                 .ws().append("[];").softNewLine();
 
+        if (context.getDependency().getMethod(REPORT_METHOD) != null) {
+            generateFinalizationRegistry(context, writer);
+        }
+    }
+
+    private void generateFinalizationRegistry(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append(context.getParameterName(0)).append(".").appendField(REGISTRY_FIELD).ws().append("=")
                 .ws().append("new $rt_globals.FinalizationRegistry(ref").ws().append("=>").appendBlockStart();
         writer.appendIf().append("!").appendMethodBody(REPORT_METHOD).append("(")
