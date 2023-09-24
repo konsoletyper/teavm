@@ -147,4 +147,20 @@ public class MathTest {
         assertEquals(Double.valueOf(Double.longBitsToDouble(Double.doubleToLongBits(Double.NEGATIVE_INFINITY) - 1)),
                 Double.valueOf(Math.nextUp(Double.NEGATIVE_INFINITY)));
     }
+
+    @Test
+    public void exponentWorks() {
+        assertEquals(0, Math.getExponent(1.0f));
+        assertEquals(-127, Math.getExponent(Float.MIN_VALUE));
+        assertEquals(127, Math.getExponent(Float.MAX_VALUE));
+        assertEquals(128, Math.getExponent(Float.POSITIVE_INFINITY));
+        assertEquals(128, Math.getExponent(Float.NEGATIVE_INFINITY));
+        assertEquals(128, Math.getExponent(Float.NaN));
+        assertEquals(0, Math.getExponent(1.0));
+        assertEquals(-1023, Math.getExponent(Double.MIN_VALUE));
+        assertEquals(1023, Math.getExponent(Double.MAX_VALUE));
+        assertEquals(1024, Math.getExponent(Double.POSITIVE_INFINITY));
+        assertEquals(1024, Math.getExponent(Double.NEGATIVE_INFINITY));
+        assertEquals(1024, Math.getExponent(Double.NaN));
+    }
 }
