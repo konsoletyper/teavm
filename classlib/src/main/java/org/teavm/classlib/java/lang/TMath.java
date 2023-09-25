@@ -164,14 +164,19 @@ public final class TMath extends TObject {
 
     @Unmanaged
     public static double random() {
-        return PlatformDetector.isC() ? randomC() : randomImpl();
+        if (PlatformDetector.isC()) {
+            return randomC();
+        } else if (PlatformDetector.isWebAssembly()) {
+            return WasmSupport.random();
+        } else {
+            return randomImpl();
+        }
     }
 
     @Import(name = "teavm_rand")
     private static native double randomC();
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "teavmMath", name = "random")
     private static native double randomImpl();
 
     public static int min(int a, int b) {
