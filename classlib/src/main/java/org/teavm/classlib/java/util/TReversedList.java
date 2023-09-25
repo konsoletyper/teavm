@@ -78,6 +78,27 @@ class TReversedList<E> extends TAbstractList<E> {
     }
 
     @Override
+    public TIterator<E> iterator() {
+        TListIterator<E> lit = base.listIterator(size());
+        return new TIterator<>() {
+            @Override
+            public boolean hasNext() {
+                return lit.hasPrevious();
+            }
+
+            @Override
+            public E next() {
+                return lit.previous();
+            }
+
+            @Override
+            public void remove() {
+                lit.remove();
+            }
+        };
+    }
+
+    @Override
     public void clear() {
         base.clear();
     }
