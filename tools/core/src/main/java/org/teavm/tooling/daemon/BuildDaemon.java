@@ -285,6 +285,7 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
         if (debugPort != 0) {
             arguments.add("-agentlib:jdwp=transport=dt_socket,quiet=y,server=y,address=" + debugPort + ",suspend=y");
         }
+        arguments.add("-XX:+HeapDumpOnOutOfMemoryError");
 
         arguments.add(BuildDaemon.class.getName());
 
