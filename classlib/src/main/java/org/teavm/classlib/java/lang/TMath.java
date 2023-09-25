@@ -195,20 +195,72 @@ public final class TMath extends TObject {
         return a > b ? a : b;
     }
 
+    @GeneratedBy(MathNativeGenerator.class)
+    @NoSideEffects
+    private static native float minImpl(double a, double b);
+
     public static double min(double a, double b) {
-        return a < b ? a : b;
+        if (PlatformDetector.isJavaScript()) {
+            return minImpl(a, b);
+        }
+        if (a != a) {
+            return a;
+        }
+        if (a == 0.0 && b == 0.0 && 1 / b == Double.NEGATIVE_INFINITY) {
+            return b;
+        }
+        return a <= b ? a : b;
     }
+
+    @GeneratedBy(MathNativeGenerator.class)
+    @NoSideEffects
+    private static native float maxImpl(double a, double b);
 
     public static double max(double a, double b) {
-        return a > b ? a : b;
+        if (PlatformDetector.isJavaScript()) {
+            return maxImpl(a, b);
+        }
+        if (a != a) {
+            return a;
+        }
+        if (a == 0.0 && b == 0.0 && 1 / a == Double.NEGATIVE_INFINITY) {
+            return b;
+        }
+        return a >= b ? a : b;
     }
+
+    @GeneratedBy(MathNativeGenerator.class)
+    @NoSideEffects
+    private static native float minImpl(float a, float b);
 
     public static float min(float a, float b) {
-        return a < b ? a : b;
+        if (PlatformDetector.isJavaScript()) {
+            return minImpl(a, b);
+        }
+        if (a != a) {
+            return a;
+        }
+        if (a == 0 && b == 0 && 1 / b == Float.NEGATIVE_INFINITY) {
+            return b;
+        }
+        return a <= b ? a : b;
     }
 
+    @GeneratedBy(MathNativeGenerator.class)
+    @NoSideEffects
+    private static native float maxImpl(float a, float b);
+
     public static float max(float a, float b) {
-        return a > b ? a : b;
+        if (PlatformDetector.isJavaScript()) {
+            return maxImpl(a, b);
+        }
+        if (a != a) {
+            return a;
+        }
+        if (a == 0 && b == 0 && 1 / a == Float.NEGATIVE_INFINITY) {
+            return b;
+        }
+        return a >= b ? a : b;
     }
 
     public static int abs(int n) {
