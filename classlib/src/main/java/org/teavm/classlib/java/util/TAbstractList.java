@@ -33,7 +33,7 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
 
     @Override
     public TIterator<E> iterator() {
-        return new TIterator<E>() {
+        return new TIterator<>() {
             private int index;
             private int modCount = TAbstractList.this.modCount;
             private int size = size();

@@ -18,7 +18,7 @@ package org.teavm.classlib.java.util;
 import java.util.Objects;
 import org.teavm.classlib.java.util.function.TUnaryOperator;
 
-public interface TList<E> extends TCollection<E> {
+public interface TList<E> extends TSequencedCollection<E> {
     boolean addAll(int index, TCollection<? extends E> c);
 
     E get(int index);
@@ -48,6 +48,54 @@ public interface TList<E> extends TCollection<E> {
 
     default void sort(TComparator<? super E> c) {
         TCollections.sort(this, c);
+    }
+
+    @Override
+    default void addFirst(E e) {
+        add(0, e);
+    }
+
+    @Override
+    default void addLast(E e) {
+        add(e);
+    }
+
+    @Override
+    default E getFirst() {
+        if (isEmpty()) {
+            throw new TNoSuchElementException();
+        }
+        return get(0);
+    }
+
+    @Override
+    default E getLast() {
+        if (isEmpty()) {
+            throw new TNoSuchElementException();
+        }
+        return get(this.size() - 1);
+    }
+
+    @Override
+    default E removeFirst() {
+        if (isEmpty()) {
+            throw new TNoSuchElementException();
+        }
+        return remove(0);
+    }
+
+    @Override
+    default E removeLast() {
+        if (isEmpty()) {
+            throw new TNoSuchElementException();
+        }
+        return remove(this.size() - 1);
+    }
+
+    @Override
+    default TList<E> reversed() {
+        return this instanceof TRandomAccess ? new TReversedList.RandomAccess<>(this)
+                : new TReversedList<>(this);
     }
 
     static <E> TList<E> of() {

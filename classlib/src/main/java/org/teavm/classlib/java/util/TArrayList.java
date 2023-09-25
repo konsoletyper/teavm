@@ -65,6 +65,16 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
     }
 
     @Override
+    public E getFirst() {
+        return get(0);
+    }
+
+    @Override
+    public E getLast() {
+        return get(size - 1);
+    }
+
+    @Override
     public int size() {
         return size;
     }
@@ -100,6 +110,26 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
         array[index] = element;
         ++size;
         ++modCount;
+    }
+
+    @Override
+    public void addFirst(E element) {
+        add(0, element);
+    }
+
+    @Override
+    public void addLast(E element) {
+        add(element);
+    }
+
+    @Override
+    public E removeFirst() {
+        return remove(0);
+    }
+
+    @Override
+    public E removeLast() {
+        return remove(size - 1);
     }
 
     @Override

@@ -15,6 +15,12 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
+import org.teavm.classlib.java.util.function.TUnaryOperator;
+import org.teavm.classlib.java.util.stream.TStream;
+
 public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque<E> {
     static class Entry<E> {
         E item;
@@ -275,6 +281,11 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque
         return new DescendingIterator();
     }
 
+    @Override
+    public TLinkedList<E> reversed() {
+        return new ReversedLinkedList<>(this);
+    }
+
     private void removeEntry(Entry<E> entry) {
         if (entry.previous != null) {
             entry.previous.next = entry.next;
@@ -439,6 +450,392 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque
             removeEntry(currentEntry);
             version = modCount;
             currentEntry = null;
+        }
+    }
+
+    private static class ReversedLinkedList<E> extends TLinkedList<E> {
+        private final TLinkedList<E> list;
+        private final TReversedList<E> reversed;
+
+        private ReversedLinkedList(TLinkedList<E> list) {
+            this.list = list;
+            this.reversed = new TReversedList<>(list);
+        }
+
+        @Override
+        public String toString() {
+            return reversed.toString();
+        }
+
+        @Override
+        public boolean retainAll(TCollection<?> c) {
+            return reversed.retainAll(c);
+        }
+
+        @Override
+        public boolean removeAll(TCollection<?> c) {
+            return reversed.removeAll(c);
+        }
+
+        @Override
+        public boolean containsAll(TCollection<?> c) {
+            return reversed.containsAll(c);
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return list.isEmpty();
+        }
+
+        @Override
+        public TStream<E> stream() {
+            return reversed.stream();
+        }
+
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            return list.removeIf(filter);
+        }
+
+        @Override
+        public <T> T[] toArray(IntFunction<T[]> generator) {
+            return reversed.toArray(generator);
+        }
+
+        @Override
+        public void forEach(Consumer<? super E> action) {
+            reversed.forEach(action);
+        }
+
+        @Override
+        public TIterator<E> iterator() {
+            return list.descendingIterator();
+        }
+
+        @Override
+        public int hashCode() {
+            return reversed.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return reversed.equals(o);
+        }
+
+        @Override
+        public TList<E> subList(int fromIndex, int toIndex) {
+            return reversed.subList(fromIndex, toIndex);
+        }
+
+        @Override
+        public TListIterator<E> listIterator() {
+            TListIterator<E> lit = list.listIterator(list.size());
+            return new TListIterator<>() {
+                @Override
+                public boolean hasPrevious() {
+                    return lit.hasNext();
+                }
+
+                @Override
+                public E previous() {
+                    return lit.next();
+                }
+
+                @Override
+                public int nextIndex() {
+                    return list.size() - lit.previousIndex() - 1;
+                }
+
+                @Override
+                public int previousIndex() {
+                    return list.size() - lit.nextIndex() - 1;
+                }
+
+                @Override
+                public void set(E e) {
+                    lit.set(e);
+                }
+
+                @Override
+                public void add(E e) {
+                    lit.add(e);
+                }
+
+                @Override
+                public boolean hasNext() {
+                    return lit.hasPrevious();
+                }
+
+                @Override
+                public E next() {
+                    return lit.previous();
+                }
+
+                @Override
+                public void remove() {
+                    lit.remove();
+                }
+            };
+        }
+
+        @Override
+        public void sort(TComparator<? super E> c) {
+            reversed.sort(c);
+        }
+
+        @Override
+        public void replaceAll(TUnaryOperator<E> operator) {
+            list.replaceAll(operator);
+        }
+
+        @Override
+        public TLinkedList<E> reversed() {
+            return list;
+        }
+
+        @Override
+        public TSpliterator<E> spliterator() {
+            return reversed.spliterator();
+        }
+
+        @Override
+        public <T> T[] toArray(T[] a) {
+            return reversed.toArray(a);
+        }
+
+        @Override
+        public Object[] toArray() {
+            return reversed.toArray();
+        }
+
+        @Override
+        public TIterator<E> descendingIterator() {
+            return list.iterator();
+        }
+
+        @Override
+        public TListIterator<E> listIterator(int index) {
+            TListIterator<E> lit = list.listIterator(list.size() - index);
+            return new TListIterator<>() {
+                @Override
+                public boolean hasPrevious() {
+                    return lit.hasNext();
+                }
+
+                @Override
+                public E previous() {
+                    return lit.next();
+                }
+
+                @Override
+                public int nextIndex() {
+                    return list.size() - lit.previousIndex() - 1;
+                }
+
+                @Override
+                public int previousIndex() {
+                    return list.size() - lit.nextIndex() - 1;
+                }
+
+                @Override
+                public void set(E e) {
+                    lit.set(e);
+                }
+
+                @Override
+                public void add(E e) {
+                    lit.add(e);
+                }
+
+                @Override
+                public boolean hasNext() {
+                    return lit.hasPrevious();
+                }
+
+                @Override
+                public E next() {
+                    return lit.previous();
+                }
+
+                @Override
+                public void remove() {
+                    lit.remove();
+                }
+            };
+        }
+
+        @Override
+        public boolean removeLastOccurrence(Object o) {
+            return list.removeFirstOccurrence(o);
+        }
+
+        @Override
+        public boolean removeFirstOccurrence(Object o) {
+            return list.removeLastOccurrence(o);
+        }
+
+        @Override
+        public E pop() {
+            return list.removeLast();
+        }
+
+        @Override
+        public void push(E e) {
+            list.addLast(e);
+        }
+
+        @Override
+        public E pollLast() {
+            return list.pollFirst();
+        }
+
+        @Override
+        public E pollFirst() {
+            return list.pollLast();
+        }
+
+        @Override
+        public E peekLast() {
+            return list.peekFirst();
+        }
+
+        @Override
+        public E peekFirst() {
+            return list.peekLast();
+        }
+
+        @Override
+        public boolean offerLast(E e) {
+            return list.offerFirst(e);
+        }
+
+        @Override
+        public boolean offerFirst(E e) {
+            return list.offerLast(e);
+        }
+
+        @Override
+        public boolean offer(E e) {
+            return list.offerLast(e);
+        }
+
+        @Override
+        public E remove() {
+            return list.removeFirst();
+        }
+
+        @Override
+        public E poll() {
+            return list.pollLast();
+        }
+
+        @Override
+        public E element() {
+            if (list.lastEntry == null) {
+                throw new TNoSuchElementException();
+            }
+            return list.lastEntry.item;
+        }
+
+        @Override
+        public E peek() {
+            return list.lastEntry != null ? list.lastEntry.item : null;
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            return list.size() - list.indexOf(o) - 1;
+        }
+
+        @Override
+        public int indexOf(Object o) {
+            return list.size() - list.lastIndexOf(o) - 1;
+        }
+
+        @Override
+        public E remove(int index) {
+            return reversed.remove(index);
+        }
+
+        @Override
+        public void add(int index, E element) {
+            reversed.add(index, element);
+        }
+
+        @Override
+        public E set(int index, E element) {
+            return reversed.set(index, element);
+        }
+
+        @Override
+        public E get(int index) {
+            return reversed.get(index);
+        }
+
+        @Override
+        public void clear() {
+            list.clear();
+        }
+
+        @Override
+        public boolean addAll(int index, TCollection<? extends E> c) {
+            return reversed.addAll(index, c);
+        }
+
+        @Override
+        public boolean addAll(TCollection<? extends E> c) {
+            return reversed.addAll(c);
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            return list.removeLastOccurrence(o);
+        }
+
+        @Override
+        public boolean add(E e) {
+            list.addLast(e);
+            return true;
+        }
+
+        @Override
+        public int size() {
+            return list.size();
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return list.contains(o);
+        }
+
+        @Override
+        public void addLast(E e) {
+            list.addFirst(e);
+        }
+
+        @Override
+        public void addFirst(E e) {
+            list.addLast(e);
+        }
+
+        @Override
+        public E removeLast() {
+            return list.removeFirst();
+        }
+
+        @Override
+        public E removeFirst() {
+            return list.removeLast();
+        }
+
+        @Override
+        public E getLast() {
+            return list.getFirst();
+        }
+
+        @Override
+        public E getFirst() {
+            return list.getLast();
         }
     }
 }
