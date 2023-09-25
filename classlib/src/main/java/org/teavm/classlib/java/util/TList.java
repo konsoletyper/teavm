@@ -16,7 +16,6 @@
 package org.teavm.classlib.java.util;
 
 import java.util.Objects;
-import java.util.RandomAccess;
 import org.teavm.classlib.java.util.function.TUnaryOperator;
 
 public interface TList<E> extends TSequencedCollection<E> {
@@ -95,8 +94,8 @@ public interface TList<E> extends TSequencedCollection<E> {
 
     @Override
     default TList<E> reversed() {
-        return this instanceof RandomAccess ? new ReversedRandomAccessList<>(this)
-                : new ReversedList<>(this);
+        return this instanceof TRandomAccess ? new TReversedList.RandomAccess<>(this)
+                : new TReversedList<>(this);
     }
 
     static <E> TList<E> of() {
@@ -207,79 +206,5 @@ public interface TList<E> extends TSequencedCollection<E> {
 
     static <E> TList<E> copyOf(TCollection<? extends E> collection) {
         return new TTemplateCollections.ImmutableArrayList<>(collection);
-    }
-
-    class ReversedList<E> extends TAbstractList<E> {
-        private final TList<E> base;
-
-        public ReversedList(TList<E> base) {
-            this.base = base;
-        }
-
-        @Override
-        public E get(int index) {
-            return base.get(size() - index - 1);
-        }
-
-        @Override
-        public int size() {
-            return base.size();
-        }
-
-        @Override
-        public E set(int index, E element) {
-            return base.set(size() - index - 1, element);
-        }
-
-        @Override
-        public void add(int index, E element) {
-            base.add(size() - index, element);
-        }
-
-        @Override
-        public E remove(int index) {
-            return base.remove(size() - index - 1);
-        }
-
-        @Override
-        public void addFirst(E element) {
-            base.addLast(element);
-        }
-
-        @Override
-        public void addLast(E element) {
-            base.addFirst(element);
-        }
-
-        @Override
-        public E removeFirst() {
-            return base.remove(size() - 1);
-        }
-
-        @Override
-        public E removeLast() {
-            return base.remove(0);
-        }
-
-        @Override
-        public void clear() {
-            base.clear();
-        }
-
-        @Override
-        public boolean contains(Object o) {
-            return base.contains(o);
-        }
-
-        @Override
-        public TList<E> reversed() {
-            return base;
-        }
-    }
-
-    class ReversedRandomAccessList<E> extends ReversedList<E> implements RandomAccess {
-        public ReversedRandomAccessList(TList<E> base) {
-            super(base);
-        }
     }
 }

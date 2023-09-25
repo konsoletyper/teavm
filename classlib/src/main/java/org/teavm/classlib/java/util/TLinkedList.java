@@ -455,11 +455,11 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque
 
     private static class ReversedLinkedList<E> extends TLinkedList<E> {
         private final TLinkedList<E> list;
-        private final ReversedList<E> reversed;
+        private final TReversedList<E> reversed;
 
         private ReversedLinkedList(TLinkedList<E> list) {
             this.list = list;
-            this.reversed = new ReversedList<>(list);
+            this.reversed = new TReversedList<>(list);
         }
 
         @Override
