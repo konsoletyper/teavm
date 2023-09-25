@@ -206,7 +206,7 @@ public final class TMath extends TObject {
         if (a != a) {
             return a;
         }
-        if (a == 0.0 && b == 0.0d && 1 / b == Double.NEGATIVE_INFINITY) {
+        if (a == 0.0 && b == 0.0 && 1 / b == Double.NEGATIVE_INFINITY) {
             return b;
         }
         return a <= b ? a : b;
@@ -223,7 +223,7 @@ public final class TMath extends TObject {
         if (a != a) {
             return a;
         }
-        if (a == 0.0d && b == 0.0d && 1 / a == Double.NEGATIVE_INFINITY) {
+        if (a == 0.0 && b == 0.0 && 1 / a == Double.NEGATIVE_INFINITY) {
             return b;
         }
         return a >= b ? a : b;
