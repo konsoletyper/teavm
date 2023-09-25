@@ -344,29 +344,25 @@ public final class TMath extends TObject {
     }
 
     public static float copySign(float magnitude, float sign) {
-        if (sign == 0 || sign == -0) {
-            return sign;
-        }
-        return (sign > 0) == (magnitude > 0) ? magnitude : -magnitude;
+        return Float.intBitsToFloat((Float.floatToRawIntBits(sign) & Integer.MIN_VALUE)
+                | (Float.floatToRawIntBits(magnitude) & Integer.MAX_VALUE));
     }
 
     public static double copySign(double magnitude, double sign) {
-        if (sign == 0 || sign == -0) {
-            return sign;
-        }
-        return (sign > 0) == (magnitude > 0) ? magnitude : -magnitude;
+        return Double.longBitsToDouble((Double.doubleToRawLongBits(sign) & Long.MIN_VALUE)
+                | (Double.doubleToRawLongBits(magnitude) & Long.MAX_VALUE));
     }
 
     public static int getExponent(double d) {
-        long bits = TDouble.doubleToLongBits(d);
+        long bits = TDouble.doubleToRawLongBits(d);
         int exponent = (int) ((bits >> 52) & 0x7FF);
         return exponent - 1023;
     }
 
     public static int getExponent(float f) {
-        int bits = TFloat.floatToIntBits(f);
-        int exponent = (bits >> 23) & 0xF;
-        return exponent + 128;
+        int bits = TFloat.floatToRawIntBits(f);
+        int exponent = (bits >> 23) & 0xFF;
+        return exponent - 127;
     }
 
     public static double nextAfter(double start, double direction) {

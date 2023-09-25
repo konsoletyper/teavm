@@ -78,13 +78,14 @@ public class StringBuilderTest {
                 .append(" ").append(1200f)
                 .append(" ").append(0.023f)
                 .append(" ").append(0f)
+                .append(" ").append(-0.0f)
                 .append(" ").append(1f)
                 .append(" ").append(Float.NaN)
                 .append(" ").append(Float.POSITIVE_INFINITY)
                 .append(" ").append(Float.NEGATIVE_INFINITY);
         assertEquals("1.234E25 9.8765E30 -1.234E25 -9.8765E30 3.402823E38"
                 + " 1.234E-25 9.8764E-30 -1.234E-25 -9.8764E-30 1.17549E-38"
-                + " 1200.0 0.023 0.0 1.0 NaN Infinity -Infinity", sb.toString());
+                + " 1200.0 0.023 0.0 -0.0 1.0 NaN Infinity -Infinity", sb.toString());
     }
 
     @Test
@@ -107,6 +108,7 @@ public class StringBuilderTest {
                 .append(" ").append(1200.0)
                 .append(" ").append(0.023)
                 .append(" ").append(0.0)
+                .append(" ").append(-0.0)
                 .append(" ").append(1.0)
                 .append(" ").append(Double.NaN)
                 .append(" ").append(Double.POSITIVE_INFINITY)
@@ -114,7 +116,7 @@ public class StringBuilderTest {
         assertEquals("1.23456789E150 10.0 20.0 100.0 1000.0 0.1 0.01 1.0E20 2.0E20 1.0E-12"
                 + " -1.23456789E150 1.23456789E-150 1.79769313486231E308 3.0E-308"
                 + " 1200.0 0.023"
-                + " 0.0 1.0 NaN Infinity -Infinity", sb.toString());
+                + " 0.0 -0.0 1.0 NaN Infinity -Infinity", sb.toString());
     }
 
     @Test

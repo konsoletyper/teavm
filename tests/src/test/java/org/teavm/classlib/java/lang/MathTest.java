@@ -95,6 +95,20 @@ public class MathTest {
     }
 
     @Test
+    public void copySignWorks() {
+        assertEquals(Double.valueOf(1.0), Double.valueOf(Math.copySign(1.0, 0.0)));
+        assertEquals(Double.valueOf(-1.0), Double.valueOf(Math.copySign(1.0, -0.0)));
+        assertEquals(Double.valueOf(1.0), Double.valueOf(Math.copySign(1.0, Double.NaN)));
+        assertEquals(Double.valueOf(Double.NaN), Double.valueOf(Math.copySign(Double.NaN, -1.0)));
+        assertEquals(Double.valueOf(Double.POSITIVE_INFINITY), Double.valueOf(Math.copySign(Double.NEGATIVE_INFINITY, 1.0)));
+        assertEquals(Float.valueOf(1.0f), Float.valueOf(Math.copySign(1.0f, 0.0f)));
+        assertEquals(Float.valueOf(-1.0f), Float.valueOf(Math.copySign(1.0f, -0.0f)));
+        assertEquals(Float.valueOf(1.0f), Float.valueOf(Math.copySign(1.0f, Float.NaN)));
+        assertEquals(Float.valueOf(Float.NaN), Float.valueOf(Math.copySign(Float.NaN, -1.0f)));
+        assertEquals(Float.valueOf(Float.POSITIVE_INFINITY), Float.valueOf(Math.copySign(Float.NEGATIVE_INFINITY, 1.0f)));
+    }
+
+    @Test
     public void roundWorks() {
         assertEquals(1, Math.round(1.3));
         assertEquals(2, Math.round(1.8));
@@ -132,5 +146,21 @@ public class MathTest {
         assertEquals(Double.valueOf(Double.POSITIVE_INFINITY), Double.valueOf(Math.nextUp(Double.POSITIVE_INFINITY)));
         assertEquals(Double.valueOf(Double.longBitsToDouble(Double.doubleToLongBits(Double.NEGATIVE_INFINITY) - 1)),
                 Double.valueOf(Math.nextUp(Double.NEGATIVE_INFINITY)));
+    }
+
+    @Test
+    public void exponentWorks() {
+        assertEquals(0, Math.getExponent(1.0f));
+        assertEquals(-127, Math.getExponent(Float.MIN_VALUE));
+        assertEquals(127, Math.getExponent(Float.MAX_VALUE));
+        assertEquals(128, Math.getExponent(Float.POSITIVE_INFINITY));
+        assertEquals(128, Math.getExponent(Float.NEGATIVE_INFINITY));
+        assertEquals(128, Math.getExponent(Float.NaN));
+        assertEquals(0, Math.getExponent(1.0));
+        assertEquals(-1023, Math.getExponent(Double.MIN_VALUE));
+        assertEquals(1023, Math.getExponent(Double.MAX_VALUE));
+        assertEquals(1024, Math.getExponent(Double.POSITIVE_INFINITY));
+        assertEquals(1024, Math.getExponent(Double.NEGATIVE_INFINITY));
+        assertEquals(1024, Math.getExponent(Double.NaN));
     }
 }

@@ -194,18 +194,20 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
 
     protected TAbstractStringBuilder insert(int target, float value) {
         if (value == 0) {
-            insertSpace(target, target + 3);
-            buffer[target++] = '0';
-            buffer[target++] = '.';
-            buffer[target++] = '0';
-            return this;
-        } else if (value == -0) {
-            insertSpace(target, target + 4);
-            buffer[target++] = '-';
-            buffer[target++] = '0';
-            buffer[target++] = '.';
-            buffer[target++] = '0';
-            return this;
+            if (1 / value == Float.POSITIVE_INFINITY) {
+                insertSpace(target, target + 3);
+                buffer[target++] = '0';
+                buffer[target++] = '.';
+                buffer[target++] = '0';
+                return this;
+            } else {
+                insertSpace(target, target + 4);
+                buffer[target++] = '-';
+                buffer[target++] = '0';
+                buffer[target++] = '.';
+                buffer[target++] = '0';
+                return this;
+            }
         } else if (Float.isNaN(value)) {
             insertSpace(target, target + 3);
             buffer[target++] = 'N';
@@ -330,18 +332,20 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
 
     protected TAbstractStringBuilder insert(int target, double value) {
         if (value == 0) {
-            insertSpace(target, target + 3);
-            buffer[target++] = '0';
-            buffer[target++] = '.';
-            buffer[target++] = '0';
-            return this;
-        } else if (value == -0) {
-            insertSpace(target, target + 4);
-            buffer[target++] = '-';
-            buffer[target++] = '0';
-            buffer[target++] = '.';
-            buffer[target++] = '0';
-            return this;
+            if (1 / value == Double.POSITIVE_INFINITY) {
+                insertSpace(target, target + 3);
+                buffer[target++] = '0';
+                buffer[target++] = '.';
+                buffer[target++] = '0';
+                return this;
+            } else {
+                insertSpace(target, target + 4);
+                buffer[target++] = '-';
+                buffer[target++] = '0';
+                buffer[target++] = '.';
+                buffer[target++] = '0';
+                return this;
+            }
         } else if (Double.isNaN(value)) {
             insertSpace(target, target + 3);
             buffer[target++] = 'N';
