@@ -16,7 +16,6 @@
 package org.teavm.common;
 
 import com.carrotsearch.hppc.IntIntHashMap;
-import com.carrotsearch.hppc.IntIntMap;
 
 public class DefaultGraphSplittingBackend implements GraphSplittingBackend {
     private MutableDirectedGraph graph;
@@ -46,37 +45,36 @@ public class DefaultGraphSplittingBackend implements GraphSplittingBackend {
     }
 
     @Override
-    public int[] split(int[] domain, int[] nodes) {
-        int[] copies = new int[nodes.length];
-        IntIntMap map = new IntIntHashMap();
-        for (int i = 0; i < nodes.length; ++i) {
+    public int[] split(int[] remaining, int[] toCopy) {
+        var copies = new int[toCopy.length];
+        var map = new IntIntHashMap();
+        for (int i = 0; i < toCopy.length; ++i) {
             copies[i] = index++;
-            map.put(nodes[i], copies[i] + 1);
-            int proto = prototypeNodes.get(nodes[i]);
+            map.put(toCopy[i], copies[i]);
+            int proto = prototypeNodes.get(toCopy[i]);
             prototypeNodes.add(proto);
             copyIndexes.add(++copyCount[proto]);
         }
 
-        for (int i = 0; i < domain.length; ++i) {
-            int node = domain[i];
+        for (int i = 0; i < remaining.length; ++i) {
+            int node = remaining[i];
             for (int succ : graph.outgoingEdges(node)) {
-                int succCopy = map.get(succ);
-                if (succCopy == 0) {
+                int succCopy = map.getOrDefault(succ, -1);
+                if (succCopy < 0) {
                     continue;
                 }
-                --succCopy;
                 graph.deleteEdge(node, succ);
                 graph.addEdge(node, succCopy);
             }
         }
 
-        for (int i = 0; i < nodes.length; ++i) {
-            int node = nodes[i];
+        for (int i = 0; i < toCopy.length; ++i) {
+            int node = toCopy[i];
             int nodeCopy = copies[i];
             for (int succ : graph.outgoingEdges(node)) {
-                int succCopy = map.get(succ);
-                if (succCopy != 0) {
-                    graph.addEdge(nodeCopy, succCopy - 1);
+                int succCopy = map.getOrDefault(succ, -1);
+                if (succCopy >= 0) {
+                    graph.addEdge(nodeCopy, succCopy);
                 } else {
                     graph.addEdge(nodeCopy, succ);
                 }

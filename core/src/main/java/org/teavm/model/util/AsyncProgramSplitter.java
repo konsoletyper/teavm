@@ -338,11 +338,11 @@ public class AsyncProgramSplitter {
         }
 
         @Override
-        public int[] split(int[] domain, int[] nodes) {
-            int[] copies = inner.split(domain, nodes);
+        public int[] split(int[] remaining, int[] toCopy) {
+            int[] copies = inner.split(remaining, toCopy);
             for (int i = 0; i < copies.length; ++i) {
                 int copy = copies[i];
-                int node = nodes[i];
+                int node = toCopy[i];
                 if (blockSuccessors.size() <= copy) {
                     blockSuccessors.add(-1);
                     splitPoints.add(null);

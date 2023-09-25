@@ -30,7 +30,6 @@ class DominatorTreeBuilder {
     private int[] labels;
     int[] dominators;
     private IntegerArray[] bucket;
-    private int[] path;
     private int effectiveSize;
     private int start;
 
@@ -44,7 +43,6 @@ class DominatorTreeBuilder {
         Arrays.fill(dominators, -1);
         ancestors = new int[graph.size()];
         labels = new int[graph.size()];
-        path = new int[graph.size()];
         bucket = new IntegerArray[graph.size()];
     }
 
@@ -54,32 +52,22 @@ class DominatorTreeBuilder {
         }
         Arrays.fill(ancestors, -1);
         dfs();
-        for (int i = effectiveSize - 1; i >= 0; --i) {
+        for (int i = effectiveSize - 1; i > 0; --i) {
             int w = vertices[i];
-            if (parents[w] < 0) {
-                continue;
-            }
-            if (w != start) {
-                for (int v : graph.incomingEdges(w)) {
-                    int u = eval(v);
-                    if (semidominators[u] >= 0) {
-                        semidominators[w] = Math.min(semidominators[w], semidominators[u]);
-                    }
-                }
+            for (int v : graph.incomingEdges(w)) {
+                int u = eval(v);
+                semidominators[w] = Math.min(semidominators[w], semidominators[u]);
             }
             addToBucket(vertices[semidominators[w]], w);
             link(parents[w], w);
-            for (int v : getBucket(w)) {
+            for (int v : getBucket(parents[w])) {
                 int u = eval(v);
                 dominators[v] = semidominators[u] < semidominators[v] ? u : parents[w];
             }
             bucket[w] = null;
         }
-        for (int i = 0; i < effectiveSize; ++i) {
+        for (int i = 1; i < effectiveSize; ++i) {
             int w = vertices[i];
-            if (w < 0 || parents[w] < 0) {
-                continue;
-            }
             if (dominators[w] != vertices[semidominators[w]]) {
                 dominators[w] = dominators[dominators[w]];
             }
@@ -107,25 +95,21 @@ class DominatorTreeBuilder {
 
     private int eval(int v) {
         int ancestor = ancestors[v];
-        if (ancestor == -1) {
+        if (ancestor < 0) {
             return v;
         }
-        int i = 0;
-        while (ancestor >= 0) {
-            path[i++] = v;
-            v = ancestor;
-            ancestor = ancestors[v];
-        }
-        ancestor = v;
-        while (--i >= 0) {
-            v = path[i];
-            if (semidominators[labels[v]] > semidominators[labels[ancestor]]) {
-                labels[v] = labels[ancestor];
-            }
-            ancestors[v] = ancestor;
-            ancestor = v;
-        }
+        compress(v);
         return labels[v];
+    }
+
+    private void compress(int v) {
+        if (ancestors[ancestors[v]] >= 0) {
+            compress(ancestors[v]);
+            if (semidominators[labels[ancestors[v]]] < semidominators[labels[v]]) {
+                labels[v] = labels[ancestors[v]];
+            }
+            ancestors[v] = ancestors[ancestors[v]];
+        }
     }
 
     private void dfs() {

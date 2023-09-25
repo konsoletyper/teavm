@@ -62,6 +62,7 @@ import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.instructions.SwitchTableEntry;
+import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.runtime.ExceptionHandling;
@@ -79,6 +80,7 @@ public class ExceptionHandlingShadowStackContributor {
     private BasicBlock[] variableDefinitionPlaces;
     private boolean hasExceptionHandlers;
     private int parameterCount;
+    private boolean hasDetachedBlocks;
 
     public int callSiteIdGen;
 
@@ -138,6 +140,10 @@ public class ExceptionHandlingShadowStackContributor {
                     incoming.setSource(program.basicBlockAt(mappedSource));
                 }
             }
+        }
+
+        if (hasDetachedBlocks) {
+            new UnreachableBasicBlockEliminator().optimize(program);
         }
 
         return hasExceptionHandlers;
@@ -218,6 +224,7 @@ public class ExceptionHandlingShadowStackContributor {
                         Instruction nextInsn = insn.getNext();
                         nextInsn.delete();
                     }
+                    hasDetachedBlocks = true;
                     last = true;
                 } else if (insn instanceof RaiseInstruction) {
                     InvokeInstruction raise = new InvokeInstruction();

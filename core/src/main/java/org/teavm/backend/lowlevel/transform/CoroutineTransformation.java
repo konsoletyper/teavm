@@ -484,13 +484,13 @@ public class CoroutineTransformation {
 
     class SplittingBackend implements GraphSplittingBackend {
         @Override
-        public int[] split(int[] domain, int[] nodes) {
-            int[] copies = new int[nodes.length];
+        public int[] split(int[] remaining, int[] toCopy) {
+            int[] copies = new int[toCopy.length];
             var map = new IntIntHashMap();
-            IntSet nodeSet = IntHashSet.from(nodes);
+            IntSet nodeSet = IntHashSet.from(toCopy);
             var outputs = ProgramUtils.getPhiOutputs(program);
-            for (int i = 0; i < nodes.length; ++i) {
-                int node = nodes[i];
+            for (int i = 0; i < toCopy.length; ++i) {
+                int node = toCopy[i];
                 BasicBlock block = program.basicBlockAt(node);
                 BasicBlock blockCopy = program.createBasicBlock();
                 ProgramUtils.copyBasicBlock(block, blockCopy);
@@ -505,13 +505,13 @@ public class CoroutineTransformation {
             for (int copy : copies) {
                 copyBlockMapper.transform(program.basicBlockAt(copy));
             }
-            for (int domainNode : domain) {
+            for (int domainNode : remaining) {
                 copyBlockMapper.transformWithoutPhis(program.basicBlockAt(domainNode));
             }
 
-            var domainSet = IntHashSet.from(domain);
-            for (int i = 0; i < nodes.length; ++i) {
-                int node = nodes[i];
+            var domainSet = IntHashSet.from(remaining);
+            for (int i = 0; i < toCopy.length; ++i) {
+                int node = toCopy[i];
                 BasicBlock blockCopy = program.basicBlockAt(copies[i]);
                 for (Incoming output : outputs.get(node)) {
                     if (!nodeSet.contains(output.getPhi().getBasicBlock().getIndex())) {

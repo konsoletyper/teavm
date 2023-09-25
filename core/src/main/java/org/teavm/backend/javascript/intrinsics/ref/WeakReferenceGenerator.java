@@ -55,10 +55,15 @@ public class WeakReferenceGenerator implements Generator {
         writer.appendIf().append(context.getParameterName(2)).ws().append("!==").ws().append("null")
                 .ws().append("&&").ws().append("supported)")
                 .appendBlockStart();
-        writer.append(context.getParameterName(2)).append(".")
-                .appendField(new FieldReference(ReferenceQueue.class.getName(), "registry"))
-                .append(".").append("register(").append(context.getParameterName(1))
+
+        writer.append("var registry").ws().append("=").ws()
+                .append(context.getParameterName(2)).append(".")
+                .appendField(new FieldReference(ReferenceQueue.class.getName(), "registry")).append(";")
+                .softNewLine();
+        writer.appendIf().append("registry").ws().append("!==").ws().append("null)").ws();
+        writer.append("registry.register(").append(context.getParameterName(1))
                 .append(",").ws().append(context.getParameterName(0)).append(");").softNewLine();
+
         writer.appendBlockEnd();
     }
 

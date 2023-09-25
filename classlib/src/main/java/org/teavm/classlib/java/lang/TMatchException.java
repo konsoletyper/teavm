@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2023 ihromant.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,8 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.common;
+package org.teavm.classlib.java.lang;
 
-public interface GraphSplittingBackend {
-    int[] split(int[] remaining, int[] toCopy);
+public final class TMatchException extends TRuntimeException {
+    public TMatchException(String message, TThrowable cause) {
+        super(message, cause);
+    }
 }
