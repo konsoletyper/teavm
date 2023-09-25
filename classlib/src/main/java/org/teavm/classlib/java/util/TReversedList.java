@@ -99,6 +99,16 @@ class TReversedList<E> extends TAbstractList<E> {
     }
 
     @Override
+    public TListIterator<E> listIterator() {
+        return new ReversedListIterator<>(this, base.listIterator(base.size()));
+    }
+
+    @Override
+    public TListIterator<E> listIterator(int idx) {
+        return new ReversedListIterator<>(this, base.listIterator(base.size() - idx));
+    }
+
+    @Override
     public void clear() {
         base.clear();
     }
@@ -116,6 +126,61 @@ class TReversedList<E> extends TAbstractList<E> {
     static class RandomAccess<E> extends TReversedList<E> implements TRandomAccess {
         RandomAccess(TList<E> base) {
             super(base);
+        }
+    }
+
+    private static class ReversedListIterator<E> implements TListIterator<E> {
+        private final TList<E> list;
+        private final TListIterator<E> lit;
+
+        private ReversedListIterator(TList<E> list, TListIterator<E> lit) {
+            this.list = list;
+            this.lit = lit;
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return lit.hasNext();
+        }
+
+        @Override
+        public E previous() {
+            return lit.next();
+        }
+
+        @Override
+        public int nextIndex() {
+            return list.size() - lit.previousIndex() - 1;
+        }
+
+        @Override
+        public int previousIndex() {
+            return list.size() - lit.nextIndex() - 1;
+        }
+
+        @Override
+        public void set(E e) {
+            lit.set(e);
+        }
+
+        @Override
+        public void add(E e) {
+            lit.add(e);
+        }
+
+        @Override
+        public boolean hasNext() {
+            return lit.hasPrevious();
+        }
+
+        @Override
+        public E next() {
+            return lit.previous();
+        }
+
+        @Override
+        public void remove() {
+            lit.remove();
         }
     }
 }
