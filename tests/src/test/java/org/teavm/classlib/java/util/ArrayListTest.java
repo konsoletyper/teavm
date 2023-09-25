@@ -16,19 +16,26 @@
 package org.teavm.classlib.java.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.ConcurrentModificationException;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class ArrayListTest {
     @Test
     public void elementsAdded() {
@@ -207,5 +214,80 @@ public class ArrayListTest {
         assertEquals(956197, new ArrayList<>(Arrays.asList(1, 3, null, 2)).hashCode());
         assertEquals(new LinkedList<>(Arrays.asList(1, 3, null, 2)), new ArrayList<>(Arrays.asList(1, 3, null, 2)));
         assertNotEquals(new ArrayList<>(Arrays.asList(1, 3, 2)), new ArrayList<>(Arrays.asList(1, 3, null, 2)));
+    }
+
+    @Test
+    public void testSequencedCollectionReadOnly() {
+        List<String> list = new ArrayList<>(List.of("0", "1", "2", "3", "4", "5", "6"));
+        List<String> reversed = list.reversed();
+        assertEquals("1", reversed.get(5));
+        Iterator<String> it = reversed.iterator();
+        assertEquals("6", it.next());
+        assertEquals("5", it.next());
+        assertEquals("6", reversed.getFirst());
+        assertEquals("0", reversed.getLast());
+        ListIterator<String> lit = reversed.listIterator();
+        assertFalse(lit.hasPrevious());
+        assertTrue(lit.hasNext());
+        assertEquals("6", lit.next());
+        assertEquals("5", lit.next());
+        assertEquals("5", lit.previous());
+        lit = reversed.listIterator(2);
+        assertEquals("4", lit.next());
+        lit.previous();
+        assertEquals("5", lit.previous());
+        assertSame(list, reversed.reversed());
+        List<String> subList = reversed.subList(3, 5);
+        assertEquals("2", subList.getLast());
+        assertEquals("3", subList.listIterator().next());
+        StringBuilder sb = new StringBuilder();
+        subList.forEach(sb::append);
+        assertEquals("32", sb.toString());
+        List<Integer> duplicates = new ArrayList<>(List.of(0, 1, 2, 3, 2, 1, 0, 0)).reversed();
+        assertEquals(2, duplicates.indexOf(1));
+        assertEquals(6, duplicates.lastIndexOf(1));
+    }
+
+    @Test
+    public void testSequencedCollectionMutations() {
+        List<String> list = new ArrayList<>(List.of("a", "b", "c", "d"));
+        assertEquals("a", list.removeFirst());
+        assertEquals("d", list.removeLast());
+        list.addFirst("u");
+        list.addLast("e");
+        assertEquals(List.of("u", "b", "c", "e"), list);
+        list = new ArrayList<>(List.of("a", "b", "c", "d")).reversed();
+        assertEquals("d", list.removeFirst());
+        assertEquals("a", list.removeLast());
+        list.addFirst("u");
+        list.addLast("e");
+        assertEquals("c", list.remove(1));
+        list.add(2, "f");
+        list.set(1, "k");
+        assertEquals(List.of("u", "k", "f", "e"), list);
+    }
+
+    @Test
+    public void testSequencedCollectionIterator() {
+        List<String> list = new ArrayList<>(List.of("a", "b", "c", "d")).reversed();
+        Iterator<String> it = list.iterator();
+        assertEquals("d", it.next());
+        assertEquals("c", it.next());
+        it.remove();
+        assertEquals(List.of("d", "b", "a"), list);
+        list = new ArrayList<>(List.of("a", "b", "c", "d")).reversed();
+        ListIterator<String> lit = list.listIterator();
+        assertEquals("d", lit.next());
+        assertEquals("c", lit.next());
+        assertEquals("b", lit.next());
+        lit.remove();
+        assertEquals("c", lit.previous());
+        assertEquals(0, lit.previousIndex());
+        assertEquals(1, lit.nextIndex());
+        lit.remove();
+        assertEquals(0, lit.previousIndex());
+        assertEquals(1, lit.nextIndex());
+        lit.add("x");
+        assertEquals(List.of("d", "x", "a"), list);
     }
 }

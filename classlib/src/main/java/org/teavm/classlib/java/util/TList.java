@@ -95,8 +95,8 @@ public interface TList<E> extends TSequencedCollection<E> {
 
     @Override
     default TList<E> reversed() {
-        return this instanceof RandomAccess ? new ReversedRandomAccess<>(this)
-                : new ReverseListWrapper<>(this);
+        return this instanceof RandomAccess ? new ReversedRandomAccessList<>(this)
+                : new ReversedList<>(this);
     }
 
     static <E> TList<E> of() {
@@ -209,10 +209,10 @@ public interface TList<E> extends TSequencedCollection<E> {
         return new TTemplateCollections.ImmutableArrayList<>(collection);
     }
 
-    class ReverseListWrapper<E> extends TAbstractList<E> {
+    class ReversedList<E> extends TAbstractList<E> {
         private final TList<E> base;
 
-        public ReverseListWrapper(TList<E> base) {
+        public ReversedList(TList<E> base) {
             this.base = base;
         }
 
@@ -228,17 +228,47 @@ public interface TList<E> extends TSequencedCollection<E> {
 
         @Override
         public E set(int index, E element) {
-            return super.set(size() - index - 1, element);
+            return base.set(size() - index - 1, element);
         }
 
         @Override
         public void add(int index, E element) {
-            super.add(size() - index - 1, element);
+            base.add(size() - index, element);
         }
 
         @Override
         public E remove(int index) {
-            return super.remove(size() - index - 1);
+            return base.remove(size() - index - 1);
+        }
+
+        @Override
+        public void addFirst(E element) {
+            base.add(size(), element);
+        }
+
+        @Override
+        public void addLast(E element) {
+            base.add(0, element);
+        }
+
+        @Override
+        public E removeFirst() {
+            return base.remove(size() - 1);
+        }
+
+        @Override
+        public E removeLast() {
+            return base.remove(0);
+        }
+
+        @Override
+        public void clear() {
+            base.clear();
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return base.contains(o);
         }
 
         @Override
@@ -247,8 +277,8 @@ public interface TList<E> extends TSequencedCollection<E> {
         }
     }
 
-    class ReversedRandomAccess<E> extends ReverseListWrapper<E> implements RandomAccess {
-        public ReversedRandomAccess(TList<E> base) {
+    class ReversedRandomAccessList<E> extends ReversedList<E> implements RandomAccess {
+        public ReversedRandomAccessList(TList<E> base) {
             super(base);
         }
     }
