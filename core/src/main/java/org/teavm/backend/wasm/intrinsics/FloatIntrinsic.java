@@ -47,7 +47,7 @@ public class FloatIntrinsic implements WasmIntrinsic {
             case "isNaN":
             case "isInfinite":
             case "isFinite":
-            case "floatToIntBits":
+            case "floatToRawIntBits":
             case "intBitsToFloat":
                 return true;
             default:
@@ -73,7 +73,7 @@ public class FloatIntrinsic implements WasmIntrinsic {
                         new WasmInt32Constant(0));
                 return result;
             }
-            case "floatToIntBits": {
+            case "floatToRawIntBits": {
                 WasmConversion conversion = new WasmConversion(WasmType.FLOAT32, WasmType.INT32, false,
                         manager.generate(invocation.getArguments().get(0)));
                 conversion.setReinterpret(true);

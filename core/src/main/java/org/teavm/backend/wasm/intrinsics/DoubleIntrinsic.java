@@ -48,7 +48,7 @@ public class DoubleIntrinsic implements WasmIntrinsic {
             case "isNaN":
             case "isInfinite":
             case "isFinite":
-            case "doubleToLongBits":
+            case "doubleToRawLongBits":
             case "longBitsToDouble":
                 return true;
             default:
@@ -74,7 +74,7 @@ public class DoubleIntrinsic implements WasmIntrinsic {
                         new WasmInt32Constant(0));
                 return result;
             }
-            case "doubleToLongBits": {
+            case "doubleToRawLongBits": {
                 WasmConversion conversion = new WasmConversion(WasmType.FLOAT64, WasmType.INT64, false,
                         manager.generate(invocation.getArguments().get(0)));
                 conversion.setReinterpret(true);
