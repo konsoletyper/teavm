@@ -68,6 +68,16 @@ class TReversedList<E> extends TAbstractList<E> {
     }
 
     @Override
+    public E getFirst() {
+        return base.getLast();
+    }
+
+    @Override
+    public E getLast() {
+        return base.getFirst();
+    }
+
+    @Override
     public void clear() {
         base.clear();
     }
