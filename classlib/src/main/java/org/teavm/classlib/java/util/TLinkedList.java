@@ -529,53 +529,7 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque
 
         @Override
         public TListIterator<E> listIterator() {
-            TListIterator<E> lit = list.listIterator(list.size());
-            return new TListIterator<>() {
-                @Override
-                public boolean hasPrevious() {
-                    return lit.hasNext();
-                }
-
-                @Override
-                public E previous() {
-                    return lit.next();
-                }
-
-                @Override
-                public int nextIndex() {
-                    return list.size() - lit.previousIndex() - 1;
-                }
-
-                @Override
-                public int previousIndex() {
-                    return list.size() - lit.nextIndex() - 1;
-                }
-
-                @Override
-                public void set(E e) {
-                    lit.set(e);
-                }
-
-                @Override
-                public void add(E e) {
-                    lit.add(e);
-                }
-
-                @Override
-                public boolean hasNext() {
-                    return lit.hasPrevious();
-                }
-
-                @Override
-                public E next() {
-                    return lit.previous();
-                }
-
-                @Override
-                public void remove() {
-                    lit.remove();
-                }
-            };
+            return reversed.listIterator();
         }
 
         @Override
@@ -615,53 +569,7 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque
 
         @Override
         public TListIterator<E> listIterator(int index) {
-            TListIterator<E> lit = list.listIterator(list.size() - index);
-            return new TListIterator<>() {
-                @Override
-                public boolean hasPrevious() {
-                    return lit.hasNext();
-                }
-
-                @Override
-                public E previous() {
-                    return lit.next();
-                }
-
-                @Override
-                public int nextIndex() {
-                    return list.size() - lit.previousIndex() - 1;
-                }
-
-                @Override
-                public int previousIndex() {
-                    return list.size() - lit.nextIndex() - 1;
-                }
-
-                @Override
-                public void set(E e) {
-                    lit.set(e);
-                }
-
-                @Override
-                public void add(E e) {
-                    lit.add(e);
-                }
-
-                @Override
-                public boolean hasNext() {
-                    return lit.hasPrevious();
-                }
-
-                @Override
-                public E next() {
-                    return lit.previous();
-                }
-
-                @Override
-                public void remove() {
-                    lit.remove();
-                }
-            };
+            return reversed.listIterator(index);
         }
 
         @Override
