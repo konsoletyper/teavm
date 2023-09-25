@@ -243,12 +243,12 @@ public interface TList<E> extends TSequencedCollection<E> {
 
         @Override
         public void addFirst(E element) {
-            base.add(size(), element);
+            base.addLast(element);
         }
 
         @Override
         public void addLast(E element) {
-            base.add(0, element);
+            base.addFirst(element);
         }
 
         @Override
