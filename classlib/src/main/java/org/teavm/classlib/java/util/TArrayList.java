@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util;
 
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.teavm.classlib.java.io.TSerializable;
@@ -66,12 +67,14 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
 
     @Override
     public E getFirst() {
-        return get(0);
+        checkIfNotEmpty();
+        return array[0];
     }
 
     @Override
     public E getLast() {
-        return get(size - 1);
+        checkIfNotEmpty();
+        return array[size - 1];
     }
 
     @Override
@@ -124,12 +127,20 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
 
     @Override
     public E removeFirst() {
+        checkIfNotEmpty();
         return remove(0);
     }
 
     @Override
     public E removeLast() {
+        checkIfNotEmpty();
         return remove(size - 1);
+    }
+
+    private void checkIfNotEmpty() {
+        if (isEmpty()) {
+            throw new NoSuchElementException();
+        }
     }
 
     @Override

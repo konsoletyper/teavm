@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.NoSuchElementException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -289,5 +290,36 @@ public class ArrayListTest {
         assertEquals(1, lit.nextIndex());
         lit.add("x");
         assertEquals(List.of("d", "x", "a"), list);
+    }
+
+    @Test
+    public void sequenceCollectionMethodsOnEmpty() {
+        var empty = new ArrayList<>();
+
+        try {
+            empty.getFirst();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+        try {
+            empty.getLast();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+
+        try {
+            empty.removeFirst();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+        try {
+            empty.removeLast();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
     }
 }
