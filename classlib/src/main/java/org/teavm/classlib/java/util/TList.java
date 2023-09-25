@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util;
 
 import java.util.Objects;
+import java.util.RandomAccess;
 import org.teavm.classlib.java.util.function.TUnaryOperator;
 
 public interface TList<E> extends TSequencedCollection<E> {
@@ -94,48 +95,8 @@ public interface TList<E> extends TSequencedCollection<E> {
 
     @Override
     default TList<E> reversed() {
-        return new TAbstractList<>() {
-            @Override
-            public E get(int index) {
-                return TList.this.get(size() - index - 1);
-            }
-
-            @Override
-            public int size() {
-                return TList.this.size();
-            }
-
-            @Override
-            public int indexOf(Object o) {
-                return size() - super.lastIndexOf(o) - 1;
-            }
-
-            @Override
-            public int lastIndexOf(Object o) {
-                return size() - super.indexOf(o) - 1;
-            }
-
-            @Override
-            public E set(int index, E element) {
-                return super.set(size() - index - 1, element);
-            }
-
-            @Override
-            public void add(int index, E element) {
-                super.add(size() - index - 1, element);
-            }
-
-            @Override
-            public E remove(int index) {
-                return super.remove(size() - index - 1);
-            }
-
-            @Override
-            public TList<E> subList(int fromIndex, int toIndex) {
-                int size = size();
-                return super.subList(size - toIndex - 1, size - fromIndex - 1).reversed();
-            }
-        };
+        return this instanceof RandomAccess ? new ReversedRandomAccess<>(this)
+                : new ReverseListWrapper<>(this);
     }
 
     static <E> TList<E> of() {
@@ -246,5 +207,49 @@ public interface TList<E> extends TSequencedCollection<E> {
 
     static <E> TList<E> copyOf(TCollection<? extends E> collection) {
         return new TTemplateCollections.ImmutableArrayList<>(collection);
+    }
+
+    class ReverseListWrapper<E> extends TAbstractList<E> {
+        private final TList<E> base;
+
+        public ReverseListWrapper(TList<E> base) {
+            this.base = base;
+        }
+
+        @Override
+        public E get(int index) {
+            return base.get(size() - index - 1);
+        }
+
+        @Override
+        public int size() {
+            return base.size();
+        }
+
+        @Override
+        public E set(int index, E element) {
+            return super.set(size() - index - 1, element);
+        }
+
+        @Override
+        public void add(int index, E element) {
+            super.add(size() - index - 1, element);
+        }
+
+        @Override
+        public E remove(int index) {
+            return super.remove(size() - index - 1);
+        }
+
+        @Override
+        public TList<E> reversed() {
+            return base;
+        }
+    }
+
+    class ReversedRandomAccess<E> extends ReverseListWrapper<E> implements RandomAccess {
+        public ReversedRandomAccess(TList<E> base) {
+            super(base);
+        }
     }
 }
