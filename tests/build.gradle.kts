@@ -21,7 +21,7 @@ plugins {
 description = "Tests"
 
 javaVersion {
-    version = JavaVersion.VERSION_17
+    version = JavaVersion.VERSION_21
 }
 
 dependencies {
