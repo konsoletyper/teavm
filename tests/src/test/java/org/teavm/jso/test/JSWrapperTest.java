@@ -244,6 +244,53 @@ public class JSWrapperTest {
         a = processObject(JSNumber.valueOf(23));
         assertTrue(a instanceof JSString);
         assertEquals("number", ((JSString) a).stringValue());
+
+        a = processObject(processObject(new A(24)));
+        assertEquals("A(24)", a.toString());
+        assertTrue(a instanceof A);
+        assertEquals(24, ((A) a).getX());
+
+        a = processObject(identity(processObject(new A(25))));
+        assertEquals("A(25)", a.toString());
+        assertTrue(a instanceof A);
+        assertEquals(25, ((A) a).getX());
+
+        a = processObject(identity(processObject(JSString.valueOf("asd"))));
+        assertEquals("asd", a.toString());
+        assertTrue(a instanceof JSString);
+        assertEquals("asd", ((JSString) a).stringValue());
+
+        a = processObject(processObject(identity(JSString.valueOf("zxc"))));
+        assertEquals("zxc", a.toString());
+        assertTrue(a instanceof JSString);
+        assertEquals("zxc", ((JSString) a).stringValue());
+    }
+
+    @Test
+    public void exportedObject() {
+        var r = new ReturningObject() {
+            @Override
+            public Object get() {
+                var o = createEmpty();
+                setProperty(o, "foo", JSNumber.valueOf(23));
+                return o;
+            }
+        };
+        var o = extract(r);
+        var foo = getProperty(o, "foo");
+        assertTrue(foo instanceof JSNumber);
+        assertEquals(JSNumber.valueOf(23), foo);
+    }
+
+    @Test
+    public void setProperty() {
+        var o = createEmpty();
+        callSetProperty(o, JSNumber.valueOf(23));
+        assertEquals(JSNumber.valueOf(23), getProperty(o, "foo"));
+    }
+
+    private void callSetProperty(Object instance, Object o) {
+        setProperty(instance, "foo", o);
     }
 
     @JSBody(script = "return null;")
@@ -254,6 +301,22 @@ public class JSWrapperTest {
 
     @JSBody(params = "o", script = "return typeof o === 'number' ? 'number' : o;")
     private static native Object processObject(Object o);
+
+    private Object identity(Object o) {
+        return o;
+    }
+
+    @JSBody(params = { "o", "name" }, script = "return o[name];")
+    private static native Object getProperty(Object o, String name);
+
+    @JSBody(params = { "o", "name", "value" }, script = "o[name] = value;")
+    private static native void setProperty(Object o, String name, Object value);
+
+    @JSBody(script = "return {};")
+    private static native Object createEmpty();
+
+    @JSBody(params = "o", script = "return o.get();")
+    private static native Object extract(ReturningObject o);
 
     static class A {
         private int x;
@@ -270,5 +333,9 @@ public class JSWrapperTest {
         public String toString() {
             return "A(" + x + ")";
         }
+    }
+
+    interface ReturningObject extends JSObject {
+        Object get();
     }
 }

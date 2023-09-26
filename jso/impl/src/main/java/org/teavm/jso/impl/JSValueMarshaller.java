@@ -58,7 +58,7 @@ class JSValueMarshaller {
         this.replacement = replacement;
     }
 
-    Variable wrapArgument(CallLocation location, Variable var, ValueType type, boolean byRef) {
+    Variable wrapArgument(CallLocation location, Variable var, ValueType type, JSType jsType, boolean byRef) {
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
             ClassReader cls = classSource.get(className);
@@ -66,7 +66,7 @@ class JSValueMarshaller {
                 return wrapFunctor(location, var, cls);
             }
         }
-        return wrap(var, type, location.getSourceLocation(), byRef);
+        return wrap(var, type, jsType, location.getSourceLocation(), byRef);
     }
 
     boolean isProperFunctor(ClassReader type) {
@@ -98,7 +98,7 @@ class JSValueMarshaller {
         return functor;
     }
 
-    Variable wrap(Variable var, ValueType type, TextLocation location, boolean byRef) {
+    Variable wrap(Variable var, ValueType type, JSType jsType, TextLocation location, boolean byRef) {
         if (byRef) {
             InvokeInstruction insn = new InvokeInstruction();
             insn.setMethod(JSMethods.ARRAY_DATA);
@@ -112,14 +112,19 @@ class JSValueMarshaller {
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
             if (className.equals("java.lang.Object")) {
-                var unwrapNative = new InvokeInstruction();
-                unwrapNative.setLocation(location);
-                unwrapNative.setType(InvocationType.SPECIAL);
-                unwrapNative.setMethod(new MethodReference(JSWrapper.class, "javaToJs", Object.class, JSObject.class));
-                unwrapNative.setArguments(var);
-                unwrapNative.setReceiver(program.createVariable());
-                replacement.add(unwrapNative);
-                return unwrapNative.getReceiver();
+                if (jsType != JSType.NULL && jsType != JSType.JS) {
+                    var unwrapNative = new InvokeInstruction();
+                    unwrapNative.setLocation(location);
+                    unwrapNative.setType(InvocationType.SPECIAL);
+                    unwrapNative.setMethod(new MethodReference(JSWrapper.class,
+                            "javaToJs", Object.class, JSObject.class));
+                    unwrapNative.setArguments(var);
+                    unwrapNative.setReceiver(program.createVariable());
+                    replacement.add(unwrapNative);
+                    return unwrapNative.getReceiver();
+                } else {
+                    return var;
+                }
             }
             if (!className.equals("java.lang.String")) {
                 return var;
@@ -516,7 +521,7 @@ class JSValueMarshaller {
     }
 
     Variable addStringWrap(Variable var, TextLocation location) {
-        return wrap(var, stringType, location, false);
+        return wrap(var, stringType, JSType.MIXED, location, false);
     }
 
     Variable addString(String str, TextLocation location) {
