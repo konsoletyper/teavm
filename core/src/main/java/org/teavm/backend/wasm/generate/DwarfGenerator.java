@@ -42,8 +42,12 @@ public class DwarfGenerator {
     private DwarfPlaceholder endOfSection;
     public final DwarfStrings strings = new DwarfStrings();
     private DwarfStrings lineStrings = new DwarfStrings();
-    private DwarfLinesGenerator lines = new DwarfLinesGenerator(lineStrings);
+    private DwarfLinesGenerator lines;
     private Marker highPcMarker;
+
+    public DwarfGenerator(SourceFileResolver sourceFileResolver) {
+         lines = new DwarfLinesGenerator(lineStrings, sourceFileResolver);
+    }
 
     public void begin() {
         endOfSection = infoWriter.placeholder(4);

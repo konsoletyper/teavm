@@ -26,6 +26,8 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_LNS_COPY;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_LNS_SET_FILE;
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
+import java.util.HashMap;
+import java.util.Map;
 import org.teavm.backend.wasm.blob.Blob;
 import org.teavm.backend.wasm.blob.Marker;
 
@@ -37,6 +39,7 @@ class DwarfLinesGenerator {
 
     Blob blob = new Blob();
     private DwarfStrings strings;
+    private SourceFileResolver sourceFileResolver;
     private Blob instructionsBlob = new Blob();
     private Marker unitLengthMarker;
     private Marker headerLengthMarker;
@@ -48,9 +51,11 @@ class DwarfLinesGenerator {
     private int file = 1;
     private int line = 1;
     private boolean sequenceStarted;
+    private Map<String, String> resolvedFileMap = new HashMap<>();
 
-    DwarfLinesGenerator(DwarfStrings strings) {
+    DwarfLinesGenerator(DwarfStrings strings, SourceFileResolver sourceFileResolver) {
         this.strings = strings;
+        this.sourceFileResolver = sourceFileResolver;
     }
 
     void begin() {
@@ -138,6 +143,7 @@ class DwarfLinesGenerator {
     }
 
     private int fileRef(String path) {
+        path = resolvePath(path);
         var ref = fileIndexes.getOrDefault(path, -1);
         if (ref < 0) {
             var nameIndex = path.lastIndexOf('/') + 1;
@@ -152,6 +158,16 @@ class DwarfLinesGenerator {
             filesBlob.writeInt(strings.stringRef(name));
         }
         return ref;
+    }
+
+    private String resolvePath(String path) {
+        if (sourceFileResolver == null) {
+            return path;
+        }
+        return resolvedFileMap.computeIfAbsent(path, p -> {
+           var result = sourceFileResolver.resolveFile(p);
+           return result != null ? result : p;
+        });
     }
 
     private int dirRef(String path) {
