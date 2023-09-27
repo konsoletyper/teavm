@@ -18,7 +18,7 @@ var $rt_seed = 2463534242;
 function $rt_nextId() {
     var x = $rt_seed;
     x ^= x << 13;
-    x ^= x >> 17;
+    x ^= x >>> 17;
     x ^= x << 5;
     $rt_seed = x;
     return x;
