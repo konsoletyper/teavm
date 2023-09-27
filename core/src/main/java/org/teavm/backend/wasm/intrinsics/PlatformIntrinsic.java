@@ -17,7 +17,6 @@ package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
@@ -34,7 +33,6 @@ public class PlatformIntrinsic implements WasmIntrinsic {
         switch (methodDescriptor.getName()) {
             case "getPlatformObject":
             case "asJavaClass":
-            case "createQueue":
                 return true;
             default:
                 return false;
@@ -47,8 +45,6 @@ public class PlatformIntrinsic implements WasmIntrinsic {
             case "getPlatformObject":
             case "asJavaClass":
                 return manager.generate(invocation.getArguments().get(0));
-            case "createQueue":
-                return new WasmInt32Constant(0);
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());
         }

@@ -126,6 +126,7 @@ public class CoroutineTransformation {
         splitter.fixProgram();
         processIrreducibleCfg();
         RedundantJumpElimination.optimize(program);
+        new PhiUpdater().updatePhis(program, parameterCount + 1);
     }
 
     private void createSplitPrologue() {
@@ -479,7 +480,6 @@ public class CoroutineTransformation {
             weights[i] = program.basicBlockAt(i).instructionCount();
         }
         GraphUtils.splitIrreducibleGraph(graph, weights, splittingBackend);
-        new PhiUpdater().updatePhis(program, parameterCount + 1);
     }
 
     class SplittingBackend implements GraphSplittingBackend {
