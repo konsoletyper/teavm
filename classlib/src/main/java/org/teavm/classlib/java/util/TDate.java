@@ -370,8 +370,10 @@ public class TDate implements TComparable<TDate> {
 
     @Override
     public String toString() {
-        if (PlatformDetector.isLowLevel()) {
-            return toStringLowLevel(value);
+        if (PlatformDetector.isC()) {
+            return toStringC(value);
+        } else if (PlatformDetector.isWebAssembly()) {
+            return toStringWebAssembly(value);
         } else {
             return JSDate.create(value).stringValue();
         }
@@ -380,8 +382,10 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_format")
     @NoSideEffects
     @RuntimeInclude("date.h")
-    @UnsupportedOn(Platforms.WEBASSEMBLY)
-    private static native String toStringLowLevel(long date);
+    private static native String toStringC(long date);
+
+    @Import(module = "teavm", name = "dateToString")
+    private static native String toStringWebAssembly(double date);
 
     @Deprecated
     public String toLocaleString() {
