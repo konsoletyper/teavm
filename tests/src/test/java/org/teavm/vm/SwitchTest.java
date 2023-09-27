@@ -16,6 +16,7 @@
 package org.teavm.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
 import org.testng.annotations.Test;
@@ -39,6 +40,12 @@ public class SwitchTest {
         assertEquals(Byte.MIN_VALUE, switchWithLogic(new D(Byte.MIN_VALUE, Short.MAX_VALUE)));
         assertEquals(Short.MIN_VALUE, switchWithLogic(new D(Byte.MIN_VALUE, Short.MIN_VALUE)));
         assertEquals(4, switchWithLogic(TestEnum.E));
+        try {
+            switchWithLogic(new Object());
+            fail();
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
     }
 
     private int switchWithLogic(Object o) {
