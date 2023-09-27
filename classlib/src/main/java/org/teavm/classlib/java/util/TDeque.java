@@ -57,6 +57,11 @@ public interface TDeque<E> extends TQueue<E>, TSequencedCollection<E> {
         }
 
         @Override
+        public TDeque<E> reversed() {
+            return base;
+        }
+
+        @Override
         public TIterator<E> iterator() {
             return base.descendingIterator();
         }
