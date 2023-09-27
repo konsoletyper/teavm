@@ -16,16 +16,16 @@
 package org.teavm.classlib.impl;
 
 import java.util.List;
-import java.util.stream.IntStream;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DynamicCallSite;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.RuntimeConstant;
 import org.teavm.model.ValueType;
-import org.teavm.model.emit.ChooseEmitter;
 import org.teavm.model.emit.PhiEmitter;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
+import org.teavm.model.instructions.SwitchInstruction;
+import org.teavm.model.instructions.SwitchTableEntry;
 
 public class PatternMatchingSubstitutor implements BootstrapMethodSubstitutor {
     @Override
@@ -40,15 +40,29 @@ public class PatternMatchingSubstitutor implements BootstrapMethodSubstitutor {
             pe.jump(joint);
         });
 
-        ChooseEmitter choice = pe.choice(restartIdx);
-        IntStream.range(0, labels.size()).forEach(i -> {
-            RuntimeConstant label = labels.get(i);
-            choice.option(i, () -> emitFragment(target, i, label, pe, result, joint));
-        });
-        choice.otherwise(() -> {
-            pe.constant(callSite.getBootstrapArguments().size()).propagateTo(result);
-            pe.jump(joint);
-        });
+        var switchInsn = new SwitchInstruction();
+        switchInsn.setCondition(restartIdx.getVariable());
+        pe.addInstruction(switchInsn);
+
+        var block = pe.prepareBlock();
+        pe.enter(block);
+        for (var i = 0; i < labels.size(); ++i) {
+            var entry = new SwitchTableEntry();
+            entry.setCondition(i);
+            entry.setTarget(block);
+            switchInsn.getEntries().add(entry);
+
+            var label = labels.get(i);
+            emitFragment(target, i, label, pe, result, joint);
+
+            block = pe.prepareBlock();
+            pe.jump(block);
+            pe.enter(block);
+        }
+
+        switchInsn.setDefaultTarget(block);
+
+        pe.constant(callSite.getBootstrapArguments().size()).propagateTo(result);
         pe.jump(joint);
         pe.enter(joint);
         return result.getValue();
