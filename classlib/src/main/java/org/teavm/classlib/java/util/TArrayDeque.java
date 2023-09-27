@@ -16,9 +16,10 @@
 package org.teavm.classlib.java.util;
 
 import java.util.Arrays;
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
 
-public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> {
+public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>, TCloneable, TSerializable {
     private int version;
     private Object[] array;
     private int head;
@@ -38,8 +39,8 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
         } else {
             array = new Object[c.size() + 1];
             int index = 0;
-            for (TIterator<? extends E> iter = c.iterator(); iter.hasNext(); ) {
-                array[index++] = iter.next();
+            for (TIterator<? extends E> it = c.iterator(); it.hasNext(); ) {
+                array[index++] = it.next();
             }
             tail = array.length - 1;
         }
