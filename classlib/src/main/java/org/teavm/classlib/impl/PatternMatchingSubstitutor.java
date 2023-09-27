@@ -15,9 +15,11 @@
  */
 package org.teavm.classlib.impl;
 
+import java.util.List;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DynamicCallSite;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.RuntimeConstant;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.PhiEmitter;
 import org.teavm.model.emit.ProgramEmitter;
@@ -26,9 +28,7 @@ import org.teavm.model.emit.ValueEmitter;
 public class PatternMatchingSubstitutor implements BootstrapMethodSubstitutor {
     @Override
     public ValueEmitter substitute(DynamicCallSite callSite, ProgramEmitter pe) {
-        System.out.println(callSite.getBootstrapArguments().size());
-        System.out.println(callSite.getBootstrapArguments().get(0).getValueType());
-        System.out.println(callSite.getBootstrapArguments().get(5).getValueType());
+        List<RuntimeConstant> labels = callSite.getBootstrapArguments();
         ValueEmitter target = callSite.getArguments().get(0);
         ValueEmitter restartIdx = callSite.getArguments().get(1);
         BasicBlock joint = pe.prepareBlock();
@@ -37,7 +37,25 @@ public class PatternMatchingSubstitutor implements BootstrapMethodSubstitutor {
             pe.constant(-1).propagateTo(result);
             pe.jump(joint);
         });
-        pe.constant(10).propagateTo(result);
+
+        // TODO emulate loop
+//        for (int i = restartIdx; i < labels.length; i++) {
+//            Object label = labels[i];
+//            if (label instanceof Class<?> c) {
+//                if (c.isAssignableFrom(targetClass))
+//                    return i;
+//            } else if (label instanceof Integer constant) {
+//                if (target instanceof Number input && constant.intValue() == input.intValue()) {
+//                    return i;
+//                } else if (target instanceof Character input && constant.intValue() == input.charValue()) {
+//                    return i;
+//                }
+//            } else if (label.equals(target)) {
+//                return i;
+//            }
+//        }
+
+        pe.constant(callSite.getBootstrapArguments().size()).propagateTo(result);
         pe.jump(joint);
         pe.enter(joint);
         return result.getValue();

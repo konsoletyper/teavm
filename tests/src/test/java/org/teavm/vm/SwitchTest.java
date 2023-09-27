@@ -24,6 +24,7 @@ import org.testng.annotations.Test;
 public class SwitchTest {
     @Test
     public void testSwitch() {
+        assertEquals(-1, switchWithLogic(null));
         A a = new A();
         assertEquals(1, switchWithLogic(a));
         a.af = 5;
@@ -41,7 +42,7 @@ public class SwitchTest {
 
     private int switchWithLogic(Object o) {
         return switch (o) {
-           // case null -> -1;
+            case null -> -1;
             case A a when (a.af & 31) == 5 -> 0;
             case A a -> 1;
             case B b -> {
