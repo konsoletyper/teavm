@@ -15,12 +15,16 @@
  */
 package org.teavm.classlib.java.util;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
-import org.junit.Assert;
+import java.util.List;
+import java.util.NoSuchElementException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -137,19 +141,19 @@ public class ArrayDequeTest {
         Object object2 = new Object();
         Object object3 = new Object();
         arrayDeque.add(object1);
-        Assert.assertTrue(arrayDeque.size() == 1);
+        assertEquals(1, arrayDeque.size());
         arrayDeque.remove(object1);
-        Assert.assertTrue(arrayDeque.size() == 0);
+        assertEquals(0, arrayDeque.size());
         arrayDeque.add(object1);
         arrayDeque.add(object2);
         arrayDeque.add(object3);
-        Assert.assertTrue(arrayDeque.size() == 3);
+        assertEquals(3, arrayDeque.size());
         arrayDeque.remove(object1);
         arrayDeque.remove(object2);
         arrayDeque.remove(object3);
-        Assert.assertTrue(arrayDeque.size() == 0);
+        assertEquals(0, arrayDeque.size());
         arrayDeque.remove(object1);
-        Assert.assertTrue(arrayDeque.size() == 0);
+        assertEquals(0, arrayDeque.size());
     }
 
     @Test
@@ -162,9 +166,9 @@ public class ArrayDequeTest {
         arrayDeque1.add(object2);
         arrayDeque1.add(object3);
         arrayDeque1.removeFirst();
-        Assert.assertTrue(arrayDeque1.size() == 2);
-        Assert.assertTrue(arrayDeque1.contains(object2));
-        Assert.assertTrue(arrayDeque1.contains(object3));
+        assertEquals(2, arrayDeque1.size());
+        assertTrue(arrayDeque1.contains(object2));
+        assertTrue(arrayDeque1.contains(object3));
 
         ArrayDeque<Object> arrayDeque2 = new ArrayDeque<>();
         arrayDeque2.add(object1);
@@ -172,8 +176,8 @@ public class ArrayDequeTest {
         arrayDeque2.add(object3);
         arrayDeque2.remove(object1);
         arrayDeque2.removeFirst();
-        Assert.assertTrue(arrayDeque2.size() == 1);
-        Assert.assertTrue(arrayDeque2.contains(object3));
+        assertEquals(1, arrayDeque2.size());
+        assertTrue(arrayDeque2.contains(object3));
 
         ArrayDeque<Object> arrayDeque3 = new ArrayDeque<>();
         arrayDeque3.add(object1);
@@ -181,8 +185,8 @@ public class ArrayDequeTest {
         arrayDeque3.add(object3);
         arrayDeque3.remove(object2);
         arrayDeque3.removeFirst();
-        Assert.assertTrue(arrayDeque3.size() == 1);
-        Assert.assertTrue(arrayDeque3.contains(object3));
+        assertEquals(1, arrayDeque3.size());
+        assertTrue(arrayDeque3.contains(object3));
 
         ArrayDeque<Object> arrayDeque4 = new ArrayDeque<>();
         arrayDeque4.add(object1);
@@ -190,8 +194,8 @@ public class ArrayDequeTest {
         arrayDeque4.add(object3);
         arrayDeque4.remove(object3);
         arrayDeque4.removeFirst();
-        Assert.assertTrue(arrayDeque4.size() == 1);
-        Assert.assertTrue(arrayDeque4.contains(object2));
+        assertEquals(1, arrayDeque4.size());
+        assertTrue(arrayDeque4.contains(object2));
     }
 
     @Test
@@ -204,9 +208,9 @@ public class ArrayDequeTest {
         arrayDeque1.add(object2);
         arrayDeque1.add(object3);
         arrayDeque1.removeLast();
-        Assert.assertTrue(arrayDeque1.size() == 2);
-        Assert.assertTrue(arrayDeque1.contains(object1));
-        Assert.assertTrue(arrayDeque1.contains(object2));
+        assertEquals(2, arrayDeque1.size());
+        assertTrue(arrayDeque1.contains(object1));
+        assertTrue(arrayDeque1.contains(object2));
 
         ArrayDeque<Object> arrayDeque2 = new ArrayDeque<>();
         arrayDeque2.add(object1);
@@ -214,8 +218,8 @@ public class ArrayDequeTest {
         arrayDeque2.add(object3);
         arrayDeque2.remove(object3);
         arrayDeque2.removeLast();
-        Assert.assertTrue(arrayDeque2.size() == 1);
-        Assert.assertTrue(arrayDeque2.contains(object1));
+        assertEquals(1, arrayDeque2.size());
+        assertTrue(arrayDeque2.contains(object1));
 
         ArrayDeque<Object> arrayDeque3 = new ArrayDeque<>();
         arrayDeque3.add(object1);
@@ -223,8 +227,8 @@ public class ArrayDequeTest {
         arrayDeque3.add(object3);
         arrayDeque3.remove(object2);
         arrayDeque3.removeLast();
-        Assert.assertTrue(arrayDeque3.size() == 1);
-        Assert.assertTrue(arrayDeque3.contains(object1));
+        assertEquals(1, arrayDeque3.size());
+        assertTrue(arrayDeque3.contains(object1));
 
         ArrayDeque<Object> arrayDeque4 = new ArrayDeque<>();
         arrayDeque4.add(object1);
@@ -232,8 +236,8 @@ public class ArrayDequeTest {
         arrayDeque4.add(object3);
         arrayDeque4.remove(object3);
         arrayDeque4.removeLast();
-        Assert.assertTrue(arrayDeque4.size() == 1);
-        Assert.assertTrue(arrayDeque4.contains(object1));
+        assertEquals(1, arrayDeque4.size());
+        assertTrue(arrayDeque4.contains(object1));
     }
 
     @Test
@@ -252,6 +256,117 @@ public class ArrayDequeTest {
             arrayDeque.remove(i);
             arrayDeque.addLast(23);
             arrayDeque.removeLast();
+        }
+    }
+
+    @Test
+    public void testSequencedCollectionReadOnly() {
+        Deque<String> deque = new ArrayDeque<>(List.of("0", "1", "2", "3", "4", "5", "6"));
+        Deque<String> reversed = deque.reversed();
+        Iterator<String> it = reversed.iterator();
+        assertEquals("6", it.next());
+        assertEquals("5", it.next());
+        assertEquals("6", reversed.getFirst());
+        assertEquals("0", reversed.getLast());
+        assertEquals("6", reversed.peek());
+        assertEquals("6", reversed.peekFirst());
+        assertEquals("0", reversed.peekLast());
+    }
+
+    @Test
+    public void testSequencedCollectionMutations() {
+        Deque<String> deque = new ArrayDeque<>(List.of("a", "b", "c", "d"));
+        assertEquals("a", deque.removeFirst());
+        assertEquals("d", deque.removeLast());
+        deque.addFirst("u");
+        deque.addLast("e");
+        assertArrayEquals(new String[] { "u", "b", "c", "e" }, deque.toArray());
+        deque = new ArrayDeque<>(List.of("a", "b", "c", "d")).reversed();
+        assertEquals("d", deque.removeFirst());
+        assertEquals("a", deque.removeLast());
+        deque.addFirst("u");
+        deque.addLast("e");
+        assertEquals("u", deque.remove());
+        deque.add("f");
+        assertArrayEquals(new String[] { "c", "b", "e", "f" }, deque.toArray());
+    }
+
+    @Test
+    public void testSequencedCollectionIterator() {
+        Deque<String> deque = new ArrayDeque<>(List.of("a", "b", "c", "d"));
+        deque.addLast("e");
+        deque.addLast("f");
+        Iterator<String> it = deque.iterator();
+        assertEquals("a", it.next());
+        it.remove();
+        assertEquals("b", it.next());
+        it.remove();
+        assertEquals("c", it.next());
+        it.remove();
+        assertEquals("d", it.next());
+        it.remove();
+        assertEquals("e", it.next());
+        it.remove();
+        assertEquals("f", it.next());
+        it.remove();
+        assertTrue(deque.isEmpty());
+        try {
+            it.next();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+        deque = new ArrayDeque<>(List.of("a", "b", "c", "d")).reversed();
+        it = deque.iterator();
+        assertEquals("d", it.next());
+        assertEquals("c", it.next());
+        it.remove();
+        assertArrayEquals(new String[] { "d", "b", "a" }, deque.toArray());
+        deque = new ArrayDeque<>(List.of("a", "b", "c", "d")).reversed();
+        it = deque.iterator();
+        assertEquals("d", it.next());
+        assertEquals("c", it.next());
+        it.remove();
+        assertEquals("b", it.next());
+        it.remove();
+        assertEquals("a", it.next());
+        try {
+            it.next();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+        assertArrayEquals(new String[] { "d", "a" }, deque.toArray());
+    }
+
+    @Test
+    public void sequenceCollectionMethodsOnEmpty() {
+        var empty = new ArrayDeque<>();
+
+        try {
+            empty.getFirst();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+        try {
+            empty.getLast();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+
+        try {
+            empty.removeFirst();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+        try {
+            empty.removeLast();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
         }
     }
 }
