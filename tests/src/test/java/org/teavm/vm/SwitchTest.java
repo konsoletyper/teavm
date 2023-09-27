@@ -36,7 +36,8 @@ public class SwitchTest {
         C c = new C();
         c.cf = a;
         assertEquals(5, switchWithLogic(c));
-        assertEquals(Short.MAX_VALUE, switchWithLogic(new D(Byte.MIN_VALUE, Short.MAX_VALUE)));
+        assertEquals(Byte.MIN_VALUE, switchWithLogic(new D(Byte.MIN_VALUE, Short.MAX_VALUE)));
+        assertEquals(Short.MIN_VALUE, switchWithLogic(new D(Byte.MIN_VALUE, Short.MIN_VALUE)));
         assertEquals(4, switchWithLogic(TestEnum.E));
     }
 
@@ -50,7 +51,7 @@ public class SwitchTest {
                 yield b.f.length();
             }
             case C c -> c.cf.af;
-//            case D(byte c, short d) when ((int) d & 31) == 31 -> d;
+            case D(byte c, short d) when ((int) d & 31) == 31 -> c;
             case D(byte c, short d) -> d;
             case TestEnum te -> te.ordinal();
             default -> throw new IllegalArgumentException();
