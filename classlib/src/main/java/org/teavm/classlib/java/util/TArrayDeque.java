@@ -17,7 +17,7 @@ package org.teavm.classlib.java.util;
 
 import java.util.Arrays;
 import org.teavm.classlib.java.io.TSerializable;
-import org.teavm.classlib.java.lang.*;
+import org.teavm.classlib.java.lang.TCloneable;
 
 public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>, TCloneable, TSerializable {
     private int version;
@@ -49,7 +49,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>,
     @Override
     public void addFirst(E e) {
         if (e == null) {
-            throw new TNullPointerException();
+            throw new NullPointerException();
         }
         ensureCapacity(size() + 1);
         head = modDec(head, array.length);
@@ -60,7 +60,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>,
     @Override
     public void addLast(E e) {
         if (e == null) {
-            throw new TNullPointerException();
+            throw new NullPointerException();
         }
         ensureCapacity(size() + 1);
         array[tail] = e;
@@ -363,9 +363,9 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>,
         if (capacity < array.length) {
             return;
         }
-        int newArraySize = TMath.max(array.length * 2, capacity * 3 / 2 + 1);
+        int newArraySize = Math.max(array.length * 2, capacity * 3 / 2 + 1);
         if (newArraySize < 1) {
-            newArraySize = TInteger.MAX_VALUE;
+            newArraySize = Integer.MAX_VALUE;
         }
         Object[] newArray = new Object[newArraySize];
         int j = 0;
