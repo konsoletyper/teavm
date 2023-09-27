@@ -16,11 +16,13 @@
 package org.teavm.classlib.impl;
 
 import java.util.List;
+import java.util.stream.IntStream;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DynamicCallSite;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.RuntimeConstant;
 import org.teavm.model.ValueType;
+import org.teavm.model.emit.ChooseEmitter;
 import org.teavm.model.emit.PhiEmitter;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
@@ -38,26 +40,31 @@ public class PatternMatchingSubstitutor implements BootstrapMethodSubstitutor {
             pe.jump(joint);
         });
 
-        // TODO emulate loop
-//        for (int i = restartIdx; i < labels.length; i++) {
-//            Object label = labels[i];
-//            if (label instanceof Class<?> c) {
-//                if (c.isAssignableFrom(targetClass))
-//                    return i;
-//            } else if (label instanceof Integer constant) {
-//                if (target instanceof Number input && constant.intValue() == input.intValue()) {
-//                    return i;
-//                } else if (target instanceof Character input && constant.intValue() == input.charValue()) {
-//                    return i;
-//                }
-//            } else if (label.equals(target)) {
-//                return i;
-//            }
-//        }
-
-        pe.constant(callSite.getBootstrapArguments().size()).propagateTo(result);
+        ChooseEmitter choice = pe.choice(restartIdx);
+        IntStream.range(0, labels.size()).forEach(i -> {
+            RuntimeConstant label = labels.get(i);
+            choice.option(i, () -> emitFragment(target, i, label, pe, result, joint));
+        });
+        choice.otherwise(() -> {
+            pe.constant(callSite.getBootstrapArguments().size()).propagateTo(result);
+            pe.jump(joint);
+        });
         pe.jump(joint);
         pe.enter(joint);
         return result.getValue();
+    }
+
+    private void emitFragment(ValueEmitter target, int idx, RuntimeConstant label, ProgramEmitter pe,
+            PhiEmitter result, BasicBlock exit) {
+        if (label.getKind() == RuntimeConstant.TYPE) {
+            ValueType type = label.getValueType();
+            pe.when(() -> target.invokeVirtual("getClass", Class.class).isSame(pe.constant(type)))
+                    .thenDo(() -> {
+                        pe.constant(idx).propagateTo(result);
+                        pe.jump(exit);
+                    });
+        } else {
+            throw new IllegalArgumentException("Unsupported constant type: " + label.getKind());
+        }
     }
 }
