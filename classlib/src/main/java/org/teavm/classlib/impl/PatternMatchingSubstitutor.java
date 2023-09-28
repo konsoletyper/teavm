@@ -30,6 +30,7 @@ import org.teavm.model.instructions.SwitchTableEntry;
 public class PatternMatchingSubstitutor implements BootstrapMethodSubstitutor {
     @Override
     public ValueEmitter substitute(DynamicCallSite callSite, ProgramEmitter pe) {
+        boolean enumSwitch = callSite.getBootstrapMethod().getName().equals("enumSwitch");
         List<RuntimeConstant> labels = callSite.getBootstrapArguments();
         ValueEmitter target = callSite.getArguments().get(0);
         ValueEmitter restartIdx = callSite.getArguments().get(1);
@@ -53,7 +54,7 @@ public class PatternMatchingSubstitutor implements BootstrapMethodSubstitutor {
             switchInsn.getEntries().add(entry);
 
             var label = labels.get(i);
-            emitFragment(target, i, label, pe, result, joint);
+            emitFragment(target, i, label, pe, result, joint, enumSwitch);
 
             block = pe.prepareBlock();
             pe.jump(block);
@@ -69,16 +70,46 @@ public class PatternMatchingSubstitutor implements BootstrapMethodSubstitutor {
     }
 
     private void emitFragment(ValueEmitter target, int idx, RuntimeConstant label, ProgramEmitter pe,
-            PhiEmitter result, BasicBlock exit) {
-        if (label.getKind() == RuntimeConstant.TYPE) {
-            ValueType type = label.getValueType();
-            pe.when(() -> target.invokeVirtual("getClass", Class.class).isSame(pe.constant(type)))
-                    .thenDo(() -> {
-                        pe.constant(idx).propagateTo(result);
-                        pe.jump(exit);
-                    });
-        } else {
-            throw new IllegalArgumentException("Unsupported constant type: " + label.getKind());
+            PhiEmitter result, BasicBlock exit, boolean enumSwitch) {
+        switch (label.getKind()) {
+            case RuntimeConstant.TYPE:
+                ValueType type = label.getValueType();
+                pe.when(() -> target.instanceOf(type).isTrue())
+                        .thenDo(() -> {
+                            pe.constant(idx).propagateTo(result);
+                            pe.jump(exit);
+                        });
+                break;
+            case RuntimeConstant.INT:
+                int val = label.getInt();
+                pe.when(() -> target.instanceOf(ValueType.object("java.lang.Number")).isTrue()
+                        .and(() -> target.cast(Number.class)
+                                .invokeVirtual("intValue", int.class).isSame(pe.constant(val))))
+                        .thenDo(() -> {
+                            pe.constant(idx).propagateTo(result);
+                            pe.jump(exit);
+                        });
+                pe.when(() -> target.instanceOf(ValueType.object("java.lang.Character")).isTrue()
+                        .and(() -> target.cast(Character.class)
+                                .invokeSpecial("charValue", char.class).isSame(pe.constant(val))))
+                        .thenDo(() -> {
+                                    pe.constant(idx).propagateTo(result);
+                                    pe.jump(exit);
+                                });
+                break;
+            case RuntimeConstant.STRING:
+                String str = label.getString();
+                pe.when(enumSwitch
+                                ? () -> pe.constant(str).isEqualTo(
+                                target.cast(Enum.class).invokeVirtual("name", String.class))
+                                : () -> pe.constant(str).isEqualTo(target))
+                        .thenDo(() -> {
+                            pe.constant(idx).propagateTo(result);
+                            pe.jump(exit);
+                        });
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported constant type: " + label.getKind());
         }
     }
 }

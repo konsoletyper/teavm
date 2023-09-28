@@ -138,6 +138,13 @@ public class JCLPlugin implements TeaVMPlugin {
                         ValueType.arrayOf(ValueType.object("java.lang.Object")),
                         ValueType.object("java.lang.invoke.CallSite")),
                 patternMatchingSubstitutor);
+        host.add(new MethodReference("java.lang.runtime.SwitchBootstraps", "enumSwitch",
+                        ValueType.object("java.lang.invoke.MethodHandles$Lookup"),
+                        ValueType.object("java.lang.String"),
+                        ValueType.object("java.lang.invoke.MethodType"),
+                        ValueType.arrayOf(ValueType.object("java.lang.Object")),
+                        ValueType.object("java.lang.invoke.CallSite")),
+                patternMatchingSubstitutor);
 
         if (!isBootstrap()) {
             host.add(new ScalaHacks());

@@ -16,6 +16,7 @@
 package org.teavm.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -69,35 +70,82 @@ public class SwitchTest {
     public void testEnumSwitch() {
         assertEquals(1, enumSwitchWithLogic(TestEnum.A));
         assertEquals(2, enumSwitchWithLogic(TestEnum.C));
-        assertEquals(3, enumSwitchWithLogic(TestEnum.F));
+        assertEquals(3, enumSwitchWithLogic(TestEnum.D));
+        assertEquals(2, enumSwitchWithLogic(TestEnum.F));
     }
 
     @Test
     public void testIntSwitch() {
-        assertEquals(50, intSwitchWithLogic(0));
-        assertEquals(50, intSwitchWithLogic(2));
-        assertEquals(100, intSwitchWithLogic(1));
+        assertEquals(1, intSwitchWithLogic(23));
+        assertEquals(3, intSwitchWithLogic(42));
+        assertEquals(4, intSwitchWithLogic(11));
+        assertEquals(2, intSwitchWithLogic(5));
+    }
+
+    @Test
+    public void testCharacterSwitch() {
+        assertEquals(5, characterSwitchWithLogic('a'));
+        assertEquals(1, characterSwitchWithLogic('R'));
+        assertEquals(2, characterSwitchWithLogic('T'));
         try {
-            intSwitchWithLogic(10);
+            characterSwitchWithLogic('A');
             fail();
         } catch (IllegalArgumentException e) {
             // ok
         }
     }
 
-    private int enumSwitchWithLogic(TestEnum o) {
-        return switch (o) {
-            case A, B -> 1;
-            case C, D, E -> 2;
-            case F -> 3;
+    @Test
+    public void testStringSwitch() {
+        assertEquals(0, stringSwitchWithLogic(""));
+        assertEquals(1, stringSwitchWithLogic("abc"));
+        assertEquals(2, stringSwitchWithLogic("bcd"));
+    }
+
+    @Test
+    public void hierarchySwitch() {
+        assertEquals(1, switchWithHierarchy(new SubclassA(23)));
+        assertEquals(2, switchWithHierarchy(new SubclassA(24)));
+        assertEquals(2, switchWithHierarchy(new SubclassA(1)));
+        assertEquals(1, switchWithHierarchy(new SubclassB(23)));
+        assertEquals(3, switchWithHierarchy(new SubclassB(24)));
+        assertEquals(4, switchWithHierarchy(new SubclassB(1)));
+        assertEquals(5, switchWithHierarchy("foo"));
+        assertEquals(5, switchWithHierarchy(new Superclass(1)));
+        assertEquals(1, switchWithHierarchy(new Superclass(23)));
+    }
+
+    private int stringSwitchWithLogic(String s) {
+        return switch (s) {
+            case String str when str.length() < 3 -> 0;
+            case "abc" -> 1;
+            default -> 2;
         };
     }
 
-    private int intSwitchWithLogic(int val) {
-        return switch (val) {
-            case 0, 2 -> 50;
-            case 1, 3, 5, 7, 9 -> 100;
+    private int characterSwitchWithLogic(Character c) {
+        return switch (c) {
+            case Character ch when ch >= 'a' && ch <= 'z' -> 5;
+            case 'R' -> 1;
+            case 'T' -> 2;
             default -> throw new IllegalArgumentException();
+        };
+    }
+
+    private int enumSwitchWithLogic(TestEnum o) {
+        return switch (o) {
+            case A, B -> 1;
+            case TestEnum e when e.ordinal() % 3 == 0 -> 3;
+            case C, D, E, F -> 2;
+        };
+    }
+
+    private int intSwitchWithLogic(Integer o) {
+        return switch (o) {
+            case 23 -> 1;
+            case Integer i when i < 10 -> 2;
+            case 42 -> 3;
+            default -> 4;
         };
     }
 
@@ -122,5 +170,35 @@ public class SwitchTest {
 
     private enum TestEnum {
         A, B, C, D, E, F
+    }
+
+    private int switchWithHierarchy(Object o) {
+        return switch (o) {
+            case Superclass s when s.x == 23 -> 1;
+            case SubclassA a -> 2;
+            case Superclass s when s.x == 24 -> 3;
+            case SubclassB b -> 4;
+            default -> 5;
+        };
+    }
+
+    private static class Superclass {
+        final int x;
+
+        public Superclass(int x) {
+            this.x = x;
+        }
+    }
+
+    private static class SubclassA extends Superclass {
+        public SubclassA(int x) {
+            super(x);
+        }
+    }
+
+    private static class SubclassB extends Superclass {
+        public SubclassB(int x) {
+            super(x);
+        }
     }
 }
