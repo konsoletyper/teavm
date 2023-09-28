@@ -1114,7 +1114,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     @Override
     public boolean isAsyncSupported() {
-        return false;
+        return true;
     }
 
     @Override

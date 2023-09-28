@@ -88,7 +88,7 @@ TeaVM.wasm = function() {
             }
         }
         if (result >= 0) {
-            controller.timer = setTimeout(() => process(controller), result)
+            controller.timer = setTimeout(() => process(controller), Number(result))
         }
     }
 
