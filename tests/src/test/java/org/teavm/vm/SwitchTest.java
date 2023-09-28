@@ -72,11 +72,32 @@ public class SwitchTest {
         assertEquals(3, enumSwitchWithLogic(TestEnum.F));
     }
 
+    @Test
+    public void testIntSwitch() {
+        assertEquals(50, intSwitchWithLogic(0));
+        assertEquals(50, intSwitchWithLogic(2));
+        assertEquals(100, intSwitchWithLogic(1));
+        try {
+            intSwitchWithLogic(10);
+            fail();
+        } catch (IllegalArgumentException e) {
+            // ok
+        }
+    }
+
     private int enumSwitchWithLogic(TestEnum o) {
         return switch (o) {
             case A, B -> 1;
             case C, D, E -> 2;
             case F -> 3;
+        };
+    }
+
+    private int intSwitchWithLogic(int val) {
+        return switch (val) {
+            case 0, 2 -> 50;
+            case 1, 3, 5, 7, 9 -> 100;
+            default -> throw new IllegalArgumentException();
         };
     }
 
