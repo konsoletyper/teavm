@@ -16,30 +16,17 @@
 package org.teavm.classlib.java.util;
 
 /**
- *
- * @author Alexey Andreev
  * @param <E>
+ * @author Alexey Andreev
  */
-public interface TDeque<E> extends TQueue<E> {
-    void addFirst(E e);
-
-    void addLast(E e);
-
+public interface TDeque<E> extends TQueue<E>, TSequencedCollection<E> {
     boolean offerFirst(E e);
 
     boolean offerLast(E e);
 
-    E removeFirst();
-
-    E removeLast();
-
     E pollFirst();
 
     E pollLast();
-
-    E getFirst();
-
-    E getLast();
 
     E peekFirst();
 
@@ -54,4 +41,9 @@ public interface TDeque<E> extends TQueue<E> {
     E pop();
 
     TIterator<E> descendingIterator();
+
+    @Override
+    default TDeque<E> reversed() {
+        return new TReversedDeque<>(this);
+    }
 }
