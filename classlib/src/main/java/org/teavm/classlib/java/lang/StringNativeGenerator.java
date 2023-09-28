@@ -30,6 +30,12 @@ public class StringNativeGenerator implements Generator, DependencyPlugin {
         if (methodRef.getName().equals("intern")) {
             writer.append("return $rt_intern(").append(context.getParameterName(0)).append(");").softNewLine();
         }
+        if (methodRef.getName().equals("toLowerCaseNative") && methodRef.parameterCount() == 1) {
+            writer.append("return ").append(context.getParameterName(1)).append(".toLowerCase();").softNewLine();
+        }
+        if (methodRef.getName().equals("toUpperCaseNative") && methodRef.parameterCount() == 1) {
+            writer.append("return ").append(context.getParameterName(1)).append(".toUpperCase();").softNewLine();
+        }
     }
 
     @Override

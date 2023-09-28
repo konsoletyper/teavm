@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import java.util.Locale;
 import org.teavm.backend.javascript.spi.GeneratedBy;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.io.TUnsupportedEncodingException;
 import org.teavm.classlib.java.nio.TByteBuffer;
@@ -34,7 +35,7 @@ import org.teavm.interop.NoSideEffects;
 public class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
     private static final char[] EMPTY_CHARS = new char[0];
     private static final TString EMPTY = new TString();
-    public static final TComparator<TString> CASE_INSENSITIVE_ORDER = (o1, o2) -> o1.compareToIgnoreCase(o2);
+    public static final TComparator<TString> CASE_INSENSITIVE_ORDER = TString::compareToIgnoreCase;
     private char[] characters;
     private transient int hashCode;
 
@@ -636,9 +637,13 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return hashCode;
     }
 
-    public TString toLowerCase() {
-        if (isEmpty()) {
-            return this;
+    @GeneratedBy(StringNativeGenerator.class)
+    @NoSideEffects
+    private static native TString toLowerCaseNative(TString str);
+
+    private static TString toLowerCaseImpl(char[] characters) {
+        if (characters.length == 0) {
+            return EMPTY;
         }
         int[] codePoints = new int[characters.length];
         int codePointCount = 0;
@@ -655,13 +660,24 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return new TString(codePoints, 0, codePointCount);
     }
 
-    public TString toLowerCase(TLocale locale) {
-        return toLowerCase();
+    public TString toLowerCase() {
+        if (PlatformDetector.isJavaScript()) {
+            return toLowerCaseNative(this);
+        }
+        return toLowerCaseImpl(characters);
     }
 
-    public TString toUpperCase() {
-        if (isEmpty()) {
-            return this;
+    public TString toLowerCase(TLocale locale) {
+        return toLowerCaseImpl(characters);
+    }
+
+    @GeneratedBy(StringNativeGenerator.class)
+    @NoSideEffects
+    private static native TString toUpperCaseNative(TString str);
+
+    private static TString toUpperCaseImpl(char[] characters) {
+        if (characters.length == 0) {
+            return EMPTY;
         }
         int[] codePoints = new int[characters.length];
         int codePointCount = 0;
@@ -678,8 +694,15 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return new TString(codePoints, 0, codePointCount);
     }
 
+    public TString toUpperCase() {
+        if (PlatformDetector.isJavaScript()) {
+            return toUpperCaseNative(this);
+        }
+        return toUpperCaseImpl(characters);
+    }
+
     public TString toUpperCase(TLocale locale) {
-        return toUpperCase();
+        return toUpperCaseImpl(characters);
     }
 
     @GeneratedBy(StringNativeGenerator.class)
