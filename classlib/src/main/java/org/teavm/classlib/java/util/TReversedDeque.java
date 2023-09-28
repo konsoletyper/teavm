@@ -53,8 +53,8 @@ class TReversedDeque<E> implements TDeque<E> {
     public Object[] toArray() {
         Object[] arr = new Object[size()];
         int i = 0;
-        for (TIterator<E> iter = base.descendingIterator(); iter.hasNext(); ) {
-            arr[i++] = iter.next();
+        for (var it = base.descendingIterator(); it.hasNext();) {
+            arr[i++] = it.next();
         }
         return arr;
     }
@@ -71,7 +71,7 @@ class TReversedDeque<E> implements TDeque<E> {
             }
         }
         int i = 0;
-        for (TIterator<E> it = base.descendingIterator(); it.hasNext(); ) {
+        for (var it = base.descendingIterator(); it.hasNext();) {
             a[i++] = (T) it.next();
         }
         return a;
@@ -95,7 +95,7 @@ class TReversedDeque<E> implements TDeque<E> {
 
     @Override
     public boolean remove(Object o) {
-        for (TIterator<E> it = base.descendingIterator(); it.hasNext(); ) {
+        for (var it = base.descendingIterator(); it.hasNext();) {
             E e = it.next();
             if (TObjects.equals(e, o)) {
                 it.remove();
@@ -113,7 +113,7 @@ class TReversedDeque<E> implements TDeque<E> {
     @Override
     public boolean addAll(TCollection<? extends E> c) {
         boolean changed = false;
-        for (TIterator<? extends E> it = c.iterator(); it.hasNext(); ) {
+        for (var it = c.iterator(); it.hasNext();) {
             addFirst(it.next());
             changed = true;
         }
@@ -123,7 +123,7 @@ class TReversedDeque<E> implements TDeque<E> {
     @Override
     public boolean removeAll(TCollection<?> c) {
         boolean changed = false;
-        for (TIterator<E> it = base.descendingIterator(); it.hasNext(); ) {
+        for (var it = base.descendingIterator(); it.hasNext();) {
             E e = it.next();
             if (c.contains(e)) {
                 it.remove();
@@ -136,7 +136,7 @@ class TReversedDeque<E> implements TDeque<E> {
     @Override
     public boolean retainAll(TCollection<?> c) {
         boolean changed = false;
-        for (TIterator<E> it = base.descendingIterator(); it.hasNext(); ) {
+        for (var it = base.descendingIterator(); it.hasNext();) {
             E e = it.next();
             if (!c.contains(e)) {
                 it.remove();

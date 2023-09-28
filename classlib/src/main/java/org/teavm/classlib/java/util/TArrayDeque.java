@@ -39,7 +39,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>,
         } else {
             array = new Object[c.size() + 1];
             int index = 0;
-            for (var it = c.iterator(); it.hasNext(); ) {
+            for (var it = c.iterator(); it.hasNext();) {
                 array[index++] = it.next();
             }
             tail = array.length - 1;
@@ -155,7 +155,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>,
         if (o == null) {
             return false;
         }
-        for (var it = iterator(); it.hasNext(); ) {
+        for (var it = iterator(); it.hasNext();) {
             if (it.next().equals(o)) {
                 it.remove();
                 return true;
@@ -169,7 +169,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>,
         if (o == null) {
             return false;
         }
-        for (var it = descendingIterator(); it.hasNext(); ) {
+        for (var it = descendingIterator(); it.hasNext();) {
             if (it.next().equals(o)) {
                 it.remove();
                 return true;
