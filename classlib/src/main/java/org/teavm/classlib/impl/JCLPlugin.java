@@ -130,21 +130,21 @@ public class JCLPlugin implements TeaVMPlugin {
                         ValueType.object("java.lang.invoke.CallSite")),
                 stringConcatSubstitutor);
 
-        PatternMatchingSubstitutor patternMatchingSubstitutor = new PatternMatchingSubstitutor();
+        SwitchBootstrapSubstitutor switchBootstrapSubstitutor = new SwitchBootstrapSubstitutor();
         host.add(new MethodReference("java.lang.runtime.SwitchBootstraps", "typeSwitch",
                         ValueType.object("java.lang.invoke.MethodHandles$Lookup"),
                         ValueType.object("java.lang.String"),
                         ValueType.object("java.lang.invoke.MethodType"),
                         ValueType.arrayOf(ValueType.object("java.lang.Object")),
                         ValueType.object("java.lang.invoke.CallSite")),
-                patternMatchingSubstitutor);
+                switchBootstrapSubstitutor);
         host.add(new MethodReference("java.lang.runtime.SwitchBootstraps", "enumSwitch",
                         ValueType.object("java.lang.invoke.MethodHandles$Lookup"),
                         ValueType.object("java.lang.String"),
                         ValueType.object("java.lang.invoke.MethodType"),
                         ValueType.arrayOf(ValueType.object("java.lang.Object")),
                         ValueType.object("java.lang.invoke.CallSite")),
-                patternMatchingSubstitutor);
+                switchBootstrapSubstitutor);
 
         if (!isBootstrap()) {
             host.add(new ScalaHacks());

@@ -27,7 +27,7 @@ import org.teavm.model.emit.ValueEmitter;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.instructions.SwitchTableEntry;
 
-public class PatternMatchingSubstitutor implements BootstrapMethodSubstitutor {
+public class SwitchBootstrapSubstitutor implements BootstrapMethodSubstitutor {
     @Override
     public ValueEmitter substitute(DynamicCallSite callSite, ProgramEmitter pe) {
         boolean enumSwitch = callSite.getBootstrapMethod().getName().equals("enumSwitch");

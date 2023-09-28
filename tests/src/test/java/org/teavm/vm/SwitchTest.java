@@ -16,7 +16,6 @@
 package org.teavm.vm;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -24,8 +23,25 @@ import org.testng.annotations.Test;
 
 @RunWith(TeaVMTestRunner.class)
 public class SwitchTest {
+    private static int switchWithLogic(Object o) {
+        return switch (o) {
+            case null -> -1;
+            case A a when (a.af & 31) == 5 -> 0;
+            case A a -> 1;
+            case B b -> {
+                b.bbf = 21;
+                yield b.f.length();
+            }
+            case C c -> c.cf.af;
+            case D(byte c, short d) when ((int) d & 31) == 31 -> c;
+            case D(byte c, short d) -> d;
+            case TestEnum te -> te.ordinal();
+            default -> throw new IllegalArgumentException();
+        };
+    }
+
     @Test
-    public void testSwitch() {
+    public void genericSwitch() {
         assertEquals(-1, switchWithLogic(null));
         A a = new A();
         assertEquals(1, switchWithLogic(a));
@@ -49,41 +65,50 @@ public class SwitchTest {
         }
     }
 
-    private int switchWithLogic(Object o) {
+    private static int enumSwitchWithLogic(TestEnum o) {
         return switch (o) {
-            case null -> -1;
-            case A a when (a.af & 31) == 5 -> 0;
-            case A a -> 1;
-            case B b -> {
-                b.bbf = 21;
-                yield b.f.length();
-            }
-            case C c -> c.cf.af;
-            case D(byte c, short d) when ((int) d & 31) == 31 -> c;
-            case D(byte c, short d) -> d;
-            case TestEnum te -> te.ordinal();
-            default -> throw new IllegalArgumentException();
+            case A, B -> 1;
+            case TestEnum e when e.ordinal() % 3 == 0 -> 3;
+            case C, D, E, F -> 2;
         };
     }
 
     @Test
-    public void testEnumSwitch() {
+    public void enumSwitch() {
         assertEquals(1, enumSwitchWithLogic(TestEnum.A));
         assertEquals(2, enumSwitchWithLogic(TestEnum.C));
         assertEquals(3, enumSwitchWithLogic(TestEnum.D));
         assertEquals(2, enumSwitchWithLogic(TestEnum.F));
     }
 
-    @Test
-    public void testIntSwitch() {
-        assertEquals(1, intSwitchWithLogic(23));
-        assertEquals(3, intSwitchWithLogic(42));
-        assertEquals(4, intSwitchWithLogic(11));
-        assertEquals(2, intSwitchWithLogic(5));
+    private static int integerSwitchWithLogic(Integer o) {
+        return switch (o) {
+            case 23 -> 1;
+            case Integer i when i < 10 -> 2;
+            case 42 -> 3;
+            default -> 4;
+        };
     }
 
     @Test
-    public void testCharacterSwitch() {
+    public void integerSwitch() {
+        assertEquals(1, integerSwitchWithLogic(23));
+        assertEquals(3, integerSwitchWithLogic(42));
+        assertEquals(4, integerSwitchWithLogic(11));
+        assertEquals(2, integerSwitchWithLogic(5));
+    }
+
+    private static int characterSwitchWithLogic(Character c) {
+        return switch (c) {
+            case Character ch when ch >= 'a' && ch <= 'z' -> 5;
+            case 'R' -> 1;
+            case 'T' -> 2;
+            default -> throw new IllegalArgumentException();
+        };
+    }
+
+    @Test
+    public void characterSwitch() {
         assertEquals(5, characterSwitchWithLogic('a'));
         assertEquals(1, characterSwitchWithLogic('R'));
         assertEquals(2, characterSwitchWithLogic('T'));
@@ -95,11 +120,29 @@ public class SwitchTest {
         }
     }
 
+    private static int stringSwitchWithLogic(String s) {
+        return switch (s) {
+            case String str when str.length() < 3 -> 0;
+            case "abc" -> 1;
+            default -> 2;
+        };
+    }
+
     @Test
-    public void testStringSwitch() {
+    public void stringSwitch() {
         assertEquals(0, stringSwitchWithLogic(""));
         assertEquals(1, stringSwitchWithLogic("abc"));
         assertEquals(2, stringSwitchWithLogic("bcd"));
+    }
+
+    private static int switchWithHierarchy(Object o) {
+        return switch (o) {
+            case Superclass s when s.x == 23 -> 1;
+            case SubclassA a -> 2;
+            case Superclass s when s.x == 24 -> 3;
+            case SubclassB b -> 4;
+            default -> 5;
+        };
     }
 
     @Test
@@ -113,40 +156,6 @@ public class SwitchTest {
         assertEquals(5, switchWithHierarchy("foo"));
         assertEquals(5, switchWithHierarchy(new Superclass(1)));
         assertEquals(1, switchWithHierarchy(new Superclass(23)));
-    }
-
-    private int stringSwitchWithLogic(String s) {
-        return switch (s) {
-            case String str when str.length() < 3 -> 0;
-            case "abc" -> 1;
-            default -> 2;
-        };
-    }
-
-    private int characterSwitchWithLogic(Character c) {
-        return switch (c) {
-            case Character ch when ch >= 'a' && ch <= 'z' -> 5;
-            case 'R' -> 1;
-            case 'T' -> 2;
-            default -> throw new IllegalArgumentException();
-        };
-    }
-
-    private int enumSwitchWithLogic(TestEnum o) {
-        return switch (o) {
-            case A, B -> 1;
-            case TestEnum e when e.ordinal() % 3 == 0 -> 3;
-            case C, D, E, F -> 2;
-        };
-    }
-
-    private int intSwitchWithLogic(Integer o) {
-        return switch (o) {
-            case 23 -> 1;
-            case Integer i when i < 10 -> 2;
-            case 42 -> 3;
-            default -> 4;
-        };
     }
 
     private static class A {
@@ -170,16 +179,6 @@ public class SwitchTest {
 
     private enum TestEnum {
         A, B, C, D, E, F
-    }
-
-    private int switchWithHierarchy(Object o) {
-        return switch (o) {
-            case Superclass s when s.x == 23 -> 1;
-            case SubclassA a -> 2;
-            case Superclass s when s.x == 24 -> 3;
-            case SubclassB b -> 4;
-            default -> 5;
-        };
     }
 
     private static class Superclass {
