@@ -47,6 +47,12 @@ public class SwitchBootstrapSubstitutor implements BootstrapMethodSubstitutor {
 
         var block = pe.prepareBlock();
         pe.enter(block);
+        ValueType.Object enumType = enumSwitch ? labels.stream()
+                .filter(l -> l.getKind() == RuntimeConstant.TYPE)
+                .findAny().map(vt -> (ValueType.Object) vt.getValueType()).orElseThrow() : null;
+        if (enumType != null) {
+            pe.initClass(enumType.getClassName());
+        }
         for (var i = 0; i < labels.size(); ++i) {
             var entry = new SwitchTableEntry();
             entry.setCondition(i);
@@ -54,7 +60,7 @@ public class SwitchBootstrapSubstitutor implements BootstrapMethodSubstitutor {
             switchInsn.getEntries().add(entry);
 
             var label = labels.get(i);
-            emitFragment(target, i, label, pe, result, joint, enumSwitch);
+            emitFragment(target, i, label, pe, result, joint, enumType);
 
             block = pe.prepareBlock();
             pe.jump(block);
@@ -70,7 +76,7 @@ public class SwitchBootstrapSubstitutor implements BootstrapMethodSubstitutor {
     }
 
     private void emitFragment(ValueEmitter target, int idx, RuntimeConstant label, ProgramEmitter pe,
-            PhiEmitter result, BasicBlock exit, boolean enumSwitch) {
+            PhiEmitter result, BasicBlock exit, ValueType.Object enumType) {
         switch (label.getKind()) {
             case RuntimeConstant.TYPE:
                 ValueType type = label.getValueType();
@@ -99,9 +105,8 @@ public class SwitchBootstrapSubstitutor implements BootstrapMethodSubstitutor {
                 break;
             case RuntimeConstant.STRING:
                 String str = label.getString();
-                pe.when(enumSwitch
-                                ? () -> pe.constant(str).isEqualTo(
-                                target.cast(Enum.class).invokeVirtual("name", String.class))
+                pe.when(enumType != null
+                                ? () -> pe.getField(enumType.getClassName(), str, enumType).isSame(target)
                                 : () -> pe.constant(str).isEqualTo(target))
                         .thenDo(() -> {
                             pe.constant(idx).propagateTo(result);
