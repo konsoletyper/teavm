@@ -31,10 +31,10 @@ public class StringNativeGenerator implements Generator, DependencyPlugin {
             writer.append("return $rt_intern(").append(context.getParameterName(0)).append(");").softNewLine();
         }
         if (methodRef.getName().equals("toLowerCaseNative") && methodRef.parameterCount() == 1) {
-            writer.append("return ").append(context.getParameterName(1)).append(".toLowerCase();").softNewLine();
+            writer.append("return $rt_str($rt_ustr(").append(context.getParameterName(1)).append(").toLowerCase());").softNewLine();
         }
         if (methodRef.getName().equals("toUpperCaseNative") && methodRef.parameterCount() == 1) {
-            writer.append("return ").append(context.getParameterName(1)).append(".toUpperCase();").softNewLine();
+            writer.append("return $rt_str($rt_ustr(").append(context.getParameterName(1)).append(").toUpperCase());").softNewLine();
         }
     }
 
