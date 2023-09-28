@@ -39,7 +39,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>,
         } else {
             array = new Object[c.size() + 1];
             int index = 0;
-            for (TIterator<? extends E> it = c.iterator(); it.hasNext(); ) {
+            for (var it = c.iterator(); it.hasNext(); ) {
                 array[index++] = it.next();
             }
             tail = array.length - 1;
@@ -48,9 +48,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>,
 
     @Override
     public void addFirst(E e) {
-        if (e == null) {
-            throw new NullPointerException();
-        }
+        TObjects.requireNonNull(e);
         ensureCapacity(size() + 1);
         head = modDec(head, array.length);
         array[head] = e;
@@ -59,9 +57,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>,
 
     @Override
     public void addLast(E e) {
-        if (e == null) {
-            throw new NullPointerException();
-        }
+        TObjects.requireNonNull(e);
         ensureCapacity(size() + 1);
         array[tail] = e;
         tail = modInc(tail, array.length);
@@ -159,7 +155,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>,
         if (o == null) {
             return false;
         }
-        for (TIterator<E> it = iterator(); it.hasNext(); ) {
+        for (var it = iterator(); it.hasNext(); ) {
             if (it.next().equals(o)) {
                 it.remove();
                 return true;
@@ -173,7 +169,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>,
         if (o == null) {
             return false;
         }
-        for (TIterator<E> it = descendingIterator(); it.hasNext(); ) {
+        for (var it = descendingIterator(); it.hasNext(); ) {
             if (it.next().equals(o)) {
                 it.remove();
                 return true;
