@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.backend.javascript.spi.GeneratedBy;
+import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Import;
@@ -197,11 +198,15 @@ public final class TMath extends TObject {
 
     @GeneratedBy(MathNativeGenerator.class)
     @NoSideEffects
+    @Unmanaged
     private static native float minImpl(double a, double b);
 
+    @Unmanaged
     public static double min(double a, double b) {
         if (PlatformDetector.isJavaScript()) {
             return minImpl(a, b);
+        } else if (PlatformDetector.isWebAssembly()) {
+            return WasmRuntime.min(a, b);
         }
         if (a != a) {
             return a;
@@ -214,11 +219,15 @@ public final class TMath extends TObject {
 
     @GeneratedBy(MathNativeGenerator.class)
     @NoSideEffects
+    @Unmanaged
     private static native float maxImpl(double a, double b);
 
+    @Unmanaged
     public static double max(double a, double b) {
         if (PlatformDetector.isJavaScript()) {
             return maxImpl(a, b);
+        } else if (PlatformDetector.isWebAssembly()) {
+            return WasmRuntime.max(a, b);
         }
         if (a != a) {
             return a;
@@ -231,11 +240,15 @@ public final class TMath extends TObject {
 
     @GeneratedBy(MathNativeGenerator.class)
     @NoSideEffects
+    @Unmanaged
     private static native float minImpl(float a, float b);
 
+    @Unmanaged
     public static float min(float a, float b) {
         if (PlatformDetector.isJavaScript()) {
             return minImpl(a, b);
+        } else if (PlatformDetector.isWebAssembly()) {
+            return WasmRuntime.min(a, b);
         }
         if (a != a) {
             return a;
@@ -248,11 +261,15 @@ public final class TMath extends TObject {
 
     @GeneratedBy(MathNativeGenerator.class)
     @NoSideEffects
+    @Unmanaged
     private static native float maxImpl(float a, float b);
 
+    @Unmanaged
     public static float max(float a, float b) {
         if (PlatformDetector.isJavaScript()) {
             return maxImpl(a, b);
+        } else if (PlatformDetector.isWebAssembly()) {
+            return WasmRuntime.max(a, b);
         }
         if (a != a) {
             return a;

@@ -51,6 +51,14 @@ public final class WasmRuntime {
         return gt(a, b) ? 1 : lt(a, b) ? -1 : 0;
     }
 
+    public static native float min(float a, float b);
+
+    public static native double min(double a, double b);
+
+    public static native float max(float a, float b);
+
+    public static native double max(double a, double b);
+
     public static float remainder(float a, float b) {
         return a - (float) (int) (a / b) * b;
     }
