@@ -43,6 +43,7 @@ import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.debug.DebugInfoBuilder;
 import org.teavm.backend.wasm.generate.DwarfClassGenerator;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
+import org.teavm.backend.wasm.generate.SourceFileResolver;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.generate.WasmDependencyListener;
 import org.teavm.backend.wasm.generate.WasmGenerationContext;
@@ -209,6 +210,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     private boolean hasThreads;
     private WasmRuntimeType runtimeType = WasmRuntimeType.TEAVM;
     private ReportingWasmBinaryStatsCollector statsCollector;
+    private SourceFileResolver sourceFileResolver;
 
     @Override
     public void setController(TeaVMTargetController controller) {
@@ -307,6 +309,10 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     public void setRuntimeType(WasmRuntimeType runtimeType) {
         this.runtimeType = runtimeType;
+    }
+
+    public void setSourceFileResolver(SourceFileResolver sourceFileResolver) {
+        this.sourceFileResolver = sourceFileResolver;
     }
 
     @Override
@@ -476,7 +482,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         var names = new NameProviderWithSpecialNames(new WasmNameProvider(), controller.getUnprocessedClassSource());
         var metadataRequirements = new ClassMetadataRequirements(controller.getDependencyInfo());
 
-        var dwarfGenerator = debugging ? new DwarfGenerator() : null;
+        var dwarfGenerator = debugging ? new DwarfGenerator(sourceFileResolver) : null;
         if (dwarfGenerator != null) {
             dwarfGenerator.begin();
         }
@@ -1108,7 +1114,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     @Override
     public boolean isAsyncSupported() {
-        return false;
+        return true;
     }
 
     @Override

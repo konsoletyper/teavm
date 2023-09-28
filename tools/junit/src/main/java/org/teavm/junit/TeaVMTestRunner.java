@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -61,6 +62,7 @@ import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.backend.wasm.WasmRuntimeType;
 import org.teavm.backend.wasm.WasmTarget;
+import org.teavm.backend.wasm.generate.DirectorySourceFileResolver;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
@@ -117,6 +119,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private static final String MINIFIED = "teavm.junit.minified";
     private static final String OPTIMIZED = "teavm.junit.optimized";
     private static final String FAST_ANALYSIS = "teavm.junit.fastAnalysis";
+    private static final String SOURCE_DIRS = "teavm.junit.sourceDirs";
 
     private Class<?> testClass;
     private boolean isWholeClassCompilation;
@@ -1125,6 +1128,20 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         Supplier<WasmTarget> targetSupplier = () -> {
             WasmTarget target = new WasmTarget();
             target.setRuntimeType(runtimeType);
+            var sourceDirs = System.getProperty(SOURCE_DIRS);
+            if (sourceDirs != null) {
+                var dirs = new ArrayList<File>();
+                for (var tokenizer = new StringTokenizer(sourceDirs, Character.toString(File.pathSeparatorChar));
+                     tokenizer.hasMoreTokens();) {
+                    var dir = new File(tokenizer.nextToken());
+                    if (dir.isDirectory()) {
+                        dirs.add(dir);
+                    }
+                }
+                if (!dirs.isEmpty()) {
+                    target.setSourceFileResolver(new DirectorySourceFileResolver(dirs));
+                }
+            }
             return target;
         };
         return compile(configuration, targetSupplier, TestNativeEntryPoint.class.getName(), path,

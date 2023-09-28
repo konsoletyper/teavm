@@ -87,6 +87,7 @@ public class PhiUpdater {
     private int[][] domFrontiers;
     private Variable[] variableMap;
     private boolean[] variableDefined;
+    private int[] variableDefinitionCount;
     private List<List<Variable>> definedVersions = new ArrayList<>();
     private BasicBlock currentBlock;
     private Phi[][] phiMap;
@@ -143,9 +144,11 @@ public class PhiUpdater {
 
         variableMap = new Variable[program.variableCount()];
         usedDefinitions = new boolean[program.variableCount()];
+        variableDefinitionCount = new int[program.variableCount()];
         for (int i = 0; i < parameters.length; ++i) {
             variableMap[i] = parameters[i];
             usedDefinitions[i] = true;
+            variableDefinitionCount[i] = 1;
         }
 
         for (int i = 0; i < program.variableCount(); ++i) {
@@ -217,6 +220,8 @@ public class PhiUpdater {
     }
 
     private void estimatePhis() {
+        calculateDefinitions();
+
         DefinitionExtractor definitionExtractor = new DefinitionExtractor();
         variableDefined = new boolean[program.variableCount()];
 
@@ -268,6 +273,37 @@ public class PhiUpdater {
             for (int successor : domGraph.outgoingEdges(i)) {
                 stack.addLast(successor);
             }
+        }
+    }
+
+    private void calculateDefinitions() {
+        var defExtractor = new DefinitionExtractor();
+        for (var block : program.getBasicBlocks()) {
+            increaseDefinitionCount(block.getExceptionVariable());
+            for (var phi : block.getPhis()) {
+                increaseDefinitionCount(phi.getReceiver());
+            }
+            for (var instruction : block) {
+                instruction.acceptVisitor(defExtractor);
+                for (var definedVar : defExtractor.getDefinedVariables()) {
+                    increaseDefinitionCount(definedVar);
+                }
+            }
+            var sigmas = getSigmasAt(block.getIndex());
+            if (sigmas != null) {
+                for (var sigma : sigmas) {
+                    increaseDefinitionCount(sigma.getValue());
+                    for (var i = 0; i < sigma.getOutgoings().size(); ++i) {
+                        increaseDefinitionCount(sigma.getValue());
+                    }
+                }
+            }
+        }
+    }
+
+    private void increaseDefinitionCount(Variable var) {
+        if (var != null) {
+            variableDefinitionCount[var.getIndex()]++;
         }
     }
 
@@ -451,6 +487,11 @@ public class PhiUpdater {
     }
 
     private void markAssignment(Variable var) {
+        if (variableDefinitionCount[var.getIndex()] < 2) {
+            variableDefined[var.getIndex()] = true;
+            return;
+        }
+
         Deque<BasicBlock> worklist = new ArrayDeque<>();
         worklist.push(currentBlock);
 

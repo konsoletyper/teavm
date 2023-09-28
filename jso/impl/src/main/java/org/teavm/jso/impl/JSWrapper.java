@@ -244,6 +244,6 @@ public final class JSWrapper {
 
     @Override
     public String toString() {
-        return JSObjects.toString(js);
+        return JSObjects.isUndefined(js) ? "undefined" : JSObjects.toString(js);
     }
 }
