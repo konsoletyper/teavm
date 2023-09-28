@@ -1697,7 +1697,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         TMathContext newPrecision = mc; // MathContext by default
 
         // In particular cases, it reduces the problem to call the other 'pow()'
-        if ((n == 0) || ((isZero()) && (n > 0))) {
+        if (n == 0 || isZero() && n > 0) {
             return pow(n);
         }
         if ((m > 999999999) || ((mcPrecision == 0) && (n < 0)) || ((mcPrecision > 0) && (elength > mcPrecision))) {
@@ -2382,7 +2382,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      */
     public String toPlainString() {
         String intStr = getUnscaledValue().toString();
-        if ((scale == 0) || ((isZero()) && (scale < 0))) {
+        if (scale == 0 || isZero() && scale < 0) {
             return intStr;
         }
         int begin = (signum() < 0) ? 1 : 0;
@@ -2429,7 +2429,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      * @return this {@code BigDecimal} as a big integer instance.
      */
     public TBigInteger toBigInteger() {
-        if ((scale == 0) || (isZero())) {
+        if (scale == 0 || isZero()) {
             return getUnscaledValue();
         } else if (scale < 0) {
             return getUnscaledValue().multiply(TMultiplication.powerOf10(-(long) scale));
@@ -2449,7 +2449,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      *             if rounding is necessary.
      */
     public TBigInteger toBigIntegerExact() {
-        if ((scale == 0) || (isZero())) {
+        if (scale == 0 || isZero()) {
             return getUnscaledValue();
         } else if (scale < 0) {
             return getUnscaledValue().multiply(TMultiplication.powerOf10(-(long) scale));
