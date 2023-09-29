@@ -23,12 +23,14 @@ import org.teavm.model.ValueType;
 import org.teavm.model.emit.PhiEmitter;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
+import org.teavm.model.instructions.SwitchInstruction;
+import org.teavm.model.instructions.SwitchTableEntry;
 
 public class SwitchBootstrapSubstitutor implements BootstrapMethodSubstitutor {
     @Override
     public ValueEmitter substitute(DynamicCallSite callSite, ProgramEmitter pe) {
         boolean enumSwitch = callSite.getBootstrapMethod().getName().equals("enumSwitch");
-        List<RuntimeConstant> labels = callSite.getBootstrapArguments();
+        var labels = callSite.getBootstrapArguments();
         ValueEmitter target = callSite.getArguments().get(0);
         ValueEmitter restartIdx = callSite.getArguments().get(1);
         BasicBlock joint = pe.prepareBlock();
