@@ -30,7 +30,7 @@ final class TestNativeEntryPoint {
         } catch (Throwable e) {
             PrintStream out = new PrintStream(StderrOutputStream.INSTANCE);
             e.printStackTrace(out);
-            out.println("FAILURE");
+            new PrintStream(StdoutOutputStream.INSTANCE).println("FAILURE");
         }
     }
 }

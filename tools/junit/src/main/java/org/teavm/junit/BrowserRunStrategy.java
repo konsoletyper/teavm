@@ -114,34 +114,24 @@ class BrowserRunStrategy implements TestRunStrategy {
         }
     }
 
-    @Override
-    public void beforeThread() {
-    }
-
-    @Override
-    public void afterThread() {
-    }
-
     static class CallbackWrapper implements TestRunCallback {
         private final CountDownLatch latch;
-        private final TestRun run;
+        volatile Throwable error;
         volatile boolean shouldRepeat;
 
-        CallbackWrapper(CountDownLatch latch, TestRun run) {
+        CallbackWrapper(CountDownLatch latch) {
             this.latch = latch;
-            this.run = run;
         }
 
         @Override
         public void complete() {
             latch.countDown();
-            run.getCallback().complete();
         }
 
         @Override
         public void error(Throwable e) {
+            error = e;
             latch.countDown();
-            run.getCallback().error(e);
         }
 
         void repeat() {
@@ -164,14 +154,14 @@ class BrowserRunStrategy implements TestRunStrategy {
                 ws = wsSessionQueue.poll(1, TimeUnit.SECONDS);
             } while (ws == null || !ws.isOpen());
         } catch (InterruptedException e) {
-            run.getCallback().error(e);
+            Thread.currentThread().interrupt();
             return true;
         }
 
         int id = idGenerator.incrementAndGet();
-        CountDownLatch latch = new CountDownLatch(1);
+        var latch = new CountDownLatch(1);
 
-        CallbackWrapper callbackWrapper = new CallbackWrapper(latch, run);
+        CallbackWrapper callbackWrapper = new CallbackWrapper(latch);
         awaitingRuns.put(id, callbackWrapper);
 
         JsonNodeFactory nf = objectMapper.getNodeFactory();
@@ -213,6 +203,15 @@ class BrowserRunStrategy implements TestRunStrategy {
 
         if (ws.isOpen()) {
             wsSessionQueue.offer(ws);
+        }
+
+        if (callbackWrapper.error != null) {
+            var err = callbackWrapper.error;
+            if (err instanceof RuntimeException) {
+                throw (RuntimeException) err;
+            } else {
+                throw new RuntimeException(err);
+            }
         }
 
         return !callbackWrapper.shouldRepeat;

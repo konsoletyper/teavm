@@ -33,8 +33,6 @@ dependencies {
 
     implementation(project(":core"))
     implementation(project(":tools:core"))
-    implementation(libs.rhino)
-    implementation(libs.htmlunit)
     implementation(libs.jackson.annotations)
     implementation(libs.jackson.databind)
     implementation(libs.javax.servlet)

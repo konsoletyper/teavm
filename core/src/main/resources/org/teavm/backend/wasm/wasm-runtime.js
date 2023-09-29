@@ -213,7 +213,12 @@ TeaVM.wasm = function() {
 
                 controller.resolve = resolve;
                 controller.reject = reject;
-                wrapExport(teavm.instance.exports.start, teavm.instance)(javaArgs);
+                try {
+                    wrapExport(teavm.instance.exports.start, teavm.instance)(javaArgs);
+                } catch (e) {
+                    reject(e);
+                    return;
+                }
                 process(controller);
             });
         }

@@ -91,6 +91,7 @@ function launchTest(argument, callback) {
 function launchWasmTest(path, argument, callback) {
     let output = [];
     let outputBuffer = "";
+    let outputBufferStderr = "";
 
     function putwchar(charCode) {
         if (charCode === 10) {
@@ -106,6 +107,7 @@ function launchWasmTest(path, argument, callback) {
                     break;
                 default:
                     output.push(outputBuffer);
+                    log.push({ message: outputBuffer, type: "stdout" });
                     outputBuffer = "";
             }
         } else {
@@ -113,8 +115,37 @@ function launchWasmTest(path, argument, callback) {
         }
     }
 
+    function putwchars(controller, buffer, count) {
+        let memory = new Int8Array(instance.exports.memory.buffer);
+        for (let i = 0; i < count; ++i) {
+            // TODO: support UTF-8
+            putwchar(memory[buffer++]);
+        }
+    }
+
+    function putwcharStderr(charCode) {
+        if (charCode === 10) {
+            log.push({ message: outputBufferStderr, type: "stderr" });
+            outputBufferStderr = "";
+        } else {
+            outputBufferStderr += String.fromCharCode(charCode);
+        }
+    }
+
+    function putwcharsStderr(controller, buffer, count) {
+        let memory = new Int8Array(instance.exports.memory.buffer);
+        for (let i = 0; i < count; ++i) {
+            // TODO: support UTF-8
+            putwcharStderr(memory[buffer++]);
+        }
+    }
+
+    let instance = null;
+
     TeaVM.wasm.load(path, {
         installImports: function(o) {
+            o.teavm.putwcharsOut = (chars, count) => putwchars(instance, chars, count);
+            o.teavm.putwcharsErr = (chars, count) => putwcharsStderr(instance, chars, count);
             o.teavm.putwchar = putwchar;
         },
         errorCallback: function(err) {
@@ -124,12 +155,9 @@ function launchWasmTest(path, argument, callback) {
             }));
         }
     }).then(teavm => {
-        teavm.main(argument ? [argument] : []);
-    })
-    .then(() => {
-        callback(wrapResponse({ status: "OK" }));
-    })
-    .catch(err => {
+        instance = teavm.instance;
+        return teavm.main(argument ? [argument] : []);
+    }).catch(err => {
         callback(wrapResponse({
             status: "failed",
             errorMessage: err.message + '\n' + err.stack

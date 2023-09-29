@@ -40,9 +40,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.WeakHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -123,44 +120,21 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private Class<?> testClass;
     private boolean isWholeClassCompilation;
-    private ClassHolderSource classSource;
-    private ClassLoader classLoader;
+    private static ClassHolderSource classSource;
+    private static ClassLoader classLoader;
     private Description suiteDescription;
-    private static Map<ClassLoader, ClassHolderSource> classSources = new WeakHashMap<>();
-    private File outputDir;
+    private static File outputDir;
     private Map<Method, Description> descriptions = new HashMap<>();
-    private static Map<RunKind, RunnerKindInfo> runners = new HashMap<>();
-    private CountDownLatch latch;
+    private static Map<RunKind, TestRunStrategy> runners = new HashMap<>();
     private List<Method> filteredChildren;
-    private ReferenceCache referenceCache = new ReferenceCache();
+    private static ReferenceCache referenceCache = new ReferenceCache();
     private boolean classCompilationOk;
     private List<TestRun> runsInCurrentClass = new ArrayList<>();
 
-    static class RunnerKindInfo {
-        volatile TestRunner runner;
-        volatile TestRunStrategy strategy;
-    }
-
     static {
-        for (RunKind kind : RunKind.values()) {
-            runners.put(kind, new RunnerKindInfo());
-        }
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            synchronized (TeaVMTestRunner.class) {
-                for (RunnerKindInfo info : runners.values()) {
-                    if (info.runner != null) {
-                        info.runner.stop();
-                        info.runner.waitForCompletion();
-                    }
-                }
-            }
-        }));
-    }
-
-    public TeaVMTestRunner(Class<?> testClass) throws InitializationError {
-        this.testClass = testClass;
         classLoader = TeaVMTestRunner.class.getClassLoader();
         classSource = getClassSource(classLoader);
+
         String outputPath = System.getProperty(PATH_PARAM);
         if (outputPath != null) {
             outputDir = new File(outputPath);
@@ -170,34 +144,31 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         if (runStrategyName != null) {
             TestRunStrategy jsRunStrategy;
             switch (runStrategyName) {
-                case "htmlunit":
-                    jsRunStrategy = new HtmlUnitRunStrategy();
-                    break;
                 case "browser":
-                    jsRunStrategy = new BrowserRunStrategy(outputDir, "JAVASCRIPT", this::customBrowser);
+                    jsRunStrategy = new BrowserRunStrategy(outputDir, "JAVASCRIPT", TeaVMTestRunner::customBrowser);
                     break;
                 case "browser-chrome":
-                    jsRunStrategy = new BrowserRunStrategy(outputDir, "JAVASCRIPT", this::chromeBrowser);
+                    jsRunStrategy = new BrowserRunStrategy(outputDir, "JAVASCRIPT", TeaVMTestRunner::chromeBrowser);
                     break;
                 case "browser-firefox":
-                    jsRunStrategy = new BrowserRunStrategy(outputDir, "JAVASCRIPT", this::firefoxBrowser);
+                    jsRunStrategy = new BrowserRunStrategy(outputDir, "JAVASCRIPT", TeaVMTestRunner::firefoxBrowser);
                     break;
                 case "none":
                     jsRunStrategy = null;
                     break;
                 default:
-                    throw new InitializationError("Unknown run strategy: " + runStrategyName);
+                    throw new RuntimeException("Unknown run strategy: " + runStrategyName);
             }
-            runners.get(RunKind.JAVASCRIPT).strategy = jsRunStrategy;
+            runners.put(RunKind.JAVASCRIPT, jsRunStrategy);
         }
 
         String cCommand = System.getProperty(C_COMPILER);
         if (cCommand != null) {
-            runners.get(RunKind.C).strategy = new CRunStrategy(cCommand);
+            runners.put(RunKind.C, new CRunStrategy(cCommand));
         }
         String wasiCommand = System.getProperty(WASI_RUNNER);
         if (wasiCommand != null) {
-            runners.get(RunKind.WASI).strategy = new WasiRunStrategy(wasiCommand);
+            runners.put(RunKind.WASI, new WasiRunStrategy(wasiCommand));
         }
 
         runStrategyName = System.getProperty(WASM_RUNNER);
@@ -205,28 +176,42 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             TestRunStrategy wasmRunStrategy;
             switch (runStrategyName) {
                 case "browser":
-                    wasmRunStrategy = new BrowserRunStrategy(outputDir, "WASM", this::customBrowser);
+                    wasmRunStrategy = new BrowserRunStrategy(outputDir, "WASM", TeaVMTestRunner::customBrowser);
                     break;
                 case "chrome":
                 case "browser-chrome":
-                    wasmRunStrategy = new BrowserRunStrategy(outputDir, "WASM", this::chromeBrowser);
+                    wasmRunStrategy = new BrowserRunStrategy(outputDir, "WASM", TeaVMTestRunner::chromeBrowser);
                     break;
                 case "browser-firefox":
-                    wasmRunStrategy = new BrowserRunStrategy(outputDir, "WASM", this::firefoxBrowser);
+                    wasmRunStrategy = new BrowserRunStrategy(outputDir, "WASM", TeaVMTestRunner::firefoxBrowser);
                     break;
                 default:
-                    throw new InitializationError("Unknown run strategy: " + runStrategyName);
+                    throw new RuntimeException("Unknown run strategy: " + runStrategyName);
             }
-            runners.get(RunKind.WASM).strategy = wasmRunStrategy;
+            runners.put(RunKind.WASM, wasmRunStrategy);
         }
+
+        for (var strategy : runners.values()) {
+            strategy.beforeAll();
+        }
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            for (var strategy : runners.values()) {
+                strategy.afterAll();
+            }
+        }));
     }
 
-    private Process customBrowser(String url) {
+    public TeaVMTestRunner(Class<?> testClass) throws InitializationError {
+        this.testClass = testClass;
+    }
+
+    private static Process customBrowser(String url) {
         System.out.println("Open link to run tests: " + url + "?logging=true");
         return null;
     }
 
-    private Process chromeBrowser(String url) {
+    private static Process chromeBrowser(String url) {
         return browserTemplate("chrome", url, (profile, params) -> {
             addChromeCommand(params);
             params.addAll(Arrays.asList(
@@ -239,7 +224,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         });
     }
 
-    private Process firefoxBrowser(String url) {
+    private static Process firefoxBrowser(String url) {
         return browserTemplate("firefox", url, (profile, params) -> {
             addFirefoxCommand(params);
             params.addAll(Arrays.asList(
@@ -250,7 +235,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         });
     }
 
-    private void addChromeCommand(List<String> params) {
+    private static void addChromeCommand(List<String> params) {
         if (isMacos()) {
             params.add("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome");
         } else if (isWindows()) {
@@ -263,7 +248,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         }
     }
 
-    private void addFirefoxCommand(List<String> params) {
+    private static void addFirefoxCommand(List<String> params) {
         if (isMacos()) {
             params.add("/Applications/Firefox.app/Contents/MacOS/firefox");
             return;
@@ -276,15 +261,15 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         params.add("firefox");
     }
 
-    private boolean isWindows() {
+    private static boolean isWindows() {
         return System.getProperty("os.name").toLowerCase().startsWith("windows");
     }
 
-    private boolean isMacos() {
+    private static boolean isMacos() {
         return System.getProperty("os.name").toLowerCase().startsWith("mac");
     }
 
-    private Process browserTemplate(String name, String url, BiConsumer<String, List<String>> paramsBuilder) {
+    private static Process browserTemplate(String name, String url, BiConsumer<String, List<String>> paramsBuilder) {
         File temp;
         try {
             temp = File.createTempFile("teavm", "teavm");
@@ -315,7 +300,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         }
     }
 
-    private void logStream(InputStream stream, String name) {
+    private static void logStream(InputStream stream, String name) {
         new Thread(() -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
                 while (true) {
@@ -331,7 +316,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         }).start();
     }
 
-    private void deleteDir(File dir) {
+    private static void deleteDir(File dir) {
         for (File file : dir.listFiles()) {
             if (file.isDirectory()) {
                 deleteDir(file);
@@ -356,9 +341,9 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     @Override
     public void run(RunNotifier notifier) {
         List<Method> children = getFilteredChildren();
-        latch = new CountDownLatch(children.size());
+        var description = getDescription();
 
-        notifier.fireTestStarted(getDescription());
+        notifier.fireTestStarted(description);
         isWholeClassCompilation = testClass.isAnnotationPresent(WholeClassCompilation.class);
         if (isWholeClassCompilation) {
             classCompilationOk = compileWholeClass(children, notifier);
@@ -370,16 +355,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         writeRunsDescriptor();
         runsInCurrentClass.clear();
 
-        while (true) {
-            try {
-                if (latch.await(1000, TimeUnit.MILLISECONDS)) {
-                    break;
-                }
-            } catch (InterruptedException e) {
-                break;
-            }
-        }
-        notifier.fireTestFinished(getDescription());
+        notifier.fireTestFinished(description);
     }
 
     private List<Method> getChildren() {
@@ -473,7 +449,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
         if (isIgnored(child)) {
             notifier.fireTestIgnored(description);
-            latch.countDown();
+            notifier.fireTestFinished(description);
             return;
         }
 
@@ -488,42 +464,38 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         }
 
         if (success && outputDir != null) {
-            int[] configurationIndex = new int[] { 0 };
-
             List<TestRun> runs = new ArrayList<>();
-            Consumer<Boolean> onSuccess = runSuccess -> {
-                if (runSuccess && configurationIndex[0] < runs.size()) {
-                    submitRun(runs.get(configurationIndex[0]++));
-                } else {
-                    notifier.fireTestFinished(description);
-                    latch.countDown();
-                }
-            };
 
             if (isWholeClassCompilation) {
                 if (!classCompilationOk) {
                     notifier.fireTestFinished(description);
                     notifier.fireTestFailure(new Failure(description,
                             new AssertionError("Could not compile test class")));
-                    latch.countDown();
                 } else {
-                    runTestsFromWholeClass(child, notifier, runs, onSuccess);
-                    onSuccess.accept(true);
+                    prepareTestsFromWholeClass(child, runs);
                 }
             } else {
-                runCompiledTest(child, notifier, runs, onSuccess);
+                prepareCompiledTest(child, notifier, runs);
             }
+
+            for (var run : runs) {
+                try {
+                    submitRun(run);
+                } catch (Throwable e) {
+                    notifier.fireTestFailure(new Failure(description, e));
+                    break;
+                }
+            }
+            notifier.fireTestFinished(description);
         } else {
             if (!ran) {
                 notifier.fireTestIgnored(description);
             }
             notifier.fireTestFinished(description);
-            latch.countDown();
         }
     }
 
-    private void runTestsFromWholeClass(Method child, RunNotifier notifier, List<TestRun> runs,
-            Consumer<Boolean> onSuccess) {
+    private void prepareTestsFromWholeClass(Method child, List<TestRun> runs) {
         File outputPath = getOutputPathForClass();
         File outputPathForMethod = getOutputPath(child);
         MethodDescriptor descriptor = getDescriptor(child);
@@ -533,10 +505,9 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         testFilePath.mkdirs();
 
         Map<String, String> properties = new HashMap<>();
-        for (TeaVMTestConfiguration<JavaScriptTarget> configuration : getJavaScriptConfigurations()) {
+        for (var configuration : getJavaScriptConfigurations()) {
             File testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), false, ".js");
-            runs.add(createTestRun(configuration, testPath, child, RunKind.JAVASCRIPT, reference.toString(),
-                    notifier, onSuccess));
+            runs.add(createTestRun(configuration, testPath, child, RunKind.JAVASCRIPT, reference.toString()));
             File htmlPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(), false, ".html");
             properties.put("SCRIPT", "../" + testPath.getName());
             properties.put("IDENTIFIER", reference.toString());
@@ -547,10 +518,9 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             }
         }
 
-        for (TeaVMTestConfiguration<WasmTarget> configuration : getWasmConfigurations()) {
+        for (var configuration : getWasmConfigurations()) {
             File testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), false, ".wasm");
-            runs.add(createTestRun(configuration, testPath, child, RunKind.WASM, reference.toString(),
-                    notifier, onSuccess));
+            runs.add(createTestRun(configuration, testPath, child, RunKind.WASM, reference.toString()));
             File htmlPath = getOutputFile(outputPathForMethod, "test-wasm", configuration.getSuffix(), false, ".html");
             properties.put("SCRIPT", "../" + testPath.getName());
             properties.put("IDENTIFIER", reference.toString());
@@ -561,30 +531,28 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             }
         }
 
-        for (TeaVMTestConfiguration<WasmTarget> configuration : getWasiConfigurations()) {
+        for (var configuration : getWasiConfigurations()) {
             File testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), false, ".wasm");
-            runs.add(createTestRun(configuration, testPath, child, RunKind.WASI, reference.toString(),
-                    notifier, onSuccess));
+            runs.add(createTestRun(configuration, testPath, child, RunKind.WASI, reference.toString()));
             File htmlPath = getOutputFile(outputPathForMethod, "test-wasm", configuration.getSuffix(), false, ".html");
             properties.put("SCRIPT", "../" + testPath.getName());
             properties.put("IDENTIFIER", reference.toString());
         }
 
-        for (TeaVMTestConfiguration<CTarget> configuration : getCConfigurations()) {
+        for (var configuration : getCConfigurations()) {
             File testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), true, ".c");
-            runs.add(createTestRun(configuration, testPath, child, RunKind.C, reference.toString(),
-                    notifier, onSuccess));
+            runs.add(createTestRun(configuration, testPath, child, RunKind.C, reference.toString()));
         }
     }
 
-    private void runCompiledTest(Method child, RunNotifier notifier, List<TestRun> runs, Consumer<Boolean> onSuccess) {
+    private void prepareCompiledTest(Method child, RunNotifier notifier, List<TestRun> runs) {
         try {
             File outputPath = getOutputPath(child);
 
             Map<String, String> properties = new HashMap<>();
-            for (TeaVMTestConfiguration<JavaScriptTarget> configuration : getJavaScriptConfigurations()) {
+            for (var configuration : getJavaScriptConfigurations()) {
                 CompileResult compileResult = compileToJs(singleTest(child), "test", configuration, outputPath);
-                TestRun run = prepareRun(configuration, child, compileResult, notifier, RunKind.JAVASCRIPT, onSuccess);
+                TestRun run = prepareRun(configuration, child, compileResult, notifier, RunKind.JAVASCRIPT);
                 if (run != null) {
                     runs.add(run);
 
@@ -601,18 +569,18 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 }
             }
 
-            for (TeaVMTestConfiguration<CTarget> configuration : getCConfigurations()) {
+            for (var configuration : getCConfigurations()) {
                 CompileResult compileResult = compileToC(singleTest(child), "test", configuration, outputPath);
-                TestRun run = prepareRun(configuration, child, compileResult, notifier, RunKind.C, onSuccess);
+                TestRun run = prepareRun(configuration, child, compileResult, notifier, RunKind.C);
                 if (run != null) {
                     runs.add(run);
                 }
             }
 
-            for (TeaVMTestConfiguration<WasmTarget> configuration : getWasmConfigurations()) {
+            for (var configuration : getWasmConfigurations()) {
                 CompileResult compileResult = compileToWasm(WasmRuntimeType.TEAVM, singleTest(child),
                         "test", configuration, outputPath);
-                TestRun run = prepareRun(configuration, child, compileResult, notifier, RunKind.WASM, onSuccess);
+                TestRun run = prepareRun(configuration, child, compileResult, notifier, RunKind.WASM);
                 if (run != null) {
                     runs.add(run);
 
@@ -629,10 +597,10 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 }
             }
 
-            for (TeaVMTestConfiguration<WasmTarget> configuration : getWasiConfigurations()) {
+            for (var configuration : getWasiConfigurations()) {
                 CompileResult compileResult = compileToWasm(WasmRuntimeType.WASI, singleTest(child), "test",
                         configuration, outputPath);
-                TestRun run = prepareRun(configuration, child, compileResult, notifier, RunKind.WASI, onSuccess);
+                TestRun run = prepareRun(configuration, child, compileResult, notifier, RunKind.WASI);
                 if (run != null) {
                     runs.add(run);
 
@@ -644,11 +612,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         } catch (Throwable e) {
             notifier.fireTestFailure(new Failure(describeChild(child), e));
             notifier.fireTestFinished(describeChild(child));
-            latch.countDown();
             return;
         }
-
-        onSuccess.accept(true);
     }
 
     static String[] getExpectedExceptions(MethodReader method) {
@@ -974,38 +939,22 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     }
 
     private TestRun prepareRun(TeaVMTestConfiguration<?> configuration, Method child, CompileResult result,
-            RunNotifier notifier, RunKind kind, Consumer<Boolean> onComplete) {
+            RunNotifier notifier, RunKind kind) {
         Description description = describeChild(child);
 
         if (!result.success) {
             notifier.fireTestFailure(createFailure(description, result));
             notifier.fireTestFinished(description);
-            latch.countDown();
             return null;
         }
 
-        return createTestRun(configuration, result.file, child, kind, null, notifier, onComplete);
+        return createTestRun(configuration, result.file, child, kind, null);
     }
 
     private TestRun createTestRun(TeaVMTestConfiguration<?> configuration, File file, Method child, RunKind kind,
-            String argument, RunNotifier notifier, Consumer<Boolean> onComplete) {
-        Description description = describeChild(child);
-
-        TestRunCallback callback = new TestRunCallback() {
-            @Override
-            public void complete() {
-                onComplete.accept(true);
-            }
-
-            @Override
-            public void error(Throwable e) {
-                notifier.fireTestFailure(new Failure(description, e));
-                onComplete.accept(false);
-            }
-        };
-
-        return new TestRun(generateName(child.getName(), configuration), file.getParentFile(), child, description,
-                file.getName(), kind, argument, callback);
+            String argument) {
+        return new TestRun(generateName(child.getName(), configuration), file.getParentFile(), child,
+                file.getName(), kind, argument);
     }
 
     private String generateName(String baseName, TeaVMTestConfiguration<?> configuration) {
@@ -1024,27 +973,15 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         return new Failure(description, throwable);
     }
 
-    private void submitRun(TestRun run) {
-        synchronized (TeaVMTestRunner.class) {
-            runsInCurrentClass.add(run);
-            RunnerKindInfo info = runners.get(run.getKind());
-
-            if (info.strategy == null) {
-                run.getCallback().complete();
-                return;
-            }
-
-            if (info.runner == null) {
-                info.runner = new TestRunner(info.strategy);
-                try {
-                    info.runner.setNumThreads(Integer.parseInt(System.getProperty(THREAD_COUNT, "1")));
-                } catch (NumberFormatException e) {
-                    info.runner.setNumThreads(1);
-                }
-                info.runner.init();
-            }
-            info.runner.run(run);
+    private boolean submitRun(TestRun run) throws IOException {
+        runsInCurrentClass.add(run);
+        var strategy = runners.get(run.getKind());
+        if (strategy == null) {
+            return false;
         }
+
+        strategy.runTest(run);
+        return true;
     }
 
     private File getOutputPath(Method method) {
@@ -1422,9 +1359,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         return sb.append(s.substring(i)).toString();
     }
 
-    private ClassHolderSource getClassSource(ClassLoader classLoader) {
-        return classSources.computeIfAbsent(classLoader, cl -> new PreOptimizingClassHolderSource(
-                new ClasspathClassHolderSource(classLoader, referenceCache)));
+    private static ClassHolderSource getClassSource(ClassLoader classLoader) {
+        return new PreOptimizingClassHolderSource(new ClasspathClassHolderSource(classLoader, referenceCache));
     }
 
     @Override
