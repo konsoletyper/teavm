@@ -31,10 +31,22 @@ public class StringNativeGenerator implements Generator, DependencyPlugin {
             writer.append("return $rt_intern(").append(context.getParameterName(0)).append(");").softNewLine();
         }
         if (methodRef.getName().equals("toLowerCaseNative")) {
-            writer.append("return $rt_str($rt_ustr(").append(context.getParameterName(1)).append(").toLowerCase());").softNewLine();
+            writer.append("return $rt_str($rt_ustr(")
+                    .append(context.getParameterName(1)).append(").toLowerCase());").softNewLine();
+        }
+        if (methodRef.getName().equals("toLocaleLowerCaseNative")) {
+            writer.append("return $rt_str($rt_ustr(")
+                    .append(context.getParameterName(1)).append(").toLocaleLowerCase($rt_ustr(")
+                    .append(context.getParameterName(2)).append(")));").softNewLine();
         }
         if (methodRef.getName().equals("toUpperCaseNative")) {
-            writer.append("return $rt_str($rt_ustr(").append(context.getParameterName(1)).append(").toUpperCase());").softNewLine();
+            writer.append("return $rt_str($rt_ustr(")
+                    .append(context.getParameterName(1)).append(").toUpperCase());").softNewLine();
+        }
+        if (methodRef.getName().equals("toLocaleUpperCaseNative")) {
+            writer.append("return $rt_str($rt_ustr(")
+                    .append(context.getParameterName(1)).append(").toLocaleUpperCase($rt_ustr(")
+                    .append(context.getParameterName(2)).append(")));").softNewLine();
         }
     }
 
@@ -50,7 +62,9 @@ public class StringNativeGenerator implements Generator, DependencyPlugin {
                     .use();
         }
         if (method.getReference().getName().equals("toLowerCaseNative")
-                || method.getReference().getName().equals("toUpperCaseNative")) {
+                || method.getReference().getName().equals("toUpperCaseNative")
+                || method.getReference().getName().equals("toLocaleLowerCaseNative")
+                || method.getReference().getName().equals("toLocaleUpperCaseNative")) {
             method.getResult().propagate(agent.getType("java.lang.String"));
         }
     }

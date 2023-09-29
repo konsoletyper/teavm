@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import java.io.UnsupportedEncodingException;
+import java.util.Locale;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -304,14 +305,24 @@ public class StringTest {
         assertEquals('d', str.charAt(8));
     }
 
+    private String common = "i̇stanbul";
+    private String turkish = "istanbul";
+
     @Test
     public void makesLowerCase() {
         assertEquals("foo bar", "FoO bAr".toLowerCase());
+        assertEquals(turkish, "İstanbul".toLowerCase(new Locale("tr", "TR")));
+        assertEquals(common, "İstanbul".toLowerCase(Locale.US));
+        assertNotEquals(turkish, common);
     }
 
     @Test
     public void makesUpperCase() {
         assertEquals("FOO BAR", "FoO bAr".toUpperCase());
+        assertEquals("İSTANBUL", common.toUpperCase(Locale.US));
+        assertEquals("İSTANBUL", turkish.toUpperCase(new Locale("tr", "TR")));
+        assertNotEquals(common.toUpperCase(Locale.US), turkish.toUpperCase(new Locale("tr", "TR")));
+        assertEquals(common.toUpperCase(Locale.US), common.toUpperCase(Locale.CANADA));
     }
 
     @Test

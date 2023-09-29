@@ -642,6 +642,11 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     @NoSideEffects
     private static native TString toLowerCaseNative(TString str);
 
+    @GeneratedBy(StringNativeGenerator.class)
+    @PluggableDependency(StringNativeGenerator.class)
+    @NoSideEffects
+    private static native TString toLocaleLowerCaseNative(TString str, String localeTag);
+
     private static TString toLowerCaseImpl(char[] characters) {
         if (characters.length == 0) {
             return EMPTY;
@@ -669,6 +674,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString toLowerCase(TLocale locale) {
+        if (PlatformDetector.isJavaScript()) {
+            String tag = locale.toLanguageTag();
+            return tag.isEmpty() ? toLowerCaseNative(this) : toLocaleLowerCaseNative(this, tag);
+        }
         return toLowerCaseImpl(characters);
     }
 
@@ -676,6 +685,11 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     @PluggableDependency(StringNativeGenerator.class)
     @NoSideEffects
     private static native TString toUpperCaseNative(TString str);
+
+    @GeneratedBy(StringNativeGenerator.class)
+    @PluggableDependency(StringNativeGenerator.class)
+    @NoSideEffects
+    private static native TString toLocaleUpperCaseNative(TString str, String localeTag);
 
     private static TString toUpperCaseImpl(char[] characters) {
         if (characters.length == 0) {
@@ -704,6 +718,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString toUpperCase(TLocale locale) {
+        if (PlatformDetector.isJavaScript()) {
+            String tag = locale.toLanguageTag();
+            return tag.isEmpty() ? toUpperCaseNative(this) : toLocaleUpperCaseNative(this, tag);
+        }
         return toUpperCaseImpl(characters);
     }
 

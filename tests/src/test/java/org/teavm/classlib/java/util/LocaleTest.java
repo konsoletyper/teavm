@@ -59,4 +59,14 @@ public class LocaleTest {
         assertEquals("Соединенные Штаты", usEnglish.getDisplayCountry(russian));
         assertEquals("Россия", russian.getDisplayCountry(russian));
     }
+
+    @Test
+    public void testLanguageTag() {
+        assertEquals("fr-CA", Locale.CANADA_FRENCH.toLanguageTag());
+        assertEquals("zh", Locale.CHINESE.toLanguageTag());
+        assertEquals("zh-TW", Locale.TRADITIONAL_CHINESE.toLanguageTag());
+        assertEquals("zh-CN", Locale.SIMPLIFIED_CHINESE.toLanguageTag());
+        assertEquals("en-GB", Locale.UK.toLanguageTag());
+        assertEquals("en-US", Locale.US.toLanguageTag());
+    }
 }
