@@ -27,26 +27,35 @@ import org.teavm.model.MethodReference;
 public class StringNativeGenerator implements Generator, DependencyPlugin {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        if (methodRef.getName().equals("intern")) {
-            writer.append("return $rt_intern(").append(context.getParameterName(0)).append(");").softNewLine();
-        }
-        if (methodRef.getName().equals("toLowerCaseNative")) {
-            writer.append("return $rt_str($rt_ustr(")
-                    .append(context.getParameterName(1)).append(").toLowerCase());").softNewLine();
-        }
-        if (methodRef.getName().equals("toLocaleLowerCaseNative")) {
-            writer.append("return $rt_str($rt_ustr(")
-                    .append(context.getParameterName(1)).append(").toLocaleLowerCase($rt_ustr(")
-                    .append(context.getParameterName(2)).append(")));").softNewLine();
-        }
-        if (methodRef.getName().equals("toUpperCaseNative")) {
-            writer.append("return $rt_str($rt_ustr(")
-                    .append(context.getParameterName(1)).append(").toUpperCase());").softNewLine();
-        }
-        if (methodRef.getName().equals("toLocaleUpperCaseNative")) {
-            writer.append("return $rt_str($rt_ustr(")
-                    .append(context.getParameterName(1)).append(").toLocaleUpperCase($rt_ustr(")
-                    .append(context.getParameterName(2)).append(")));").softNewLine();
+        switch (methodRef.getName()) {
+            case "intern":
+                writer.append("return").ws().appendFunction("$rt_intern")
+                        .append("(").append(context.getParameterName(0)).append(");").softNewLine();
+                break;
+            case "toLowerCaseNative":
+                writer.append("return").ws().appendFunction("$rt_str").append("(")
+                        .appendFunction("$rt_ustr").append("(")
+                        .append(context.getParameterName(1)).append(").toLowerCase());").softNewLine();
+                break;
+            case "toLocaleLowerCaseNative":
+                writer.append("return").ws().appendFunction("$rt_str").append("(")
+                        .appendFunction("$rt_ustr").append("(")
+                        .append(context.getParameterName(1)).append(").toLocaleLowerCase(")
+                        .appendFunction("$rt_ustr").append("(")
+                        .append(context.getParameterName(2)).append(")));").softNewLine();
+                break;
+            case "toUpperCaseNative":
+                writer.append("return").ws().appendFunction("$rt_str").append("(")
+                        .appendFunction("$rt_ustr").append("(")
+                        .append(context.getParameterName(1)).append(").toUpperCase());").softNewLine();
+                break;
+            case "toLocaleUpperCaseNative":
+                writer.append("return").ws().appendFunction("$rt_str").append("(")
+                        .appendFunction("$rt_ustr").append("(")
+                        .append(context.getParameterName(1)).append(").toLocaleUpperCase(")
+                        .appendFunction("$rt_ustr").append("(")
+                        .append(context.getParameterName(2)).append(")));").softNewLine();
+                break;
         }
     }
 
