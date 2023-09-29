@@ -30,10 +30,10 @@ public class StringNativeGenerator implements Generator, DependencyPlugin {
         if (methodRef.getName().equals("intern")) {
             writer.append("return $rt_intern(").append(context.getParameterName(0)).append(");").softNewLine();
         }
-        if (methodRef.getName().equals("toLowerCaseNative") && methodRef.parameterCount() == 1) {
+        if (methodRef.getName().equals("toLowerCaseNative")) {
             writer.append("return $rt_str($rt_ustr(").append(context.getParameterName(1)).append(").toLowerCase());").softNewLine();
         }
-        if (methodRef.getName().equals("toUpperCaseNative") && methodRef.parameterCount() == 1) {
+        if (methodRef.getName().equals("toUpperCaseNative")) {
             writer.append("return $rt_str($rt_ustr(").append(context.getParameterName(1)).append(").toUpperCase());").softNewLine();
         }
     }
@@ -48,6 +48,10 @@ public class StringNativeGenerator implements Generator, DependencyPlugin {
                     .propagate(0, agent.getType("java.lang.String"))
                     .propagate(1, agent.getType("java.lang.String"))
                     .use();
+        }
+        if (method.getReference().getName().equals("toLowerCaseNative")
+                || method.getReference().getName().equals("toUpperCaseNative")) {
+            method.getResult().propagate(agent.getType("java.lang.String"));
         }
     }
 }

@@ -638,6 +638,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     @GeneratedBy(StringNativeGenerator.class)
+    @PluggableDependency(StringNativeGenerator.class)
     @NoSideEffects
     private static native TString toLowerCaseNative(TString str);
 
@@ -672,6 +673,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     @GeneratedBy(StringNativeGenerator.class)
+    @PluggableDependency(StringNativeGenerator.class)
     @NoSideEffects
     private static native TString toUpperCaseNative(TString str);
 
