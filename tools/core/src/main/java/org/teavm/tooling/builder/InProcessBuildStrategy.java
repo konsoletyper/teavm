@@ -53,7 +53,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private boolean fastDependencyAnalysis;
     private boolean obfuscated;
     private boolean strict;
-    private int maxTopLevelNames;
+    private int maxTopLevelNames = 1000000;
     private boolean sourceMapsFileGenerated;
     private boolean debugInformationGenerated;
     private boolean sourceFilesCopied;
