@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.impl;
 
-import java.util.List;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DynamicCallSite;
 import org.teavm.model.BasicBlock;
@@ -24,8 +23,6 @@ import org.teavm.model.ValueType;
 import org.teavm.model.emit.PhiEmitter;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
-import org.teavm.model.instructions.SwitchInstruction;
-import org.teavm.model.instructions.SwitchTableEntry;
 
 public class SwitchBootstrapSubstitutor implements BootstrapMethodSubstitutor {
     @Override
@@ -47,9 +44,9 @@ public class SwitchBootstrapSubstitutor implements BootstrapMethodSubstitutor {
 
         var block = pe.prepareBlock();
         pe.enter(block);
-        ValueType.Object enumType = enumSwitch ? labels.stream()
-                .filter(l -> l.getKind() == RuntimeConstant.TYPE)
-                .findAny().map(vt -> (ValueType.Object) vt.getValueType()).orElseThrow() : null;
+        var enumType = enumSwitch
+                ? (ValueType.Object) callSite.getCalledMethod().parameterType(0)
+                : null;
         if (enumType != null) {
             pe.initClass(enumType.getClassName());
         }
