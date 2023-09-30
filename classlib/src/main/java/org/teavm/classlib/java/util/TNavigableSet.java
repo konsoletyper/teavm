@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.NoSuchElementException;
+
 /**
  *
  * @author Alexey Andreev
@@ -42,4 +44,27 @@ public interface TNavigableSet<E> extends TSortedSet<E> {
     TNavigableSet<E> headSet(E toElement, boolean inclusive);
 
     TNavigableSet<E> tailSet(E fromElement, boolean inclusive);
+
+    @Override
+    default E removeFirst() {
+        if (isEmpty()) {
+            throw new NoSuchElementException();
+        } else {
+            return pollFirst();
+        }
+    }
+
+    @Override
+    default E removeLast() {
+        if (isEmpty()) {
+            throw new NoSuchElementException();
+        } else {
+            return pollLast();
+        }
+    }
+
+    @Override
+    default TNavigableSet<E> reversed() {
+        return descendingSet();
+    }
 }

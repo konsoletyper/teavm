@@ -555,6 +555,9 @@ public class TCollections extends TObject {
     private static TComparator<Object> reverseOrder = (o1, o2) -> ((TComparable<Object>) o2).compareTo(o1);
 
     public static <T> TComparator<T> reverseOrder(final TComparator<T> cmp) {
+        if (cmp == null) {
+            return reverseOrder();
+        }
         return (o1, o2) -> -cmp.compare(o1, o2);
     }
 

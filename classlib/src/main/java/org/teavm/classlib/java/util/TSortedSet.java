@@ -20,7 +20,7 @@ package org.teavm.classlib.java.util;
  * @author Alexey Andreev
  * @param <E>
  */
-public interface TSortedSet<E> extends TSet<E> {
+public interface TSortedSet<E> extends TSet<E>, TSequencedSet<E> {
     TComparator<? super E> comparator();
 
     TSortedSet<E> subSet(E fromElement, E toElement);
@@ -32,4 +32,33 @@ public interface TSortedSet<E> extends TSet<E> {
     E first();
 
     E last();
+
+    @Override
+    default E getFirst() {
+        return first();
+    }
+
+    @Override
+    default E getLast() {
+        return last();
+    }
+
+    @Override
+    default E removeFirst() {
+        E e = this.first();
+        this.remove(e);
+        return e;
+    }
+
+    @Override
+    default E removeLast() {
+        E e = this.last();
+        this.remove(e);
+        return e;
+    }
+
+    @Override
+    default TSortedSet<E> reversed() {
+        return new TReversedSortedSet<>(this);
+    }
 }
