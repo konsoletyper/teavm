@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.impl.unicode.CharMapping;
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
 import org.teavm.platform.metadata.StringResource;
 
@@ -87,9 +88,9 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     public static final int BYTES = SIZE / Byte.SIZE;
     static final int ERROR = 0xFFFFFFFF;
     private static int[] digitMapping;
-    private static int[] titleCaseMapping;
-    private static int[] upperCaseMapping;
-    private static int[] lowerCaseMapping;
+    private static CharMapping titleCaseMapping;
+    private static CharMapping upperCaseMapping;
+    private static CharMapping lowerCaseMapping;
     private static UnicodeHelper.Range[] classMapping;
     private final char value;
     private static TCharacter[] characterCache = new TCharacter[128];
@@ -241,9 +242,10 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return mapChar(getLowerCaseMapping(), ch);
     }
 
-    private static int[] getLowerCaseMapping() {
+    private static CharMapping getLowerCaseMapping() {
         if (lowerCaseMapping == null) {
-            lowerCaseMapping = UnicodeHelper.decodeCaseMapping(acquireLowerCaseMapping().getValue());
+            lowerCaseMapping = UnicodeHelper.createCharMapping(
+                    UnicodeHelper.decodeCaseMapping(acquireLowerCaseMapping().getValue()));
         }
         return lowerCaseMapping;
     }
@@ -259,9 +261,10 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return mapChar(getUpperCaseMapping(), codePoint);
     }
 
-    private static int[] getUpperCaseMapping() {
+    private static CharMapping getUpperCaseMapping() {
         if (upperCaseMapping == null) {
-            upperCaseMapping = UnicodeHelper.decodeCaseMapping(acquireUpperCaseMapping().getValue());
+            upperCaseMapping = UnicodeHelper.createCharMapping(
+                    UnicodeHelper.decodeCaseMapping(acquireUpperCaseMapping().getValue()));
         }
         return upperCaseMapping;
     }
@@ -280,21 +283,27 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return (char) toTitleCase((int) c);
     }
 
-    private static int[] getTitleCaseMapping() {
+    private static CharMapping getTitleCaseMapping() {
         if (titleCaseMapping == null) {
-            titleCaseMapping = UnicodeHelper.decodeCaseMapping(acquireTitleCaseMapping().getValue());
+            titleCaseMapping = UnicodeHelper.createCharMapping(
+                    UnicodeHelper.decodeCaseMapping(acquireTitleCaseMapping().getValue()));
         }
         return titleCaseMapping;
     }
 
     private static native StringResource acquireTitleCaseMapping();
 
-    private static int mapChar(int[] table, int codePoint) {
-        int index = binarySearchTable(table, codePoint);
-        if (index < 0 || index >= table.length / 2) {
+    private static int mapChar(CharMapping table, int codePoint) {
+        if (codePoint < table.fastTable.length) {
+            return codePoint + table.fastTable[codePoint];
+        }
+
+        var binSearchTable = table.binarySearchTable;
+        int index = binarySearchTable(binSearchTable, codePoint);
+        if (index < 0 || index * 2 >= binSearchTable.length) {
             return 0;
         }
-        return codePoint + table[index * 2 + 1];
+        return codePoint + binSearchTable[index * 2 + 1];
     }
 
     private static int binarySearchTable(int[] data, int key) {

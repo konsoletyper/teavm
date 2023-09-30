@@ -640,6 +640,33 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         if (isEmpty()) {
             return this;
         }
+
+        var hasCharsToTransform = false;
+        var hasSurrogates = false;
+        for (var c : characters) {
+            if (Character.toLowerCase(c) != c) {
+                hasCharsToTransform = true;
+                break;
+            }
+            if (Character.isSurrogate(c)) {
+                hasSurrogates = true;
+            }
+        }
+        if (!hasCharsToTransform) {
+            return this;
+        }
+        return hasSurrogates ? toLowerCaseCodePoints() : toLowerCaseChars();
+    }
+
+    private TString toLowerCaseChars() {
+        var chars = new char[characters.length];
+        for (int i = 0; i < characters.length; ++i) {
+            chars[i] = TCharacter.toLowerCase(characters[i]);
+        }
+        return new TString(chars);
+    }
+
+    private TString toLowerCaseCodePoints() {
         int[] codePoints = new int[characters.length];
         int codePointCount = 0;
         for (int i = 0; i < characters.length; ++i) {
@@ -663,6 +690,33 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         if (isEmpty()) {
             return this;
         }
+
+        var hasCharsToTransform = false;
+        var hasSurrogates = false;
+        for (var c : characters) {
+            if (Character.toUpperCase(c) != c) {
+                hasCharsToTransform = true;
+                break;
+            }
+            if (Character.isSurrogate(c)) {
+                hasSurrogates = true;
+            }
+        }
+        if (!hasCharsToTransform) {
+            return this;
+        }
+        return hasSurrogates ? toUpperCaseCodePoints() : toUpperCaseChars();
+    }
+
+    private TString toUpperCaseChars() {
+        var chars = new char[characters.length];
+        for (int i = 0; i < characters.length; ++i) {
+            chars[i] = TCharacter.toUpperCase(characters[i]);
+        }
+        return new TString(chars);
+    }
+
+    private TString toUpperCaseCodePoints() {
         int[] codePoints = new int[characters.length];
         int codePointCount = 0;
         for (int i = 0; i < characters.length; ++i) {
