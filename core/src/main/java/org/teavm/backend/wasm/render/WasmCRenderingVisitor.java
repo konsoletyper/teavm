@@ -1064,20 +1064,24 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmFill expression) {
         var result = new CExpression();
 
+        requiredType = WasmType.INT32;
         expression.getIndex().acceptVisitor(this);
         var dest = value;
 
+        requiredType = WasmType.INT32;
         expression.getValue().acceptVisitor(this);
         var v = value;
 
-        expression.getValue().acceptVisitor(this);
+        requiredType = WasmType.INT32;
+        expression.getCount().acceptVisitor(this);
         var num = value;
 
         result.getLines().addAll(dest.getLines());
         result.getLines().addAll(v.getLines());
         result.getLines().addAll(num.getLines());
 
-        result.addLine("memset(" + dest.getText() + ", " + v.getText() + ", " + num.getText() + ");");
+        result.addLine("memset(wasm_heap + " + dest.getText() + ", " + v.getText()
+                + ", " + num.getText() + ");");
         value = result;
     }
 
@@ -1085,12 +1089,15 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmCopy expression) {
         var result = new CExpression();
 
+        requiredType = WasmType.INT32;
         expression.getDestinationIndex().acceptVisitor(this);
         var dest = value;
 
+        requiredType = WasmType.INT32;
         expression.getSourceIndex().acceptVisitor(this);
         var src = value;
 
+        requiredType = WasmType.INT32;
         expression.getCount().acceptVisitor(this);
         var num = value;
 
@@ -1098,7 +1105,8 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         result.getLines().addAll(src.getLines());
         result.getLines().addAll(num.getLines());
 
-        result.addLine("memcpy(" + dest.getText() + ", " + src.getText() + ", " + num.getText() + ");");
+        result.addLine("memcpy(wasm_heap + " + dest.getText() + ", wasm_heap + " + src.getText() + ", "
+                + num.getText() + ");");
         value = result;
     }
 
