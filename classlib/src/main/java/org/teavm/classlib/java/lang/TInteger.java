@@ -17,7 +17,10 @@ package org.teavm.classlib.java.lang;
 
 import static org.teavm.classlib.impl.IntegerUtil.toUnsignedLogRadixString;
 import java.util.Objects;
+import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.classlib.PlatformDetector;
+import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.NoSideEffects;
 
 public class TInteger extends TNumber implements TComparable<TInteger> {
@@ -37,9 +40,17 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         this(parseInt(s));
     }
 
+    @GeneratedBy(IntegerNativeGenerator.class)
+    @PluggableDependency(IntegerNativeGenerator.class)
+    @NoSideEffects
+    private static native String toStringNative(int i, int radix);
+
     public static String toString(int i, int radix) {
         if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX) {
             radix = 10;
+        }
+        if (PlatformDetector.isJavaScript()) {
+            return radix == 10 ? toStringNative(i) : toStringNative(i, radix);
         }
         return new TAbstractStringBuilder(20).append(i, radix).toString();
     }
@@ -60,7 +71,15 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         return toUnsignedLogRadixString(i, 1);
     }
 
+    @GeneratedBy(IntegerNativeGenerator.class)
+    @PluggableDependency(IntegerNativeGenerator.class)
+    @NoSideEffects
+    private static native String toStringNative(int i);
+
     public static String toString(int i) {
+        if (PlatformDetector.isJavaScript()) {
+            return toStringNative(i);
+        }
         return toString(i, 10);
     }
 

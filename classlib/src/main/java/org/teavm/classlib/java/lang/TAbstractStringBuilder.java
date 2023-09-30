@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import java.util.Arrays;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.text.DoubleAnalyzer;
 import org.teavm.classlib.impl.text.FloatAnalyzer;
 import org.teavm.classlib.java.io.TSerializable;
@@ -91,6 +92,9 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
     }
 
     protected TAbstractStringBuilder insert(int index, int value) {
+        if (PlatformDetector.isJavaScript()) {
+            return insert(index, Integer.toString(value));
+        }
         return insert(index, value, 10);
     }
 
@@ -99,6 +103,9 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
     }
 
     TAbstractStringBuilder insert(int target, int value, int radix) {
+        if (PlatformDetector.isJavaScript()) {
+            return insert(target, Integer.toString(value, radix));
+        }
         boolean positive = true;
         if (value < 0) {
             positive = false;
