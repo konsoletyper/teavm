@@ -308,4 +308,13 @@ public class LinkedListTest {
         lit.add("x");
         assertEquals(List.of("d", "x", "a"), list);
     }
+
+    @Test
+    public void offerOrder() {
+        var list = new LinkedList<String>();
+        list.offer("1");
+        list.offer("2");
+        assertEquals("1", list.getFirst());
+        assertEquals("2", list.getLast());
+    }
 }
