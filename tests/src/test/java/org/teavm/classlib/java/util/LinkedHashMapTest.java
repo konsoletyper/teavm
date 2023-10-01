@@ -32,6 +32,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -43,9 +44,16 @@ import static org.junit.Assert.fail;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.SequencedMap;
 import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.MapTest2Support;
@@ -531,6 +539,137 @@ public class LinkedHashMapTest {
         lhm.put("B", "C");
 
         assertEquals("{A=(this Map), B=C}", lhm.toString());
+        assertEquals("{B=C, A={A=(this Map), B=C}}", lhm.reversed().toString());
         assertEquals("{}", new LinkedHashMap<>().toString());
+    }
+
+    private static final List<Integer> BASE_LIST = Arrays.asList(1, 6, 2, 5, 3, 4);
+
+    private SequencedMap<Integer, String> generateMap() {
+        return BASE_LIST.stream().collect(Collectors.toMap(Function.identity(), i -> Integer.toString(i),
+                (a, b) -> a, LinkedHashMap::new));
+    }
+
+    private SequencedMap<Integer, String> generateAccessOrderMap() {
+        return BASE_LIST.stream().collect(Collectors.toMap(Function.identity(), i -> Integer.toString(i),
+                (a, b) -> a, () -> new LinkedHashMap<>(16, 0.75f, true)));
+    }
+
+    @Test
+    public void testSequencedMap() {
+        SequencedMap<Integer, String> map = generateMap();
+        assertEquals(Map.entry(1, "1"), map.pollFirstEntry());
+        assertArrayEquals(new Integer[] { 6, 2, 5, 3, 4 }, map.keySet().toArray(new Integer[0]));
+        assertEquals(Map.entry(4, "4"), map.pollLastEntry());
+        assertArrayEquals(new Integer[] { 6, 2, 5, 3 }, map.keySet().toArray(new Integer[0]));
+        assertEquals(Map.entry(3, "3"), map.pollLastEntry());
+        assertArrayEquals(new Integer[] { 6, 2, 5 }, map.keySet().toArray(new Integer[0]));
+        assertEquals(Map.entry(6, "6"), map.firstEntry());
+        assertEquals(Map.entry(5, "5"), map.lastEntry());
+        map.putFirst(1, "1");
+        map.put(7, "7");
+        map.putLast(3, "3");
+        assertArrayEquals(new Integer[] { 1, 6, 2, 5, 7, 3 }, map.keySet().toArray(new Integer[0]));
+        map = generateMap().reversed();
+        assertEquals(Map.entry(4, "4"), map.pollFirstEntry());
+        assertArrayEquals(new Integer[] { 3, 5, 2, 6, 1 }, map.keySet().toArray(new Integer[0]));
+        assertEquals(Map.entry(1, "1"), map.pollLastEntry());
+        assertArrayEquals(new Integer[] { 3, 5, 2, 6 }, map.keySet().toArray(new Integer[0]));
+        assertEquals(Map.entry(6, "6"), map.pollLastEntry());
+        assertArrayEquals(new Integer[] { 3, 5, 2 }, map.keySet().toArray(new Integer[0]));
+        assertEquals(Map.entry(3, "3"), map.firstEntry());
+        assertEquals(Map.entry(2, "2"), map.lastEntry());
+        map.putFirst(1, "1");
+        map.put(7, "7");
+        map.putLast(6, "6");
+        assertArrayEquals(new Integer[] { 7, 1, 3, 5, 2, 6 }, map.keySet().toArray(new Integer[0]));
+        map = generateAccessOrderMap();
+        map.putFirst(3, "3");
+        map.put(5, "5");
+        map.putLast(2, "2");
+        assertArrayEquals(new Integer[] { 3, 1, 6, 4, 5, 2 }, map.keySet().toArray(new Integer[0]));
+        assertArrayEquals(new Integer[] { 2, 5, 4, 6, 1, 3 }, map.reversed().keySet().toArray(new Integer[0]));
+        map = generateAccessOrderMap();
+        map.putFirst(1, "1");
+        assertArrayEquals(new Integer[] { 1, 6, 2, 5, 3, 4 }, map.keySet().toArray(new Integer[0]));
+        map.put(1, "1");
+        assertArrayEquals(new Integer[] { 6, 2, 5, 3, 4, 1 }, map.keySet().toArray(new Integer[0]));
+        map.putLast(6, "6");
+        assertArrayEquals(new Integer[] { 2, 5, 3, 4, 1, 6 }, map.keySet().toArray(new Integer[0]));
+        map.putFirst(6, "6");
+        assertArrayEquals(new Integer[] { 6, 2, 5, 3, 4, 1 }, map.keySet().toArray(new Integer[0]));
+        assertArrayEquals(new Integer[] { 1, 4, 3, 5, 2, 6 }, map.reversed().keySet().toArray(new Integer[0]));
+        map = generateAccessOrderMap().reversed();
+        assertArrayEquals(new Integer[] { 4, 3, 5, 2, 6, 1 }, map.keySet().toArray(new Integer[0]));
+        map.putFirst(1, "1");
+        assertArrayEquals(new Integer[] { 1, 4, 3, 5, 2, 6 }, map.keySet().toArray(new Integer[0]));
+        map.put(1, "1");
+        assertArrayEquals(new Integer[] { 1, 4, 3, 5, 2, 6 }, map.keySet().toArray(new Integer[0]));
+        map.putLast(1, "1");
+        assertArrayEquals(new Integer[] { 4, 3, 5, 2, 6, 1 }, map.keySet().toArray(new Integer[0]));
+        assertArrayEquals(new Integer[] { 1, 6, 2, 5, 3, 4 }, map.reversed().keySet().toArray(new Integer[0]));
+    }
+
+    @Test
+    public void testSequencedIterators() {
+        SequencedMap<Integer, String> map = generateMap();
+        Iterator<Integer> it = map.keySet().iterator();
+        assertTrue(it.hasNext());
+        assertEquals(1, it.next().intValue());
+        assertTrue(it.hasNext());
+        assertEquals(6, it.next().intValue());
+        it.remove();
+        assertArrayEquals(new Integer[] { 1, 2, 5, 3, 4 }, map.keySet().toArray(new Integer[0]));
+        map = map.reversed();
+        it = map.keySet().iterator();
+        assertTrue(it.hasNext());
+        assertEquals(4, it.next().intValue());
+        assertTrue(it.hasNext());
+        assertEquals(3, it.next().intValue());
+        it.remove();
+        assertArrayEquals(new Integer[] { 4, 5, 2, 1 }, map.keySet().toArray(new Integer[0]));
+        map = generateMap();
+        Iterator<String> sit = map.values().iterator();
+        assertTrue(sit.hasNext());
+        assertEquals("1", sit.next());
+        assertTrue(sit.hasNext());
+        assertEquals("6", sit.next());
+        sit.remove();
+        assertArrayEquals(new String[] { "1", "2", "5", "3", "4" }, map.values().toArray(new String[0]));
+        map = map.reversed();
+        sit = map.values().iterator();
+        assertTrue(sit.hasNext());
+        assertEquals("4", sit.next());
+        assertTrue(sit.hasNext());
+        assertEquals("3", sit.next());
+        sit.remove();
+        assertArrayEquals(new String[] { "4", "5", "2", "1" }, map.values().toArray(new String[0]));
+    }
+
+    @Test
+    public void testEmpty() {
+        var empty = new LinkedHashMap<>();
+        assertNull(empty.pollFirstEntry());
+        assertNull(empty.pollLastEntry());
+        assertNull(empty.firstEntry());
+        assertNull(empty.lastEntry());
+        try {
+            empty.entrySet().iterator().next();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+        try {
+            empty.keySet().iterator().next();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+        try {
+            empty.values().iterator().next();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
     }
 }

@@ -21,7 +21,7 @@ import org.teavm.classlib.java.util.TMap.Entry;
 
 public class TCollections extends TObject {
     @SuppressWarnings("rawtypes")
-    public static final TSet EMPTY_SET = new TTemplateCollections.AbstractImmutableSet<Object>() {
+    public static final TSet EMPTY_SET = new TTemplateCollections.AbstractImmutableSet<>() {
         @Override public int size() {
             return 0;
         }
@@ -40,7 +40,7 @@ public class TCollections extends TObject {
     };
 
     @SuppressWarnings("rawtypes")
-    public static final TMap EMPTY_MAP = new TTemplateCollections.AbstractImmutableMap<Object, Object>() {
+    public static final TMap EMPTY_MAP = new TTemplateCollections.AbstractImmutableMap<>() {
         @Override public TSet<Entry<Object, Object>> entrySet() {
             return emptySet();
         }
@@ -63,7 +63,7 @@ public class TCollections extends TObject {
     };
 
     @SuppressWarnings("rawtypes")
-    public static final TList EMPTY_LIST = new TTemplateCollections.AbstractImmutableList<Object>() {
+    public static final TList EMPTY_LIST = new TTemplateCollections.AbstractImmutableList<>() {
         @Override public Object get(int index) {
             throw new TIndexOutOfBoundsException();
         }
@@ -86,7 +86,7 @@ public class TCollections extends TObject {
         }
     };
 
-    private static final TIterator<?> EMPTY_ITERATOR = new TIterator<Object>() {
+    private static final TIterator<?> EMPTY_ITERATOR = new TIterator<>() {
         @Override public boolean hasNext() {
             return false;
         }
@@ -98,7 +98,7 @@ public class TCollections extends TObject {
         }
     };
 
-    private static final TListIterator<?> EMPTY_LIST_ITERATOR = new TListIterator<Object>() {
+    private static final TListIterator<?> EMPTY_LIST_ITERATOR = new TListIterator<>() {
         @Override public boolean hasNext() {
             return false;
         }
@@ -144,7 +144,7 @@ public class TCollections extends TObject {
     }
 
     public static <T> TEnumeration<T> emptyEnumeration() {
-        return new TEnumeration<T>() {
+        return new TEnumeration<>() {
             @Override public boolean hasMoreElements() {
                 return false;
             }
@@ -174,7 +174,7 @@ public class TCollections extends TObject {
 
     public static <K, V> TMap<K, V> singletonMap(final K key, final V value) {
         final TSet<Entry<K, V>> entries = singleton(new TAbstractMap.SimpleImmutableEntry<>(key, value));
-        return new TAbstractMap<K, V>() {
+        return new TAbstractMap<>() {
             @Override public TSet<Entry<K, V>> entrySet() {
                 return entries;
             }
@@ -182,7 +182,7 @@ public class TCollections extends TObject {
     }
 
     public static <T> TList<T> unmodifiableList(final TList<? extends T> list) {
-        return new TAbstractList<T>() {
+        return new TAbstractList<>() {
             @Override public T get(int index) {
                 return list.get(index);
             }
@@ -193,7 +193,7 @@ public class TCollections extends TObject {
     }
 
     public static <T> TList<T> nCopies(final int n, final T o) {
-        return new TAbstractList<T>() {
+        return new TAbstractList<>() {
             @Override public T get(int index) {
                 if (index < 0 || index >= n) {
                     throw new TIndexOutOfBoundsException();
@@ -461,7 +461,7 @@ public class TCollections extends TObject {
     }
 
     public static <T> TCollection<T> unmodifiableCollection(final TCollection<? extends T> c) {
-        return new TAbstractCollection<T>() {
+        return new TAbstractCollection<>() {
             @Override public TIterator<T> iterator() {
                 return unmodifiableIterator(c.iterator());
             }
@@ -472,7 +472,7 @@ public class TCollections extends TObject {
     }
 
     private static <T> TIterator<T> unmodifiableIterator(final TIterator<? extends T> c) {
-        return new TIterator<T>() {
+        return new TIterator<>() {
             @Override public boolean hasNext() {
                 return c.hasNext();
             }
@@ -486,7 +486,7 @@ public class TCollections extends TObject {
     }
 
     public static <T> TSet<T> unmodifiableSet(final TSet<? extends T> s) {
-        return new TAbstractSet<T>() {
+        return new TAbstractSet<>() {
             @Override public TIterator<T> iterator() {
                 return unmodifiableIterator(s.iterator());
             }
@@ -497,7 +497,7 @@ public class TCollections extends TObject {
     }
 
     public static <K, V> TMap<K, V> unmodifiableMap(final TMap<? extends K, ? extends V> m) {
-        return new TAbstractMap<K, V>() {
+        return new TAbstractMap<>() {
             @Override public TSet<Entry<K, V>> entrySet() {
                 return unmodifiableMapEntrySet(m.entrySet());
             }
@@ -506,7 +506,7 @@ public class TCollections extends TObject {
 
     private static <K, V> TSet<Entry<K, V>> unmodifiableMapEntrySet(
             final TSet<? extends Entry<? extends K, ? extends V>> c) {
-        return new TAbstractSet<Entry<K, V>>() {
+        return new TAbstractSet<>() {
             @Override public int size() {
                 return c.size();
             }
@@ -518,7 +518,7 @@ public class TCollections extends TObject {
 
     private static <K, V> TIterator<Entry<K, V>> unmodifiableMapEntryIterator(
             final TIterator<? extends Entry<? extends K, ? extends V>> c) {
-        return new TIterator<Entry<K, V>>() {
+        return new TIterator<>() {
             @Override public boolean hasNext() {
                 return c.hasNext();
             }
@@ -552,15 +552,19 @@ public class TCollections extends TObject {
         return (TComparator<T>) reverseOrder;
     }
 
+    @SuppressWarnings("unchecked")
     private static TComparator<Object> reverseOrder = (o1, o2) -> ((TComparable<Object>) o2).compareTo(o1);
 
     public static <T> TComparator<T> reverseOrder(final TComparator<T> cmp) {
+        if (cmp == null) {
+            return reverseOrder();
+        }
         return (o1, o2) -> -cmp.compare(o1, o2);
     }
 
     public static <T> TEnumeration<T> enumeration(TCollection<T> c) {
         final TIterator<T> iter = c.iterator();
-        return new TEnumeration<T>() {
+        return new TEnumeration<>() {
             @Override public boolean hasMoreElements() {
                 return iter.hasNext();
             }
