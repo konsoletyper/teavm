@@ -61,6 +61,14 @@ public abstract class TClassLoader extends TObject {
         return new ByteArrayInputStream(Base64Impl.decode(bytes));
     }
 
+    public Class<?> loadClass(String name) {
+        return null;
+    }
+
+    public Class<?> loadClass(String name, boolean result) {
+        return null;
+    }
+
     public static InputStream getSystemResourceAsStream(String name) {
         return getSystemClassLoader().getResourceAsStream(name);
     }
