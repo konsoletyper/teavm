@@ -15,11 +15,13 @@
  */
 package org.teavm.junit;
 
+import static org.teavm.junit.PropertyNames.JS_DECODE_STACK;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -28,6 +30,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +42,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -55,7 +60,7 @@ import org.eclipse.jetty.websocket.api.WebSocketPolicy;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
 class BrowserRunStrategy implements TestRunStrategy {
-    private boolean decodeStack = Boolean.parseBoolean(System.getProperty(TeaVMTestRunner.JS_DECODE_STACK, "true"));
+    private boolean decodeStack = Boolean.parseBoolean(System.getProperty(JS_DECODE_STACK, "true"));
     private final File baseDir;
     private final String type;
     private final Function<String, Process> browserRunner;
@@ -408,5 +413,123 @@ class BrowserRunStrategy implements TestRunStrategy {
                 run.error(new RuntimeException(resultNode.get("errorMessage").asText()));
             }
         }
+    }
+
+    static Process customBrowser(String url) {
+        System.out.println("Open link to run tests: " + url + "?logging=true");
+        return null;
+    }
+
+    static Process chromeBrowser(String url) {
+        return browserTemplate("chrome", url, (profile, params) -> {
+            addChromeCommand(params);
+            params.addAll(Arrays.asList(
+                    "--headless",
+                    "--disable-gpu",
+                    "--remote-debugging-port=9222",
+                    "--no-first-run",
+                    "--user-data-dir=" + profile
+            ));
+        });
+    }
+
+    static Process firefoxBrowser(String url) {
+        return browserTemplate("firefox", url, (profile, params) -> {
+            addFirefoxCommand(params);
+            params.addAll(Arrays.asList(
+                    "--headless",
+                    "--profile",
+                    profile
+            ));
+        });
+    }
+
+    private static void addChromeCommand(List<String> params) {
+        if (isMacos()) {
+            params.add("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome");
+        } else if (isWindows()) {
+            params.add("cmd.exe");
+            params.add("start");
+            params.add("/C");
+            params.add("chrome");
+        } else {
+            params.add("google-chrome-stable");
+        }
+    }
+
+    private static void addFirefoxCommand(List<String> params) {
+        if (isMacos()) {
+            params.add("/Applications/Firefox.app/Contents/MacOS/firefox");
+            return;
+        }
+        if (isWindows()) {
+            params.add("cmd.exe");
+            params.add("/C");
+            params.add("start");
+        }
+        params.add("firefox");
+    }
+
+    private static boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().startsWith("windows");
+    }
+
+    private static boolean isMacos() {
+        return System.getProperty("os.name").toLowerCase().startsWith("mac");
+    }
+
+    private static Process browserTemplate(String name, String url, BiConsumer<String, List<String>> paramsBuilder) {
+        File temp;
+        try {
+            temp = File.createTempFile("teavm", "teavm");
+            temp.delete();
+            temp.mkdirs();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> deleteDir(temp)));
+            System.out.println("Running " + name + " with user data dir: " + temp.getAbsolutePath());
+            List<String> params = new ArrayList<>();
+            paramsBuilder.accept(temp.getAbsolutePath(), params);
+            params.add(url);
+            ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[0]));
+            Process process = pb.start();
+            logStream(process.getInputStream(), name + " stdout");
+            logStream(process.getErrorStream(), name + " stderr");
+            new Thread(() -> {
+                try {
+                    System.out.println(name + " process terminated with code: " + process.waitFor());
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+            });
+            return process;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void logStream(InputStream stream, String name) {
+        new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
+                while (true) {
+                    String line = reader.readLine();
+                    if (line == null) {
+                        break;
+                    }
+                    System.out.println(name + ": " + line);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private static void deleteDir(File dir) {
+        for (File file : dir.listFiles()) {
+            if (file.isDirectory()) {
+                deleteDir(file);
+            } else {
+                file.delete();
+            }
+        }
+        dir.delete();
     }
 }
