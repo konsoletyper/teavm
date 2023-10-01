@@ -25,9 +25,11 @@ import java.io.PipedOutputStream;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
+@EachTestCompiledSeparately
 public class PipedOutputStreamTest  {
     static class PReader implements Runnable {
         PipedInputStream reader;

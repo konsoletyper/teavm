@@ -100,7 +100,6 @@ import java.util.List;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.temporal.MockFieldNoValue;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -110,7 +109,6 @@ import org.testng.annotations.Test;
  */
 @Test
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TestLocalDate extends AbstractDateTimeTest {
 
     private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);

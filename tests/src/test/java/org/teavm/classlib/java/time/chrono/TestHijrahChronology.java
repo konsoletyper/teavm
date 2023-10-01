@@ -64,7 +64,6 @@ import java.time.chrono.IsoChronology;
 import java.time.temporal.TemporalAdjusters;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Ignore;
@@ -77,7 +76,6 @@ import org.testng.annotations.Test;
 @Test
 @Ignore
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TestHijrahChronology {
 
     //-----------------------------------------------------------------------

@@ -21,10 +21,8 @@ import java.util.Base64;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class Base64Test {
     @Test
     public void decoderWorks() {

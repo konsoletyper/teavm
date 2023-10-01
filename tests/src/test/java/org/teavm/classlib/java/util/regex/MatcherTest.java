@@ -42,11 +42,9 @@ import java.util.regex.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
 @SuppressWarnings("nls")
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class MatcherTest {
     String[] testPatterns = {
             "(a|b)*abb",

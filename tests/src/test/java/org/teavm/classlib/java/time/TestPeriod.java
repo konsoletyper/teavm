@@ -53,7 +53,6 @@ import java.time.Period;
 import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -62,7 +61,6 @@ import org.testng.annotations.Test;
  */
 @Test
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TestPeriod extends AbstractTest {
     //-----------------------------------------------------------------------
     // factories

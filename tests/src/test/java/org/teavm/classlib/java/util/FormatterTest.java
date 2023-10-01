@@ -32,10 +32,8 @@ import java.util.UnknownFormatConversionException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class FormatterTest {
     @Test(expected = UnknownFormatConversionException.class)
     public void unexpectedEndOfFormatString() {

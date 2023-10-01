@@ -23,6 +23,7 @@ import static org.teavm.metaprogramming.Metaprogramming.proxy;
 import static org.teavm.metaprogramming.Metaprogramming.unsupportedCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.metaprogramming.CompileTime;
@@ -33,6 +34,7 @@ import org.teavm.metaprogramming.Value;
 @CompileTime
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
+@EachTestCompiledSeparately
 public class ProxyTest {
     @Test
     public void createsProxy() {

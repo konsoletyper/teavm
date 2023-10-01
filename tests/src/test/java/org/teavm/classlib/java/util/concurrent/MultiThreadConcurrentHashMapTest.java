@@ -25,12 +25,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
+@EachTestCompiledSeparately
+@OnlyPlatform(TestPlatform.JAVASCRIPT)
 public class MultiThreadConcurrentHashMapTest {
     private ArrayBlockingQueue<Runnable> backgroundTasks = new ArrayBlockingQueue<>(100);
     private boolean stopped;
@@ -54,6 +57,7 @@ public class MultiThreadConcurrentHashMapTest {
     }
 
     @Test
+    @SkipJVM
     public void containsValue() {
         var key = new Wrapper("q");
         var value = new Wrapper("23");

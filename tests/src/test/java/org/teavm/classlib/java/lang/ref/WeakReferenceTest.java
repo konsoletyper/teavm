@@ -25,11 +25,13 @@ import java.util.concurrent.ArrayBlockingQueue;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
+@EachTestCompiledSeparately
 public class WeakReferenceTest {
     private Node lastNode;
 

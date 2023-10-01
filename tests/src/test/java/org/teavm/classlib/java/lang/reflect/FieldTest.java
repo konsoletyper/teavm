@@ -21,10 +21,12 @@ import java.lang.reflect.Field;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
+import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
+@EachTestCompiledSeparately
 public class FieldTest {
     @Test
     public void fieldsEnumerated() {

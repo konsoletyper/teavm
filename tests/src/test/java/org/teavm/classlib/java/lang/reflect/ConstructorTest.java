@@ -25,9 +25,11 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
+import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
+@EachTestCompiledSeparately
 public class ConstructorTest {
     @Test
     public void constructorsEnumerated() {

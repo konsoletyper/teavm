@@ -20,9 +20,11 @@ import static org.junit.Assert.assertEquals;
 import java.lang.reflect.Array;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
+@EachTestCompiledSeparately
 public class ArrayTest {
     @Test
     public void createsNewInstance() {

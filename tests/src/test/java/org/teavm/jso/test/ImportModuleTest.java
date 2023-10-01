@@ -21,13 +21,16 @@ import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSBodyImport;
 import org.teavm.junit.AttachJavaScript;
+import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
-@WholeClassCompilation
+@OnlyPlatform(TestPlatform.JAVASCRIPT)
+@EachTestCompiledSeparately
 public class ImportModuleTest {
     @Test
     @AttachJavaScript({

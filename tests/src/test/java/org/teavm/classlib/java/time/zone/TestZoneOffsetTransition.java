@@ -57,7 +57,6 @@ import java.time.zone.ZoneOffsetTransition;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.AbstractTest;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.Test;
 
 /**
@@ -65,7 +64,6 @@ import org.testng.annotations.Test;
  */
 @Test
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TestZoneOffsetTransition extends AbstractTest {
 
     private static final ZoneOffset OFFSET_0100 = ZoneOffset.ofHours(1);
