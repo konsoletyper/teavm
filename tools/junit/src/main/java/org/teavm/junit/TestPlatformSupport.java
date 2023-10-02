@@ -60,11 +60,10 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
 
     CompileResult compile(TeaVMTestConfiguration<T> configuration,
             Supplier<T> targetSupplier, String entryPoint, File path, String extension,
-            CompilePostProcessor postBuild, boolean separateDir,
-            Consumer<TeaVM> additionalProcessing, String baseName) {
+            CompilePostProcessor postBuild, Consumer<TeaVM> additionalProcessing, String baseName) {
         CompileResult result = new CompileResult();
 
-        File outputFile = getOutputFile(path, baseName, configuration.getSuffix(), separateDir, extension);
+        File outputFile = getOutputFile(path, baseName, configuration.getSuffix(), extension);
         result.file = outputFile;
 
         ClassLoader classLoader = TeaVMTestRunner.class.getClassLoader();
@@ -112,21 +111,15 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
         }
     }
 
-    private File getOutputFile(File path, String baseName, String suffix, boolean separateDir, String extension) {
+    private File getOutputFile(File path, String baseName, String suffix, String extension) {
         StringBuilder simpleName = new StringBuilder();
         simpleName.append(baseName);
         if (!suffix.isEmpty()) {
-            if (!separateDir) {
-                simpleName.append('-').append(suffix);
-            }
+            simpleName.append('-').append(suffix);
         }
         File outputFile;
-        if (separateDir) {
-            outputFile = new File(new File(path, simpleName.toString()), "test" + extension);
-        } else {
-            simpleName.append(extension);
-            outputFile = new File(path, simpleName.toString());
-        }
+        simpleName.append(extension);
+        outputFile = new File(path, simpleName.toString());
 
         return outputFile;
     }
@@ -155,8 +148,8 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
 
     protected final void htmlOutput(File outputPath, File outputPathForMethod, TeaVMTestConfiguration<?> configuration,
             MethodReference reference, String template) {
-        var testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), false,  getExtension());
-        var htmlPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(), false, ".html");
+        var testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), getExtension());
+        var htmlPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(), ".html");
         var properties = Map.of(
                 "SCRIPT", "../" + testPath.getName(),
                 "IDENTIFIER", reference.toString()
@@ -170,8 +163,8 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
 
     protected final void htmlSingleTestOutput(File outputPathForMethod, TeaVMTestConfiguration<?> configuration,
             String template) {
-        File testPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(), false, ".wasm");
-        File htmlPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(), false, ".html");
+        File testPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(), ".wasm");
+        File htmlPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(), ".html");
         var properties = Map.of(
                 "SCRIPT", testPath.getName(),
                 "IDENTIFIER", ""

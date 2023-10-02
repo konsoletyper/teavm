@@ -63,6 +63,6 @@ abstract class BaseWebAssemblyPlatformSupport extends TestPlatformSupport<WasmTa
             return target;
         };
         return compile(configuration, targetSupplier, TestNativeEntryPoint.class.getName(), path,
-                ".wasm", null, false, additionalProcessing, baseName);
+                ".wasm", null, additionalProcessing, baseName);
     }
 }

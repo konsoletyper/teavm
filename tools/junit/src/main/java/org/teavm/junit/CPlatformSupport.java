@@ -84,8 +84,8 @@ class CPlatformSupport extends TestPlatformSupport<CTarget> {
                 throw new RuntimeException(e);
             }
         };
-        return compile(configuration, this::createCTarget, TestNativeEntryPoint.class.getName(), path, ".c",
-                postBuild, true, additionalProcessing, baseName);
+        return compile(configuration, this::createCTarget, TestNativeEntryPoint.class.getName(), path, "",
+                postBuild, additionalProcessing, baseName);
     }
 
     private CTarget createCTarget() {
