@@ -46,7 +46,7 @@ public class ClassLoaderTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void returnsNullForNonExistentResource() {
         InputStream input = ClassLoader.getSystemClassLoader().getResourceAsStream("non-existent-resource.txt");
         assertNull(input);

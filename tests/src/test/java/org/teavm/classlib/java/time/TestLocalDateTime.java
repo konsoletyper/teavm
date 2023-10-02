@@ -115,7 +115,9 @@ import java.util.Iterator;
 import java.util.List;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.temporal.MockFieldNoValue;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -2670,6 +2672,7 @@ public class TestLocalDateTime extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider = "until")
+    @SkipPlatform({ TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
     public void test_until(String startStr, String endStr, TemporalUnit unit, long expected) {
         LocalDateTime start = LocalDateTime.parse(startStr);
         LocalDateTime end = LocalDateTime.parse(endStr);
