@@ -73,6 +73,7 @@ public class WasmRuntimeIntrinsic implements WasmIntrinsic {
                         invocation, manager);
             case "callFunctionFromTable": {
                 var call = new WasmIndirectCall(manager.generate(invocation.getArguments().get(0)));
+                call.getParameterTypes().add(WasmType.INT32);
                 call.getArguments().add(manager.generate(invocation.getArguments().get(1)));
                 return call;
             }
