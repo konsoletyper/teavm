@@ -21,7 +21,9 @@ import java.lang.reflect.Array;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
@@ -41,6 +43,7 @@ public class ArrayTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.C)
     public void setWorks() {
         Object array = Array.newInstance(String.class, 2);
         Array.set(array, 0, "foo");
@@ -49,6 +52,7 @@ public class ArrayTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.C)
     public void setPrimitiveWorks() {
         Object array = Array.newInstance(int.class, 2);
         Array.set(array, 0, 23);

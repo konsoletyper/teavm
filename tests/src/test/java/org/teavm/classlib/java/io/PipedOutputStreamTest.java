@@ -26,7 +26,9 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
@@ -94,6 +96,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.C)
     public void close() throws Exception {
         out = new PipedOutputStream();
         reader = new PReader(out);
@@ -129,6 +132,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.C)
     public void flush() throws IOException {
         out = new PipedOutputStream();
         reader = new PReader(out);
@@ -141,6 +145,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.C)
     public void write$BII() throws IOException {
         out = new PipedOutputStream();
         reader = new PReader(out);

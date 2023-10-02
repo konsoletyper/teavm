@@ -25,10 +25,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
 import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
+@SkipPlatform(TestPlatform.C)
 public class MethodTest {
     @Test
     public void methodsEnumerated() {

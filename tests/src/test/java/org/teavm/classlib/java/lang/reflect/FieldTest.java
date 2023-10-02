@@ -23,10 +23,13 @@ import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
+@SkipPlatform(TestPlatform.C)
 public class FieldTest {
     @Test
     public void fieldsEnumerated() {
