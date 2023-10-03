@@ -23,4 +23,9 @@ public class WasmUnreachable extends WasmExpression {
     public void acceptVisitor(WasmExpressionVisitor visitor) {
         visitor.visit(this);
     }
+
+    @Override
+    public boolean isTerminating() {
+        return true;
+    }
 }

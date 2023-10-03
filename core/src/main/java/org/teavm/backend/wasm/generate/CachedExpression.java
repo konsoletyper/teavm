@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2023 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,12 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.lowlevel;
+package org.teavm.backend.wasm.generate;
 
-@interface CallSiteDescriptorAnnot {
-    int id();
+import org.teavm.backend.wasm.model.expression.WasmExpression;
 
-    ExceptionHandlerDescriptorAnnot[] handlers();
+abstract class CachedExpression {
+    abstract WasmExpression expr();
 
-    CallSiteLocationsAnnot location();
+    void release() {
+    }
+
 }

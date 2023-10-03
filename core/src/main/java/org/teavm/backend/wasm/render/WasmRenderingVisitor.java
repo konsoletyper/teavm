@@ -109,9 +109,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         if (lfDeferred) {
             lfDeferred = false;
             sb.append("\n");
-            for (int i = 0; i < indentLevel; ++i) {
-                sb.append("  ");
-            }
+            sb.append("  ".repeat(Math.max(0, indentLevel)));
         }
         sb.append(text);
         return this;
@@ -714,6 +712,8 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     private String operation(WasmIntUnaryOperation operation) {
         switch (operation) {
+            case EQZ:
+                return "eqz";
             case CLZ:
                 return "clz";
             case CTZ:

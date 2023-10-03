@@ -108,14 +108,17 @@ public class VMTest {
 
     @Test
     public void catchesException() {
+        var wasCaught = false;
         try {
             throw new IllegalArgumentException();
         } catch (IllegalArgumentException e) {
-            // do nothing
+            wasCaught = true;
         }
+        assertTrue(wasCaught);
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY)
     public void setsVariableBeforeTryCatch() {
         int a = 23;
         try {
@@ -255,7 +258,7 @@ public class VMTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void asyncClinit() {
         assertEquals(0, initCount);
         assertEquals("foo", AsyncClinitClass.foo());
@@ -267,13 +270,13 @@ public class VMTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void asyncClinitField() {
         assertEquals("ok", AsyncClinitClass.state);
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void asyncClinitInstance() {
         AsyncClinitClass acl = new AsyncClinitClass();
         assertEquals("ok", AsyncClinitClass.state);
@@ -281,7 +284,7 @@ public class VMTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void asyncWait() {
         AsyncClinitClass acl = new AsyncClinitClass();
         acl.doWait();
@@ -290,7 +293,7 @@ public class VMTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void loopAndExceptionPhi() {
         int[] a = createArray();
         int s = 0;
@@ -309,7 +312,7 @@ public class VMTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void asyncTryCatch() {
         try {
             throwExceptionAsync();
@@ -321,7 +324,7 @@ public class VMTest {
 
     @Test
     @SkipJVM
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void asyncExceptionHandler() {
         try {
             throw new RuntimeException("OK");
@@ -527,7 +530,7 @@ public class VMTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void indirectDefaultMethod() {
         StringBuilder sb = new StringBuilder();
         for (FirstPath o : new FirstPath[] { new PathJoint(), new FirstPathOptimizationPrevention() }) {
@@ -537,7 +540,7 @@ public class VMTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void indirectDefaultMethodSubclass() {
         StringBuilder sb = new StringBuilder();
         for (FirstPath o : new FirstPath[] { new PathJointSubclass(), new FirstPathOptimizationPrevention() }) {

@@ -534,8 +534,7 @@ public class URLTest {
                     u.toString());
             assertEquals("b) Does not return the right url string",
                     "http://www.yahoo2.com:9999", u1.toString());
-            assertTrue("c) Does not return the right url string", u
-                    .equals(new URL(u.toString())));
+            assertEquals("c) Does not return the right url string", u, new URL(u.toString()));
         } catch (Exception e) {
             // Do nothing
         }

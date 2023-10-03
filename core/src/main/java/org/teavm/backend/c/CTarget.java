@@ -116,7 +116,6 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.model.lowlevel.Characteristics;
-import org.teavm.model.lowlevel.CheckInstructionTransformation;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
 import org.teavm.model.lowlevel.ExportDependencyListener;
@@ -164,7 +163,6 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private WriteBarrierInsertion writeBarrierInsertion;
     private NullCheckInsertion nullCheckInsertion;
     private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
-    private CheckInstructionTransformation checkTransformation;
     private ExportDependencyListener exportDependencyListener = new ExportDependencyListener();
     private int minHeapSize = 4 * 1024 * 1024;
     private int maxHeapSize = 128 * 1024 * 1024;
@@ -177,7 +175,6 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private boolean incremental;
     private boolean lineNumbersGenerated;
     private SimpleStringPool stringPool;
-    private boolean longjmpUsed = true;
     private boolean heapDump;
     private boolean obfuscated;
     private List<CallSiteDescriptor> callSites = new ArrayList<>();
@@ -200,10 +197,6 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     public void setLineNumbersGenerated(boolean lineNumbersGenerated) {
         this.lineNumbersGenerated = lineNumbersGenerated;
-    }
-
-    public void setLongjmpUsed(boolean longjmpUsed) {
-        this.longjmpUsed = longjmpUsed;
     }
 
     public void setHeapDump(boolean heapDump) {
@@ -244,9 +237,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         characteristics = new Characteristics(controller.getUnprocessedClassSource());
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
-        shadowStackTransformer = new ShadowStackTransformer(characteristics, !longjmpUsed);
+        shadowStackTransformer = new ShadowStackTransformer(characteristics);
         nullCheckInsertion = new NullCheckInsertion(new LowLevelNullCheckFilter(characteristics));
-        checkTransformation = new CheckInstructionTransformation();
         writeBarrierInsertion = new WriteBarrierInsertion(characteristics);
 
         controller.addVirtualMethods(VIRTUAL_METHODS::contains);
@@ -357,14 +349,11 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     public void afterOptimizations(Program program, MethodReader method) {
         classInitializerEliminator.apply(program);
         classInitializerTransformer.transform(program);
-        if (!longjmpUsed) {
-            checkTransformation.apply(program, method.getResultType());
-        }
         new CoroutineTransformation(controller.getUnprocessedClassSource(), asyncMethods, hasThreads)
                 .apply(program, method.getReference());
-        ShadowStackTransformer shadowStackTransformer = !incremental
+        var shadowStackTransformer = !incremental
                 ? this.shadowStackTransformer
-                : new ShadowStackTransformer(characteristics, !longjmpUsed);
+                : new ShadowStackTransformer(characteristics);
         shadowStackTransformer.apply(program, method);
         writeBarrierInsertion.apply(program);
     }
@@ -412,7 +401,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         GenerationContext context = new GenerationContext(vtableProvider, characteristics,
                 controller.getDependencyInfo(), stringPool, nameProvider, fileNames,
                 controller.getDiagnostics(), classes, intrinsics, generators, asyncMethods::contains, buildTarget,
-                controller.getClassInitializerInfo(), incremental, longjmpUsed,
+                controller.getClassInitializerInfo(), incremental,
                 vmAssertions, vmAssertions || heapDump, obfuscated);
 
         BufferedCodeWriter specialWriter = new BufferedCodeWriter(false);
@@ -421,9 +410,6 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         configHeaderWriter.println("#pragma once");
         if (incremental) {
             configHeaderWriter.println("#define TEAVM_INCREMENTAL 1");
-        }
-        if (!longjmpUsed) {
-            configHeaderWriter.println("#define TEAVM_USE_SETJMP 0");
         }
         if (vmAssertions) {
             configHeaderWriter.println("#define TEAVM_MEMORY_TRACE 1");
@@ -441,7 +427,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         ClassGenerator classGenerator = new ClassGenerator(context, tagRegistry, decompiler,
                 controller.getCacheStatus());
         classGenerator.setAstCache(astCache);
-        if (context.isLongjmp() && !context.isIncremental()) {
+        if (!context.isIncremental()) {
             classGenerator.setCallSites(callSites);
         }
         IntrinsicFactoryContextImpl intrinsicFactoryContext = new IntrinsicFactoryContextImpl(
@@ -545,9 +531,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateFastCallSites(GenerationContext context, CodeWriter writer, IncludeManager includes,
             Collection<? extends String> classNames) {
-        List<? extends CallSiteDescriptor> callSites = context.isLongjmp()
-                ? this.callSites
-                : CallSiteDescriptor.extract(context.getClassSource(), classNames);
+        var callSites = this.callSites;
         new CallSiteGenerator(context, writer, includes, "teavm_callSites").generate(callSites);
         if (obfuscated) {
             generateCallSitesJson(context.getBuildTarget(), callSites);

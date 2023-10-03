@@ -549,7 +549,7 @@ public final class TTemplateCollections {
 
         @Override
         public boolean containsKey(Object key) {
-            if (key == null) {
+            if (key == null || data.length == 0) {
                 return false;
             }
             int suggestedIndex = Math.abs(key.hashCode()) % data.length;

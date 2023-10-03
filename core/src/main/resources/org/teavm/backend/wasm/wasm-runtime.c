@@ -155,8 +155,15 @@ int32_t wasi_snapshot_preview1_fd_write(int32_t fd, int32_t iovs, int32_t count,
 }
 
 void teavm_putwcharsOut(int32_t chars, int32_t count) {
-    int16_t* chars_array = (int16_t*) (wasm_heap + chars);
+    char* chars_array = (char*) (wasm_heap + chars);
     for (int32_t i = 0; i < count; ++i) {
-        putwchar(chars_array[i]);
+        putc(chars_array[i], stdout);
+    }
+}
+
+void teavm_putwcharsErr(int32_t chars, int32_t count) {
+    char* chars_array = (char*) (wasm_heap + chars);
+    for (int32_t i = 0; i < count; ++i) {
+        putc(chars_array[i], stderr);
     }
 }

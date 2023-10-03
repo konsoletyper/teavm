@@ -241,6 +241,7 @@ public class WasmClassGenerator {
         value.setInt(CLASS_IS_INSTANCE, getFunctionPointer(names.forSupertypeFunction(type)));
         value.setAddress(CLASS_SIMPLE_NAME, 0);
         value.setInt(CLASS_INIT, -1);
+        value.setInt(CLASS_TAG, Integer.MAX_VALUE);
 
         String name;
         if (type == ValueType.VOID) {

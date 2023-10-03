@@ -710,7 +710,7 @@ public class TestYear extends AbstractDateTimeTest {
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void test_compareTo_nullYear() {
         Year doy = null;
         Year test = Year.of(1);

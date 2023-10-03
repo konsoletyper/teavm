@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.model.expression;
 
 public enum WasmIntUnaryOperation {
+    EQZ,
     CLZ,
     CTZ,
     POPCNT

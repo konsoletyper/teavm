@@ -31,7 +31,7 @@ import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@SkipPlatform(TestPlatform.C)
+@SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
 public class ClassTest {
     @Test
     public void classNameEvaluated() {

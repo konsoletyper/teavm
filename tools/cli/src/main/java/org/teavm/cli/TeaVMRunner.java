@@ -151,10 +151,6 @@ public final class TeaVMRunner {
                 .desc("Maximum number of names kept in top-level scope ("
                         + "other will be put in a separate object. 10000 by default.")
                 .build());
-        options.addOption(Option.builder()
-                .longOpt("no-longjmp")
-                .desc("Don't use setjmp/longjmp functions to emulate exceptions (C target)")
-                .build());
     }
 
     private TeaVMRunner(CommandLine commandLine) {
@@ -335,9 +331,6 @@ public final class TeaVMRunner {
     }
 
     private void parseCOptions() {
-        if (commandLine.hasOption("no-longjmp")) {
-            tool.setLongjmpSupported(false);
-        }
         if (commandLine.hasOption("heap-dump")) {
             tool.setHeapDump(true);
         }

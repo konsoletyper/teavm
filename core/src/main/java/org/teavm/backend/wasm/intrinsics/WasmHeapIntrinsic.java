@@ -51,7 +51,7 @@ public class WasmHeapIntrinsic implements WasmIntrinsic {
             case "initHeapTrace":
                 return new WasmDrop(new WasmInt32Constant(0));
             case "growMemory":
-                return new WasmMemoryGrow(manager.generate(invocation.getArguments().get(0)));
+                return new WasmDrop(new WasmMemoryGrow(manager.generate(invocation.getArguments().get(0))));
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }

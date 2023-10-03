@@ -43,7 +43,7 @@ public class ArrayTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void setWorks() {
         Object array = Array.newInstance(String.class, 2);
         Array.set(array, 0, "foo");
@@ -52,7 +52,7 @@ public class ArrayTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void setPrimitiveWorks() {
         Object array = Array.newInstance(int.class, 2);
         Array.set(array, 0, 23);

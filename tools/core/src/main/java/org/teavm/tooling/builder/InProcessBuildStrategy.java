@@ -63,7 +63,6 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private int minHeapSize = 4 * 1024 * 1204;
     private int maxHeapSize = 128 * 1024 * 1024;
     private final List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
-    private boolean longjmpSupported = true;
     private boolean heapDump;
     private TeaVMProgressListener progressListener;
     private Properties properties = new Properties();
@@ -209,11 +208,6 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
-    public void setLongjmpSupported(boolean longjmpSupported) {
-        this.longjmpSupported = longjmpSupported;
-    }
-
-    @Override
     public void setHeapDump(boolean heapDump) {
         this.heapDump = heapDump;
     }
@@ -257,7 +251,6 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setWasmVersion(wasmVersion);
         tool.setMinHeapSize(minHeapSize);
         tool.setMaxHeapSize(maxHeapSize);
-        tool.setLongjmpSupported(longjmpSupported);
         tool.setHeapDump(heapDump);
         tool.setShortFileNames(shortFileNames);
         tool.setAssertionsRemoved(assertionsRemoved);

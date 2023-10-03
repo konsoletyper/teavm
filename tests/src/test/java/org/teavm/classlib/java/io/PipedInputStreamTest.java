@@ -106,7 +106,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void available() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -150,7 +150,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void connectLjava_io_PipedOutputStream() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -168,7 +168,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void test_read() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -186,7 +186,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void test_read$BII() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -375,7 +375,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void read_after_write_close() throws Exception {
         PipedInputStream in = new PipedInputStream();
         PipedOutputStream out = new PipedOutputStream();

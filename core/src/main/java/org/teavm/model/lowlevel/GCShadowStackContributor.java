@@ -160,7 +160,7 @@ public class GCShadowStackContributor {
                 for (Variable definedVar : defExtractor.getDefinedVariables()) {
                     currentLiveOut.clear(definedVar.getIndex());
                 }
-                if (ExceptionHandlingShadowStackContributor.isCallInstruction(characteristics, insn)) {
+                if (ExceptionHandlingUtil.isCallInstruction(characteristics, insn)) {
                     BitSet csLiveIn = (BitSet) currentLiveOut.clone();
                     for (int v = csLiveIn.nextSetBit(0); v >= 0; v = csLiveIn.nextSetBit(v + 1)) {
                         if (!isReference(typeInferer, v) || nativePointers[v] || constants.get(v)) {

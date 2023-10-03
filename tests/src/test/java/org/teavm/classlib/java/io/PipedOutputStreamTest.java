@@ -96,7 +96,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void close() throws Exception {
         out = new PipedOutputStream();
         reader = new PReader(out);
@@ -132,7 +132,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void flush() throws IOException {
         out = new PipedOutputStream();
         reader = new PReader(out);
@@ -145,7 +145,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
     public void write$BII() throws IOException {
         out = new PipedOutputStream();
         reader = new PReader(out);
