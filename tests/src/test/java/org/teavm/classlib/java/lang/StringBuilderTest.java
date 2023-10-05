@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -205,8 +206,8 @@ public class StringBuilderTest {
     }
 
     @Test
-    public void substringWithUpperBoundAtEndWorks() {
-        assertEquals("23", "123".substring(1, 3));
+    public void substringWorks() {
+        assertEquals("23", new StringBuilder("123").substring(1, 3));
     }
 
     @Test
@@ -217,5 +218,53 @@ public class StringBuilderTest {
         assertEquals(-1, sb.indexOf("56"));
         assertEquals(0, sb.indexOf("12345"));
         assertEquals(0, sb.indexOf("123"));
+    }
+
+    @Test
+    public void testDeleteChar() {
+        StringBuilder sb = new StringBuilder("abcdef");
+        try {
+            sb.delete(-1, 3);
+            fail();
+        } catch (StringIndexOutOfBoundsException e) {
+            // ok
+        }
+        try {
+            sb.delete(7, 8);
+            fail();
+        } catch (StringIndexOutOfBoundsException e) {
+            // ok
+        }
+        sb.delete(6, 50);
+        assertEquals("abcdef", sb.toString());
+        sb.delete(5, 50);
+        assertEquals("abcde", sb.toString());
+        sb.delete(1, 4);
+        assertEquals("ae", sb.toString());
+    }
+
+    @Test
+    public void testReplace() {
+        StringBuilder sb = new StringBuilder("abcdef");
+        try {
+            sb.replace(-1, 3, "h");
+            fail();
+        } catch (StringIndexOutOfBoundsException e) {
+            // ok
+        }
+        try {
+            sb.replace(7, 8, "h");
+            fail();
+        } catch (StringIndexOutOfBoundsException e) {
+            // ok
+        }
+        sb.replace(6, 50, "g");
+        assertEquals("abcdefg", sb.toString());
+        sb.replace(6, 50, "h");
+        assertEquals("abcdefh", sb.toString());
+        sb.replace(1, 6, "g");
+        assertEquals("agh", sb.toString());
+        sb.replace(1, 1, "bc");
+        assertEquals("abcgh", sb.toString());
     }
 }
