@@ -221,7 +221,7 @@ public class StringBuilderTest {
     }
 
     @Test
-    public void testDeleteChar() {
+    public void delete() {
         StringBuilder sb = new StringBuilder("abcdef");
         try {
             sb.delete(-1, 3);
@@ -244,7 +244,7 @@ public class StringBuilderTest {
     }
 
     @Test
-    public void testReplace() {
+    public void replace() {
         StringBuilder sb = new StringBuilder("abcdef");
         try {
             sb.replace(-1, 3, "h");
