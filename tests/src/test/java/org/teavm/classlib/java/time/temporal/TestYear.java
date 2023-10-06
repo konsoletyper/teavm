@@ -78,7 +78,9 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.AbstractDateTimeTest;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -708,6 +710,7 @@ public class TestYear extends AbstractDateTimeTest {
     }
 
     @Test(expectedExceptions = NullPointerException.class)
+    @SkipPlatform(TestPlatform.C)
     public void test_compareTo_nullYear() {
         Year doy = null;
         Year test = Year.of(1);

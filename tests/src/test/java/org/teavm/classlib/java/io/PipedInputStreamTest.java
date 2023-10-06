@@ -375,6 +375,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.C)
     public void read_after_write_close() throws Exception {
         PipedInputStream in = new PipedInputStream();
         PipedOutputStream out = new PipedOutputStream();

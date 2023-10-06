@@ -60,28 +60,23 @@ tasks.test {
     systemProperty("teavm.junit.c.compiler", providers.gradleProperty("teavm.tests.c.compiler")
             .orElse("compile-c-unix-fast.sh").get())
 
-    jvmArgumentProviders += object : CommandLineArgumentProvider {
-        override fun asArguments(): Iterable<String> {
-            val dependencies = configurations.testRuntimeClasspath.get()
-                    .incoming.resolutionResult.allDependencies
-                    .asSequence()
-                    .filterIsInstance<ResolvedDependencyResult>()
-                    .map { it.requested }
-                    .filterIsInstance<ProjectComponentSelector>()
-                    .map { project.rootProject.project(it.projectPath) }
-            val projects = dependencies + project
-            val dirs = projects.map { it.layout.projectDirectory }.flatMap {
-                sequenceOf(
-                    it.dir("src/main/java"),
-                    it.dir("src/test/java")
-                )
-            }
-            val result = dirs
-                    .map { it.asFile.absolutePath }
-                    .joinToString(File.pathSeparator)
-            return listOf("-Dteavm.junit.sourceDirs=$result")
-        }
+    val dependencies = configurations.testRuntimeClasspath.get()
+            .incoming.resolutionResult.allDependencies
+            .asSequence()
+            .filterIsInstance<ResolvedDependencyResult>()
+            .map { it.requested }
+            .filterIsInstance<ProjectComponentSelector>()
+            .map { project.rootProject.project(it.projectPath) }
+    val projects = dependencies + project
+    val dirs = projects.map { it.layout.projectDirectory }.flatMap {
+        sequenceOf(
+                it.dir("src/main/java"),
+                it.dir("src/test/java")
+        )
     }
+    systemProperty("teavm.junit.sourceDirs", dirs
+            .map { it.asFile.absolutePath }
+            .joinToString(File.pathSeparator))
 
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
 }

@@ -147,4 +147,9 @@ class JSPlatformSupport extends TestPlatformSupport<JavaScriptTarget> {
             MethodReference reference) {
         htmlSingleTestOutput(outputPathForMethod, configuration, "teavm-run-test.html");
     }
+
+    @Override
+    boolean usesFileName() {
+        return true;
+    }
 }

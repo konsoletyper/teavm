@@ -58,6 +58,8 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
     abstract CompileResult compile(Consumer<TeaVM> additionalProcessing, String baseName,
             TeaVMTestConfiguration<T> configuration, File path);
 
+    abstract boolean usesFileName();
+
     CompileResult compile(TeaVMTestConfiguration<T> configuration,
             Supplier<T> targetSupplier, String entryPoint, File path, String extension,
             CompilePostProcessor postBuild, Consumer<TeaVM> additionalProcessing, String baseName) {
@@ -89,10 +91,15 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
 
             vm.entryPoint(entryPoint);
 
-            if (!outputFile.getParentFile().exists()) {
+            if (usesFileName()) {
+                if (!outputFile.getParentFile().exists()) {
+                    outputFile.getParentFile().mkdirs();
+                }
+                vm.build(new DirectoryBuildTarget(outputFile.getParentFile()), outputFile.getName());
+            } else {
                 outputFile.getParentFile().mkdirs();
+                vm.build(new DirectoryBuildTarget(outputFile), "");
             }
-            vm.build(new DirectoryBuildTarget(outputFile.getParentFile()), outputFile.getName());
             if (!vm.getProblemProvider().getProblems().isEmpty()) {
                 result.success = false;
                 result.errorMessage = buildErrorMessage(vm);

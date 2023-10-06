@@ -93,4 +93,9 @@ class CPlatformSupport extends TestPlatformSupport<CTarget> {
         cTarget.setLineNumbersGenerated(Boolean.parseBoolean(System.getProperty(C_LINE_NUMBERS, "false")));
         return cTarget;
     }
+
+    @Override
+    boolean usesFileName() {
+        return false;
+    }
 }

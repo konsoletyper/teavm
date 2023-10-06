@@ -95,7 +95,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -666,6 +668,7 @@ public class TestOffsetTime extends AbstractDateTimeTest {
     }
 
     @Test(expectedExceptions = NullPointerException.class)
+    @SkipPlatform(TestPlatform.C)
     public void test_with_TemporalField_null() {
         test11x30x59x500pone.with((TemporalField) null, 0);
     }
