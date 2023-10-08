@@ -288,7 +288,7 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TSequencedMa
 
     @Override
     public TSet<Entry<K, V>> entrySet() {
-        return new TReversedLinkedHashMap.LinkedHashMapEntrySet<>(this, false);
+        return new TLinkedHashMapEntrySet<>(this, false);
     }
 
     @Override
@@ -299,7 +299,7 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TSequencedMa
     @Override
     public TSequencedSet<K> sequencedKeySet() {
         if (cachedKeySet == null) {
-            cachedKeySet = new TReversedLinkedHashMap.LinkedHashMapKeySet<>(this, false);
+            cachedKeySet = new TLinkedHashMapKeySet<>(this, false);
         }
         return (TSequencedSet<K>) cachedKeySet;
     }
@@ -312,14 +312,14 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TSequencedMa
     @Override
     public TSequencedCollection<V> sequencedValues() {
         if (cachedValues == null) {
-            cachedValues = new TReversedLinkedHashMap.LinkedHashMapValues<>(this, false);
+            cachedValues = new TLinkedHashMapValues<>(this, false);
         }
         return (TSequencedCollection<V>) cachedValues;
     }
 
     @Override
     public TSequencedSet<Entry<K, V>> sequencedEntrySet() {
-        return new TReversedLinkedHashMap.LinkedHashMapEntrySet<>(this, false);
+        return new TLinkedHashMapEntrySet<>(this, false);
     }
 
     @Override
@@ -378,7 +378,7 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TSequencedMa
     public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
         if (elementCount > 0) {
             int prevModCount = modCount;
-            TLinkedHashMap.LinkedHashMapEntry<K, V> entry = head;
+            LinkedHashMapEntry<K, V> entry = head;
             do {
                 entry.value = function.apply(entry.key, entry.value);
                 entry = entry.chainForward;
@@ -402,5 +402,12 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TSequencedMa
     @Override
     public TSequencedMap<K, V> reversed() {
         return new TReversedLinkedHashMap<>(this);
+    }
+
+    static <T> T checkNotNull(T node) {
+        if (node == null) {
+            throw new TNoSuchElementException();
+        }
+        return node;
     }
 }
