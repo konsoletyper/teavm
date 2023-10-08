@@ -15,8 +15,6 @@
  */
 package org.teavm.classlib.java.util;
 
-import java.util.NoSuchElementException;
-
 class TReversedSortedSet<E> extends TAbstractSet<E> implements TSortedSet<E> {
     private final TSortedSet<E> base;
 
@@ -191,7 +189,7 @@ class TReversedSortedSet<E> extends TAbstractSet<E> implements TSortedSet<E> {
                         current = null;
                         return e;
                     } else {
-                        throw new NoSuchElementException();
+                        throw new TNoSuchElementException();
                     }
                 }
 
@@ -246,7 +244,7 @@ class TReversedSortedSet<E> extends TAbstractSet<E> implements TSortedSet<E> {
         public E last() {
             TIterator<E> it = iterator();
             if (!it.hasNext()) {
-                throw new NoSuchElementException();
+                throw new TNoSuchElementException();
             }
             E last = it.next();
             while (it.hasNext()) {
@@ -303,7 +301,7 @@ class TReversedSortedSet<E> extends TAbstractSet<E> implements TSortedSet<E> {
         @Override
         public E next() {
             if (remaining.isEmpty()) {
-                throw new NoSuchElementException();
+                throw new TNoSuchElementException();
             }
             current = remaining.last();
             remaining = base.headSet(current);

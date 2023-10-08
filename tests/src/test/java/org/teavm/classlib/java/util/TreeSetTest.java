@@ -17,6 +17,8 @@ package org.teavm.classlib.java.util;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.Iterator;
 import java.util.List;
@@ -26,56 +28,57 @@ import java.util.TreeSet;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TreeSetTest {
     @Test
     public void testSortedSetReadOnly() {
-        SortedSet<String> set = new TreeSet<>(List.of("0", "1", "2", "3", "4", "5", "6"));
+        SortedSet<String> set = new TreeSet<>(List.of("1", "2", "3", "4", "5", "6"));
         SortedSet<String> reversed = set.reversed();
         Iterator<String> it = reversed.iterator();
         assertEquals("6", it.next());
         assertEquals("5", it.next());
         assertEquals("6", reversed.getFirst());
-        assertEquals("0", reversed.getLast());
-//        SortedSet<String> subset = reversed.subSet("3", "1");
-//        it = subset.iterator();
-//        assertTrue(it.hasNext());
-//        assertEquals("3", it.next());
-//        assertTrue(it.hasNext());
-//        assertEquals("2", it.next());
-//        try {
-//            assertFalse(it.hasNext());
-//            it.next();
-//        } catch (NoSuchElementException e) {
-//            // ok
-//        }
-//        subset = reversed.headSet("4");
-//        it = subset.iterator();
-//        assertTrue(it.hasNext());
-//        assertEquals("6", it.next());
-//        assertTrue(it.hasNext());
-//        assertEquals("5", it.next());
-//        try {
-//            assertFalse(it.hasNext());
-//            it.next();
-//        } catch (NoSuchElementException e) {
-//            // ok
-//        }
-//        subset = reversed.tailSet("2");
-//        it = subset.iterator();
-//        assertTrue(it.hasNext());
-//        assertEquals("2", it.next());
-//        assertTrue(it.hasNext());
-//        assertEquals("1", it.next());
-//        try {
-//            // TODO lol, seems JDK bug, JDK fails here assertFalse(it.hasNext());
-//            it.next();
-//        } catch (NoSuchElementException e) {
-//            // ok
-//        }
+        assertEquals("1", reversed.getLast());
+        SortedSet<String> subset = reversed.subSet("3", "1");
+        it = subset.iterator();
+        assertTrue(it.hasNext());
+        assertEquals("3", it.next());
+        assertTrue(it.hasNext());
+        assertEquals("2", it.next());
+        try {
+            assertFalse(it.hasNext());
+            it.next();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+        subset = reversed.headSet("4");
+        it = subset.iterator();
+        assertTrue(it.hasNext());
+        assertEquals("6", it.next());
+        assertTrue(it.hasNext());
+        assertEquals("5", it.next());
+        try {
+            assertFalse(it.hasNext());
+            it.next();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+        subset = reversed.tailSet("2");
+        it = subset.iterator();
+        assertTrue(it.hasNext());
+        assertEquals("2", it.next());
+        assertTrue(it.hasNext());
+        assertEquals("1", it.next());
+        try {
+            assertFalse(it.hasNext());
+            it.next();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
     }
 
     @Test
