@@ -790,7 +790,7 @@ public class TreeMapTest {
         it.remove();
         assertArrayEquals(new Integer[] { 6, 4, 3, 1 }, map.keySet().toArray(new Integer[0]));
         map = generateMap();
-        Iterator<String> sit = map.values().iterator();
+        Iterator<String> sit = map.sequencedValues().iterator();
         assertTrue(sit.hasNext());
         assertEquals("1", sit.next());
         assertTrue(sit.hasNext());
@@ -798,7 +798,7 @@ public class TreeMapTest {
         sit.remove();
         assertArrayEquals(new String[] { "1", "3", "4", "5", "6" }, map.values().toArray(new String[0]));
         map = map.reversed();
-        sit = map.values().iterator();
+        sit = map.sequencedValues().iterator();
         assertTrue(sit.hasNext());
         assertEquals("6", sit.next());
         assertTrue(sit.hasNext());

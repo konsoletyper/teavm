@@ -483,8 +483,16 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     }
 
     @Override
+    public TCollection<V> values() {
+        return sequencedValues();
+    }
+
+    @Override
     public TSequencedCollection<V> sequencedValues() {
-        return null;
+        if (cachedValues == null) {
+            cachedValues = new NavigableMapValues<>(this);
+        }
+        return (TSequencedCollection<V>)cachedValues;
     }
 
     @Override
@@ -1043,8 +1051,16 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
 
         @Override
+        public TCollection<V> values() {
+            return sequencedValues();
+        }
+
+        @Override
         public TSequencedCollection<V> sequencedValues() {
-            return null;
+            if (cachedValues == null) {
+                cachedValues = new NavigableMapValues<>(this);
+            }
+            return (TSequencedCollection<V>)cachedValues;
         }
 
         @Override
@@ -1113,7 +1129,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     }
 
     static class NavigableKeySet<K, V> extends TAbstractSet<K> implements TNavigableSet<K> {
-        private TNavigableMap<K, V> map;
+        private final TNavigableMap<K, V> map;
 
         NavigableKeySet(TNavigableMap<K, V> map) {
             this.map = map;
@@ -1214,6 +1230,40 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         @Override
         public TNavigableSet<K> tailSet(K fromElement, boolean inclusive) {
             return map.tailMap(fromElement, inclusive).navigableKeySet();
+        }
+    }
+
+    static class NavigableMapValues<K, V> extends TAbstractCollection<V> implements TSequencedCollection<V> {
+        private final TNavigableMap<K, V> map;
+
+        NavigableMapValues(TNavigableMap<K, V> map) {
+            this.map = map;
+        }
+
+        @Override
+        public int size() {
+            return map.size();
+        }
+
+        @Override
+        public TIterator<V> iterator() {
+            final TIterator<TMap.Entry<K, V>> it = map.entrySet().iterator();
+            return new TIterator<>() {
+                @Override public boolean hasNext() {
+                    return it.hasNext();
+                }
+                @Override public V next() {
+                    return it.next().getValue();
+                }
+                @Override public void remove() {
+                    it.remove();
+                }
+            };
+        }
+
+        @Override
+        public TSequencedCollection<V> reversed() {
+            return new NavigableMapValues<>(map.reversed());
         }
     }
 }
