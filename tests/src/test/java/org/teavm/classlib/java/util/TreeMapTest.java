@@ -742,6 +742,7 @@ public class TreeMapTest {
         map.put(7, "7");
         try {
             map.putLast(3, "3");
+            fail();
         } catch (UnsupportedOperationException e) {
             // ok
         }
@@ -764,6 +765,7 @@ public class TreeMapTest {
         map.put(7, "7");
         try {
             map.putLast(6, "6");
+            fail();
         } catch (UnsupportedOperationException e) {
             // ok
         }
