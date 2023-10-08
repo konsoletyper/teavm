@@ -617,7 +617,9 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(NullCheckInstruction insn) {
-        assign(Expr.unary(UnaryOperation.NULL_CHECK, null, Expr.var(insn.getValue().getIndex())), insn.getReceiver());
+        var expr = Expr.unary(UnaryOperation.NULL_CHECK, null, Expr.var(insn.getValue().getIndex()));
+        expr.setLocation(insn.getLocation());
+        assign(expr, insn.getReceiver());
     }
 
     @Override

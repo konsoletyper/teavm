@@ -23,9 +23,14 @@ import java.lang.reflect.Method;
 import java.util.function.Function;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
+@EachTestCompiledSeparately
+@SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
 public class SerializedLambdaTest {
     @Test
     public void serializableLambdaHasWriteReplaceMethod() throws NoSuchMethodException, InvocationTargetException,

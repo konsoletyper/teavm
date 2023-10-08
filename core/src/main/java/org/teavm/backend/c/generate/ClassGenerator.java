@@ -258,7 +258,7 @@ public class ClassGenerator {
         ClassGenerationContext classContext = new ClassGenerationContext(context, includes, prologueWriter,
                 initWriter, currentClassName);
         codeGenerator = new CodeGenerator(classContext, codeWriter, includes);
-        if (context.isLongjmp() && !context.isIncremental()) {
+        if (!context.isIncremental()) {
             codeGenerator.setCallSites(callSites);
         }
     }
@@ -334,18 +334,15 @@ public class ClassGenerator {
             }
 
             List<CallSiteDescriptor> callSites = null;
-            if (context.isLongjmp()) {
-                if (context.isIncremental()) {
-                    callSites = new ArrayList<>();
-                    codeGenerator.setCallSites(callSites);
-                }
+            if (context.isIncremental()) {
+                callSites = new ArrayList<>();
+                codeGenerator.setCallSites(callSites);
             }
 
             codeGenerator.generateMethod(methodNode);
 
             if (context.isIncremental()) {
-                generateCallSites(method.getReference(),
-                        context.isLongjmp() ? callSites : CallSiteDescriptor.extract(method.getProgram()));
+                generateCallSites(method.getReference(), callSites);
                 codeWriter.println("#undef TEAVM_ALLOC_STACK");
             }
         }
@@ -1273,7 +1270,7 @@ public class ClassGenerator {
         codeWriter.outdent().println("}");
 
         GeneratorContextImpl generatorContext = new GeneratorContextImpl(codeGenerator.getClassContext(),
-                bodyWriter, writerBefore, codeWriter, includes, callSites, context.isLongjmp());
+                bodyWriter, writerBefore, codeWriter, includes, callSites);
         generator.generate(generatorContext, methodRef);
         try {
             generatorContext.flush();

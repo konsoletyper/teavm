@@ -241,6 +241,9 @@ public class CodeSectionParser {
                 codeListener.float64Constant(Double.longBitsToDouble(readFixedLong()));
                 break;
 
+            case 0x45:
+                codeListener.unary(WasmIntUnaryOperation.EQZ, WasmIntType.INT32);
+                break;
             case 0x46:
                 codeListener.binary(WasmIntBinaryOperation.EQ, WasmIntType.INT32);
                 break;
@@ -272,6 +275,9 @@ public class CodeSectionParser {
                 codeListener.binary(WasmIntBinaryOperation.GE_UNSIGNED, WasmIntType.INT32);
                 break;
 
+            case 0x50:
+                codeListener.unary(WasmIntUnaryOperation.EQZ, WasmIntType.INT64);
+                break;
             case 0x51:
                 codeListener.binary(WasmIntBinaryOperation.EQ, WasmIntType.INT64);
                 break;

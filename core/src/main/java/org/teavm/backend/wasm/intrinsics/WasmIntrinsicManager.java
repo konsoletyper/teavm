@@ -24,6 +24,8 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodReference;
+import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 
 public interface WasmIntrinsicManager {
@@ -46,4 +48,12 @@ public interface WasmIntrinsicManager {
     int getFunctionPointer(String name);
 
     void releaseTemporary(WasmLocal local);
+
+    boolean isManagedMethodCall(MethodReference method);
+
+    int generateCallSiteId(TextLocation location);
+
+    WasmExpression generateRegisterCallSite(int callSite, TextLocation location);
+
+
 }

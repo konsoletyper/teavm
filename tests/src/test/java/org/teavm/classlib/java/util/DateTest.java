@@ -19,12 +19,17 @@ import static org.junit.Assert.assertEquals;
 import java.util.Date;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
+@EachTestCompiledSeparately
 public class DateTest {
     @SuppressWarnings("deprecation")
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY)
     public void setsDateAndMonth() {
         Date date = new Date();
         date.setMonth(0);
@@ -37,6 +42,7 @@ public class DateTest {
 
     @SuppressWarnings("deprecation")
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY)
     public void setsUTC() {
         long epochTime = Date.UTC(2023, 1, 20, 10, 0, 0);
         Date date = new Date(epochTime);

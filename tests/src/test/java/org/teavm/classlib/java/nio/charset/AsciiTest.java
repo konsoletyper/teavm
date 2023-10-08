@@ -20,10 +20,8 @@ import java.nio.charset.StandardCharsets;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class AsciiTest {
     private static String hex = CharsetTestCommon.bytesToHex(convert(CharsetTestCommon.asciiText));
 

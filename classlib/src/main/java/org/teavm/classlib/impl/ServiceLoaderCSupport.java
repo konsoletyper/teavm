@@ -124,22 +124,13 @@ public class ServiceLoaderCSupport implements GeneratorFactory {
                     .print(names.forMethod(ALLOC_ARRAY_METHOD)).print("(&")
                     .print(names.forClassInstance(ValueType.parse(Object[].class))).print(", ")
                     .println("services->size);");
-            if (!context.usesLongjmp()) {
-                writer.println("if (TEAVM_EXCEPTION_HANDLER != " + callSite.getId() + ") goto exit;");
-            }
 
             writer.println("TEAVM_GC_ROOT(0, result);");
             writer.println("void** arrayData = (void**) TEAVM_ARRAY_DATA(result, void*);");
             writer.println("for (int32_t i = 0; i < services->size; ++i) {").indent();
             writer.print("void* obj = ").print(names.forMethod(ALLOC_METHOD)).println("(services->entries[i].cls);");
-            if (!context.usesLongjmp()) {
-                writer.println("if (TEAVM_EXCEPTION_HANDLER != " + callSite.getId() + ") goto exit;");
-            }
             writer.println("TEAVM_GC_ROOT(1, obj);");
             writer.println("services->entries[i].constructor(obj);");
-            if (!context.usesLongjmp()) {
-                writer.println("if (TEAVM_EXCEPTION_HANDLER != " + callSite.getId() + ") goto exit;");
-            }
             writer.println("arrayData[i] = obj;");
             writer.outdent().println("}");
 

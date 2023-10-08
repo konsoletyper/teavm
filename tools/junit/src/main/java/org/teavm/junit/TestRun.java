@@ -23,10 +23,10 @@ class TestRun {
     private File baseDirectory;
     private Method method;
     private String fileName;
-    private RunKind kind;
+    private TestPlatform kind;
     private String argument;
 
-    TestRun(String name, File baseDirectory, Method method, String fileName, RunKind kind,
+    TestRun(String name, File baseDirectory, Method method, String fileName, TestPlatform kind,
             String argument) {
         this.name = name;
         this.baseDirectory = baseDirectory;
@@ -52,7 +52,7 @@ class TestRun {
         return fileName;
     }
 
-    public RunKind getKind() {
+    public TestPlatform getKind() {
         return kind;
     }
 

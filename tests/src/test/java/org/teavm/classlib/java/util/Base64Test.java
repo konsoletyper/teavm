@@ -20,11 +20,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
+@SkipPlatform(TestPlatform.C)
 public class Base64Test {
     @Test
     public void decoderWorks() {

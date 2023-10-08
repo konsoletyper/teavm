@@ -20,7 +20,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 import org.teavm.parsing.substitution.java.RootPackageClass1;
 import org.teavm.parsing.substitution.java.RootPackageClass2;
 import org.teavm.parsing.substitution.java.RootPackageClass3;
@@ -38,7 +37,6 @@ import org.teavm.parsing.substitution.java.subpackage.SubPackageClass4;
 import org.teavm.parsing.substitution.java.subpackage.subsubpackage.SubSubPackageClass1;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 @SkipJVM
 public class ClasspathResourceMapperTest {
     @Test

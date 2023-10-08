@@ -528,6 +528,9 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         switch (expression.getType()) {
             case INT32:
                 switch (expression.getOperation()) {
+                    case EQZ:
+                        writer.writeByte(0x45);
+                        break;
                     case CLZ:
                         writer.writeByte(0x67);
                         break;
@@ -541,6 +544,9 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                 break;
             case INT64:
                 switch (expression.getOperation()) {
+                    case EQZ:
+                        writer.writeByte(0x50);
+                        break;
                     case CLZ:
                         writer.writeByte(0x79);
                         break;

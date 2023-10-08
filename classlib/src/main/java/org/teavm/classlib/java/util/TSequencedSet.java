@@ -16,5 +16,6 @@
 package org.teavm.classlib.java.util;
 
 public interface TSequencedSet<E> extends TSequencedCollection<E>, TSet<E> {
+    @Override
     TSequencedSet<E> reversed();
 }

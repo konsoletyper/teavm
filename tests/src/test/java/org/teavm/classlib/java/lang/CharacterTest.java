@@ -77,4 +77,15 @@ public class CharacterTest {
         assertEquals((char) 12405, Character.reverseBytes((char) 30000));
         assertEquals((char) -12150, Character.reverseBytes((char) -30000));
     }
+
+    @Test
+    public void characterForDigit() {
+        assertEquals('\0', Character.forDigit(-1, 5));
+        assertEquals('\0', Character.forDigit(6, 5));
+        assertEquals('\0', Character.forDigit(1, 1));
+        assertEquals('\0', Character.forDigit(1, 37));
+        assertEquals('a', Character.forDigit(10, 11));
+        assertEquals('\0', Character.forDigit(10, 10));
+        assertEquals('5', Character.forDigit(5, 6));
+    }
 }

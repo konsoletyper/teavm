@@ -37,6 +37,7 @@ public interface TPredicate<T> {
         return t -> TObjects.equals(t, targetRef);
     }
 
+    @SuppressWarnings("unchecked")
     static <T> TPredicate<T> not(TPredicate<? super T> target) {
         return (TPredicate<T>) target.negate();
     }

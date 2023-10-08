@@ -52,4 +52,12 @@ public class WasmBlock extends WasmExpression {
     public void acceptVisitor(WasmExpressionVisitor visitor) {
         visitor.visit(this);
     }
+
+    @Override
+    public boolean isTerminating() {
+        if (loop) {
+            return false;
+        }
+        return !body.isEmpty() && body.get(body.size() - 1).isTerminating();
+    }
 }

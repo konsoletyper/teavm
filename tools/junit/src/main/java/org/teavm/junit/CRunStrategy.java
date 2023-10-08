@@ -41,8 +41,9 @@ class CRunStrategy implements TestRunStrategy {
                 exeName += ".exe";
             }
 
-            File outputFile = new File(run.getBaseDirectory(), exeName);
-            boolean compilerSuccess = compile(run.getBaseDirectory());
+            var sourcesDir = new File(run.getBaseDirectory(), run.getFileName());
+            var outputFile = new File(sourcesDir, exeName);
+            var compilerSuccess = compile(sourcesDir);
             if (!compilerSuccess) {
                 throw new RuntimeException("C compiler error");
             }

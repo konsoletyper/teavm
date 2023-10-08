@@ -26,11 +26,16 @@ import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSString;
+import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
+@OnlyPlatform(TestPlatform.JAVASCRIPT)
+@EachTestCompiledSeparately
 public class ConversionTest {
     @Test
     public void convertsPrimitivesToJavaScript() {

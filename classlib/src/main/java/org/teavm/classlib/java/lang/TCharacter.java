@@ -363,7 +363,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static char forDigit(int digit, int radix) {
-        if (radix < MIN_RADIX || radix > MAX_RADIX || digit >= radix) {
+        if (radix < MIN_RADIX || radix > MAX_RADIX || digit < 0 || digit >= radix) {
             return '\0';
         }
         return digit < 10 ? (char) ('0' + digit) : (char) ('a' + digit - 10);

@@ -61,7 +61,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.Test;
 
 /**
@@ -69,7 +68,6 @@ import org.testng.annotations.Test;
  */
 @Test
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TestZoneRulesProvider {
 
     //-----------------------------------------------------------------------

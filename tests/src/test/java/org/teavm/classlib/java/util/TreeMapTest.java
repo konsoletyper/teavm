@@ -67,11 +67,9 @@ import java.util.TreeMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
 @SuppressWarnings({ "UnnecessaryTemporaryOnConversionToString", "SuspiciousMethodCalls" })
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TreeMapTest {
 
     public static class ReversedComparator implements Comparator<Object> {

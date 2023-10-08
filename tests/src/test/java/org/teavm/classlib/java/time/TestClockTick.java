@@ -57,7 +57,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.Test;
 
 /**
@@ -65,7 +64,6 @@ import org.testng.annotations.Test;
  */
 @Test
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TestClockTick extends AbstractTest {
 
     private static final ZoneId MOSCOW = ZoneId.of("Europe/Moscow");

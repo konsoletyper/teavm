@@ -102,7 +102,7 @@ public class CallSiteBinaryGenerator {
                 int address = writer.append(binaryExceptionHandler);
                 binaryExceptionHandlers.add(binaryExceptionHandler);
 
-                binaryExceptionHandler.setInt(EXCEPTION_HANDLER_ID, callSiteId + i + 1);
+                binaryExceptionHandler.setInt(EXCEPTION_HANDLER_ID, callSite.getHandlers().get(i).getId());
 
                 if (!firstHandlerSet) {
                     binaryCallSite.setAddress(CALL_SITE_FIRST_HANDLER, address);

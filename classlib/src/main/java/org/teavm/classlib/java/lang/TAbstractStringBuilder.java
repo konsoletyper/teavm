@@ -668,11 +668,14 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
     }
 
     public TAbstractStringBuilder delete(int start, int end) {
-        if (start > end || start > length) {
+        if (start < 0 || start > end || start > length) {
             throw new TStringIndexOutOfBoundsException();
         }
         if (start == end) {
             return this;
+        }
+        if (end > length) {
+            end = length;
         }
         int sz = length - end;
         length -= end - start;
@@ -683,6 +686,12 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
     }
 
     public TAbstractStringBuilder replace(int start, int end, TString str) {
+        if (start < 0 || start > end || start > length) {
+            throw new TStringIndexOutOfBoundsException();
+        }
+        if (end > length) {
+            end = length;
+        }
         int oldSize = end - start;
         if (str.length() > oldSize) {
             insertSpace(end, start + str.length());

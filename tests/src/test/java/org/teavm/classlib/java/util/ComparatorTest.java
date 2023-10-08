@@ -22,10 +22,8 @@ import java.util.Comparator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class ComparatorTest {
     @Test
     public void naturalReverseOrder() {

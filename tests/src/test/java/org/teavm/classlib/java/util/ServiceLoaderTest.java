@@ -22,9 +22,11 @@ import java.util.List;
 import java.util.ServiceLoader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
+@EachTestCompiledSeparately
 public class ServiceLoaderTest {
     @Test
     public void loadsService() {

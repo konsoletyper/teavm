@@ -18,16 +18,20 @@ package org.teavm.backend.wasm.intrinsics;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.WasmHeap;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.generate.CallSiteBinaryGenerator;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.generate.WasmStringPool;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
+import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
+import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.runtime.CallSite;
@@ -87,7 +91,13 @@ public class ExceptionHandlingIntrinsic implements WasmIntrinsic {
             case "isObfuscated":
                 return new WasmInt32Constant(0);
 
-            case "jumpToFrame":
+            case "jumpToFrame": {
+                var offset = classGenerator.getFieldOffset(new FieldReference(WasmHeap.class.getName(), "stack"));
+                var ptr = new WasmInt32Constant(offset);
+                return new WasmStoreInt32(4, ptr, manager.generate(invocation.getArguments().get(0)),
+                        WasmInt32Subtype.INT32);
+            }
+
             case "abort":
                 return new WasmUnreachable();
 

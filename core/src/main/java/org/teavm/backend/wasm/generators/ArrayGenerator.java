@@ -52,7 +52,7 @@ public class ArrayGenerator implements WasmMethodGenerator {
             "Float", "Double", "Boolean" };
     private static final ValueType.Primitive[] primitiveTypes = { ValueType.BYTE, ValueType.SHORT, ValueType.CHARACTER,
             ValueType.INTEGER, ValueType.LONG, ValueType.FLOAT, ValueType.DOUBLE, ValueType.BOOLEAN };
-    private static final int[] shift = new int[] { 0, 1, 1, 2, 3, 2, 3, 0 };
+    private static final int[] shift = new int[] { 0, 0, 1, 1, 2, 3, 2, 3, 0 };
 
     @Override
     public boolean isApplicable(MethodReference methodReference) {
@@ -99,7 +99,11 @@ public class ArrayGenerator implements WasmMethodGenerator {
         function.getBody().add(currentBlock);
         function.getBody().add(new WasmReturn(new WasmInt32Constant(0)));
 
-        WasmSwitch primitiveSwitch = new WasmSwitch(new WasmGetLocal(flagsVar), currentBlock);
+        var primitiveExpr = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHR_UNSIGNED,
+                new WasmGetLocal(flagsVar), new WasmInt32Constant(RuntimeClass.PRIMITIVE_SHIFT));
+        primitiveExpr = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
+                new WasmGetLocal(flagsVar), new WasmInt32Constant(RuntimeClass.PRIMITIVE_MASK));
+        WasmSwitch primitiveSwitch = new WasmSwitch(primitiveExpr, currentBlock);
         for (int i = 0; i <= 8; ++i) {
             primitiveSwitch.getTargets().add(currentBlock);
         }

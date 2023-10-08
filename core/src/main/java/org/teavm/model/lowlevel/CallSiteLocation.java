@@ -18,9 +18,6 @@ package org.teavm.model.lowlevel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.teavm.model.AnnotationHolder;
-import org.teavm.model.AnnotationReader;
-import org.teavm.model.AnnotationValue;
 import org.teavm.model.InliningInfo;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
@@ -113,40 +110,5 @@ public class CallSiteLocation {
     @Override
     public int hashCode() {
         return Objects.hash(fileName, className, methodName, lineNumber);
-    }
-
-    public AnnotationReader save() {
-        AnnotationHolder annotation = new AnnotationHolder(CallSiteLocationAnnot.class.getName());
-        annotation.getValues().put("fileName", CallSiteDescriptor.saveNullableString(fileName));
-        annotation.getValues().put("className", CallSiteDescriptor.saveNullableString(className));
-        annotation.getValues().put("methodName", CallSiteDescriptor.saveNullableString(methodName));
-        annotation.getValues().put("lineNumber", new AnnotationValue(lineNumber));
-        return annotation;
-    }
-
-    public static CallSiteLocation load(AnnotationReader reader) {
-        return new CallSiteLocation(
-                CallSiteDescriptor.loadNullableString(reader.getValue("fileName")),
-                CallSiteDescriptor.loadNullableString(reader.getValue("className")),
-                CallSiteDescriptor.loadNullableString(reader.getValue("methodName")),
-                reader.getValue("lineNumber").getInt());
-    }
-
-    public static AnnotationReader saveMany(List<? extends CallSiteLocation> locations) {
-        AnnotationHolder annotation = new AnnotationHolder(CallSiteLocationsAnnot.class.getName());
-        List<AnnotationValue> list = new ArrayList<>();
-        for (CallSiteLocation location : locations) {
-            list.add(new AnnotationValue(location.save()));
-        }
-        annotation.getValues().put("value", new AnnotationValue(list));
-        return annotation;
-    }
-
-    public static List<? extends CallSiteLocation> loadMany(AnnotationReader reader) {
-        List<CallSiteLocation> result = new ArrayList<>();
-        for (AnnotationValue item : reader.getValue("value").getList()) {
-            result.add(load(item.getAnnotation()));
-        }
-        return result;
     }
 }

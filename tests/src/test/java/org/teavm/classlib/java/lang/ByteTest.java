@@ -20,9 +20,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
-@WholeClassCompilation
 @RunWith(TeaVMTestRunner.class)
 public class ByteTest {
     @Test

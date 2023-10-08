@@ -110,7 +110,6 @@ public class TeaVMTool {
     private int minHeapSize = 4 * (1 << 20);
     private int maxHeapSize = 128 * (1 << 20);
     private ReferenceCache referenceCache;
-    private boolean longjmpSupported = true;
     private boolean heapDump;
     private boolean shortFileNames;
     private boolean assertionsRemoved;
@@ -259,10 +258,6 @@ public class TeaVMTool {
         this.wasmVersion = wasmVersion;
     }
 
-    public void setLongjmpSupported(boolean longjmpSupported) {
-        this.longjmpSupported = longjmpSupported;
-    }
-
     public void setHeapDump(boolean heapDump) {
         this.heapDump = heapDump;
     }
@@ -367,7 +362,6 @@ public class TeaVMTool {
         cTarget.setMinHeapSize(minHeapSize);
         cTarget.setMaxHeapSize(maxHeapSize);
         cTarget.setLineNumbersGenerated(debugInformationGenerated);
-        cTarget.setLongjmpUsed(longjmpSupported);
         cTarget.setHeapDump(heapDump);
         cTarget.setObfuscated(obfuscated);
         cTarget.setFileNames(shortFileNames

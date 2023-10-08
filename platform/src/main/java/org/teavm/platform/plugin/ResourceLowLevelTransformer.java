@@ -21,7 +21,7 @@ import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.Program;
 
-class ResourceCTransformer implements ClassHolderTransformer {
+class ResourceLowLevelTransformer implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         for (MethodHolder method : cls.getMethods()) {

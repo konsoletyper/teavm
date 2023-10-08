@@ -69,8 +69,9 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQuery;
 import java.util.Locale;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
+import org.teavm.junit.TestPlatform;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -79,7 +80,6 @@ import org.testng.annotations.Test;
  */
 @Test
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TestDateTimeFormatter {
 
     private static final DateTimeFormatter BASIC_FORMATTER = DateTimeFormatter.ofPattern("'ONE'd");
@@ -517,6 +517,7 @@ public class TestDateTimeFormatter {
     }
 
     //-------------------------------------------------------------------------
+    @SkipPlatform({ TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
     public void test_parse_allZones() throws Exception {
         for (String zoneStr : ZoneId.getAvailableZoneIds()) {
             // TODO: looks like our implementation does not support that. Fix and remove this hack

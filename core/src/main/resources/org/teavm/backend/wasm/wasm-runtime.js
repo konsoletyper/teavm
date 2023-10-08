@@ -58,11 +58,11 @@ TeaVM.wasm = function() {
     function dateToString(timestamp, controller) {
         const s = new Date(timestamp).toString();
         let instance = controller.instance;
-        let result = instance.allocateString(s.length);
+        let result = instance.exports.teavm_allocateString(s.length);
         if (result === 0) {
             return 0;
         }
-        let resultAddress = instance.objectArrayData(instance.stringData(result));
+        let resultAddress = instance.exports.teavm_objectArrayData(instance.exports.teavm_stringData(result));
         let resultView = new Uint16Array(instance.exports.memory.buffer, resultAddress, s.length);
         for (let i = 0; i < s.length; ++i) {
             resultView[i] = s.charCodeAt(i);

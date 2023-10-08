@@ -69,7 +69,6 @@ import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMProperties;
 import org.teavm.junit.TeaVMProperty;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Ignore;
 import org.testng.annotations.Test;
@@ -79,7 +78,6 @@ import org.testng.annotations.Test;
  */
 @Test
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 @TeaVMProperties(@TeaVMProperty(key = "java.util.Locale.available", value = "en, en_US, fr_FR"))
 public class TestDateTimeParsing {
 

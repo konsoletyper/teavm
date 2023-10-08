@@ -74,7 +74,6 @@ import java.util.Locale;
 import java.util.Map;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -84,7 +83,6 @@ import org.testng.annotations.Test;
  */
 @Test
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TestChronoZonedDateTime {
     //-----------------------------------------------------------------------
     // regular data factory for names and descriptions of available calendars

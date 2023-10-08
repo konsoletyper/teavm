@@ -134,7 +134,7 @@ public class TPrintStream extends TFilterOutputStream {
 
     private void print(char[] s, int begin, int end) {
         TCharBuffer src = TCharBuffer.wrap(s, begin, end - begin);
-        byte[] destBytes = new byte[TMath.max(16, TMath.min(s.length, 1024))];
+        byte[] destBytes = new byte[TMath.max(16, TMath.min(end - begin, 1024))];
         TByteBuffer dest = TByteBuffer.wrap(destBytes);
         TCharsetEncoder encoder = charset.newEncoder()
                 .onMalformedInput(TCodingErrorAction.REPLACE)

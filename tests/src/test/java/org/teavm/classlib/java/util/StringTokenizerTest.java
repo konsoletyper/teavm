@@ -41,11 +41,9 @@ import java.util.StringTokenizer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
-@SuppressWarnings({ "RedundantStringConstructorCall", "RedundantCast" })
+@SuppressWarnings("RedundantCast")
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class StringTokenizerTest {
     @Test
     public void test_ConstructorLjava_lang_StringLjava_lang_String() {

@@ -114,7 +114,6 @@ public class TClass<T> extends TObject implements TAnnotatedElement, TType {
         return Address.ofObject(this).<RuntimeClass>toStructure().isSupertypeOf.apply(other);
     }
 
-    @Unmanaged
     public String getName() {
         if (PlatformDetector.isLowLevel()) {
             String result = getNameCache(this);
