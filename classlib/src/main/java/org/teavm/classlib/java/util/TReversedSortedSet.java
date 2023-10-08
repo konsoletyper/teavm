@@ -168,7 +168,6 @@ class TReversedSortedSet<E> extends TAbstractSet<E> implements TSortedSet<E> {
                     }
                     while (it.hasNext()) {
                         E e = it.next();
-                        System.out.println(e);
                         if (!aboveHeadInc(e)) {
                             continue;
                         }
