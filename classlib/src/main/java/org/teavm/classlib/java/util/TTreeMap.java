@@ -364,10 +364,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     @Override
     public TSet<Entry<K, V>> entrySet() {
-        if (cachedEntrySet == null) {
-            cachedEntrySet = new EntrySet<>(this, null, true, false, null, true, false, false);
-        }
-        return cachedEntrySet;
+        return sequencedEntrySet();
     }
 
     @Override
@@ -470,6 +467,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         TreeNode<K, V> node = firstNode(false);
         if (node != null) {
             root = deleteNode(root, node.getKey());
+            modCount++;
         }
         return node;
     }
@@ -479,8 +477,22 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         TreeNode<K, V> node = firstNode(true);
         if (node != null) {
             root = deleteNode(root, node.getKey());
+            modCount++;
         }
         return node;
+    }
+
+    @Override
+    public TSequencedCollection<V> sequencedValues() {
+        return null;
+    }
+
+    @Override
+    public TSequencedSet<Entry<K, V>> sequencedEntrySet() {
+        if (cachedEntrySet == null) {
+            cachedEntrySet = new EntrySet<>(this, null, true, false, null, true, false, false);
+        }
+        return cachedEntrySet;
     }
 
     @Override
@@ -542,7 +554,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         return copy;
     }
 
-    static class EntrySet<K, V> extends TAbstractSet<Entry<K, V>> {
+    static class EntrySet<K, V> extends TAbstractSet<Entry<K, V>> implements TSequencedSet<Entry<K, V>> {
         private int modCount = -1;
         private TTreeMap<K, V> owner;
         private K from;
@@ -650,6 +662,11 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         @Override
         public boolean isEmpty() {
             return size() == 0;
+        }
+
+        @Override
+        public TSequencedSet<Entry<K, V>> reversed() {
+            return new EntrySet<>(owner, from, fromIncluded, fromChecked, to, toIncluded, toChecked, !reverse);
         }
     }
 
@@ -766,11 +783,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public TSet<Entry<K, V>> entrySet() {
-            if (entrySetCache == null) {
-                entrySetCache = new EntrySet<>(owner, from, fromIncluded,
-                        fromChecked, to, toIncluded, toChecked, reverse);
-            }
-            return entrySetCache;
+            return sequencedEntrySet();
         }
 
         @Override
@@ -1015,7 +1028,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         public Entry<K, V> pollFirstEntry() {
             TreeNode<K, V> node = !reverse ? firstNode() : lastNode();
             if (node != null) {
-                owner.deleteNode(owner.root, node.getKey());
+                owner.remove(node.getKey());
             }
             return node;
         }
@@ -1024,9 +1037,23 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         public Entry<K, V> pollLastEntry() {
             TreeNode<K, V> node = !reverse ? lastNode() : firstNode();
             if (node != null) {
-                owner.deleteNode(owner.root, node.getKey());
+                owner.remove(node.getKey());
             }
             return node;
+        }
+
+        @Override
+        public TSequencedCollection<V> sequencedValues() {
+            return null;
+        }
+
+        @Override
+        public TSequencedSet<Entry<K, V>> sequencedEntrySet() {
+            if (entrySetCache == null) {
+                entrySetCache = new EntrySet<>(owner, from, fromIncluded,
+                        fromChecked, to, toIncluded, toChecked, reverse);
+            }
+            return entrySetCache;
         }
 
         @Override
