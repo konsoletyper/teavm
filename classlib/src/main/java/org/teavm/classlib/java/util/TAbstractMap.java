@@ -320,16 +320,16 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
 
         @Override
         public TIterator<V> iterator() {
-            final TIterator<TMap.Entry<K, V>> iter = TAbstractMap.this.entrySet().iterator();
+            final TIterator<TMap.Entry<K, V>> it = entrySet().iterator();
             return new TIterator<>() {
                 @Override public boolean hasNext() {
-                    return iter.hasNext();
+                    return it.hasNext();
                 }
                 @Override public V next() {
-                    return iter.next().getValue();
+                    return it.next().getValue();
                 }
                 @Override public void remove() {
-                    iter.remove();
+                    it.remove();
                 }
             };
         }
