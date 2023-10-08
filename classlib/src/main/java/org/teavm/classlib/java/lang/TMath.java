@@ -27,6 +27,7 @@ import org.teavm.interop.Unmanaged;
 public final class TMath extends TObject {
     public static final double E = 2.71828182845904523536;
     public static final double PI = 3.14159265358979323846;
+    public static final double TAU = 2 * PI;
 
     private TMath() {
     }
@@ -515,5 +516,33 @@ public final class TMath extends TObject {
             bits--;
         }
         return TFloat.intBitsToFloat(bits);
+    }
+
+    public static int clamp(long value, int min, int max) {
+        if (min > max) {
+            throw new IllegalArgumentException();
+        }
+        return (int) Math.min(max, Math.max(value, min));
+    }
+
+    public static long clamp(long value, long min, long max) {
+        if (min > max) {
+            throw new IllegalArgumentException();
+        }
+        return Math.min(max, Math.max(value, min));
+    }
+
+    public static double clamp(double value, double min, double max) {
+        if (!(min < max) && (Double.isNaN(min) || Double.isNaN(max) || Double.compare(min, max) > 0)) {
+            throw new IllegalArgumentException();
+        }
+        return Math.min(max, Math.max(value, min));
+    }
+
+    public static float clamp(float value, float min, float max) {
+        if (!(min < max) && (Float.isNaN(min) || Float.isNaN(max) || Float.compare(min, max) > 0)) {
+            throw new IllegalArgumentException();
+        }
+        return Math.min(max, Math.max(value, min));
     }
 }
