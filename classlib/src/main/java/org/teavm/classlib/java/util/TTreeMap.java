@@ -619,7 +619,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             } else {
                 toPath = owner.pathToFirst(true);
             }
-            return new EntryIterator<>(owner, toPath, from, fromIncluded, fromChecked, true);
+            return new EntryIterator<>(owner, toPath, from, fromChecked, fromIncluded, true);
         }
 
         @Override
@@ -1080,7 +1080,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             if (!reverse) {
                 return new MapView<>(owner, fromKey, inclusive, true, to, toIncluded, toChecked, false);
             } else {
-                return new MapView<>(owner, from, fromIncluded, toChecked, fromKey, inclusive, true, true);
+                return new MapView<>(owner, from, fromIncluded, fromChecked, fromKey, inclusive, true, true);
             }
         }
     }
@@ -1109,7 +1109,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public TSortedSet<K> tailSet(K fromElement) {
-            return map.headMap(fromElement, true).navigableKeySet();
+            return map.tailMap(fromElement, true).navigableKeySet();
         }
 
         @Override
@@ -1186,7 +1186,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public TNavigableSet<K> tailSet(K fromElement, boolean inclusive) {
-            return map.headMap(fromElement, inclusive).navigableKeySet();
+            return map.tailMap(fromElement, inclusive).navigableKeySet();
         }
     }
 }
