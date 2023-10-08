@@ -13,33 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-/*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
 package org.teavm.classlib.java.util;
 
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import org.teavm.classlib.java.lang.TIllegalStateException;
+import java.util.function.BiFunction;
 
-public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
-    private final boolean accessOrder;
+public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TSequencedMap<K, V> {
+    private boolean accessOrder;
 
-    transient private LinkedHashMapEntry<K, V> head;
-    transient private LinkedHashMapEntry<K, V> tail;
+    transient LinkedHashMapEntry<K, V> head;
+    transient LinkedHashMapEntry<K, V> tail;
 
     public TLinkedHashMap() {
         accessOrder = false;
@@ -73,127 +56,15 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
         putAll(m);
     }
 
-    private static class AbstractMapIterator<K, V>  {
-        int expectedModCount;
-        LinkedHashMapEntry<K, V>  futureEntry;
-        LinkedHashMapEntry<K, V>  currentEntry;
-        final TLinkedHashMap<K, V> associatedMap;
-
-        AbstractMapIterator(TLinkedHashMap<K, V> map) {
-            expectedModCount = map.modCount;
-            futureEntry = map.head;
-            associatedMap = map;
+    @Override
+    void putAllImpl(TMap<? extends K, ? extends V> map) {
+        int capacity = elementCount + map.size();
+        if (capacity > threshold) {
+            rehash(capacity);
         }
-
-        public boolean hasNext() {
-            return futureEntry != null;
-        }
-
-        final void checkConcurrentMod() throws TConcurrentModificationException {
-            if (expectedModCount != associatedMap.modCount) {
-                throw new TConcurrentModificationException();
-            }
-        }
-
-        final void makeNext() {
-            checkConcurrentMod();
-            if (!hasNext()) {
-                throw new TNoSuchElementException();
-            }
-            currentEntry = futureEntry;
-            futureEntry = futureEntry.chainForward;
-        }
-
-        public void remove() {
-            checkConcurrentMod();
-            if (currentEntry == null) {
-                throw new TIllegalStateException();
-            }
-            associatedMap.removeEntry(currentEntry);
-            LinkedHashMapEntry<K, V> lhme =  currentEntry;
-            LinkedHashMapEntry<K, V> p = lhme.chainBackward;
-            LinkedHashMapEntry<K, V> n = lhme.chainForward;
-            TLinkedHashMap<K, V> lhm = associatedMap;
-            if (p != null) {
-                p.chainForward = n;
-                if (n != null) {
-                    n.chainBackward = p;
-                } else {
-                    lhm.tail = p;
-                }
-            } else {
-                lhm.head = n;
-                if (n != null) {
-                    n.chainBackward = null;
-                } else {
-                    lhm.tail = null;
-                }
-            }
-            currentEntry = null;
-            expectedModCount++;
-        }
-    }
-
-    private static class EntryIterator<K, V> extends AbstractMapIterator<K, V> implements TIterator<Entry<K, V>> {
-        EntryIterator(TLinkedHashMap<K, V> map) {
-            super(map);
-        }
-
-        @Override
-        public Entry<K, V> next() {
-            makeNext();
-            return currentEntry;
-        }
-    }
-
-    private static class KeyIterator<K, V> extends AbstractMapIterator<K, V> implements TIterator<K> {
-        KeyIterator(TLinkedHashMap<K, V> map) {
-            super(map);
-        }
-
-        @Override
-        public K next() {
-            makeNext();
-            return currentEntry.key;
-        }
-    }
-
-    private static class ValueIterator<K, V> extends AbstractMapIterator<K, V> implements TIterator<V> {
-        ValueIterator(TLinkedHashMap<K, V> map) {
-            super(map);
-        }
-
-        @Override
-        public V next() {
-            makeNext();
-            return currentEntry.value;
-        }
-    }
-
-    static final class LinkedHashMapEntrySet<K, V> extends HashMapEntrySet<K, V> {
-        public LinkedHashMapEntrySet(TLinkedHashMap<K, V> lhm) {
-            super(lhm);
-        }
-
-        @Override
-        public TIterator<Entry<K, V>> iterator() {
-            return new EntryIterator<>((TLinkedHashMap<K, V>) hashMap());
-        }
-
-        @Override
-        public void forEach(Consumer<? super Entry<K, V>> action) {
-            TLinkedHashMap<K, V> map = (TLinkedHashMap<K, V>) hashMap();
-            if (map.elementCount > 0) {
-                int prevModCount = map.modCount;
-                LinkedHashMapEntry<K, V> entry = map.head;
-                do {
-                    action.accept(entry);
-                    entry = entry.chainForward;
-                    if (map.modCount != prevModCount) {
-                        throw new TConcurrentModificationException();
-                    }
-                } while (entry != null);
-            }
+        for (var it = map.entrySet().iterator(); it.hasNext();) {
+            TMap.Entry<? extends K, ? extends V> entry = it.next();
+            putImpl(entry.getKey(), entry.getValue(), false);
         }
     }
 
@@ -255,7 +126,7 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
     }
 
     @Override
-    public V get(Object key) {
+    public V getOrDefault(Object key, V defaultValue) {
         LinkedHashMapEntry<K, V> m;
         if (key == null) {
             m = (LinkedHashMapEntry<K, V>) findNullKeyEntry();
@@ -265,7 +136,7 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
             m = (LinkedHashMapEntry<K, V>) findNonNullKeyEntry(key, index, hash);
         }
         if (m == null) {
-            return null;
+            return defaultValue;
         }
         if (accessOrder && tail != m) {
             LinkedHashMapEntry<K, V> p = m.chainBackward;
@@ -285,27 +156,24 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
     }
 
     @Override
-    HashEntry<K, V> createHashedEntry(K key, int index, int hash) {
+    public V get(Object key) {
+        return getOrDefault(key, null);
+    }
+
+    private HashEntry<K, V> createHashedEntry(K key, int index, int hash, boolean first) {
         LinkedHashMapEntry<K, V> m = new LinkedHashMapEntry<>(key, hash);
         m.next = elementData[index];
         elementData[index] = m;
-        linkEntry(m);
+        linkEntry(m, first);
         return m;
     }
 
     @Override
     public V put(K key, V value) {
-        V result = putImpl(key, value);
-
-        if (removeEldestEntry(head)) {
-            remove(head.key);
-        }
-
-        return result;
+        return putImpl(key, value, false);
     }
 
-    @Override
-    V putImpl(K key, V value) {
+    V putImpl(K key, V value, boolean first) {
         LinkedHashMapEntry<K, V> m;
         if (elementCount == 0) {
             head = null;
@@ -321,36 +189,37 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
                 if (++elementCount > threshold) {
                     rehash();
                 }
-                m = (LinkedHashMapEntry<K, V>) createHashedEntry(null, 0, 0);
+                m = (LinkedHashMapEntry<K, V>) createHashedEntry(null, 0, 0, first);
             } else {
-                linkEntry(m);
+                linkEntry(m, first);
             }
         } else {
             int hash = key.hashCode();
-            int index = (hash & 0x7FFFFFFF) % elementData.length;
+            int index = (hash & Integer.MAX_VALUE) % elementData.length;
             m = (LinkedHashMapEntry<K, V>) findNonNullKeyEntry(key, index, hash);
             if (m == null) {
                 modCount++;
                 if (++elementCount > threshold) {
                     rehash();
-                    index = (hash & 0x7FFFFFFF) % elementData.length;
+                    index = (hash & Integer.MAX_VALUE) % elementData.length;
                 }
-                m = (LinkedHashMapEntry<K, V>) createHashedEntry(key, index, hash);
+                m = (LinkedHashMapEntry<K, V>) createHashedEntry(key, index, hash, first);
             } else {
-                linkEntry(m);
+                linkEntry(m, first);
             }
         }
 
         V result = m.value;
         m.value = value;
+
+        if (removeEldestEntry(head)) {
+            remove(head.key);
+        }
+
         return result;
     }
 
-    void linkEntry(LinkedHashMapEntry<K, V> m) {
-        if (tail == m) {
-            return;
-        }
-
+    void linkEntry(LinkedHashMapEntry<K, V> m, boolean first) {
         if (head == null) {
             // Check if the map is empty
             head = m;
@@ -364,8 +233,8 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
         LinkedHashMapEntry<K, V> n = m.chainForward;
         if (p == null) {
             if (n != null) {
-                // The entry must be the head but not the tail
-                if (accessOrder) {
+                // Existing entry must be the head but not the tail
+                if (!first && accessOrder) {
                     head = n;
                     n.chainBackward = null;
                     m.chainBackward = tail;
@@ -375,133 +244,87 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
                 }
             } else {
                 // This is a new entry
-                m.chainBackward = tail;
-                m.chainForward = null;
-                tail.chainForward = m;
-                tail = m;
+                m.chainBackward = first ? null : tail;
+                m.chainForward = first ? head : null;
+                if (first) {
+                    head.chainBackward = m;
+                    head = m;
+                } else {
+                    tail.chainForward = m;
+                    tail = m;
+                }
             }
-            return;
-        }
-
-        if (n == null) {
-            // The entry must be the tail so we can't get here
-            return;
-        }
-
-        // The entry is neither the head nor tail
-        if (accessOrder) {
-            p.chainForward = n;
-            n.chainBackward = p;
-            m.chainForward = null;
-            m.chainBackward = tail;
-            tail.chainForward = m;
-            tail = m;
+        } else {
+            if (n == null) {
+                // Existing entry must be the tail but not the head
+                if (first && accessOrder) {
+                    tail = p;
+                    p.chainForward = null;
+                    m.chainBackward = null;
+                    m.chainForward = head;
+                    head.chainBackward = m;
+                    head = m;
+                }
+            } else {
+                if (elementCount > 1 && accessOrder) {
+                    // Existing entry is neither the head nor tail
+                    p.chainForward = n;
+                    n.chainBackward = p;
+                    if (first) {
+                        m.chainForward = head;
+                        m.chainBackward = null;
+                        head.chainBackward = m;
+                        head = m;
+                    } else {
+                        m.chainForward = null;
+                        m.chainBackward = tail;
+                        tail.chainForward = m;
+                        tail = m;
+                    }
+                }
+            }
         }
     }
 
     @Override
     public TSet<Entry<K, V>> entrySet() {
-        return new LinkedHashMapEntrySet<>(this);
+        return new TLinkedHashMapEntrySet<>(this, false);
     }
 
     @Override
     public TSet<K> keySet() {
+        return sequencedKeySet();
+    }
+
+    @Override
+    public TSequencedSet<K> sequencedKeySet() {
         if (cachedKeySet == null) {
-            cachedKeySet = new TAbstractSet<K>() {
-                @Override
-                public boolean contains(Object object) {
-                    return containsKey(object);
-                }
-
-                @Override
-                public int size() {
-                    return TLinkedHashMap.this.size();
-                }
-
-                @Override
-                public void clear() {
-                    TLinkedHashMap.this.clear();
-                }
-
-                @Override
-                public boolean remove(Object key) {
-                    if (containsKey(key)) {
-                        TLinkedHashMap.this.remove(key);
-                        return true;
-                    }
-                    return false;
-                }
-
-                @Override
-                public TIterator<K> iterator() {
-                    return new KeyIterator<>(TLinkedHashMap.this);
-                }
-
-                @Override
-                public void forEach(Consumer<? super K> action) {
-                    if (elementCount > 0) {
-                        int prevModCount = modCount;
-                        LinkedHashMapEntry<K, V> entry = head;
-                        do {
-                            action.accept(entry.key);
-                            entry = entry.chainForward;
-                            if (modCount != prevModCount) {
-                                throw new TConcurrentModificationException();
-                            }
-                        } while (entry != null);
-                    }
-                }
-            };
+            cachedKeySet = new TLinkedHashMapKeySet<>(this, false);
         }
-        return cachedKeySet;
+        return (TSequencedSet<K>) cachedKeySet;
     }
 
     @Override
     public TCollection<V> values() {
+        return sequencedValues();
+    }
+
+    @Override
+    public TSequencedCollection<V> sequencedValues() {
         if (cachedValues == null) {
-            cachedValues = new TAbstractCollection<V>() {
-                @Override
-                public boolean contains(Object object) {
-                    return containsValue(object);
-                }
-
-                @Override
-                public int size() {
-                    return TLinkedHashMap.this.size();
-                }
-
-                @Override
-                public void clear() {
-                    TLinkedHashMap.this.clear();
-                }
-
-                @Override
-                public TIterator<V> iterator() {
-                    return new ValueIterator<>(TLinkedHashMap.this);
-                }
-
-                @Override
-                public void forEach(Consumer<? super V> action) {
-                    if (elementCount > 0) {
-                        int prevModCount = modCount;
-                        LinkedHashMapEntry<K, V> entry = head;
-                        do {
-                            action.accept(entry.value);
-                            entry = entry.chainForward;
-                            if (modCount != prevModCount) {
-                                throw new TConcurrentModificationException();
-                            }
-                        } while (entry != null);
-                    }
-                }
-            };
+            cachedValues = new TLinkedHashMapValues<>(this, false);
         }
-        return cachedValues;
+        return (TSequencedCollection<V>) cachedValues;
+    }
+
+    @Override
+    public TSequencedSet<Entry<K, V>> sequencedEntrySet() {
+        return new TLinkedHashMapEntrySet<>(this, false);
     }
 
     @Override
     public V remove(Object key) {
-        LinkedHashMapEntry<K, V> m = (LinkedHashMapEntry<K, V>) removeEntry(key);
+        LinkedHashMapEntry<K, V> m = (LinkedHashMapEntry<K, V>) removeByKey(key);
         if (m == null) {
             return null;
         }
@@ -509,13 +332,18 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
         LinkedHashMapEntry<K, V> n = m.chainForward;
         if (p != null) {
             p.chainForward = n;
+            if (n != null) {
+                n.chainBackward = p;
+            } else {
+                tail = p;
+            }
         } else {
             head = n;
-        }
-        if (n != null) {
-            n.chainBackward = p;
-        } else {
-            tail = p;
+            if (n != null) {
+                n.chainBackward = null;
+            } else {
+                tail = null;
+            }
         }
         return m.value;
     }
@@ -544,5 +372,42 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
         super.clear();
         head = null;
         tail = null;
+    }
+
+    @Override
+    public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        if (elementCount > 0) {
+            int prevModCount = modCount;
+            LinkedHashMapEntry<K, V> entry = head;
+            do {
+                entry.value = function.apply(entry.key, entry.value);
+                entry = entry.chainForward;
+                if (modCount != prevModCount) {
+                    throw new TConcurrentModificationException();
+                }
+            } while (entry != null);
+        }
+    }
+
+    @Override
+    public V putFirst(K k, V v) {
+        return putImpl(k, v, true);
+    }
+
+    @Override
+    public V putLast(K k, V v) {
+        return putImpl(k, v, false);
+    }
+
+    @Override
+    public TSequencedMap<K, V> reversed() {
+        return new TReversedLinkedHashMap<>(this);
+    }
+
+    static <T> T checkNotNull(T node) {
+        if (node == null) {
+            throw new TNoSuchElementException();
+        }
+        return node;
     }
 }

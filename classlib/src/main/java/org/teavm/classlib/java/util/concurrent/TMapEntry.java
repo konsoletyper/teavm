@@ -70,7 +70,7 @@ class TMapEntry<K, V> implements TMap.Entry<K, V>, Cloneable {
 
     @Override
     public int hashCode() {
-        return (key == null ? 0 : key.hashCode()) ^ (value == null ? 0 : value.hashCode());
+        return Objects.hashCode(key) ^ Objects.hashCode(value);
     }
 
     @Override

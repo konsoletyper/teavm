@@ -53,19 +53,19 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof TMap.Entry)) {
-                return false;
+            if (this == obj) {
+                return true;
             }
-            TMap.Entry<?, ?> other = (TMap.Entry<?, ?>) obj;
-            if (getKey() == null ? other.getKey() != null : !getKey().equals(other.getKey())) {
-                return false;
+            if (obj instanceof TMap.Entry) {
+                TMap.Entry<?, ?> entry = (TMap.Entry<?, ?>) obj;
+                return TObjects.equals(key, entry.getKey()) && TObjects.equals(value, entry.getValue());
             }
-            return getValue() == null ? other.getValue() == null : getValue().equals(other.getValue());
+            return false;
         }
 
         @Override
         public int hashCode() {
-            return (getKey() == null ? 0 : getKey().hashCode()) ^ (getValue() == null ? 0 : getValue().hashCode());
+            return TObjects.hashCode(key) ^ TObjects.hashCode(value);
         }
 
         @Override
@@ -104,19 +104,19 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof TMap.Entry)) {
-                return false;
+            if (this == obj) {
+                return true;
             }
-            TMap.Entry<?, ?> other = (TMap.Entry<?, ?>) obj;
-            if (getKey() == null ? other.getKey() != null : !getKey().equals(other.getKey())) {
-                return false;
+            if (obj instanceof TMap.Entry) {
+                TMap.Entry<?, ?> entry = (TMap.Entry<?, ?>) obj;
+                return TObjects.equals(key, entry.getKey()) && TObjects.equals(value, entry.getValue());
             }
-            return getValue() == null ? other.getValue() == null : getValue().equals(other.getValue());
+            return false;
         }
 
         @Override
         public int hashCode() {
-            return (getKey() == null ? 0 : getKey().hashCode()) ^ (getValue() == null ? 0 : getValue().hashCode());
+            return TObjects.hashCode(key) ^ TObjects.hashCode(value);
         }
 
         @Override
@@ -254,7 +254,7 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
         int result = 0;
         for (TIterator<? extends TMap.Entry<K, V>> iter = entrySet().iterator(); iter.hasNext();) {
             TMap.Entry<K, V> entry = iter.next();
-            result ^= entry.hashCode();
+            result += entry.hashCode();
         }
         return result;
     }
@@ -292,16 +292,16 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
     private class KeySet extends TAbstractSet<K> {
         @Override
         public TIterator<K> iterator() {
-            final TIterator<TMap.Entry<K, V>> iter = TAbstractMap.this.entrySet().iterator();
-            return new TIterator<K>() {
+            final TIterator<TMap.Entry<K, V>> it = TAbstractMap.this.entrySet().iterator();
+            return new TIterator<>() {
                 @Override public boolean hasNext() {
-                    return iter.hasNext();
+                    return it.hasNext();
                 }
                 @Override public K next() {
-                    return iter.next().getKey();
+                    return it.next().getKey();
                 }
                 @Override public void remove() {
-                    iter.remove();
+                    it.remove();
                 }
             };
         }
