@@ -110,7 +110,7 @@ public class FormatterTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY)
+    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void formatsChar() {
         assertEquals("x:  Y:\uDBFF\uDFFF ", new Formatter().format("%c:%3C:%-3c", 'x', 'y', 0x10ffff).toString());
 

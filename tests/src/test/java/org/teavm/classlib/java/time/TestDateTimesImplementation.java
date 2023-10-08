@@ -310,7 +310,7 @@ public class TestDateTimesImplementation {
     }
 
     @Test(dataProvider = "safeMultiplyLongLongProviderOverflow", expectedExceptions = ArithmeticException.class)
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void test_safeMultiplyLongLong_overflow(long a, long b) {
         Jdk8Methods.safeMultiply(a, b);
     }

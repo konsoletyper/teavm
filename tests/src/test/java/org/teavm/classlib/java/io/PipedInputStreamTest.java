@@ -106,7 +106,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void available() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -133,6 +133,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WASI)
     public void close() throws IOException {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -150,7 +151,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void connectLjava_io_PipedOutputStream() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -168,7 +169,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void test_read() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -186,7 +187,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void test_read$BII() throws Exception {
         pis = new PipedInputStream();
         pos = new PipedOutputStream();
@@ -208,6 +209,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WASI)
     public void read$BII_2() throws IOException {
         PipedInputStream obj = new PipedInputStream();
         try {
@@ -221,6 +223,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WASI)
     public void read$BII_3() throws IOException {
         PipedInputStream obj = new PipedInputStream();
         try {
@@ -234,6 +237,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WASI)
     public void read$BII_4() throws IOException {
         PipedInputStream obj = new PipedInputStream();
         try {
@@ -375,7 +379,7 @@ public class PipedInputStreamTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void read_after_write_close() throws Exception {
         PipedInputStream in = new PipedInputStream();
         PipedOutputStream out = new PipedOutputStream();

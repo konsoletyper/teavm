@@ -42,9 +42,12 @@ import java.util.Locale;
 import java.util.TimeZone;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
+@SkipPlatform(TestPlatform.WASI)
 public class CalendarTest {
     Locale defaultLocale;
 

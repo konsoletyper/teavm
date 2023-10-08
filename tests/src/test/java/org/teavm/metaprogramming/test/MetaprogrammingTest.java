@@ -484,7 +484,7 @@ public class MetaprogrammingTest {
     private static int counter;
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY)
+    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void arrayTypeSelected() {
         assertEquals(String[].class, createInstance(String.class, 1).getClass());
         assertEquals(String[][].class, createInstance(String[].class, 1).getClass());

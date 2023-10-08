@@ -90,13 +90,14 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WASI)
     public void constructorLjava_io_PipedInputStream() throws Exception {
         out = new PipedOutputStream(new PipedInputStream());
         out.write('b');
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void close() throws Exception {
         out = new PipedOutputStream();
         reader = new PReader(out);
@@ -118,6 +119,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WASI)
     public void connectLjava_io_PipedInputStream() {
         try {
             out = new PipedOutputStream();
@@ -132,7 +134,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void flush() throws IOException {
         out = new PipedOutputStream();
         reader = new PReader(out);
@@ -145,7 +147,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void write$BII() throws IOException {
         out = new PipedOutputStream();
         reader = new PReader(out);
@@ -157,6 +159,7 @@ public class PipedOutputStreamTest  {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WASI)
     public void test_writeI() throws IOException {
         out = new PipedOutputStream();
         reader = new PReader(out);

@@ -26,6 +26,7 @@ import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
+@SkipPlatform(TestPlatform.WASI)
 public class DateTest {
     @SuppressWarnings("deprecation")
     @Test

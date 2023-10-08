@@ -1456,7 +1456,7 @@ public class TestZonedDateTime extends AbstractDateTimeTest {
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void test_plus_longUnit_null() {
         testDateTimeParis.plus(0, null);
     }
