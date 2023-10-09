@@ -1261,7 +1261,7 @@ public class TestLocalDateTime extends AbstractDateTimeTest {
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void test_plus_longPeriodUnit_null() {
         test2007x07x15x12x30x40x987654321.plus(1, null);
     }
@@ -1972,7 +1972,7 @@ public class TestLocalDateTime extends AbstractDateTimeTest {
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void test_minus_longPeriodUnit_null() {
         test2007x07x15x12x30x40x987654321.minus(1, null);
     }

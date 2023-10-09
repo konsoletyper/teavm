@@ -32,6 +32,7 @@ import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
+@SkipPlatform(TestPlatform.WASI)
 public class RandomTest {
     @Test
     public void testDoubles() {

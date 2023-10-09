@@ -18,9 +18,12 @@ package org.teavm.classlib.java.lang;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
+@SkipPlatform(TestPlatform.WASI)
 public class MathTest {
     private static void sameDouble(double a, double b) {
         assertEquals(Double.valueOf(a), Double.valueOf(b));

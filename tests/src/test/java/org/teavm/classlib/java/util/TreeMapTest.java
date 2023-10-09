@@ -75,7 +75,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
 
-@SuppressWarnings({ "UnnecessaryTemporaryOnConversionToString", "SuspiciousMethodCalls" })
+@SuppressWarnings("SuspiciousMethodCalls")
 @RunWith(TeaVMTestRunner.class)
 public class TreeMapTest {
 
@@ -155,9 +155,9 @@ public class TreeMapTest {
     public void test_ConstructorLjava_util_Map() {
         // Test for method java.util.TreeMap(java.util.Map)
         TreeMap<Object, Object> myTreeMap = new TreeMap<>(new HashMap<>(tm));
-        assertTrue("Map is incorrect size", myTreeMap.size() == objArray.length);
+        assertEquals("Map is incorrect size", objArray.length, myTreeMap.size());
         for (Object element : objArray) {
-            assertTrue("Map has incorrect mappings", myTreeMap.get(element.toString()).equals(element));
+            assertEquals("Map has incorrect mappings", myTreeMap.get(element.toString()), element);
         }
     }
 
@@ -713,6 +713,27 @@ public class TreeMapTest {
         assertEquals("{3=15, 4=20, 6=13}", map.subMap(3, 9).toString());
         assertEquals("{10=119}", map.subMap(10, 29).toString());
         assertEquals("{}", map.subMap(29, 100).toString());
+    }
+
+    @Test
+    public void iteratorRemove() {
+        var keys = new String[] { "a", "b", "c", "d", "e", "f", "g" };
+        for (var i = 1; i < keys.length; ++i) {
+            for (var j = 0; j < i; ++j) {
+                var map = new TreeMap<String, Integer>();
+                for (var k = 0; k < i; ++k) {
+                    map.put(keys[k], k);
+                }
+                var iter = map.keySet().iterator();
+                for (var k = 0; k < i; ++k) {
+                    assertEquals(keys[k], iter.next());
+                    if (k == j) {
+                        iter.remove();
+                    }
+                }
+                assertFalse(iter.hasNext());
+            }
+        }
     }
 
     private static final List<Integer> BASE_LIST = Arrays.asList(1, 6, 2, 5, 3, 4);

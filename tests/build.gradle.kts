@@ -45,18 +45,18 @@ tasks.test {
     systemProperty("teavm.junit.js", providers.gradleProperty("teavm.tests.js").orElse("true").get())
     systemProperty("teavm.junit.js.runner", browser)
     systemProperty("teavm.junit.minified", providers.gradleProperty("teavm.tests.minified").orElse("false").get())
-    systemProperty("teavm.junit.optimized", providers.gradleProperty("teavm.tests.optimized").orElse("false").get())
+    systemProperty("teavm.junit.optimized", providers.gradleProperty("teavm.tests.optimized").orElse("true").get())
     systemProperty("teavm.junit.js.decodeStack", providers.gradleProperty("teavm.tests.decodeStack")
             .orElse("false").get())
 
-    systemProperty("teavm.junit.wasm", providers.gradleProperty("teavm.tests.wasm").orElse("false").get())
+    systemProperty("teavm.junit.wasm", providers.gradleProperty("teavm.tests.wasm").orElse("true").get())
     systemProperty("teavm.junit.wasm.runner", browser)
 
-    systemProperty("teavm.junit.wasi", providers.gradleProperty("teavm.tests.wasi").orElse("false").get())
+    systemProperty("teavm.junit.wasi", providers.gradleProperty("teavm.tests.wasi").orElse("true").get())
     systemProperty("teavm.junit.wasi.runner", providers.gradleProperty("teavm.tests.wasi.runner")
             .orElse("./run-wasi.sh").get())
 
-    systemProperty("teavm.junit.c", providers.gradleProperty("teavm.tests.c").orElse("false").get())
+    systemProperty("teavm.junit.c", providers.gradleProperty("teavm.tests.c").orElse("true").get())
     systemProperty("teavm.junit.c.compiler", providers.gradleProperty("teavm.tests.c.compiler")
             .orElse("compile-c-unix-fast.sh").get())
 

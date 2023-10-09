@@ -668,7 +668,7 @@ public class TestOffsetTime extends AbstractDateTimeTest {
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void test_with_TemporalField_null() {
         test11x30x59x500pone.with((TemporalField) null, 0);
     }

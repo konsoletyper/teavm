@@ -32,7 +32,7 @@ import org.teavm.junit.TestPlatform;
 @EachTestCompiledSeparately
 public class ClassLoaderTest {
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void loadsResources() {
         assertEquals("q", loadResource("1"));
         assertEquals("qw", loadResource("2"));
