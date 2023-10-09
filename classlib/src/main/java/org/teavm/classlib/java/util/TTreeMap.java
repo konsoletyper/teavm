@@ -732,7 +732,13 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             if (last == null) {
                 throw new TNoSuchElementException();
             }
-            owner.root = owner.deleteNode(owner.root, last.getKey());
+            var newRoot = owner.deleteNode(owner.root, last.getKey());
+            if (owner.root != newRoot) {
+                owner.root = newRoot;
+                var newPath = owner.pathToNext(last.getKey(), reverse);
+                System.arraycopy(newPath, 0, path, 0, newPath.length);
+                depth = newPath.length;
+            }
             modCount = ++owner.modCount;
             last = null;
         }
