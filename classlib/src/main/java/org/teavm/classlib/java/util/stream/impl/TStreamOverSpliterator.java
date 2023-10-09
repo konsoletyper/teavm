@@ -18,11 +18,12 @@ package org.teavm.classlib.java.util.stream.impl;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import org.teavm.classlib.java.util.TSpliterator;
 
 public class TStreamOverSpliterator<T> extends TSimpleStreamImpl<T> {
-    private Spliterator<T> spliterator;
+    private TSpliterator<T> spliterator;
 
-    public TStreamOverSpliterator(Spliterator<T> spliterator) {
+    public TStreamOverSpliterator(TSpliterator<T> spliterator) {
         this.spliterator = spliterator;
     }
 

@@ -364,10 +364,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     @Override
     public TSet<Entry<K, V>> entrySet() {
-        if (cachedEntrySet == null) {
-            cachedEntrySet = new EntrySet<>(this, null, true, false, null, true, false, false);
-        }
-        return cachedEntrySet;
+        return sequencedEntrySet();
     }
 
     @Override
@@ -469,7 +466,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     public Entry<K, V> pollFirstEntry() {
         TreeNode<K, V> node = firstNode(false);
         if (node != null) {
-            root = deleteNode(root, node.getKey());
+            remove(node.getKey());
         }
         return node;
     }
@@ -478,9 +475,30 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     public Entry<K, V> pollLastEntry() {
         TreeNode<K, V> node = firstNode(true);
         if (node != null) {
-            root = deleteNode(root, node.getKey());
+            remove(node.getKey());
         }
         return node;
+    }
+
+    @Override
+    public TCollection<V> values() {
+        return sequencedValues();
+    }
+
+    @Override
+    public TSequencedCollection<V> sequencedValues() {
+        if (cachedValues == null) {
+            cachedValues = new NavigableMapValues<>(this);
+        }
+        return (TSequencedCollection<V>) cachedValues;
+    }
+
+    @Override
+    public TSequencedSet<Entry<K, V>> sequencedEntrySet() {
+        if (cachedEntrySet == null) {
+            cachedEntrySet = new EntrySet<>(this, null, true, false, null, true, false, false);
+        }
+        return cachedEntrySet;
     }
 
     @Override
@@ -542,7 +560,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         return copy;
     }
 
-    static class EntrySet<K, V> extends TAbstractSet<Entry<K, V>> {
+    static class EntrySet<K, V> extends TAbstractSet<Entry<K, V>> implements TSequencedSet<Entry<K, V>> {
         private int modCount = -1;
         private TTreeMap<K, V> owner;
         private K from;
@@ -619,7 +637,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             } else {
                 toPath = owner.pathToFirst(true);
             }
-            return new EntryIterator<>(owner, toPath, from, fromIncluded, fromChecked, true);
+            return new EntryIterator<>(owner, toPath, from, fromChecked, fromIncluded, true);
         }
 
         @Override
@@ -650,6 +668,11 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         @Override
         public boolean isEmpty() {
             return size() == 0;
+        }
+
+        @Override
+        public TSequencedSet<Entry<K, V>> reversed() {
+            return new EntrySet<>(owner, from, fromIncluded, fromChecked, to, toIncluded, toChecked, !reverse);
         }
     }
 
@@ -772,11 +795,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public TSet<Entry<K, V>> entrySet() {
-            if (entrySetCache == null) {
-                entrySetCache = new EntrySet<>(owner, from, fromIncluded,
-                        fromChecked, to, toIncluded, toChecked, reverse);
-            }
-            return entrySetCache;
+            return sequencedEntrySet();
         }
 
         @Override
@@ -1021,7 +1040,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         public Entry<K, V> pollFirstEntry() {
             TreeNode<K, V> node = !reverse ? firstNode() : lastNode();
             if (node != null) {
-                owner.deleteNode(owner.root, node.getKey());
+                owner.remove(node.getKey());
             }
             return node;
         }
@@ -1030,9 +1049,31 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         public Entry<K, V> pollLastEntry() {
             TreeNode<K, V> node = !reverse ? lastNode() : firstNode();
             if (node != null) {
-                owner.deleteNode(owner.root, node.getKey());
+                owner.remove(node.getKey());
             }
             return node;
+        }
+
+        @Override
+        public TCollection<V> values() {
+            return sequencedValues();
+        }
+
+        @Override
+        public TSequencedCollection<V> sequencedValues() {
+            if (cachedValues == null) {
+                cachedValues = new NavigableMapValues<>(this);
+            }
+            return (TSequencedCollection<V>) cachedValues;
+        }
+
+        @Override
+        public TSequencedSet<Entry<K, V>> sequencedEntrySet() {
+            if (entrySetCache == null) {
+                entrySetCache = new EntrySet<>(owner, from, fromIncluded,
+                        fromChecked, to, toIncluded, toChecked, reverse);
+            }
+            return entrySetCache;
         }
 
         @Override
@@ -1086,13 +1127,13 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             if (!reverse) {
                 return new MapView<>(owner, fromKey, inclusive, true, to, toIncluded, toChecked, false);
             } else {
-                return new MapView<>(owner, from, fromIncluded, toChecked, fromKey, inclusive, true, true);
+                return new MapView<>(owner, from, fromIncluded, fromChecked, fromKey, inclusive, true, true);
             }
         }
     }
 
     static class NavigableKeySet<K, V> extends TAbstractSet<K> implements TNavigableSet<K> {
-        private TNavigableMap<K, V> map;
+        private final TNavigableMap<K, V> map;
 
         NavigableKeySet(TNavigableMap<K, V> map) {
             this.map = map;
@@ -1115,7 +1156,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public TSortedSet<K> tailSet(K fromElement) {
-            return map.headMap(fromElement, true).navigableKeySet();
+            return map.tailMap(fromElement, true).navigableKeySet();
         }
 
         @Override
@@ -1192,7 +1233,41 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public TNavigableSet<K> tailSet(K fromElement, boolean inclusive) {
-            return map.headMap(fromElement, inclusive).navigableKeySet();
+            return map.tailMap(fromElement, inclusive).navigableKeySet();
+        }
+    }
+
+    static class NavigableMapValues<K, V> extends TAbstractCollection<V> implements TSequencedCollection<V> {
+        private final TNavigableMap<K, V> map;
+
+        NavigableMapValues(TNavigableMap<K, V> map) {
+            this.map = map;
+        }
+
+        @Override
+        public int size() {
+            return map.size();
+        }
+
+        @Override
+        public TIterator<V> iterator() {
+            final TIterator<TMap.Entry<K, V>> it = map.entrySet().iterator();
+            return new TIterator<>() {
+                @Override public boolean hasNext() {
+                    return it.hasNext();
+                }
+                @Override public V next() {
+                    return it.next().getValue();
+                }
+                @Override public void remove() {
+                    it.remove();
+                }
+            };
+        }
+
+        @Override
+        public TSequencedCollection<V> reversed() {
+            return new NavigableMapValues<>(map.reversed());
         }
     }
 }

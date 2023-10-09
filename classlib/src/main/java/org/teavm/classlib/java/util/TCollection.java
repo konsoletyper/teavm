@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.util;
 
-import java.util.Spliterator;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import org.teavm.classlib.java.lang.TIterable;
@@ -59,7 +58,7 @@ public interface TCollection<E> extends TIterable<E> {
 
     @SuppressWarnings("unchecked")
     default TStream<E> stream() {
-        return new TStreamOverSpliterator<>((Spliterator<E>) spliterator());
+        return new TStreamOverSpliterator<>(spliterator());
     }
 
     default boolean removeIf(Predicate<? super E> filter) {
