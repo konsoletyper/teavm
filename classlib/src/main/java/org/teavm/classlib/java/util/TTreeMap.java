@@ -466,8 +466,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     public Entry<K, V> pollFirstEntry() {
         TreeNode<K, V> node = firstNode(false);
         if (node != null) {
-            root = deleteNode(root, node.getKey());
-            modCount++;
+            remove(node.getKey());
         }
         return node;
     }
@@ -476,8 +475,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     public Entry<K, V> pollLastEntry() {
         TreeNode<K, V> node = firstNode(true);
         if (node != null) {
-            root = deleteNode(root, node.getKey());
-            modCount++;
+            remove(node.getKey());
         }
         return node;
     }
