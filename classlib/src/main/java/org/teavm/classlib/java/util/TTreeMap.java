@@ -492,7 +492,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         if (cachedValues == null) {
             cachedValues = new NavigableMapValues<>(this);
         }
-        return (TSequencedCollection<V>)cachedValues;
+        return (TSequencedCollection<V>) cachedValues;
     }
 
     @Override
@@ -1066,7 +1066,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             if (cachedValues == null) {
                 cachedValues = new NavigableMapValues<>(this);
             }
-            return (TSequencedCollection<V>)cachedValues;
+            return (TSequencedCollection<V>) cachedValues;
         }
 
         @Override

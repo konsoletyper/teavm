@@ -163,16 +163,39 @@ public class TreeSetTest {
         it.remove();
         assertEquals("d", it.next());
         it.remove();
-//      TODO fixme  assertEquals("e", it.next());
-//        it.remove();
-//        assertEquals("f", it.next());
-//        it.remove();
-//        assertTrue(set.isEmpty());
-//        try {
-//            it.next();
-//            fail();
-//        } catch (NoSuchElementException e) {
-//            // ok
-//        }
+        assertEquals("e", it.next());
+        it.remove();
+        assertEquals("f", it.next());
+        it.remove();
+        assertTrue(set.isEmpty());
+        try {
+            it.next();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+        set = new TreeSet<>(List.of("a", "b", "c", "d"));
+        set.add("e");
+        set.add("f");
+        it = set.reversed().iterator();
+        assertEquals("f", it.next());
+        it.remove();
+        assertEquals("e", it.next());
+        it.remove();
+        assertEquals("d", it.next());
+        it.remove();
+        assertEquals("c", it.next());
+        it.remove();
+        assertEquals("b", it.next());
+        it.remove();
+        assertEquals("a", it.next());
+        it.remove();
+        assertTrue(set.isEmpty());
+        try {
+            it.next();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
     }
 }
