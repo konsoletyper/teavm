@@ -683,22 +683,20 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     }
 
     static class EntryIterator<K, V> implements TIterator<Entry<K, V>> {
-        private int modCount;
-        private TTreeMap<K, V> owner;
+        private final TTreeMap<K, V> owner;
+        private final K to;
+        private final boolean toChecked;
+        private final boolean toIncluded;
+        private final boolean reverse;
         private TreeNode<K, V>[] path;
         private TreeNode<K, V> last;
-        private K to;
-        private boolean toChecked;
-        private boolean toIncluded;
-        private int depth;
-        private boolean reverse;
+        private int modCount;
 
         EntryIterator(TTreeMap<K, V> owner, TreeNode<K, V>[] path, K to, boolean toChecked, boolean toIncluded,
                 boolean reverse) {
             this.owner = owner;
             modCount = owner.modCount;
-            this.path = TArrays.copyOf(path, owner.root == null ? 0 : owner.root.height);
-            depth = path.length;
+            this.path = path;
             this.to = to;
             this.toChecked = toChecked;
             this.toIncluded = toIncluded;
@@ -708,7 +706,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public boolean hasNext() {
-            return depth > 0;
+            return path.length > 0;
         }
 
         @Override
@@ -716,39 +714,31 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             if (modCount != owner.modCount) {
                 throw new TConcurrentModificationException();
             }
-            if (depth == 0) {
+            if (path.length == 0) {
                 throw new TNoSuchElementException();
             }
-            TreeNode<K, V> node = path[--depth];
-            last = node;
-            TreeNode<K, V> down = node.down(reverse);
-            if (down != null) {
-                node = down;
-                while (node != null) {
-                    path[depth++] = node;
-                    node = node.forward(reverse);
-                }
-            }
+            last = path[path.length - 1];
+            path = owner.pathToNext(last.getKey(), reverse);
 
             checkFinished();
             return last;
         }
 
         private void checkFinished() {
-            if (!toChecked || depth == 0) {
+            if (!toChecked || path.length == 0) {
                 return;
             }
-            int cmp = owner.comparator.compare(path[depth - 1].getKey(), to);
+            int cmp = owner.comparator.compare(path[path.length - 1].getKey(), to);
             if (reverse) {
                 cmp = -cmp;
             }
             if (toIncluded) {
                 if (cmp > 0) {
-                    depth = 0;
+                    path = new TreeNode[0];
                 }
-            }  else {
+            } else {
                 if (cmp >= 0) {
-                    depth = 0;
+                    path = new TreeNode[0];
                 }
             }
         }
@@ -761,13 +751,8 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             if (last == null) {
                 throw new IllegalStateException();
             }
-            var newRoot = owner.deleteNode(owner.root, last.getKey());
-            if (owner.root != newRoot) {
-                owner.root = newRoot;
-                var newPath = owner.pathToNext(last.getKey(), reverse);
-                System.arraycopy(newPath, 0, path, 0, newPath.length);
-                depth = newPath.length;
-            }
+            owner.root = owner.deleteNode(owner.root, last.getKey());
+            path = owner.pathToNext(last.getKey(), reverse);
             modCount = ++owner.modCount;
             last = null;
         }
