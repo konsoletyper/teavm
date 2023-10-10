@@ -468,7 +468,8 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     public Entry<K, V> pollFirstEntry() {
         TreeNode<K, V> node = firstNode(false);
         if (node != null) {
-            remove(node.getKey());
+            root = deleteNode(root, node.getKey());
+            modCount++;
         }
         return clone(node);
     }
@@ -477,7 +478,8 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     public Entry<K, V> pollLastEntry() {
         TreeNode<K, V> node = firstNode(true);
         if (node != null) {
-            remove(node.getKey());
+            root = deleteNode(root, node.getKey());
+            modCount++;
         }
         return clone(node);
     }
@@ -1008,30 +1010,32 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public Entry<K, V> firstEntry() {
-            return !reverse ? firstNode() : lastNode();
+            return TTreeMap.clone(reverse ? lastNode() : firstNode());
         }
 
         @Override
         public Entry<K, V> lastEntry() {
-            return !reverse ? lastNode() : firstNode();
+            return TTreeMap.clone(reverse ? firstNode() : lastNode());
         }
 
         @Override
         public Entry<K, V> pollFirstEntry() {
-            TreeNode<K, V> node = !reverse ? firstNode() : lastNode();
+            TreeNode<K, V> node = reverse ? lastNode() : firstNode();
             if (node != null) {
-                owner.remove(node.getKey());
+                owner.root = owner.deleteNode(owner.root, node.getKey());
+                owner.modCount++;
             }
-            return node;
+            return TTreeMap.clone(node);
         }
 
         @Override
         public Entry<K, V> pollLastEntry() {
-            TreeNode<K, V> node = !reverse ? lastNode() : firstNode();
+            TreeNode<K, V> node = reverse ? firstNode() : lastNode();
             if (node != null) {
-                owner.remove(node.getKey());
+                owner.root = owner.deleteNode(owner.root, node.getKey());
+                owner.modCount++;
             }
-            return node;
+            return TTreeMap.clone(node);
         }
 
         @Override
