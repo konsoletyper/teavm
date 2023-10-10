@@ -589,6 +589,11 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
 
         @Override
+        public boolean isEmpty() {
+            return !iterator().hasNext();
+        }
+
+        @Override
         public int size() {
             if (modCount != owner.modCount) {
                 modCount = owner.modCount;
@@ -671,11 +676,6 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             }
             TreeNode<?, V> node = owner.findExact(key);
             return node != null && node.equals(o);
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return size() == 0;
         }
 
         @Override
@@ -896,6 +896,11 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             } else {
                 owner.clear();
             }
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return fromChecked || toChecked ? entrySet().isEmpty() : owner.isEmpty();
         }
 
         @Override
