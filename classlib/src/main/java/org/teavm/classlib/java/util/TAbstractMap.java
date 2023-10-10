@@ -238,7 +238,7 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
             return false;
         }
         try {
-            for (var it = entrySet().iterator(); it.hasNext(); ) {
+            for (var it = entrySet().iterator(); it.hasNext();) {
                 TMap.Entry<K, V> entry = it.next();
                 if (!other.containsKey(entry.getKey())) {
                     return false;
