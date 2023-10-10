@@ -17,7 +17,6 @@ package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
-import org.teavm.classlib.java.lang.TIllegalArgumentException;
 
 public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TSerializable, TNavigableMap<K, V> {
     static class TreeNode<K, V> extends SimpleEntry<K, V> {
@@ -199,9 +198,11 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     TreeNode<?, V> findExact(Object key) {
         TreeNode<K, V> node = root;
+        @SuppressWarnings("unchecked")
+        K k = (K) key;
+        comparator.compare(k, k);
         while (node != null) {
-            @SuppressWarnings("unchecked")
-            int cmp = comparator.compare((K) key, node.getKey());
+            int cmp = comparator.compare(k, node.getKey());
             if (cmp == 0) {
                 return node;
             } else if (cmp < 0) {
@@ -378,20 +379,17 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     @Override
     public TSortedMap<K, V> subMap(K fromKey, K toKey) {
-        if (comparator.compare(fromKey, toKey) > 0) {
-            throw new TIllegalArgumentException();
-        }
-        return new MapView<>(this, fromKey, true, true, toKey, false, true, false);
+        return subMap(fromKey, true, toKey, false);
     }
 
     @Override
     public TNavigableMap<K, V> headMap(K toKey) {
-        return new MapView<>(this, null, true, false, toKey, false, true, false);
+        return headMap(toKey, false);
     }
 
     @Override
     public TNavigableMap<K, V> tailMap(K fromKey) {
-        return new MapView<>(this, fromKey, true, true, null, false, false, false);
+        return tailMap(fromKey, true);
     }
 
     @Override
@@ -565,16 +563,16 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     }
 
     static class EntrySet<K, V> extends TAbstractSet<Entry<K, V>> implements TSequencedSet<Entry<K, V>> {
+        private final TTreeMap<K, V> owner;
+        private final K from;
+        private final boolean fromIncluded;
+        private final boolean fromChecked;
+        private final K to;
+        private final boolean toIncluded;
+        private final boolean toChecked;
+        private final boolean reverse;
         private int modCount = -1;
-        private TTreeMap<K, V> owner;
-        private K from;
-        private boolean fromIncluded;
-        private boolean fromChecked;
-        private K to;
-        private boolean toIncluded;
-        private boolean toChecked;
         private int cachedSize;
-        private boolean reverse;
 
          EntrySet(TTreeMap<K, V> owner, K from, boolean fromIncluded, boolean fromChecked,
                 K to, boolean toIncluded, boolean toChecked, boolean reverse) {
@@ -590,19 +588,19 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public int size() {
-            int size = cachedSize;
             if (modCount != owner.modCount) {
                 modCount = owner.modCount;
-                size = owner.size();
+                int size = owner.size();
+                TreeNode<K, V>[] fromPath = null;
                 if (fromChecked) {
-                    TreeNode<K, V>[] path = fromIncluded ? owner.pathToNext(from, true)
+                    fromPath = fromIncluded ? owner.pathToNext(from, true)
                             : owner.pathToExactOrNext(from, true);
-                    for (TreeNode<K, V> node : path) {
+                    for (TreeNode<K, V> node : fromPath) {
                         if (node.left != null) {
                             size -= node.left.size;
                         }
                     }
-                    size -= path.length;
+                    size -= fromPath.length;
                 }
                 if (toChecked) {
                     TreeNode<K, V>[] path = toIncluded ? owner.pathToNext(to, false)
@@ -613,10 +611,14 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                         }
                     }
                     size -= path.length;
+                    if (fromPath != null && fromPath.length > 0 && path.length > 0 && owner.comparator.compare(
+                            fromPath[fromPath.length - 1].getKey(), path[path.length - 1].getKey()) == 0) {
+                        size++;
+                    }
                 }
                 cachedSize = size;
             }
-            return size;
+            return cachedSize;
         }
 
         @Override
@@ -757,7 +759,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                 throw new TConcurrentModificationException();
             }
             if (last == null) {
-                throw new TNoSuchElementException();
+                throw new IllegalStateException();
             }
             var newRoot = owner.deleteNode(owner.root, last.getKey());
             if (owner.root != newRoot) {
@@ -772,21 +774,34 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     }
 
     static class MapView<K, V> extends TAbstractMap<K, V> implements TNavigableMap<K, V>, TSerializable {
-        private int modCount = -1;
-        private int cachedSize;
-        private TTreeMap<K, V> owner;
-        private K from;
-        private boolean fromIncluded;
-        private boolean fromChecked;
-        private K to;
-        private boolean toIncluded;
-        private boolean toChecked;
+        private final TTreeMap<K, V> owner;
+        private final K from;
+        private final boolean fromIncluded;
+        private final boolean fromChecked;
+        private final K to;
+        private final boolean toIncluded;
+        private final boolean toChecked;
+        private final boolean reverse;
         private EntrySet<K, V> entrySetCache;
-        private boolean reverse;
         private NavigableKeySet<K, V> cachedNavigableKeySet;
 
         MapView(TTreeMap<K, V> owner, K from, boolean fromIncluded, boolean fromChecked,
                 K to, boolean toIncluded, boolean toChecked, boolean reverse) {
+            check(owner, from, fromChecked, to, toChecked);
+            this.owner = owner;
+            this.from = from;
+            this.fromIncluded = fromIncluded;
+            this.fromChecked = fromChecked;
+            this.to = to;
+            this.toIncluded = toIncluded;
+            this.toChecked = toChecked;
+            this.reverse = reverse;
+            if (reverse) {
+                owner.ensureRevertedComparator();
+            }
+        }
+
+        private void check(TTreeMap<K, V> owner, K from, boolean fromChecked, K to, boolean toChecked) {
             if (fromChecked) {
                 if (toChecked) {
                     if (owner.comparator.compare(from, to) > 0) {
@@ -800,14 +815,6 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                     owner.comparator.compare(to, to);
                 }
             }
-            this.owner = owner;
-            this.from = from;
-            this.fromIncluded = fromIncluded;
-            this.fromChecked = fromChecked;
-            this.to = to;
-            this.toIncluded = toIncluded;
-            this.toChecked = toChecked;
-            this.reverse = reverse;
         }
 
         @Override
@@ -817,18 +824,28 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public TComparator<? super K> comparator() {
-            if (!reverse) {
-                return owner.originalComparator;
-            } else {
-                owner.ensureRevertedComparator();
-                return owner.revertedComparator;
+            return reverse ? owner.revertedComparator : owner.originalComparator;
+        }
+
+        private void checkKey(K key, boolean inclusive) {
+            boolean inRange = inclusive ? keyInRange(key) : keyInClosedRange(key);
+            if (!inRange) {
+                throw new IllegalArgumentException();
             }
         }
 
-        private void checkKey(K key) {
-            if (!keyInRange(key)) {
-                throw new TIllegalArgumentException();
+        private boolean keyInClosedRange(K key) {
+            if (fromChecked) {
+                if (owner.comparator.compare(key, from) < 0) {
+                    return false;
+                }
             }
+            if (toChecked) {
+                if (owner.comparator.compare(key, to) > 0) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private boolean keyInRange(K key) {
@@ -867,7 +884,9 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public V put(K key, V value) {
-            checkKey(key);
+            if (!keyInRange(key)) {
+                throw new IllegalArgumentException();
+            }
             return owner.put(key, value);
         }
 
@@ -882,33 +901,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public int size() {
-            int size = cachedSize;
-            if (modCount != owner.modCount) {
-                modCount = owner.modCount;
-                size = owner.size();
-                if (fromChecked) {
-                    TreeNode<K, V>[] path = fromIncluded ? owner.pathToNext(from, true)
-                            : owner.pathToExactOrNext(from, true);
-                    for (TreeNode<K, V> node : path) {
-                        if (node.left != null) {
-                            size -= node.left.size;
-                        }
-                    }
-                    size -= path.length;
-                }
-                if (toChecked) {
-                    TreeNode<K, V>[] path = toIncluded ? owner.pathToNext(to, false)
-                            : owner.pathToExactOrNext(to, false);
-                    for (TreeNode<K, V> node : path) {
-                        if (node.right != null) {
-                            size -= node.right.size;
-                        }
-                    }
-                    size -= path.length;
-                }
-                cachedSize = size;
-            }
-            return size;
+            return !fromChecked && !toChecked ? owner.size() : entrySet().size();
         }
 
         @Override
@@ -923,26 +916,11 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             if (toChecked) {
                 @SuppressWarnings("unchecked")
                 int cmp = owner.comparator.compare((K) key, to);
-                if (fromIncluded ? cmp > 0 : cmp >= 0) {
+                if (toIncluded ? cmp > 0 : cmp >= 0) {
                     return false;
                 }
             }
             return owner.containsKey(key);
-        }
-
-        @Override
-        public TSortedMap<K, V> subMap(K fromKey, K toKey) {
-            return subMap(fromKey, true, toKey, false);
-        }
-
-        @Override
-        public TSortedMap<K, V> headMap(K toKey) {
-            return headMap(toKey, false);
-        }
-
-        @Override
-        public TSortedMap<K, V> tailMap(K fromKey) {
-            return tailMap(fromKey, true);
         }
 
         @Override
@@ -1111,10 +1089,16 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             return descendingMap().navigableKeySet();
         }
 
+
+        @Override
+        public TSortedMap<K, V> subMap(K fromKey, K toKey) {
+            return subMap(fromKey, true, toKey, false);
+        }
+
         @Override
         public TNavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
-            checkKey(fromKey);
-            checkKey(toKey);
+            checkKey(fromKey, fromInclusive);
+            checkKey(toKey, toInclusive);
             if (!reverse) {
                 return new MapView<>(owner, fromKey, fromInclusive, true, toKey, toInclusive, true, false);
             } else {
@@ -1123,8 +1107,13 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
 
         @Override
+        public TSortedMap<K, V> headMap(K toKey) {
+            return headMap(toKey, false);
+        }
+
+        @Override
         public TNavigableMap<K, V> headMap(K toKey, boolean inclusive) {
-            checkKey(toKey);
+            checkKey(toKey, inclusive);
             if (!reverse) {
                 return new MapView<>(owner, from, fromIncluded, fromChecked, toKey, inclusive, true, false);
             } else {
@@ -1133,8 +1122,13 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
 
         @Override
+        public TSortedMap<K, V> tailMap(K fromKey) {
+            return tailMap(fromKey, true);
+        }
+
+        @Override
         public TNavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
-            checkKey(fromKey);
+            checkKey(fromKey, inclusive);
             if (!reverse) {
                 return new MapView<>(owner, fromKey, inclusive, true, to, toIncluded, toChecked, false);
             } else {
