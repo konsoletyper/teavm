@@ -80,11 +80,11 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
 
         public TreeNode<K, V> forward(boolean reverse) {
-            return !reverse ? left : right;
+            return reverse ? right : left;
         }
 
         public TreeNode<K, V> down(boolean reverse) {
-            return !reverse ? right : left;
+            return reverse ? left : right;
         }
     }
 
@@ -625,7 +625,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public TIterator<Entry<K, V>> iterator() {
-            return !reverse ? ascendingIterator() : descendingIterator();
+            return reverse ? descendingIterator() : ascendingIterator();
         }
 
         private TIterator<Entry<K, V>> ascendingIterator() {
@@ -912,7 +912,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public K firstKey() {
-            TreeNode<K, V> node = !reverse ? firstNode() : lastNode();
+            TreeNode<K, V> node = reverse ? lastNode() : firstNode();
             if (node == null) {
                 throw new TNoSuchElementException();
             }
@@ -921,7 +921,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public K lastKey() {
-            TreeNode<K, V> node = !reverse ? lastNode() : firstNode();
+            TreeNode<K, V> node = reverse ? firstNode() : lastNode();
             if (node == null) {
                 throw new TNoSuchElementException();
             }
@@ -1088,10 +1088,10 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         public TNavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
             checkKey(fromKey, fromInclusive);
             checkKey(toKey, toInclusive);
-            if (!reverse) {
-                return new MapView<>(owner, fromKey, fromInclusive, true, toKey, toInclusive, true, false);
-            } else {
+            if (reverse) {
                 return new MapView<>(owner, toKey, toInclusive, true, fromKey, fromInclusive, true, true);
+            } else {
+                return new MapView<>(owner, fromKey, fromInclusive, true, toKey, toInclusive, true, false);
             }
         }
 
@@ -1103,10 +1103,10 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         @Override
         public TNavigableMap<K, V> headMap(K toKey, boolean inclusive) {
             checkKey(toKey, inclusive);
-            if (!reverse) {
-                return new MapView<>(owner, from, fromIncluded, fromChecked, toKey, inclusive, true, false);
-            } else {
+            if (reverse) {
                 return new MapView<>(owner, toKey, inclusive, true, to, toIncluded, toChecked, true);
+            } else {
+                return new MapView<>(owner, from, fromIncluded, fromChecked, toKey, inclusive, true, false);
             }
         }
 
@@ -1118,10 +1118,10 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         @Override
         public TNavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
             checkKey(fromKey, inclusive);
-            if (!reverse) {
-                return new MapView<>(owner, fromKey, inclusive, true, to, toIncluded, toChecked, false);
-            } else {
+            if (reverse) {
                 return new MapView<>(owner, from, fromIncluded, fromChecked, fromKey, inclusive, true, true);
+            } else {
+                return new MapView<>(owner, fromKey, inclusive, true, to, toIncluded, toChecked, false);
             }
         }
     }
