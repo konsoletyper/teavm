@@ -89,6 +89,10 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
     }
 
+    private static <K, V> TMap.Entry<K, V> clone(TMap.Entry<K, V> entry) {
+        return entry == null ? null : TMap.entry(entry.getKey(), entry.getValue());
+    }
+
     TreeNode<K, V> root;
     private TComparator<? super K> comparator;
     private TComparator<? super K> originalComparator;
@@ -410,7 +414,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     @Override
     public Entry<K, V> lowerEntry(K key) {
-        return findNext(key, true);
+        return clone(findNext(key, true));
     }
 
     @Override
@@ -421,7 +425,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     @Override
     public Entry<K, V> floorEntry(K key) {
-        return findExactOrNext(key, true);
+        return clone(findExactOrNext(key, true));
     }
 
     @Override
@@ -432,7 +436,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     @Override
     public Entry<K, V> ceilingEntry(K key) {
-        return findExactOrNext(key, false);
+        return clone(findExactOrNext(key, false));
     }
 
     @Override
@@ -443,7 +447,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     @Override
     public Entry<K, V> higherEntry(K key) {
-        return findNext(key, false);
+        return clone(findNext(key, false));
     }
 
     @Override
@@ -454,12 +458,12 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     @Override
     public Entry<K, V> firstEntry() {
-        return firstNode(false);
+        return clone(firstNode(false));
     }
 
     @Override
     public Entry<K, V> lastEntry() {
-        return firstNode(true);
+        return clone(firstNode(true));
     }
 
     @Override
@@ -468,7 +472,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         if (node != null) {
             remove(node.getKey());
         }
-        return node;
+        return clone(node);
     }
 
     @Override
@@ -477,7 +481,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         if (node != null) {
             remove(node.getKey());
         }
-        return node;
+        return clone(node);
     }
 
     @Override
@@ -783,6 +787,19 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         MapView(TTreeMap<K, V> owner, K from, boolean fromIncluded, boolean fromChecked,
                 K to, boolean toIncluded, boolean toChecked, boolean reverse) {
+            if (fromChecked) {
+                if (toChecked) {
+                    if (owner.comparator.compare(from, to) > 0) {
+                        throw new IllegalArgumentException();
+                    }
+                } else {
+                    owner.comparator.compare(from, from);
+                }
+            } else {
+                if (toChecked) {
+                    owner.comparator.compare(to, to);
+                }
+            }
             this.owner = owner;
             this.from = from;
             this.fromIncluded = fromIncluded;
@@ -823,7 +840,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             }
             if (toChecked) {
                 int cmp = owner.comparator.compare(key, to);
-                if (fromIncluded ? cmp > 0 : cmp >= 0) {
+                if (toIncluded ? cmp > 0 : cmp >= 0) {
                     return false;
                 }
             }
@@ -1099,14 +1116,8 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             checkKey(fromKey);
             checkKey(toKey);
             if (!reverse) {
-                if (owner.comparator.compare(fromKey, toKey) > 0) {
-                    throw new IllegalArgumentException();
-                }
                 return new MapView<>(owner, fromKey, fromInclusive, true, toKey, toInclusive, true, false);
             } else {
-                if (owner.comparator.compare(fromKey, toKey) < 0) {
-                    throw new IllegalArgumentException();
-                }
                 return new MapView<>(owner, toKey, toInclusive, true, fromKey, fromInclusive, true, true);
             }
         }
@@ -1263,6 +1274,18 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                     it.remove();
                 }
             };
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            for (TIterator<TMap.Entry<K, V>> it = map.entrySet().iterator(); it.hasNext();) {
+                TMap.Entry<K, V> e = it.next();
+                if (TObjects.equals(e.getValue(), o)) {
+                    map.remove(e.getKey());
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
