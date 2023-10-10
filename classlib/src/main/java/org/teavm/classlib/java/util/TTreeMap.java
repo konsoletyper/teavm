@@ -1181,6 +1181,11 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
 
         @Override
+        public boolean isEmpty() {
+            return map.isEmpty();
+        }
+
+        @Override
         public int size() {
             return map.size();
         }
@@ -1253,6 +1258,11 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         NavigableMapValues(TNavigableMap<K, V> map) {
             this.map = map;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return map.isEmpty();
         }
 
         @Override
