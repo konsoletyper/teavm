@@ -364,14 +364,14 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      */
     public void build(BuildTarget buildTarget, String outputName) {
         // Check dependencies
-        reportPhase(TeaVMPhase.DEPENDENCY_ANALYSIS, lastKnownClasses > 0 ? lastKnownClasses : 1);
+        reportPhase(TeaVMPhase.DEPENDENCY_ANALYSIS, lastKnownClasses);
         if (wasCancelled()) {
             return;
         }
 
         dependencyAnalyzer.setAsyncSupported(target.isAsyncSupported());
         dependencyAnalyzer.setInterruptor(() -> {
-            int progress = lastKnownClasses > 0 ? dependencyAnalyzer.getReachableClasses().size() : 0;
+            int progress = dependencyAnalyzer.getReachableClasses().size();
             cancelled |= progressListener.progressReached(progress) != TeaVMProgressFeedback.CONTINUE;
             return !cancelled;
         });
@@ -417,7 +417,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         // Render
         try {
             if (!isLazy) {
-                compileProgressReportStart = 500;
+                compileProgressReportStart = 0;
                 compileProgressReportLimit = 1000;
             }
             target.emit(classSet, buildTarget, outputName);
