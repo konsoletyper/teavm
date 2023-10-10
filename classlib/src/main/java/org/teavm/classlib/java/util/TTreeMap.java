@@ -823,7 +823,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public TComparator<? super K> comparator() {
-            return reverse ? owner.revertedComparator : owner.originalComparator;
+            return !reverse ? owner.originalComparator : owner.revertedComparator;
         }
 
         private void checkKey(K key, boolean inclusive) {
@@ -1022,17 +1022,17 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public Entry<K, V> firstEntry() {
-            return TTreeMap.clone(reverse ? lastNode() : firstNode());
+            return TTreeMap.clone(!reverse ? firstNode() : lastNode());
         }
 
         @Override
         public Entry<K, V> lastEntry() {
-            return TTreeMap.clone(reverse ? firstNode() : lastNode());
+            return TTreeMap.clone(!reverse ? lastNode() : firstNode());
         }
 
         @Override
         public Entry<K, V> pollFirstEntry() {
-            TreeNode<K, V> node = reverse ? lastNode() : firstNode();
+            TreeNode<K, V> node = !reverse ? firstNode() : lastNode();
             if (node != null) {
                 owner.root = owner.deleteNode(owner.root, node.getKey());
                 owner.modCount++;
@@ -1042,7 +1042,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public Entry<K, V> pollLastEntry() {
-            TreeNode<K, V> node = reverse ? firstNode() : lastNode();
+            TreeNode<K, V> node = !reverse ? lastNode() : firstNode();
             if (node != null) {
                 owner.root = owner.deleteNode(owner.root, node.getKey());
                 owner.modCount++;
