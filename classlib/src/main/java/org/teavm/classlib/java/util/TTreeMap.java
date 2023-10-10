@@ -879,16 +879,16 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public void clear() {
-            if (!fromChecked && !toChecked) {
-                owner.clear();
+            if (fromChecked || toChecked) {
+                entrySet().clear();
             } else {
-                super.clear();
+                owner.clear();
             }
         }
 
         @Override
         public int size() {
-            return !fromChecked && !toChecked ? owner.size() : entrySet().size();
+            return fromChecked || toChecked ? entrySet().size() : owner.size();
         }
 
         @Override
