@@ -539,6 +539,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         writer.appendElseIf().append("typeof exports").ws()
                 .append("===").ws().append("'object'").ws().append("&&").ws()
+                .append("exports").ws().append("!==").ws().append("null").ws().append("&&").ws()
                 .append("typeof exports.nodeName").ws().append("!==").ws().append("'string')").appendBlockStart();
         writer.append("module(global,").ws().append("exports");
         for (var moduleName : importedModules.keySet()) {
