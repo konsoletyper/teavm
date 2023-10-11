@@ -1196,6 +1196,18 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
 
         @Override
+        public void clear() {
+            map.clear();
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            int old = map.size();
+            map.remove(o);
+            return map.size() != old;
+        }
+
+        @Override
         public TIterator<K> iterator() {
             return map.keySet().iterator();
         }
