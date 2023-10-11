@@ -15,12 +15,6 @@
  */
 package org.teavm.classlib.java.util;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
 
@@ -728,45 +722,18 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                 throw new TNoSuchElementException();
             }
             TreeNode<K, V> node = path[--depth];
-            //System.out.println(depth + " " + path.length);
-            int lastDepth = depth;
             last = node;
             TreeNode<K, V> down = node.down(reverse);
             if (down != null) {
                 node = down;
                 while (node != null) {
-                    try {
-                        path[depth++] = node;
-                    } catch (ArrayIndexOutOfBoundsException e) {
-                        System.out.println(owner.root.height + " " + lastDepth + " " + last.height + " " + owner.size() + " " + (depth - 1) + " " + Arrays.toString(path));
-                        System.out.println(owner.root + " " + owner.root.left + " " + owner.root.right);
-                        Set<K> s = new HashSet<>();
-                        //System.out.println(fillSet(s, owner.root, new StringBuilder()));
-                        //BTreePrinter.printNode(owner.root);
-                        throw e;
-                    }
+                    path[depth++] = node;
                     node = node.forward(reverse);
                 }
             }
 
             checkFinished();
             return last;
-        }
-
-        private boolean fillSet(Set<K> set, TreeNode<K, ?> node, StringBuilder pathBuilder) {
-            pathBuilder.append(node.getKey()).append("->");
-            if (!set.add(node.getKey())) {
-                System.out.println("Duplicate " + node.getKey() + " path " + pathBuilder);
-                return false;
-            }
-            boolean result = true;
-            if (node.left != null) {
-                result = result && fillSet(set, node.left, new StringBuilder(pathBuilder));
-            }
-            if (node.right != null) {
-                result = result && fillSet(set, node.right, new StringBuilder(pathBuilder));
-            }
-            return result;
         }
 
         private void checkFinished() {
@@ -796,13 +763,10 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             if (last == null) {
                 throw new IllegalStateException();
             }
-            var newRoot = owner.deleteNode(owner.root, last.getKey());
-            if (owner.root != newRoot) {
-                owner.root = newRoot;
-                var newPath = owner.pathToNext(last.getKey(), reverse);
-                System.arraycopy(newPath, 0, path, 0, newPath.length);
-                depth = newPath.length;
-            }
+            owner.root = owner.deleteNode(owner.root, last.getKey());
+            var newPath = owner.pathToNext(last.getKey(), reverse);
+            System.arraycopy(newPath, 0, path, 0, newPath.length);
+            depth = newPath.length;
             modCount = ++owner.modCount;
             last = null;
         }
@@ -1338,96 +1302,5 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         public TSequencedCollection<V> reversed() {
             return new NavigableMapValues<>(map.reversed());
         }
-    }
-
-    private static class BTreePrinter {
-        private static void printNode(TreeNode<?, ?> root) {
-            int maxLevel = BTreePrinter.maxLevel(root);
-
-            printNodeInternal(Collections.singletonList(root), 1, maxLevel);
-        }
-
-        private static void printNodeInternal(List<TreeNode<?, ?>> nodes, int level, int maxLevel) {
-            if (nodes.isEmpty() || BTreePrinter.isAllElementsNull(nodes)) {
-                return;
-            }
-
-            int floor = maxLevel - level;
-            int endgeLines = (int) Math.pow(2, (Math.max(floor - 1, 0)));
-            int firstSpaces = (int) Math.pow(2, (floor)) - 1;
-            int betweenSpaces = (int) Math.pow(2, (floor + 1)) - 1;
-
-            BTreePrinter.printWhitespaces(firstSpaces);
-
-            List<TreeNode<?, ?>> newNodes = new ArrayList<>();
-            for (TreeNode<?, ?> node : nodes) {
-                if (node != null) {
-                    System.out.print(node.getKey());
-                    newNodes.add(node.left);
-                    newNodes.add(node.right);
-                } else {
-                    newNodes.add(null);
-                    newNodes.add(null);
-                    System.out.print(" ");
-                }
-
-                BTreePrinter.printWhitespaces(betweenSpaces);
-            }
-            System.out.println();
-
-            for (int i = 1; i <= endgeLines; i++) {
-                for (TreeNode<?, ?> node : nodes) {
-                    BTreePrinter.printWhitespaces(firstSpaces - i);
-                    if (node == null) {
-                        BTreePrinter.printWhitespaces(endgeLines + endgeLines + i + 1);
-                        continue;
-                    }
-
-                    if (node.left != null) {
-                        System.out.print("/");
-                    } else {
-                        BTreePrinter.printWhitespaces(1);
-                    }
-
-                    BTreePrinter.printWhitespaces(i + i - 1);
-
-                    if (node.right != null) {
-                        System.out.print("\\");
-                    } else {
-                        BTreePrinter.printWhitespaces(1);
-                    }
-
-                    BTreePrinter.printWhitespaces(endgeLines + endgeLines - i);
-                }
-
-                System.out.println();
-            }
-
-            printNodeInternal(newNodes, level + 1, maxLevel);
-        }
-
-        private static void printWhitespaces(int count) {
-            for (int i = 0; i < count; i++) {
-                System.out.print(" ");
-            }
-        }
-
-        private static int maxLevel(TreeNode<?, ?> node) {
-            if (node == null) {
-                return 0;
-            }
-
-            return Math.max(BTreePrinter.maxLevel(node.left), BTreePrinter.maxLevel(node.right)) + 1;
-        }
-
-        private static boolean isAllElementsNull(List<?> list) {
-            for (Object object : list) {
-                if (object != null) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
     }
 }
