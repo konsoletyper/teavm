@@ -52,6 +52,11 @@ public class TTreeSet<E> extends TAbstractSet<E> implements TNavigableSet<E> {
     }
 
     @Override
+    public boolean isEmpty() {
+        return map.isEmpty();
+    }
+
+    @Override
     public int size() {
         return map.size();
     }
