@@ -1186,6 +1186,11 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
 
         @Override
+        public boolean contains(Object o) {
+            return map.containsKey(o);
+        }
+
+        @Override
         public int size() {
             return map.size();
         }
