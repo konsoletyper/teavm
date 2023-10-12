@@ -170,7 +170,7 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
 
     protected final void htmlSingleTestOutput(File outputPathForMethod, TeaVMTestConfiguration<?> configuration,
             String template) {
-        File testPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(), ".wasm");
+        File testPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(), getExtension());
         File htmlPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(), ".html");
         var properties = Map.of(
                 "SCRIPT", testPath.getName(),
