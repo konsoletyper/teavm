@@ -19,10 +19,13 @@ import org.teavm.backend.javascript.TeaVMJavaScriptHost;
 import org.teavm.jso.JSExceptions;
 import org.teavm.jso.JSObject;
 import org.teavm.model.MethodReference;
+import org.teavm.platform.plugin.PlatformPlugin;
 import org.teavm.vm.TeaVMPluginUtil;
+import org.teavm.vm.spi.After;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
+@After(PlatformPlugin.class)
 public class JSOPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {

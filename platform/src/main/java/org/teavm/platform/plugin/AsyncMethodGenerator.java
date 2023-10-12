@@ -26,6 +26,7 @@ import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
@@ -38,7 +39,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Virtua
 
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        MethodReference asyncRef = getAsyncReference(methodRef);
+        MethodReference asyncRef = getAsyncReference(context.getClassSource(), methodRef);
         writer.append("var thread").ws().append('=').ws().append("$rt_nativeThread();").softNewLine();
         writer.append("var javaThread").ws().append('=').ws().append("$rt_getThread();").softNewLine();
         writer.append("if").ws().append("(thread.isResuming())").ws().append("{").indent().softNewLine();
@@ -65,7 +66,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Virtua
         writer.outdent().append("};").softNewLine();
         writer.append("callback").ws().append("=").ws().appendMethodBody(AsyncCallbackWrapper.class, "create",
                 AsyncCallback.class, AsyncCallbackWrapper.class).append("(callback);").softNewLine();
-        writer.append("return thread.suspend(function()").ws().append("{").indent().softNewLine();
+        writer.append("thread.suspend(function()").ws().append("{").indent().softNewLine();
         writer.append("try").ws().append("{").indent().softNewLine();
         writer.appendMethodBody(asyncRef).append('(');
         ClassReader cls = context.getClassSource().get(methodRef.getClassName());
@@ -81,22 +82,19 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Virtua
                 .softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.outdent().append("});").softNewLine();
+        writer.append("return null;").softNewLine();
     }
 
-    private MethodReference getAsyncReference(MethodReference methodRef) {
-        ValueType[] signature = new ValueType[methodRef.parameterCount() + 2];
-        for (int i = 0; i < methodRef.parameterCount(); ++i) {
-            signature[i] = methodRef.getDescriptor().parameterType(i);
-        }
-        signature[methodRef.parameterCount()] = ValueType.parse(AsyncCallback.class);
-        signature[methodRef.parameterCount() + 1] = ValueType.VOID;
-        return new MethodReference(methodRef.getClassName(), methodRef.getName(), signature);
+    private MethodReference getAsyncReference(ClassReaderSource classSource, MethodReference methodRef) {
+        var method = classSource.resolve(methodRef);
+        var callerAnnot = method.getAnnotations().get(AsyncCaller.class.getName());
+        return MethodReference.parse(callerAnnot.getValue("value").getString());
     }
 
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
         MethodReference ref = method.getReference();
-        MethodReference asyncRef = getAsyncReference(ref);
+        MethodReference asyncRef = getAsyncReference(agent.getClassSource(), ref);
         MethodDependency asyncMethod = agent.linkMethod(asyncRef);
         method.addLocationListener(asyncMethod::addLocation);
         int paramCount = ref.parameterCount();

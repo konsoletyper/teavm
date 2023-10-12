@@ -18,12 +18,12 @@ package org.teavm.platform.plugin;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.interop.Async;
 
 public class AsyncDependencyListener extends AbstractDependencyListener {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
-        if (method.getMethod() != null && method.getMethod().getAnnotations().get(Async.class.getName()) != null) {
+        if (method.getMethod() != null && method.getMethod().getAnnotations()
+                .get(AsyncCaller.class.getName()) != null) {
             new AsyncMethodGenerator().methodReached(agent, method);
         }
     }

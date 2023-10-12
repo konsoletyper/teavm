@@ -68,7 +68,7 @@ public class AsyncLowLevelDependencyListener extends AbstractDependencyListener 
     }
 
     private ClassHolder generateClassDecl(MethodReader method) {
-        AnnotationReader annot = method.getAnnotations().get(AsyncCallClass.class.getName());
+        AnnotationReader annot = method.getAnnotations().get(AsyncCaller.class.getName());
         String className = annot.getValue("value").getString();
         if (!generatedClassNames.add(className)) {
             return null;

@@ -31,6 +31,7 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
+import org.teavm.model.PrimitiveType;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
@@ -52,7 +53,7 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         int suffix = 0;
-        for (MethodHolder method : cls.getMethods()) {
+        for (var method : List.copyOf(cls.getMethods())) {
             if (method.hasModifier(ElementModifier.NATIVE)
                     && method.getAnnotations().get(Async.class.getName()) != null
                     && method.getAnnotations().get(GeneratedBy.class.getName()) == null) {
@@ -75,6 +76,8 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
 
                 if (lowLevel) {
                     generateLowLevelCall(method, suffix++);
+                } else {
+                    generateCallerMethod(cls, method);
                 }
             }
         }
@@ -82,7 +85,7 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
 
     private void generateLowLevelCall(MethodHolder method, int suffix) {
         String className = method.getOwnerName() + "$" + method.getName() + "$" + suffix;
-        AnnotationHolder classNameAnnot = new AnnotationHolder(AsyncCallClass.class.getName());
+        AnnotationHolder classNameAnnot = new AnnotationHolder(AsyncCaller.class.getName());
         classNameAnnot.getValues().put("value", new AnnotationValue(className));
         method.getAnnotations().add(classNameAnnot);
 
@@ -185,5 +188,111 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
         invoke.setReceiver(block.getProgram().createVariable());
         block.add(invoke);
         return invoke.getReceiver();
+    }
+
+    private void generateCallerMethod(ClassHolder cls, MethodHolder method) {
+        method.getAnnotations().remove(Async.class.getName());
+
+        var mappedSignature = method.getSignature();
+        mappedSignature[mappedSignature.length - 1] = ValueType.object("java.lang.Object");
+        var callerMethod = new MethodHolder(method.getName() + "$_asyncCall_$", mappedSignature);
+        var annot = new AnnotationHolder(AsyncCaller.class.getName());
+        annot.getValues().put("value", new AnnotationValue(getAsyncReference(method.getReference()).toString()));
+        callerMethod.getAnnotations().add(annot);
+        callerMethod.getAnnotations().add(new AnnotationHolder(Async.class.getName()));
+        callerMethod.getModifiers().add(ElementModifier.NATIVE);
+        cls.addMethod(callerMethod);
+
+        method.getModifiers().remove(ElementModifier.NATIVE);
+        var program = new Program();
+        var block = program.createBasicBlock();
+        var thisVar = program.createVariable();
+        var call = new InvokeInstruction();
+        call.setMethod(callerMethod.getReference());
+        call.setType(InvocationType.SPECIAL);
+        if (!method.hasModifier(ElementModifier.STATIC)) {
+            call.setInstance(thisVar);
+        } else {
+            callerMethod.getModifiers().add(ElementModifier.STATIC);
+        }
+        var args = new Variable[method.parameterCount()];
+        for (var i = 0; i < method.parameterCount(); ++i) {
+            args[i] = program.createVariable();
+        }
+        call.setArguments(args);
+        block.add(call);
+
+        var exit = new ExitInstruction();
+        var returnType = method.getResultType();
+        if (returnType instanceof ValueType.Primitive) {
+            call.setReceiver(program.createVariable());
+            exit.setValueToReturn(unbox(call.getReceiver(), ((ValueType.Primitive) returnType).getKind(),
+                    block, program));
+        } else if (!(returnType instanceof ValueType.Void)) {
+            call.setReceiver(program.createVariable());
+            var cast = new CastInstruction();
+            cast.setValue(call.getReceiver());
+            cast.setTargetType(returnType);
+            cast.setReceiver(program.createVariable());
+            block.add(cast);
+            exit.setValueToReturn(cast.getReceiver());
+        }
+
+        block.add(exit);
+
+        method.setProgram(program);
+    }
+
+    private MethodReference getAsyncReference(MethodReference methodRef) {
+        var signature = new ValueType[methodRef.parameterCount() + 2];
+        for (int i = 0; i < methodRef.parameterCount(); ++i) {
+            signature[i] = methodRef.getDescriptor().parameterType(i);
+        }
+        signature[methodRef.parameterCount()] = ValueType.parse(AsyncCallback.class);
+        signature[methodRef.parameterCount() + 1] = ValueType.VOID;
+        return new MethodReference(methodRef.getClassName(), methodRef.getName(), signature);
+    }
+
+    private Variable unbox(Variable value, PrimitiveType type, BasicBlock block, Program program) {
+        var cast = new CastInstruction();
+        cast.setValue(value);
+        cast.setReceiver(program.createVariable());
+        block.add(cast);
+
+        var call = new InvokeInstruction();
+        call.setInstance(cast.getReceiver());
+        call.setReceiver(program.createVariable());
+        call.setType(InvocationType.VIRTUAL);
+        block.add(call);
+
+        switch (type) {
+            case BOOLEAN:
+                call.setMethod(new MethodReference(Boolean.class, "booleanValue", boolean.class));
+                break;
+            case BYTE:
+                call.setMethod(new MethodReference(Byte.class, "byteValue", boolean.class));
+                break;
+            case SHORT:
+                call.setMethod(new MethodReference(Short.class, "shortValue", short.class));
+                break;
+            case CHARACTER:
+                call.setMethod(new MethodReference(Character.class, "charValue", char.class));
+                break;
+            case INTEGER:
+                call.setMethod(new MethodReference(Integer.class, "intValue", int.class));
+                break;
+            case LONG:
+                call.setMethod(new MethodReference(Long.class, "longValue", int.class));
+                break;
+            case FLOAT:
+                call.setMethod(new MethodReference(Float.class, "floatValue", int.class));
+                break;
+            case DOUBLE:
+                call.setMethod(new MethodReference(Double.class, "doubleValue", int.class));
+                break;
+        }
+
+        cast.setTargetType(ValueType.object(call.getMethod().getClassName()));
+        return call.getReceiver();
     }
 }

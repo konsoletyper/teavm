@@ -15,6 +15,6 @@
  */
 package org.teavm.platform.plugin;
 
-@interface AsyncCallClass {
+@interface AsyncCaller {
     String value();
 }
