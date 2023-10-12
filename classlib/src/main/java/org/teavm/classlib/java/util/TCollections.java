@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 import java.util.RandomAccess;
 import org.teavm.classlib.java.lang.*;
 import org.teavm.classlib.java.util.TMap.Entry;
+import org.teavm.classlib.java.util.random.TRandomGenerator;
 
 public class TCollections extends TObject {
     @SuppressWarnings("rawtypes")
@@ -181,17 +182,6 @@ public class TCollections extends TObject {
         };
     }
 
-    public static <T> TList<T> unmodifiableList(final TList<? extends T> list) {
-        return new TAbstractList<>() {
-            @Override public T get(int index) {
-                return list.get(index);
-            }
-            @Override public int size() {
-                return list.size();
-            }
-        };
-    }
-
     public static <T> TList<T> nCopies(final int n, final T o) {
         return new TAbstractList<>() {
             @Override public T get(int index) {
@@ -283,8 +273,12 @@ public class TCollections extends TObject {
         shuffle(list, new TRandom());
     }
 
-    @SuppressWarnings("unchecked")
     public static void shuffle(TList<?> list, TRandom rnd) {
+        shuffle(list, (TRandomGenerator) rnd);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static void shuffle(TList<?> list, TRandomGenerator rnd) {
         if (list instanceof TRandomAccess) {
             shuffleRandomAccess(list, rnd);
         } else {
@@ -295,7 +289,7 @@ public class TCollections extends TObject {
         }
     }
 
-    private static void shuffleRandomAccess(TList<?> list, TRandom rnd) {
+    private static void shuffleRandomAccess(TList<?> list, TRandomGenerator rnd) {
         for (int i = list.size() - 1; i > 0; --i) {
             int j = rnd.nextInt(i + 1);
             swap(list, i, j);
@@ -458,6 +452,17 @@ public class TCollections extends TObject {
             return i;
         }
         return -1;
+    }
+
+    public static <T> TList<T> unmodifiableList(final TList<? extends T> list) {
+        return new TAbstractList<>() {
+            @Override public T get(int index) {
+                return list.get(index);
+            }
+            @Override public int size() {
+                return list.size();
+            }
+        };
     }
 
     public static <T> TCollection<T> unmodifiableCollection(final TCollection<? extends T> c) {
@@ -628,6 +633,16 @@ public class TCollections extends TObject {
     }
 
     public static <E> TSet<E> newSetFromMap(TMap<E, TBoolean> map) {
+        if (!map.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
         return new TSetFromMap<>(map);
+    }
+
+    public static <E> TSequencedSet<E> newSequencedSetFromMap(TSequencedMap<E, TBoolean> map) {
+        if (!map.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+        return new TSetFromMap.SequencedSetFromMap<E>(map);
     }
 }

@@ -38,12 +38,6 @@ public class TLinkedHashSet<E> extends THashSet<E> implements TSequencedSet<E>, 
         }
     }
 
-    /* overrides method in HashMap */
-    @Override
-    THashMap<E, THashSet<E>> createBackingMap(int capacity, float loadFactor) {
-        return new TLinkedHashMap<>(capacity, loadFactor);
-    }
-
     private TLinkedHashMap<E, THashSet<E>> map() {
         return (TLinkedHashMap<E, THashSet<E>>) backingMap;
     }
@@ -139,5 +133,12 @@ public class TLinkedHashSet<E> extends THashSet<E> implements TSequencedSet<E>, 
         public TSequencedSet<E> reversed() {
             return base;
         }
+    }
+
+    public static <T> TLinkedHashSet<T> newLinkedHashSet(int size) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        return new TLinkedHashSet<>(THashMap.capacity(size));
     }
 }

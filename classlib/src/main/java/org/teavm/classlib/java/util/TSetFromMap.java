@@ -22,10 +22,10 @@ import org.teavm.classlib.java.lang.TBoolean;
  * @author Alexey Andreev
  * @param <E>
  */
-public class TSetFromMap<E> extends TAbstractSet<E> {
+class TSetFromMap<E> extends TAbstractSet<E> {
     private TMap<E, TBoolean> map;
 
-    public TSetFromMap(TMap<E, TBoolean> map) {
+    TSetFromMap(TMap<E, TBoolean> map) {
         this.map = map;
     }
 
@@ -72,5 +72,50 @@ public class TSetFromMap<E> extends TAbstractSet<E> {
     @Override
     public TIterator<E> iterator() {
         return map.keySet().iterator();
+    }
+
+    static class SequencedSetFromMap<E> extends TSetFromMap<E> implements TSequencedSet<E> {
+        SequencedSetFromMap(TSequencedMap<E, TBoolean> map) {
+            super(map);
+        }
+
+        private TSequencedMap<E, TBoolean> map() {
+            return (TSequencedMap<E, TBoolean>) super.map;
+        }
+
+        @Override
+        public TSequencedSet<E> reversed() {
+            return new SequencedSetFromMap<>(map().reversed());
+        }
+
+        @Override
+        public void addFirst(E e) {
+            map().putFirst(e, TBoolean.TRUE);
+        }
+
+        @Override
+        public void addLast(E e) {
+            map().putLast(e, TBoolean.TRUE);
+        }
+
+        @Override
+        public E getFirst() {
+            return TLinkedHashMap.checkNotNull(map().firstEntry()).getKey();
+        }
+
+        @Override
+        public E getLast() {
+            return TLinkedHashMap.checkNotNull(map().lastEntry()).getKey();
+        }
+
+        @Override
+        public E removeFirst() {
+            return TLinkedHashMap.checkNotNull(map().pollFirstEntry()).getKey();
+        }
+
+        @Override
+        public E removeLast() {
+            return TLinkedHashMap.checkNotNull(map().pollLastEntry()).getKey();
+        }
     }
 }

@@ -404,6 +404,13 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TSequencedMa
         return new TReversedLinkedHashMap<>(this);
     }
 
+    public static <K, V> TLinkedHashMap<K, V> newLinkedHashMap(int size) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        return new TLinkedHashMap<>(THashMap.capacity(size));
+    }
+
     static <T> T checkNotNull(T node) {
         if (node == null) {
             throw new TNoSuchElementException();

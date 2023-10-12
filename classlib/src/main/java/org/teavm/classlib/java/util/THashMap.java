@@ -28,6 +28,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     transient HashEntry<K, V>[] elementData;
     transient int modCount;
     private static final int DEFAULT_SIZE = 16;
+    private static final float DEFAULT_LOAD_FACTOR = 0.75f;
     final float loadFactor;
     int threshold;
 
@@ -244,7 +245,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     }
 
     public THashMap(int capacity) {
-        this(capacity, 0.75f);  // default load factor of 0.75
+        this(capacity, DEFAULT_LOAD_FACTOR);
     }
 
     private static int calculateCapacity(int x) {
@@ -639,5 +640,16 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     static boolean areEqualKeys(Object key1, Object key2) {
         return (key1 == key2) || key1.equals(key2);
+    }
+
+    static int capacity(int size) {
+        return (int) Math.ceil(size / DEFAULT_LOAD_FACTOR);
+    }
+
+    public static <K, V> THashMap<K, V> newHashMap(int size) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        return new THashMap<>(capacity(size));
     }
 }

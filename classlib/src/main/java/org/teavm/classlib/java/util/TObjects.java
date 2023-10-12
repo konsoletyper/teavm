@@ -38,6 +38,11 @@ public final class TObjects extends TObject {
         return o != null ? o.toString() : nullDefault;
     }
 
+    public static String toIdentityString(Object o) {
+        requireNonNull(o);
+        return o.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(o));
+    }
+
     public static <T> int compare(T a, T b, TComparator<? super T> c) {
         return a == null && b == null ? 0 : c.compare(a, b);
     }
@@ -131,6 +136,13 @@ public final class TObjects extends TObject {
         return index;
     }
 
+    public static long checkIndex(long index, long length) {
+        if (index < 0 || index >= length) {
+            throw new IndexOutOfBoundsException();
+        }
+        return index;
+    }
+
     public static int checkFromToIndex(int fromIndex, int toIndex, int length) {
         if (fromIndex < 0 || fromIndex > toIndex || toIndex > length) {
             throw new IndexOutOfBoundsException();
@@ -138,7 +150,21 @@ public final class TObjects extends TObject {
         return fromIndex;
     }
 
+    public static long checkFromToIndex(long fromIndex, long toIndex, long length) {
+        if (fromIndex < 0 || fromIndex > toIndex || toIndex > length) {
+            throw new IndexOutOfBoundsException();
+        }
+        return fromIndex;
+    }
+
     public static int checkFromIndexSize(int fromIndex, int size, int length) {
+        if (fromIndex < 0 || size < 0 || fromIndex + size > length) {
+            throw new IndexOutOfBoundsException();
+        }
+        return fromIndex;
+    }
+
+    public static long checkFromIndexSize(long fromIndex, long size, long length) {
         if (fromIndex < 0 || size < 0 || fromIndex + size > length) {
             throw new IndexOutOfBoundsException();
         }
