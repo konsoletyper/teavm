@@ -565,16 +565,16 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     }
 
     static class EntrySet<K, V> extends TAbstractSet<Entry<K, V>> implements TSequencedSet<Entry<K, V>> {
-        private final TTreeMap<K, V> owner;
-        private final K from;
-        private final boolean fromIncluded;
-        private final boolean fromChecked;
-        private final K to;
-        private final boolean toIncluded;
-        private final boolean toChecked;
-        private final boolean reverse;
         private int modCount = -1;
+        private TTreeMap<K, V> owner;
+        private K from;
+        private boolean fromIncluded;
+        private boolean fromChecked;
+        private K to;
+        private boolean toIncluded;
+        private boolean toChecked;
         private int cachedSize;
+        private boolean reverse;
 
          EntrySet(TTreeMap<K, V> owner, K from, boolean fromIncluded, boolean fromChecked,
                 K to, boolean toIncluded, boolean toChecked, boolean reverse) {
@@ -618,8 +618,8 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                         }
                     }
                     size -= path.length;
-                    if (fromPath != null && fromPath.length > 0 && path.length > 0 && owner.comparator.compare(
-                            fromPath[fromPath.length - 1].getKey(), path[path.length - 1].getKey()) == 0) {
+                    if (fromPath != null && fromPath.length > 0 && path.length > 0
+                            && fromPath[fromPath.length - 1].getKey() == path[path.length - 1].getKey()) {
                         size++;
                     }
                 }
@@ -685,15 +685,15 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     }
 
     static class EntryIterator<K, V> implements TIterator<Entry<K, V>> {
-        private final TTreeMap<K, V> owner;
-        private final K to;
-        private final boolean toChecked;
-        private final boolean toIncluded;
-        private final boolean reverse;
-        private final TreeNode<K, V>[] path;
-        private int depth;
-        private TreeNode<K, V> last;
         private int modCount;
+        private TTreeMap<K, V> owner;
+        private TreeNode<K, V>[] path;
+        private TreeNode<K, V> last;
+        private K to;
+        private boolean toChecked;
+        private boolean toIncluded;
+        private int depth;
+        private boolean reverse;
 
         EntryIterator(TTreeMap<K, V> owner, TreeNode<K, V>[] path, K to, boolean toChecked, boolean toIncluded,
                 boolean reverse) {
@@ -773,15 +773,15 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     }
 
     static class MapView<K, V> extends TAbstractMap<K, V> implements TNavigableMap<K, V>, TSerializable {
-        private final TTreeMap<K, V> owner;
-        private final K from;
-        private final boolean fromIncluded;
-        private final boolean fromChecked;
-        private final K to;
-        private final boolean toIncluded;
-        private final boolean toChecked;
-        private final boolean reverse;
+        private TTreeMap<K, V> owner;
+        private K from;
+        private boolean fromIncluded;
+        private boolean fromChecked;
+        private K to;
+        private boolean toIncluded;
+        private boolean toChecked;
         private EntrySet<K, V> entrySetCache;
+        private boolean reverse;
         private NavigableKeySet<K, V> cachedNavigableKeySet;
 
         MapView(TTreeMap<K, V> owner, K from, boolean fromIncluded, boolean fromChecked,
@@ -1308,7 +1308,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             for (TIterator<TMap.Entry<K, V>> it = map.entrySet().iterator(); it.hasNext();) {
                 TMap.Entry<K, V> e = it.next();
                 if (TObjects.equals(e.getValue(), o)) {
-                    map.remove(e.getKey());
+                    it.remove();
                     return true;
                 }
             }
