@@ -619,7 +619,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                     }
                     size -= path.length;
                     if (fromPath != null && fromPath.length > 0 && path.length > 0
-                            && fromPath[fromPath.length - 1].getKey() == path[path.length - 1].getKey()) {
+                            && fromPath[fromPath.length - 1] == path[path.length - 1]) {
                         size++;
                     }
                 }
