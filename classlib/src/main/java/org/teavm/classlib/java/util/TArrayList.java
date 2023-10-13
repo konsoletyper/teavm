@@ -34,6 +34,9 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
 
     @SuppressWarnings("unchecked")
     public TArrayList(int initialCapacity) {
+        if (initialCapacity < 0) {
+            throw new IllegalArgumentException();
+        }
         array = (E[]) new Object[initialCapacity];
     }
 
