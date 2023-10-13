@@ -38,12 +38,16 @@ public interface TNavigableMap<K, V> extends TSortedMap<K, V> {
 
     K higherKey(K key);
 
+    @Override
     Entry<K, V> firstEntry();
 
+    @Override
     Entry<K, V> lastEntry();
 
+    @Override
     Entry<K, V> pollFirstEntry();
 
+    @Override
     Entry<K, V> pollLastEntry();
 
     TNavigableMap<K, V> descendingMap();

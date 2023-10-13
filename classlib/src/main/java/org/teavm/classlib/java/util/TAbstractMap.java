@@ -237,14 +237,18 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
         if (size() != other.size()) {
             return false;
         }
-        for (TIterator<? extends TMap.Entry<K, V>> iter = entrySet().iterator(); iter.hasNext();) {
-            TMap.Entry<K, V> entry = iter.next();
-            if (!other.containsKey(entry.getKey())) {
-                return false;
+        try {
+            for (var it = entrySet().iterator(); it.hasNext();) {
+                TMap.Entry<K, V> entry = it.next();
+                if (!other.containsKey(entry.getKey())) {
+                    return false;
+                }
+                if (!TObjects.equals(entry.getValue(), other.get(entry.getKey()))) {
+                    return false;
+                }
             }
-            if (!TObjects.equals(entry.getValue(), other.get(entry.getKey()))) {
-                return false;
-            }
+        } catch (ClassCastException | NullPointerException e) {
+            return false;
         }
         return true;
     }
