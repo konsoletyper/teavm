@@ -33,10 +33,13 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     public TBitSet() {
-        data = new int[0];
+        data = new int[2];
     }
 
     public TBitSet(int nbits) {
+        if (nbits < 0) {
+            throw new NegativeArraySizeException();
+        }
         data = new int[(nbits + TInteger.SIZE - 1) / TInteger.SIZE];
     }
 
@@ -123,7 +126,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     public void flip(int fromIndex, int toIndex) {
-        if (fromIndex > toIndex) {
+        if (fromIndex < 0 || fromIndex > toIndex) {
             throw new TIndexOutOfBoundsException();
         }
         int fromDataIndex = fromIndex / 32;
@@ -149,6 +152,9 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     public void set(int bitIndex) {
+        if (bitIndex < 0) {
+            throw new IndexOutOfBoundsException();
+        }
         int index = bitIndex / 32;
         if (bitIndex >= length) {
             ensureCapacity(index + 1);
@@ -166,7 +172,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     public void set(int fromIndex, int toIndex) {
-        if (fromIndex > toIndex) {
+        if (fromIndex < 0 || fromIndex > toIndex) {
             throw new TIndexOutOfBoundsException();
         }
         if (fromIndex == toIndex) {
@@ -210,6 +216,9 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     public void clear(int bitIndex) {
+        if (bitIndex < 0) {
+            throw new IndexOutOfBoundsException();
+        }
         int index = bitIndex / 32;
         if (index < data.length) {
             data[index] &= TInteger.rotateLeft(0xFFFFFFFE, bitIndex % 32);
@@ -220,7 +229,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     public void clear(int fromIndex, int toIndex) {
-        if (fromIndex > toIndex) {
+        if (fromIndex < 0 || fromIndex > toIndex) {
             throw new TIndexOutOfBoundsException();
         }
         if (fromIndex >= length) {
@@ -252,12 +261,15 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     public boolean get(int bitIndex) {
+        if (bitIndex < 0) {
+            throw new IndexOutOfBoundsException();
+        }
         int index = bitIndex / 32;
         return index < data.length && (data[index] & (1 << (bitIndex % 32))) != 0;
     }
 
     public TBitSet get(int fromIndex, int toIndex) {
-        if (fromIndex > toIndex) {
+        if (fromIndex < 0 || fromIndex > toIndex) {
             throw new TIndexOutOfBoundsException();
         }
         if (toIndex > length) {
@@ -292,6 +304,9 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     public int nextSetBit(int fromIndex) {
+        if (fromIndex < 0) {
+            throw new IndexOutOfBoundsException();
+        }
         if (fromIndex >= length) {
             return -1;
         }
@@ -311,6 +326,9 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     public int nextClearBit(int fromIndex) {
+        if (fromIndex < 0) {
+            throw new IndexOutOfBoundsException();
+        }
         if (fromIndex >= length) {
             return fromIndex;
         }
