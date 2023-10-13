@@ -48,8 +48,8 @@ public class TreeMapTest1 {
     private TreeMap tm() {
         TreeMap tm = new TreeMap();
         for (int i = 0; i < objArray.length; i++) {
-            Object x = objArray[i] = Integer.valueOf(i);
-            tm.put(x.toString(), x);
+            objArray[i] = Integer.valueOf(i);
+            tm.put(objArray[i].toString(), objArray[i]);
         }
         return tm;
     }
@@ -327,7 +327,8 @@ public class TreeMapTest1 {
         SortedMap<String, String> headMap = treemap.headMap("100");
         headMap.headMap("100");
 
-        SortedMap<Integer, Integer> intMap, sub;
+        SortedMap<Integer, Integer> intMap;
+        SortedMap<Integer, Integer> sub;
         int size = 16;
         intMap = new TreeMap<Integer, Integer>();
         for (int i = 0; i < size; i++) {
@@ -644,7 +645,8 @@ public class TreeMapTest1 {
         // Regression for Harmony-1066
         assertTrue(tail instanceof Serializable);
 
-        SortedMap<Integer, Integer> intMap, sub;
+        SortedMap<Integer, Integer> intMap;
+        SortedMap<Integer, Integer> sub;
         int size = 16;
         intMap = new TreeMap<Integer, Integer>();
         for (int i = 0; i < size; i++) {
@@ -715,7 +717,7 @@ public class TreeMapTest1 {
         }
         assertEquals(1000, vals.size());
         int j = 0;
-        for (Iterator iter = vals.iterator(); iter.hasNext(); ) {
+        for (Iterator iter = vals.iterator(); iter.hasNext();) {
             Object element = iter.next();
             j++;
         }
@@ -731,7 +733,7 @@ public class TreeMapTest1 {
         }
         assertEquals(1000, vals.size());
         j = 0;
-        for (Iterator iter = vals.iterator(); iter.hasNext(); ) {
+        for (Iterator iter = vals.iterator(); iter.hasNext();) {
             Object element = iter.next();
             j++;
         }
@@ -751,7 +753,7 @@ public class TreeMapTest1 {
                 !myTreeMap.containsValue(Integer.valueOf(0)));
         assertEquals(99, values.size());
         j = 0;
-        for (Iterator iter = values.iterator(); iter.hasNext(); ) {
+        for (Iterator iter = values.iterator(); iter.hasNext();) {
             Object element = iter.next();
             j++;
         }
@@ -1875,27 +1877,27 @@ public class TreeMapTest1 {
     @Test
     public void test_entrySet_contains() throws Exception {
         TreeMap master = new TreeMap<String, String>();
-        TreeMap test_map = new TreeMap<String, String>();
+        TreeMap testMap = new TreeMap<String, String>();
 
         master.put("null", null);
         Object[] entry = master.entrySet().toArray();
         assertFalse("Empty map should not contain the null-valued entry",
-                test_map.entrySet().contains(entry[0]));
+                testMap.entrySet().contains(entry[0]));
 
-        Map<String, String> submap = test_map.subMap("a", "z");
+        Map<String, String> submap = testMap.subMap("a", "z");
         entry = master.entrySet().toArray();
         assertFalse("Empty submap should not contain the null-valued entry",
                 submap.entrySet().contains(entry[0]));
 
-        test_map.put("null", null);
+        testMap.put("null", null);
         assertTrue("entrySet().containsAll(...) should work with null values",
-                test_map.entrySet().containsAll(master.entrySet()));
+                testMap.entrySet().containsAll(master.entrySet()));
 
         master.clear();
         master.put("null", '0');
         entry = master.entrySet().toArray();
         assertFalse("Null-valued entry should not equal non-null-valued entry",
-                test_map.entrySet().contains(entry[0]));
+                testMap.entrySet().contains(entry[0]));
     }
 
     @Test
@@ -1904,8 +1906,7 @@ public class TreeMapTest1 {
         Map m = tm.subMap("0", "1");
         Iterator it = m.entrySet().iterator();
         assertEquals("0=0", it.next().toString());
-        while (it.hasNext()) {
-        }
+        assertFalse(it.hasNext());
         try {
             it.next();
             fail("should throw java.util.NoSuchElementException");
