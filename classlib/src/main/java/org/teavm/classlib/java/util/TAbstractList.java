@@ -70,7 +70,7 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
     @Override
     public boolean addAll(int index, TCollection<? extends E> c) {
         if (index < 0 || index > size()) {
-            throw new TIllegalArgumentException();
+            throw new TIndexOutOfBoundsException();
         }
         if (c.isEmpty()) {
             return false;
