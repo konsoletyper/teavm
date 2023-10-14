@@ -34,3 +34,9 @@ dependencies {
 teavmPublish {
     artifactId = "teavm-jso-apis"
 }
+
+tasks.withType<Jar> {
+    manifest {
+        attributes["Automatic-Module-Name"] = "org.teavm.jso.apis"
+    }
+}
