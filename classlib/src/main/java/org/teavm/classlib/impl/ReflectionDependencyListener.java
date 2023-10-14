@@ -43,8 +43,9 @@ import org.teavm.model.ValueType;
 
 public class ReflectionDependencyListener extends AbstractDependencyListener {
     private List<ReflectionSupplier> reflectionSuppliers;
-    private MethodReference fieldGet = new MethodReference(Field.class, "get", Object.class, Object.class);
-    private MethodReference fieldSet = new MethodReference(Field.class, "set", Object.class, Object.class, void.class);
+    private MethodReference fieldGet = new MethodReference(Field.class, "getWithoutCheck", Object.class, Object.class);
+    private MethodReference fieldSet = new MethodReference(Field.class, "setWithoutCheck", Object.class, Object.class,
+            void.class);
     private MethodReference newInstance = new MethodReference(Constructor.class, "newInstance", Object[].class,
             Object.class);
     private MethodReference invokeMethod = new MethodReference(Method.class, "invoke", Object.class, Object[].class,

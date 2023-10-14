@@ -24,6 +24,7 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipPlatform;
@@ -119,6 +120,20 @@ public class ClassTest {
         instance.run();
         assertEquals(TestObject.class, instance.getClass());
         assertEquals(1, ((TestObject) instance).getCounter());
+    }
+
+    @Test
+    public void instanceCreatedThoughReflectionWithConstantName() throws Exception {
+        var cls = Class.forName("org.teavm.classlib.java.lang.ClassTest$ClassReferredByConstantName");
+        assertArrayEquals(new Class<?>[] { Supplier.class }, cls.getInterfaces());
+        assertEquals(Object.class, cls.getSuperclass());
+    }
+
+    private static class ClassReferredByConstantName implements Supplier<String> {
+        @Override
+        public String get() {
+            return "constantNameWorks";
+        }
     }
 
     @Test

@@ -28,6 +28,7 @@ import org.teavm.classlib.impl.currency.CurrenciesGenerator;
 import org.teavm.classlib.impl.currency.CurrencyHelper;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
 import org.teavm.classlib.impl.record.ObjectMethodsSubstitutor;
+import org.teavm.classlib.impl.reflection.ReflectionTransformer;
 import org.teavm.classlib.impl.tz.DateTimeZoneProvider;
 import org.teavm.classlib.impl.tz.DateTimeZoneProviderIntrinsic;
 import org.teavm.classlib.impl.tz.DateTimeZoneProviderPatch;
@@ -94,7 +95,7 @@ public class JCLPlugin implements TeaVMPlugin {
         if (!isBootstrap()) {
             host.registerService(CLDRReader.class, CLDRReader.getInstance(host.getProperties(), host.getClassLoader()));
 
-            host.add(new ClassForNameTransformer());
+            host.add(new ReflectionTransformer());
         }
 
         host.add(new AnnotationDependencyListener());

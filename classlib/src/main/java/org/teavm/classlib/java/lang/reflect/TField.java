@@ -86,19 +86,23 @@ public class TField extends TAccessibleObject implements TMember {
     }
 
     public Object get(Object obj) throws TIllegalArgumentException, TIllegalAccessException {
-        if (getter == null) {
-            throw new TIllegalAccessException();
-        }
+        checkGetAccess();
         checkInstance(obj);
+        return getWithoutCheck(obj);
+    }
+
+    public Object getWithoutCheck(Object obj) {
         PlatformObject result = getter.get(Platform.getPlatformObject(obj));
         return Converter.toJava(result);
     }
 
     public void set(Object obj, Object value) throws TIllegalArgumentException, TIllegalAccessException {
-        if (setter == null) {
-            throw new TIllegalAccessException();
-        }
+        checkSetAccess();
         checkInstance(obj);
+        setWithoutCheck(obj, value);
+    }
+
+    public void setWithoutCheck(Object obj, Object value) {
         setter.set(Platform.getPlatformObject(obj), Converter.fromJava(value));
     }
 
@@ -110,6 +114,18 @@ public class TField extends TAccessibleObject implements TMember {
             if (!declaringClass.isInstance((TObject) obj)) {
                 throw new TIllegalArgumentException();
             }
+        }
+    }
+
+    public void checkGetAccess() throws TIllegalAccessException {
+        if (getter == null) {
+            throw new TIllegalAccessException();
+        }
+    }
+
+    public void checkSetAccess() throws TIllegalAccessException {
+        if (setter == null) {
+            throw new TIllegalAccessException();
         }
     }
 }
