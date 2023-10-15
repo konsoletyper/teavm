@@ -185,4 +185,15 @@ public class CollectorsTest {
         assertEquals(Set.of(1, 3, 5, 7, 9), grouped.get(false));
         assertEquals(Set.of(0, 2, 4, 6, 8), grouped.get(true));
     }
+
+    @Test
+    public void simpleCollectors() {
+        List<String> l = List.of("a", "b", "c", "d");
+        assertEquals("aAbBcCdD", l.stream().collect(
+                Collectors.mapping(s -> s + s.toUpperCase(), Collectors.joining())));
+        assertEquals("acd", l.stream().collect(
+                Collectors.filtering(s -> s.indexOf('b') < 0, Collectors.joining())));
+        assertEquals("aaabbbcccddd", l.stream().collect(
+                Collectors.flatMapping(s -> Stream.of(s, s, s), Collectors.joining())));
+    }
 }
