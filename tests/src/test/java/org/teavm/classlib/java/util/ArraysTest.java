@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.classlib.java.lang.DoubleTest;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
@@ -40,6 +41,36 @@ public class ArraysTest {
         assertEquals(Integer.valueOf(6), array[4]);
         assertEquals(Integer.valueOf(7), array[5]);
         Arrays.sort(array, null); // NPE check
+        double[] dSpecials1 = new double[] { Double.NaN, Double.MAX_VALUE,
+                Double.MIN_VALUE, 0d, -0d, Double.POSITIVE_INFINITY,
+                Double.NEGATIVE_INFINITY };
+        double[] dSpecials2 = new double[] { 0d, Double.POSITIVE_INFINITY, -0d,
+                Double.NEGATIVE_INFINITY, Double.MIN_VALUE, Double.NaN,
+                Double.MAX_VALUE };
+        double[] dSorted = new double[] { Double.NEGATIVE_INFINITY, -0d, 0d,
+                Double.MIN_VALUE, Double.MAX_VALUE, Double.POSITIVE_INFINITY,
+                Double.NaN };
+        Arrays.sort(dSpecials1);
+        assertTrue("specials sort incorrectly 1: " + Arrays.toString(dSpecials1),
+                Arrays.equals(dSpecials1, dSorted));
+        Arrays.sort(dSpecials2);
+        assertTrue("specials sort incorrectly 2: " + Arrays.toString(dSpecials2),
+                Arrays.equals(dSpecials2, dSorted));
+        float[] fSpecials1 = new float[] { Float.NaN, Float.MAX_VALUE,
+                Float.MIN_VALUE, 0f, -0f, Float.POSITIVE_INFINITY,
+                Float.NEGATIVE_INFINITY };
+        float[] fSpecials2 = new float[] { 0f, Float.POSITIVE_INFINITY, -0f,
+                Float.NEGATIVE_INFINITY, Float.MIN_VALUE, Float.NaN,
+                Float.MAX_VALUE };
+        float[] fSorted = new float[] { Float.NEGATIVE_INFINITY, -0f, 0f,
+                Float.MIN_VALUE, Float.MAX_VALUE, Float.POSITIVE_INFINITY,
+                Float.NaN };
+        Arrays.sort(fSpecials1);
+        assertTrue("specials sort incorrectly 1: " + Arrays.toString(fSpecials1),
+                Arrays.equals(fSpecials1, fSorted));
+        Arrays.sort(fSpecials2);
+        assertTrue("specials sort incorrectly 2: " + Arrays.toString(fSpecials2),
+                Arrays.equals(fSpecials2, fSorted));
     }
 
     @Test
@@ -54,6 +85,23 @@ public class ArraysTest {
         assertEquals(-8, Arrays.binarySearch(array, 15));
         assertEquals(-9, Arrays.binarySearch(array, 17));
         assertEquals(3, Arrays.binarySearch(array, 8, null)); // NPE check
+        assertEquals(-6, Arrays.binarySearch(array, 5, 5, 10));
+        float[] floatSpecials = new float[] { Float.NEGATIVE_INFINITY,
+                -Float.MAX_VALUE, -2f, -Float.MIN_VALUE, -0f, 0f,
+                Float.MIN_VALUE, 2f, Float.MAX_VALUE, Float.POSITIVE_INFINITY,
+                Float.NaN };
+        for (int i = 0; i < floatSpecials.length; i++) {
+            int result = Arrays.binarySearch(floatSpecials, floatSpecials[i]);
+            assertEquals(floatSpecials[i] + " invalid: " + result, result, i);
+        }
+        double[] doubleSpecials = new double[] { Double.NEGATIVE_INFINITY,
+                -Double.MAX_VALUE, -2d, -Double.MIN_VALUE, -0d, 0d,
+                Double.MIN_VALUE, 2d, Double.MAX_VALUE,
+                Double.POSITIVE_INFINITY, Double.NaN };
+        for (int i = 0; i < doubleSpecials.length; i++) {
+            int result = Arrays.binarySearch(doubleSpecials, doubleSpecials[i]);
+            assertEquals(doubleSpecials[i] + " invalid: " + result, result, i);
+        }
     }
 
     @Test
@@ -162,10 +210,14 @@ public class ArraysTest {
         int[] equal = { 1, 2, 3 };
         int[] shorter = { 1, 2 };
         int[] different = { 3, 1, 2 };
+        double[] withNaN = { 1.0, Double.NaN };
+        double[] withOtherNaN = { 1.0, DoubleTest.OTHER_NAN };
 
         // Simple equals
         assertTrue(Arrays.equals(array, array));
         assertTrue(Arrays.equals(array, equal));
+        assertTrue(Arrays.equals(withNaN, withNaN));
+        assertTrue(Arrays.equals(withNaN, withOtherNaN));
 
         // Equal to null
         assertTrue(Arrays.equals((int[]) null, null));
