@@ -317,4 +317,11 @@ public class LinkedListTest {
         assertEquals("1", list.getFirst());
         assertEquals("2", list.getLast());
     }
+
+    @Test
+    public void testAddAllPositioned() {
+        LinkedList<String> ll = new LinkedList<>(Arrays.asList("a", "b", "c", "d"));
+        ll.addAll(2, new LinkedList<>(ll));
+        assertArrayEquals(new String[] {"a", "b", "a", "b", "c", "d", "c", "d"}, ll.toArray());
+    }
 }
