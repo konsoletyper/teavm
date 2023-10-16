@@ -85,7 +85,11 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         if (this == other) {
             return true;
         }
-        return other instanceof TFloat && floatToIntBits(((TFloat) other).value) == floatToIntBits(value);
+        return other instanceof TFloat && equals(value, ((TFloat) other).value);
+    }
+
+    private static boolean equals(float a, float b) {
+        return a != a ? b != b : floatToRawIntBits(a) == floatToRawIntBits(b);
     }
 
     @Override

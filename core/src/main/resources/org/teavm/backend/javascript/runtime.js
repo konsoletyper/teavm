@@ -656,7 +656,11 @@ function $rt_eraseClinit(target) {
     return target.$clinit = function() {};
 }
 
-var $rt_numberConversionView = new DataView(new ArrayBuffer(8));
+var $rt_numberConversionBuffer = new ArrayBuffer(16);
+var $rt_numberConversionView = new DataView($rt_numberConversionBuffer);
+var $rt_numberConversionFloatArray = new Float32Array($rt_numberConversionBuffer);
+var $rt_numberConversionDoubleArray = new Float64Array($rt_numberConversionBuffer);
+var $rt_numberConversionIntArray = new Int32Array($rt_numberConversionBuffer);
 
 var $rt_doubleToRawLongBits;
 var $rt_longBitsToDouble;
@@ -670,31 +674,47 @@ if (typeof BigInt !== 'function') {
         $rt_numberConversionView.setInt32(4, n.hi, true);
         return $rt_numberConversionView.getFloat64(0, true);
     }
-} else {
+} else if (typeof BigInt64Array !== 'function') {
     $rt_doubleToRawLongBits = function(n) {
         $rt_numberConversionView.setFloat64(0, n, true);
-        // For compatibility with Safari
         var lo = $rt_numberConversionView.getInt32(0, true);
         var hi = $rt_numberConversionView.getInt32(4, true);
         return BigInt.asIntN(64, BigInt.asUintN(32, BigInt(lo)) | (BigInt(hi) << BigInt(32)));
     }
     $rt_longBitsToDouble = function(n) {
-        // For compatibility with Safari
-        var hi = Number(BigInt.asIntN(32, n >> BigInt(32)));
-        var lo = Number(BigInt.asIntN(32, n & BigInt(0xFFFFFFFF)));
-        $rt_numberConversionView.setInt32(0, lo, true);
-        $rt_numberConversionView.setInt32(4, hi, true);
-        return $rt_numberConversionView.getFloat64(0, true);
+        $rt_numberConversionView.setFloat64(0, n, true);
+        var lo = $rt_numberConversionView.getInt32(0, true);
+        var hi = $rt_numberConversionView.getInt32(4, true);
+        return BigInt.asIntN(64, BigInt.asUintN(32, BigInt(lo)) | (BigInt(hi) << BigInt(32)));
+    }
+} else {
+    var $rt_numberConversionLongArray = new BigInt64Array($rt_numberConversionBuffer);
+    $rt_doubleToRawLongBits = function(n) {
+        $rt_numberConversionDoubleArray[0] = n;
+        return $rt_numberConversionLongArray[0];
+    }
+    $rt_longBitsToDouble = function(n) {
+        $rt_numberConversionLongArray[0] = n;
+        return $rt_numberConversionDoubleArray[0];
     }
 }
 
 function $rt_floatToRawIntBits(n) {
-    $rt_numberConversionView.setFloat32(0, n);
-    return $rt_numberConversionView.getInt32(0);
+    $rt_numberConversionFloatArray[0] = n;
+    return $rt_numberConversionIntArray[0];
 }
 function $rt_intBitsToFloat(n) {
-    $rt_numberConversionView.setInt32(0, n);
-    return $rt_numberConversionView.getFloat32(0);
+    $rt_numberConversionIntArray[0] = n;
+    return $rt_numberConversionFloatArray[0];
+}
+function $rt_equalDoubles(a, b) {
+    if (a !== a) {
+        return b !== b;
+    }
+    $rt_numberConversionDoubleArray[0] = a;
+    $rt_numberConversionDoubleArray[1] = b;
+    return $rt_numberConversionIntArray[0] === $rt_numberConversionIntArray[2]
+            && $rt_numberConversionIntArray[1] === $rt_numberConversionIntArray[3];
 }
 
 var JavaError;

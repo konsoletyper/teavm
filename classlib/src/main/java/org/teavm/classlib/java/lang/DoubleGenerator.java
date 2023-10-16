@@ -23,6 +23,14 @@ import org.teavm.model.MethodReference;
 public class DoubleGenerator implements Injector {
     @Override
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+        if (methodRef.getName().equals("doubleEqualsJs")) {
+            context.getWriter().appendFunction("$rt_equalDoubles").append("(");
+            context.writeExpr(context.getArgument(0));
+            context.getWriter().append(',').ws();
+            context.writeExpr(context.getArgument(1));
+            context.getWriter().append(')');
+            return;
+        }
         context.getWriter().append("$rt_").append(methodRef.getName()).append("(");
         context.writeExpr(context.getArgument(0));
         context.getWriter().append(")");
