@@ -112,7 +112,6 @@ public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializabl
         if (e == null) {
             throw new TNullPointerException();
         }
-        comparator.compare(e, e);
         ensureCapacity(size + 1);
         int current = size;
         while (current > 0) {
