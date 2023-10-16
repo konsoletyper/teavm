@@ -48,8 +48,8 @@ public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializabl
             initFromSortedSet((TSortedSet<? extends E>) c);
         } else {
             data = new Object[c.size()];
-            fillFromCollection(c);
             setComparator(null);
+            fillFromCollection(c);
         }
     }
 
@@ -169,6 +169,9 @@ public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializabl
             @SuppressWarnings("unchecked")@Override public E next() {
                 if (version != knownVersion) {
                     throw new TConcurrentModificationException();
+                }
+                if (index >= size) {
+                    throw new TNoSuchElementException();
                 }
                 removeIndex = index;
                 return (E) data[index++];
