@@ -72,7 +72,6 @@ public abstract class TAbstractSequentialList<E> extends TAbstractList<E> {
         boolean added = false;
         for (TIterator<? extends E> srcIter = c.iterator(); srcIter.hasNext();) {
             iter.add(srcIter.next());
-            iter.next();
             added = true;
         }
         return added;
