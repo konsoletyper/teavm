@@ -1462,7 +1462,7 @@ public class TArrays extends TObject {
 
     private static int mismatchImpl(float[] a, int aStart, float[] a2, int a2Start, int length) {
         for (int i = 0; i < length; ++i) {
-            if (Float.floatToIntBits(a[i + aStart]) != Float.floatToIntBits(a2[i + a2Start])) {
+            if (Float.compare(a[i + aStart], a2[i + a2Start]) != 0) {
                 return i;
             }
         }
@@ -1511,7 +1511,7 @@ public class TArrays extends TObject {
 
     private static int mismatchImpl(double[] a, int aStart, double[] a2, int a2Start, int length) {
         for (int i = 0; i < length; ++i) {
-            if (Double.doubleToLongBits(a[i + aStart]) != Double.doubleToLongBits(a2[i + a2Start])) {
+            if (Double.compare(a[i + aStart], a2[i + a2Start]) != 0) {
                 return i;
             }
         }
