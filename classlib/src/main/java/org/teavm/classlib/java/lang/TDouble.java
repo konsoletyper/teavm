@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.text.DoubleSynthesizer;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
@@ -201,7 +202,9 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         if (this == other) {
             return true;
         }
-        return other instanceof TDouble && doubleToLongBits(((TDouble) other).value) == doubleToLongBits(value);
+        return other instanceof TDouble && PlatformDetector.isJavaScript()
+                ? TDouble.compare(((TDouble) other).value, value) == 0
+                : doubleToLongBits(((TDouble) other).value) == doubleToLongBits(value);
     }
 
     @Override

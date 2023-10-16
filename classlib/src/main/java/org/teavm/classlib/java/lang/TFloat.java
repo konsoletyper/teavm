@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.text.FloatSynthesizer;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
@@ -85,7 +86,9 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         if (this == other) {
             return true;
         }
-        return other instanceof TFloat && floatToIntBits(((TFloat) other).value) == floatToIntBits(value);
+        return other instanceof TFloat && PlatformDetector.isJavaScript()
+                ? TFloat.compare(((TFloat) other).value, value) == 0
+                : floatToIntBits(((TFloat) other).value) == floatToIntBits(value);
     }
 
     @Override
