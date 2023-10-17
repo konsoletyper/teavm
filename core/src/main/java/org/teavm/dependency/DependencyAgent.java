@@ -83,6 +83,10 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
         return analyzer.agentClassSource;
     }
 
+    public ClassReaderSource getUnprocessedClassSource() {
+        return analyzer.getUnprocessedClassSource();
+    }
+
     @Override
     public ClassLoader getClassLoader() {
         return analyzer.getClassLoader();
