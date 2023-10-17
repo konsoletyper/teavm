@@ -111,7 +111,9 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
         for (var platform : platforms) {
             var runStrategy = platform.createRunStrategy(outputDir);
-            runners.put(platform.getPlatform(), runStrategy);
+            if (runStrategy != null) {
+                runners.put(platform.getPlatform(), runStrategy);
+            }
         }
 
         for (var strategy : runners.values()) {
