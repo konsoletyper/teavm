@@ -1084,7 +1084,7 @@ public class CodeServlet extends HttpServlet {
                     end = 1000;
                     break;
             }
-            phaseLimit = count;
+            phaseLimit = Math.max(1, count);
             return progressReached(0);
         }
 
