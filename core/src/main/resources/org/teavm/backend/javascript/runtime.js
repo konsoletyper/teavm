@@ -59,105 +59,133 @@ function $rt_castToClass(obj, cls) {
 function $rt_createArray(cls, sz) {
     var data = new Array(sz);
     data.fill(null);
-    return new $rt_array(cls, data);
+    return new ($rt_arraycls(cls))(data);
 }
 function $rt_createArrayFromData(cls, init) {
     return $rt_wrapArray(cls, init);
 }
 function $rt_wrapArray(cls, data) {
-    return new $rt_array(cls, data);
+    return new ($rt_arraycls(cls))(data);
 }
 function $rt_createUnfilledArray(cls, sz) {
-    return new $rt_array(cls, new Array(sz));
-}
-function $rt_createNumericArray(cls, nativeArray) {
-    return new $rt_array(cls, nativeArray);
+    return new ($rt_arraycls(cls))(new Array(sz));
 }
 var $rt_createLongArray;
 var $rt_createLongArrayFromData;
 if (typeof BigInt64Array !== 'function') {
     $rt_createLongArray = function(sz) {
         var data = new Array(sz);
-        var arr = new $rt_array($rt_longcls(), data);
+        var arr = new $rt_longArrayCls(data);
         data.fill(Long_ZERO);
         return arr;
     }
     $rt_createLongArrayFromData = function(init) {
-        return new $rt_array($rt_longcls(), init);
+        return new $rt_longArrayCls(init);
     }
 } else {
     $rt_createLongArray = function (sz) {
-        return $rt_createNumericArray($rt_longcls(), new BigInt64Array(sz));
+        return new $rt_longArrayCls(new BigInt64Array(sz));
     }
     $rt_createLongArrayFromData = function(data) {
         var buffer = new BigInt64Array(data.length);
         buffer.set(data);
-        return $rt_createNumericArray($rt_longcls(), buffer);
+        return new $rt_longArrayCls(buffer);
     }
 }
+
 function $rt_createCharArray(sz) {
-    return $rt_createNumericArray($rt_charcls(), new Uint16Array(sz));
+    return new $rt_charArrayCls(new Uint16Array(sz));
 }
 function $rt_createCharArrayFromData(data) {
     var buffer = new Uint16Array(data.length);
     buffer.set(data);
-    return $rt_createNumericArray($rt_charcls(), buffer);
+    return new $rt_charArrayCls(buffer);
 }
 function $rt_createByteArray(sz) {
-    return $rt_createNumericArray($rt_bytecls(), new Int8Array(sz));
+    return new $rt_byteArrayCls(new Int8Array(sz));
 }
 function $rt_createByteArrayFromData(data) {
     var buffer = new Int8Array(data.length);
     buffer.set(data);
-    return $rt_createNumericArray($rt_bytecls(), buffer);
+    return new $rt_byteArrayCls(buffer);
 }
 function $rt_createShortArray(sz) {
-    return $rt_createNumericArray($rt_shortcls(), new Int16Array(sz));
+    return new $rt_shortArrayCls(new Int16Array(sz));
 }
 function $rt_createShortArrayFromData(data) {
     var buffer = new Int16Array(data.length);
     buffer.set(data);
-    return $rt_createNumericArray($rt_shortcls(), buffer);
+    return new $rt_shortArrayCls(buffer);
 }
 function $rt_createIntArray(sz) {
-    return $rt_createNumericArray($rt_intcls(), new Int32Array(sz));
+    return new $rt_intArrayCls(new Int32Array(sz));
 }
 function $rt_createIntArrayFromData(data) {
     var buffer = new Int32Array(data.length);
     buffer.set(data);
-    return $rt_createNumericArray($rt_intcls(), buffer);
+    return new $rt_intArrayCls(buffer);
 }
 function $rt_createBooleanArray(sz) {
-    return $rt_createNumericArray($rt_booleancls(), new Int8Array(sz));
+    return new $rt_booleanArrayCls(new Int8Array(sz));
 }
 function $rt_createBooleanArrayFromData(data) {
     var buffer = new Int8Array(data.length);
     buffer.set(data);
-    return $rt_createNumericArray($rt_booleancls(), buffer);
+    return new $rt_booleanArrayCls(buffer);
 }
+
 function $rt_createFloatArray(sz) {
-    return $rt_createNumericArray($rt_floatcls(), new Float32Array(sz));
+    return new $rt_floatArrayCls(new Float32Array(sz));
 }
 function $rt_createFloatArrayFromData(data) {
     var buffer = new Float32Array(data.length);
     buffer.set(data);
-    return $rt_createNumericArray($rt_floatcls(), buffer);
+    return new $rt_floatArrayCls(buffer);
 }
 function $rt_createDoubleArray(sz) {
-    return $rt_createNumericArray($rt_doublecls(), new Float64Array(sz));
+    return new $rt_doubleArrayCls(new Float64Array(sz));
 }
 function $rt_createDoubleArrayFromData(data) {
     var buffer = new Float64Array(data.length);
     buffer.set(data);
-    return $rt_createNumericArray($rt_doublecls(), buffer);
+    return new $rt_doubleArrayCls(buffer);
 }
 
 function $rt_arraycls(cls) {
     var result = cls.$array;
     if (result === null) {
-        var arraycls = {};
+        function JavaArray(data) {
+            $rt_objcls().call(this);
+            this.data = data;
+        }
+        JavaArray.prototype = Object.create($rt_objcls().prototype);
+        JavaArray.prototype.type = cls;
+        JavaArray.prototype.constructor = JavaArray;
+        JavaArray.prototype.toString = function() {
+            var str = "[";
+            for (var i = 0; i < this.data.length; ++i) {
+                if (i > 0) {
+                    str += ", ";
+                }
+                str += this.data[i].toString();
+            }
+            str += "]";
+            return str;
+        };
+        $rt_setCloneMethod(JavaArray.prototype, function () {
+            var dataCopy;
+            if ('slice' in this.data) {
+                dataCopy = this.data.slice();
+            } else {
+                dataCopy = new this.data.constructor(this.data.length);
+                for (var i = 0; i < dataCopy.length; ++i) {
+                    dataCopy[i] = this.data[i];
+                }
+            }
+            return new ($rt_arraycls(this.type))(dataCopy);
+        });
         var name = "[" + cls.$meta.binaryName;
-        arraycls.$meta = {
+        JavaArray.$meta = {
             item: cls,
             supertypes: [$rt_objcls()],
             primitive: false,
@@ -169,10 +197,11 @@ function $rt_arraycls(cls) {
             declaringClass: null,
             enclosingClass: null
         };
-        arraycls.classObject = null;
-        arraycls.$array = null;
-        result = arraycls;
-        cls.$array = arraycls;
+        JavaArray.classObject = null;
+        JavaArray.$array = null;
+
+        result = JavaArray;
+        cls.$array = JavaArray;
     }
     return result;
 }
@@ -945,7 +974,7 @@ function $rt_fastStringToCharArray(string) {
     for (var i = 0; i < array.length; ++i) {
         array[i] = string.charCodeAt(i);
     }
-    return $rt_createNumericArray($rt_charcls(), array);
+    return new $rt_charArrayCls(array);
 }
 function $rt_substring(string, start, end) {
     if (start === 0 && end === string.length) {
