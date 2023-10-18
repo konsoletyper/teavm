@@ -166,7 +166,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                 }
                 break;
             case "unwrapString":
-                writer.append("$rt_str(");
+                writer.appendFunction("$rt_str").append("(");
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;

@@ -125,7 +125,7 @@ public class JavaScriptConvGenerator implements Generator {
 
         writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.String")
                 .append(") {").indent().softNewLine();
-        writer.append("return $rt_str(" + obj + ");").softNewLine();
+        writer.append("return ").appendFunction("$rt_str").append("(").append(obj).append(");").softNewLine();
 
         writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Boolean")
                 .append(") {").indent().softNewLine();
@@ -179,7 +179,7 @@ public class JavaScriptConvGenerator implements Generator {
         writer.append("return arr;").softNewLine();
 
         writer.outdent().append("} else if (typeof " + obj + " === 'string') {").indent().softNewLine();
-        writer.append("return $rt_str(" + obj + ");").softNewLine();
+        writer.append("return ").appendFunction("$rt_str").append("(" + obj + ");").softNewLine();
 
         writer.outdent().append("} else if (typeof " + obj + " === 'number') {").indent().softNewLine();
         writer.append("if ((" + obj + "|0) === " + obj + ") {").indent().softNewLine();

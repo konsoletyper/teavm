@@ -87,7 +87,7 @@ class ResourceAccessorInjector implements Injector {
                 context.getWriter().append('(');
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().ws().append("!==").ws().append("null").ws().append("?").ws();
-                context.getWriter().append("$rt_str(");
+                context.getWriter().appendFunction("$rt_str").append("(");
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().append(")").ws().append(':').ws().append("null)");
                 break;

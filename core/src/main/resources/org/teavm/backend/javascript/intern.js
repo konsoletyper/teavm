@@ -16,49 +16,34 @@
 "use strict";
 
 var $rt_intern = function() {
-    var table = new Array(100);
-    var size = 0;
+    var map = Object.create(null);
 
-    function get(str) {
-        var hash = $rt_stringHash(str);
-        var bucket = getBucket(hash);
-        for (var i = 0; i < bucket.length; ++i) {
-            if ($rt_stringEquals(bucket[i], str)) {
-                return bucket[i];
+    var get;
+    if (typeof WeakRef !== 'undefined') {
+        var registry = new FinalizationRegistry(value => {
+            delete map[value];
+        });
+
+        get = function(str) {
+            var key = $rt_ustr(str);
+            var ref = map[key];
+            var result = typeof ref !== 'undefined' ? ref.deref() : void 0;
+            if (typeof result !== 'object') {
+                result = str;
+                map[key] = new WeakRef(result);
+                registry.register(result, key);
             }
+            return result;
         }
-        bucket.push(str);
-        return str;
-    }
-
-    function getBucket(hash) {
-        while (true) {
-            var position = hash % table.length;
-            var bucket = table[position];
-            if (typeof bucket !== "undefined") {
-                return bucket;
+    } else {
+        get = function(str) {
+            var key = $rt_ustr(str);
+            var result = map[key];
+            if (typeof result !== 'object') {
+                result = str;
+                map[key] = result;
             }
-            if (++size / table.length > 0.5) {
-                rehash();
-            } else {
-                bucket = [];
-                table[position] = bucket;
-                return bucket;
-            }
-        }
-    }
-
-    function rehash() {
-        var old = table;
-        table = new Array(table.length * 2);
-        size = 0;
-        for (var i = 0; i < old.length; ++i) {
-            var bucket = old[i];
-            if (typeof bucket !== "undefined") {
-                for (var j = 0; j < bucket.length; ++j) {
-                    get(bucket[j]);
-                }
-            }
+            return result;
         }
     }
 

@@ -73,6 +73,7 @@ public class RuntimeRenderer {
             renderRuntimeThrowableMethods();
             renderRuntimeNullCheck();
             renderRuntimeIntern();
+            renderStringClassInit();
             renderRuntimeThreads();
             renderRuntimeCreateException();
             renderCreateStackTraceElement();
@@ -123,33 +124,21 @@ public class RuntimeRenderer {
     }
 
     private void renderRuntimeString() throws IOException {
-        MethodReference stringCons = new MethodReference(String.class, "<init>", char[].class, void.class);
-        writer.append("function $rt_str(str) {").indent().softNewLine();
+        MethodReference stringCons = new MethodReference(String.class, "<init>", Object.class, void.class);
+        writer.append("function $rt_str(str)").ws().append("{").indent().softNewLine();
         writer.append("if (str === null) {").indent().softNewLine();
         writer.append("return null;").softNewLine();
         writer.outdent().append("}").softNewLine();
-        writer.append("var characters = $rt_createCharArray(str.length);").softNewLine();
-        writer.append("var charsBuffer = characters.data;").softNewLine();
-        writer.append("for (var i = 0; i < str.length; i = (i + 1) | 0) {").indent().softNewLine();
-        writer.append("charsBuffer[i] = str.charCodeAt(i) & 0xFFFF;").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.append("return ").appendInit(stringCons).append("(characters);").softNewLine();
+        writer.append("return ").appendInit(stringCons).append("(str);").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
     private void renderRuntimeUnwrapString() throws IOException {
-        FieldReference stringChars = new FieldReference(STRING_CLASS, "characters");
-        writer.append("function $rt_ustr(str) {").indent().softNewLine();
-        writer.append("if (str === null) {").indent().softNewLine();
-        writer.append("return null;").softNewLine();
-        writer.outdent().append("}").softNewLine();
-
-        writer.append("var data = str.").appendField(stringChars).append(".data;").softNewLine();
-        writer.append("var result = \"\";").softNewLine();
-        writer.append("for (var i = 0; i < data.length; i = (i + 1) | 0) {").indent().softNewLine();
-        writer.append("result += String.fromCharCode(data[i]);").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.append("return result;").softNewLine();
+        FieldReference stringChars = new FieldReference(STRING_CLASS, "nativeString");
+        writer.append("function $rt_ustr(str)").ws().append("{").indent().softNewLine();
+        writer.append("return str").ws().append("!==").ws().append("null");
+        writer.ws().append("?").ws().append("str.").appendField(stringChars);
+        writer.ws().append(":").ws().append("null").append(";").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
@@ -169,15 +158,13 @@ public class RuntimeRenderer {
             writer.outdent().append("}").softNewLine();
         } else {
             renderHandWrittenRuntime("intern.js");
-            writer.append("function $rt_stringHash(s)").ws().append("{").indent().softNewLine();
-            writer.append("return ").appendMethodBody(String.class, "hashCode", int.class)
-                    .append("(s);").softNewLine();
-            writer.outdent().append("}").softNewLine();
-            writer.append("function $rt_stringEquals(a,").ws().append("b)").ws().append("{").indent().softNewLine();
-            writer.append("return ").appendMethodBody(String.class, "equals", Object.class, boolean.class)
-                    .append("(a").ws().append(",b);").softNewLine();
-            writer.outdent().append("}").softNewLine();
         }
+    }
+
+    private void renderStringClassInit() throws IOException {
+        writer.append("function $rt_stringClassInit(str)").ws().append("{").indent().softNewLine();
+        writer.appendClassInit("java.lang.String").append("();").softNewLine();
+        writer.outdent().append("}").softNewLine();
     }
 
     private boolean needInternMethod() {

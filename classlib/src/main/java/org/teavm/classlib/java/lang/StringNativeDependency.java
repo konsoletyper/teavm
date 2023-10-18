@@ -15,23 +15,12 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.io.IOException;
-import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.backend.javascript.spi.Generator;
-import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.MethodReference;
 
-public class StringNativeGenerator implements Generator, DependencyPlugin {
-    @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        if (methodRef.getName().equals("intern")) {
-            writer.append("return $rt_intern(").append(context.getParameterName(0)).append(");").softNewLine();
-        }
-    }
-
+public class StringNativeDependency implements DependencyPlugin {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
         if (method.getReference().getName().equals("intern")) {

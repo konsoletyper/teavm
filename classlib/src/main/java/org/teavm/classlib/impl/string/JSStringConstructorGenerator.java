@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2023 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,19 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.incremental;
+package org.teavm.classlib.impl.string;
 
 import java.io.IOException;
-import org.teavm.backend.javascript.spi.Injector;
-import org.teavm.backend.javascript.spi.InjectorContext;
-import org.teavm.model.FieldReference;
+import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.spi.Generator;
+import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.model.MethodReference;
 
-public class EntryPointGenerator implements Injector {
+public class JSStringConstructorGenerator implements Generator {
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
-        context.getWriter().append("main.result = (");
-        context.writeExpr(context.getArgument(0));
-        context.getWriter().append(").").appendField(new FieldReference("java.lang.String", "nativeString"));
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+        writer.append(context.getParameterName(0));
+        writer.append(".").appendField(JSStringInjector.NATIVE_FIELD).ws().append("=").ws();
+        writer.append(context.getParameterName(1)).append(";").softNewLine();
     }
 }

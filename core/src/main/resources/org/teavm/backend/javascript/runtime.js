@@ -644,6 +644,7 @@ function $rt_mainStarter(f) {
 }
 var $rt_stringPool_instance;
 function $rt_stringPool(strings) {
+    $rt_stringClassInit();
     $rt_stringPool_instance = new Array(strings.length);
     for (var i = 0; i < strings.length; ++i) {
         $rt_stringPool_instance[i] = $rt_intern($rt_str(strings[i]));
@@ -938,3 +939,35 @@ function $rt_classWithoutFields(superclass) {
         superclass.call(this);
     };
 }
+function $rt_charArrayToString(array, offset, count) {
+    var result = "";
+    var limit = offset + count;
+    for (var i = offset; i < limit; i = (i + 1024) | 0) {
+        var next = Math.min(limit, (i + 1024) | 0);
+        result += String.fromCharCode.apply(null, array.subarray(i, next));
+    }
+    return result;
+}
+function $rt_fullArrayToString(array) {
+    return $rt_charArrayToString(array, 0, array.length);
+}
+function $rt_stringToCharArray(string, begin, dst, dstBegin, count) {
+    for (var i = 0; i < count; i = (i + 1) | 0) {
+        dst[dstBegin + i] = string.charCodeAt(begin + i);
+    }
+}
+function $rt_fastStringToCharArray(string) {
+    var array = new Uint16Array(string.length);
+    for (var i = 0; i < array.length; ++i) {
+        array[i] = string.charCodeAt(i);
+    }
+    return $rt_createNumericArray($rt_charcls(), array);
+}
+function $rt_substring(string, start, end) {
+    if (start === 0 && end === string.length) {
+        return string;
+    }
+    var result = start.substring(start, end - 1) + start.substring(end - 1, end);
+    $rt_substringSink = ($rt_substringSink + result.charCodeAt(result.length - 1)) | 0;
+}
+var $rt_substringSink = 0;

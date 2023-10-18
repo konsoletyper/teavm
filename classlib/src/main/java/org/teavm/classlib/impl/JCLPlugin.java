@@ -29,6 +29,10 @@ import org.teavm.classlib.impl.currency.CurrencyHelper;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
 import org.teavm.classlib.impl.record.ObjectMethodsSubstitutor;
 import org.teavm.classlib.impl.reflection.ReflectionTransformer;
+import org.teavm.classlib.impl.string.DefaultStringTransformer;
+import org.teavm.classlib.impl.string.JSStringConstructorGenerator;
+import org.teavm.classlib.impl.string.JSStringInjector;
+import org.teavm.classlib.impl.string.JSStringTransformer;
 import org.teavm.classlib.impl.tz.DateTimeZoneProvider;
 import org.teavm.classlib.impl.tz.DateTimeZoneProviderIntrinsic;
 import org.teavm.classlib.impl.tz.DateTimeZoneProviderPatch;
@@ -186,6 +190,16 @@ public class JCLPlugin implements TeaVMPlugin {
         installMetadata(host.getService(MetadataRegistration.class));
         host.add(new DeclaringClassDependencyListener());
         applyTimeZoneDetection(host);
+
+        var js = host.getExtension(TeaVMJavaScriptHost.class);
+        if (js != null) {
+            host.add(new JSStringTransformer());
+            js.addInjectorProvider(new JSStringInjector());
+            js.add(new MethodReference(String.class, "<init>", Object.class, void.class),
+                    new JSStringConstructorGenerator());
+        } else {
+            host.add(new DefaultStringTransformer());
+        }
     }
 
     private void applyTimeZoneDetection(TeaVMHost host) {

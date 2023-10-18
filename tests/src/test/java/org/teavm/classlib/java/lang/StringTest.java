@@ -354,5 +354,5 @@ public class StringTest {
         assertTrue(new String(new char[] { ' ', ' ' }).isBlank());
         assertFalse(new String(new char[] { ' ', 'x', ' ' }).isBlank());
         assertFalse(new String(new char[] { 'a', ' ' }).isBlank());
-    }    
+    }
 }

@@ -266,9 +266,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         dep.getResult().propagate(dependencyAnalyzer.getType("java.lang.Class"));
         dep.use();
 
-        dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class));
+        dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "<init>", Object.class, void.class));
         dep.getVariable(0).propagate(stringType);
-        dep.getVariable(1).propagate(dependencyAnalyzer.getType("[C"));
         dep.use();
 
         dependencyAnalyzer.linkField(new FieldReference(String.class.getName(), "characters"));
