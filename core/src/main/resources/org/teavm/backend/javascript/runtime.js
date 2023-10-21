@@ -227,69 +227,15 @@ function $rt_createPrimitiveCls(name, binaryName) {
     cls.$meta.enclosingClass = null;
     return cls;
 }
-var $rt_booleanclsCache = null;
-function $rt_booleancls() {
-    if ($rt_booleanclsCache === null) {
-        $rt_booleanclsCache = $rt_createPrimitiveCls("boolean", "Z");
-    }
-    return $rt_booleanclsCache;
-}
-var $rt_charclsCache = null;
-function $rt_charcls() {
-    if ($rt_charclsCache === null) {
-        $rt_charclsCache = $rt_createPrimitiveCls("char", "C");
-    }
-    return $rt_charclsCache;
-}
-var $rt_byteclsCache = null;
-function $rt_bytecls() {
-    if ($rt_byteclsCache === null) {
-        $rt_byteclsCache = $rt_createPrimitiveCls("byte", "B");
-    }
-    return $rt_byteclsCache;
-}
-var $rt_shortclsCache = null;
-function $rt_shortcls() {
-    if ($rt_shortclsCache === null) {
-        $rt_shortclsCache = $rt_createPrimitiveCls("short", "S");
-    }
-    return $rt_shortclsCache;
-}
-var $rt_intclsCache = null;
-function $rt_intcls() {
-    if ($rt_intclsCache === null) {
-        $rt_intclsCache = $rt_createPrimitiveCls("int", "I");
-    }
-    return $rt_intclsCache;
-}
-var $rt_longclsCache = null;
-function $rt_longcls() {
-    if ($rt_longclsCache === null) {
-        $rt_longclsCache = $rt_createPrimitiveCls("long", "J");
-    }
-    return $rt_longclsCache;
-}
-var $rt_floatclsCache = null;
-function $rt_floatcls() {
-    if ($rt_floatclsCache === null) {
-        $rt_floatclsCache = $rt_createPrimitiveCls("float", "F");
-    }
-    return $rt_floatclsCache;
-}
-var $rt_doubleclsCache = null;
-function $rt_doublecls() {
-    if ($rt_doubleclsCache === null) {
-        $rt_doubleclsCache = $rt_createPrimitiveCls("double", "D");
-    }
-    return $rt_doubleclsCache;
-}
-var $rt_voidclsCache = null;
-function $rt_voidcls() {
-    if ($rt_voidclsCache === null) {
-        $rt_voidclsCache = $rt_createPrimitiveCls("void", "V");
-    }
-    return $rt_voidclsCache;
-}
+var $rt_booleancls = $rt_createPrimitiveCls("boolean", "Z");
+var $rt_charcls = $rt_createPrimitiveCls("char", "C");
+var $rt_bytecls = $rt_createPrimitiveCls("byte", "B");
+var $rt_shortcls = $rt_createPrimitiveCls("short", "S");
+var $rt_intcls = $rt_createPrimitiveCls("int", "I");
+var $rt_longcls = $rt_createPrimitiveCls("long", "J");
+var $rt_floatcls = $rt_createPrimitiveCls("float", "F");
+var $rt_doublecls = $rt_createPrimitiveCls("double", "D");
+var $rt_voidcls = $rt_createPrimitiveCls("void", "V");
 function $rt_throw(ex) {
     throw $rt_exception(ex);
 }
@@ -357,90 +303,90 @@ function $rt_createMultiArray(cls, dimensions) {
 function $rt_createByteMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
-        return $rt_createMultiArray($rt_bytecls(), dimensions);
+        return $rt_createMultiArray($rt_bytecls, dimensions);
     }
     var firstDim = dimensions[0] | 0;
     for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createByteArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_bytecls(), arrays, dimensions);
+    return $rt_createMultiArrayImpl($rt_bytecls, arrays, dimensions);
 }
 function $rt_createCharMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
-        return $rt_createMultiArray($rt_charcls(), dimensions);
+        return $rt_createMultiArray($rt_charcls, dimensions);
     }
     var firstDim = dimensions[0] | 0;
     for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createCharArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_charcls(), arrays, dimensions, 0);
+    return $rt_createMultiArrayImpl($rt_charcls, arrays, dimensions, 0);
 }
 function $rt_createBooleanMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
-        return $rt_createMultiArray($rt_booleancls(), dimensions);
+        return $rt_createMultiArray($rt_booleancls, dimensions);
     }
     var firstDim = dimensions[0] | 0;
     for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createBooleanArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_booleancls(), arrays, dimensions, 0);
+    return $rt_createMultiArrayImpl($rt_booleancls, arrays, dimensions, 0);
 }
 function $rt_createShortMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
-        return $rt_createMultiArray($rt_shortcls(), dimensions);
+        return $rt_createMultiArray($rt_shortcls, dimensions);
     }
     var firstDim = dimensions[0] | 0;
     for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createShortArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_shortcls(), arrays, dimensions, 0);
+    return $rt_createMultiArrayImpl($rt_shortcls, arrays, dimensions, 0);
 }
 function $rt_createIntMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
-        return $rt_createMultiArray($rt_intcls(), dimensions);
+        return $rt_createMultiArray($rt_intcls, dimensions);
     }
     var firstDim = dimensions[0] | 0;
     for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createIntArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_intcls(), arrays, dimensions, 0);
+    return $rt_createMultiArrayImpl($rt_intcls, arrays, dimensions, 0);
 }
 function $rt_createLongMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
-        return $rt_createMultiArray($rt_longcls(), dimensions);
+        return $rt_createMultiArray($rt_longcls, dimensions);
     }
     var firstDim = dimensions[0] | 0;
     for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createLongArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_longcls(), arrays, dimensions, 0);
+    return $rt_createMultiArrayImpl($rt_longcls, arrays, dimensions, 0);
 }
 function $rt_createFloatMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
-        return $rt_createMultiArray($rt_floatcls(), dimensions);
+        return $rt_createMultiArray($rt_floatcls, dimensions);
     }
     var firstDim = dimensions[0] | 0;
     for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createFloatArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_floatcls(), arrays, dimensions, 0);
+    return $rt_createMultiArrayImpl($rt_floatcls, arrays, dimensions, 0);
 }
 function $rt_createDoubleMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
-        return $rt_createMultiArray($rt_doublecls(), dimensions);
+        return $rt_createMultiArray($rt_doublecls, dimensions);
     }
     var firstDim = dimensions[0] | 0;
     for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createDoubleArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_doublecls(), arrays, dimensions, 0);
+    return $rt_createMultiArrayImpl($rt_doublecls, arrays, dimensions, 0);
 }
 function $rt_primitiveArrayCount(dimensions, start) {
     var val = dimensions[start + 1] | 0;
@@ -792,21 +738,21 @@ function $dbg_class(obj) {
         cls = cls.$meta.item;
     }
     var clsName = "";
-    if (cls === $rt_booleancls()) {
+    if (cls === $rt_booleancls) {
         clsName = "boolean";
-    } else if (cls === $rt_bytecls()) {
+    } else if (cls === $rt_bytecls) {
         clsName = "byte";
-    } else if (cls === $rt_shortcls()) {
+    } else if (cls === $rt_shortcls) {
         clsName = "short";
-    } else if (cls === $rt_charcls()) {
+    } else if (cls === $rt_charcls) {
         clsName = "char";
-    } else if (cls === $rt_intcls()) {
+    } else if (cls === $rt_intcls) {
         clsName = "int";
-    } else if (cls === $rt_longcls()) {
+    } else if (cls === $rt_longcl) {
         clsName = "long";
-    } else if (cls === $rt_floatcls()) {
+    } else if (cls === $rt_floatcls) {
         clsName = "float";
-    } else if (cls === $rt_doublecls()) {
+    } else if (cls === $rt_doublecls) {
         clsName = "double";
     } else {
         clsName = cls.$meta ? (cls.$meta.name || ("a/" + cls.name)) : "@" + cls.name;

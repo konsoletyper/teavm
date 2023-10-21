@@ -312,33 +312,33 @@ public abstract class RenderingContext {
             ValueType.Object objType = (ValueType.Object) type;
             writer.appendClass(objType.getClassName());
         } else if (type instanceof ValueType.Void) {
-            writer.append("$rt_voidcls()");
+            writer.append("$rt_voidcls");
         } else if (type instanceof ValueType.Primitive) {
             ValueType.Primitive primitiveType = (ValueType.Primitive) type;
             switch (primitiveType.getKind()) {
                 case BOOLEAN:
-                    writer.append("$rt_booleancls()");
+                    writer.append("$rt_booleancls");
                     break;
                 case CHARACTER:
-                    writer.append("$rt_charcls()");
+                    writer.append("$rt_charcls");
                     break;
                 case BYTE:
-                    writer.append("$rt_bytecls()");
+                    writer.append("$rt_bytecls");
                     break;
                 case SHORT:
-                    writer.append("$rt_shortcls()");
+                    writer.append("$rt_shortcls");
                     break;
                 case INTEGER:
-                    writer.append("$rt_intcls()");
+                    writer.append("$rt_intcls");
                     break;
                 case LONG:
-                    writer.append("$rt_longcls()");
+                    writer.append("$rt_longcls");
                     break;
                 case FLOAT:
-                    writer.append("$rt_floatcls()");
+                    writer.append("$rt_floatcls");
                     break;
                 case DOUBLE:
-                    writer.append("$rt_doublecls()");
+                    writer.append("$rt_doublecls");
                     break;
                 default:
                     throw new IllegalArgumentException("The type is not renderable");

@@ -113,7 +113,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         String length = context.getParameterName(2);
         writer.append("if (").append(type).append(".$meta.primitive) {").softNewLine().indent();
         for (String primitive : primitives) {
-            writer.append("if (" + type + " == $rt_" + primitive.toLowerCase() + "cls()) {").indent().softNewLine();
+            writer.append("if (" + type + " == $rt_" + primitive.toLowerCase() + "cls) {").indent().softNewLine();
             writer.append("return $rt_create" + primitive + "Array(" + length + ");").softNewLine();
             writer.outdent().append("}").softNewLine();
         }
@@ -134,7 +134,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
             if (cls == null || cls.getMethod(methodRef.getDescriptor()) == null) {
                 continue;
             }
-            writer.append("if (type === $rt_" + primitives[i].toLowerCase() + "cls()) {").indent().softNewLine();
+            writer.append("if (type === $rt_" + primitives[i].toLowerCase() + "cls) {").indent().softNewLine();
             writer.append("return ").appendMethodBody(methodRef).append("(item);").softNewLine();
             writer.outdent().append("} else ");
         }
@@ -160,7 +160,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
                 writer.append(" else ");
             }
             first = false;
-            writer.append("if (type === $rt_" + primitives[i].toLowerCase() + "cls()) {").indent().softNewLine();
+            writer.append("if (type === $rt_" + primitives[i].toLowerCase() + "cls) {").indent().softNewLine();
             writer.append(item + " = ").appendMethodBody(methodRef).append("(" + item + ");").softNewLine();
             writer.outdent().append("}");
         }

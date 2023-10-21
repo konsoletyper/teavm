@@ -14,11 +14,11 @@
  *  limitations under the License.
  */
 
-var $rt_booleanArrayCls = $rt_arraycls($rt_booleancls());
-var $rt_charArrayCls = $rt_arraycls($rt_charcls());
-var $rt_byteArrayCls = $rt_arraycls($rt_bytecls());
-var $rt_shortArrayCls = $rt_arraycls($rt_shortcls());
-var $rt_intArrayCls = $rt_arraycls($rt_intcls());
-var $rt_longArrayCls = $rt_arraycls($rt_longcls());
-var $rt_floatArrayCls = $rt_arraycls($rt_floatcls());
-var $rt_doubleArrayCls = $rt_arraycls($rt_doublecls());
+var $rt_booleanArrayCls = $rt_arraycls($rt_booleancls);
+var $rt_charArrayCls = $rt_arraycls($rt_charcls);
+var $rt_byteArrayCls = $rt_arraycls($rt_bytecls);
+var $rt_shortArrayCls = $rt_arraycls($rt_shortcls);
+var $rt_intArrayCls = $rt_arraycls($rt_intcls);
+var $rt_longArrayCls = $rt_arraycls($rt_longcls);
+var $rt_floatArrayCls = $rt_arraycls($rt_floatcls);
+var $rt_doubleArrayCls = $rt_arraycls($rt_doublecls);

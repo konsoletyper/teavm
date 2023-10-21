@@ -182,37 +182,37 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                 break;
 
             case "dataToByteArray":
-                writer.append("$rt_wrapArray($rt_bytecls(),").ws();
+                writer.append("$rt_wrapArray($rt_bytecls,").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
             case "dataToShortArray":
-                writer.append("$rt_wrapArray($rt_shortcls(),").ws();
+                writer.append("$rt_wrapArray($rt_shortcls,").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
             case "dataToCharArray":
-                writer.append("$rt_wrapArray($rt_charcls(),").ws();
+                writer.append("$rt_wrapArray($rt_charcls,").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
             case "dataToIntArray":
-                writer.append("$rt_wrapArray($rt_intcls(),").ws();
+                writer.append("$rt_wrapArray($rt_intcls,").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
             case "dataToFloatArray":
-                writer.append("$rt_wrapArray($rt_floatcls(),").ws();
+                writer.append("$rt_wrapArray($rt_floatcls,").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
             case "dataToDoubleArray":
-                writer.append("$rt_wrapArray($rt_doublecls(),").ws();
+                writer.append("$rt_wrapArray($rt_doublecls,").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
             case "dataToArray":
-                writer.append("$rt_wrapArray($rt_objcls(),").ws();
+                writer.append("$rt_wrapArray($rt_objcls,").ws();
                 context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
