@@ -56,22 +56,6 @@ function $rt_castToClass(obj, cls) {
     }
     return obj;
 }
-Array.prototype.fill = Array.prototype.fill || function(value,start,end) {
-    var len = this.length;
-    if (!len) return this;
-    start = start | 0;
-    var i = start < 0
-        ? Math.max(len + start, 0)
-        : Math.min(start, len);
-    end = end === undefined ? len : end | 0;
-    end = end < 0
-        ? Math.max(len + end, 0)
-        : Math.min(end, len);
-    for (; i < end; i++) {
-        this[i] = value;
-    }
-    return this;
-};
 function $rt_createArray(cls, sz) {
     var data = new Array(sz);
     data.fill(null);
