@@ -28,6 +28,7 @@ plugins {
 
 rootProject.name = "teavm"
 
+include("js-parser")
 include("core")
 include("interop:core")
 include("metaprogramming:api", "metaprogramming:impl")
