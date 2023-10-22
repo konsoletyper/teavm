@@ -239,7 +239,8 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
             if (++pos == length) {
                 return valueOf(0);
             }
-            if ((firstDigit = string.charAt(pos)) == 'x' || firstDigit == 'X') {
+            firstDigit = string.charAt(pos);
+            if (firstDigit == 'x' || firstDigit == 'X') {
                 ++pos;
                 base = 16;
             } else {
