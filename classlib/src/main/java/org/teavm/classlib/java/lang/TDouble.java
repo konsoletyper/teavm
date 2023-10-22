@@ -293,9 +293,13 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         int sz = 0;
         long bits = doubleToLongBits(d);
         boolean subNormal = false;
+        boolean negative = (bits & (1L << 63)) != 0;
         int exp = (int) ((bits >>> 52) & 0x7FF) - 1023;
         long mantissa = bits & 0xFFFFFFFFFFFFFL;
         if (exp == -1023) {
+            if (mantissa == 0) {
+                return negative ? "-0x0.0p0" : "0x0.0p0";
+            }
             ++exp;
             subNormal = true;
         }
@@ -314,7 +318,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         buffer[sz++] = subNormal ? '0' : '1';
         buffer[sz++] = 'x';
         buffer[sz++] = '0';
-        if ((bits & (1L << 63)) != 0) {
+        if (negative) {
             buffer[sz++] = '-';
         }
         int half = sz / 2;

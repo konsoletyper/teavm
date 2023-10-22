@@ -131,6 +131,8 @@ public class DoubleTest {
         assertEquals("0x1.0p-1022", Double.toHexString(0x1.0p-1022));
         assertEquals("0x0.8p-1022", Double.toHexString(0x0.8p-1022));
         assertEquals("0x0.001p-1022", Double.toHexString(0x0.001p-1022));
+        assertEquals("0x0.0p0", Double.toHexString(0.0D));
+        assertEquals("-0x0.0p0", Double.toHexString(-0.0D));
     }
 
     @Test
