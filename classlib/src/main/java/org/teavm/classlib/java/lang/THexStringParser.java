@@ -49,7 +49,7 @@ final class THexStringParser {
     private long mantissa;
     private String abandonedNumber="";
 
-    public THexStringParser(int exponentWidth, int mantissaWidth) {
+    private THexStringParser(int exponentWidth, int mantissaWidth) {
         this.EXPONENT_WIDTH = exponentWidth;
         this.MANTISSA_WIDTH = mantissaWidth;
         this.EXPONENT_BASE = ~(-1L << (exponentWidth - 1));
@@ -60,7 +60,7 @@ final class THexStringParser {
     /*
      * Parses the hex string to a double number.
      */
-    public static double parseDouble(String hexString) {
+    static double parseDouble(String hexString) {
         THexStringParser parser = new THexStringParser(DOUBLE_EXPONENT_WIDTH, DOUBLE_MANTISSA_WIDTH);
         long result = parser.parse(hexString, true);
         return Double.longBitsToDouble(result);
@@ -68,7 +68,7 @@ final class THexStringParser {
     /*
      * Parses the hex string to a float number.
      */
-    public static float parseFloat(String hexString) {
+    static float parseFloat(String hexString) {
         THexStringParser parser = new THexStringParser(FLOAT_EXPONENT_WIDTH, FLOAT_MANTISSA_WIDTH);
         int result = (int) parser.parse(hexString, false);
         return Float.intBitsToFloat(result);
