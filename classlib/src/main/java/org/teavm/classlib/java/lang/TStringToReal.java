@@ -22,7 +22,7 @@ package org.teavm.classlib.java.lang;
 final class TStringToReal {
     private static final class StringExponentPair {
         String s;
-        long e;
+        int e;
         boolean negative;
         // Flags for two special non-error failure cases.
         boolean infinity;
