@@ -106,13 +106,13 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         return parseImpl(s, index, endIndex, radix, negative);
     }
 
-    private static int parseImpl(CharSequence s, int offset, int length, int radix, boolean negative) throws NumberFormatException {
-        if (offset == length) {
+    private static int parseImpl(CharSequence s, int offset, int end, int radix, boolean negative) throws NumberFormatException {
+        if (offset == end) {
             throw new NumberFormatException();
         }
         int max = Integer.MIN_VALUE / radix;
         int result = 0;
-        while (offset < length) {
+        while (offset < end) {
             int digit = Character.digit(s.charAt(offset++), radix);
             if (digit == -1) {
                 throw new NumberFormatException();
