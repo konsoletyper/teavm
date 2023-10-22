@@ -28,7 +28,7 @@ final class TStringToReal {
         boolean infinity;
         boolean zero;
 
-        public float specialValue() {
+        float specialValue() {
             if (infinity) {
                 return negative ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
             }
@@ -39,7 +39,7 @@ final class TStringToReal {
      * Takes a String and an integer exponent. The String should hold a positive
      * integer value (or zero). The exponent will be used to calculate the
      * floating point number by taking the positive integer the String
-     * represents and multiplying by 10 raised to the power of the of the
+     * represents and multiplying by 10 raised to the power of the
      * exponent. Returns the closest double value to the real number, or Double.longBitsToDouble(-1).
      */
     private static double parseDblImpl(String s, int e) {
@@ -51,7 +51,7 @@ final class TStringToReal {
      * Takes a String and an integer exponent. The String should hold a positive
      * integer value (or zero). The exponent will be used to calculate the
      * floating point number by taking the positive integer the String
-     * represents and multiplying by 10 raised to the power of the of the
+     * represents and multiplying by 10 raised to the power of the
      * exponent. Returns the closest float value to the real number, or Float.intBitsToFloat(-1).
      */
     private static float parseFltImpl(String s, int e) {
@@ -67,7 +67,7 @@ final class TStringToReal {
      * space and trailing zeroes eliminated. The exponent of the
      * StringExponentPair will be used to calculate the floating point number by
      * taking the positive integer the String represents and multiplying by 10
-     * raised to the power of the of the exponent.
+     * raised to the power of the exponent.
      */
     private static StringExponentPair initialParse(String s, int length, boolean isDouble) {
         StringExponentPair result = new StringExponentPair();
@@ -172,7 +172,7 @@ final class TStringToReal {
         final int MAX_DIGITS = 52;
         length = s.length();
         if (length > MAX_DIGITS && result.e < APPROX_MIN_MAGNITUDE) {
-            int d = Math.min(APPROX_MIN_MAGNITUDE - (int) result.e, length - 1);
+            int d = Math.min(APPROX_MIN_MAGNITUDE - result.e, length - 1);
             s = s.substring(0, length - d);
             result.e += d;
         }
@@ -222,7 +222,7 @@ final class TStringToReal {
      * @throws NumberFormatException
      *                if the String doesn't represent a double
      */
-    public static double parseDouble(String s) {
+    static double parseDouble(String s) {
         s = s.trim();
         int length = s.length();
         if (length == 0) {
@@ -242,7 +242,7 @@ final class TStringToReal {
         if (info.infinity || info.zero) {
             return info.specialValue();
         }
-        double result = parseDblImpl(info.s, (int) info.e);
+        double result = parseDblImpl(info.s, info.e);
         if (Double.doubleToRawLongBits(result) == 0xffffffffffffffffL) {
             throw invalidReal(s, true);
         }
@@ -258,7 +258,7 @@ final class TStringToReal {
      * @throws NumberFormatException
      *                if the String doesn't represent a float
      */
-    public static float parseFloat(String s) {
+    static float parseFloat(String s) {
         s = s.trim();
         int length = s.length();
         if (length == 0) {
@@ -278,7 +278,7 @@ final class TStringToReal {
         if (info.infinity || info.zero) {
             return info.specialValue();
         }
-        float result = parseFltImpl(info.s, (int) info.e);
+        float result = parseFltImpl(info.s, info.e);
         if (Float.floatToRawIntBits(result) == 0xffffffff) {
             throw invalidReal(s, false);
         }
