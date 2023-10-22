@@ -106,7 +106,8 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         return parseImpl(s, index, endIndex, radix, negative);
     }
 
-    private static int parseImpl(CharSequence s, int offset, int end, int radix, boolean negative) throws NumberFormatException {
+    private static int parseImpl(CharSequence s, int offset, int end, int radix, boolean negative) throws
+            NumberFormatException {
         if (offset == end) {
             throw new NumberFormatException();
         }
