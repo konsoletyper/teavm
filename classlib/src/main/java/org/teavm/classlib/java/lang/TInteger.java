@@ -63,30 +63,31 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         return toString(i, 10);
     }
 
-    public static int parseInt(String string, int radix) throws TNumberFormatException {
+    public static int parseInt(String s, int radix) throws TNumberFormatException {
         if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX) {
             throw new NumberFormatException("Invalid radix: " + radix);
         }
-        if (string == null) {
+        if (s == null) {
             throw new NumberFormatException();
         }
-        int length = string.length();
+        int length = s.length();
         int pos = 0;
         if (length == 0) {
             throw new NumberFormatException();
         }
-        boolean negative = string.charAt(pos) == '-';
-        if (negative || string.charAt(pos) == '+') {
+        boolean negative = s.charAt(pos) == '-';
+        if (negative || s.charAt(pos) == '+') {
             pos++;
         }
-        return parseImpl(string, pos, string.length(), radix, negative);
+        return parseImpl(s, pos, length, radix, negative);
     }
 
     public static int parseInt(CharSequence s, int beginIndex, int endIndex, int radix) throws TNumberFormatException {
         if (radix < TCharacter.MIN_RADIX || radix > TCharacter.MAX_RADIX) {
             throw new TNumberFormatException("Illegal radix: " + radix);
         }
-        if (beginIndex >= s.length()) {
+        int length = s.length();
+        if (beginIndex >= length) {
             throw new IndexOutOfBoundsException();
         }
         boolean negative = false;
@@ -100,7 +101,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
                 index++;
                 break;
         }
-        if (index > endIndex || endIndex > s.length()) {
+        if (index > endIndex || endIndex > length) {
             throw new IndexOutOfBoundsException();
         }
         return parseImpl(s, index, endIndex, radix, negative);
@@ -220,26 +221,26 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         }
     }
 
-    public static TInteger decode(String string) throws TNumberFormatException {
-        int length = string.length();
+    public static TInteger decode(String s) throws TNumberFormatException {
+        int length = s.length();
         int pos = 0;
         if (length == 0) {
             throw new NumberFormatException();
         }
-        char firstDigit = string.charAt(pos);
+        char firstDigit = s.charAt(pos);
         boolean negative = firstDigit == '-';
         if (negative || firstDigit == '+') {
             if (length == 1) {
                 throw new NumberFormatException();
             }
-            firstDigit = string.charAt(++pos);
+            firstDigit = s.charAt(++pos);
         }
         int base = 10;
         if (firstDigit == '0') {
             if (++pos == length) {
                 return valueOf(0);
             }
-            firstDigit = string.charAt(pos);
+            firstDigit = s.charAt(pos);
             if (firstDigit == 'x' || firstDigit == 'X') {
                 ++pos;
                 base = 16;
@@ -250,7 +251,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
             ++pos;
             base = 16;
         }
-        int result = parseImpl(string, pos, string.length(), base, negative);
+        int result = parseImpl(s, pos, length, base, negative);
         return valueOf(result);
     }
 
