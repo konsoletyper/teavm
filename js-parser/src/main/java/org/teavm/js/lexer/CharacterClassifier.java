@@ -17,6 +17,7 @@ package org.teavm.js.lexer;
 
 final class CharacterClassifier {
     static final int EOF = -1;
+    static final int CODEPOINT_COUNT = 0x10f800;
 
     private CharacterClassifier() {
     }
@@ -53,6 +54,27 @@ final class CharacterClassifier {
     }
 
     static boolean isIdentifierStart(int codePoint) {
-        return Character.isUnicodeIdentifierStart(codePoint);
+        return Character.isUnicodeIdentifierStart(codePoint) || codePoint == '_' || codePoint == '$';
+    }
+
+    static boolean isIdentifierPart(int codePoint) {
+        return Character.isUnicodeIdentifierPart(codePoint) || codePoint == '_' || codePoint == '$'
+                || codePoint == 0x200C || codePoint == 0x200D;
+    }
+
+    static boolean isDecimalDigit(int codePoint) {
+        return codePoint >= '0' && codePoint <= '9';
+    }
+
+    static int hexDigit(int codePoint) {
+        if (codePoint >= 0 && codePoint <= '9') {
+            return codePoint - '0';
+        } else if (codePoint >= 'A' && codePoint <= 'F') {
+            return 10 + (codePoint - 'A');
+        } else if (codePoint >= 'a' && codePoint <= 'f') {
+            return 10 + (codePoint - 'a');
+        } else {
+            return -1;
+        }
     }
 }
