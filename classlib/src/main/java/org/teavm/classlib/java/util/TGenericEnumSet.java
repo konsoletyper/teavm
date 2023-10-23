@@ -29,8 +29,12 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
 
     TGenericEnumSet(Class<E> cls) {
         this.cls = cls;
-        int constantCount = getConstants(cls).length;
-        int bitCount = ((constantCount - 1) / 32) + 1;
+        Enum<?>[] constants = getConstants(cls);
+        if (constants == null) {
+            throw new ClassCastException();
+        }
+        int constantCount = constants.length;
+        int bitCount = constantCount == 0 ? 0 : ((constantCount - 1) / 32) + 1;
         this.bits = new int[bitCount];
     }
 
@@ -47,7 +51,7 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
 
     @Override
     public Iterator<E> iterator() {
-        return new Iterator<E>() {
+        return new Iterator<>() {
             int index;
             int indexToRemove = -1;
             int count = size();
@@ -62,12 +66,12 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
                 if (count == 0) {
                     throw new NoSuchElementException();
                 }
-                indexToRemove = index;
                 while (true) {
                     int next = Integer.numberOfTrailingZeros(bits[index / 32] >>> (index % 32));
                     if (next < 32) {
                         index += next;
                         --count;
+                        indexToRemove = index;
                         @SuppressWarnings("unchecked")
                         E returnValue = (E) getConstants(cls)[index++];
                         return returnValue;
@@ -107,7 +111,10 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
             return false;
         }
         TGenericEnumSet<?> other = (TGenericEnumSet<?>) o;
-        return cls == other.cls && Arrays.equals(bits, other.bits);
+        if (this.cls != other.cls) {
+            return this.size() == 0 && other.size() == 0;
+        }
+        return Arrays.equals(bits, other.bits);
     }
 
     @Override
@@ -153,6 +160,10 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
 
     @Override
     public boolean add(E t) {
+        Class<?> tCls = t.getClass();
+        if (tCls != cls && tCls.getSuperclass() != cls) {
+            throw new ClassCastException();
+        }
         int n = t.ordinal();
         int bitNumber = n / 32;
         int bit = 1 << (n % 32);

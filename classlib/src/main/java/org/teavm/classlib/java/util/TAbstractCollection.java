@@ -107,6 +107,7 @@ public abstract class TAbstractCollection<E> extends TObject implements TCollect
 
     @Override
     public boolean removeAll(TCollection<?> c) {
+        TObjects.requireNonNull(c);
         boolean changed = false;
         for (TIterator<E> iter = iterator(); iter.hasNext();) {
             E e = iter.next();
@@ -120,6 +121,7 @@ public abstract class TAbstractCollection<E> extends TObject implements TCollect
 
     @Override
     public boolean retainAll(TCollection<?> c) {
+        TObjects.requireNonNull(c);
         boolean changed = false;
         for (TIterator<E> iter = iterator(); iter.hasNext();) {
             E e = iter.next();
