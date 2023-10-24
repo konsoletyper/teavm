@@ -28,7 +28,7 @@ public class TEnumMap<K extends Enum<K>, V> extends TAbstractMap<K, V> implement
     private TSet<Entry<K, V>> entrySet;
 
     public TEnumMap(Class<K> keyType) {
-        initFromKeyType(TObjects.requireNonNull(keyType));
+        initFromKeyType(keyType);
     }
 
     public TEnumMap(TEnumMap<K, V> m) {
