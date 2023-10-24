@@ -33,7 +33,7 @@ public abstract class TEnumSet<E extends Enum<E>> extends AbstractSet<E> impleme
             throw new ClassCastException();
         }
         int count = constants.length;
-        int[] bits = new int[count == 0 ? 0 : ((count - 1) / 32) + 1];
+        int[] bits = new int[count == 0 ? 0 : ((count - 1) / Integer.SIZE) + 1];
         Arrays.fill(bits, ~0);
         if (count > 0) {
             zeroHighBits(bits, count);
@@ -154,6 +154,6 @@ public abstract class TEnumSet<E extends Enum<E>> extends AbstractSet<E> impleme
     abstract void fastAdd(int n);
 
     private static void zeroHighBits(int[] bits, int count) {
-        bits[bits.length - 1] &= ~0 >>> (32 - count % 32);
+        bits[bits.length - 1] &= ~0 >>> (Integer.SIZE - count % Integer.SIZE);
     }
 }

@@ -18,7 +18,6 @@ package org.teavm.classlib.java.util;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
@@ -34,7 +33,7 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
             throw new ClassCastException();
         }
         int constantCount = constants.length;
-        int bitCount = constantCount == 0 ? 0 : ((constantCount - 1) / 32) + 1;
+        int bitCount = constantCount == 0 ? 0 : ((constantCount - 1) / Integer.SIZE) + 1;
         this.bits = new int[bitCount];
     }
 
@@ -52,33 +51,42 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
     @Override
     public Iterator<E> iterator() {
         return new Iterator<>() {
-            int index;
-            int indexToRemove = -1;
-            int count = size();
+            private int index;
+            private int indexToRemove = -1;
+
+            {
+                index = find();
+            }
+
+            private int find() {
+                int overflow = bits.length * Integer.SIZE;
+                while (index < overflow) {
+                    int next = Integer.numberOfTrailingZeros(bits[index / Integer.SIZE] >>> (index % Integer.SIZE));
+                    if (next < Integer.SIZE) {
+                        index += next;
+                        return index;
+                    } else {
+                        index = (index / Integer.SIZE + 1) * Integer.SIZE;
+                    }
+                }
+                return index;
+            }
 
             @Override
             public boolean hasNext() {
-                return count > 0;
+                return index < bits.length * Integer.SIZE;
             }
 
             @Override
             public E next() {
-                if (count == 0) {
-                    throw new NoSuchElementException();
+                if (!hasNext()) {
+                    throw new TNoSuchElementException();
                 }
-                while (true) {
-                    int next = Integer.numberOfTrailingZeros(bits[index / 32] >>> (index % 32));
-                    if (next < 32) {
-                        index += next;
-                        --count;
-                        indexToRemove = index;
-                        @SuppressWarnings("unchecked")
-                        E returnValue = (E) getConstants(cls)[index++];
-                        return returnValue;
-                    } else {
-                        index = (index / 32 + 1) * 32;
-                    }
-                }
+                indexToRemove = index;
+                @SuppressWarnings("unchecked")
+                E returnValue = (E) getConstants(cls)[index++];
+                index = find();
+                return returnValue;
             }
 
             @Override
@@ -86,8 +94,8 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
                 if (indexToRemove < 0) {
                     throw new IllegalStateException();
                 }
-                int bitNumber = indexToRemove / 32;
-                bits[bitNumber] &= ~(1 << (indexToRemove % 32));
+                int bitNumber = indexToRemove / Integer.SIZE;
+                bits[bitNumber] &= ~(1 << (indexToRemove % Integer.SIZE));
                 indexToRemove = -1;
             }
         };
@@ -118,11 +126,6 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
     }
 
     @Override
-    public int hashCode() {
-        return Arrays.hashCode(bits);
-    }
-
-    @Override
     public boolean removeAll(Collection<?> c) {
         if (c instanceof TGenericEnumSet<?>) {
             TGenericEnumSet<?> other = (TGenericEnumSet<?>) c;
@@ -147,15 +150,15 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
             return false;
         }
         int n = ((Enum<?>) o).ordinal();
-        int bitNumber = n / 32;
-        int bit = 1 << (n % 32);
+        int bitNumber = n / Integer.SIZE;
+        int bit = 1 << (n % Integer.SIZE);
         return (bits[bitNumber] & bit) != 0;
     }
 
     @Override
     void fastAdd(int n) {
-        int bitNumber = n / 32;
-        bits[bitNumber] |= 1 << (n % 32);
+        int bitNumber = n / Integer.SIZE;
+        bits[bitNumber] |= 1 << (n % Integer.SIZE);
     }
 
     @Override
@@ -182,8 +185,8 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
         }
 
         int n = ((Enum<?>) o).ordinal();
-        int bitNumber = n / 32;
-        int bit = 1 << (n % 32);
+        int bitNumber = n / Integer.SIZE;
+        int bit = 1 << (n % Integer.SIZE);
         if ((bits[bitNumber] & bit) != 0) {
             bits[bitNumber] &= ~bit;
             return true;
