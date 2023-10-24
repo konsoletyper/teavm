@@ -112,7 +112,7 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
             return true;
         }
         if (!(o instanceof TGenericEnumSet)) {
-            return false;
+            return super.equals(o);
         }
         TGenericEnumSet<?> other = (TGenericEnumSet<?>) o;
         if (this.cls != other.cls) {
