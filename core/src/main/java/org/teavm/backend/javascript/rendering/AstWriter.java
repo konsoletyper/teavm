@@ -91,7 +91,7 @@ public class AstWriter {
     public static final int PRECEDENCE_COND = 16;
     public static final int PRECEDENCE_ASSIGN = 17;
     public static final int PRECEDENCE_COMMA = 18;
-    private SourceWriter writer;
+    protected final SourceWriter writer;
     private Map<String, NameEmitter> nameMap = new HashMap<>();
     private boolean rootScope = true;
     private Set<String> aliases = new HashSet<>();
@@ -495,7 +495,7 @@ public class AstWriter {
         writer.append(';');
     }
 
-    private void print(ElementGet node) throws IOException {
+    protected void print(ElementGet node) throws IOException {
         print(node.getTarget(), PRECEDENCE_MEMBER);
         writer.append('[');
         print(node.getElement());
@@ -512,6 +512,10 @@ public class AstWriter {
     }
 
     private void print(FunctionCall node, int precedence) throws IOException {
+        if (intrinsic(node, precedence)) {
+            return;
+        }
+
         if (tryJavaInvocation(node)) {
             return;
         }
@@ -537,6 +541,10 @@ public class AstWriter {
         if (precedence < PRECEDENCE_FUNCTION) {
             writer.append(')');
         }
+    }
+
+    protected boolean intrinsic(FunctionCall node, int precedence) throws IOException {
+        return false;
     }
 
     private boolean tryJavaInvocation(FunctionCall node) throws IOException {

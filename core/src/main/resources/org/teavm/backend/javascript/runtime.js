@@ -930,3 +930,41 @@ function $rt_substring(string, start, end) {
     $rt_substringSink = ($rt_substringSink + result.charCodeAt(result.length - 1)) | 0;
 }
 var $rt_substringSink = 0;
+
+function $rt_setCloneMethod(target, method) {
+    target[teavm_javaVirtualMethod('clone()Ljava/lang/Object;')] = method;
+}
+function $rt_cls(cls) {
+    return teavm_javaMethod("java.lang.Class",
+        "getClass(Lorg/teavm/platform/PlatformClass;)Ljava/lang/Class;")(cls);
+}
+function $rt_str(str) {
+    if (str === null) {
+        return null;
+    }
+    return teavm_javaConstructor("java.lang.String", "(Ljava/lang/Object;)V")(str);
+}
+function $rt_ustr(str) {
+    return str === null ? null : str[teavm_javaField("java.lang.String", "nativeString")];
+}
+function $rt_nullCheck(val) {
+    if (val === null) {
+        $rt_throw(teavm_javaConstructor("java.lang.NullPointerException", "()V")());
+    }
+    return val;
+}
+function $rt_stringClassInit() {
+    teavm_javaClassInit("java.lang.String")();
+}
+function $rt_objcls() {
+    return teavm_javaClass("java.lang.Object");
+}
+function $rt_createException(message) {
+    return teavm_javaConstructor("java.lang.RuntimeException", "(Ljava/lang/String;)V")(message);
+}
+function $rt_throwableMessage(t) {
+    return teavm_javaMethod("java.lang.Throwable", "getMessage()Ljava/lang/String;")(t);
+}
+function $rt_throwableCause(t) {
+    return teavm_javaMethod("java.lang.Throwable", "getCause()Ljava/lang/Throwable;")(t);
+}
