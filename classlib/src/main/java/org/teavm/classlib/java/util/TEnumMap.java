@@ -137,10 +137,12 @@ public class TEnumMap<K extends Enum<K>, V> extends TAbstractMap<K, V> implement
                 throw new ClassCastException(em.keyType + " != " + keyType);
             }
             for (int i = 0; i < data.length; i++) {
-                if (em.provided[i] && !this.provided[i]) {
+                if (em.provided[i]) {
                     this.data[i] = em.data[i];
-                    this.provided[i] = true;
-                    size++;
+                    if (!this.provided[i]) {
+                        this.provided[i] = true;
+                        size++;
+                    }
                 }
             }
         } else {
