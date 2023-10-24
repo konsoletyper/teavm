@@ -237,7 +237,8 @@ public class TEnumMap<K extends Enum<K>, V> extends TAbstractMap<K, V> implement
                         return false;
                     }
                     TMap.Entry<?, ?> e = (TMap.Entry<?, ?>) o;
-                    if (!keyType.isInstance(e.getKey())) {
+                    Class<?> cls = e.getKey().getClass();
+                    if (cls != keyType && cls.getSuperclass() != keyType) {
                         return false;
                     }
                     int index = ((Enum<?>) e.getKey()).ordinal();
@@ -251,7 +252,8 @@ public class TEnumMap<K extends Enum<K>, V> extends TAbstractMap<K, V> implement
                     }
                     TMap.Entry<?, ?> e = (TMap.Entry<?, ?>) o;
 
-                    if (!keyType.isInstance(e.getKey())) {
+                    Class<?> cls = e.getKey().getClass();
+                    if (cls != keyType && cls.getSuperclass() != keyType) {
                         return false;
                     }
                     int index = ((Enum<?>) e.getKey()).ordinal();
