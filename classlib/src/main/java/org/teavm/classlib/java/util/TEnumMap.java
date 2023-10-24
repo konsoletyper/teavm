@@ -42,8 +42,21 @@ public class TEnumMap<K extends Enum<K>, V> extends TAbstractMap<K, V> implement
             if (m.isEmpty()) {
                 throw new IllegalArgumentException();
             }
-            initFromKeyType(m.keySet().iterator().next().getDeclaringClass());
-            putAll(m);
+            for (TIterator<? extends TMap.Entry<K, V>> iter = m.entrySet().iterator(); iter.hasNext();) {
+                TMap.Entry<K, V> entry = iter.next();
+                K key = entry.getKey();
+                if (keyType == null) {
+                    initFromKeyType(key.getDeclaringClass());
+                }
+                Class<?> cls = key.getClass();
+                if (cls != keyType && cls.getSuperclass() != keyType) {
+                    throw new ClassCastException();
+                }
+                int index = key.ordinal();
+                provided[index] = true;
+                data[index] = entry.getValue();
+            }
+            size = m.size();
         }
     }
 

@@ -236,6 +236,62 @@ public class EnumMapTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    public void constructorMap() {
+        EnumMap enumMap;
+        Map enumColorMap = null;
+        try {
+            enumMap = new EnumMap(enumColorMap);
+            fail("Expected NullPointerException");
+        } catch (NullPointerException e) {
+            // Expected
+        }
+        enumColorMap = new EnumMap<Color, Double>(Color.class);
+        enumMap      = new EnumMap(enumColorMap);
+        enumColorMap.put(Color.Blue, 3);
+        enumMap      = new EnumMap(enumColorMap);
+
+        HashMap hashColorMap = null;
+        try {
+            enumMap = new EnumMap(hashColorMap);
+            fail("Expected NullPointerException");
+        } catch (NullPointerException e) {
+            // Expected
+        }
+
+        hashColorMap = new HashMap();
+        try {
+            enumMap = new EnumMap(hashColorMap);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // Expected
+        }
+
+        hashColorMap.put(Color.Green, 2);
+        enumMap = new EnumMap(hashColorMap);
+        assertEquals("Constructor fails", 2, enumMap.get(Color.Green));
+        assertNull("Constructor fails", enumMap.get(Color.Red));
+        enumMap.put(Color.Red, 1);
+        assertEquals("Wrong value", 1, enumMap.get(Color.Red));
+        hashColorMap.put(Size.Big, 3);
+        try {
+            enumMap = new EnumMap(hashColorMap);
+            fail("Expected ClassCastException");
+        } catch (ClassCastException e) {
+            // Expected
+        }
+
+        hashColorMap = new HashMap();
+        hashColorMap.put(1, 1);
+        try {
+            enumMap = new EnumMap(hashColorMap);
+            fail("Expected ClassCastException");
+        } catch (ClassCastException e) {
+            // Expected
+        }
+    }
+
+    @Test
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void putAll() {
         EnumMap enumColorMap = new EnumMap(Color.class);
