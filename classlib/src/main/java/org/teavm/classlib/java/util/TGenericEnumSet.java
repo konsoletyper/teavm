@@ -51,12 +51,8 @@ class TGenericEnumSet<E extends Enum<E>> extends TEnumSet<E> {
     @Override
     public Iterator<E> iterator() {
         return new Iterator<>() {
-            private int index;
+            private int index = find();
             private int indexToRemove = -1;
-
-            {
-                index = find();
-            }
 
             private int find() {
                 int overflow = bits.length * Integer.SIZE;
