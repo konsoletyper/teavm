@@ -487,7 +487,7 @@ public class EnumMapTest {
     }
 
     @Test
-    @SuppressWarnings( { "unchecked", "boxing" })
+    @SuppressWarnings({ "unchecked", "boxing" })
     public void values() {
         EnumMap<Color, Integer> enumColorMap = new EnumMap<>(Color.class);
         enumColorMap.put(Color.Red, 1);
@@ -613,10 +613,12 @@ public class EnumMapTest {
     }
 
     enum Size {
-        Small, Middle, Big {}
+        Small, Middle, Big {
+        }
     }
     enum Color {
-        Red, Green, Blue {}
+        Red, Green, Blue {
+        }
     }
     enum Empty {
         //Empty

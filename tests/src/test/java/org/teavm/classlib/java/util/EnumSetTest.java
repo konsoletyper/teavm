@@ -232,7 +232,7 @@ public class EnumSetTest {
         try {
             iterator.remove();
             fail("Should throw IllegalStateException");
-        } catch(IllegalStateException e) {
+        } catch (IllegalStateException e) {
             // expected
         }
         Set<EmptyEnum> emptySet = EnumSet.allOf(EmptyEnum.class);
@@ -282,7 +282,7 @@ public class EnumSetTest {
         try {
             iterator.remove();
             fail("Should throw IllegalStateException");
-        } catch(IllegalStateException e) {
+        } catch (IllegalStateException e) {
             // expected
         }
         assertTrue("Should have next element", iterator.hasNext());
@@ -383,21 +383,25 @@ public class EnumSetTest {
         a, b, c, d, e, f {
         },
     }
-    enum EnumWithAllInnerClass {
-        a {},
-        b {},
-    }
     enum EnumFoo {
-        a, b,c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, aa, bb, cc, dd, ee, ff, gg, hh, ii, jj, kk, ll,
+        a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z,
+        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+        aa, bb, cc, dd, ee, ff, gg, hh, ii, jj, kk, ll,
     }
     enum EmptyEnum {
         // expected
     }
     enum HugeEnumWithInnerClass {
-        a{}, b{}, c{}, d{}, e{}, f{}, g{}, h{}, i{}, j{}, k{}, l{}, m{}, n{}, o{}, p{}, q{}, r{}, s{}, t{}, u{}, v{}, w{}, x{}, y{}, z{}, A{}, B{}, C{}, D{}, E{}, F{}, G{}, H{}, I{}, J{}, K{}, L{}, M{}, N{}, O{}, P{}, Q{}, R{}, S{}, T{}, U{}, V{}, W{}, X{}, Y{}, Z{}, aa{}, bb{}, cc{}, dd{}, ee{}, ff{}, gg{}, hh{}, ii{}, jj{}, kk{}, ll{}, mm{},
+        a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z,
+        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+        aa, bb, cc, dd, ee, ff, gg, hh, ii, jj, kk, ll,
+        mm {
+        },
     }
     enum HugeEnum {
-        a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, aa, bb, cc, dd, ee, ff, gg, hh, ii, jj, kk, ll, mm,
+        a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z,
+        A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+        aa, bb, cc, dd, ee, ff, gg, hh, ii, jj, kk, ll, mm,
     }
     
     enum L {
