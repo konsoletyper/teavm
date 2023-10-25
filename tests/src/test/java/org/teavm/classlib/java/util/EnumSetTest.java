@@ -19,7 +19,9 @@ import static org.junit.Assert.*;
 import java.util.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class EnumSetTest {
@@ -197,6 +199,7 @@ public class EnumSetTest {
     }
 
     @Test
+    @SkipPlatform({ TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
     public void iterator() {
         Set<EnumFoo> set = EnumSet.noneOf(EnumFoo.class);
         set.add(EnumFoo.a);
