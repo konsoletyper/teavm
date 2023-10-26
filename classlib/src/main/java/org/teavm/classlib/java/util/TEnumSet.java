@@ -28,10 +28,16 @@ public abstract class TEnumSet<E extends Enum<E>> extends AbstractSet<E> impleme
     }
 
     public static <E extends Enum<E>> TEnumSet<E> allOf(Class<E> elementType) {
-        int count = TGenericEnumSet.getConstants(elementType).length;
-        int[] bits = new int[((count - 1) / 32) + 1];
+        Enum<?>[] constants = TGenericEnumSet.getConstants(elementType);
+        if (constants == null) {
+            throw new ClassCastException();
+        }
+        int count = constants.length;
+        int[] bits = new int[count == 0 ? 0 : ((count - 1) / Integer.SIZE) + 1];
         Arrays.fill(bits, ~0);
-        zeroHighBits(bits, count);
+        if (count > 0) {
+            zeroHighBits(bits, count);
+        }
         return new TGenericEnumSet<>(elementType, bits);
     }
 
@@ -62,7 +68,7 @@ public abstract class TEnumSet<E extends Enum<E>> extends AbstractSet<E> impleme
         TGenericEnumSet<E> other = (TGenericEnumSet<E>) s;
         int count = TGenericEnumSet.getConstants(other.cls).length;
         int[] bits = new int[other.bits.length];
-        for (int i = 0; i < bits.length - 1; ++i) {
+        for (int i = 0; i < bits.length; ++i) {
             bits[i] = ~other.bits[i];
         }
         zeroHighBits(bits, count);
@@ -148,6 +154,6 @@ public abstract class TEnumSet<E extends Enum<E>> extends AbstractSet<E> impleme
     abstract void fastAdd(int n);
 
     private static void zeroHighBits(int[] bits, int count) {
-        bits[bits.length - 1] &= (~0) >>> (32 - count % 32);
+        bits[bits.length - 1] &= ~0 >>> (Integer.SIZE - count % Integer.SIZE);
     }
 }
