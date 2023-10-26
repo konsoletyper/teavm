@@ -15,37 +15,44 @@
  */
 "use strict";
 
-var $rt_intern = function() {
-    var map = Object.create(null);
+var $rt_intern
+if (teavm_javaMethodExists("java.lang.String", "intern()Ljava/lang/String;")) {
+    $rt_intern = function() {
+        var map = Object.create(null);
 
-    var get;
-    if (typeof WeakRef !== 'undefined') {
-        var registry = new FinalizationRegistry(value => {
-            delete map[value];
-        });
+        var get;
+        if (typeof WeakRef !== 'undefined') {
+            var registry = new FinalizationRegistry(value => {
+                delete map[value];
+            });
 
-        get = function(str) {
-            var key = $rt_ustr(str);
-            var ref = map[key];
-            var result = typeof ref !== 'undefined' ? ref.deref() : void 0;
-            if (typeof result !== 'object') {
-                result = str;
-                map[key] = new WeakRef(result);
-                registry.register(result, key);
+            get = function (str) {
+                var key = $rt_ustr(str);
+                var ref = map[key];
+                var result = typeof ref !== 'undefined' ? ref.deref() : void 0;
+                if (typeof result !== 'object') {
+                    result = str;
+                    map[key] = new WeakRef(result);
+                    registry.register(result, key);
+                }
+                return result;
             }
-            return result;
-        }
-    } else {
-        get = function(str) {
-            var key = $rt_ustr(str);
-            var result = map[key];
-            if (typeof result !== 'object') {
-                result = str;
-                map[key] = result;
+        } else {
+            get = function (str) {
+                var key = $rt_ustr(str);
+                var result = map[key];
+                if (typeof result !== 'object') {
+                    result = str;
+                    map[key] = result;
+                }
+                return result;
             }
-            return result;
         }
+
+        return get;
+    }();
+} else {
+    $rt_intern = function(str) {
+        return str;
     }
-
-    return get;
-}();
+}

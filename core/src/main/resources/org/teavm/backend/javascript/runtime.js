@@ -968,3 +968,49 @@ function $rt_throwableMessage(t) {
 function $rt_throwableCause(t) {
     return teavm_javaMethod("java.lang.Throwable", "getCause()Ljava/lang/Throwable;")(t);
 }
+function $rt_stecls() {
+    if (teavm_javaClassExists("java.lang.StackTraceElement")) {
+        return teavm_javaClass("java.lang.StackTraceElement");
+    } else {
+        return $rt_objcls();
+    }
+}
+function $rt_throwAIOOBE() {
+    if (teavm_javaConstructorExists("java.lang.ArrayIndexOutOfBoundsException", "()V")) {
+        $rt_throw(teavm_javaConstructor("java.lang.ArrayIndexOutOfBoundsException", "()V")());
+    } else {
+        $rt_throw($rt_createException($rt_str("")));
+    }
+}
+function $rt_throwCCE() {
+    if (teavm_javaConstructorExists("java.lang.ClassCastException", "()V")) {
+        $rt_throw(teavm_javaConstructor("java.lang.ClassCastException", "()V")());
+    } else {
+        $rt_throw($rt_createException($rt_str("")));
+    }
+}
+
+function $rt_getThread() {
+    if (teavm_javaMethodExists("java.lang.Thread", "currentThread()Ljava/lang/Thread;")) {
+        return teavm_javaMethod("java.lang.Thread", "currentThread()Ljava/lang/Thread;")();
+    }
+}
+function $rt_setThread(t) {
+    if (teavm_javaMethodExists("java.lang.Thread", "setCurrentThread(Ljava/lang/Thread;)V")) {
+        return teavm_javaMethod("java.lang.Thread", "setCurrentThread(Ljava/lang/Thread;)V")(t);
+    }
+}
+function $rt_createStackElement(className, methodName, fileName, lineNumber) {
+    if (teavm_javaConstructorExists("java.lang.StackTraceElement",
+        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V")) {
+        return teavm_javaConstructor("java.lang.StackTraceElement",
+            "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V")(className, methodName, fileName, lineNumber);
+    } else {
+        return null;
+    }
+}
+function $rt_setStack(e, stack) {
+    if (teavm_javaMethodExists("java.lang.Throwable", "setStackTrace([Ljava/lang/StackTraceElement;)V")) {
+        teavm_javaMethod("java.lang.Throwable", "setStackTrace([Ljava/lang/StackTraceElement;)V")(e, stack);
+    }
+}

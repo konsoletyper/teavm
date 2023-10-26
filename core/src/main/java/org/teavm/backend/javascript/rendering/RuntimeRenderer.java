@@ -24,32 +24,12 @@ import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ast.AstRoot;
 import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.templating.TemplatingAstTransformer;
 import org.teavm.backend.javascript.templating.TemplatingAstWriter;
-import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
-import org.teavm.model.ElementModifier;
-import org.teavm.model.MethodDescriptor;
-import org.teavm.model.MethodReader;
-import org.teavm.model.MethodReference;
 import org.teavm.vm.RenderingException;
 
 public class RuntimeRenderer {
-    private static final String STRING_CLASS = String.class.getName();
-    private static final String THREAD_CLASS = Thread.class.getName();
-    private static final String STE_CLASS = StackTraceElement.class.getName();
-
-    private static final MethodDescriptor STRING_INTERN_METHOD = new MethodDescriptor("intern", String.class);
-    private static final MethodDescriptor CURRENT_THREAD_METHOD = new MethodDescriptor("currentThread",
-            Thread.class);
-    private static final MethodReference STACK_TRACE_ELEM_INIT = new MethodReference(StackTraceElement.class,
-            "<init>", String.class, String.class, String.class, int.class, void.class);
-    private static final MethodReference SET_STACK_TRACE_METHOD = new MethodReference(Throwable.class,
-            "setStackTrace", StackTraceElement[].class, void.class);
-    private static final MethodReference AIOOBE_INIT_METHOD = new MethodReference(ArrayIndexOutOfBoundsException.class,
-            "<init>", void.class);
-    private static final MethodReference CCE_INIT_METHOD = new MethodReference(ClassCastException.class,
-            "<init>", void.class);
-
     private final ClassReaderSource classSource;
     private final SourceWriter writer;
 
@@ -61,13 +41,7 @@ public class RuntimeRenderer {
     public void renderRuntime() throws RenderingException {
         try {
             renderHandWrittenRuntime("runtime.js");
-            renderRuntimeThrowablecls();
-            renderRuntimeIntern();
-            renderRuntimeThreads();
-            renderCreateStackTraceElement();
-            renderSetStackTrace();
-            renderThrowAIOOBE();
-            renderThrowCCE();
+            renderHandWrittenRuntime("intern.js");
         } catch (IOException e) {
             throw new RenderingException("IO error", e);
         }
@@ -76,6 +50,7 @@ public class RuntimeRenderer {
     public void renderHandWrittenRuntime(String name) throws IOException {
         AstRoot ast = parseRuntime(name);
         ast.visit(new StringConstantElimination());
+        new TemplatingAstTransformer(classSource).visit(ast);
         var astWriter = new TemplatingAstWriter(writer);
         astWriter.hoist(ast);
         astWriter.print(ast);
@@ -92,122 +67,5 @@ public class RuntimeRenderer {
                 Reader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
             return factory.parse(reader, null, 0);
         }
-    }
-
-    private void renderRuntimeIntern() throws IOException {
-        if (!needInternMethod()) {
-            writer.append("function $rt_intern(str) {").indent().softNewLine();
-            writer.append("return str;").softNewLine();
-            writer.outdent().append("}").softNewLine();
-        } else {
-            renderHandWrittenRuntime("intern.js");
-        }
-    }
-
-    private boolean needInternMethod() {
-        ClassReader cls = classSource.get(STRING_CLASS);
-        if (cls == null) {
-            return false;
-        }
-        MethodReader method = cls.getMethod(STRING_INTERN_METHOD);
-        return method != null && method.hasModifier(ElementModifier.NATIVE);
-    }
-
-    private void renderRuntimeThrowablecls() throws IOException {
-        writer.append("function $rt_stecls()").ws().append("{").indent().softNewLine();
-        writer.append("return ");
-        if (classSource.get(STE_CLASS) != null) {
-            writer.appendClass(STE_CLASS);
-        } else {
-            writer.appendClass("java.lang.Object");
-        }
-        writer.append(";").softNewLine().outdent().append("}").newLine();
-    }
-
-    private void renderRuntimeThreads() throws IOException {
-        ClassReader threadCls = classSource.get(THREAD_CLASS);
-        MethodReader currentThreadMethod = threadCls != null ? threadCls.getMethod(CURRENT_THREAD_METHOD) : null;
-        boolean threadUsed = currentThreadMethod != null && currentThreadMethod.getProgram() != null;
-
-        writer.append("function $rt_getThread()").ws().append("{").indent().softNewLine();
-        if (threadUsed) {
-            writer.append("return ").appendMethodBody(Thread.class, "currentThread", Thread.class).append("();")
-                    .softNewLine();
-        } else {
-            writer.append("return null;").softNewLine();
-        }
-        writer.outdent().append("}").newLine();
-
-        writer.append("function $rt_setThread(t)").ws().append("{").indent().softNewLine();
-        if (threadUsed) {
-            writer.append("return ").appendMethodBody(Thread.class, "setCurrentThread", Thread.class, void.class)
-                    .append("(t);").softNewLine();
-        }
-        writer.outdent().append("}").newLine();
-    }
-
-    private void renderCreateStackTraceElement() throws IOException {
-        ClassReader cls = classSource.get(STACK_TRACE_ELEM_INIT.getClassName());
-        MethodReader stackTraceElemInit = cls != null ? cls.getMethod(STACK_TRACE_ELEM_INIT.getDescriptor()) : null;
-        boolean supported = stackTraceElemInit != null && stackTraceElemInit.getProgram() != null;
-
-        writer.append("function $rt_createStackElement(")
-                .append("className,").ws()
-                .append("methodName,").ws()
-                .append("fileName,").ws()
-                .append("lineNumber)").ws().append("{").indent().softNewLine();
-        writer.append("return ");
-        if (supported) {
-            writer.appendInit(STACK_TRACE_ELEM_INIT);
-            writer.append("(className,").ws()
-                    .append("methodName,").ws()
-                    .append("fileName,").ws()
-                    .append("lineNumber)");
-        } else {
-            writer.append("null");
-        }
-        writer.append(";").softNewLine();
-        writer.outdent().append("}").newLine();
-    }
-
-    private void renderSetStackTrace() throws IOException {
-        ClassReader cls = classSource.get(SET_STACK_TRACE_METHOD.getClassName());
-        MethodReader setStackTrace = cls != null ? cls.getMethod(SET_STACK_TRACE_METHOD.getDescriptor()) : null;
-        boolean supported = setStackTrace != null && setStackTrace.getProgram() != null;
-
-        writer.append("function $rt_setStack(e,").ws().append("stack)").ws().append("{").indent().softNewLine();
-        if (supported) {
-            writer.appendMethodBody(SET_STACK_TRACE_METHOD);
-            writer.append("(e,").ws().append("stack);").softNewLine();
-        }
-        writer.outdent().append("}").newLine();
-    }
-
-    private void renderThrowAIOOBE() throws IOException {
-        writer.append("function $rt_throwAIOOBE()").ws().append("{").indent().softNewLine();
-
-        ClassReader cls = classSource.get(AIOOBE_INIT_METHOD.getClassName());
-        if (cls != null) {
-            MethodReader method = cls.getMethod(AIOOBE_INIT_METHOD.getDescriptor());
-            if (method != null && !method.hasModifier(ElementModifier.ABSTRACT)) {
-                writer.append("$rt_throw(").appendInit(AIOOBE_INIT_METHOD).append("());").softNewLine();
-            }
-        }
-
-        writer.outdent().append("}").newLine();
-    }
-
-    private void renderThrowCCE() throws IOException {
-        writer.append("function $rt_throwCCE()").ws().append("{").indent().softNewLine();
-
-        ClassReader cls = classSource.get(CCE_INIT_METHOD.getClassName());
-        if (cls != null) {
-            MethodReader method = cls.getMethod(CCE_INIT_METHOD.getDescriptor());
-            if (method != null && !method.hasModifier(ElementModifier.ABSTRACT)) {
-                writer.append("$rt_throw(").appendInit(CCE_INIT_METHOD).append("());").softNewLine();
-            }
-        }
-
-        writer.outdent().append("}").newLine();
     }
 }
