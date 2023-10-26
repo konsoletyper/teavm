@@ -110,8 +110,11 @@ public class TInputStreamReader extends TReader {
             if (!inBuffer.hasRemaining() && !fillReadBuffer()) {
                 break;
             }
-            if (decoder.decode(inBuffer, outBuffer, streamEof).isOverflow()) {
+            var result = decoder.decode(inBuffer, outBuffer, streamEof);
+            if (result.isOverflow()) {
                 break;
+            } else if (result.isUnderflow()) {
+                fillReadBuffer();
             }
         }
         if (!inBuffer.hasRemaining() && streamEof && decoder.flush(outBuffer).isUnderflow()) {
