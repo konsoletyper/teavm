@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,5 +48,12 @@ public class ByteTest {
     @Test
     public void bytes() {
         assertEquals(1, Byte.BYTES);
+    }
+
+    @Test
+    public void cache() {
+        for (int b = Byte.MIN_VALUE; b <= Byte.MAX_VALUE; b++) {
+            assertSame(Byte.valueOf((byte) b), (byte) b);
+        }
     }
 }
