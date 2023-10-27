@@ -375,8 +375,10 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     public static long reverseBytes(long i) {
-        i = (i & 0x00ff00ff00ff00ffL) << 8 | (i >>> 8) & 0x00ff00ff00ff00ffL;
-        return (i << 48) | ((i & 0xffff0000L) << 16) | ((i >>> 16) & 0xffff0000L) | (i >>> 48);
+        i = ((i & 0xFF00FF00FF00FF00L) >>> 8)  | ((i & 0x00FF00FF00FF00FFL) << 8);
+        i = ((i & 0xFFFF0000FFFF0000L) >>> 16) | ((i & 0x0000FFFF0000FFFFL) << 16);
+        i = (i >>> 32) | (i << 32);
+        return i;
     }
 
     public static int signum(long i) {
