@@ -531,7 +531,6 @@ public class TCollections extends TObject {
 
     private static <K, V> TSet<Entry<K, V>> unmodifiableMapEntrySet(
             final TSet<? extends Entry<? extends K, ? extends V>> c) {
-        TObjects.requireNonNull(c);
         return new TAbstractSet<>() {
             @Override public int size() {
                 return c.size();
