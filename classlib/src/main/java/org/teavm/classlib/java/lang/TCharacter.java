@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.util.Objects;
 import org.teavm.classlib.impl.unicode.CharMapping;
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
 import org.teavm.platform.metadata.StringResource;
@@ -177,7 +178,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int charCount(int codePoint) {
-        return isSupplementaryCodePoint(codePoint) ? 2 : 1;
+        return codePoint >= MIN_SUPPLEMENTARY_CODE_POINT ? 2 : 1;
     }
 
     public static int toCodePoint(char high, char low) {
@@ -199,6 +200,9 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int codePointAt(char[] a, int index, int limit) {
+        if (index >= limit || index < 0 || limit > a.length) {
+            throw new IndexOutOfBoundsException();
+        }
         if (index >= limit - 1 || !isHighSurrogate(a[index]) || !isLowSurrogate(a[index + 1])) {
             return a[index];
         } else {
@@ -218,8 +222,11 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int codePointBefore(char[] a, int index, int start) {
+        if (index > a.length || index <= start || start < 0) {
+            throw new IndexOutOfBoundsException();
+        }
         if (index <= start + 1 || !isLowSurrogate(a[index - 1]) || !isHighSurrogate(a[index - 2])) {
-            return a[index];
+            return a[index - 1];
         } else {
             return toCodePoint(a[index - 2], a[index - 1]);
         }
@@ -396,6 +403,9 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     private static native StringResource obtainClasses();
 
     public static int toChars(int codePoint, char[] dst, int dstIndex) {
+        if (!isValidCodePoint(codePoint)) {
+            throw new IllegalArgumentException();
+        }
         if (codePoint >= MIN_SUPPLEMENTARY_CODE_POINT) {
             dst[dstIndex] = highSurrogate(codePoint);
             dst[dstIndex + 1] = lowSurrogate(codePoint);
@@ -407,6 +417,9 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static char[] toChars(int codePoint) {
+        if (!isValidCodePoint(codePoint)) {
+            throw new IllegalArgumentException();
+        }
         if (codePoint >= MIN_SUPPLEMENTARY_CODE_POINT) {
             return new char[] { highSurrogate(codePoint), lowSurrogate(codePoint) };
         } else {
@@ -415,6 +428,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int codePointCount(TCharSequence seq, int beginIndex, int endIndex) {
+        Objects.checkFromToIndex(beginIndex, endIndex, seq.length());
         int count = endIndex - beginIndex;
         --endIndex;
         for (int i = beginIndex; i < endIndex; ++i) {
@@ -427,6 +441,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int codePointCount(char[] a, int offset, int count) {
+        Objects.checkFromIndexSize(offset, count, a.length);
         int r = count;
         --count;
         for (int i = 0; i < count; ++i) {
@@ -439,23 +454,66 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int offsetByCodePoints(TCharSequence seq, int index, int codePointOffset) {
-        for (int i = 0; i < codePointOffset; ++i) {
-            if (index < seq.length() - 1 && isHighSurrogate(seq.charAt(index))
-                    && isLowSurrogate(seq.charAt(index + 1))) {
-                index += 2;
-            } else {
-                index++;
+        if (codePointOffset >= 0) {
+            int i;
+            for (i = 0; i < codePointOffset && index < seq.length(); ++i) {
+                if (index < seq.length() - 1 && isHighSurrogate(seq.charAt(index))
+                        && isLowSurrogate(seq.charAt(index + 1))) {
+                    index += 2;
+                } else {
+                    index++;
+                }
+            }
+            if (i < codePointOffset) {
+                throw new IndexOutOfBoundsException();
+            }
+        } else {
+            int i;
+            for (i = codePointOffset; i < 0 && index > 0; ++i) {
+                if (index > 0 && isLowSurrogate(seq.charAt(index - 1))
+                        && isHighSurrogate(seq.charAt(index - 2))) {
+                    index -= 2;
+                } else {
+                    index--;
+                }
+            }
+            if (i < 0) {
+                throw new IndexOutOfBoundsException();
             }
         }
         return index;
     }
 
     public static int offsetByCodePoints(char[] a, int start, int count, int index, int codePointOffset) {
-        for (int i = 0; i < codePointOffset; ++i) {
-            if (index < count - 1 && isHighSurrogate(a[index + start]) && isLowSurrogate(a[index + start + 1])) {
-                index += 2;
-            } else {
-                index++;
+        if (count > a.length - start || start < 0 || count < 0
+                || index < start || index > start + count) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (codePointOffset >= 0) {
+            int i;
+            for (i = 0; i < codePointOffset && index < start + count; ++i) {
+                if (index < count - 1 && isHighSurrogate(a[index])
+                        && isLowSurrogate(a[index + 1])) {
+                    index += 2;
+                } else {
+                    index++;
+                }
+            }
+            if (i < codePointOffset) {
+                throw new IndexOutOfBoundsException();
+            }
+        } else {
+            int i;
+            for (i = codePointOffset; i < 0 && index > start; ++i) {
+                if (index > start && isLowSurrogate(a[index - 1])
+                        && isHighSurrogate(a[index - 2])) {
+                    index -= 2;
+                } else {
+                    index--;
+                }
+            }
+            if (i < 0) {
+                throw new IndexOutOfBoundsException();
             }
         }
         return index;
