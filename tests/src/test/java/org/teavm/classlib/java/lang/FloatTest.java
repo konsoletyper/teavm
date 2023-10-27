@@ -112,6 +112,8 @@ public class FloatTest {
         assertEquals("0x1.0p-2", Float.toHexString(0.25f));
         assertEquals("0x1.0p-126", Float.toHexString((float) Math.pow(2, -126)));
         assertEquals("0x0.001p-126", Float.toHexString(0x0.001p-126f));
+        assertEquals("0x0.0p0", Float.toHexString(0.0F));
+        assertEquals("-0x0.0p0", Float.toHexString(-0.0F));
     }
 
     @Test

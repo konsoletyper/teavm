@@ -289,9 +289,13 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         int sz = 0;
         int bits = floatToIntBits(f);
         boolean subNormal = false;
+        boolean negative = (bits & (1 << 31)) != 0;
         int exp = ((bits >>> 23) & 0xFF) - 127;
         int mantissa = (bits & 0x7FFFFF) << 1;
         if (exp == -127) {
+            if (mantissa == 0) {
+                return negative ? "-0x0.0p0" : "0x0.0p0";
+            }
             ++exp;
             subNormal = true;
         }
@@ -310,7 +314,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         buffer[sz++] = subNormal ? '0' : '1';
         buffer[sz++] = 'x';
         buffer[sz++] = '0';
-        if ((bits & (1L << 31)) != 0) {
+        if (negative) {
             buffer[sz++] = '-';
         }
         int half = sz / 2;
