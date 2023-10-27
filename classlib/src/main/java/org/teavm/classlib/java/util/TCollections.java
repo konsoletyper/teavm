@@ -335,9 +335,6 @@ public class TCollections extends TObject {
     }
 
     public static <T> T min(TCollection<? extends T> coll, TComparator<? super T> comp) {
-        if (coll.isEmpty()) {
-            throw new TNoSuchElementException();
-        }
         if (comp == null) {
             comp = TComparator.NaturalOrder.instance();
         }
@@ -357,9 +354,6 @@ public class TCollections extends TObject {
     }
 
     public static <T> T max(TCollection<? extends T> coll, TComparator<? super T> comp) {
-        if (coll.isEmpty()) {
-            throw new TNoSuchElementException();
-        }
         if (comp == null) {
             comp = TComparator.NaturalOrder.instance();
         }
