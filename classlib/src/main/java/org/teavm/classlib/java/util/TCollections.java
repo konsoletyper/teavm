@@ -546,7 +546,6 @@ public class TCollections extends TObject {
 
     private static <K, V> TIterator<Entry<K, V>> unmodifiableMapEntryIterator(
             final TIterator<? extends Entry<? extends K, ? extends V>> c) {
-        TObjects.requireNonNull(c);
         return new TIterator<>() {
             @Override public boolean hasNext() {
                 return c.hasNext();
