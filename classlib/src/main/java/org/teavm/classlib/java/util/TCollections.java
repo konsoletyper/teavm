@@ -183,6 +183,9 @@ public class TCollections extends TObject {
     }
 
     public static <T> TList<T> nCopies(final int n, final T o) {
+        if (n < 0) {
+            throw new IllegalArgumentException();
+        }
         return new TAbstractList<>() {
             @Override public T get(int index) {
                 if (index < 0 || index >= n) {
@@ -332,6 +335,9 @@ public class TCollections extends TObject {
     }
 
     public static <T> T min(TCollection<? extends T> coll, TComparator<? super T> comp) {
+        if (coll.isEmpty()) {
+            throw new TNoSuchElementException();
+        }
         if (comp == null) {
             comp = TComparator.NaturalOrder.instance();
         }
@@ -351,6 +357,9 @@ public class TCollections extends TObject {
     }
 
     public static <T> T max(TCollection<? extends T> coll, TComparator<? super T> comp) {
+        if (coll.isEmpty()) {
+            throw new TNoSuchElementException();
+        }
         if (comp == null) {
             comp = TComparator.NaturalOrder.instance();
         }
@@ -455,6 +464,7 @@ public class TCollections extends TObject {
     }
 
     public static <T> TList<T> unmodifiableList(final TList<? extends T> list) {
+        TObjects.requireNonNull(list);
         return new TAbstractList<>() {
             @Override public T get(int index) {
                 return list.get(index);
@@ -462,10 +472,14 @@ public class TCollections extends TObject {
             @Override public int size() {
                 return list.size();
             }
+            @Override public boolean remove(Object o) {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 
     public static <T> TCollection<T> unmodifiableCollection(final TCollection<? extends T> c) {
+        TObjects.requireNonNull(c);
         return new TAbstractCollection<>() {
             @Override public TIterator<T> iterator() {
                 return unmodifiableIterator(c.iterator());
@@ -473,10 +487,14 @@ public class TCollections extends TObject {
             @Override public int size() {
                 return c.size();
             }
+            @Override public boolean remove(Object o) {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 
     private static <T> TIterator<T> unmodifiableIterator(final TIterator<? extends T> c) {
+        TObjects.requireNonNull(c);
         return new TIterator<>() {
             @Override public boolean hasNext() {
                 return c.hasNext();
@@ -491,6 +509,7 @@ public class TCollections extends TObject {
     }
 
     public static <T> TSet<T> unmodifiableSet(final TSet<? extends T> s) {
+        TObjects.requireNonNull(s);
         return new TAbstractSet<>() {
             @Override public TIterator<T> iterator() {
                 return unmodifiableIterator(s.iterator());
@@ -498,19 +517,27 @@ public class TCollections extends TObject {
             @Override public int size() {
                 return s.size();
             }
+            @Override public boolean remove(Object o) {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 
     public static <K, V> TMap<K, V> unmodifiableMap(final TMap<? extends K, ? extends V> m) {
+        TObjects.requireNonNull(m);
         return new TAbstractMap<>() {
             @Override public TSet<Entry<K, V>> entrySet() {
                 return unmodifiableMapEntrySet(m.entrySet());
+            }
+            @Override public V remove(Object o) {
+                throw new UnsupportedOperationException();
             }
         };
     }
 
     private static <K, V> TSet<Entry<K, V>> unmodifiableMapEntrySet(
             final TSet<? extends Entry<? extends K, ? extends V>> c) {
+        TObjects.requireNonNull(c);
         return new TAbstractSet<>() {
             @Override public int size() {
                 return c.size();
@@ -523,6 +550,7 @@ public class TCollections extends TObject {
 
     private static <K, V> TIterator<Entry<K, V>> unmodifiableMapEntryIterator(
             final TIterator<? extends Entry<? extends K, ? extends V>> c) {
+        TObjects.requireNonNull(c);
         return new TIterator<>() {
             @Override public boolean hasNext() {
                 return c.hasNext();
