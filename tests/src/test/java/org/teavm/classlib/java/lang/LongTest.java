@@ -17,20 +17,43 @@ package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
 public class LongTest {
-
     @Test
     public void parsesLongInSubstring() {
         assertEquals(0, Long.parseLong("[0]", 1, 2, 10));
         assertEquals(473, Long.parseLong("[473]", 1, 4, 10));
         assertEquals(42, Long.parseLong("[+42]", 1, 4, 10));
         assertEquals(-255, Long.parseLong("[-FF]", 1, 4, 16));
+        try {
+            Long.parseLong("[-FF]", 1, 5, 16);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Long.parseLong("[-FF]", 1, 6, 16);
+            fail();
+        } catch (IndexOutOfBoundsException e) {
+            // ok
+        }
+        try {
+            Long.parseLong("[-FF]", 1, 2, 16);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Long.parseLong("[-FF]", 5, 4, 16);
+            fail();
+        } catch (IndexOutOfBoundsException e) {
+            // ok
+        }
     }
 
     @Test
@@ -43,7 +66,6 @@ public class LongTest {
     }
 
     @Test
-    @SkipJVM
     public void calculatesHashCode() {
         assertEquals(23 ^ 42, Long.hashCode((23L << 32) | 42));
     }
@@ -108,5 +130,128 @@ public class LongTest {
                 Long.toString(Long.MAX_VALUE, 2));
         assertEquals("-1000000000000000000000000000000000000000000000000000000000000000",
                 Long.toString(Long.MIN_VALUE, 2));
+    }
+
+    @Test
+    public void reverseBytes() {
+        assertEquals(0xAABBCCDD00112233L, Long.reverseBytes(0x33221100DDCCBBAAL));
+        assertEquals(0x1122334455667788L, Long.reverseBytes(0x8877665544332211L));
+        assertEquals(0x0011223344556677L, Long.reverseBytes(0x7766554433221100L));
+        assertEquals(0x2000000000000002L, Long.reverseBytes(0x0200000000000020L));
+    }
+
+    @Test
+    public void decode() {
+        assertEquals("Returned incorrect value for hex string", 255L,
+                Long.decode("0xFF").longValue());
+        assertEquals("Returned incorrect value for dec string", -89000L,
+                Long.decode("-89000").longValue());
+        assertEquals("Returned incorrect value for 0 decimal", 0,
+                Long.decode("0").longValue());
+        assertEquals("Returned incorrect value for 0 hex", 0,
+                Long.decode("0x0").longValue());
+        assertEquals("Returned incorrect value for most negative value decimal", 0x8000000000000000L,
+                Long.decode("-9223372036854775808").longValue());
+        assertEquals("Returned incorrect value for most negative value hex", 0x8000000000000000L,
+                Long.decode("-0x8000000000000000").longValue());
+        assertEquals("Returned incorrect value for most positive value decimal", 0x7fffffffffffffffL,
+                Long.decode("9223372036854775807").longValue());
+        assertEquals("Returned incorrect value for most positive value hex", 0x7fffffffffffffffL,
+                Long.decode("0x7fffffffffffffff").longValue());
+        assertEquals("Failed for 07654321765432", 07654321765432L,
+                Long.decode("07654321765432").longValue());
+        try {
+            Long.decode("999999999999999999999999999999999999999999999999999999");
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Long.decode("9223372036854775808");
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Long.decode("-9223372036854775809");
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Long.decode("0x8000000000000000");
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Long.decode("-0x8000000000000001");
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Long.decode("42325917317067571199");
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+    }
+
+    @Test
+    public void test_parseLong() {
+        assertEquals("Returned incorrect value",
+                100000000L, Long.parseLong("100000000", 10));
+        assertEquals("Returned incorrect value from hex string", 68719476735L,
+                Long.parseLong("FFFFFFFFF", 16));
+        assertEquals("Returned incorrect value from octal string: " + Long.parseLong("77777777777"),
+                8589934591L, Long.parseLong("77777777777", 8));
+        assertEquals("Returned incorrect value for 0 hex", 0, Long.parseLong("0", 16));
+        assertEquals("Returned incorrect value for most negative value hex", 0x8000000000000000L,
+                Long.parseLong("-8000000000000000", 16));
+        assertEquals("Returned incorrect value for most positive value hex", 0x7fffffffffffffffL,
+                Long.parseLong("7fffffffffffffff", 16));
+        assertEquals("Returned incorrect value for 0 decimal", 0,
+                Long.parseLong("0", 10));
+        assertEquals("Returned incorrect value for most negative value decimal", 0x8000000000000000L,
+                Long.parseLong("-9223372036854775808", 10));
+        assertEquals("Returned incorrect value for most positive value decimal", 0x7fffffffffffffffL,
+                Long.parseLong("9223372036854775807", 10));
+        try {
+            Long.parseLong("999999999999", 8);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Long.parseLong("9223372036854775808", 10);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Long.parseLong("-9223372036854775809", 10);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Long.parseLong("8000000000000000", 16);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Long.parseLong("-8000000000000001", 16);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Long.parseLong("42325917317067571199", 10);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
     }
 }
