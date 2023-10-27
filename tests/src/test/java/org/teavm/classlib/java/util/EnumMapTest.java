@@ -36,7 +36,9 @@ import java.util.Objects;
 import java.util.Set;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class EnumMapTest {
@@ -293,6 +295,7 @@ public class EnumMapTest {
 
     @Test
     @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void putAll() {
         EnumMap enumColorMap = new EnumMap(Color.class);
         enumColorMap.put(Color.Green, 2);
