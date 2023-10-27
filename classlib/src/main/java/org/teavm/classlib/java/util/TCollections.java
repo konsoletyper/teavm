@@ -539,6 +539,9 @@ public class TCollections extends TObject {
             @Override public TIterator<Entry<K, V>> iterator() {
                 return unmodifiableMapEntryIterator(c.iterator());
             }
+            @Override public boolean remove(Object o) {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 
