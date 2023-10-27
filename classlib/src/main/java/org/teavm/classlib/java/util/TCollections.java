@@ -488,7 +488,6 @@ public class TCollections extends TObject {
     }
 
     private static <T> TIterator<T> unmodifiableIterator(final TIterator<? extends T> c) {
-        TObjects.requireNonNull(c);
         return new TIterator<>() {
             @Override public boolean hasNext() {
                 return c.hasNext();
