@@ -42,9 +42,6 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
                 return index < size;
             }
             @Override public E next() {
-                if (!hasNext()) {
-                    throw new TNoSuchElementException();
-                }
                 checkConcurrentModification();
                 removeIndex = index;
                 return get(index++);
