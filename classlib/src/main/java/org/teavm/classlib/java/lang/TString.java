@@ -436,13 +436,12 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             return EMPTY;
         }
 
-        if (PlatformDetector.isJavaScript()) {
-            var nativeSubstring = substringJS(nativeString(), beginIndex, endIndex);
-            return nativeSubstring != nativeString() ? new TString(nativeSubstring) : this;
-        }
-
         if (beginIndex == 0 && endIndex == length) {
             return this;
+        }
+
+        if (PlatformDetector.isJavaScript()) {
+            return new TString(substringJS(nativeString(), beginIndex, endIndex));
         }
         return new TString(fastCharArray(), beginIndex, endIndex - beginIndex);
     }
