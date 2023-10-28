@@ -81,17 +81,17 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     private native void takeCharArray(char[] characters);
 
     public TString(byte[] bytes, int offset, int length, TString charsetName) throws TUnsupportedEncodingException {
-        checkSIOOB(offset, length, bytes.length);
+        Objects.checkFromIndexSize(offset, length, bytes.length);
         initWithBytes(bytes, offset, length, TCharset.forName(charsetName.toString()));
     }
 
     public TString(byte[] bytes, int offset, int length, TCharset charset) {
-        checkSIOOB(offset, length, bytes.length);
+        Objects.checkFromIndexSize(offset, length, bytes.length);
         initWithBytes(bytes, offset, length, charset);
     }
 
     public TString(byte[] bytes, int offset, int length) {
-        checkSIOOB(offset, length, bytes.length);
+        Objects.checkFromIndexSize(offset, length, bytes.length);
         initWithBytes(bytes, offset, length, TUTF8Charset.INSTANCE);
     }
 
@@ -589,12 +589,6 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             array[i] = charAt(i);
         }
         return array;
-    }
-
-    private static void checkSIOOB(int offset, int count, int length) {
-        if (offset < 0 || count < 0 || count > length - offset) {
-            throw new StringIndexOutOfBoundsException();
-        }
     }
 
     public static String valueOf(Object obj) {
