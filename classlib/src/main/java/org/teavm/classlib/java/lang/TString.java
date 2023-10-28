@@ -424,9 +424,6 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     public TString substring(int beginIndex, int endIndex) {
         int length = charactersLength();
-        if (beginIndex < 0 || beginIndex > endIndex || endIndex > length) {
-            throw new TStringIndexOutOfBoundsException();
-        }
         if (beginIndex == endIndex) {
             return EMPTY;
         }
@@ -436,6 +433,9 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         }
 
         if (PlatformDetector.isJavaScript()) {
+            if (beginIndex < 0 || beginIndex > endIndex || endIndex > length) {
+                throw new TStringIndexOutOfBoundsException();
+            }
             return new TString(substringJS(nativeString(), beginIndex, endIndex));
         }
         return new TString(fastCharArray(), beginIndex, endIndex - beginIndex);
