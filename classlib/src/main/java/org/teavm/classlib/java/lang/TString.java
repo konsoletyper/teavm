@@ -15,7 +15,10 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Locale;
+import java.util.Objects;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.io.TUnsupportedEncodingException;
@@ -52,7 +55,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     private native void borrowChars(TString other);
 
     public TString(char[] characters) {
-        this(characters, 0, characters.length);
+        initWithCharArray(characters, 0, characters.length);
     }
 
     public TString(Object nativeString) {
@@ -61,9 +64,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     private native Object nativeString();
 
     public TString(char[] value, int offset, int count) {
-        if (offset < 0 || count < 0 || offset + count > value.length) {
-            throw new IndexOutOfBoundsException();
-        }
+        Objects.checkFromIndexSize(offset, count, value.length);
         initWithCharArray(value, offset, count);
     }
 
@@ -80,30 +81,34 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     private native void takeCharArray(char[] characters);
 
     public TString(byte[] bytes, int offset, int length, TString charsetName) throws TUnsupportedEncodingException {
-        this(bytes, offset, length, TCharset.forName(charsetName.toString()));
+        checkSIOOB(offset, length, bytes.length);
+        initWithBytes(bytes, offset, length, TCharset.forName(charsetName.toString()));
     }
 
     public TString(byte[] bytes, int offset, int length, TCharset charset) {
+        checkSIOOB(offset, length, bytes.length);
         initWithBytes(bytes, offset, length, charset);
     }
 
     public TString(byte[] bytes, int offset, int length) {
+        checkSIOOB(offset, length, bytes.length);
         initWithBytes(bytes, offset, length, TUTF8Charset.INSTANCE);
     }
 
     public TString(byte[] bytes) {
-        this(bytes, 0, bytes.length);
+        initWithBytes(bytes, 0, bytes.length, TUTF8Charset.INSTANCE);
     }
 
     public TString(byte[] bytes, TString charsetName) throws TUnsupportedEncodingException {
-        this(bytes, 0, bytes.length, charsetName);
+        initWithBytes(bytes, 0, bytes.length, TCharset.forName(charsetName.toString()));
     }
 
     public TString(byte[] bytes, TCharset charset) {
-        this(bytes, 0, bytes.length, charset);
+        initWithBytes(bytes, 0, bytes.length, charset);
     }
 
     public TString(int[] codePoints, int offset, int count) {
+        Objects.checkFromIndexSize(offset, count, codePoints.length);
         var characters = new char[count * 2];
         int charCount = 0;
         for (int i = 0; i < count; ++i) {
@@ -122,6 +127,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     private void initWithBytes(byte[] bytes, int offset, int length, TCharset charset) {
+        checkSIOOB(offset, length, bytes.length);
         TCharBuffer buffer = charset.decode(TByteBuffer.wrap(bytes, offset, length));
         char[] characters;
         if (buffer.hasArray() && buffer.position() == 0 && buffer.limit() == buffer.capacity()) {
@@ -133,8 +139,12 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         takeCharArray(characters);
     }
 
+    public TString(TStringBuffer sb) {
+        initWithCharArray(sb.buffer, 0, sb.length());
+    }
+
     public TString(TStringBuilder sb) {
-        this(sb.buffer, 0, sb.length());
+        initWithCharArray(sb.buffer, 0, sb.length());
     }
 
     private TString(int length) {
@@ -418,8 +428,9 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString substring(int beginIndex, int endIndex) {
-        if (beginIndex > endIndex) {
-            throw new TIndexOutOfBoundsException();
+        int length = charactersLength();
+        if (beginIndex < 0 || beginIndex > endIndex || endIndex > length) {
+            throw new TStringIndexOutOfBoundsException();
         }
         if (beginIndex == endIndex) {
             return EMPTY;
@@ -430,7 +441,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             return nativeSubstring != nativeString() ? new TString(nativeSubstring) : this;
         }
 
-        if (beginIndex == 0 && endIndex == length()) {
+        if (beginIndex == 0 && endIndex == length) {
             return this;
         }
         return new TString(fastCharArray(), beginIndex, endIndex - beginIndex);
@@ -582,6 +593,12 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return array;
     }
 
+    private static void checkSIOOB(int offset, int count, int length) {
+        if (offset < 0 || count < 0 || count > length - offset) {
+            throw new StringIndexOutOfBoundsException();
+        }
+    }
+
     public static String valueOf(Object obj) {
         return obj != null ? obj.toString() : "null";
     }
@@ -669,7 +686,11 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public byte[] getBytes(TString charsetName) throws TUnsupportedEncodingException {
-        return getBytes(TCharset.forName(charsetName.toString()));
+        try {
+            return getBytes(TCharset.forName(charsetName.toString()));
+        } catch (UnsupportedCharsetException | IllegalCharsetNameException x) {
+            throw new TUnsupportedEncodingException();
+        }
     }
 
     public byte[] getBytes() {
