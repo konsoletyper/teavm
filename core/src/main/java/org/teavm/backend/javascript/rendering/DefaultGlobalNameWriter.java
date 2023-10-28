@@ -27,7 +27,7 @@ public class DefaultGlobalNameWriter implements Function<String, NameEmitter> {
 
     @Override
     public NameEmitter apply(String s) {
-        if (s.startsWith("$rt_") || s.startsWith("Long_") || s.equals("Long")) {
+        if (s.startsWith("$rt_") || s.startsWith("Long_") || s.equals("Long") || s.equals("import")) {
             return prec -> writer.append(s);
         }
         return prec -> writer.append("$rt_globals").append('.').append(s);
