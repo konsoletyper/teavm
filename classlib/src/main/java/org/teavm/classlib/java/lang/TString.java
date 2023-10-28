@@ -81,17 +81,14 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     private native void takeCharArray(char[] characters);
 
     public TString(byte[] bytes, int offset, int length, TString charsetName) throws TUnsupportedEncodingException {
-        Objects.checkFromIndexSize(offset, length, bytes.length);
         initWithBytes(bytes, offset, length, TCharset.forName(charsetName.toString()));
     }
 
     public TString(byte[] bytes, int offset, int length, TCharset charset) {
-        Objects.checkFromIndexSize(offset, length, bytes.length);
         initWithBytes(bytes, offset, length, charset);
     }
 
     public TString(byte[] bytes, int offset, int length) {
-        Objects.checkFromIndexSize(offset, length, bytes.length);
         initWithBytes(bytes, offset, length, TUTF8Charset.INSTANCE);
     }
 
@@ -108,7 +105,6 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString(int[] codePoints, int offset, int count) {
-        Objects.checkFromIndexSize(offset, count, codePoints.length);
         var characters = new char[count * 2];
         int charCount = 0;
         for (int i = 0; i < count; ++i) {
