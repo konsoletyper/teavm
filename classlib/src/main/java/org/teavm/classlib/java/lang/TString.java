@@ -127,7 +127,6 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     private void initWithBytes(byte[] bytes, int offset, int length, TCharset charset) {
-        checkSIOOB(offset, length, bytes.length);
         TCharBuffer buffer = charset.decode(TByteBuffer.wrap(bytes, offset, length));
         char[] characters;
         if (buffer.hasArray() && buffer.position() == 0 && buffer.limit() == buffer.capacity()) {
