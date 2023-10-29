@@ -24,6 +24,7 @@ import java.io.Writer;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -70,11 +71,13 @@ import org.teavm.backend.javascript.spi.ModuleImporter;
 import org.teavm.backend.javascript.spi.ModuleImporterContext;
 import org.teavm.backend.javascript.spi.VirtualMethodContributor;
 import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
+import org.teavm.backend.javascript.templating.JavaScriptTemplateFactory;
 import org.teavm.cache.AstCacheEntry;
 import org.teavm.cache.AstDependencyExtractor;
 import org.teavm.cache.CacheStatus;
 import org.teavm.cache.EmptyMethodNodeCache;
 import org.teavm.cache.MethodNodeCache;
+import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
@@ -148,6 +151,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
     private NullCheckInsertion nullCheckInsertion = new NullCheckInsertion(NullCheckFilter.EMPTY);
     private final Map<String, String> importedModules = new LinkedHashMap<>();
+    private Map<String, Generator> generatorCache = new HashMap<>();
+    private JavaScriptTemplateFactory templateFactory;
 
     @Override
     public List<ClassHolderTransformer> getTransformers() {
@@ -175,6 +180,9 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         var refQueueGenerator = new ReferenceQueueGenerator();
         methodGenerators.put(new MethodReference(ReferenceQueue.class, "<init>", void.class), refQueueGenerator);
         methodGenerators.put(new MethodReference(ReferenceQueue.class, "poll", Reference.class), refQueueGenerator);
+
+        templateFactory = new JavaScriptTemplateFactory(controller.getClassLoader(),
+                controller.getDependencyInfo().getClassSource());
     }
 
     @Override
@@ -629,7 +637,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                     break;
                 }
             }
-            classNodes.add(decompile(decompiler, cls));
+            classNodes.add(decompile(decompiler, cls, classes));
         }
         return classNodes;
     }
@@ -660,7 +668,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         order.add(className);
     }
 
-    private PreparedClass decompile(Decompiler decompiler, ClassHolder cls) {
+    private PreparedClass decompile(Decompiler decompiler, ClassHolder cls, ClassReaderSource classes) {
         PreparedClass clsNode = new PreparedClass(cls);
         for (MethodHolder method : cls.getMethods()) {
             if (method.getModifiers().contains(ElementModifier.ABSTRACT)) {
@@ -675,14 +683,14 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             }
 
             PreparedMethod preparedMethod = method.hasModifier(ElementModifier.NATIVE)
-                    ? decompileNative(method)
+                    ? decompileNative(method, classes)
                     : decompile(decompiler, method);
             clsNode.getMethods().add(preparedMethod);
         }
         return clsNode;
     }
 
-    private PreparedMethod decompileNative(MethodHolder method) {
+    private PreparedMethod decompileNative(MethodHolder method, ClassReaderSource classes) {
         MethodReference reference = method.getReference();
         Generator generator = methodGenerators.get(reference);
         if (generator == null && !isBootstrap()) {
@@ -693,16 +701,60 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             }
             ValueType annotValue = annotHolder.getValues().get("value").getJavaClass();
             String generatorClassName = ((ValueType.Object) annotValue).getClassName();
-            try {
-                Class<?> generatorClass = Class.forName(generatorClassName, true, controller.getClassLoader());
-                generator = (Generator) generatorClass.newInstance();
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new DecompilationException("Error instantiating generator " + generatorClassName
-                        + " for native method " + method.getOwnerName() + "." + method.getDescriptor());
-            }
+            generator = generatorCache.computeIfAbsent(generatorClassName,
+                    name -> createGenerator(name, method, classes));
         }
 
         return new PreparedMethod(method, null, generator, asyncMethods.contains(reference), null);
+    }
+
+    private Generator createGenerator(String name, MethodHolder method, ClassReaderSource classes) {
+        Class<?> generatorClass;
+        try {
+            generatorClass = Class.forName(name, true, controller.getClassLoader());
+        } catch (ClassNotFoundException e) {
+            throw new DecompilationException("Error instantiating generator " + name
+                    + " for native method " + method.getOwnerName() + "." + method.getDescriptor());
+        }
+
+        var constructors = generatorClass.getConstructors();
+        if (constructors.length != 1) {
+            throw new DecompilationException("Error instantiating generator " + name
+                    + " for native method " + method.getOwnerName() + "." + method.getDescriptor());
+        }
+
+        var constructor = constructors[0];
+        var parameterTypes = constructor.getParameterTypes();
+        var arguments = new Object[parameterTypes.length];
+        for (var i = 0; i < arguments.length; ++i) {
+            var parameterType = parameterTypes[i];
+            if (parameterType.equals(ClassReaderSource.class)) {
+                arguments[i] = classes;
+            } else if (parameterType.equals(Properties.class)) {
+                arguments[i] = controller.getProperties();
+            } else if (parameterType.equals(DependencyInfo.class)) {
+                arguments[i] = controller.getDependencyInfo();
+            } else if (parameterType.equals(ServiceRepository.class)) {
+                arguments[i] = controller.getServices();
+            } else if (parameterType.equals(JavaScriptTemplateFactory.class)) {
+                arguments[i] = templateFactory;
+            } else {
+                var service = controller.getServices().getService(parameterType);
+                if (service == null) {
+                    throw new DecompilationException("Error instantiating generator " + name
+                            + " for native method " + method.getOwnerName() + "." + method.getDescriptor() + ". "
+                            + "Its constructor requires " + parameterType + " as its parameter #" + (i + 1)
+                            + " which is not available.");
+                }
+            }
+        }
+
+        try {
+            return (Generator) constructor.newInstance(arguments);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new DecompilationException("Error instantiating generator " + name
+                    + " for native method " + method.getOwnerName() + "." + method.getDescriptor(), e);
+        }
     }
 
     private PreparedMethod decompile(Decompiler decompiler, MethodHolder method) {

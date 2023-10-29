@@ -16,9 +16,12 @@
 package org.teavm.backend.javascript.templating;
 
 import java.io.IOException;
+import java.util.function.Function;
 import org.mozilla.javascript.ast.ElementGet;
 import org.mozilla.javascript.ast.FunctionCall;
 import org.mozilla.javascript.ast.Name;
+import org.mozilla.javascript.ast.PropertyGet;
+import org.mozilla.javascript.ast.Scope;
 import org.mozilla.javascript.ast.StringLiteral;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.AstWriter;
@@ -28,8 +31,13 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 public class TemplatingAstWriter extends AstWriter {
-    public TemplatingAstWriter(SourceWriter writer) {
+    private Function<String, SourceFragment> names;
+    private Scope scope;
+
+    public TemplatingAstWriter(SourceWriter writer, Function<String, SourceFragment> names, Scope scope) {
         super(writer, new DefaultGlobalNameWriter(writer));
+        this.names = names;
+        this.scope = scope;
     }
 
     @Override
@@ -137,6 +145,19 @@ public class TemplatingAstWriter extends AstWriter {
         super.print(node);
     }
 
+    @Override
+    public void print(PropertyGet node) throws IOException {
+        if (node.getTarget() instanceof Name) {
+            var name = (Name) node.getTarget();
+            if (name.getDefiningScope() == null && name.getIdentifier().equals("teavm_globals")) {
+                writer.append("$rt_globals").append(".");
+                print(node.getProperty());
+                return;
+            }
+        }
+        super.print(node);
+    }
+
     private boolean writeJavaVirtualMethod(ElementGet get, FunctionCall call) throws IOException {
         var arg = call.getArguments().get(0);
         if (!(arg instanceof StringLiteral)) {
@@ -162,5 +183,23 @@ public class TemplatingAstWriter extends AstWriter {
         print(get.getTarget());
         writer.append('.').appendField(new FieldReference(className, fieldName));
         return true;
+    }
+
+    @Override
+    public void print(Name node, int precedence) throws IOException {
+        if (isRootScope()) {
+            if (names != null && node.getDefiningScope() == scope) {
+                var fragment = names.apply(node.getIdentifier());
+                if (fragment != null) {
+                    fragment.write(writer, precedence);
+                    return;
+                }
+            }
+            if (node.getDefiningScope() == null && scope != null) {
+                writer.appendFunction(node.getIdentifier());
+                return;
+            }
+        }
+        super.print(node, precedence);
     }
 }

@@ -51,7 +51,7 @@ public class RuntimeRenderer {
         AstRoot ast = parseRuntime(name);
         ast.visit(new StringConstantElimination());
         new TemplatingAstTransformer(classSource).visit(ast);
-        var astWriter = new TemplatingAstWriter(writer);
+        var astWriter = new TemplatingAstWriter(writer, null, null);
         astWriter.hoist(ast);
         astWriter.print(ast);
     }

@@ -502,7 +502,7 @@ public class AstWriter {
         writer.append(']');
     }
 
-    private void print(PropertyGet node) throws IOException {
+    public void print(PropertyGet node) throws IOException {
         print(node.getLeft(), PRECEDENCE_MEMBER);
         writer.append('.');
         var oldRootScope = rootScope;
@@ -651,8 +651,8 @@ public class AstWriter {
         writer.append(node.getQuoteCharacter());
     }
 
-    private void print(Name node, int precedence) throws IOException {
-        if (rootScope) {
+    public void print(Name node, int precedence) throws IOException {
+        if (rootScope && node.getDefiningScope() == null) {
             var alias = nameMap.get(node.getIdentifier());
             if (alias == null) {
                 if (globalNameWriter != null) {
@@ -665,6 +665,10 @@ public class AstWriter {
         } else {
             writer.append(node.getIdentifier());
         }
+    }
+
+    protected final boolean isRootScope() {
+        return rootScope;
     }
 
     private void print(RegExpLiteral node) throws IOException {

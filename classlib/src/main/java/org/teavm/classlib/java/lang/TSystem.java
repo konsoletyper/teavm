@@ -31,6 +31,7 @@ import org.teavm.classlib.java.io.TInputStream;
 import org.teavm.classlib.java.io.TOutputStream;
 import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.classlib.java.lang.reflect.TArray;
+import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
@@ -125,6 +126,7 @@ public final class TSystem extends TObject {
     }
 
     @GeneratedBy(SystemNativeGenerator.class)
+    @PluggableDependency(SystemDependencyPlugin.class)
     @DelegateTo("doArrayCopyLowLevel")
     @NoSideEffects
     static native void doArrayCopy(Object src, int srcPos, Object dest, int destPos, int length);
