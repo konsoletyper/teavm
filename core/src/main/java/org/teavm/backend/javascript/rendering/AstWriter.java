@@ -16,8 +16,10 @@
 package org.teavm.backend.javascript.rendering;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,9 +95,10 @@ public class AstWriter {
     public static final int PRECEDENCE_COMMA = 18;
     protected final SourceWriter writer;
     private Map<String, NameEmitter> nameMap = new HashMap<>();
-    private boolean rootScope = true;
+    protected boolean rootScope = true;
     private Set<String> aliases = new HashSet<>();
     private Function<String, NameEmitter> globalNameWriter;
+    public final Map<String, Scope> currentScopes = new HashMap<>();
 
     public AstWriter(SourceWriter writer, Function<String, NameEmitter> globalNameWriter) {
         this.writer = writer;
@@ -319,12 +322,14 @@ public class AstWriter {
     }
 
     private void print(Scope node) throws IOException {
+        var scope = enterScope(node);
         writer.append('{').softNewLine().indent();
         for (Node child = node.getFirstChild(); child != null; child = child.getNext()) {
             print((AstNode) child);
             writer.softNewLine();
         }
         writer.outdent().append('}');
+        leaveScope(scope);
     }
 
     private void print(LabeledStatement node) throws IOException {
@@ -366,14 +371,17 @@ public class AstWriter {
     }
 
     private void print(DoLoop node) throws IOException {
+        var scope = enterScope(node);
         writer.append("do ").ws();
         print(node.getBody());
         writer.append("while").ws().append('(');
         print(node.getCondition());
         writer.append(");");
+        leaveScope(scope);
     }
 
     private void print(ForInLoop node) throws IOException {
+        var scope = enterScope(node);
         writer.append("for");
         if (node.isForEach()) {
             writer.append(" each");
@@ -384,9 +392,11 @@ public class AstWriter {
         print(node.getIteratedObject());
         writer.append(')').ws();
         print(node.getBody());
+        leaveScope(scope);
     }
 
     private void print(ForLoop node) throws IOException {
+        var scope = enterScope(node);
         writer.append("for").ws().append('(');
         print(node.getInitializer());
         writer.append(';');
@@ -395,13 +405,16 @@ public class AstWriter {
         print(node.getIncrement());
         writer.append(')').ws();
         print(node.getBody());
+        leaveScope(scope);
     }
 
     private void print(WhileLoop node) throws IOException {
+        var scope = enterScope(node);
         writer.append("while").ws().append('(');
         print(node.getCondition());
         writer.append(')').ws();
         print(node.getBody());
+        leaveScope(scope);
     }
 
     private void print(IfStatement node) throws IOException {
@@ -606,6 +619,7 @@ public class AstWriter {
     }
 
     private void print(ArrayComprehension node) throws IOException {
+        var scope = enterScope(node);
         writer.append("[");
         for (ArrayComprehensionLoop loop : node.getLoops()) {
             writer.append("for").ws().append("(");
@@ -621,9 +635,11 @@ public class AstWriter {
         }
         print(node.getResult());
         writer.append(']');
+        leaveScope(scope);
     }
 
     private void print(GeneratorExpression node) throws IOException {
+        var scope = enterScope(node);
         writer.append("(");
         for (GeneratorExpressionLoop loop : node.getLoops()) {
             writer.append("for").ws().append("(");
@@ -639,6 +655,7 @@ public class AstWriter {
         }
         print(node.getResult());
         writer.append(')');
+        leaveScope(scope);
     }
 
     private void print(NumberLiteral node) throws IOException {
@@ -652,7 +669,8 @@ public class AstWriter {
     }
 
     public void print(Name node, int precedence) throws IOException {
-        if (rootScope && node.getDefiningScope() == null) {
+        var definingScope = scopeOfId(node.getIdentifier());
+        if (rootScope && definingScope == null) {
             var alias = nameMap.get(node.getIdentifier());
             if (alias == null) {
                 if (globalNameWriter != null) {
@@ -665,10 +683,6 @@ public class AstWriter {
         } else {
             writer.append(node.getIdentifier());
         }
-    }
-
-    protected final boolean isRootScope() {
-        return rootScope;
     }
 
     private void print(RegExpLiteral node) throws IOException {
@@ -710,16 +724,28 @@ public class AstWriter {
     }
 
     private void print(FunctionNode node) throws IOException {
-        if (!node.isMethod()) {
+        var scope = enterScope(node);
+        var isArrow = node.getFunctionType() == FunctionNode.ARROW_FUNCTION;
+        if (!isArrow) {
+            currentScopes.put("arguments", node);
+        }
+        if (!node.isMethod() && !isArrow) {
             writer.append("function");
         }
         if (node.getFunctionName() != null) {
             writer.append(' ');
             print(node.getFunctionName());
         }
-        writer.append('(');
-        printList(node.getParams());
-        writer.append(')').ws();
+        if (!isArrow || node.getParams().size() != 1) {
+            writer.append('(');
+            printList(node.getParams());
+            writer.append(')').ws();
+        } else {
+            print(node.getParams().get(0));
+        }
+        if (isArrow) {
+            writer.append("=>").ws();
+        }
 
         if (node.isExpressionClosure()) {
             if (node.getBody().getLastChild() instanceof ReturnStatement) {
@@ -731,13 +757,17 @@ public class AstWriter {
         } else {
             print(node.getBody());
         }
+
+        leaveScope(scope);
     }
 
     private void print(LetNode node) throws IOException {
+        var scope = enterScope(node);
         writer.append("let").ws().append('(');
         printList(node.getVariables().getVariables());
         writer.append(')');
         print(node.getBody());
+        leaveScope(scope);
     }
 
     private void print(ParenthesizedExpression node, int precedence) throws IOException {
@@ -933,5 +963,31 @@ public class AstWriter {
             default:
                 return false;
         }
+    }
+
+    private Map<String, Scope> enterScope(Scope scope) {
+        if (scope.getSymbolTable() == null) {
+            return Collections.emptyMap();
+        }
+        var map = new LinkedHashMap<String, Scope>();
+        for (var name : scope.getSymbolTable().keySet()) {
+            map.put(name, currentScopes.get(name));
+            currentScopes.put(name, scope);
+        }
+        return map;
+    }
+
+    private void leaveScope(Map<String, Scope> backup) {
+        for (var entry : backup.entrySet()) {
+            if (entry.getValue() == null) {
+                currentScopes.remove(entry.getKey());
+            } else {
+                currentScopes.put(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    protected Scope scopeOfId(String id) {
+        return currentScopes.get(id);
     }
 }

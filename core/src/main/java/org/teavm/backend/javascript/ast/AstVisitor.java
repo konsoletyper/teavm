@@ -15,7 +15,11 @@
  */
 package org.teavm.backend.javascript.ast;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -70,6 +74,7 @@ import org.mozilla.javascript.ast.WhileLoop;
 public class AstVisitor {
     protected AstNode replacement;
     protected boolean hasReplacement;
+    protected final Map<String, Scope> currentScopes = new HashMap<>();
 
     public final void visit(AstNode node) {
         switch (node.getType()) {
@@ -261,7 +266,9 @@ public class AstVisitor {
     }
 
     public void visit(Scope node) {
+        var scope = enterScope(node);
         visitChildren(node);
+        leaveScope(scope);
     }
 
     public void visit(LabeledStatement node) {
@@ -284,26 +291,34 @@ public class AstVisitor {
     }
 
     public void visit(DoLoop node) {
+        var scope = enterScope(node);
         visitProperty(node, DoLoop::getBody, DoLoop::setBody, EMPTY_DEFAULT);
         visitProperty(node, DoLoop::getCondition, DoLoop::setCondition, NULL_DEFAULT);
+        leaveScope(scope);
     }
 
     public void visit(ForInLoop node) {
+        var scope = enterScope(node);
         visitProperty(node, ForInLoop::getIterator, ForInLoop::setIterator, NULL_DEFAULT);
         visitProperty(node, ForInLoop::getIteratedObject, ForInLoop::setIteratedObject, NULL_DEFAULT);
         visitProperty(node, ForInLoop::getBody, ForInLoop::setBody, EMPTY_DEFAULT);
+        leaveScope(scope);
     }
 
     public void visit(ForLoop node) {
+        var scope = enterScope(node);
         visitProperty(node, ForLoop::getInitializer, ForLoop::setInitializer, EMPTY_EXPR_DEFAULT);
         visitProperty(node, ForLoop::getCondition, ForLoop::setCondition, EMPTY_EXPR_DEFAULT);
         visitProperty(node, ForLoop::getIncrement, ForLoop::setIncrement, EMPTY_EXPR_DEFAULT);
         visitProperty(node, ForLoop::getBody, ForLoop::setBody, EMPTY_DEFAULT);
+        leaveScope(scope);
     }
 
     public void visit(WhileLoop node) {
+        var scope = enterScope(node);
         visitProperty(node, WhileLoop::getCondition, WhileLoop::setCondition, NULL_DEFAULT);
         visitProperty(node, WhileLoop::getBody, WhileLoop::setBody, EMPTY_DEFAULT);
+        leaveScope(scope);
     }
 
     public void visit(IfStatement node) {
@@ -375,15 +390,18 @@ public class AstVisitor {
     }
 
     public void visit(ArrayComprehension node) {
+        var scope = enterScope(node);
         for (var loop : node.getLoops()) {
             visitProperty(loop, ArrayComprehensionLoop::getIterator, ArrayComprehensionLoop::setIterator);
             visitProperty(loop, ArrayComprehensionLoop::getIteratedObject, ArrayComprehensionLoop::setIteratedObject);
         }
         visitProperty(node, ArrayComprehension::getFilter, ArrayComprehension::setFilter);
         visitProperty(node, ArrayComprehension::getResult, ArrayComprehension::setResult);
+        leaveScope(scope);
     }
 
     public void visit(GeneratorExpression node) {
+        var scope = enterScope(node);
         for (var loop : node.getLoops()) {
             visitProperty(loop, GeneratorExpressionLoop::getIterator, GeneratorExpressionLoop::setIterator);
             visitProperty(loop, GeneratorExpressionLoop::getIteratedObject,
@@ -391,6 +409,7 @@ public class AstVisitor {
         }
         visitProperty(node, GeneratorExpression::getFilter, GeneratorExpression::setFilter);
         visitProperty(node, GeneratorExpression::getResult, GeneratorExpression::setResult);
+        leaveScope(scope);
     }
 
     public void visit(NumberLiteral node) {
@@ -426,14 +445,21 @@ public class AstVisitor {
     }
 
     public void visit(FunctionNode node) {
+        var scope = enterScope(node);
+        if (node.getFunctionType() != FunctionNode.ARROW_FUNCTION) {
+            currentScopes.put("arguments", node);
+        }
         visitProperty(node, FunctionNode::getFunctionName, FunctionNode::setFunctionName);
         visitMany(node.getParams());
         visitChildren(node.getBody());
+        leaveScope(scope);
     }
 
     public void visit(LetNode node) {
+        var scope = enterScope(node);
         visitProperty(node, LetNode::getVariables, LetNode::setVariables);
         visitProperty(node, LetNode::getBody, LetNode::setBody);
+        leaveScope(scope);
     }
 
     public void visit(ParenthesizedExpression node) {
@@ -462,6 +488,33 @@ public class AstVisitor {
     protected final void replaceWith(AstNode node) {
         hasReplacement = true;
         replacement = node;
+    }
+
+
+    private Map<String, Scope> enterScope(Scope scope) {
+        if (scope.getSymbolTable() == null) {
+            return Collections.emptyMap();
+        }
+        var map = new LinkedHashMap<String, Scope>();
+        for (var name : scope.getSymbolTable().keySet()) {
+            map.put(name, currentScopes.get(name));
+            currentScopes.put(name, scope);
+        }
+        return map;
+    }
+
+    private void leaveScope(Map<String, Scope> backup) {
+        for (var entry : backup.entrySet()) {
+            if (entry.getValue() == null) {
+                currentScopes.remove(entry.getKey());
+            } else {
+                currentScopes.put(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    protected Scope scopeOfId(String id) {
+        return currentScopes.get(id);
     }
 
     private static final Supplier<AstNode> NULL_DEFAULT = () -> new KeywordLiteral(0, 0, Token.NULL);

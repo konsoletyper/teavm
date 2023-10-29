@@ -16,7 +16,6 @@
 package org.teavm.backend.javascript.templating;
 
 import java.util.HashMap;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.FunctionNode;
@@ -59,21 +58,22 @@ public class JavaScriptTemplate {
 
         public SourceFragment build() {
             var intParameters = parameters;
-            var paramNameToIndex = new HashMap<String, Integer>();
+            var nameParameters = new HashMap<String, SourceFragment>();
             for (var i = 0; i < node.getParams().size(); ++i) {
                 var param = node.getParams().get(i);
                 if (param instanceof Name) {
-                    paramNameToIndex.put(((Name) param).getIdentifier(), i);
+                    nameParameters.put(((Name) param).getIdentifier(), intParameters.apply(i));
                 }
             }
-            Function<String, SourceFragment> nameParameters = name -> {
-                var index = paramNameToIndex.get(name);
-                return index != null ? intParameters.apply(index) : null;
-            };
             var thisFragment = parameters.apply(0);
             var body = node.getBody();
             return (writer, precedence) -> {
                 var astWriter = new TemplatingAstWriter(writer, nameParameters, node);
+                if (node.getSymbolTable() != null) {
+                    for (var name : node.getSymbolTable().keySet()) {
+                        astWriter.currentScopes.put(name, node);
+                    }
+                }
                 if (thisFragment != null) {
                     astWriter.declareNameEmitter("this", thisPrecedence -> thisFragment.write(writer, thisPrecedence));
                 }

@@ -264,7 +264,7 @@ public class Renderer implements RenderingManager {
                 "$rt_createFloatArray", "$rt_createDoubleArray", "$rt_compare",
                 "$rt_castToClass", "$rt_castToInterface", "$rt_equalDoubles",
                 "$rt_str", "Long_toNumber", "Long_fromInt", "Long_fromNumber", "Long_create", "Long_ZERO",
-                "$rt_intern", "$rt_substring",
+                "$rt_intern", "$rt_substring", "$rt_ustr",
                 "Long_hi", "Long_lo");
     }
 

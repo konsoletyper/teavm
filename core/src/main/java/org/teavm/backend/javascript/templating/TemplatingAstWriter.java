@@ -16,9 +16,10 @@
 package org.teavm.backend.javascript.templating;
 
 import java.io.IOException;
-import java.util.function.Function;
+import java.util.Map;
 import org.mozilla.javascript.ast.ElementGet;
 import org.mozilla.javascript.ast.FunctionCall;
+import org.mozilla.javascript.ast.FunctionNode;
 import org.mozilla.javascript.ast.Name;
 import org.mozilla.javascript.ast.PropertyGet;
 import org.mozilla.javascript.ast.Scope;
@@ -31,20 +32,28 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 public class TemplatingAstWriter extends AstWriter {
-    private Function<String, SourceFragment> names;
+    private Map<String, SourceFragment> names;
     private Scope scope;
 
-    public TemplatingAstWriter(SourceWriter writer, Function<String, SourceFragment> names, Scope scope) {
+    public TemplatingAstWriter(SourceWriter writer, Map<String, SourceFragment> names, Scope scope) {
         super(writer, new DefaultGlobalNameWriter(writer));
         this.names = names;
         this.scope = scope;
+        if (names != null) {
+            for (var name : names.keySet()) {
+                currentScopes.put(name, scope);
+            }
+        }
+        if (scope instanceof FunctionNode) {
+            currentScopes.put("arguments", scope);
+        }
     }
 
     @Override
     protected boolean intrinsic(FunctionCall node, int precedence) throws IOException {
         if (node.getTarget() instanceof Name) {
             var name = (Name) node.getTarget();
-            if (name.getDefiningScope() == null) {
+            if (scopeOfId(name.getIdentifier()) == null) {
                 return tryIntrinsicName(node, name.getIdentifier());
             }
         }
@@ -126,7 +135,7 @@ public class TemplatingAstWriter extends AstWriter {
             var call = (FunctionCall) node.getElement();
             if (call.getTarget() instanceof Name) {
                 var name = (Name) call.getTarget();
-                if (name.getDefiningScope() == null) {
+                if (scopeOfId(name.getIdentifier()) == null) {
                     switch (name.getIdentifier()) {
                         case "teavm_javaVirtualMethod":
                             if (writeJavaVirtualMethod(node, call)) {
@@ -149,9 +158,13 @@ public class TemplatingAstWriter extends AstWriter {
     public void print(PropertyGet node) throws IOException {
         if (node.getTarget() instanceof Name) {
             var name = (Name) node.getTarget();
-            if (name.getDefiningScope() == null && name.getIdentifier().equals("teavm_globals")) {
+            var scope = scopeOfId(name.getIdentifier());
+            if (scope == null && name.getIdentifier().equals("teavm_globals")) {
+                var oldRootScope = rootScope;
+                rootScope = false;
                 writer.append("$rt_globals").append(".");
                 print(node.getProperty());
+                rootScope = oldRootScope;
                 return;
             }
         }
@@ -187,15 +200,16 @@ public class TemplatingAstWriter extends AstWriter {
 
     @Override
     public void print(Name node, int precedence) throws IOException {
-        if (isRootScope()) {
-            if (names != null && node.getDefiningScope() == scope) {
-                var fragment = names.apply(node.getIdentifier());
+        var definingScope = scopeOfId(node.getIdentifier());
+        if (rootScope) {
+            if (names != null && definingScope == scope) {
+                var fragment = names.get(node.getIdentifier());
                 if (fragment != null) {
                     fragment.write(writer, precedence);
                     return;
                 }
             }
-            if (node.getDefiningScope() == null && scope != null) {
+            if (definingScope == null && scope != null) {
                 writer.appendFunction(node.getIdentifier());
                 return;
             }

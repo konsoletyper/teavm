@@ -112,7 +112,8 @@ public class TemplatingAstTransformer extends AstVisitor {
         super.visit(node);
         if (node.getTarget() instanceof Name) {
             var name = (Name) node.getTarget();
-            if (name.getDefiningScope() == null) {
+            var scope = scopeOfId(name.getIdentifier());
+            if (scope == null) {
                 tryIntrinsicName(node, name.getIdentifier());
             }
         }

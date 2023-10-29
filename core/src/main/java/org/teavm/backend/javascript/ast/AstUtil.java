@@ -30,6 +30,7 @@ public final class AstUtil {
         var env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
         env.setLanguageVersion(Context.VERSION_1_8);
+        env.setIdeMode(true);
         var factory = new JSParser(env);
 
         return factory.parse(string, null, 0);
