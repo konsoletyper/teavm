@@ -95,7 +95,7 @@ class ResourceAccessorInjector implements Injector {
                 context.getWriter().append('(');
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().ws().append("!==").ws().append("null").ws().append("?").ws();
-                context.getWriter().append("$rt_ustr(");
+                context.getWriter().appendFunction("$rt_ustr").append("(");
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().append(")").ws().append(':').ws().append("null)");
                 break;
@@ -114,7 +114,7 @@ class ResourceAccessorInjector implements Injector {
                 return;
             }
         }
-        context.getWriter().append("[$rt_ustr(");
+        context.getWriter().append("[").appendFunction("$rt_ustr").append("(");
         context.writeExpr(property);
         context.getWriter().append(")]");
     }
@@ -127,7 +127,7 @@ class ResourceAccessorInjector implements Injector {
             context.getWriter().append('"');
             return;
         }
-        context.getWriter().append("$rt_ustr(");
+        context.getWriter().appendFunction("$rt_ustr").append("(");
         context.writeExpr(expr);
         context.getWriter().append(")");
     }

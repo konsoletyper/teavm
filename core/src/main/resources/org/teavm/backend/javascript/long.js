@@ -41,7 +41,7 @@ var Long_shr;
 var Long_shru;
 var Long_not;
 
-if (typeof BigInt !== 'function') {
+if (typeof teavm_globals.BigInt !== 'function') {
     Long_eq = function(a, b) {
         return a.hi === b.hi && a.lo === b.lo;
     }
@@ -267,7 +267,7 @@ if (typeof BigInt !== 'function') {
 
     function Long_divRem(a, b) {
         if (b.lo === 0 && b.hi === 0) {
-            throw new Error("Division by zero");
+            throw new teavm_globals.Error("Division by zero");
         }
         var positive = Long_isNegative(a) === Long_isNegative(b);
         if (Long_isNegative(a)) {
@@ -286,7 +286,7 @@ if (typeof BigInt !== 'function') {
 
     function Long_udivRem(a, b) {
         if (b.lo === 0 && b.hi === 0) {
-            throw new Error("Division by zero");
+            throw new teavm_globals.Error("Division by zero");
         }
         a = new LongInt(a.lo, a.hi, 0);
         b = new LongInt(b.lo, b.hi, 0);
@@ -599,79 +599,81 @@ if (typeof BigInt !== 'function') {
     }
 
     Long_add = function(a, b) {
-        return BigInt.asIntN(64, a + b);
+        return teavm_globals.BigInt.asIntN(64, a + b);
     }
 
     Long_inc = function(a) {
-        return BigInt.asIntN(64, a + 1);
+        return teavm_globals.BigInt.asIntN(64, a + 1);
     }
 
     Long_dec = function(a) {
-        return BigInt.asIntN(64, a - 1);
+        return teavm_globals.BigInt.asIntN(64, a - 1);
     }
 
     Long_neg = function(a) {
-        return BigInt.asIntN(64, -a);
+        return teavm_globals.BigInt.asIntN(64, -a);
     }
 
     Long_sub = function(a, b) {
-        return BigInt.asIntN(64, a - b);
+        return teavm_globals.BigInt.asIntN(64, a - b);
     }
 
     Long_compare = function(a, b) {
         return a < b ? -1 : a > b ? 1 : 0;
     }
     Long_ucompare = function(a, b) {
-        a = BigInt.asUintN(64, a);
-        b = BigInt.asUintN(64, b);
+        a = teavm_globals.BigInt.asUintN(64, a);
+        b = teavm_globals.BigInt.asUintN(64, b);
         return a < b ? -1 : a > b ? 1 : 0;
     }
 
     Long_mul = function(a, b) {
-        return BigInt.asIntN(64, a * b);
+        return teavm_globals.BigInt.asIntN(64, a * b);
     }
 
     Long_div = function(a, b) {
-        return BigInt.asIntN(64, a / b);
+        return teavm_globals.BigInt.asIntN(64, a / b);
     }
 
     Long_udiv = function(a, b) {
-        return BigInt.asIntN(64, BigInt.asUintN(64, a) / BigInt.asUintN(64, b));
+        return teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, a) /
+            teavm_globals.BigInt.asUintN(64, b));
     }
 
     Long_rem = function(a, b) {
-        return BigInt.asIntN(64, a % b);
+        return teavm_globals.BigInt.asIntN(64, a % b);
     }
 
     Long_urem = function(a, b) {
-        return BigInt.asIntN(64, BigInt.asUintN(64, a) % BigInt.asUintN(64, b));
+        return teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, a) %
+            teavm_globals.BigInt.asUintN(64, b));
     }
 
     Long_and = function(a, b) {
-        return BigInt.asIntN(64, a & b);
+        return teavm_globals.BigInt.asIntN(64, a & b);
     }
 
     Long_or = function(a, b) {
-        return BigInt.asIntN(64, a | b);
+        return teavm_globals.BigInt.asIntN(64, a | b);
     }
 
     Long_xor = function(a, b) {
-        return BigInt.asIntN(64, a ^ b);
+        return teavm_globals.BigInt.asIntN(64, a ^ b);
     }
 
     Long_shl = function(a, b) {
-        return BigInt.asIntN(64, a << BigInt(b & 63));
+        return teavm_globals.BigInt.asIntN(64, a << teavm_globals.BigInt(b & 63));
     }
 
     Long_shr = function(a, b) {
-        return BigInt.asIntN(64, a >> BigInt(b & 63));
+        return teavm_globals.BigInt.asIntN(64, a >> teavm_globals.BigInt(b & 63));
     }
 
     Long_shru = function(a, b) {
-        return BigInt.asIntN(64, BigInt.asUintN(64, a) >> BigInt(b & 63));
+        return teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, a) >> teavm_globals.BigInt(b & 63));
     }
 
     Long_not = function(a) {
-        return BigInt.asIntN(64, ~a);
+        return teavm_globals.BigInt.asIntN(64, ~a);
     }
 }

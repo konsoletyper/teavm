@@ -183,7 +183,7 @@ public class Renderer implements RenderingManager {
         }
         try {
             int start = writer.getOffset();
-            writer.append("$rt_stringPool([");
+            writer.appendFunction("$rt_stringPool").append("([");
             for (int i = 0; i < context.getStringPool().size(); ++i) {
                 if (i > 0) {
                     writer.append(',').ws();
@@ -223,9 +223,9 @@ public class Renderer implements RenderingManager {
     }
 
     private void renderJavaStringToString() throws IOException {
-        writer.appendClass("java.lang.String").append(".prototype.toString").ws().append("=").ws()
-                .append("function()").ws().append("{").indent().softNewLine();
-        writer.append("return $rt_ustr(this);").softNewLine();
+        writer.appendClass("java.lang.String").append(".prototype.toString").ws().append("=").ws().append("()")
+                .ws().append("=>").ws().append("{").indent().softNewLine();
+        writer.append("return ").appendFunction("$rt_ustr").append("(this);").softNewLine();
         writer.outdent().append("};").newLine();
         writer.appendClass("java.lang.String").append(".prototype.valueOf").ws().append("=").ws()
             .appendClass("java.lang.String").append(".prototype.toString;").softNewLine();
@@ -233,8 +233,9 @@ public class Renderer implements RenderingManager {
 
     private void renderJavaObjectToString() throws IOException {
         writer.appendClass("java.lang.Object").append(".prototype.toString").ws().append("=").ws()
-                .append("function()").ws().append("{").indent().softNewLine();
-        writer.append("return $rt_ustr(").appendMethodBody(Object.class, "toString", String.class).append("(this));")
+                .append("()").ws().append("=>").ws().append("{").indent().softNewLine();
+        writer.append("return ").appendFunction("$rt_ustr").append("(")
+                .appendMethodBody(Object.class, "toString", String.class).append("(this));")
                 .softNewLine();
         writer.outdent().append("};").newLine();
     }
@@ -242,48 +243,12 @@ public class Renderer implements RenderingManager {
     private void renderTeaVMClass() throws IOException {
         writer.appendClass("java.lang.Object").append(".prototype.__teavm_class__").ws().append("=").ws()
                 .append("function()").ws().append("{").indent().softNewLine();
-        writer.append("return $dbg_class(this);").softNewLine();
+        writer.append("return ").appendFunction("$dbg_class").append("(this);").softNewLine();
         writer.outdent().append("};").newLine();
     }
 
     private void appendClassSize(String className, int sz) {
         sizeByClass.put(className, sizeByClass.getOrDefault(className, 0) + sz);
-    }
-
-    private void renderCommonRuntimeAliases() throws IOException {
-        renderRuntimeAliases("$rt_throw", "$rt_compare", "$rt_nullCheck", "$rt_cls", "$rt_createArray",
-                "$rt_isInstance", "$rt_nativeThread", "$rt_suspending", "$rt_resuming", "$rt_invalidPointer",
-                "$rt_s", "$rt_eraseClinit", "$rt_imul", "$rt_wrapException", "$rt_checkBounds",
-                "$rt_checkUpperBound", "$rt_checkLowerBound", "$rt_wrapFunction0", "$rt_wrapFunction1",
-                "$rt_wrapFunction2", "$rt_wrapFunction3", "$rt_wrapFunction4",
-                "$rt_classWithoutFields", "$rt_createArrayFromData", "$rt_createCharArrayFromData",
-                "$rt_createByteArrayFromData", "$rt_createShortArrayFromData", "$rt_createIntArrayFromData",
-                "$rt_createBooleanArrayFromData", "$rt_createFloatArrayFromData", "$rt_createDoubleArrayFromData",
-                "$rt_createLongArrayFromData", "$rt_createBooleanArray", "$rt_createByteArray",
-                "$rt_createShortArray", "$rt_createCharArray", "$rt_createIntArray", "$rt_createLongArray",
-                "$rt_createFloatArray", "$rt_createDoubleArray", "$rt_compare",
-                "$rt_castToClass", "$rt_castToInterface", "$rt_equalDoubles",
-                "$rt_str", "Long_toNumber", "Long_fromInt", "Long_fromNumber", "Long_create", "Long_ZERO",
-                "$rt_intern", "$rt_substring", "$rt_ustr",
-                "Long_hi", "Long_lo");
-    }
-
-    public void renderLongRuntimeAliases() throws IOException {
-        renderRuntimeAliases("Long_add", "Long_sub", "Long_mul", "Long_div", "Long_rem", "Long_or", "Long_and",
-                "Long_xor", "Long_shl", "Long_shr", "Long_shru", "Long_compare", "Long_eq", "Long_ne",
-                "Long_lt", "Long_le", "Long_gt", "Long_ge", "Long_not", "Long_neg");
-    }
-
-    private void renderRuntimeAliases(String... names) throws IOException {
-        boolean first = true;
-        for (String name : names) {
-            if (!first) {
-                writer.softNewLine();
-            }
-            first = false;
-            writer.append("var ").appendFunction(name).ws().append('=').ws().append(name).append(";").softNewLine();
-        }
-        writer.newLine();
     }
 
     public void prepare(List<PreparedClass> classes) {
@@ -300,13 +265,6 @@ public class Renderer implements RenderingManager {
     }
 
     public boolean render(List<PreparedClass> classes) throws RenderingException {
-        if (minifying) {
-            try {
-                renderCommonRuntimeAliases();
-            } catch (IOException e) {
-                throw new RenderingException(e);
-            }
-        }
         int index = 0;
         for (PreparedClass cls : classes) {
             int start = writer.getOffset();
@@ -527,7 +485,7 @@ public class Renderer implements RenderingManager {
 
         int start = writer.getOffset();
         try {
-            writer.append("$rt_packages([");
+            writer.appendFunction("$rt_packages").append("([");
             ObjectIntMap<String> packageIndexes = generatePackageMetadata(classes, metadataRequirements);
             writer.append("]);").newLine();
 
@@ -545,7 +503,7 @@ public class Renderer implements RenderingManager {
 
     private void renderClassMetadataPortion(List<PreparedClass> classes, ObjectIntMap<String> packageIndexes,
             ClassMetadataRequirements metadataRequirements) throws IOException {
-        writer.append("$rt_metadata([");
+        writer.appendFunction("$rt_metadata").append("([");
         boolean first = true;
         for (PreparedClass cls : classes) {
             if (!first) {

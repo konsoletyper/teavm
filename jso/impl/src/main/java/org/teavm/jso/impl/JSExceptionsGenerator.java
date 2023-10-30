@@ -25,12 +25,12 @@ public class JSExceptionsGenerator implements Injector {
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
             case "getJavaException":
-                context.getWriter().append("$rt_javaException(");
+                context.getWriter().appendFunction("$rt_javaException").append("(");
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().append(")");
                 break;
             case "getJSException":
-                context.getWriter().append("$rt_jsException(");
+                context.getWriter().appendFunction("$rt_jsException").append("(");
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().append(")");
                 break;

@@ -16,6 +16,7 @@
 package org.teavm.backend.javascript.templating;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.function.IntFunction;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.FunctionNode;
@@ -42,6 +43,7 @@ public class JavaScriptTemplate {
     public static class FragmentBuilder {
         private FunctionNode node;
         private IntFunction<SourceFragment> parameters;
+        private Map<String, SourceFragment> fragments = new HashMap<>();
 
         private FragmentBuilder(FunctionNode node) {
             this.node = node;
@@ -53,7 +55,12 @@ public class JavaScriptTemplate {
         }
 
         public FragmentBuilder withContext(GeneratorContext context) {
-            return withParameters(param -> (writer, precedence) -> writer.append(context.getParameterName(param + 1)));
+            return withParameters(param -> (writer, precedence) -> writer.append(context.getParameterName(param)));
+        }
+
+        public FragmentBuilder withFragment(String name, SourceFragment fragment) {
+            fragments.put(name, fragment);
+            return this;
         }
 
         public SourceFragment build() {
@@ -62,13 +69,16 @@ public class JavaScriptTemplate {
             for (var i = 0; i < node.getParams().size(); ++i) {
                 var param = node.getParams().get(i);
                 if (param instanceof Name) {
-                    nameParameters.put(((Name) param).getIdentifier(), intParameters.apply(i));
+                    nameParameters.put(((Name) param).getIdentifier(), intParameters.apply(i + 1));
                 }
             }
             var thisFragment = parameters.apply(0);
             var body = node.getBody();
             return (writer, precedence) -> {
                 var astWriter = new TemplatingAstWriter(writer, nameParameters, node);
+                for (var entry : fragments.entrySet()) {
+                    astWriter.setFragment(entry.getKey(), entry.getValue());
+                }
                 if (node.getSymbolTable() != null) {
                     for (var name : node.getSymbolTable().keySet()) {
                         astWriter.currentScopes.put(name, node);

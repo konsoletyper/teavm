@@ -21,6 +21,8 @@ import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.backend.javascript.spi.VirtualMethodContributor;
 import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
+import org.teavm.backend.javascript.templating.JavaScriptTemplate;
+import org.teavm.backend.javascript.templating.JavaScriptTemplateFactory;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
@@ -36,53 +38,30 @@ import org.teavm.model.ValueType;
 public class AsyncMethodGenerator implements Generator, DependencyPlugin, VirtualMethodContributor {
     private static final MethodDescriptor completeMethod = new MethodDescriptor("complete", Object.class, void.class);
     private static final MethodDescriptor errorMethod = new MethodDescriptor("error", Throwable.class, void.class);
+    private JavaScriptTemplate template;
 
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        MethodReference asyncRef = getAsyncReference(context.getClassSource(), methodRef);
-        writer.append("var thread").ws().append('=').ws().append("$rt_nativeThread();").softNewLine();
-        writer.append("var javaThread").ws().append('=').ws().append("$rt_getThread();").softNewLine();
-        writer.append("if").ws().append("(thread.isResuming())").ws().append("{").indent().softNewLine();
-        writer.append("thread.status").ws().append("=").ws().append("0;").softNewLine();
-        writer.append("var result").ws().append("=").ws().append("thread.attribute;").softNewLine();
-        writer.append("if").ws().append("(result instanceof Error)").ws().append("{").indent().softNewLine();
-        writer.append("throw result;").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.append("return result;").softNewLine();
-        writer.outdent().append("}").softNewLine();
-
-        writer.append("var callback").ws().append("=").ws().append("function()").ws().append("{};").softNewLine();
-        writer.append("callback.").appendMethod(completeMethod).ws().append("=").ws()
-                .append("function(val)").ws().append("{").indent().softNewLine();
-        writer.append("thread.attribute").ws().append('=').ws().append("val;").softNewLine();
-        writer.append("$rt_setThread(javaThread);").softNewLine();
-        writer.append("thread.resume();").softNewLine();
-        writer.outdent().append("};").softNewLine();
-        writer.append("callback.").appendMethod(errorMethod).ws().append("=").ws()
-                .append("function(e)").ws().append("{").indent().softNewLine();
-        writer.append("thread.attribute").ws().append('=').ws().append("$rt_exception(e);").softNewLine();
-        writer.append("$rt_setThread(javaThread);").softNewLine();
-        writer.append("thread.resume();").softNewLine();
-        writer.outdent().append("};").softNewLine();
-        writer.append("callback").ws().append("=").ws().appendMethodBody(AsyncCallbackWrapper.class, "create",
-                AsyncCallback.class, AsyncCallbackWrapper.class).append("(callback);").softNewLine();
-        writer.append("thread.suspend(function()").ws().append("{").indent().softNewLine();
-        writer.append("try").ws().append("{").indent().softNewLine();
-        writer.appendMethodBody(asyncRef).append('(');
-        ClassReader cls = context.getClassSource().get(methodRef.getClassName());
-        MethodReader method = cls.getMethod(methodRef.getDescriptor());
-        int start = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;
-        for (int i = start; i <= methodRef.parameterCount(); ++i) {
-            writer.append(context.getParameterName(i));
-            writer.append(',').ws();
+        if (template == null) {
+            var templateFactory = new JavaScriptTemplateFactory(context.getClassLoader(), context.getClassSource());
+            template = templateFactory.createFromResource("org/teavm/platform/plugin/Async.js");
         }
-        writer.append("callback);").softNewLine();
-        writer.outdent().append("}").ws().append("catch($e)").ws().append("{").indent().softNewLine();
-        writer.append("callback.").appendMethod(errorMethod).append("($rt_exception($e));")
-                .softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.outdent().append("});").softNewLine();
-        writer.append("return null;").softNewLine();
+        MethodReference asyncRef = getAsyncReference(context.getClassSource(), methodRef);
+        template.builder("asyncMethod")
+                .withContext(context)
+                .withFragment("callMethod", (w, p) -> {
+                    w.appendMethodBody(asyncRef).append('(');
+                    ClassReader cls = context.getClassSource().get(methodRef.getClassName());
+                    MethodReader method = cls.getMethod(methodRef.getDescriptor());
+                    int start = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;
+                    for (int i = start; i <= methodRef.parameterCount(); ++i) {
+                        w.append(context.getParameterName(i));
+                        w.append(',').ws();
+                    }
+                    w.append("callback);").softNewLine();
+                })
+                .build()
+                .write(writer, 0);
     }
 
     private MethodReference getAsyncReference(ClassReaderSource classSource, MethodReference methodRef) {

@@ -305,40 +305,40 @@ public abstract class RenderingContext {
         }
 
         for (int i = 0; i < arrayCount; ++i) {
-            writer.append("$rt_arraycls(");
+            writer.appendFunction("$rt_arraycls").append("(");
         }
 
         if (type instanceof ValueType.Object) {
             ValueType.Object objType = (ValueType.Object) type;
             writer.appendClass(objType.getClassName());
         } else if (type instanceof ValueType.Void) {
-            writer.append("$rt_voidcls");
+            writer.appendFunction("$rt_voidcls");
         } else if (type instanceof ValueType.Primitive) {
             ValueType.Primitive primitiveType = (ValueType.Primitive) type;
             switch (primitiveType.getKind()) {
                 case BOOLEAN:
-                    writer.append("$rt_booleancls");
+                    writer.appendFunction("$rt_booleancls");
                     break;
                 case CHARACTER:
-                    writer.append("$rt_charcls");
+                    writer.appendFunction("$rt_charcls");
                     break;
                 case BYTE:
-                    writer.append("$rt_bytecls");
+                    writer.appendFunction("$rt_bytecls");
                     break;
                 case SHORT:
-                    writer.append("$rt_shortcls");
+                    writer.appendFunction("$rt_shortcls");
                     break;
                 case INTEGER:
-                    writer.append("$rt_intcls");
+                    writer.appendFunction("$rt_intcls");
                     break;
                 case LONG:
-                    writer.append("$rt_longcls");
+                    writer.appendFunction("$rt_longcls");
                     break;
                 case FLOAT:
-                    writer.append("$rt_floatcls");
+                    writer.appendFunction("$rt_floatcls");
                     break;
                 case DOUBLE:
-                    writer.append("$rt_doublecls");
+                    writer.appendFunction("$rt_doublecls");
                     break;
                 default:
                     throw new IllegalArgumentException("The type is not renderable");

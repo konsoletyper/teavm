@@ -18,11 +18,11 @@
 var $rt_intern
 if (teavm_javaMethodExists("java.lang.String", "intern()Ljava/lang/String;")) {
     $rt_intern = function() {
-        var map = Object.create(null);
+        var map = teavm_globals.Object.create(null);
 
         var get;
-        if (typeof WeakRef !== 'undefined') {
-            var registry = new FinalizationRegistry(value => {
+        if (typeof teavm_globals.WeakRef !== 'undefined') {
+            var registry = new teavm_globals.FinalizationRegistry(value => {
                 delete map[value];
             });
 
@@ -32,7 +32,7 @@ if (teavm_javaMethodExists("java.lang.String", "intern()Ljava/lang/String;")) {
                 var result = typeof ref !== 'undefined' ? ref.deref() : void 0;
                 if (typeof result !== 'object') {
                     result = str;
-                    map[key] = new WeakRef(result);
+                    map[key] = new teavm_globals.WeakRef(result);
                     registry.register(result, key);
                 }
                 return result;

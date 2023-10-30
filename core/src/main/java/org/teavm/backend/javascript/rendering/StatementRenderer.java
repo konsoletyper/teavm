@@ -1414,32 +1414,32 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             if (type instanceof ValueType.Primitive) {
                 switch (((ValueType.Primitive) type).getKind()) {
                     case BOOLEAN:
-                        writer.append("$rt_createBooleanMultiArray(");
+                        writer.appendFunction("$rt_createBooleanMultiArray").append("(");
                         break;
                     case BYTE:
-                        writer.append("$rt_createByteMultiArray(");
+                        writer.appendFunction("$rt_createByteMultiArray").append("(");
                         break;
                     case SHORT:
-                        writer.append("$rt_createShortMultiArray(");
+                        writer.appendFunction("$rt_createShortMultiArray").append("(");
                         break;
                     case INTEGER:
-                        writer.append("$rt_createIntMultiArray(");
+                        writer.appendFunction("$rt_createIntMultiArray").append("(");
                         break;
                     case LONG:
-                        writer.append("$rt_createLongMultiArray(");
+                        writer.appendFunction("$rt_createLongMultiArray").append("(");
                         break;
                     case FLOAT:
-                        writer.append("$rt_createFloatMultiArray(");
+                        writer.appendFunction("$rt_createFloatMultiArray").append("(");
                         break;
                     case DOUBLE:
-                        writer.append("$rt_createDoubleMultiArray(");
+                        writer.appendFunction("$rt_createDoubleMultiArray").append("(");
                         break;
                     case CHARACTER:
-                        writer.append("$rt_createCharMultiArray(");
+                        writer.appendFunction("$rt_createCharMultiArray").append("(");
                         break;
                 }
             } else {
-                writer.append("$rt_createMultiArray(");
+                writer.appendFunction("$rt_createMultiArray").append("(");
                 context.typeToClsString(writer, type);
                 writer.append(",").ws();
             }

@@ -57,7 +57,7 @@ function $rt_castToClass(obj, cls) {
     return obj;
 }
 function $rt_createArray(cls, sz) {
-    var data = new Array(sz);
+    var data = new teavm_globals.Array(sz);
     data.fill(null);
     return new ($rt_arraycls(cls))(data);
 }
@@ -68,13 +68,13 @@ function $rt_wrapArray(cls, data) {
     return new ($rt_arraycls(cls))(data);
 }
 function $rt_createUnfilledArray(cls, sz) {
-    return new ($rt_arraycls(cls))(new Array(sz));
+    return new ($rt_arraycls(cls))(new teavm_globals.Array(sz));
 }
 var $rt_createLongArray;
 var $rt_createLongArrayFromData;
-if (typeof BigInt64Array !== 'function') {
+if (typeof teavm_globals.BigInt64Array !== 'function') {
     $rt_createLongArray = function(sz) {
-        var data = new Array(sz);
+        var data = new teavm_globals.Array(sz);
         var arr = new $rt_longArrayCls(data);
         data.fill(Long_ZERO);
         return arr;
@@ -84,69 +84,69 @@ if (typeof BigInt64Array !== 'function') {
     }
 } else {
     $rt_createLongArray = function (sz) {
-        return new $rt_longArrayCls(new BigInt64Array(sz));
+        return new $rt_longArrayCls(new teavm_globals.BigInt64Array(sz));
     }
     $rt_createLongArrayFromData = function(data) {
-        var buffer = new BigInt64Array(data.length);
+        var buffer = new teavm_globals.BigInt64Array(data.length);
         buffer.set(data);
         return new $rt_longArrayCls(buffer);
     }
 }
 
 function $rt_createCharArray(sz) {
-    return new $rt_charArrayCls(new Uint16Array(sz));
+    return new $rt_charArrayCls(new teavm_globals.Uint16Array(sz));
 }
 function $rt_createCharArrayFromData(data) {
-    var buffer = new Uint16Array(data.length);
+    var buffer = new teavm_globals.Uint16Array(data.length);
     buffer.set(data);
     return new $rt_charArrayCls(buffer);
 }
 function $rt_createByteArray(sz) {
-    return new $rt_byteArrayCls(new Int8Array(sz));
+    return new $rt_byteArrayCls(new teavm_globals.Int8Array(sz));
 }
 function $rt_createByteArrayFromData(data) {
-    var buffer = new Int8Array(data.length);
+    var buffer = new teavm_globals.Int8Array(data.length);
     buffer.set(data);
     return new $rt_byteArrayCls(buffer);
 }
 function $rt_createShortArray(sz) {
-    return new $rt_shortArrayCls(new Int16Array(sz));
+    return new $rt_shortArrayCls(new teavm_globals.Int16Array(sz));
 }
 function $rt_createShortArrayFromData(data) {
-    var buffer = new Int16Array(data.length);
+    var buffer = new teavm_globals.Int16Array(data.length);
     buffer.set(data);
     return new $rt_shortArrayCls(buffer);
 }
 function $rt_createIntArray(sz) {
-    return new $rt_intArrayCls(new Int32Array(sz));
+    return new $rt_intArrayCls(new teavm_globals.Int32Array(sz));
 }
 function $rt_createIntArrayFromData(data) {
-    var buffer = new Int32Array(data.length);
+    var buffer = new teavm_globals.Int32Array(data.length);
     buffer.set(data);
     return new $rt_intArrayCls(buffer);
 }
 function $rt_createBooleanArray(sz) {
-    return new $rt_booleanArrayCls(new Int8Array(sz));
+    return new $rt_booleanArrayCls(new teavm_globals.Int8Array(sz));
 }
 function $rt_createBooleanArrayFromData(data) {
-    var buffer = new Int8Array(data.length);
+    var buffer = new teavm_globals.Int8Array(data.length);
     buffer.set(data);
     return new $rt_booleanArrayCls(buffer);
 }
 
 function $rt_createFloatArray(sz) {
-    return new $rt_floatArrayCls(new Float32Array(sz));
+    return new $rt_floatArrayCls(new teavm_globals.Float32Array(sz));
 }
 function $rt_createFloatArrayFromData(data) {
-    var buffer = new Float32Array(data.length);
+    var buffer = new teavm_globals.Float32Array(data.length);
     buffer.set(data);
     return new $rt_floatArrayCls(buffer);
 }
 function $rt_createDoubleArray(sz) {
-    return new $rt_doubleArrayCls(new Float64Array(sz));
+    return new $rt_doubleArrayCls(new teavm_globals.Float64Array(sz));
 }
 function $rt_createDoubleArrayFromData(data) {
-    var buffer = new Float64Array(data.length);
+    var buffer = new teavm_globals.Float64Array(data.length);
     buffer.set(data);
     return new $rt_doubleArrayCls(buffer);
 }
@@ -158,7 +158,7 @@ function $rt_arraycls(cls) {
             $rt_objcls().call(this);
             this.data = data;
         }
-        JavaArray.prototype = Object.create($rt_objcls().prototype);
+        JavaArray.prototype = teavm_globals.Object.create($rt_objcls().prototype);
         JavaArray.prototype.type = cls;
         JavaArray.prototype.constructor = JavaArray;
         JavaArray.prototype.toString = function() {
@@ -239,16 +239,16 @@ var $rt_voidcls = $rt_createPrimitiveCls("void", "V");
 function $rt_throw(ex) {
     throw $rt_exception(ex);
 }
-var $rt_javaExceptionProp = Symbol("javaException")
+var $rt_javaExceptionProp = teavm_globals.Symbol("javaException")
 function $rt_exception(ex) {
     var err = ex.$jsException;
     if (!err) {
         var javaCause = $rt_throwableCause(ex);
-        var jsCause = javaCause !== null ? javaCause.$jsException : undefined;
-        var cause = typeof jsCause === "object" ? { cause : jsCause } : undefined;
+        var jsCause = javaCause !== null ? javaCause.$jsException : void 0;
+        var cause = typeof jsCause === "object" ? { cause : jsCause } : void 0;
         err = new JavaError("Java exception thrown", cause);
-        if (typeof Error.captureStackTrace === "function") {
-            Error.captureStackTrace(err);
+        if (typeof teavm_globals.Error.captureStackTrace === "function") {
+            teavm_globals.Error.captureStackTrace(err);
         }
         err[$rt_javaExceptionProp] = ex;
         ex.$jsException = err;
@@ -293,7 +293,7 @@ function $rt_createMultiArray(cls, dimensions) {
             return $rt_createArray(cls, dimensions[first]);
         }
     }
-    var arrays = new Array($rt_primitiveArrayCount(dimensions, first));
+    var arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, first));
     var firstDim = dimensions[first] | 0;
     for (i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createArray(cls, firstDim);
@@ -301,7 +301,7 @@ function $rt_createMultiArray(cls, dimensions) {
     return $rt_createMultiArrayImpl(cls, arrays, dimensions, first);
 }
 function $rt_createByteMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    var arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_bytecls, dimensions);
     }
@@ -312,7 +312,7 @@ function $rt_createByteMultiArray(dimensions) {
     return $rt_createMultiArrayImpl($rt_bytecls, arrays, dimensions);
 }
 function $rt_createCharMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    var arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_charcls, dimensions);
     }
@@ -323,7 +323,7 @@ function $rt_createCharMultiArray(dimensions) {
     return $rt_createMultiArrayImpl($rt_charcls, arrays, dimensions, 0);
 }
 function $rt_createBooleanMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    var arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_booleancls, dimensions);
     }
@@ -334,7 +334,7 @@ function $rt_createBooleanMultiArray(dimensions) {
     return $rt_createMultiArrayImpl($rt_booleancls, arrays, dimensions, 0);
 }
 function $rt_createShortMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    var arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_shortcls, dimensions);
     }
@@ -345,7 +345,7 @@ function $rt_createShortMultiArray(dimensions) {
     return $rt_createMultiArrayImpl($rt_shortcls, arrays, dimensions, 0);
 }
 function $rt_createIntMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    var arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_intcls, dimensions);
     }
@@ -356,7 +356,7 @@ function $rt_createIntMultiArray(dimensions) {
     return $rt_createMultiArrayImpl($rt_intcls, arrays, dimensions, 0);
 }
 function $rt_createLongMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    var arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_longcls, dimensions);
     }
@@ -367,7 +367,7 @@ function $rt_createLongMultiArray(dimensions) {
     return $rt_createMultiArrayImpl($rt_longcls, arrays, dimensions, 0);
 }
 function $rt_createFloatMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    var arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_floatcls, dimensions);
     }
@@ -378,7 +378,7 @@ function $rt_createFloatMultiArray(dimensions) {
     return $rt_createMultiArrayImpl($rt_floatcls, arrays, dimensions, 0);
 }
 function $rt_createDoubleMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    var arrays = new teavm_globals.Array($rt_primitiveArrayCount(dimensions, 0));
     if (arrays.length === 0) {
         return $rt_createMultiArray($rt_doublecls, dimensions);
     }
@@ -477,7 +477,7 @@ var $rt_putStderr = typeof $rt_putStderrCustom === "function"
 var $rt_packageData = null;
 function $rt_packages(data) {
     var i = 0;
-    var packages = new Array(data.length);
+    var packages = new teavm_globals.Array(data.length);
     for (var j = 0; j < data.length; ++j) {
         var prefixIndex = data[i++];
         var prefix = prefixIndex >= 0 ? packages[prefixIndex] : "";
@@ -508,7 +508,7 @@ function $rt_metadata(data) {
         m.supertypes = data[i++];
         if (m.superclass) {
             m.supertypes.push(m.superclass);
-            cls.prototype = Object.create(m.superclass.prototype);
+            cls.prototype = teavm_globals.Object.create(m.superclass.prototype);
         } else {
             cls.prototype = {};
         }
@@ -583,7 +583,7 @@ function $rt_wrapFunction4(f) {
 }
 function $rt_threadStarter(f) {
     return function() {
-        var args = Array.prototype.slice.apply(arguments);
+        var args = teavm_globals.Array.prototype.slice.apply(arguments);
         $rt_startThread(function() {
             f.apply(this, args);
         });
@@ -604,7 +604,7 @@ function $rt_mainStarter(f) {
 var $rt_stringPool_instance;
 function $rt_stringPool(strings) {
     $rt_stringClassInit();
-    $rt_stringPool_instance = new Array(strings.length);
+    $rt_stringPool_instance = new teavm_globals.Array(strings.length);
     for (var i = 0; i < strings.length; ++i) {
         $rt_stringPool_instance[i] = $rt_intern($rt_str(strings[i]));
     }
@@ -616,15 +616,15 @@ function $rt_eraseClinit(target) {
     return target.$clinit = function() {};
 }
 
-var $rt_numberConversionBuffer = new ArrayBuffer(16);
-var $rt_numberConversionView = new DataView($rt_numberConversionBuffer);
-var $rt_numberConversionFloatArray = new Float32Array($rt_numberConversionBuffer);
-var $rt_numberConversionDoubleArray = new Float64Array($rt_numberConversionBuffer);
-var $rt_numberConversionIntArray = new Int32Array($rt_numberConversionBuffer);
+var $rt_numberConversionBuffer = new teavm_globals.ArrayBuffer(16);
+var $rt_numberConversionView = new teavm_globals.DataView($rt_numberConversionBuffer);
+var $rt_numberConversionFloatArray = new teavm_globals.Float32Array($rt_numberConversionBuffer);
+var $rt_numberConversionDoubleArray = new teavm_globals.Float64Array($rt_numberConversionBuffer);
+var $rt_numberConversionIntArray = new teavm_globals.Int32Array($rt_numberConversionBuffer);
 
 var $rt_doubleToRawLongBits;
 var $rt_longBitsToDouble;
-if (typeof BigInt !== 'function') {
+if (typeof teavm_globals.BigInt !== 'function') {
     $rt_doubleToRawLongBits = function(n) {
         $rt_numberConversionView.setFloat64(0, n, true);
         return new Long($rt_numberConversionView.getInt32(0, true), $rt_numberConversionView.getInt32(4, true));
@@ -634,21 +634,23 @@ if (typeof BigInt !== 'function') {
         $rt_numberConversionView.setInt32(4, n.hi, true);
         return $rt_numberConversionView.getFloat64(0, true);
     }
-} else if (typeof BigInt64Array !== 'function') {
+} else if (typeof teavm_globals.BigInt64Array !== 'function') {
     $rt_doubleToRawLongBits = function(n) {
         $rt_numberConversionView.setFloat64(0, n, true);
         var lo = $rt_numberConversionView.getInt32(0, true);
         var hi = $rt_numberConversionView.getInt32(4, true);
-        return BigInt.asIntN(64, BigInt.asUintN(32, BigInt(lo)) | (BigInt(hi) << BigInt(32)));
+        return teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(32, teavm_globals.BigInt(lo))
+            | (teavm_globals.BigInt(hi) << teavm_globals.BigInt(32)));
     }
     $rt_longBitsToDouble = function(n) {
         $rt_numberConversionView.setFloat64(0, n, true);
         var lo = $rt_numberConversionView.getInt32(0, true);
         var hi = $rt_numberConversionView.getInt32(4, true);
-        return BigInt.asIntN(64, BigInt.asUintN(32, BigInt(lo)) | (BigInt(hi) << BigInt(32)));
+        return teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(32, teavm_globals.BigInt(lo))
+            | (teavm_globals.BigInt(hi) << teavm_globals.BigInt(32)));
     }
 } else {
-    var $rt_numberConversionLongArray = new BigInt64Array($rt_numberConversionBuffer);
+    var $rt_numberConversionLongArray = new teavm_globals.BigInt64Array($rt_numberConversionBuffer);
     $rt_doubleToRawLongBits = function(n) {
         $rt_numberConversionDoubleArray[0] = n;
         return $rt_numberConversionLongArray[0];
@@ -679,14 +681,14 @@ function $rt_equalDoubles(a, b) {
 
 var JavaError;
 if (typeof Reflect === 'object') {
-    var defaultMessage = Symbol("defaultMessage");
+    var defaultMessage = teavm_globals.Symbol("defaultMessage");
     JavaError = function JavaError(message, cause) {
-        var self = Reflect.construct(Error, [undefined, cause], JavaError);
-        Object.setPrototypeOf(self, JavaError.prototype);
+        var self = teavm_globals.Reflect.construct(teavm_globals.Error, [void 0, cause], JavaError);
+        teavm_globals.Object.setPrototypeOf(self, JavaError.prototype);
         self[defaultMessage] = message;
         return self;
     }
-    JavaError.prototype = Object.create(Error.prototype, {
+    JavaError.prototype = teavm_globals.Object.create(teavm_globals.Error.prototype, {
         constructor: {
             configurable: true,
             writable: true,
@@ -710,11 +712,13 @@ if (typeof Reflect === 'object') {
         }
     });
 } else {
-    JavaError = Error;
+    JavaError = teavm_globals.Error;
 }
 
 function $rt_javaException(e) {
-    return e instanceof Error && typeof e[$rt_javaExceptionProp] === 'object' ? e[$rt_javaExceptionProp] : null;
+    return e instanceof teavm_globals.Error && typeof e[$rt_javaExceptionProp] === 'object'
+        ? e[$rt_javaExceptionProp]
+        : null;
 }
 function $rt_jsException(e) {
     return typeof e.$jsException === 'object' ? e.$jsException : null;
@@ -785,7 +789,7 @@ var Long_fromNumber;
 var Long_toNumber;
 var Long_hi;
 var Long_lo;
-if (typeof BigInt !== "function") {
+if (typeof teavm_globals.BigInt !== "function") {
     Long.prototype.toString = function() {
         var result = [];
         var n = this;
@@ -796,7 +800,7 @@ if (typeof BigInt !== "function") {
         var radix = new Long(10, 0);
         do {
             var divRem = Long_divRem(n, radix);
-            result.push(String.fromCharCode(48 + divRem[1].lo));
+            result.push(teavm_globals.String.fromCharCode(48 + divRem[1].lo));
             n = divRem[0];
         } while (n.lo !== 0 || n.hi !== 0);
         result = result.reverse().join('');
@@ -830,28 +834,29 @@ if (typeof BigInt !== "function") {
         return val.lo;
     }
 } else {
-    Long_ZERO = BigInt(0);
+    Long_ZERO = teavm_globals.BigInt(0);
     Long_create = function(lo, hi) {
-        return BigInt.asIntN(64, BigInt.asUintN(64, BigInt(lo))
-            | BigInt.asUintN(64, (BigInt(hi) << BigInt(32))));
+        return teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, teavm_globals.BigInt(lo))
+            | teavm_globals.BigInt.asUintN(64, (teavm_globals.BigInt(hi) << teavm_globals.BigInt(32))));
     }
     Long_fromInt = function(val) {
-        return BigInt.asIntN(64, BigInt(val | 0));
+        return teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt(val | 0));
     }
     Long_fromNumber = function(val) {
-        return BigInt.asIntN(64, BigInt(val >= 0 ? Math.floor(val) : Math.ceil(val)));
+        return teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt(
+            val >= 0 ? teavm_globals.Math.floor(val) : teavm_globals.Math.ceil(val)));
     }
     Long_toNumber = function(val) {
-        return Number(val);
+        return teavm_globals.Number(val);
     }
     Long_hi = function(val) {
-        return Number(BigInt.asIntN(64, val >> BigInt(32))) | 0;
+        return teavm_globals.Number(teavm_globals.BigInt.asIntN(64, val >> teavm_globals.BigInt(32))) | 0;
     }
     Long_lo = function(val) {
-        return Number(BigInt.asIntN(32, val)) | 0;
+        return teavm_globals.Number(teavm_globals.BigInt.asIntN(32, val)) | 0;
     }
 }
-var $rt_imul = Math.imul || function(a, b) {
+var $rt_imul = teavm_globals.Math.imul || function(a, b) {
     var ah = (a >>> 16) & 0xFFFF;
     var al = a & 0xFFFF;
     var bh = (b >>> 16) & 0xFFFF;
@@ -902,8 +907,8 @@ function $rt_charArrayToString(array, offset, count) {
     var result = "";
     var limit = offset + count;
     for (var i = offset; i < limit; i = (i + 1024) | 0) {
-        var next = Math.min(limit, (i + 1024) | 0);
-        result += String.fromCharCode.apply(null, array.subarray(i, next));
+        var next = teavm_globals.Math.min(limit, (i + 1024) | 0);
+        result += teavm_globals.String.fromCharCode.apply(null, array.subarray(i, next));
     }
     return result;
 }
@@ -916,7 +921,7 @@ function $rt_stringToCharArray(string, begin, dst, dstBegin, count) {
     }
 }
 function $rt_fastStringToCharArray(string) {
-    var array = new Uint16Array(string.length);
+    var array = new teavm_globals.Uint16Array(string.length);
     for (var i = 0; i < array.length; ++i) {
         array[i] = string.charCodeAt(i);
     }

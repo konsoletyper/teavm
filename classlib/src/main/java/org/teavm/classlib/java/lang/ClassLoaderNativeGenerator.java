@@ -75,7 +75,7 @@ public class ClassLoaderNativeGenerator implements Injector {
                     dataChars[i] = (char) dataBytes[i];
                 }
                 RenderingUtil.writeString(writer, resource);
-                writer.ws().append(':').ws();
+                writer.append(':').ws();
                 RenderingUtil.writeString(writer, new String(dataChars));
             }
         }

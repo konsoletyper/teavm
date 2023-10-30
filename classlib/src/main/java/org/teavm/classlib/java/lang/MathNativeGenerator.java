@@ -31,12 +31,12 @@ public class MathNativeGenerator implements Generator {
         if (name.equals("signum")) {
             name = "sign";
         }
-        function(context, writer, "Math." + name, methodRef.parameterCount());
+        function(context, writer, name, methodRef.parameterCount());
     }
 
     private void function(GeneratorContext context, SourceWriter writer, String name, int paramCount)
             throws IOException {
-        writer.append("return ").append(name).append("(");
+        writer.append("return ").append("$rt_globals.Math").append(".").append(name).append("(");
         for (int i = 0; i < paramCount; ++i) {
             if (i > 0) {
                 writer.append(",").ws();

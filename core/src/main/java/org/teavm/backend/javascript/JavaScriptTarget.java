@@ -171,7 +171,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     public void setController(TeaVMTargetController controller) {
         this.controller = controller;
 
-        var weakRefGenerator = new WeakReferenceGenerator();
+        templateFactory = new JavaScriptTemplateFactory(controller.getClassLoader(),
+                controller.getDependencyInfo().getClassSource());
+
+        var weakRefGenerator = new WeakReferenceGenerator(templateFactory);
         methodGenerators.put(new MethodReference(WeakReference.class, "<init>", Object.class,
                 ReferenceQueue.class, void.class), weakRefGenerator);
         methodGenerators.put(new MethodReference(WeakReference.class, "get", Object.class), weakRefGenerator);
@@ -180,9 +183,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         var refQueueGenerator = new ReferenceQueueGenerator();
         methodGenerators.put(new MethodReference(ReferenceQueue.class, "<init>", void.class), refQueueGenerator);
         methodGenerators.put(new MethodReference(ReferenceQueue.class, "poll", Reference.class), refQueueGenerator);
-
-        templateFactory = new JavaScriptTemplateFactory(controller.getClassLoader(),
-                controller.getDependencyInfo().getClassSource());
     }
 
     @Override
@@ -480,7 +480,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
             if (renderer.isLongLibraryUsed()) {
                 runtimeRenderer.renderHandWrittenRuntime("long.js");
-                renderer.renderLongRuntimeAliases();
             }
             if (renderer.isThreadLibraryUsed()) {
                 runtimeRenderer.renderHandWrittenRuntime("thread.js");
@@ -491,10 +490,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             for (var entry : controller.getEntryPoints().entrySet()) {
                 sourceWriter.append("$rt_exports.").append(entry.getKey()).ws().append("=").ws();
                 var ref = entry.getValue().getMethod();
-                sourceWriter.append("$rt_mainStarter(").appendMethodBody(ref);
+                sourceWriter.appendFunction("$rt_mainStarter").append("(").appendMethodBody(ref);
                 sourceWriter.append(");").newLine();
                 sourceWriter.append("$rt_exports.").append(entry.getKey()).append(".").append("javaException")
-                        .ws().append("=").ws().append("$rt_javaException;").newLine();
+                        .ws().append("=").ws().appendFunction("$rt_javaException").append(";").newLine();
             }
 
             for (var listener : rendererListeners) {

@@ -122,7 +122,7 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".").appendField(NATIVE_FIELD).ws().append("=").ws();
-        writer.append("$rt_charArrayToString").append("(");
+        writer.appendFunction("$rt_charArrayToString").append("(");
         context.writeExpr(context.getArgument(1));
         writer.append(".data,").ws();
         context.writeExpr(context.getArgument(2));
@@ -135,7 +135,7 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".").appendField(NATIVE_FIELD).ws().append("=").ws();
-        writer.append("$rt_fullArrayToString").append("(");
+        writer.appendFunction("$rt_fullArrayToString").append("(");
         context.writeExpr(context.getArgument(1));
         writer.append(".data)");
     }
@@ -156,7 +156,7 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
 
     private void copyCharsToArray(InjectorContext context) throws IOException {
         var writer = context.getWriter();
-        writer.append("$rt_stringToCharArray").append("(");
+        writer.appendFunction("$rt_stringToCharArray").append("(");
         context.writeExpr(context.getArgument(0));
         writer.append(".").appendField(NATIVE_FIELD);
         writer.append(",").ws();
@@ -183,7 +183,7 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
 
     private void fastCharArray(InjectorContext context) throws IOException {
         var writer = context.getWriter();
-        writer.append("$rt_fastStringToCharArray").append("(");
+        writer.appendFunction("$rt_fastStringToCharArray").append("(");
         context.writeExpr(context.getArgument(0));
         writer.append(".").appendField(NATIVE_FIELD);
         writer.append(")");

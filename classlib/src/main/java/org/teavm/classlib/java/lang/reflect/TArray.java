@@ -33,7 +33,7 @@ import org.teavm.runtime.RuntimeObject;
 
 public final class TArray extends TObject {
     @GeneratedBy(ArrayNativeGenerator.class)
-    @PluggableDependency(ArrayNativeGenerator.class)
+    @PluggableDependency(ArrayDependencyPlugin.class)
     @DelegateTo("getLengthLowLevel")
     @NoSideEffects
     public static native int getLength(TObject array) throws TIllegalArgumentException;
@@ -48,7 +48,7 @@ public final class TArray extends TObject {
         return array.size;
     }
 
-    @PluggableDependency(ArrayNativeGenerator.class)
+    @PluggableDependency(ArrayDependencyPlugin.class)
     public static TObject newInstance(Class<?> componentType, int length) throws TNegativeArraySizeException {
         if (componentType == null) {
             throw new TNullPointerException();
@@ -89,12 +89,12 @@ public final class TArray extends TObject {
     }
 
     @GeneratedBy(ArrayNativeGenerator.class)
-    @PluggableDependency(ArrayNativeGenerator.class)
+    @PluggableDependency(ArrayDependencyPlugin.class)
     @NoSideEffects
     private static native TObject getImpl(TObject array, int index);
 
     @GeneratedBy(ArrayNativeGenerator.class)
-    @PluggableDependency(ArrayNativeGenerator.class)
+    @PluggableDependency(ArrayDependencyPlugin.class)
     @NoSideEffects
     private static native void setImpl(TObject array, int index, TObject value);
 }

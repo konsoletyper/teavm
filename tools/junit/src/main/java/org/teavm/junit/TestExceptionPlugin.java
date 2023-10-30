@@ -65,8 +65,8 @@ class TestExceptionPlugin implements TeaVMPlugin {
     private void renderExceptionMessage(SourceWriter writer) throws IOException {
         writer.appendClass("java.lang.Throwable").append(".prototype.getMessage").ws().append("=").ws()
                 .append("function()").ws().append("{").indent().softNewLine();
-        writer.append("return $rt_ustr(this.").appendMethod("getMessage", String.class).append("());")
-                .softNewLine();
+        writer.append("return ").appendFunction("$rt_ustr").append("(this.")
+                .appendMethod("getMessage", String.class).append("());").softNewLine();
         writer.outdent().append("};").newLine();
     }
 }

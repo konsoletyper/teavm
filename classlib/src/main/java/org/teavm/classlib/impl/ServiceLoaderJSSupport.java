@@ -16,10 +16,10 @@
 package org.teavm.classlib.impl;
 
 import java.io.IOException;
-import java.util.Collection;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
+import org.teavm.backend.javascript.templating.JavaScriptTemplateFactory;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
@@ -28,39 +28,31 @@ public class ServiceLoaderJSSupport implements Generator {
 
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        ServiceLoaderInformation information = context.getService(ServiceLoaderInformation.class);
-        writer.append("if (!").appendClass("java.util.ServiceLoader").append(".$$services$$) {").indent()
-                .softNewLine();
-        writer.appendClass("java.util.ServiceLoader").append(".$$services$$ = true;").softNewLine();
-        for (String serviceType : information.serviceTypes()) {
-            writer.appendClass(serviceType).append(".$$serviceList$$ = [");
-            Collection<? extends String> implementations = information.serviceImplementations(serviceType);
-            boolean first = true;
-            for (String implName : implementations) {
-                if (context.getClassSource().getClassNames().contains(implName)) {
-                    if (!first) {
-                        writer.append(", ");
+        var templateFactory = new JavaScriptTemplateFactory(context.getClassLoader(), context.getClassSource());
+        var template = templateFactory.createFromResource("org/teavm/classlib/java/util/ServiceLoader.js");
+        var information = context.getService(ServiceLoaderInformation.class);
+        var fragment = template.builder("loadServices")
+                .withContext(context)
+                .withFragment("fillServices", (w, precedence) -> {
+                    for (var serviceType : information.serviceTypes()) {
+                        writer.appendClass(serviceType).append(".$$serviceList$$ = [");
+                        var implementations = information.serviceImplementations(serviceType);
+                        boolean first = true;
+                        for (var implName : implementations) {
+                            if (context.getClassSource().getClassNames().contains(implName)) {
+                                if (!first) {
+                                    writer.append(",").ws();
+                                }
+                                first = false;
+                                writer.append("[").appendClass(implName).append(",").ws()
+                                        .appendMethodBody(new MethodReference(implName, INIT_METHOD))
+                                        .append("]");
+                            }
+                        }
+                        writer.append("];").softNewLine();
                     }
-                    first = false;
-                    writer.append("[").appendClass(implName).append(", ").appendMethodBody(
-                            new MethodReference(implName, INIT_METHOD))
-                            .append("]");
-                }
-            }
-            writer.append("];").softNewLine();
-        }
-        writer.outdent().append("}").softNewLine();
-        String param = context.getParameterName(1);
-        writer.append("var cls = " + param + ";").softNewLine();
-        writer.append("if (!cls.$$serviceList$$) {").indent().softNewLine();
-        writer.append("return $rt_createArray($rt_objcls(), 0);").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.append("var result = $rt_createArray($rt_objcls(), cls.$$serviceList$$.length);").softNewLine();
-        writer.append("for (var i = 0; i < result.data.length; ++i) {").indent().softNewLine();
-        writer.append("var serviceDesc = cls.$$serviceList$$[i];").softNewLine();
-        writer.append("result.data[i] = new serviceDesc[0]();").softNewLine();
-        writer.append("serviceDesc[1](result.data[i]);").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.append("return result;").softNewLine();
+                })
+                .build();
+        fragment.write(writer, 0);
     }
 }

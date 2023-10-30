@@ -55,7 +55,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
             case "newEmptyInstance":
-                context.getWriter().append("new (");
+                context.getWriter().append("new").ws().append("(");
                 context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
                 context.getWriter().append('.').appendField(platformClassField);
                 context.getWriter().append(")");

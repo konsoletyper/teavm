@@ -46,14 +46,14 @@ TeaVMThread.prototype.suspend = function(callback) {
 };
 TeaVMThread.prototype.start = function(callback) {
     if (this.status !== 3) {
-        throw new Error("Thread already started");
+        throw new teavm_globals.Error("Thread already started");
     }
     if ($rt_currentNativeThread !== null) {
-        throw new Error("Another thread is running");
+        throw new teavm_globals.Error("Another thread is running");
     }
     this.status = 0;
-    this.completeCallback = callback ? callback : function(result) {
-        if (result instanceof Error) {
+    this.completeCallback = callback ? callback : (result) => {
+        if (result instanceof teavm_globals.Error) {
             throw result;
         }
     };
@@ -61,7 +61,7 @@ TeaVMThread.prototype.start = function(callback) {
 };
 TeaVMThread.prototype.resume = function() {
     if ($rt_currentNativeThread !== null) {
-        throw new Error("Another thread is running");
+        throw new teavm_globals.Error("Another thread is running");
     }
     this.status = 2;
     this.run();
@@ -80,9 +80,7 @@ TeaVMThread.prototype.run = function() {
         var self = this;
         var callback = this.suspendCallback;
         this.suspendCallback = null;
-        callback(function() {
-            self.resume();
-        });
+        callback(() => self.resume());
     } else if (this.status === 0) {
         this.completeCallback(result);
     }
@@ -99,7 +97,7 @@ function $rt_resuming() {
 function $rt_suspend(callback) {
     var nativeThread = $rt_nativeThread();
     if (nativeThread === null) {
-        throw new Error("Suspension point reached from non-threading context (perhaps, from native JS method).");
+        throw new teavm_globals.Error("Suspension point reached from non-threading context (perhaps, from native JS method).");
     }
     return nativeThread.suspend(callback);
 }
@@ -111,5 +109,5 @@ function $rt_nativeThread() {
     return $rt_currentNativeThread;
 }
 function $rt_invalidPointer() {
-    throw new Error("Invalid recorded state");
+    throw new teavm_globals.Error("Invalid recorded state");
 }

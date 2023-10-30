@@ -16,56 +16,33 @@
 package org.teavm.backend.javascript.intrinsics.ref;
 
 import java.io.IOException;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
-import org.teavm.model.FieldReference;
+import org.teavm.backend.javascript.templating.JavaScriptTemplate;
+import org.teavm.backend.javascript.templating.JavaScriptTemplateFactory;
 import org.teavm.model.MethodReference;
 
 public class ReferenceQueueGenerator implements Generator {
-    private static final FieldReference INNER_FIELD = new FieldReference(ReferenceQueue.class.getName(), "inner");
-    private static final FieldReference REGISTRY_FIELD = new FieldReference(ReferenceQueue.class.getName(),
-            "registry");
-    private static final MethodReference REPORT_METHOD = new MethodReference(ReferenceQueue.class,
-            "reportNext", Reference.class, boolean.class);
+    private JavaScriptTemplate template;
 
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+        ensureTemplate(context);
         switch (methodRef.getName()) {
             case "<init>":
-                generateInitMethod(context, writer);
+                template.builder("init").withContext(context).build().write(writer, 0);
                 break;
             case "poll":
-                generatePollMethod(context, writer);
+                template.builder("poll").withContext(context).build().write(writer, 0);
                 break;
         }
     }
 
-    private void generateInitMethod(GeneratorContext context, SourceWriter writer) throws IOException {
-        writer.append(context.getParameterName(0)).append(".").appendField(INNER_FIELD).ws().append("=")
-                .ws().append("[];").softNewLine();
-
-        if (context.getDependency().getMethod(REPORT_METHOD) != null) {
-            generateFinalizationRegistry(context, writer);
+    private void ensureTemplate(GeneratorContext context) throws IOException {
+        if (template == null) {
+            template = new JavaScriptTemplateFactory(context.getClassLoader(), context.getClassSource())
+                    .createFromResource("org/teavm/classlib/java/lang/ref/ReferenceQueue.js");
         }
-    }
-
-    private void generateFinalizationRegistry(GeneratorContext context, SourceWriter writer) throws IOException {
-        writer.append(context.getParameterName(0)).append(".").appendField(REGISTRY_FIELD).ws().append("=")
-                .ws().append("new $rt_globals.FinalizationRegistry(ref").ws().append("=>").appendBlockStart();
-        writer.appendIf().append("!").appendMethodBody(REPORT_METHOD).append("(")
-                .append(context.getParameterName(0)).append(",").ws().append("ref))").ws();
-        writer.append(context.getParameterName(0)).append(".").appendField(INNER_FIELD)
-                .append(".push(ref)").softNewLine();
-        writer.appendBlockEnd().append(");").softNewLine();
-    }
-
-    private void generatePollMethod(GeneratorContext context, SourceWriter writer) throws IOException {
-        writer.append("var value").ws().append("=").ws().append(context.getParameterName(0))
-                .append(".").appendField(INNER_FIELD).append(".shift();").softNewLine();
-        writer.append("return typeof value").ws().append("!==").ws().append("'undefined'").ws()
-                .append("?").ws().append("value").ws().append(":").ws().append("null;").softNewLine();
     }
 }

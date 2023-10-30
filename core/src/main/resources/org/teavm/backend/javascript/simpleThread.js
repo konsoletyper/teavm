@@ -24,7 +24,7 @@ function $rt_startThread(runner, callback) {
     }
     if (typeof callback !== 'undefined') {
         callback(result);
-    } else if (result instanceof Error) {
+    } else if (result instanceof teavm_globals.Error) {
         throw result;
     }
 }

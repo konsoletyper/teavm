@@ -16,6 +16,7 @@
 package org.teavm.backend.javascript.templating;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import org.mozilla.javascript.ast.ElementGet;
 import org.mozilla.javascript.ast.FunctionCall;
@@ -34,6 +35,7 @@ import org.teavm.model.MethodReference;
 public class TemplatingAstWriter extends AstWriter {
     private Map<String, SourceFragment> names;
     private Scope scope;
+    private Map<String, SourceFragment> fragments = new HashMap<>();
 
     public TemplatingAstWriter(SourceWriter writer, Map<String, SourceFragment> names, Scope scope) {
         super(writer, new DefaultGlobalNameWriter(writer));
@@ -47,6 +49,10 @@ public class TemplatingAstWriter extends AstWriter {
         if (scope instanceof FunctionNode) {
             currentScopes.put("arguments", scope);
         }
+    }
+
+    public void setFragment(String name, SourceFragment fragment) {
+        fragments.put(name, fragment);
     }
 
     @Override
@@ -70,6 +76,8 @@ public class TemplatingAstWriter extends AstWriter {
                 return writeJavaConstructor(node);
             case "teavm_javaClassInit":
                 return writeJavaClassInit(node);
+            case "teavm_fragment":
+                return writeFragment(node);
             default:
                 return false;
         }
@@ -126,6 +134,19 @@ public class TemplatingAstWriter extends AstWriter {
             return false;
         }
         writer.appendClassInit(((StringLiteral) classArg).getValue());
+        return true;
+    }
+
+    private boolean writeFragment(FunctionCall node) throws IOException {
+        if (node.getArguments().size() != 1) {
+            return false;
+        }
+        var fragmentArg = node.getArguments().get(0);
+        if (!(fragmentArg instanceof StringLiteral)) {
+            return false;
+        }
+        var fragment = fragments.get(((StringLiteral) fragmentArg).getValue());
+        fragment.write(writer, AstWriter.PRECEDENCE_COMMA + 1);
         return true;
     }
 
@@ -209,7 +230,7 @@ public class TemplatingAstWriter extends AstWriter {
                     return;
                 }
             }
-            if (definingScope == null && scope != null) {
+            if (definingScope == null) {
                 writer.appendFunction(node.getIdentifier());
                 return;
             }
