@@ -158,14 +158,14 @@ public final class TObjects extends TObject {
     }
 
     public static int checkFromIndexSize(int fromIndex, int size, int length) {
-        if (fromIndex < 0 || size < 0 || fromIndex + size > length) {
+        if (fromIndex < 0 || size < 0 || size > length - fromIndex) {
             throw new IndexOutOfBoundsException();
         }
         return fromIndex;
     }
 
     public static long checkFromIndexSize(long fromIndex, long size, long length) {
-        if (fromIndex < 0 || size < 0 || fromIndex + size > length) {
+        if (fromIndex < 0 || size < 0 || size > length - fromIndex) {
             throw new IndexOutOfBoundsException();
         }
         return fromIndex;
