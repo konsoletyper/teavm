@@ -37,6 +37,7 @@ import org.teavm.ast.Statement;
 import org.teavm.ast.VariableNode;
 import org.teavm.backend.javascript.codegen.NamingOrderer;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
+import org.teavm.backend.javascript.codegen.OutputSourceWriter;
 import org.teavm.backend.javascript.codegen.ScopedName;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.decompile.PreparedClass;
@@ -64,7 +65,7 @@ import org.teavm.vm.TeaVMProgressFeedback;
 
 public class Renderer implements RenderingManager {
     private final NamingStrategy naming;
-    private final SourceWriter writer;
+    private final OutputSourceWriter writer;
     private final ListableClassReaderSource classSource;
     private final ClassLoader classLoader;
     private boolean minifying;
@@ -86,8 +87,8 @@ public class Renderer implements RenderingManager {
     private boolean longLibraryUsed;
     private boolean threadLibraryUsed;
 
-    public Renderer(SourceWriter writer, Set<MethodReference> asyncMethods, Set<MethodReference> asyncFamilyMethods,
-            Diagnostics diagnostics, RenderingContext context) {
+    public Renderer(OutputSourceWriter writer, Set<MethodReference> asyncMethods,
+            Set<MethodReference> asyncFamilyMethods, Diagnostics diagnostics, RenderingContext context) {
         this.naming = context.getNaming();
         this.writer = writer;
         this.classSource = context.getClassSource();

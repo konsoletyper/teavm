@@ -17,11 +17,14 @@ package org.teavm.backend.javascript.rendering;
 
 import com.carrotsearch.hppc.IntArrayList;
 import com.carrotsearch.hppc.IntIndexedContainer;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.AssignmentStatement;
@@ -68,11 +71,10 @@ import org.teavm.backend.javascript.codegen.NamingStrategy;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
-import org.teavm.debugging.information.DebugInformationEmitter;
-import org.teavm.debugging.information.DeferredCallSite;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.InliningInfo;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
@@ -88,10 +90,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     private boolean async;
     private boolean minifying;
     private Precedence precedence;
-    private DebugInformationEmitter debugEmitter;
     private NamingStrategy naming;
-    private DeferredCallSite lastCallSite;
-    private DeferredCallSite prevCallSite;
     private boolean end;
     private final Map<String, String> blockIdMap = new HashMap<>();
     private int currentPart;
@@ -100,6 +99,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     private boolean longLibraryUsed;
     private static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
     private VariableNameGenerator variableNameGenerator;
+    private final Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
+    private TextLocation lastEmittedLocation = TextLocation.EMPTY;
 
     public StatementRenderer(RenderingContext context, SourceWriter writer) {
         this.context = context;
@@ -107,7 +108,6 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         this.classSource = context.getClassSource();
         this.minifying = context.isMinifying();
         this.naming = context.getNaming();
-        this.debugEmitter = context.getDebugEmitter();
         variableNameGenerator = new VariableNameGenerator(minifying);
     }
 
@@ -135,21 +135,88 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         this.end = end;
     }
 
-    private void pushLocation(TextLocation location) {
-        context.pushLocation(location);
+    public void pushLocation(TextLocation location) {
+        var prevEntry = locationStack.peek();
+        if (location != null) {
+            if (prevEntry == null || !location.equals(prevEntry.location)) {
+                emitLocation(location);
+            }
+        } else {
+            if (prevEntry != null) {
+                emitLocation(TextLocation.EMPTY);
+            }
+        }
+        locationStack.push(new LocationStackEntry(location));
     }
 
-    private void popLocation() {
-        context.popLocation();
+    public void popLocation() {
+        var prevEntry = locationStack.pop();
+        var entry = locationStack.peek();
+        if (entry != null) {
+            if (!entry.location.equals(prevEntry.location)) {
+                emitLocation(entry.location);
+            }
+        } else {
+            emitLocation(TextLocation.EMPTY);
+        }
+    }
+
+    private void emitLocation(TextLocation location) {
+        if (lastEmittedLocation.equals(location)) {
+            return;
+        }
+
+        String fileName = lastEmittedLocation.getFileName();
+        int lineNumber = lastEmittedLocation.getLine();
+        if (lastEmittedLocation.getInlining() != location.getInlining()) {
+            InliningInfo[] newPath = location.getInliningPath();
+            InliningInfo[] prevPath = lastEmittedLocation.getInliningPath();
+
+            InliningInfo lastCommonInlining = null;
+            int pathIndex = 0;
+            while (pathIndex < prevPath.length && pathIndex < newPath.length
+                    && prevPath[pathIndex].equals(newPath[pathIndex])) {
+                lastCommonInlining = prevPath[pathIndex++];
+            }
+
+            InliningInfo prevInlining = lastEmittedLocation.getInlining();
+            while (prevInlining != lastCommonInlining) {
+                writer.exitLocation();
+                fileName = prevInlining.getFileName();
+                lineNumber = prevInlining.getLine();
+                prevInlining = prevInlining.getParent();
+            }
+
+            while (pathIndex < newPath.length) {
+                InliningInfo inlining = newPath[pathIndex++];
+                emitSimpleLocation(fileName, lineNumber, inlining.getFileName(), inlining.getLine());
+                fileName = null;
+                lineNumber = -1;
+
+                writer.enterLocation();
+                writer.emitClass(inlining.getMethod().getClassName());
+                writer.emitMethod(inlining.getMethod().getDescriptor());
+            }
+        }
+
+        emitSimpleLocation(fileName, lineNumber, location.getFileName(), location.getLine());
+        lastEmittedLocation = location;
+    }
+
+    private void emitSimpleLocation(String fileName, int lineNumber, String newFileName, int newLineNumber) {
+        if (Objects.equals(fileName, newFileName) && lineNumber == newLineNumber) {
+            return;
+        }
+
+        writer.emitLocation(newFileName, newLineNumber);
     }
 
     @Override
     public void visit(AssignmentStatement statement) throws RenderingException {
-        debugEmitter.emitStatementStart();
+        writer.emitStatementStart();
         if (statement.getLocation() != null) {
             pushLocation(statement.getLocation());
         }
-        prevCallSite = debugEmitter.emitCallSite();
         if (statement.getLeftValue() != null) {
             if (statement.isAsync()) {
                 writer.append(context.tempVarName());
@@ -161,7 +228,6 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
         precedence = Precedence.COMMA;
         statement.getRightValue().acceptVisitor(this);
-        debugEmitter.emitCallSite();
         writer.append(";").softNewLine();
         if (statement.isAsync()) {
             emitSuspendChecker();
@@ -185,18 +251,16 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     public void visit(ConditionalStatement statement) {
         boolean needClosingBracket;
         while (true) {
-            debugEmitter.emitStatementStart();
+            writer.emitStatementStart();
             if (statement.getCondition().getLocation() != null) {
                 pushLocation(statement.getCondition().getLocation());
             }
-            prevCallSite = debugEmitter.emitCallSite();
             writer.append("if").ws().append("(");
             precedence = Precedence.COMMA;
             statement.getCondition().acceptVisitor(this);
             if (statement.getCondition().getLocation() != null) {
                 popLocation();
             }
-            debugEmitter.emitCallSite();
             writer.append(")");
             if (isSimpleIfContent(statement.getConsequent())) {
                 needClosingBracket = false;
@@ -250,21 +314,19 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(SwitchStatement statement) {
-        debugEmitter.emitStatementStart();
+        writer.emitStatementStart();
         if (statement.getValue().getLocation() != null) {
             pushLocation(statement.getValue().getLocation());
         }
         if (statement.getId() != null) {
             writer.append(mapBlockId(statement.getId())).append(":").ws();
         }
-        prevCallSite = debugEmitter.emitCallSite();
         writer.append("switch").ws().append("(");
         precedence = Precedence.min();
         statement.getValue().acceptVisitor(this);
         if (statement.getValue().getLocation() != null) {
             popLocation();
         }
-        debugEmitter.emitCallSite();
         writer.append(")").ws().append("{").softNewLine().indent();
         for (SwitchClause clause : statement.getClauses()) {
             for (int condition : clause.getConditions()) {
@@ -294,17 +356,15 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(WhileStatement statement) {
-        debugEmitter.emitStatementStart();
+        writer.emitStatementStart();
         if (statement.getId() != null) {
             writer.append(mapBlockId(statement.getId())).append(":").ws();
         }
         writer.append("while");
         writer.ws().append("(");
         if (statement.getCondition() != null) {
-            prevCallSite = debugEmitter.emitCallSite();
             precedence = Precedence.min();
             statement.getCondition().acceptVisitor(this);
-            debugEmitter.emitCallSite();
         } else {
             writer.append("true");
         }
@@ -351,7 +411,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(BreakStatement statement) {
-        debugEmitter.emitStatementStart();
+        writer.emitStatementStart();
         if (statement.getLocation() != null) {
             pushLocation(statement.getLocation());
         }
@@ -367,7 +427,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(ContinueStatement statement) {
-        debugEmitter.emitStatementStart();
+        writer.emitStatementStart();
         if (statement.getLocation() != null) {
             pushLocation(statement.getLocation());
         }
@@ -383,17 +443,15 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(ReturnStatement statement) {
-        debugEmitter.emitStatementStart();
+        writer.emitStatementStart();
         if (statement.getLocation() != null) {
             pushLocation(statement.getLocation());
         }
         writer.append("return");
         if (statement.getResult() != null) {
             writer.append(' ');
-            prevCallSite = debugEmitter.emitCallSite();
             precedence = Precedence.min();
             statement.getResult().acceptVisitor(this);
-            debugEmitter.emitCallSite();
         }
         writer.append(";").softNewLine();
         if (statement.getLocation() != null) {
@@ -403,16 +461,14 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(ThrowStatement statement) {
-        debugEmitter.emitStatementStart();
+        writer.emitStatementStart();
         if (statement.getLocation() != null) {
             pushLocation(statement.getLocation());
         }
         writer.appendFunction("$rt_throw").append("(");
-        prevCallSite = debugEmitter.emitCallSite();
         precedence = Precedence.min();
         statement.getException().acceptVisitor(this);
         writer.append(");").softNewLine();
-        debugEmitter.emitCallSite();
         if (statement.getLocation() != null) {
             popLocation();
         }
@@ -428,7 +484,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         if (method == null) {
             return;
         }
-        debugEmitter.emitStatementStart();
+        writer.emitStatementStart();
         if (statement.getLocation() != null) {
             pushLocation(statement.getLocation());
         }
@@ -1040,16 +1096,9 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             }
             MethodReference method = expr.getMethod();
             String name = naming.getNameFor(method.getDescriptor());
-            DeferredCallSite callSite = prevCallSite;
-            boolean shouldEraseCallSite = lastCallSite == null;
-            if (lastCallSite == null) {
-                lastCallSite = callSite;
-            }
-            boolean virtual = false;
             switch (expr.getType()) {
                 case STATIC:
                     writer.appendMethodBody(method).append("(");
-                    prevCallSite = debugEmitter.emitCallSite();
                     for (int i = 0; i < expr.getArguments().size(); ++i) {
                         if (i > 0) {
                             writer.append(",").ws();
@@ -1060,7 +1109,6 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     break;
                 case SPECIAL:
                     writer.appendMethodBody(method).append("(");
-                    prevCallSite = debugEmitter.emitCallSite();
                     precedence = Precedence.min();
                     expr.getArguments().get(0).acceptVisitor(this);
                     for (int i = 1; i < expr.getArguments().size(); ++i) {
@@ -1071,7 +1119,6 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     break;
                 case DYNAMIC:
                     writer.append(".").append(name).append("(");
-                    prevCallSite = debugEmitter.emitCallSite();
                     for (int i = 1; i < expr.getArguments().size(); ++i) {
                         if (i > 1) {
                             writer.append(",").ws();
@@ -1079,11 +1126,9 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                         precedence = Precedence.min();
                         expr.getArguments().get(i).acceptVisitor(this);
                     }
-                    virtual = true;
                     break;
                 case CONSTRUCTOR:
                     writer.appendInit(expr.getMethod()).append("(");
-                    prevCallSite = debugEmitter.emitCallSite();
                     for (int i = 0; i < expr.getArguments().size(); ++i) {
                         if (i > 0) {
                             writer.append(",").ws();
@@ -1094,17 +1139,6 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     break;
             }
             writer.append(')');
-            if (lastCallSite != null) {
-                if (virtual) {
-                    lastCallSite.setVirtualMethod(expr.getMethod());
-                } else {
-                    lastCallSite.setStaticMethod(expr.getMethod());
-                }
-                lastCallSite = callSite;
-            }
-            if (shouldEraseCallSite) {
-                lastCallSite = null;
-            }
 
             if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
                 writer.append(')');
@@ -1610,6 +1644,14 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         @Override
         public String importModule(String name) {
             return context.importModule(name);
+        }
+    }
+
+    private static class LocationStackEntry {
+        final TextLocation location;
+
+        LocationStackEntry(TextLocation location) {
+            this.location = location;
         }
     }
 }

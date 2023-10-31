@@ -50,8 +50,8 @@ import org.teavm.backend.javascript.codegen.AliasProvider;
 import org.teavm.backend.javascript.codegen.DefaultAliasProvider;
 import org.teavm.backend.javascript.codegen.DefaultNamingStrategy;
 import org.teavm.backend.javascript.codegen.MinifyingAliasProvider;
+import org.teavm.backend.javascript.codegen.OutputSourceWriterBuilder;
 import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.backend.javascript.codegen.SourceWriterBuilder;
 import org.teavm.backend.javascript.decompile.PreparedClass;
 import org.teavm.backend.javascript.decompile.PreparedMethod;
 import org.teavm.backend.javascript.intrinsics.ref.ReferenceQueueGenerator;
@@ -414,14 +414,16 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                 ? new MinifyingAliasProvider(topLevelNameLimit)
                 : new DefaultAliasProvider(topLevelNameLimit);
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, controller.getUnprocessedClassSource());
-        SourceWriterBuilder builder = new SourceWriterBuilder(naming);
+        OutputSourceWriterBuilder builder = new OutputSourceWriterBuilder(naming);
         builder.setMinified(obfuscated);
-        SourceWriter sourceWriter = builder.build(writer);
+        var sourceWriter = builder.build(writer);
 
         DebugInformationEmitter debugEmitterToUse = debugEmitter;
         if (debugEmitterToUse == null) {
             debugEmitterToUse = new DummyDebugInformationEmitter();
         }
+        sourceWriter.setDebugInformationEmitter(debugEmitterToUse);
+
         var virtualMethodContributorContext = new VirtualMethodContributorContextImpl(classes);
         RenderingContext renderingContext = new RenderingContext(debugEmitterToUse,
                 controller.getUnprocessedClassSource(), classes,
@@ -454,7 +456,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             }
             renderer.setDebugEmitter(debugEmitter);
         }
-        renderer.getDebugEmitter().setLocationProvider(sourceWriter);
         for (var entry : methodInjectors.entrySet()) {
             renderingContext.addInjector(entry.getKey(), entry.getValue());
         }

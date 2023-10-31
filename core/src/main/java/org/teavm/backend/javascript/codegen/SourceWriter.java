@@ -15,33 +15,12 @@
  */
 package org.teavm.backend.javascript.codegen;
 
-import java.io.IOException;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-public class SourceWriter implements Appendable, LocationProvider {
-    private final Appendable innerWriter;
-    private int indentSize;
-    private final NamingStrategy naming;
-    private boolean lineStart;
-    private boolean minified;
-    private final int lineWidth;
-    private int column;
-    private int line;
-    private int offset;
-
-    SourceWriter(NamingStrategy naming, Appendable innerWriter, int lineWidth) {
-        this.naming = naming;
-        this.innerWriter = innerWriter;
-        this.lineWidth = lineWidth;
-    }
-
-    void setMinified(boolean minified) {
-        this.minified = minified;
-    }
-
+public abstract class SourceWriter implements Appendable {
     public SourceWriter append(String value) {
         append((CharSequence) value);
         return this;
@@ -72,21 +51,7 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     @Override
-    public SourceWriter append(char value) {
-        appendIndent();
-        try {
-            innerWriter.append(value);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        if (value == '\n') {
-            newLine();
-        } else {
-            column++;
-            offset++;
-        }
-        return this;
-    }
+    public abstract SourceWriter append(char value);
 
     @Override
     public SourceWriter append(CharSequence csq) {
@@ -95,60 +60,25 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     @Override
-    public SourceWriter append(CharSequence csq, int start, int end) {
-        int last = start;
-        for (int i = start; i < end; ++i) {
-            if (csq.charAt(i) == '\n') {
-                appendSingleLine(csq, last, i);
-                newLine();
-                last = i + 1;
-            }
-        }
-        appendSingleLine(csq, last, end);
-        return this;
-    }
+    public abstract SourceWriter append(CharSequence csq, int start, int end);
 
-    private void appendSingleLine(CharSequence csq, int start, int end) {
-        if (start == end) {
-            return;
-        }
-        appendIndent();
-        column += end - start;
-        offset += end - start;
-        try {
-            innerWriter.append(csq, start, end);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public SourceWriter appendClass(String cls) {
-        return appendName(naming.getNameFor(cls));
-    }
+    public abstract SourceWriter appendClass(String cls);
 
     public SourceWriter appendClass(Class<?> cls) {
         return appendClass(cls.getName());
     }
 
-    public SourceWriter appendField(FieldReference field) {
-        return append(naming.getNameFor(field));
-    }
+    public abstract SourceWriter appendField(FieldReference field);
 
-    public SourceWriter appendStaticField(FieldReference field) {
-        return appendName(naming.getFullNameFor(field));
-    }
+    public abstract SourceWriter appendStaticField(FieldReference field);
 
-    public SourceWriter appendMethod(MethodDescriptor method) {
-        return append(naming.getNameFor(method));
-    }
+    public abstract SourceWriter appendMethod(MethodDescriptor method);
 
     public SourceWriter appendMethod(String name, Class<?>... params) {
-        return append(naming.getNameFor(new MethodDescriptor(name, params)));
+        return appendMethod(new MethodDescriptor(name, params));
     }
 
-    public SourceWriter appendMethodBody(MethodReference method) {
-        return appendName(naming.getFullNameFor(method));
-    }
+    public abstract SourceWriter appendMethodBody(MethodReference method);
 
     public SourceWriter appendMethodBody(String className, String name, ValueType... params) {
         return appendMethodBody(new MethodReference(className, new MethodDescriptor(name, params)));
@@ -158,122 +88,33 @@ public class SourceWriter implements Appendable, LocationProvider {
         return appendMethodBody(new MethodReference(cls, name, params));
     }
 
-    public SourceWriter appendFunction(String name) {
-        return append(naming.getNameForFunction(name));
-    }
+    public abstract SourceWriter appendFunction(String name);
 
-    public SourceWriter appendInit(MethodReference method) {
-        return appendName(naming.getNameForInit(method));
-    }
+    public abstract SourceWriter appendInit(MethodReference method);
 
-    public SourceWriter appendClassInit(String className) {
-        return appendName(naming.getNameForClassInit(className));
-    }
+    public abstract SourceWriter appendClassInit(String className);
 
-    private SourceWriter appendName(ScopedName name) {
-        if (name.scoped) {
-            append(naming.getScopeName()).append(".");
-        }
-        append(name.value);
-        return this;
-    }
+    public abstract SourceWriter newLine();
 
-    private void appendIndent() {
-        if (minified) {
-            return;
-        }
-        if (lineStart) {
-            try {
-                for (int i = 0; i < indentSize; ++i) {
-                    innerWriter.append("    ");
-                    column += 4;
-                    offset += 4;
-                }
-                lineStart = false;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
+    public abstract SourceWriter ws();
 
-    public SourceWriter newLine() {
-        try {
-            innerWriter.append('\n');
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        column = 0;
-        ++line;
-        ++offset;
-        lineStart = true;
-        return this;
-    }
+    public abstract SourceWriter tokenBoundary();
 
-    public SourceWriter ws() {
-        if (column >= lineWidth) {
-            newLine();
-        } else {
-            if (!minified) {
-                try {
-                    innerWriter.append(' ');
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                column++;
-                offset++;
-            }
-        }
-        return this;
-    }
+    public abstract SourceWriter softNewLine();
 
-    public SourceWriter tokenBoundary() {
-        if (column >= lineWidth) {
-            newLine();
-        }
-        return this;
-    }
+    public abstract SourceWriter indent();
 
-    public SourceWriter softNewLine() {
-        if (!minified) {
-            try {
-                innerWriter.append('\n');
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            column = 0;
-            ++offset;
-            ++line;
-            lineStart = true;
-        }
-        return this;
-    }
+    public abstract SourceWriter outdent();
 
-    public SourceWriter indent() {
-        ++indentSize;
-        return this;
-    }
+    public abstract SourceWriter emitLocation(String fileName, int line);
 
-    public SourceWriter outdent() {
-        --indentSize;
-        return this;
-    }
+    public abstract SourceWriter enterLocation();
 
-    public NamingStrategy getNaming() {
-        return naming;
-    }
+    public abstract SourceWriter exitLocation();
 
-    @Override
-    public int getColumn() {
-        return column;
-    }
+    public abstract SourceWriter emitStatementStart();
 
-    @Override
-    public int getLine() {
-        return line;
-    }
+    public abstract void emitMethod(MethodDescriptor method);
 
-    @Override
-    public int getOffset() {
-        return offset;
-    }
+    public abstract void emitClass(String className);
 }
