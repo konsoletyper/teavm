@@ -70,7 +70,7 @@ public class TByte extends TNumber implements TComparable<TByte> {
     }
 
     public static String toString(byte value) {
-        return new StringBuilder().append(value).toString();
+        return Integer.toString(value);
     }
 
     @Override

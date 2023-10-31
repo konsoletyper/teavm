@@ -75,7 +75,7 @@ public class TShort extends TNumber implements TComparable<TShort> {
     }
 
     public static String toString(short value) {
-        return new StringBuilder().append(value).toString();
+        return Integer.toString(value);
     }
 
     @Override
