@@ -183,6 +183,9 @@ public class TCollections extends TObject {
     }
 
     public static <T> TList<T> nCopies(final int n, final T o) {
+        if (n < 0) {
+            throw new IllegalArgumentException();
+        }
         return new TAbstractList<>() {
             @Override public T get(int index) {
                 if (index < 0 || index >= n) {
@@ -455,6 +458,7 @@ public class TCollections extends TObject {
     }
 
     public static <T> TList<T> unmodifiableList(final TList<? extends T> list) {
+        TObjects.requireNonNull(list);
         return new TAbstractList<>() {
             @Override public T get(int index) {
                 return list.get(index);
@@ -462,16 +466,23 @@ public class TCollections extends TObject {
             @Override public int size() {
                 return list.size();
             }
+            @Override public boolean remove(Object o) {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 
     public static <T> TCollection<T> unmodifiableCollection(final TCollection<? extends T> c) {
+        TObjects.requireNonNull(c);
         return new TAbstractCollection<>() {
             @Override public TIterator<T> iterator() {
                 return unmodifiableIterator(c.iterator());
             }
             @Override public int size() {
                 return c.size();
+            }
+            @Override public boolean remove(Object o) {
+                throw new UnsupportedOperationException();
             }
         };
     }
@@ -491,6 +502,7 @@ public class TCollections extends TObject {
     }
 
     public static <T> TSet<T> unmodifiableSet(final TSet<? extends T> s) {
+        TObjects.requireNonNull(s);
         return new TAbstractSet<>() {
             @Override public TIterator<T> iterator() {
                 return unmodifiableIterator(s.iterator());
@@ -498,13 +510,20 @@ public class TCollections extends TObject {
             @Override public int size() {
                 return s.size();
             }
+            @Override public boolean remove(Object o) {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 
     public static <K, V> TMap<K, V> unmodifiableMap(final TMap<? extends K, ? extends V> m) {
+        TObjects.requireNonNull(m);
         return new TAbstractMap<>() {
             @Override public TSet<Entry<K, V>> entrySet() {
                 return unmodifiableMapEntrySet(m.entrySet());
+            }
+            @Override public V remove(Object o) {
+                throw new UnsupportedOperationException();
             }
         };
     }
@@ -517,6 +536,9 @@ public class TCollections extends TObject {
             }
             @Override public TIterator<Entry<K, V>> iterator() {
                 return unmodifiableMapEntryIterator(c.iterator());
+            }
+            @Override public boolean remove(Object o) {
+                throw new UnsupportedOperationException();
             }
         };
     }
