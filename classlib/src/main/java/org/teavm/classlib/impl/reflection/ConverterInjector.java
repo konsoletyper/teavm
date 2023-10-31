@@ -15,14 +15,13 @@
  */
 package org.teavm.classlib.impl.reflection;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
 public class ConverterInjector implements Injector {
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+    public void generate(InjectorContext context, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "toJava":
             case "fromJava":

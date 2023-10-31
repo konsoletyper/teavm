@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.javascript.templating;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.mozilla.javascript.ast.ElementGet;
@@ -56,7 +55,7 @@ public class TemplatingAstWriter extends AstWriter {
     }
 
     @Override
-    protected boolean intrinsic(FunctionCall node, int precedence) throws IOException {
+    protected boolean intrinsic(FunctionCall node, int precedence) {
         if (node.getTarget() instanceof Name) {
             var name = (Name) node.getTarget();
             if (scopeOfId(name.getIdentifier()) == null) {
@@ -66,7 +65,7 @@ public class TemplatingAstWriter extends AstWriter {
         return super.intrinsic(node, precedence);
     }
 
-    private boolean tryIntrinsicName(FunctionCall node, String name) throws IOException {
+    private boolean tryIntrinsicName(FunctionCall node, String name) {
         switch (name) {
             case "teavm_javaClass":
                 return writeJavaClass(node);
@@ -83,7 +82,7 @@ public class TemplatingAstWriter extends AstWriter {
         }
     }
 
-    private boolean writeJavaClass(FunctionCall node) throws IOException {
+    private boolean writeJavaClass(FunctionCall node) {
         if (node.getArguments().size() != 1) {
             return false;
         }
@@ -95,7 +94,7 @@ public class TemplatingAstWriter extends AstWriter {
         return true;
     }
 
-    private boolean writeJavaMethod(FunctionCall node) throws IOException {
+    private boolean writeJavaMethod(FunctionCall node) {
         if (node.getArguments().size() != 2) {
             return false;
         }
@@ -110,7 +109,7 @@ public class TemplatingAstWriter extends AstWriter {
         return true;
     }
 
-    private boolean writeJavaConstructor(FunctionCall node) throws IOException {
+    private boolean writeJavaConstructor(FunctionCall node) {
         if (node.getArguments().size() != 2) {
             return false;
         }
@@ -125,7 +124,7 @@ public class TemplatingAstWriter extends AstWriter {
         return true;
     }
 
-    private boolean writeJavaClassInit(FunctionCall node) throws IOException {
+    private boolean writeJavaClassInit(FunctionCall node) {
         if (node.getArguments().size() != 1) {
             return false;
         }
@@ -137,7 +136,7 @@ public class TemplatingAstWriter extends AstWriter {
         return true;
     }
 
-    private boolean writeFragment(FunctionCall node) throws IOException {
+    private boolean writeFragment(FunctionCall node) {
         if (node.getArguments().size() != 1) {
             return false;
         }
@@ -151,7 +150,7 @@ public class TemplatingAstWriter extends AstWriter {
     }
 
     @Override
-    protected void print(ElementGet node) throws IOException {
+    protected void print(ElementGet node) {
         if (node.getElement() instanceof FunctionCall) {
             var call = (FunctionCall) node.getElement();
             if (call.getTarget() instanceof Name) {
@@ -176,7 +175,7 @@ public class TemplatingAstWriter extends AstWriter {
     }
 
     @Override
-    public void print(PropertyGet node) throws IOException {
+    public void print(PropertyGet node) {
         if (node.getTarget() instanceof Name) {
             var name = (Name) node.getTarget();
             var scope = scopeOfId(name.getIdentifier());
@@ -192,7 +191,7 @@ public class TemplatingAstWriter extends AstWriter {
         super.print(node);
     }
 
-    private boolean writeJavaVirtualMethod(ElementGet get, FunctionCall call) throws IOException {
+    private boolean writeJavaVirtualMethod(ElementGet get, FunctionCall call) {
         var arg = call.getArguments().get(0);
         if (!(arg instanceof StringLiteral)) {
             return false;
@@ -203,7 +202,7 @@ public class TemplatingAstWriter extends AstWriter {
         return true;
     }
 
-    private boolean writeJavaField(ElementGet get, FunctionCall call) throws IOException {
+    private boolean writeJavaField(ElementGet get, FunctionCall call) {
         if (call.getArguments().size() != 2) {
             return false;
         }
@@ -220,7 +219,7 @@ public class TemplatingAstWriter extends AstWriter {
     }
 
     @Override
-    public void print(Name node, int precedence) throws IOException {
+    public void print(Name node, int precedence) {
         var definingScope = scopeOfId(node.getIdentifier());
         if (rootScope) {
             if (names != null && definingScope == scope) {

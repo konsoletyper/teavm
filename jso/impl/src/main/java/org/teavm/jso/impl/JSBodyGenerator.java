@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.impl;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
@@ -25,14 +24,14 @@ import org.teavm.model.MethodReference;
 
 public class JSBodyGenerator implements Injector, Generator {
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+    public void generate(InjectorContext context, MethodReference methodRef) {
         JSBodyRepository emitterRepository = context.getService(JSBodyRepository.class);
         JSBodyEmitter emitter = emitterRepository.emitters.get(methodRef);
         emitter.emit(context);
     }
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         JSBodyRepository emitterRepository = context.getService(JSBodyRepository.class);
         JSBodyEmitter emitter = emitterRepository.emitters.get(methodRef);
         emitter.emit(context, writer, methodRef);

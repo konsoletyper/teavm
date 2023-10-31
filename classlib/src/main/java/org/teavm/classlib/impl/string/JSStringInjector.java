@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.impl.string;
 
-import java.io.IOException;
 import java.util.function.Function;
 import org.teavm.backend.javascript.ProviderContext;
 import org.teavm.backend.javascript.spi.Injector;
@@ -51,7 +50,7 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
     }
 
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+    public void generate(InjectorContext context, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "initWithEmptyChars":
                 initWithEmptyChars(context);
@@ -104,13 +103,13 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
         }
     }
 
-    private void initWithEmptyChars(InjectorContext context) throws IOException {
+    private void initWithEmptyChars(InjectorContext context) {
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".").appendField(NATIVE_FIELD).ws().append("=").ws().append("\"\"");
     }
 
-    private void borrowChars(InjectorContext context) throws IOException {
+    private void borrowChars(InjectorContext context) {
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".").appendField(NATIVE_FIELD).ws().append("=").ws();
@@ -118,7 +117,7 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
         writer.append(".").appendField(NATIVE_FIELD);
     }
 
-    private void initWithCharArray(InjectorContext context) throws IOException {
+    private void initWithCharArray(InjectorContext context) {
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".").appendField(NATIVE_FIELD).ws().append("=").ws();
@@ -131,7 +130,7 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
         writer.append(")");
     }
 
-    private void takeCharArray(InjectorContext context) throws IOException {
+    private void takeCharArray(InjectorContext context) {
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".").appendField(NATIVE_FIELD).ws().append("=").ws();
@@ -140,13 +139,13 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
         writer.append(".data)");
     }
 
-    private void charactersLength(InjectorContext context) throws IOException {
+    private void charactersLength(InjectorContext context) {
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".").appendField(NATIVE_FIELD).append(".length");
     }
 
-    private void charactersGet(InjectorContext context) throws IOException {
+    private void charactersGet(InjectorContext context) {
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".").appendField(NATIVE_FIELD).append(".charCodeAt(");
@@ -154,7 +153,7 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
         writer.append(")");
     }
 
-    private void copyCharsToArray(InjectorContext context) throws IOException {
+    private void copyCharsToArray(InjectorContext context) {
         var writer = context.getWriter();
         writer.appendFunction("$rt_stringToCharArray").append("(");
         context.writeExpr(context.getArgument(0));
@@ -171,7 +170,7 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
         writer.append(")");
     }
 
-    private void substringJS(InjectorContext context) throws IOException {
+    private void substringJS(InjectorContext context) {
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".substring(");
@@ -181,7 +180,7 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
         writer.append(")");
     }
 
-    private void fastCharArray(InjectorContext context) throws IOException {
+    private void fastCharArray(InjectorContext context) {
         var writer = context.getWriter();
         writer.appendFunction("$rt_fastStringToCharArray").append("(");
         context.writeExpr(context.getArgument(0));
@@ -189,44 +188,44 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
         writer.append(")");
     }
 
-    private void nativeString(InjectorContext context) throws IOException {
+    private void nativeString(InjectorContext context) {
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".").appendField(NATIVE_FIELD);
     }
 
-    private void toLowerCaseJS(InjectorContext context) throws IOException {
+    private void toLowerCaseJS(InjectorContext context) {
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".toLowerCase()");
     }
 
-    private void toUpperCaseJS(InjectorContext context) throws IOException {
+    private void toUpperCaseJS(InjectorContext context) {
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".toUpperCase()");
     }
 
-    private void intern(InjectorContext context) throws IOException {
+    private void intern(InjectorContext context) {
         var writer = context.getWriter();
         writer.appendFunction("$rt_intern").append("(");
         context.writeExpr(context.getArgument(0));
         writer.append(")");
     }
 
-    private void stripJS(InjectorContext context) throws IOException {
+    private void stripJS(InjectorContext context) {
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".trim()");
     }
 
-    private void stripLeadingJS(InjectorContext context) throws IOException {
+    private void stripLeadingJS(InjectorContext context) {
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".trimStart()");
     }
 
-    private void stripTrailingJS(InjectorContext context) throws IOException {
+    private void stripTrailingJS(InjectorContext context) {
         var writer = context.getWriter();
         context.writeExpr(context.getArgument(0));
         writer.append(".trimEnd()");

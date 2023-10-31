@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.impl;
 
-import java.io.IOException;
 import java.util.HashMap;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.RenderingManager;
@@ -44,7 +43,7 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
     }
 
     @Override
-    public void complete() throws IOException {
+    public void complete() {
         if (!hasClassesToExpose()) {
             return;
         }
@@ -178,7 +177,7 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
         }
     }
 
-    private void writeFunctor(ClassReader cls, FieldReference functorField) throws IOException {
+    private void writeFunctor(ClassReader cls, FieldReference functorField) {
         AnnotationReader implAnnot = cls.getAnnotations().get(FunctorImpl.class.getName());
         MethodDescriptor functorMethod = MethodDescriptor.parse(implAnnot.getValue("value").getString());
         String alias = cls.getMethod(functorMethod).getAnnotations()
@@ -206,7 +205,7 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
         writer.outdent().append("};").softNewLine();
     }
 
-    private void appendArguments(int count) throws IOException {
+    private void appendArguments(int count) {
         for (int i = 0; i < count; ++i) {
             if (i > 0) {
                 writer.append(',').ws();

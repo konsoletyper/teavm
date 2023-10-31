@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.javascript.intrinsics.ref;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
@@ -27,7 +26,7 @@ public class ReferenceQueueGenerator implements Generator {
     private JavaScriptTemplate template;
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         ensureTemplate(context);
         switch (methodRef.getName()) {
             case "<init>":
@@ -39,7 +38,7 @@ public class ReferenceQueueGenerator implements Generator {
         }
     }
 
-    private void ensureTemplate(GeneratorContext context) throws IOException {
+    private void ensureTemplate(GeneratorContext context) {
         if (template == null) {
             template = new JavaScriptTemplateFactory(context.getClassLoader(), context.getClassSource())
                     .createFromResource("org/teavm/classlib/java/lang/ref/ReferenceQueue.js");

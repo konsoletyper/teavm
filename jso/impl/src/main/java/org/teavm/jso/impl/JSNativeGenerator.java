@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.impl;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
@@ -26,13 +25,12 @@ import org.teavm.model.MethodReference;
 public class JSNativeGenerator implements Generator {
     private JavaScriptTemplate template;
 
-    public JSNativeGenerator(JavaScriptTemplateFactory templateFactory) throws IOException {
+    public JSNativeGenerator(JavaScriptTemplateFactory templateFactory) {
         template = templateFactory.createFromResource("org/teavm/jso/impl/JS.js");
     }
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef)
-            throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "function":
                 template.builder("jsFunction").withContext(context).build().write(writer, 0);

@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.javascript.rendering;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
@@ -222,7 +221,7 @@ public abstract class RenderingContext {
         return readonlyStringPool;
     }
 
-    public void constantToString(SourceWriter writer, Object cst) throws IOException {
+    public void constantToString(SourceWriter writer, Object cst) {
         if (cst == null) {
             writer.append("null");
         }
@@ -297,7 +296,7 @@ public abstract class RenderingContext {
         }
     }
 
-    public void typeToClsString(SourceWriter writer, ValueType type) throws IOException {
+    public void typeToClsString(SourceWriter writer, ValueType type) {
         int arrayCount = 0;
         while (type instanceof ValueType.Array) {
             arrayCount++;

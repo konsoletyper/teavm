@@ -15,7 +15,6 @@
  */
 package org.teavm.platform.plugin;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
@@ -41,7 +40,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Virtua
     private JavaScriptTemplate template;
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         if (template == null) {
             var templateFactory = new JavaScriptTemplateFactory(context.getClassLoader(), context.getClassSource());
             template = templateFactory.createFromResource("org/teavm/platform/plugin/Async.js");

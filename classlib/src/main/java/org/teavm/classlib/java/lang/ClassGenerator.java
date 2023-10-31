@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.io.IOException;
 import java.util.Set;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.Precedence;
@@ -43,7 +42,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
             new FieldReference(Class.class.getName(), "platformClass");
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "createMetadata":
                 generateCreateMetadata(context, writer);
@@ -52,7 +51,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
     }
 
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+    public void generate(InjectorContext context, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "newEmptyInstance":
                 context.getWriter().append("new").ws().append("(");
@@ -133,7 +132,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         });
     }
 
-    private void generateCreateMetadata(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateCreateMetadata(GeneratorContext context, SourceWriter writer) {
         ReflectionDependencyListener reflection = context.getService(ReflectionDependencyListener.class);
         for (String className : reflection.getClassesWithReflectableFields()) {
             generateCreateFieldsForClass(context, writer, className);
@@ -143,8 +142,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         }
     }
 
-    private void generateCreateFieldsForClass(GeneratorContext context, SourceWriter writer, String className)
-            throws IOException {
+    private void generateCreateFieldsForClass(GeneratorContext context, SourceWriter writer, String className) {
         ReflectionDependencyListener reflection = context.getService(ReflectionDependencyListener.class);
         Set<String> accessibleFields = reflection.getAccessibleFields(className);
 
@@ -178,8 +176,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         writer.outdent().append("];").softNewLine();
     }
 
-    private void generateCreateMethodsForClass(GeneratorContext context, SourceWriter writer, String className)
-            throws IOException {
+    private void generateCreateMethodsForClass(GeneratorContext context, SourceWriter writer, String className) {
         ReflectionDependencyListener reflection = context.getService(ReflectionDependencyListener.class);
         Set<MethodDescriptor> accessibleMethods = reflection.getAccessibleMethods(className);
 
@@ -219,7 +216,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
     }
 
     private <T extends MemberReader> void generateCreateMembers(SourceWriter writer, Iterable<T> members,
-            MemberRenderer<T> renderer) throws IOException {
+            MemberRenderer<T> renderer) {
         boolean first = true;
         for (T member : members) {
             if (!first) {
@@ -240,7 +237,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         }
     }
 
-    private void appendProperty(SourceWriter writer, String name, boolean first, Fragment value) throws IOException {
+    private void appendProperty(SourceWriter writer, String name, boolean first, Fragment value) {
         if (!first) {
             writer.append(",").softNewLine();
         }
@@ -248,7 +245,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         value.render();
     }
 
-    private void renderGetter(GeneratorContext context, SourceWriter writer, FieldReader field) throws IOException {
+    private void renderGetter(GeneratorContext context, SourceWriter writer, FieldReader field) {
         writer.append("function(obj)").ws().append("{").indent().softNewLine();
         initClass(context, writer, field);
         writer.append("return ");
@@ -257,7 +254,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         writer.outdent().append("}");
     }
 
-    private void renderSetter(GeneratorContext context, SourceWriter writer, FieldReader field) throws IOException {
+    private void renderSetter(GeneratorContext context, SourceWriter writer, FieldReader field) {
         writer.append("function(obj,").ws().append("val)").ws().append("{").indent().softNewLine();
         initClass(context, writer, field);
         fieldAccess(writer, field);
@@ -267,7 +264,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         writer.outdent().append("}");
     }
 
-    private void renderCallable(GeneratorContext context, SourceWriter writer, MethodReader method) throws IOException {
+    private void renderCallable(GeneratorContext context, SourceWriter writer, MethodReader method) {
         writer.append("function(obj,").ws().append("args)").ws().append("{").indent().softNewLine();
 
         initClass(context, writer, method);
@@ -299,13 +296,13 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         writer.outdent().append("}");
     }
 
-    private void initClass(GeneratorContext context, SourceWriter writer, MemberReader member) throws IOException {
+    private void initClass(GeneratorContext context, SourceWriter writer, MemberReader member) {
         if (member.hasModifier(ElementModifier.STATIC) && context.isDynamicInitializer(member.getOwnerName())) {
             writer.appendClassInit(member.getOwnerName()).append("();").softNewLine();
         }
     }
 
-    private void fieldAccess(SourceWriter writer, FieldReader field) throws IOException {
+    private void fieldAccess(SourceWriter writer, FieldReader field) {
         if (field.hasModifier(ElementModifier.STATIC)) {
             writer.appendStaticField(field.getReference());
         } else {
@@ -313,7 +310,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         }
     }
 
-    private void boxIfNecessary(SourceWriter writer, ValueType type, Fragment fragment) throws IOException {
+    private void boxIfNecessary(SourceWriter writer, ValueType type, Fragment fragment) {
         boolean boxed = false;
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
@@ -353,7 +350,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         }
     }
 
-    private void unboxIfNecessary(SourceWriter writer, ValueType type, Fragment fragment) throws IOException {
+    private void unboxIfNecessary(SourceWriter writer, ValueType type, Fragment fragment) {
         boolean boxed = false;
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
@@ -392,10 +389,10 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
     }
 
     private interface Fragment {
-        void render() throws IOException;
+        void render();
     }
 
     private interface MemberRenderer<T extends MemberReader> {
-        void render(T member) throws IOException;
+        void render(T member);
     }
 }

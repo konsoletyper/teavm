@@ -458,58 +458,55 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         for (var entry : methodInjectors.entrySet()) {
             renderingContext.addInjector(entry.getKey(), entry.getValue());
         }
-        try {
-            printWrapperStart(sourceWriter);
 
-            for (RendererListener listener : rendererListeners) {
-                listener.begin(renderer, target);
-            }
-            int start = sourceWriter.getOffset();
+        printWrapperStart(sourceWriter);
 
-            renderer.prepare(clsNodes);
-            runtimeRenderer.renderRuntime();
-            sourceWriter.append("var ").append(renderer.getNaming().getScopeName()).ws().append("=").ws()
-                    .append("Object.create(null);").newLine();
-            if (!renderer.render(clsNodes)) {
-                return;
-            }
-            runtimeRenderer.renderHandWrittenRuntime("array.js");
-            renderer.renderStringPool();
-            renderer.renderStringConstants();
-            renderer.renderCompatibilityStubs();
-
-            if (renderer.isLongLibraryUsed()) {
-                runtimeRenderer.renderHandWrittenRuntime("long.js");
-            }
-            if (renderer.isThreadLibraryUsed()) {
-                runtimeRenderer.renderHandWrittenRuntime("thread.js");
-            } else {
-                runtimeRenderer.renderHandWrittenRuntime("simpleThread.js");
-            }
-
-            for (var entry : controller.getEntryPoints().entrySet()) {
-                sourceWriter.append("$rt_exports.").append(entry.getKey()).ws().append("=").ws();
-                var ref = entry.getValue().getMethod();
-                sourceWriter.appendFunction("$rt_mainStarter").append("(").appendMethodBody(ref);
-                sourceWriter.append(");").newLine();
-                sourceWriter.append("$rt_exports.").append(entry.getKey()).append(".").append("javaException")
-                        .ws().append("=").ws().appendFunction("$rt_javaException").append(";").newLine();
-            }
-
-            for (var listener : rendererListeners) {
-                listener.complete();
-            }
-
-            printWrapperEnd(sourceWriter);
-
-            int totalSize = sourceWriter.getOffset() - start;
-            printStats(renderer, totalSize);
-        } catch (IOException e) {
-            throw new RenderingException("IO Error occurred", e);
+        for (RendererListener listener : rendererListeners) {
+            listener.begin(renderer, target);
         }
+        int start = sourceWriter.getOffset();
+
+        renderer.prepare(clsNodes);
+        runtimeRenderer.renderRuntime();
+        sourceWriter.append("var ").append(renderer.getNaming().getScopeName()).ws().append("=").ws()
+                .append("Object.create(null);").newLine();
+        if (!renderer.render(clsNodes)) {
+            return;
+        }
+        runtimeRenderer.renderHandWrittenRuntime("array.js");
+        renderer.renderStringPool();
+        renderer.renderStringConstants();
+        renderer.renderCompatibilityStubs();
+
+        if (renderer.isLongLibraryUsed()) {
+            runtimeRenderer.renderHandWrittenRuntime("long.js");
+        }
+        if (renderer.isThreadLibraryUsed()) {
+            runtimeRenderer.renderHandWrittenRuntime("thread.js");
+        } else {
+            runtimeRenderer.renderHandWrittenRuntime("simpleThread.js");
+        }
+
+        for (var entry : controller.getEntryPoints().entrySet()) {
+            sourceWriter.append("$rt_exports.").append(entry.getKey()).ws().append("=").ws();
+            var ref = entry.getValue().getMethod();
+            sourceWriter.appendFunction("$rt_mainStarter").append("(").appendMethodBody(ref);
+            sourceWriter.append(");").newLine();
+            sourceWriter.append("$rt_exports.").append(entry.getKey()).append(".").append("javaException")
+                    .ws().append("=").ws().appendFunction("$rt_javaException").append(";").newLine();
+        }
+
+        for (var listener : rendererListeners) {
+            listener.complete();
+        }
+
+        printWrapperEnd(sourceWriter);
+
+        int totalSize = sourceWriter.getOffset() - start;
+        printStats(renderer, totalSize);
     }
 
-    private void printWrapperStart(SourceWriter writer) throws IOException {
+    private void printWrapperStart(SourceWriter writer) {
         writer.append("\"use strict\";").newLine();
         printUmdStart(writer);
         writer.append("function($rt_globals,").ws().append("$rt_exports");
@@ -523,7 +520,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         return importedModules.get(name);
     }
 
-    private void printUmdStart(SourceWriter writer) throws IOException {
+    private void printUmdStart(SourceWriter writer) {
         writer.append("(function(root,").ws().append("module)").appendBlockStart();
         writer.appendIf().append("typeof define").ws().append("===").ws().append("'function'")
                 .ws().append("&&").ws().append("define.amd)").appendBlockStart();
@@ -562,7 +559,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                 .ws();
     }
 
-    private void printWrapperEnd(SourceWriter writer) throws IOException {
+    private void printWrapperEnd(SourceWriter writer) {
         writer.outdent().append("}));").newLine();
     }
 

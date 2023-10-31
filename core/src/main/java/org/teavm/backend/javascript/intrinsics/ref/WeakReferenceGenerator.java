@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.javascript.intrinsics.ref;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
@@ -27,15 +26,11 @@ public class WeakReferenceGenerator implements Generator {
     private JavaScriptTemplate template;
 
     public WeakReferenceGenerator(JavaScriptTemplateFactory templateFactory) {
-        try {
-            template = templateFactory.createFromResource("org/teavm/classlib/java/lang/ref/WeakReference.js");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        template = templateFactory.createFromResource("org/teavm/classlib/java/lang/ref/WeakReference.js");
     }
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "<init>":
                 template.builder("init").withContext(context).build().write(writer, 0);

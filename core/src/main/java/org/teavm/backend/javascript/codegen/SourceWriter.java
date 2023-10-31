@@ -42,39 +42,43 @@ public class SourceWriter implements Appendable, LocationProvider {
         this.minified = minified;
     }
 
-    public SourceWriter append(String value) throws IOException {
+    public SourceWriter append(String value) {
         append((CharSequence) value);
         return this;
     }
 
-    public SourceWriter appendBlockStart() throws IOException {
+    public SourceWriter appendBlockStart() {
         return ws().append("{").indent().softNewLine();
     }
 
-    public SourceWriter appendBlockEnd() throws IOException {
+    public SourceWriter appendBlockEnd() {
         return outdent().append("}").softNewLine();
     }
 
-    public SourceWriter appendIf() throws IOException {
+    public SourceWriter appendIf() {
         return append("if").ws().append("(");
     }
 
-    public SourceWriter appendElseIf() throws IOException {
+    public SourceWriter appendElseIf() {
         return outdent().append("}").ws().append("else ").appendIf();
     }
 
-    public SourceWriter appendElse() throws IOException {
+    public SourceWriter appendElse() {
         return outdent().append("}").ws().append("else").appendBlockStart();
     }
 
-    public SourceWriter append(int value) throws IOException {
+    public SourceWriter append(int value) {
         return append(String.valueOf(value));
     }
 
     @Override
-    public SourceWriter append(char value) throws IOException {
+    public SourceWriter append(char value) {
         appendIndent();
-        innerWriter.append(value);
+        try {
+            innerWriter.append(value);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         if (value == '\n') {
             newLine();
         } else {
@@ -85,13 +89,13 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     @Override
-    public SourceWriter append(CharSequence csq) throws IOException {
+    public SourceWriter append(CharSequence csq) {
         append(csq, 0, csq.length());
         return this;
     }
 
     @Override
-    public SourceWriter append(CharSequence csq, int start, int end) throws IOException {
+    public SourceWriter append(CharSequence csq, int start, int end) {
         int last = start;
         for (int i = start; i < end; ++i) {
             if (csq.charAt(i) == '\n') {
@@ -104,65 +108,69 @@ public class SourceWriter implements Appendable, LocationProvider {
         return this;
     }
 
-    private void appendSingleLine(CharSequence csq, int start, int end) throws IOException {
+    private void appendSingleLine(CharSequence csq, int start, int end) {
         if (start == end) {
             return;
         }
         appendIndent();
         column += end - start;
         offset += end - start;
-        innerWriter.append(csq, start, end);
+        try {
+            innerWriter.append(csq, start, end);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public SourceWriter appendClass(String cls) throws IOException {
+    public SourceWriter appendClass(String cls) {
         return appendName(naming.getNameFor(cls));
     }
 
-    public SourceWriter appendClass(Class<?> cls) throws IOException {
+    public SourceWriter appendClass(Class<?> cls) {
         return appendClass(cls.getName());
     }
 
-    public SourceWriter appendField(FieldReference field) throws IOException {
+    public SourceWriter appendField(FieldReference field) {
         return append(naming.getNameFor(field));
     }
 
-    public SourceWriter appendStaticField(FieldReference field) throws IOException {
+    public SourceWriter appendStaticField(FieldReference field) {
         return appendName(naming.getFullNameFor(field));
     }
 
-    public SourceWriter appendMethod(MethodDescriptor method) throws IOException {
+    public SourceWriter appendMethod(MethodDescriptor method) {
         return append(naming.getNameFor(method));
     }
 
-    public SourceWriter appendMethod(String name, Class<?>... params) throws IOException {
+    public SourceWriter appendMethod(String name, Class<?>... params) {
         return append(naming.getNameFor(new MethodDescriptor(name, params)));
     }
 
-    public SourceWriter appendMethodBody(MethodReference method) throws IOException {
+    public SourceWriter appendMethodBody(MethodReference method) {
         return appendName(naming.getFullNameFor(method));
     }
 
-    public SourceWriter appendMethodBody(String className, String name, ValueType... params) throws IOException {
+    public SourceWriter appendMethodBody(String className, String name, ValueType... params) {
         return appendMethodBody(new MethodReference(className, new MethodDescriptor(name, params)));
     }
 
-    public SourceWriter appendMethodBody(Class<?> cls, String name, Class<?>... params) throws IOException {
+    public SourceWriter appendMethodBody(Class<?> cls, String name, Class<?>... params) {
         return appendMethodBody(new MethodReference(cls, name, params));
     }
 
-    public SourceWriter appendFunction(String name) throws IOException {
+    public SourceWriter appendFunction(String name) {
         return append(naming.getNameForFunction(name));
     }
 
-    public SourceWriter appendInit(MethodReference method) throws IOException {
+    public SourceWriter appendInit(MethodReference method) {
         return appendName(naming.getNameForInit(method));
     }
 
-    public SourceWriter appendClassInit(String className) throws IOException {
+    public SourceWriter appendClassInit(String className) {
         return appendName(naming.getNameForClassInit(className));
     }
 
-    private SourceWriter appendName(ScopedName name) throws IOException {
+    private SourceWriter appendName(ScopedName name) {
         if (name.scoped) {
             append(naming.getScopeName()).append(".");
         }
@@ -170,22 +178,30 @@ public class SourceWriter implements Appendable, LocationProvider {
         return this;
     }
 
-    private void appendIndent() throws IOException {
+    private void appendIndent() {
         if (minified) {
             return;
         }
         if (lineStart) {
-            for (int i = 0; i < indentSize; ++i) {
-                innerWriter.append("    ");
-                column += 4;
-                offset += 4;
+            try {
+                for (int i = 0; i < indentSize; ++i) {
+                    innerWriter.append("    ");
+                    column += 4;
+                    offset += 4;
+                }
+                lineStart = false;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            lineStart = false;
         }
     }
 
-    public SourceWriter newLine() throws IOException {
-        innerWriter.append('\n');
+    public SourceWriter newLine() {
+        try {
+            innerWriter.append('\n');
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         column = 0;
         ++line;
         ++offset;
@@ -193,12 +209,16 @@ public class SourceWriter implements Appendable, LocationProvider {
         return this;
     }
 
-    public SourceWriter ws() throws IOException {
+    public SourceWriter ws() {
         if (column >= lineWidth) {
             newLine();
         } else {
             if (!minified) {
-                innerWriter.append(' ');
+                try {
+                    innerWriter.append(' ');
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 column++;
                 offset++;
             }
@@ -206,16 +226,20 @@ public class SourceWriter implements Appendable, LocationProvider {
         return this;
     }
 
-    public SourceWriter tokenBoundary() throws IOException {
+    public SourceWriter tokenBoundary() {
         if (column >= lineWidth) {
             newLine();
         }
         return this;
     }
 
-    public SourceWriter softNewLine() throws IOException {
+    public SourceWriter softNewLine() {
         if (!minified) {
-            innerWriter.append('\n');
+            try {
+                innerWriter.append('\n');
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             column = 0;
             ++offset;
             ++line;

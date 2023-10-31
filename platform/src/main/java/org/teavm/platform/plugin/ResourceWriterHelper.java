@@ -23,7 +23,7 @@ final class ResourceWriterHelper {
     private ResourceWriterHelper() {
     }
 
-    public static void write(SourceWriter writer, Object resource) throws IOException {
+    public static void write(SourceWriter writer, Object resource) {
         if (resource == null) {
             writer.append("null");
         } else {

@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.impl;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
@@ -27,7 +26,7 @@ public class ServiceLoaderJSSupport implements Generator {
     private static final MethodDescriptor INIT_METHOD = new MethodDescriptor("<init>", void.class);
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         var templateFactory = new JavaScriptTemplateFactory(context.getClassLoader(), context.getClassSource());
         var template = templateFactory.createFromResource("org/teavm/classlib/java/util/ServiceLoader.js");
         var information = context.getService(ServiceLoaderInformation.class);

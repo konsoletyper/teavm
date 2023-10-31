@@ -36,9 +36,11 @@ public final class AstUtil {
         return factory.parse(string, null, 0);
     }
 
-    public static AstNode parseFromResources(ClassLoader classLoader, String path) throws IOException {
+    public static AstNode parseFromResources(ClassLoader classLoader, String path) {
         try (var input = classLoader.getResourceAsStream(path)) {
             return parse(new String(input.readAllBytes(), StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

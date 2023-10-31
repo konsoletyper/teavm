@@ -15,10 +15,9 @@
  */
 package org.teavm.backend.javascript.spi;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.model.MethodReference;
 
 public interface Generator {
-    void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException;
+    void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef);
 }

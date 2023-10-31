@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
@@ -23,7 +22,7 @@ import org.teavm.model.MethodReference;
 
 public class MathNativeGenerator implements Generator {
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         String name = methodRef.getName();
         if (name.endsWith("Impl")) {
             name = name.substring(0, name.length() - 4);
@@ -34,8 +33,7 @@ public class MathNativeGenerator implements Generator {
         function(context, writer, name, methodRef.parameterCount());
     }
 
-    private void function(GeneratorContext context, SourceWriter writer, String name, int paramCount)
-            throws IOException {
+    private void function(GeneratorContext context, SourceWriter writer, String name, int paramCount) {
         writer.append("return ").append("$rt_globals.Math").append(".").append(name).append("(");
         for (int i = 0; i < paramCount; ++i) {
             if (i > 0) {

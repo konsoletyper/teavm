@@ -15,7 +15,6 @@
  */
 package org.teavm.platform.plugin;
 
-import java.io.IOException;
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.Expr;
 import org.teavm.backend.javascript.spi.Injector;
@@ -25,7 +24,7 @@ import org.teavm.model.ValueType;
 
 class ResourceAccessorInjector implements Injector {
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+    public void generate(InjectorContext context, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "get":
             case "getProperty":
@@ -102,7 +101,7 @@ class ResourceAccessorInjector implements Injector {
         }
     }
 
-    private void writePropertyAccessor(InjectorContext context, Expr property) throws IOException {
+    private void writePropertyAccessor(InjectorContext context, Expr property) {
         if (property instanceof ConstantExpr) {
             String str = (String) ((ConstantExpr) property).getValue();
             if (str.isEmpty()) {
@@ -119,7 +118,7 @@ class ResourceAccessorInjector implements Injector {
         context.getWriter().append(")]");
     }
 
-    private void writeStringExpr(InjectorContext context, Expr expr) throws IOException {
+    private void writeStringExpr(InjectorContext context, Expr expr) {
         if (expr instanceof ConstantExpr) {
             String str = (String) ((ConstantExpr) expr).getValue();
             context.getWriter().append('"');

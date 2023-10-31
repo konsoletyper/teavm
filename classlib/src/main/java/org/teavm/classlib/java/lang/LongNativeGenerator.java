@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
@@ -23,7 +22,7 @@ import org.teavm.model.MethodReference;
 
 public class LongNativeGenerator implements Generator {
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "compare":
                 generateRuntimeCall(context, writer, "Long_compare");
@@ -40,7 +39,7 @@ public class LongNativeGenerator implements Generator {
         }
     }
 
-    private void generateRuntimeCall(GeneratorContext context, SourceWriter writer, String name) throws IOException {
+    private void generateRuntimeCall(GeneratorContext context, SourceWriter writer, String name) {
         writer.append("return ").appendFunction(name).append("(").append(context.getParameterName(1))
                 .append(",").ws()
                 .append(context.getParameterName(2)).append(");").softNewLine();

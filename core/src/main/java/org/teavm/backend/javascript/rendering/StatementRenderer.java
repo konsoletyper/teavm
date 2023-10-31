@@ -17,7 +17,6 @@ package org.teavm.backend.javascript.rendering;
 
 import com.carrotsearch.hppc.IntArrayList;
 import com.carrotsearch.hppc.IntIndexedContainer;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -146,38 +145,34 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(AssignmentStatement statement) throws RenderingException {
-        try {
-            debugEmitter.emitStatementStart();
-            if (statement.getLocation() != null) {
-                pushLocation(statement.getLocation());
-            }
-            prevCallSite = debugEmitter.emitCallSite();
-            if (statement.getLeftValue() != null) {
-                if (statement.isAsync()) {
-                    writer.append(context.tempVarName());
-                } else {
-                    precedence = Precedence.COMMA;
-                    statement.getLeftValue().acceptVisitor(this);
-                }
-                writer.ws().append("=").ws();
-            }
-            precedence = Precedence.COMMA;
-            statement.getRightValue().acceptVisitor(this);
-            debugEmitter.emitCallSite();
-            writer.append(";").softNewLine();
+        debugEmitter.emitStatementStart();
+        if (statement.getLocation() != null) {
+            pushLocation(statement.getLocation());
+        }
+        prevCallSite = debugEmitter.emitCallSite();
+        if (statement.getLeftValue() != null) {
             if (statement.isAsync()) {
-                emitSuspendChecker();
-                if (statement.getLeftValue() != null) {
-                    precedence = Precedence.COMMA;
-                    statement.getLeftValue().acceptVisitor(this);
-                    writer.ws().append("=").ws().append(context.tempVarName()).append(";").softNewLine();
-                }
+                writer.append(context.tempVarName());
+            } else {
+                precedence = Precedence.COMMA;
+                statement.getLeftValue().acceptVisitor(this);
             }
-            if (statement.getLocation() != null) {
-                popLocation();
+            writer.ws().append("=").ws();
+        }
+        precedence = Precedence.COMMA;
+        statement.getRightValue().acceptVisitor(this);
+        debugEmitter.emitCallSite();
+        writer.append(";").softNewLine();
+        if (statement.isAsync()) {
+            emitSuspendChecker();
+            if (statement.getLeftValue() != null) {
+                precedence = Precedence.COMMA;
+                statement.getLeftValue().acceptVisitor(this);
+                writer.ws().append("=").ws().append(context.tempVarName()).append(";").softNewLine();
             }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        }
+        if (statement.getLocation() != null) {
+            popLocation();
         }
     }
 
@@ -188,63 +183,59 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(ConditionalStatement statement) {
-        try {
-            boolean needClosingBracket;
-            while (true) {
-                debugEmitter.emitStatementStart();
-                if (statement.getCondition().getLocation() != null) {
-                    pushLocation(statement.getCondition().getLocation());
+        boolean needClosingBracket;
+        while (true) {
+            debugEmitter.emitStatementStart();
+            if (statement.getCondition().getLocation() != null) {
+                pushLocation(statement.getCondition().getLocation());
+            }
+            prevCallSite = debugEmitter.emitCallSite();
+            writer.append("if").ws().append("(");
+            precedence = Precedence.COMMA;
+            statement.getCondition().acceptVisitor(this);
+            if (statement.getCondition().getLocation() != null) {
+                popLocation();
+            }
+            debugEmitter.emitCallSite();
+            writer.append(")");
+            if (isSimpleIfContent(statement.getConsequent())) {
+                needClosingBracket = false;
+            } else {
+                writer.ws().append("{");
+                needClosingBracket = true;
+            }
+            writer.softNewLine().indent();
+            visitStatements(statement.getConsequent());
+
+            if (!statement.getAlternative().isEmpty()) {
+                writer.outdent();
+                if (needClosingBracket) {
+                    writer.append("}").ws();
                 }
-                prevCallSite = debugEmitter.emitCallSite();
-                writer.append("if").ws().append("(");
-                precedence = Precedence.COMMA;
-                statement.getCondition().acceptVisitor(this);
-                if (statement.getCondition().getLocation() != null) {
-                    popLocation();
+                if (statement.getAlternative().size() == 1
+                        && statement.getAlternative().get(0) instanceof ConditionalStatement) {
+                    statement = (ConditionalStatement) statement.getAlternative().get(0);
+                    writer.append("else ");
+                    continue;
                 }
-                debugEmitter.emitCallSite();
-                writer.append(")");
-                if (isSimpleIfContent(statement.getConsequent())) {
+                writer.append("else");
+                if (isSimpleIfContent(statement.getAlternative())) {
+                    if (minifying) {
+                        writer.append(" ");
+                    }
                     needClosingBracket = false;
                 } else {
                     writer.ws().append("{");
                     needClosingBracket = true;
                 }
-                writer.softNewLine().indent();
-                visitStatements(statement.getConsequent());
-
-                if (!statement.getAlternative().isEmpty()) {
-                    writer.outdent();
-                    if (needClosingBracket) {
-                        writer.append("}").ws();
-                    }
-                    if (statement.getAlternative().size() == 1
-                            && statement.getAlternative().get(0) instanceof ConditionalStatement) {
-                        statement = (ConditionalStatement) statement.getAlternative().get(0);
-                        writer.append("else ");
-                        continue;
-                    }
-                    writer.append("else");
-                    if (isSimpleIfContent(statement.getAlternative())) {
-                        if (minifying) {
-                            writer.append(" ");
-                        }
-                        needClosingBracket = false;
-                    } else {
-                        writer.ws().append("{");
-                        needClosingBracket = true;
-                    }
-                    writer.indent().softNewLine();
-                    visitStatements(statement.getAlternative());
-                }
-                break;
+                writer.indent().softNewLine();
+                visitStatements(statement.getAlternative());
             }
-            writer.outdent();
-            if (needClosingBracket) {
-                writer.append("}").softNewLine();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+            break;
+        }
+        writer.outdent();
+        if (needClosingBracket) {
+            writer.append("}").softNewLine();
         }
     }
 
@@ -259,80 +250,72 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(SwitchStatement statement) {
-        try {
-            debugEmitter.emitStatementStart();
-            if (statement.getValue().getLocation() != null) {
-                pushLocation(statement.getValue().getLocation());
-            }
-            if (statement.getId() != null) {
-                writer.append(mapBlockId(statement.getId())).append(":").ws();
-            }
-            prevCallSite = debugEmitter.emitCallSite();
-            writer.append("switch").ws().append("(");
-            precedence = Precedence.min();
-            statement.getValue().acceptVisitor(this);
-            if (statement.getValue().getLocation() != null) {
-                popLocation();
-            }
-            debugEmitter.emitCallSite();
-            writer.append(")").ws().append("{").softNewLine().indent();
-            for (SwitchClause clause : statement.getClauses()) {
-                for (int condition : clause.getConditions()) {
-                    writer.append("case ").append(condition).append(":").softNewLine();
-                }
-                writer.indent();
-                boolean oldEnd = end;
-                for (Statement part : clause.getBody()) {
-                    end = false;
-                    part.acceptVisitor(this);
-                }
-                end = oldEnd;
-                writer.outdent();
-            }
-            if (statement.getDefaultClause() != null) {
-                writer.append("default:").softNewLine().indent();
-                boolean oldEnd = end;
-                for (Statement part : statement.getDefaultClause()) {
-                    end = false;
-                    part.acceptVisitor(this);
-                }
-                end = oldEnd;
-                writer.outdent();
-            }
-            writer.outdent().append("}").softNewLine();
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        debugEmitter.emitStatementStart();
+        if (statement.getValue().getLocation() != null) {
+            pushLocation(statement.getValue().getLocation());
         }
-    }
-
-    @Override
-    public void visit(WhileStatement statement) {
-        try {
-            debugEmitter.emitStatementStart();
-            if (statement.getId() != null) {
-                writer.append(mapBlockId(statement.getId())).append(":").ws();
+        if (statement.getId() != null) {
+            writer.append(mapBlockId(statement.getId())).append(":").ws();
+        }
+        prevCallSite = debugEmitter.emitCallSite();
+        writer.append("switch").ws().append("(");
+        precedence = Precedence.min();
+        statement.getValue().acceptVisitor(this);
+        if (statement.getValue().getLocation() != null) {
+            popLocation();
+        }
+        debugEmitter.emitCallSite();
+        writer.append(")").ws().append("{").softNewLine().indent();
+        for (SwitchClause clause : statement.getClauses()) {
+            for (int condition : clause.getConditions()) {
+                writer.append("case ").append(condition).append(":").softNewLine();
             }
-            writer.append("while");
-            writer.ws().append("(");
-            if (statement.getCondition() != null) {
-                prevCallSite = debugEmitter.emitCallSite();
-                precedence = Precedence.min();
-                statement.getCondition().acceptVisitor(this);
-                debugEmitter.emitCallSite();
-            } else {
-                writer.append("true");
-            }
-            writer.append(")").ws().append("{").softNewLine().indent();
+            writer.indent();
             boolean oldEnd = end;
-            for (Statement part : statement.getBody()) {
+            for (Statement part : clause.getBody()) {
                 end = false;
                 part.acceptVisitor(this);
             }
             end = oldEnd;
-            writer.outdent().append("}").softNewLine();
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+            writer.outdent();
         }
+        if (statement.getDefaultClause() != null) {
+            writer.append("default:").softNewLine().indent();
+            boolean oldEnd = end;
+            for (Statement part : statement.getDefaultClause()) {
+                end = false;
+                part.acceptVisitor(this);
+            }
+            end = oldEnd;
+            writer.outdent();
+        }
+        writer.outdent().append("}").softNewLine();
+    }
+
+    @Override
+    public void visit(WhileStatement statement) {
+        debugEmitter.emitStatementStart();
+        if (statement.getId() != null) {
+            writer.append(mapBlockId(statement.getId())).append(":").ws();
+        }
+        writer.append("while");
+        writer.ws().append("(");
+        if (statement.getCondition() != null) {
+            prevCallSite = debugEmitter.emitCallSite();
+            precedence = Precedence.min();
+            statement.getCondition().acceptVisitor(this);
+            debugEmitter.emitCallSite();
+        } else {
+            writer.append("true");
+        }
+        writer.append(")").ws().append("{").softNewLine().indent();
+        boolean oldEnd = end;
+        for (Statement part : statement.getBody()) {
+            end = false;
+            part.acceptVisitor(this);
+        }
+        end = oldEnd;
+        writer.outdent().append("}").softNewLine();
     }
 
     private String mapBlockId(String id) {
@@ -361,97 +344,77 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(BlockStatement statement) {
-        try {
-            writer.append(mapBlockId(statement.getId())).append(":").ws().append("{").softNewLine().indent();
-            visitStatements(statement.getBody());
-            writer.outdent().append("}").softNewLine();
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
-        }
+        writer.append(mapBlockId(statement.getId())).append(":").ws().append("{").softNewLine().indent();
+        visitStatements(statement.getBody());
+        writer.outdent().append("}").softNewLine();
     }
 
     @Override
     public void visit(BreakStatement statement) {
-        try {
-            debugEmitter.emitStatementStart();
-            if (statement.getLocation() != null) {
-                pushLocation(statement.getLocation());
-            }
-            writer.append("break");
-            if (statement.getTarget() != null) {
-                writer.append(' ').append(mapBlockId(statement.getTarget().getId()));
-            }
-            writer.append(";").softNewLine();
-            if (statement.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        debugEmitter.emitStatementStart();
+        if (statement.getLocation() != null) {
+            pushLocation(statement.getLocation());
+        }
+        writer.append("break");
+        if (statement.getTarget() != null) {
+            writer.append(' ').append(mapBlockId(statement.getTarget().getId()));
+        }
+        writer.append(";").softNewLine();
+        if (statement.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(ContinueStatement statement) {
-        try {
-            debugEmitter.emitStatementStart();
-            if (statement.getLocation() != null) {
-                pushLocation(statement.getLocation());
-            }
-            writer.append("continue");
-            if (statement.getTarget() != null) {
-                writer.append(' ').append(mapBlockId(statement.getTarget().getId()));
-            }
-            writer.append(";").softNewLine();
-            if (statement.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        debugEmitter.emitStatementStart();
+        if (statement.getLocation() != null) {
+            pushLocation(statement.getLocation());
+        }
+        writer.append("continue");
+        if (statement.getTarget() != null) {
+            writer.append(' ').append(mapBlockId(statement.getTarget().getId()));
+        }
+        writer.append(";").softNewLine();
+        if (statement.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(ReturnStatement statement) {
-        try {
-            debugEmitter.emitStatementStart();
-            if (statement.getLocation() != null) {
-                pushLocation(statement.getLocation());
-            }
-            writer.append("return");
-            if (statement.getResult() != null) {
-                writer.append(' ');
-                prevCallSite = debugEmitter.emitCallSite();
-                precedence = Precedence.min();
-                statement.getResult().acceptVisitor(this);
-                debugEmitter.emitCallSite();
-            }
-            writer.append(";").softNewLine();
-            if (statement.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        debugEmitter.emitStatementStart();
+        if (statement.getLocation() != null) {
+            pushLocation(statement.getLocation());
+        }
+        writer.append("return");
+        if (statement.getResult() != null) {
+            writer.append(' ');
+            prevCallSite = debugEmitter.emitCallSite();
+            precedence = Precedence.min();
+            statement.getResult().acceptVisitor(this);
+            debugEmitter.emitCallSite();
+        }
+        writer.append(";").softNewLine();
+        if (statement.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(ThrowStatement statement) {
-        try {
-            debugEmitter.emitStatementStart();
-            if (statement.getLocation() != null) {
-                pushLocation(statement.getLocation());
-            }
-            writer.appendFunction("$rt_throw").append("(");
-            prevCallSite = debugEmitter.emitCallSite();
-            precedence = Precedence.min();
-            statement.getException().acceptVisitor(this);
-            writer.append(");").softNewLine();
-            debugEmitter.emitCallSite();
-            if (statement.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        debugEmitter.emitStatementStart();
+        if (statement.getLocation() != null) {
+            pushLocation(statement.getLocation());
+        }
+        writer.appendFunction("$rt_throw").append("(");
+        prevCallSite = debugEmitter.emitCallSite();
+        precedence = Precedence.min();
+        statement.getException().acceptVisitor(this);
+        writer.append(");").softNewLine();
+        debugEmitter.emitCallSite();
+        if (statement.getLocation() != null) {
+            popLocation();
         }
     }
 
@@ -465,20 +428,16 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         if (method == null) {
             return;
         }
-        try {
-            debugEmitter.emitStatementStart();
-            if (statement.getLocation() != null) {
-                pushLocation(statement.getLocation());
-            }
-            writer.appendClassInit(statement.getClassName()).append("();").softNewLine();
-            if (statement.isAsync()) {
-                emitSuspendChecker();
-            }
-            if (statement.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        debugEmitter.emitStatementStart();
+        if (statement.getLocation() != null) {
+            pushLocation(statement.getLocation());
+        }
+        writer.appendClassInit(statement.getClassName()).append("();").softNewLine();
+        if (statement.isAsync()) {
+            emitSuspendChecker();
+        }
+        if (statement.getLocation() != null) {
+            popLocation();
         }
     }
 
@@ -492,13 +451,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
         if (guarded) {
             visitBinary(BinaryOperation.OR, "|", () -> visitBinary(expr, op, false),
-                    () -> {
-                        try {
-                            writer.append("0");
-                        } catch (IOException e) {
-                            throw new RenderingException("IO error occurred", e);
-                        }
-                    });
+                    () -> writer.append("0"));
         } else {
             visitBinary(expr.getOperation(), op, () -> expr.getFirstOperand().acceptVisitor(this),
                     () -> expr.getSecondOperand().acceptVisitor(this));
@@ -509,56 +462,52 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     }
 
     private void visitBinary(BinaryOperation operation, String infixText, Runnable a, Runnable b) {
-        try {
-            Precedence outerPrecedence = precedence;
-            Precedence innerPrecedence = getPrecedence(operation);
-            if (innerPrecedence.ordinal() < outerPrecedence.ordinal()) {
-                writer.append('(');
-            }
+        Precedence outerPrecedence = precedence;
+        Precedence innerPrecedence = getPrecedence(operation);
+        if (innerPrecedence.ordinal() < outerPrecedence.ordinal()) {
+            writer.append('(');
+        }
 
-            switch (operation) {
-                case ADD:
-                case SUBTRACT:
-                case MULTIPLY:
-                case DIVIDE:
-                case AND:
-                case OR:
-                case BITWISE_AND:
-                case BITWISE_OR:
-                case BITWISE_XOR:
-                case LEFT_SHIFT:
-                case RIGHT_SHIFT:
-                case UNSIGNED_RIGHT_SHIFT:
-                    precedence = innerPrecedence;
-                    break;
-                default:
-                    precedence = innerPrecedence.next();
-            }
-            a.run();
+        switch (operation) {
+            case ADD:
+            case SUBTRACT:
+            case MULTIPLY:
+            case DIVIDE:
+            case AND:
+            case OR:
+            case BITWISE_AND:
+            case BITWISE_OR:
+            case BITWISE_XOR:
+            case LEFT_SHIFT:
+            case RIGHT_SHIFT:
+            case UNSIGNED_RIGHT_SHIFT:
+                precedence = innerPrecedence;
+                break;
+            default:
+                precedence = innerPrecedence.next();
+        }
+        a.run();
 
-            writer.ws().append(infixText).ws();
+        writer.ws().append(infixText).ws();
 
-            switch (operation) {
-                case ADD:
-                case MULTIPLY:
-                case AND:
-                case OR:
-                case BITWISE_AND:
-                case BITWISE_OR:
-                case BITWISE_XOR:
-                    precedence = innerPrecedence;
-                    break;
-                default:
-                    precedence = innerPrecedence.next();
-                    break;
-            }
-            b.run();
+        switch (operation) {
+            case ADD:
+            case MULTIPLY:
+            case AND:
+            case OR:
+            case BITWISE_AND:
+            case BITWISE_OR:
+            case BITWISE_XOR:
+                precedence = innerPrecedence;
+                break;
+            default:
+                precedence = innerPrecedence.next();
+                break;
+        }
+        b.run();
 
-            if (innerPrecedence.ordinal() < outerPrecedence.ordinal()) {
-                writer.append(')');
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        if (innerPrecedence.ordinal() < outerPrecedence.ordinal()) {
+            writer.append(')');
         }
     }
 
@@ -600,23 +549,19 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     }
 
     private void visitBinaryFunction(BinaryExpr expr, String function) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
-            }
-            writer.appendFunction(function);
-            writer.append('(');
-            precedence = Precedence.min();
-            expr.getFirstOperand().acceptVisitor(this);
-            writer.append(",").ws();
-            precedence = Precedence.min();
-            expr.getSecondOperand().acceptVisitor(this);
-            writer.append(')');
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        writer.appendFunction(function);
+        writer.append('(');
+        precedence = Precedence.min();
+        expr.getFirstOperand().acceptVisitor(this);
+        writer.append(",").ws();
+        precedence = Precedence.min();
+        expr.getSecondOperand().acceptVisitor(this);
+        writer.append(')');
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
@@ -764,140 +709,132 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(UnaryExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
-            }
-            Precedence outerPrecedence = precedence;
-            switch (expr.getOperation()) {
-                case NOT: {
-                    if (expr.getType() == OperationType.LONG) {
-                        longLibraryUsed = true;
-                        writer.appendFunction("Long_not").append("(");
-                        precedence = Precedence.min();
-                        expr.getOperand().acceptVisitor(this);
-                        writer.append(')');
-                    } else {
-                        if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
-                            writer.append('(');
-                        }
-                        writer.append(expr.getType() == null ? "!" : "~");
-                        precedence = Precedence.UNARY;
-                        expr.getOperand().acceptVisitor(this);
-                        if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
-                            writer.append(')');
-                        }
-                    }
-                    break;
-                }
-                case NEGATE:
-                    if (expr.getType() == OperationType.LONG) {
-                        longLibraryUsed = true;
-                        writer.appendFunction("Long_neg").append("(");
-                        precedence = Precedence.min();
-                        expr.getOperand().acceptVisitor(this);
-                        writer.append(')');
-                    } else if (expr.getType() == OperationType.INT) {
-                        if (outerPrecedence.ordinal() > Precedence.BITWISE_OR.ordinal()) {
-                            writer.append('(');
-                        }
-                        writer.append(" -");
-                        precedence = Precedence.UNARY;
-                        expr.getOperand().acceptVisitor(this);
-                        writer.ws().append("|").ws();
-                        writer.append("0");
-                        if (outerPrecedence.ordinal() > Precedence.BITWISE_OR.ordinal()) {
-                            writer.append(')');
-                        }
-                    } else {
-                        if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
-                            writer.append('(');
-                        }
-                        writer.append(" -");
-                        precedence = Precedence.UNARY;
-                        expr.getOperand().acceptVisitor(this);
-                        if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
-                            writer.append(')');
-                        }
-                    }
-                    break;
-                case LENGTH:
-                    precedence = Precedence.MEMBER_ACCESS;
-                    expr.getOperand().acceptVisitor(this);
-                    writer.append(".length");
-                    break;
-                case INT_TO_BYTE:
-                    if (outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal()) {
-                        writer.append('(');
-                    }
-                    precedence = Precedence.BITWISE_SHIFT;
-                    expr.getOperand().acceptVisitor(this);
-                    writer.ws().append("<<").ws().append("24").ws().append(">>").ws().append("24");
-                    if (outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal()) {
-                        writer.append(')');
-                    }
-                    break;
-                case INT_TO_SHORT:
-                    if (outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal()) {
-                        writer.append('(');
-                    }
-                    precedence = Precedence.BITWISE_SHIFT;
-                    expr.getOperand().acceptVisitor(this);
-                    writer.ws().append("<<").ws().append("16").ws().append(">>").ws().append("16");
-                    if (outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal()) {
-                        writer.append(')');
-                    }
-                    break;
-                case INT_TO_CHAR:
-                    if (outerPrecedence.ordinal() > Precedence.BITWISE_AND.ordinal()) {
-                        writer.append('(');
-                    }
-                    precedence = Precedence.BITWISE_AND;
-                    expr.getOperand().acceptVisitor(this);
-                    writer.ws().append("&").ws().append("65535");
-                    if (outerPrecedence.ordinal() > Precedence.BITWISE_AND.ordinal()) {
-                        writer.append(')');
-                    }
-                    break;
-                case NULL_CHECK:
-                    writer.appendFunction("$rt_nullCheck").append("(");
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        Precedence outerPrecedence = precedence;
+        switch (expr.getOperation()) {
+            case NOT: {
+                if (expr.getType() == OperationType.LONG) {
+                    longLibraryUsed = true;
+                    writer.appendFunction("Long_not").append("(");
                     precedence = Precedence.min();
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
-                    break;
+                } else {
+                    if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                        writer.append('(');
+                    }
+                    writer.append(expr.getType() == null ? "!" : "~");
+                    precedence = Precedence.UNARY;
+                    expr.getOperand().acceptVisitor(this);
+                    if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                        writer.append(')');
+                    }
+                }
+                break;
             }
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+            case NEGATE:
+                if (expr.getType() == OperationType.LONG) {
+                    longLibraryUsed = true;
+                    writer.appendFunction("Long_neg").append("(");
+                    precedence = Precedence.min();
+                    expr.getOperand().acceptVisitor(this);
+                    writer.append(')');
+                } else if (expr.getType() == OperationType.INT) {
+                    if (outerPrecedence.ordinal() > Precedence.BITWISE_OR.ordinal()) {
+                        writer.append('(');
+                    }
+                    writer.append(" -");
+                    precedence = Precedence.UNARY;
+                    expr.getOperand().acceptVisitor(this);
+                    writer.ws().append("|").ws();
+                    writer.append("0");
+                    if (outerPrecedence.ordinal() > Precedence.BITWISE_OR.ordinal()) {
+                        writer.append(')');
+                    }
+                } else {
+                    if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                        writer.append('(');
+                    }
+                    writer.append(" -");
+                    precedence = Precedence.UNARY;
+                    expr.getOperand().acceptVisitor(this);
+                    if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                        writer.append(')');
+                    }
+                }
+                break;
+            case LENGTH:
+                precedence = Precedence.MEMBER_ACCESS;
+                expr.getOperand().acceptVisitor(this);
+                writer.append(".length");
+                break;
+            case INT_TO_BYTE:
+                if (outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal()) {
+                    writer.append('(');
+                }
+                precedence = Precedence.BITWISE_SHIFT;
+                expr.getOperand().acceptVisitor(this);
+                writer.ws().append("<<").ws().append("24").ws().append(">>").ws().append("24");
+                if (outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal()) {
+                    writer.append(')');
+                }
+                break;
+            case INT_TO_SHORT:
+                if (outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal()) {
+                    writer.append('(');
+                }
+                precedence = Precedence.BITWISE_SHIFT;
+                expr.getOperand().acceptVisitor(this);
+                writer.ws().append("<<").ws().append("16").ws().append(">>").ws().append("16");
+                if (outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal()) {
+                    writer.append(')');
+                }
+                break;
+            case INT_TO_CHAR:
+                if (outerPrecedence.ordinal() > Precedence.BITWISE_AND.ordinal()) {
+                    writer.append('(');
+                }
+                precedence = Precedence.BITWISE_AND;
+                expr.getOperand().acceptVisitor(this);
+                writer.ws().append("&").ws().append("65535");
+                if (outerPrecedence.ordinal() > Precedence.BITWISE_AND.ordinal()) {
+                    writer.append(')');
+                }
+                break;
+            case NULL_CHECK:
+                writer.appendFunction("$rt_nullCheck").append("(");
+                precedence = Precedence.min();
+                expr.getOperand().acceptVisitor(this);
+                writer.append(')');
+                break;
+        }
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(CastExpr expr) {
         if (context.isStrict()) {
-            try {
-                if (expr.getLocation() != null) {
-                    pushLocation(expr.getLocation());
-                }
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
 
-                if (isClass(expr.getTarget(), context.getClassSource())) {
-                    writer.appendFunction("$rt_castToClass");
-                } else {
-                    writer.appendFunction("$rt_castToInterface");
-                }
-                writer.append("(");
-                precedence = Precedence.min();
-                expr.getValue().acceptVisitor(this);
-                writer.append(",").ws();
-                context.typeToClsString(writer, expr.getTarget());
-                writer.append(")");
-                if (expr.getLocation() != null) {
-                    popLocation();
-                }
-            } catch (IOException e) {
-                throw new RenderingException("IO error occurred", e);
+            if (isClass(expr.getTarget(), context.getClassSource())) {
+                writer.appendFunction("$rt_castToClass");
+            } else {
+                writer.appendFunction("$rt_castToInterface");
+            }
+            writer.append("(");
+            precedence = Precedence.min();
+            expr.getValue().acceptVisitor(this);
+            writer.append(",").ws();
+            context.typeToClsString(writer, expr.getTarget());
+            writer.append(")");
+            if (expr.getLocation() != null) {
+                popLocation();
             }
         } else {
             expr.getValue().acceptVisitor(this);
@@ -915,76 +852,66 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(PrimitiveCastExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
-            }
-            switch (expr.getSource()) {
-                case INT:
-                    if (expr.getTarget() == OperationType.LONG) {
-                        writer.appendFunction("Long_fromInt").append("(");
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        switch (expr.getSource()) {
+            case INT:
+                if (expr.getTarget() == OperationType.LONG) {
+                    writer.appendFunction("Long_fromInt").append("(");
+                    precedence = Precedence.min();
+                    expr.getValue().acceptVisitor(this);
+                    writer.append(')');
+                } else {
+                    expr.getValue().acceptVisitor(this);
+                }
+                break;
+            case LONG:
+                switch (expr.getTarget()) {
+                    case INT:
+                        precedence = Precedence.MEMBER_ACCESS;
+                        Expr longShifted = extractLongRightShiftedBy32(expr.getValue());
+                        if (longShifted != null) {
+                            writer.appendFunction("Long_hi").append("(");
+                            longShifted.acceptVisitor(this);
+                            writer.append(")");
+                        } else {
+                            writer.appendFunction("Long_lo").append("(");
+                            expr.getValue().acceptVisitor(this);
+                            writer.append(")");
+                        }
+                        break;
+                    case FLOAT:
+                    case DOUBLE:
+                        writer.appendFunction("Long_toNumber").append("(");
                         precedence = Precedence.min();
                         expr.getValue().acceptVisitor(this);
                         writer.append(')');
-                    } else {
+                        break;
+                    default:
                         expr.getValue().acceptVisitor(this);
-                    }
-                    break;
-                case LONG:
-                    switch (expr.getTarget()) {
-                        case INT:
-                            precedence = Precedence.MEMBER_ACCESS;
-                            Expr longShifted = extractLongRightShiftedBy32(expr.getValue());
-                            if (longShifted != null) {
-                                writer.appendFunction("Long_hi").append("(");
-                                longShifted.acceptVisitor(this);
-                                writer.append(")");
-                            } else {
-                                writer.appendFunction("Long_lo").append("(");
-                                expr.getValue().acceptVisitor(this);
-                                writer.append(")");
-                            }
-                            break;
-                        case FLOAT:
-                        case DOUBLE:
-                            writer.appendFunction("Long_toNumber").append("(");
-                            precedence = Precedence.min();
-                            expr.getValue().acceptVisitor(this);
-                            writer.append(')');
-                            break;
-                        default:
-                            expr.getValue().acceptVisitor(this);
-                    }
-                    break;
-                case FLOAT:
-                case DOUBLE:
-                    switch (expr.getTarget()) {
-                        case LONG:
-                            writer.appendFunction("Long_fromNumber").append("(");
-                            precedence = Precedence.min();
-                            expr.getValue().acceptVisitor(this);
-                            writer.append(')');
-                            break;
-                        case INT:
-                            visitBinary(BinaryOperation.BITWISE_OR, "|", () -> expr.getValue().acceptVisitor(this),
-                                    () -> {
-                                        try {
-                                            writer.append("0");
-                                        } catch (IOException e) {
-                                            throw new RenderingException("IO error occurred", e);
-                                        }
-                                    });
-                            break;
-                        default:
-                            expr.getValue().acceptVisitor(this);
-                    }
-                    break;
-            }
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+                }
+                break;
+            case FLOAT:
+            case DOUBLE:
+                switch (expr.getTarget()) {
+                    case LONG:
+                        writer.appendFunction("Long_fromNumber").append("(");
+                        precedence = Precedence.min();
+                        expr.getValue().acceptVisitor(this);
+                        writer.append(')');
+                        break;
+                    case INT:
+                        visitBinary(BinaryOperation.BITWISE_OR, "|", () -> expr.getValue().acceptVisitor(this),
+                                () -> writer.append("0"));
+                        break;
+                    default:
+                        expr.getValue().acceptVisitor(this);
+                }
+                break;
+        }
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
@@ -1015,381 +942,341 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(ConditionalExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
-            }
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
 
-            Precedence outerPrecedence = precedence;
-            if (outerPrecedence.ordinal() > Precedence.CONDITIONAL.ordinal()) {
-                writer.append('(');
-            }
+        Precedence outerPrecedence = precedence;
+        if (outerPrecedence.ordinal() > Precedence.CONDITIONAL.ordinal()) {
+            writer.append('(');
+        }
 
-            precedence = Precedence.CONDITIONAL.next();
-            expr.getCondition().acceptVisitor(this);
-            writer.ws().append("?").ws();
-            precedence = Precedence.CONDITIONAL.next();
-            expr.getConsequent().acceptVisitor(this);
-            writer.ws().append(":").ws();
-            precedence = Precedence.CONDITIONAL;
-            expr.getAlternative().acceptVisitor(this);
+        precedence = Precedence.CONDITIONAL.next();
+        expr.getCondition().acceptVisitor(this);
+        writer.ws().append("?").ws();
+        precedence = Precedence.CONDITIONAL.next();
+        expr.getConsequent().acceptVisitor(this);
+        writer.ws().append(":").ws();
+        precedence = Precedence.CONDITIONAL;
+        expr.getAlternative().acceptVisitor(this);
 
-            if (outerPrecedence.ordinal() > Precedence.CONDITIONAL.ordinal()) {
-                writer.append(')');
-            }
+        if (outerPrecedence.ordinal() > Precedence.CONDITIONAL.ordinal()) {
+            writer.append(')');
+        }
 
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(ConstantExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
-            }
-            context.constantToString(writer, expr.getValue());
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        context.constantToString(writer, expr.getValue());
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(VariableExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
-            }
-            writer.append(variableName(expr.getIndex()));
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        writer.append(variableName(expr.getIndex()));
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(SubscriptExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
-            }
-            precedence = Precedence.MEMBER_ACCESS;
-            expr.getArray().acceptVisitor(this);
-            writer.append('[');
-            precedence = Precedence.min();
-            expr.getIndex().acceptVisitor(this);
-            writer.append(']');
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        precedence = Precedence.MEMBER_ACCESS;
+        expr.getArray().acceptVisitor(this);
+        writer.append('[');
+        precedence = Precedence.min();
+        expr.getIndex().acceptVisitor(this);
+        writer.append(']');
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(UnwrapArrayExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
-            }
-            precedence = Precedence.MEMBER_ACCESS;
-            expr.getArray().acceptVisitor(this);
-            writer.append(".data");
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        precedence = Precedence.MEMBER_ACCESS;
+        expr.getArray().acceptVisitor(this);
+        writer.append(".data");
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(InvocationExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        Injector injector = context.getInjector(expr.getMethod());
+        if (injector != null) {
+            injector.generate(new InjectorContextImpl(expr.getArguments()), expr.getMethod());
+        } else {
+            Precedence outerPrecedence = precedence;
+            if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
+                writer.append('(');
             }
-            Injector injector = context.getInjector(expr.getMethod());
-            if (injector != null) {
-                injector.generate(new InjectorContextImpl(expr.getArguments()), expr.getMethod());
-            } else {
-                Precedence outerPrecedence = precedence;
-                if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
-                    writer.append('(');
-                }
 
-                if (expr.getType() == InvocationType.DYNAMIC) {
-                    precedence = Precedence.MEMBER_ACCESS;
-                    expr.getArguments().get(0).acceptVisitor(this);
-                }
-                MethodReference method = expr.getMethod();
-                String name = naming.getNameFor(method.getDescriptor());
-                DeferredCallSite callSite = prevCallSite;
-                boolean shouldEraseCallSite = lastCallSite == null;
-                if (lastCallSite == null) {
-                    lastCallSite = callSite;
-                }
-                boolean virtual = false;
-                switch (expr.getType()) {
-                    case STATIC:
-                        writer.appendMethodBody(method).append("(");
-                        prevCallSite = debugEmitter.emitCallSite();
-                        for (int i = 0; i < expr.getArguments().size(); ++i) {
-                            if (i > 0) {
-                                writer.append(",").ws();
-                            }
-                            precedence = Precedence.min();
-                            expr.getArguments().get(i).acceptVisitor(this);
-                        }
-                        break;
-                    case SPECIAL:
-                        writer.appendMethodBody(method).append("(");
-                        prevCallSite = debugEmitter.emitCallSite();
-                        precedence = Precedence.min();
-                        expr.getArguments().get(0).acceptVisitor(this);
-                        for (int i = 1; i < expr.getArguments().size(); ++i) {
+            if (expr.getType() == InvocationType.DYNAMIC) {
+                precedence = Precedence.MEMBER_ACCESS;
+                expr.getArguments().get(0).acceptVisitor(this);
+            }
+            MethodReference method = expr.getMethod();
+            String name = naming.getNameFor(method.getDescriptor());
+            DeferredCallSite callSite = prevCallSite;
+            boolean shouldEraseCallSite = lastCallSite == null;
+            if (lastCallSite == null) {
+                lastCallSite = callSite;
+            }
+            boolean virtual = false;
+            switch (expr.getType()) {
+                case STATIC:
+                    writer.appendMethodBody(method).append("(");
+                    prevCallSite = debugEmitter.emitCallSite();
+                    for (int i = 0; i < expr.getArguments().size(); ++i) {
+                        if (i > 0) {
                             writer.append(",").ws();
-                            precedence = Precedence.min();
-                            expr.getArguments().get(i).acceptVisitor(this);
                         }
-                        break;
-                    case DYNAMIC:
-                        writer.append(".").append(name).append("(");
-                        prevCallSite = debugEmitter.emitCallSite();
-                        for (int i = 1; i < expr.getArguments().size(); ++i) {
-                            if (i > 1) {
-                                writer.append(",").ws();
-                            }
-                            precedence = Precedence.min();
-                            expr.getArguments().get(i).acceptVisitor(this);
-                        }
-                        virtual = true;
-                        break;
-                    case CONSTRUCTOR:
-                        writer.appendInit(expr.getMethod()).append("(");
-                        prevCallSite = debugEmitter.emitCallSite();
-                        for (int i = 0; i < expr.getArguments().size(); ++i) {
-                            if (i > 0) {
-                                writer.append(",").ws();
-                            }
-                            precedence = Precedence.min();
-                            expr.getArguments().get(i).acceptVisitor(this);
-                        }
-                        break;
-                }
-                writer.append(')');
-                if (lastCallSite != null) {
-                    if (virtual) {
-                        lastCallSite.setVirtualMethod(expr.getMethod());
-                    } else {
-                        lastCallSite.setStaticMethod(expr.getMethod());
+                        precedence = Precedence.min();
+                        expr.getArguments().get(i).acceptVisitor(this);
                     }
-                    lastCallSite = callSite;
+                    break;
+                case SPECIAL:
+                    writer.appendMethodBody(method).append("(");
+                    prevCallSite = debugEmitter.emitCallSite();
+                    precedence = Precedence.min();
+                    expr.getArguments().get(0).acceptVisitor(this);
+                    for (int i = 1; i < expr.getArguments().size(); ++i) {
+                        writer.append(",").ws();
+                        precedence = Precedence.min();
+                        expr.getArguments().get(i).acceptVisitor(this);
+                    }
+                    break;
+                case DYNAMIC:
+                    writer.append(".").append(name).append("(");
+                    prevCallSite = debugEmitter.emitCallSite();
+                    for (int i = 1; i < expr.getArguments().size(); ++i) {
+                        if (i > 1) {
+                            writer.append(",").ws();
+                        }
+                        precedence = Precedence.min();
+                        expr.getArguments().get(i).acceptVisitor(this);
+                    }
+                    virtual = true;
+                    break;
+                case CONSTRUCTOR:
+                    writer.appendInit(expr.getMethod()).append("(");
+                    prevCallSite = debugEmitter.emitCallSite();
+                    for (int i = 0; i < expr.getArguments().size(); ++i) {
+                        if (i > 0) {
+                            writer.append(",").ws();
+                        }
+                        precedence = Precedence.min();
+                        expr.getArguments().get(i).acceptVisitor(this);
+                    }
+                    break;
+            }
+            writer.append(')');
+            if (lastCallSite != null) {
+                if (virtual) {
+                    lastCallSite.setVirtualMethod(expr.getMethod());
+                } else {
+                    lastCallSite.setStaticMethod(expr.getMethod());
                 }
-                if (shouldEraseCallSite) {
-                    lastCallSite = null;
-                }
+                lastCallSite = callSite;
+            }
+            if (shouldEraseCallSite) {
+                lastCallSite = null;
+            }
 
-                if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
-                    writer.append(')');
-                }
+            if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
+                writer.append(')');
             }
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        }
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(QualificationExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
-            }
-            precedence = Precedence.MEMBER_ACCESS;
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        precedence = Precedence.MEMBER_ACCESS;
 
-            if (expr.getQualified() != null) {
-                expr.getQualified().acceptVisitor(this);
-                writer.append('.').appendField(expr.getField());
-            } else {
-                writer.appendStaticField(expr.getField());
-            }
+        if (expr.getQualified() != null) {
+            expr.getQualified().acceptVisitor(this);
+            writer.append('.').appendField(expr.getField());
+        } else {
+            writer.appendStaticField(expr.getField());
+        }
 
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(NewExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
-            }
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
 
-            Precedence outerPrecedence = precedence;
-            if (outerPrecedence.ordinal() > Precedence.NEW.ordinal()) {
-                writer.append('(');
-            }
+        Precedence outerPrecedence = precedence;
+        if (outerPrecedence.ordinal() > Precedence.NEW.ordinal()) {
+            writer.append('(');
+        }
 
-            precedence = Precedence.NEW;
+        precedence = Precedence.NEW;
 
-            writer.append("new ").appendClass(expr.getConstructedClass());
-            if (outerPrecedence.ordinal() > Precedence.NEW.ordinal()) {
-                writer.append(')');
-            }
+        writer.append("new ").appendClass(expr.getConstructedClass());
+        if (outerPrecedence.ordinal() > Precedence.NEW.ordinal()) {
+            writer.append(')');
+        }
 
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(NewArrayExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        ValueType type = expr.getType();
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                    writer.appendFunction("$rt_createBooleanArray").append("(");
+                    precedence = Precedence.min();
+                    expr.getLength().acceptVisitor(this);
+                    writer.append(")");
+                    break;
+                case BYTE:
+                    writer.appendFunction("$rt_createByteArray").append("(");
+                    precedence = Precedence.min();
+                    expr.getLength().acceptVisitor(this);
+                    writer.append(")");
+                    break;
+                case SHORT:
+                    writer.appendFunction("$rt_createShortArray").append("(");
+                    precedence = Precedence.min();
+                    expr.getLength().acceptVisitor(this);
+                    writer.append(")");
+                    break;
+                case INTEGER:
+                    writer.appendFunction("$rt_createIntArray").append("(");
+                    precedence = Precedence.min();
+                    expr.getLength().acceptVisitor(this);
+                    writer.append(")");
+                    break;
+                case LONG:
+                    writer.appendFunction("$rt_createLongArray").append("(");
+                    precedence = Precedence.min();
+                    expr.getLength().acceptVisitor(this);
+                    writer.append(")");
+                    break;
+                case FLOAT:
+                    writer.appendFunction("$rt_createFloatArray").append("(");
+                    precedence = Precedence.min();
+                    expr.getLength().acceptVisitor(this);
+                    writer.append(")");
+                    break;
+                case DOUBLE:
+                    writer.appendFunction("$rt_createDoubleArray").append("(");
+                    precedence = Precedence.min();
+                    expr.getLength().acceptVisitor(this);
+                    writer.append(")");
+                    break;
+                case CHARACTER:
+                    writer.appendFunction("$rt_createCharArray").append("(");
+                    precedence = Precedence.min();
+                    expr.getLength().acceptVisitor(this);
+                    writer.append(")");
+                    break;
             }
-            ValueType type = expr.getType();
-            if (type instanceof ValueType.Primitive) {
-                switch (((ValueType.Primitive) type).getKind()) {
-                    case BOOLEAN:
-                        writer.appendFunction("$rt_createBooleanArray").append("(");
-                        precedence = Precedence.min();
-                        expr.getLength().acceptVisitor(this);
-                        writer.append(")");
-                        break;
-                    case BYTE:
-                        writer.appendFunction("$rt_createByteArray").append("(");
-                        precedence = Precedence.min();
-                        expr.getLength().acceptVisitor(this);
-                        writer.append(")");
-                        break;
-                    case SHORT:
-                        writer.appendFunction("$rt_createShortArray").append("(");
-                        precedence = Precedence.min();
-                        expr.getLength().acceptVisitor(this);
-                        writer.append(")");
-                        break;
-                    case INTEGER:
-                        writer.appendFunction("$rt_createIntArray").append("(");
-                        precedence = Precedence.min();
-                        expr.getLength().acceptVisitor(this);
-                        writer.append(")");
-                        break;
-                    case LONG:
-                        writer.appendFunction("$rt_createLongArray").append("(");
-                        precedence = Precedence.min();
-                        expr.getLength().acceptVisitor(this);
-                        writer.append(")");
-                        break;
-                    case FLOAT:
-                        writer.appendFunction("$rt_createFloatArray").append("(");
-                        precedence = Precedence.min();
-                        expr.getLength().acceptVisitor(this);
-                        writer.append(")");
-                        break;
-                    case DOUBLE:
-                        writer.appendFunction("$rt_createDoubleArray").append("(");
-                        precedence = Precedence.min();
-                        expr.getLength().acceptVisitor(this);
-                        writer.append(")");
-                        break;
-                    case CHARACTER:
-                        writer.appendFunction("$rt_createCharArray").append("(");
-                        precedence = Precedence.min();
-                        expr.getLength().acceptVisitor(this);
-                        writer.append(")");
-                        break;
-                }
-            } else {
-                writer.appendFunction("$rt_createArray").append("(");
-                context.typeToClsString(writer, expr.getType());
-                writer.append(",").ws();
-                precedence = Precedence.min();
-                expr.getLength().acceptVisitor(this);
-                writer.append(")");
-            }
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        } else {
+            writer.appendFunction("$rt_createArray").append("(");
+            context.typeToClsString(writer, expr.getType());
+            writer.append(",").ws();
+            precedence = Precedence.min();
+            expr.getLength().acceptVisitor(this);
+            writer.append(")");
+        }
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(ArrayFromDataExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        ValueType type = expr.getType();
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                    writer.appendFunction("$rt_createBooleanArrayFromData");
+                    break;
+                case BYTE:
+                    writer.appendFunction("$rt_createByteArrayFromData");
+                    break;
+                case SHORT:
+                    writer.appendFunction("$rt_createShortArrayFromData");
+                    break;
+                case INTEGER:
+                    writer.appendFunction("$rt_createIntArrayFromData");
+                    break;
+                case LONG:
+                    writer.appendFunction("$rt_createLongArrayFromData");
+                    break;
+                case FLOAT:
+                    writer.appendFunction("$rt_createFloatArrayFromData");
+                    break;
+                case DOUBLE:
+                    writer.appendFunction("$rt_createDoubleArrayFromData");
+                    break;
+                case CHARACTER:
+                    writer.appendFunction("$rt_createCharArrayFromData");
+                    break;
             }
-            ValueType type = expr.getType();
-            if (type instanceof ValueType.Primitive) {
-                switch (((ValueType.Primitive) type).getKind()) {
-                    case BOOLEAN:
-                        writer.appendFunction("$rt_createBooleanArrayFromData");
-                        break;
-                    case BYTE:
-                        writer.appendFunction("$rt_createByteArrayFromData");
-                        break;
-                    case SHORT:
-                        writer.appendFunction("$rt_createShortArrayFromData");
-                        break;
-                    case INTEGER:
-                        writer.appendFunction("$rt_createIntArrayFromData");
-                        break;
-                    case LONG:
-                        writer.appendFunction("$rt_createLongArrayFromData");
-                        break;
-                    case FLOAT:
-                        writer.appendFunction("$rt_createFloatArrayFromData");
-                        break;
-                    case DOUBLE:
-                        writer.appendFunction("$rt_createDoubleArrayFromData");
-                        break;
-                    case CHARACTER:
-                        writer.appendFunction("$rt_createCharArrayFromData");
-                        break;
-                }
-                writer.append("(");
-            } else {
-                writer.appendFunction("$rt_createArrayFromData").append("(");
-                context.typeToClsString(writer, expr.getType());
-                writer.append(",").ws();
-            }
+            writer.append("(");
+        } else {
+            writer.appendFunction("$rt_createArrayFromData").append("(");
+            context.typeToClsString(writer, expr.getType());
+            writer.append(",").ws();
+        }
 
-            writer.append("[");
-            writeCommaSeparated(expr.getData());
-            writer.append("])");
+        writer.append("[");
+        writeCommaSeparated(expr.getData());
+        writer.append("])");
 
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
-    private void writeCommaSeparated(List<Expr> expressions) throws IOException {
+    private void writeCommaSeparated(List<Expr> expressions) {
         boolean first = true;
         for (Expr element : expressions) {
             if (!first) {
@@ -1403,98 +1290,90 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        ValueType type = expr.getType();
+        for (int i = 0; i < expr.getDimensions().size(); ++i) {
+            type = ((ValueType.Array) type).getItemType();
+        }
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                    writer.appendFunction("$rt_createBooleanMultiArray").append("(");
+                    break;
+                case BYTE:
+                    writer.appendFunction("$rt_createByteMultiArray").append("(");
+                    break;
+                case SHORT:
+                    writer.appendFunction("$rt_createShortMultiArray").append("(");
+                    break;
+                case INTEGER:
+                    writer.appendFunction("$rt_createIntMultiArray").append("(");
+                    break;
+                case LONG:
+                    writer.appendFunction("$rt_createLongMultiArray").append("(");
+                    break;
+                case FLOAT:
+                    writer.appendFunction("$rt_createFloatMultiArray").append("(");
+                    break;
+                case DOUBLE:
+                    writer.appendFunction("$rt_createDoubleMultiArray").append("(");
+                    break;
+                case CHARACTER:
+                    writer.appendFunction("$rt_createCharMultiArray").append("(");
+                    break;
             }
-            ValueType type = expr.getType();
-            for (int i = 0; i < expr.getDimensions().size(); ++i) {
-                type = ((ValueType.Array) type).getItemType();
-            }
-            if (type instanceof ValueType.Primitive) {
-                switch (((ValueType.Primitive) type).getKind()) {
-                    case BOOLEAN:
-                        writer.appendFunction("$rt_createBooleanMultiArray").append("(");
-                        break;
-                    case BYTE:
-                        writer.appendFunction("$rt_createByteMultiArray").append("(");
-                        break;
-                    case SHORT:
-                        writer.appendFunction("$rt_createShortMultiArray").append("(");
-                        break;
-                    case INTEGER:
-                        writer.appendFunction("$rt_createIntMultiArray").append("(");
-                        break;
-                    case LONG:
-                        writer.appendFunction("$rt_createLongMultiArray").append("(");
-                        break;
-                    case FLOAT:
-                        writer.appendFunction("$rt_createFloatMultiArray").append("(");
-                        break;
-                    case DOUBLE:
-                        writer.appendFunction("$rt_createDoubleMultiArray").append("(");
-                        break;
-                    case CHARACTER:
-                        writer.appendFunction("$rt_createCharMultiArray").append("(");
-                        break;
-                }
-            } else {
-                writer.appendFunction("$rt_createMultiArray").append("(");
-                context.typeToClsString(writer, type);
+        } else {
+            writer.appendFunction("$rt_createMultiArray").append("(");
+            context.typeToClsString(writer, type);
+            writer.append(",").ws();
+        }
+        writer.append("[");
+        boolean first = true;
+        List<Expr> dimensions = new ArrayList<>(expr.getDimensions());
+        Collections.reverse(dimensions);
+        for (Expr dimension : dimensions) {
+            if (!first) {
                 writer.append(",").ws();
             }
-            writer.append("[");
-            boolean first = true;
-            List<Expr> dimensions = new ArrayList<>(expr.getDimensions());
-            Collections.reverse(dimensions);
-            for (Expr dimension : dimensions) {
-                if (!first) {
-                    writer.append(",").ws();
-                }
-                first = false;
-                precedence = Precedence.min();
-                dimension.acceptVisitor(this);
-            }
-            writer.append("])");
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+            first = false;
+            precedence = Precedence.min();
+            dimension.acceptVisitor(this);
+        }
+        writer.append("])");
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
     @Override
     public void visit(InstanceOfExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        if (isClass(expr.getType(), context.getClassSource())) {
+            boolean needsParentheses = Precedence.COMPARISON.ordinal() < precedence.ordinal();
+            if (needsParentheses) {
+                writer.append('(');
             }
-            if (isClass(expr.getType(), context.getClassSource())) {
-                boolean needsParentheses = Precedence.COMPARISON.ordinal() < precedence.ordinal();
-                if (needsParentheses) {
-                    writer.append('(');
-                }
-                precedence = Precedence.CONDITIONAL.next();
-                expr.getExpr().acceptVisitor(this);
-                writer.append(" instanceof ");
-                context.typeToClsString(writer, expr.getType());
-                if (needsParentheses) {
-                    writer.append(')');
-                }
-            } else {
-                writer.appendFunction("$rt_isInstance").append("(");
-                precedence = Precedence.min();
-                expr.getExpr().acceptVisitor(this);
-                writer.append(",").ws();
-                context.typeToClsString(writer, expr.getType());
-                writer.append(")");
+            precedence = Precedence.CONDITIONAL.next();
+            expr.getExpr().acceptVisitor(this);
+            writer.append(" instanceof ");
+            context.typeToClsString(writer, expr.getType());
+            if (needsParentheses) {
+                writer.append(')');
             }
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        } else {
+            writer.appendFunction("$rt_isInstance").append("(");
+            precedence = Precedence.min();
+            expr.getExpr().acceptVisitor(this);
+            writer.append(",").ws();
+            context.typeToClsString(writer, expr.getType());
+            writer.append(")");
+        }
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
@@ -1514,107 +1393,95 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(TryCatchStatement statement) {
-        try {
-            writer.append("try").ws().append("{").softNewLine().indent();
-            List<TryCatchStatement> sequence = new ArrayList<>();
-            sequence.add(statement);
-            List<Statement> protectedBody = statement.getProtectedBody();
-            while (protectedBody.size() == 1 && protectedBody.get(0) instanceof TryCatchStatement) {
-                TryCatchStatement nextStatement = (TryCatchStatement) protectedBody.get(0);
-                sequence.add(nextStatement);
-                protectedBody = nextStatement.getProtectedBody();
-            }
-            visitStatements(protectedBody);
-            writer.outdent().append("}").ws().append("catch").ws().append("($$e)")
-                    .ws().append("{").indent().softNewLine();
-            writer.append("$$je").ws().append("=").ws().appendFunction("$rt_wrapException").append("($$e);")
-                    .softNewLine();
-            boolean first = true;
-            boolean defaultHandlerOccurred = false;
-            for (int i = sequence.size() - 1; i >= 0; --i) {
-                TryCatchStatement catchClause = sequence.get(i);
-                if (!first) {
-                    writer.ws().append("else");
-                }
-                if (catchClause.getExceptionType() != null) {
-                    if (!first) {
-                        writer.append(" ");
-                    }
-                    writer.append("if").ws().append("($$je instanceof ").appendClass(catchClause.getExceptionType());
-                    writer.append(")").ws();
-                } else {
-                    defaultHandlerOccurred = true;
-                }
-
-                if (catchClause.getExceptionType() != null || !first) {
-                    writer.append("{").indent().softNewLine();
-                }
-
-                if (catchClause.getExceptionVariable() != null) {
-                    writer.append(variableName(catchClause.getExceptionVariable())).ws().append("=").ws()
-                            .append("$$je;").softNewLine();
-                }
-                visitStatements(catchClause.getHandler());
-
-                if (catchClause.getExceptionType() != null || !first) {
-                    writer.outdent().append("}");
-                }
-
-                first = false;
-
-                if (defaultHandlerOccurred) {
-                    break;
-                }
-            }
-            if (!defaultHandlerOccurred) {
-                writer.ws().append("else").ws().append("{").indent().softNewLine();
-                writer.append("throw $$e;").softNewLine();
-                writer.outdent().append("}").softNewLine();
-            } else {
-                writer.softNewLine();
-            }
-            writer.outdent().append("}").softNewLine();
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        writer.append("try").ws().append("{").softNewLine().indent();
+        List<TryCatchStatement> sequence = new ArrayList<>();
+        sequence.add(statement);
+        List<Statement> protectedBody = statement.getProtectedBody();
+        while (protectedBody.size() == 1 && protectedBody.get(0) instanceof TryCatchStatement) {
+            TryCatchStatement nextStatement = (TryCatchStatement) protectedBody.get(0);
+            sequence.add(nextStatement);
+            protectedBody = nextStatement.getProtectedBody();
         }
+        visitStatements(protectedBody);
+        writer.outdent().append("}").ws().append("catch").ws().append("($$e)")
+                .ws().append("{").indent().softNewLine();
+        writer.append("$$je").ws().append("=").ws().appendFunction("$rt_wrapException").append("($$e);")
+                .softNewLine();
+        boolean first = true;
+        boolean defaultHandlerOccurred = false;
+        for (int i = sequence.size() - 1; i >= 0; --i) {
+            TryCatchStatement catchClause = sequence.get(i);
+            if (!first) {
+                writer.ws().append("else");
+            }
+            if (catchClause.getExceptionType() != null) {
+                if (!first) {
+                    writer.append(" ");
+                }
+                writer.append("if").ws().append("($$je instanceof ").appendClass(catchClause.getExceptionType());
+                writer.append(")").ws();
+            } else {
+                defaultHandlerOccurred = true;
+            }
+
+            if (catchClause.getExceptionType() != null || !first) {
+                writer.append("{").indent().softNewLine();
+            }
+
+            if (catchClause.getExceptionVariable() != null) {
+                writer.append(variableName(catchClause.getExceptionVariable())).ws().append("=").ws()
+                        .append("$$je;").softNewLine();
+            }
+            visitStatements(catchClause.getHandler());
+
+            if (catchClause.getExceptionType() != null || !first) {
+                writer.outdent().append("}");
+            }
+
+            first = false;
+
+            if (defaultHandlerOccurred) {
+                break;
+            }
+        }
+        if (!defaultHandlerOccurred) {
+            writer.ws().append("else").ws().append("{").indent().softNewLine();
+            writer.append("throw $$e;").softNewLine();
+            writer.outdent().append("}").softNewLine();
+        } else {
+            writer.softNewLine();
+        }
+        writer.outdent().append("}").softNewLine();
     }
 
     @Override
     public void visit(GotoPartStatement statement) {
-        try {
-            if (statement.getPart() != currentPart) {
-                writer.append(context.pointerName()).ws().append("=").ws().append(statement.getPart()).append(";")
-                        .softNewLine();
-            }
-            if (!end || statement.getPart() != currentPart + 1) {
-                writer.append("continue ").append(context.mainLoopName()).append(";").softNewLine();
-            }
-        } catch (IOException ex) {
-            throw new RenderingException("IO error occurred", ex);
+        if (statement.getPart() != currentPart) {
+            writer.append(context.pointerName()).ws().append("=").ws().append(statement.getPart()).append(";")
+                    .softNewLine();
+        }
+        if (!end || statement.getPart() != currentPart + 1) {
+            writer.append("continue ").append(context.mainLoopName()).append(";").softNewLine();
         }
     }
 
     @Override
     public void visit(MonitorEnterStatement statement) {
-        try {
-            if (async) {
-                writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_METHOD).append("(");
-                precedence = Precedence.min();
-                statement.getObjectRef().acceptVisitor(this);
-                writer.append(");").softNewLine();
-                emitSuspendChecker();
-            } else {
-                writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_SYNC_METHOD).append('(');
-                precedence = Precedence.min();
-                statement.getObjectRef().acceptVisitor(this);
-                writer.append(");").softNewLine();
-            }
-        } catch (IOException ex) {
-            throw new RenderingException("IO error occurred", ex);
+        if (async) {
+            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_METHOD).append("(");
+            precedence = Precedence.min();
+            statement.getObjectRef().acceptVisitor(this);
+            writer.append(");").softNewLine();
+            emitSuspendChecker();
+        } else {
+            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_SYNC_METHOD).append('(');
+            precedence = Precedence.min();
+            statement.getObjectRef().acceptVisitor(this);
+            writer.append(");").softNewLine();
         }
     }
 
-    public void emitSuspendChecker() throws IOException {
+    public void emitSuspendChecker() {
         writer.append("if").ws().append("(").appendFunction("$rt_suspending").append("())").ws()
                 .append("{").indent().softNewLine();
         writer.append("break ").append(context.mainLoopName()).append(";").softNewLine();
@@ -1623,54 +1490,46 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(MonitorExitStatement statement) {
-        try {
-            if (async) {
-                writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_METHOD).append("(");
-                precedence = Precedence.min();
-                statement.getObjectRef().acceptVisitor(this);
-                writer.append(");").softNewLine();
-            } else {
-                writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_SYNC_METHOD).append('(');
-                precedence = Precedence.min();
-                statement.getObjectRef().acceptVisitor(this);
-                writer.append(");").softNewLine();
-            }
-        } catch (IOException ex) {
-            throw new RenderingException("IO error occurred", ex);
+        if (async) {
+            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_METHOD).append("(");
+            precedence = Precedence.min();
+            statement.getObjectRef().acceptVisitor(this);
+            writer.append(");").softNewLine();
+        } else {
+            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_SYNC_METHOD).append('(');
+            precedence = Precedence.min();
+            statement.getObjectRef().acceptVisitor(this);
+            writer.append(");").softNewLine();
         }
     }
 
     @Override
     public void visit(BoundCheckExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
-            }
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
 
-            if (expr.getArray() != null && expr.isLower()) {
-                writer.appendFunction("$rt_checkBounds").append("(");
-            } else if (expr.getArray() != null) {
-                writer.appendFunction("$rt_checkUpperBound").append("(");
-            } else if (expr.isLower()) {
-                writer.appendFunction("$rt_checkLowerBound").append("(");
-            }
+        if (expr.getArray() != null && expr.isLower()) {
+            writer.appendFunction("$rt_checkBounds").append("(");
+        } else if (expr.getArray() != null) {
+            writer.appendFunction("$rt_checkUpperBound").append("(");
+        } else if (expr.isLower()) {
+            writer.appendFunction("$rt_checkLowerBound").append("(");
+        }
 
-            expr.getIndex().acceptVisitor(this);
+        expr.getIndex().acceptVisitor(this);
 
-            if (expr.getArray() != null) {
-                writer.append(",").ws();
-                expr.getArray().acceptVisitor(this);
-            }
+        if (expr.getArray() != null) {
+            writer.append(",").ws();
+            expr.getArray().acceptVisitor(this);
+        }
 
-            if (expr.getArray() != null || expr.isLower()) {
-                writer.append(")");
-            }
+        if (expr.getArray() != null || expr.isLower()) {
+            writer.append(")");
+        }
 
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 
@@ -1698,12 +1557,12 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
 
         @Override
-        public void writeEscaped(String str) throws IOException {
+        public void writeEscaped(String str) {
             writer.append(RenderingUtil.escapeString(str));
         }
 
         @Override
-        public void writeType(ValueType type) throws IOException {
+        public void writeType(ValueType type) {
             context.typeToClsString(writer, type);
         }
 

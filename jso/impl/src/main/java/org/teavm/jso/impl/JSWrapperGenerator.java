@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.impl;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.rendering.Precedence;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
@@ -29,7 +28,7 @@ public class JSWrapperGenerator implements Injector, DependencyPlugin {
     private DependencyNode externalClassesNode;
 
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+    public void generate(InjectorContext context, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "directJavaToJs":
             case "directJsToJava":

@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
@@ -26,12 +25,12 @@ import org.teavm.model.MethodReference;
 public class ArrayNativeGenerator implements Generator {
     private JavaScriptTemplate template;
 
-    public ArrayNativeGenerator(JavaScriptTemplateFactory templateFactory) throws IOException {
+    public ArrayNativeGenerator(JavaScriptTemplateFactory templateFactory) {
         template = templateFactory.createFromResource("org/teavm/classlib/java/lang/reflect/Array.js");
     }
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         template.builder(methodRef.getName()).withContext(context).build().write(writer, 0);
     }
 }

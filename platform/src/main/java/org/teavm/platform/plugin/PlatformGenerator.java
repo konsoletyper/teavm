@@ -15,7 +15,6 @@
  */
 package org.teavm.platform.plugin;
 
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
@@ -75,7 +74,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     }
 
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+    public void generate(InjectorContext context, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "asJavaClass":
             case "classFromResource":
@@ -92,7 +91,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     }
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "prepareNewInstance":
                 generatePrepareNewInstance(context, writer);
@@ -112,8 +111,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         }
     }
 
-    private void generateWithTemplate(GeneratorContext context, SourceWriter writer, MethodReference methodRef)
-            throws IOException {
+    private void generateWithTemplate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         if (template == null) {
             template = new JavaScriptTemplateFactory(context.getClassLoader(), context.getClassSource())
                     .createFromResource("org/teavm/platform/plugin/Platform.js");
@@ -121,7 +119,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         template.builder(methodRef.getName()).withContext(context).build().write(writer, 0);
     }
 
-    private void generatePrepareNewInstance(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generatePrepareNewInstance(GeneratorContext context, SourceWriter writer) {
         MethodDependencyInfo newInstanceMethod = context.getDependency().getMethod(
                 new MethodReference(Platform.class, "newInstanceImpl", PlatformClass.class, Object.class));
         writer.append("let c").ws().append("=").ws().append("'$$constructor$$';").softNewLine();
@@ -140,7 +138,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         }
     }
 
-    private void generateLookup(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateLookup(GeneratorContext context, SourceWriter writer) {
         String param = context.getParameterName(1);
         writer.append("switch").ws().append("(").appendFunction("$rt_ustr").append("(" + param + "))")
                 .ws().append("{").softNewLine().indent();
@@ -153,7 +151,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     }
 
 
-    private void generateEnumConstants(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateEnumConstants(GeneratorContext context, SourceWriter writer) {
         writer.append("let c").ws().append("=").ws().append("'$$enumConstants$$';").softNewLine();
         for (String clsName : context.getClassSource().getClassNames()) {
             ClassReader cls = context.getClassSource().get(clsName);
@@ -184,7 +182,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 .append(");").softNewLine();
     }
 
-    private void generateAnnotations(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateAnnotations(GeneratorContext context, SourceWriter writer) {
         writer.append("let c").ws().append("=").ws().append("'$$annotations$$';").softNewLine();
         for (String clsName : context.getClassSource().getClassNames()) {
             ClassReader annotCls = context.getClassSource().get(clsName + "$$__annotations__$$");

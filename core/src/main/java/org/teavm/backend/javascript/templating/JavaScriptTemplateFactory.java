@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.javascript.templating;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.ast.AstUtil;
 import org.teavm.model.ClassReaderSource;
 
@@ -28,7 +27,7 @@ public class JavaScriptTemplateFactory {
         this.classSource = classSource;
     }
 
-    public JavaScriptTemplate createFromResource(String path) throws IOException {
+    public JavaScriptTemplate createFromResource(String path) {
         return new JavaScriptTemplate(AstUtil.parseFromResources(classLoader, path), classSource);
     }
 }

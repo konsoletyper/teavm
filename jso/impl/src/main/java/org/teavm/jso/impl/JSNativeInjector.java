@@ -16,7 +16,6 @@
 package org.teavm.jso.impl;
 
 import static org.teavm.backend.javascript.rendering.RenderingUtil.escapeString;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import org.teavm.ast.ConstantExpr;
@@ -41,7 +40,7 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
     private Set<DependencyNode> functorParamNodes = new HashSet<>();
 
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+    public void generate(InjectorContext context, MethodReference methodRef) {
         SourceWriter writer = context.getWriter();
         switch (methodRef.getName()) {
             case "arrayData":
@@ -162,7 +161,7 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
         }
     }
 
-    private void dataToArray(InjectorContext context, String className) throws IOException {
+    private void dataToArray(InjectorContext context, String className) {
         var writer = context.getWriter();
         writer.appendFunction("$rt_wrapArray").append("(").appendFunction(className).append(",").ws();
         context.writeExpr(context.getArgument(0), Precedence.min());
@@ -229,7 +228,7 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
     }
 
 
-    private void renderProperty(Expr property, InjectorContext context) throws IOException {
+    private void renderProperty(Expr property, InjectorContext context) {
         SourceWriter writer = context.getWriter();
         String name = extractPropertyName(property);
         if (name == null) {

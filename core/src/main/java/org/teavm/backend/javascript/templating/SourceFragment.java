@@ -15,9 +15,8 @@
  */
 package org.teavm.backend.javascript.templating;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 
 public interface SourceFragment {
-    void write(SourceWriter writer, int precedence) throws IOException;
+    void write(SourceWriter writer, int precedence);
 }

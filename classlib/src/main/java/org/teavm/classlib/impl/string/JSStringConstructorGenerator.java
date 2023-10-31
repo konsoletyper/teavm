@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.impl.string;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
@@ -23,7 +22,7 @@ import org.teavm.model.MethodReference;
 
 public class JSStringConstructorGenerator implements Generator {
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         writer.append(context.getParameterName(0));
         writer.append(".").appendField(JSStringInjector.NATIVE_FIELD).ws().append("=").ws();
         writer.append(context.getParameterName(1)).append(";").softNewLine();

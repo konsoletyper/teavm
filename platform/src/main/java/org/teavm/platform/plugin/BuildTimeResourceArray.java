@@ -15,7 +15,6 @@
  */
 package org.teavm.platform.plugin;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.backend.javascript.codegen.SourceWriter;
@@ -41,7 +40,7 @@ class BuildTimeResourceArray<T extends Resource> implements ResourceArray<T>, Re
     }
 
     @Override
-    public void write(SourceWriter writer) throws IOException {
+    public void write(SourceWriter writer) {
         writer.append('[').tokenBoundary();
         for (int i = 0; i < data.size(); ++i) {
             if (i > 0) {

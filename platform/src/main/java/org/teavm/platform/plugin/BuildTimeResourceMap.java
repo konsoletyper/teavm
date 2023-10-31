@@ -15,7 +15,6 @@
  */
 package org.teavm.platform.plugin;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.teavm.backend.javascript.codegen.SourceWriter;
@@ -42,7 +41,7 @@ class BuildTimeResourceMap<T extends Resource> implements ResourceMap<T>, Resour
     }
 
     @Override
-    public void write(SourceWriter writer) throws IOException {
+    public void write(SourceWriter writer) {
         writer.append('{');
         boolean first = true;
         for (Map.Entry<String, T> entry : data.entrySet()) {

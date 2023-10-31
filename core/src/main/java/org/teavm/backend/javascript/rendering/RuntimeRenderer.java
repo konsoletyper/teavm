@@ -39,15 +39,11 @@ public class RuntimeRenderer {
     }
 
     public void renderRuntime() throws RenderingException {
-        try {
-            renderHandWrittenRuntime("runtime.js");
-            renderHandWrittenRuntime("intern.js");
-        } catch (IOException e) {
-            throw new RenderingException("IO error", e);
-        }
+        renderHandWrittenRuntime("runtime.js");
+        renderHandWrittenRuntime("intern.js");
     }
 
-    public void renderHandWrittenRuntime(String name) throws IOException {
+    public void renderHandWrittenRuntime(String name)  {
         AstRoot ast = parseRuntime(name);
         ast.visit(new StringConstantElimination());
         new TemplatingAstTransformer(classSource).visit(ast);
@@ -56,7 +52,7 @@ public class RuntimeRenderer {
         astWriter.print(ast);
     }
 
-    private AstRoot parseRuntime(String name) throws IOException {
+    private AstRoot parseRuntime(String name) {
         CompilerEnvirons env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
         env.setLanguageVersion(Context.VERSION_1_8);
@@ -66,6 +62,8 @@ public class RuntimeRenderer {
         try (InputStream input = loader.getResourceAsStream("org/teavm/backend/javascript/" + name);
                 Reader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
             return factory.parse(reader, null, 0);
+        } catch (IOException e) {
+            throw new RenderingException(e);
         }
     }
 }

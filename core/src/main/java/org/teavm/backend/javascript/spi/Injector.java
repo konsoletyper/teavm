@@ -15,9 +15,8 @@
  */
 package org.teavm.backend.javascript.spi;
 
-import java.io.IOException;
 import org.teavm.model.MethodReference;
 
 public interface Injector {
-    void generate(InjectorContext context, MethodReference methodRef) throws IOException;
+    void generate(InjectorContext context, MethodReference methodRef);
 }
