@@ -34,7 +34,7 @@ public class MathNativeGenerator implements Generator {
     }
 
     private void function(GeneratorContext context, SourceWriter writer, String name, int paramCount) {
-        writer.append("return ").append("$rt_globals.Math").append(".").append(name).append("(");
+        writer.append("return ").appendGlobal("Math").append(".").append(name).append("(");
         for (int i = 0; i < paramCount; ++i) {
             if (i > 0) {
                 writer.append(",").ws();

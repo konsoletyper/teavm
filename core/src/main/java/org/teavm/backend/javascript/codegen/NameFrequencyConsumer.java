@@ -32,5 +32,9 @@ public interface NameFrequencyConsumer {
 
     void consume(FieldReference field);
 
+    void consumeStatic(FieldReference field);
+
     void consumeFunction(String name);
+
+    void consumeGlobal(String name);
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 konsoletyper.
+ *  Copyright 2023 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,22 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.impl;
+package org.teavm.backend.javascript.decompile;
 
-import org.teavm.backend.javascript.spi.ModuleImporter;
-import org.teavm.backend.javascript.spi.ModuleImporterContext;
+import org.teavm.debugging.information.DebugInformationEmitter;
 
-class JsBodyImportsContributor implements ModuleImporter {
-    private JsBodyImportInfo[] imports;
+public class PreparedVariable {
+    public final String[] names;
+    public final String jsName;
 
-    JsBodyImportsContributor(JsBodyImportInfo[] imports) {
-        this.imports = imports;
+    public PreparedVariable(String[] names, String jsName) {
+        this.names = names;
+        this.jsName = jsName;
     }
 
-    @Override
-    public void importModules(ModuleImporterContext context) {
-        for (var importInfo : imports) {
-            context.importModule(importInfo.fromModule);
-        }
+    public void emit(DebugInformationEmitter emitter) {
+        emitter.emitVariable(names, jsName);
     }
 }

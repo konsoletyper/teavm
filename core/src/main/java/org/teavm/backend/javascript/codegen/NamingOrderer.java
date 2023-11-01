@@ -22,6 +22,7 @@ import org.teavm.model.MethodReference;
 
 public class NamingOrderer implements NameFrequencyConsumer {
     private Map<String, Entry> entries = new HashMap<>();
+    private Set<String> reservedNames = new HashSet<>();
 
     @Override
     public void consume(MethodReference method) {
@@ -97,6 +98,18 @@ public class NamingOrderer implements NameFrequencyConsumer {
     }
 
     @Override
+    public void consumeStatic(FieldReference field) {
+        var key = "sf:" + field;
+        var entry = entries.get(key);
+        if (entry == null) {
+            entry = new Entry();
+            entry.operation = naming -> naming.getFullNameFor(field);
+            entries.put(key, entry);
+        }
+        entry.frequency++;
+    }
+
+    @Override
     public void consumeFunction(String name) {
         String key = "n:" + name;
         Entry entry = entries.get(key);
@@ -108,7 +121,15 @@ public class NamingOrderer implements NameFrequencyConsumer {
         entry.frequency++;
     }
 
+    @Override
+    public void consumeGlobal(String name) {
+        reservedNames.add(name);
+    }
+
     public void apply(NamingStrategy naming) {
+        for (var name : reservedNames) {
+            naming.reserveName(name);
+        }
         List<Entry> entryList = new ArrayList<>(entries.values());
         Collections.sort(entryList, (o1, o2) -> Integer.compare(o2.frequency, o1.frequency));
         for (Entry entry : entryList) {

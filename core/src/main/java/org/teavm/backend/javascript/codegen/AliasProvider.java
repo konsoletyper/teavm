@@ -35,4 +35,6 @@ public interface AliasProvider {
     ScopedName getClassInitAlias(String className);
 
     String getScopeAlias();
+
+    void reserveName(String name);
 }

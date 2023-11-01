@@ -15,27 +15,33 @@
  */
 package org.teavm.backend.javascript.decompile;
 
+import java.util.Set;
 import org.teavm.ast.ControlFlowEntry;
-import org.teavm.ast.MethodNode;
-import org.teavm.backend.javascript.spi.Generator;
-import org.teavm.model.MethodHolder;
+import org.teavm.backend.javascript.codegen.RememberedSource;
+import org.teavm.model.AccessLevel;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodReference;
 
 public class PreparedMethod {
-    public final MethodHolder methodHolder;
+    public final AccessLevel accessLevel;
+    public final Set<ElementModifier> modifiers;
     public final MethodReference reference;
-    public final MethodNode node;
-    public final Generator generator;
+    public final RememberedSource body;
+    public final RememberedSource parameters;
     public final boolean async;
     public final ControlFlowEntry[] cfg;
+    public final PreparedVariable[] variables;
 
-    public PreparedMethod(MethodHolder method, MethodNode node, Generator generator, boolean async,
-            ControlFlowEntry[] cfg) {
-        this.reference = method.getReference();
-        this.methodHolder = method;
-        this.node = node;
-        this.generator = generator;
+    public PreparedMethod(AccessLevel accessLevel, Set<ElementModifier> modifiers, MethodReference reference,
+            RememberedSource body, RememberedSource parameters, boolean async, ControlFlowEntry[] cfg,
+            PreparedVariable[] variables) {
+        this.accessLevel = accessLevel;
+        this.modifiers = modifiers;
+        this.reference = reference;
+        this.body = body;
+        this.parameters = parameters;
         this.async = async;
         this.cfg = cfg;
+        this.variables = variables;
     }
 }

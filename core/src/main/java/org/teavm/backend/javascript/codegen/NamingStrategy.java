@@ -37,4 +37,6 @@ public interface NamingStrategy {
     ScopedName getNameForClassInit(String className);
 
     String getScopeName();
+
+    void reserveName(String name);
 }

@@ -182,8 +182,7 @@ public class TemplatingAstWriter extends AstWriter {
             if (scope == null && name.getIdentifier().equals("teavm_globals")) {
                 var oldRootScope = rootScope;
                 rootScope = false;
-                writer.append("$rt_globals").append(".");
-                print(node.getProperty());
+                writer.appendGlobal(node.getProperty().getIdentifier());
                 rootScope = oldRootScope;
                 return;
             }

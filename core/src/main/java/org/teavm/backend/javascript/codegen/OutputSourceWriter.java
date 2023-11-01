@@ -125,6 +125,11 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
     }
 
     @Override
+    public SourceWriter appendGlobal(String name) {
+        return append(name);
+    }
+
+    @Override
     public SourceWriter appendInit(MethodReference method) {
         return appendName(naming.getNameForInit(method));
     }

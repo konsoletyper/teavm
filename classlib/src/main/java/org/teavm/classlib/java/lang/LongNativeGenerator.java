@@ -43,6 +43,5 @@ public class LongNativeGenerator implements Generator {
         writer.append("return ").appendFunction(name).append("(").append(context.getParameterName(1))
                 .append(",").ws()
                 .append(context.getParameterName(2)).append(");").softNewLine();
-        context.useLongLibrary();
     }
 }

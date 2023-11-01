@@ -30,6 +30,6 @@ public class DefaultGlobalNameWriter implements Function<String, NameEmitter> {
         if (s.startsWith("$rt_") || s.startsWith("Long_") || s.equals("Long")) {
             return prec -> writer.appendFunction(s);
         }
-        return prec -> writer.append("$rt_globals").append('.').append(s);
+        return prec -> writer.appendGlobal(s);
     }
 }

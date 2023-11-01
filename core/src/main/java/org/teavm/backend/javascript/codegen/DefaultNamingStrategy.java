@@ -130,6 +130,11 @@ public class DefaultNamingStrategy implements NamingStrategy {
         return scopeName;
     }
 
+    @Override
+    public void reserveName(String name) {
+        aliasProvider.reserveName(name);
+    }
+
     private MethodReference getRealMethod(MethodReference methodRef) {
         String className = methodRef.getClassName();
         while (className != null) {

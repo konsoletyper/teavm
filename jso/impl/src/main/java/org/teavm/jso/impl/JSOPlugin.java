@@ -81,10 +81,5 @@ public class JSOPlugin implements TeaVMPlugin {
                 wrapperGenerator);
 
         TeaVMPluginUtil.handleNatives(host, JS.class);
-
-        jsHost.addModuleImporterProvider(providerContext -> {
-            var imports = repository.imports.get(providerContext.getMethod());
-            return imports != null ? new JsBodyImportsContributor(imports) : null;
-        });
     }
 }

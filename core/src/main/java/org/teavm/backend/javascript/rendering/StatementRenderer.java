@@ -96,7 +96,6 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     private int currentPart;
     private List<String> blockIds = new ArrayList<>();
     private IntIndexedContainer blockIndexMap = new IntArrayList();
-    private boolean longLibraryUsed;
     private static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
     private VariableNameGenerator variableNameGenerator;
     private final Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
@@ -111,8 +110,16 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         variableNameGenerator = new VariableNameGenerator(minifying);
     }
 
-    public boolean isLongLibraryUsed() {
-        return longLibraryUsed;
+    public void clear() {
+        blockIdMap.clear();
+        blockIds.clear();
+        blockIndexMap.clear();
+        currentPart = 0;
+        end = false;
+        precedence = null;
+        variableNameGenerator.setCurrentMethod(null);
+        locationStack.clear();
+        lastEmittedLocation = TextLocation.EMPTY;
     }
 
     public boolean isAsync() {
@@ -624,7 +631,6 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(BinaryExpr expr) {
         if (expr.getType() == OperationType.LONG) {
-            longLibraryUsed = true;
             switch (expr.getOperation()) {
                 case ADD:
                     visitBinaryFunction(expr, "Long_add");
@@ -772,7 +778,6 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         switch (expr.getOperation()) {
             case NOT: {
                 if (expr.getType() == OperationType.LONG) {
-                    longLibraryUsed = true;
                     writer.appendFunction("Long_not").append("(");
                     precedence = Precedence.min();
                     expr.getOperand().acceptVisitor(this);
@@ -792,7 +797,6 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             }
             case NEGATE:
                 if (expr.getType() == OperationType.LONG) {
-                    longLibraryUsed = true;
                     writer.appendFunction("Long_neg").append("(");
                     precedence = Precedence.min();
                     expr.getOperand().acceptVisitor(this);

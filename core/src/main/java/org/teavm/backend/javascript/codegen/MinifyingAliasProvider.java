@@ -89,6 +89,11 @@ public class MinifyingAliasProvider implements AliasProvider {
         return result;
     }
 
+    @Override
+    public void reserveName(String name) {
+        usedAliases.add(name);
+    }
+
     private ScopedName createTopLevelName() {
         if (usedAliases.size() < topLevelAliasLimit) {
             String result;
