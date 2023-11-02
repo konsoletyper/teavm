@@ -139,6 +139,12 @@ public class RememberedSource implements SourceFragment {
                     }
                     break;
 
+                case RememberingSourceWriter.SAME_LINE_WS:
+                    if ((filter & FILTER_TEXT) != 0) {
+                        sink.sameLineWs();
+                    }
+                    break;
+
                 case RememberingSourceWriter.TOKEN_BOUNDARY:
                     if ((filter & FILTER_TEXT) != 0) {
                         sink.tokenBoundary();

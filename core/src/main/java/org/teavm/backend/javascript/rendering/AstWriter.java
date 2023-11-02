@@ -738,12 +738,14 @@ public class AstWriter {
         if (!isArrow || node.getParams().size() != 1) {
             writer.append('(');
             printList(node.getParams());
-            writer.append(')').ws();
+            writer.append(')');
         } else {
             print(node.getParams().get(0));
         }
         if (isArrow) {
-            writer.append("=>").ws();
+            writer.sameLineWs().append("=>").ws();
+        } else {
+            writer.ws();
         }
 
         if (node.isExpressionClosure()) {

@@ -166,7 +166,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
 
         MethodReference selfRef = new MethodReference(Platform.class, "getEnumConstants",
                 PlatformClass.class, Enum[].class);
-        writer.appendMethodBody(selfRef).ws().append("=").ws().append("cls").ws().append("=>").ws()
+        writer.appendMethodBody(selfRef).ws().append("=").ws().append("cls").sameLineWs().append("=>").ws()
                 .append("{").softNewLine().indent();
         writer.append("if").ws().append("(!cls.hasOwnProperty(c))").ws().append("{").indent().softNewLine();
         writer.append("return null;").softNewLine();
@@ -196,7 +196,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
 
         MethodReference selfRef = new MethodReference(Platform.class, "getAnnotations", PlatformClass.class,
                 Annotation[].class);
-        writer.appendMethodBody(selfRef).ws().append("=").ws().append("cls").ws().append("=>").ws()
+        writer.appendMethodBody(selfRef).ws().append("=").ws().append("cls").sameLineWs().append("=>").ws()
                 .append("{").softNewLine().indent();
         writer.append("if").ws().append("(!cls.hasOwnProperty(c))").ws().append("{").indent().softNewLine();
         writer.append("return null;").softNewLine();

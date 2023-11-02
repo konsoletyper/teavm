@@ -15,167 +15,161 @@
  */
 "use strict";
 
-var Long_eq;
-var Long_ne;
-var Long_gt;
-var Long_ge;
-var Long_lt;
-var Long_le;
-var Long_compare;
-var Long_ucompare;
-var Long_add;
-var Long_sub;
-var Long_inc;
-var Long_dec;
-var Long_mul;
-var Long_div;
-var Long_rem;
-var Long_udiv;
-var Long_urem;
-var Long_neg;
-var Long_and;
-var Long_or;
-var Long_xor;
-var Long_shl;
-var Long_shr;
-var Long_shru;
-var Long_not;
+let Long_eq;
+let Long_ne;
+let Long_gt;
+let Long_ge;
+let Long_lt;
+let Long_le;
+let Long_compare;
+let Long_ucompare;
+let Long_add;
+let Long_sub;
+let Long_inc;
+let Long_dec;
+let Long_mul;
+let Long_div;
+let Long_rem;
+let Long_udiv;
+let Long_urem;
+let Long_neg;
+let Long_and;
+let Long_or;
+let Long_xor;
+let Long_shl;
+let Long_shr;
+let Long_shru;
+let Long_not;
 
 if (typeof teavm_globals.BigInt !== 'function') {
-    Long_eq = function(a, b) {
-        return a.hi === b.hi && a.lo === b.lo;
-    }
+    Long_eq = (a, b) => a.hi === b.hi && a.lo === b.lo;
 
-    Long_ne = function(a, b) {
-        return a.hi !== b.hi || a.lo !== b.lo;
-    }
+    Long_ne = (a, b) => a.hi !== b.hi || a.lo !== b.lo;
 
-    Long_gt = function(a, b) {
+    Long_gt = (a, b) => {
         if (a.hi < b.hi) {
             return false;
         }
         if (a.hi > b.hi) {
             return true;
         }
-        var x = a.lo >>> 1;
-        var y = b.lo >>> 1;
+        let x = a.lo >>> 1;
+        let y = b.lo >>> 1;
         if (x !== y) {
             return x > y;
         }
         return (a.lo & 1) > (b.lo & 1);
     }
 
-    Long_ge = function(a, b) {
+    Long_ge = (a, b) => {
         if (a.hi < b.hi) {
             return false;
         }
         if (a.hi > b.hi) {
             return true;
         }
-        var x = a.lo >>> 1;
-        var y = b.lo >>> 1;
+        let x = a.lo >>> 1;
+        let y = b.lo >>> 1;
         if (x !== y) {
             return x >= y;
         }
         return (a.lo & 1) >= (b.lo & 1);
     }
 
-    Long_lt = function(a, b) {
+    Long_lt = (a, b) => {
         if (a.hi > b.hi) {
             return false;
         }
         if (a.hi < b.hi) {
             return true;
         }
-        var x = a.lo >>> 1;
-        var y = b.lo >>> 1;
+        let x = a.lo >>> 1;
+        let y = b.lo >>> 1;
         if (x !== y) {
             return x < y;
         }
         return (a.lo & 1) < (b.lo & 1);
     }
 
-    Long_le = function(a, b) {
+    Long_le = (a, b) => {
         if (a.hi > b.hi) {
             return false;
         }
         if (a.hi < b.hi) {
             return true;
         }
-        var x = a.lo >>> 1;
-        var y = b.lo >>> 1;
+        let x = a.lo >>> 1;
+        let y = b.lo >>> 1;
         if (x !== y) {
             return x <= y;
         }
         return (a.lo & 1) <= (b.lo & 1);
     }
 
-    Long_add = function(a, b) {
+    Long_add = (a, b) => {
         if (a.hi === (a.lo >> 31) && b.hi === (b.lo >> 31)) {
             return Long_fromNumber(a.lo + b.lo);
         } else if (Math.abs(a.hi) < Long_MAX_NORMAL && Math.abs(b.hi) < Long_MAX_NORMAL) {
             return Long_fromNumber(Long_toNumber(a) + Long_toNumber(b));
         }
-        var a_lolo = a.lo & 0xFFFF;
-        var a_lohi = a.lo >>> 16;
-        var a_hilo = a.hi & 0xFFFF;
-        var a_hihi = a.hi >>> 16;
-        var b_lolo = b.lo & 0xFFFF;
-        var b_lohi = b.lo >>> 16;
-        var b_hilo = b.hi & 0xFFFF;
-        var b_hihi = b.hi >>> 16;
+        let a_lolo = a.lo & 0xFFFF;
+        let a_lohi = a.lo >>> 16;
+        let a_hilo = a.hi & 0xFFFF;
+        let a_hihi = a.hi >>> 16;
+        let b_lolo = b.lo & 0xFFFF;
+        let b_lohi = b.lo >>> 16;
+        let b_hilo = b.hi & 0xFFFF;
+        let b_hihi = b.hi >>> 16;
 
-        var lolo = (a_lolo + b_lolo) | 0;
-        var lohi = (a_lohi + b_lohi + (lolo >> 16)) | 0;
-        var hilo = (a_hilo + b_hilo + (lohi >> 16)) | 0;
-        var hihi = (a_hihi + b_hihi + (hilo >> 16)) | 0;
+        let lolo = (a_lolo + b_lolo) | 0;
+        let lohi = (a_lohi + b_lohi + (lolo >> 16)) | 0;
+        let hilo = (a_hilo + b_hilo + (lohi >> 16)) | 0;
+        let hihi = (a_hihi + b_hihi + (hilo >> 16)) | 0;
         return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16), (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
     }
 
-    Long_inc = function(a) {
-        var lo = (a.lo + 1) | 0;
-        var hi = a.hi;
+    Long_inc = a => {
+        let lo = (a.lo + 1) | 0;
+        let hi = a.hi;
         if (lo === 0) {
             hi = (hi + 1) | 0;
         }
         return new Long(lo, hi);
     }
 
-    Long_dec = function(a) {
-        var lo = (a.lo - 1) | 0;
-        var hi = a.hi;
+    Long_dec = a => {
+        let lo = (a.lo - 1) | 0;
+        let hi = a.hi;
         if (lo === -1) {
             hi = (hi - 1) | 0;
         }
         return new Long(lo, hi);
     }
 
-    Long_neg = function(a) {
-        return Long_inc(new Long(a.lo ^ 0xFFFFFFFF, a.hi ^ 0xFFFFFFFF));
-    }
+    Long_neg = a => Long_inc(new Long(a.lo ^ 0xFFFFFFFF, a.hi ^ 0xFFFFFFFF))
 
-    Long_sub = function(a, b) {
+    Long_sub = (a, b) => {
         if (a.hi === (a.lo >> 31) && b.hi === (b.lo >> 31)) {
             return Long_fromNumber(a.lo - b.lo);
         }
-        var a_lolo = a.lo & 0xFFFF;
-        var a_lohi = a.lo >>> 16;
-        var a_hilo = a.hi & 0xFFFF;
-        var a_hihi = a.hi >>> 16;
-        var b_lolo = b.lo & 0xFFFF;
-        var b_lohi = b.lo >>> 16;
-        var b_hilo = b.hi & 0xFFFF;
-        var b_hihi = b.hi >>> 16;
+        let a_lolo = a.lo & 0xFFFF;
+        let a_lohi = a.lo >>> 16;
+        let a_hilo = a.hi & 0xFFFF;
+        let a_hihi = a.hi >>> 16;
+        let b_lolo = b.lo & 0xFFFF;
+        let b_lohi = b.lo >>> 16;
+        let b_hilo = b.hi & 0xFFFF;
+        let b_hihi = b.hi >>> 16;
 
-        var lolo = (a_lolo - b_lolo) | 0;
-        var lohi = (a_lohi - b_lohi + (lolo >> 16)) | 0;
-        var hilo = (a_hilo - b_hilo + (lohi >> 16)) | 0;
-        var hihi = (a_hihi - b_hihi + (hilo >> 16)) | 0;
+        let lolo = (a_lolo - b_lolo) | 0;
+        let lohi = (a_lohi - b_lohi + (lolo >> 16)) | 0;
+        let hilo = (a_hilo - b_hilo + (lohi >> 16)) | 0;
+        let hihi = (a_hihi - b_hihi + (hilo >> 16)) | 0;
         return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16), (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
     }
 
-    Long_compare = function(a, b) {
-        var r = a.hi - b.hi;
+    Long_compare = (a, b) => {
+        let r = a.hi - b.hi;
         if (r !== 0) {
             return r;
         }
@@ -186,8 +180,8 @@ if (typeof teavm_globals.BigInt !== 'function') {
         return (a.lo & 1) - (b.lo & 1);
     }
 
-    Long_ucompare = function(a, b) {
-        var r = $rt_ucmp(a.hi, b.hi);
+    Long_ucompare = (a, b) => {
+        let r = $rt_ucmp(a.hi, b.hi);
         if (r !== 0) {
             return r;
         }
@@ -198,27 +192,27 @@ if (typeof teavm_globals.BigInt !== 'function') {
         return (a.lo & 1) - (b.lo & 1);
     }
 
-    Long_mul = function(a, b) {
-        var positive = Long_isNegative(a) === Long_isNegative(b);
+    Long_mul = (a, b) => {
+        let positive = Long_isNegative(a) === Long_isNegative(b);
         if (Long_isNegative(a)) {
             a = Long_neg(a);
         }
         if (Long_isNegative(b)) {
             b = Long_neg(b);
         }
-        var a_lolo = a.lo & 0xFFFF;
-        var a_lohi = a.lo >>> 16;
-        var a_hilo = a.hi & 0xFFFF;
-        var a_hihi = a.hi >>> 16;
-        var b_lolo = b.lo & 0xFFFF;
-        var b_lohi = b.lo >>> 16;
-        var b_hilo = b.hi & 0xFFFF;
-        var b_hihi = b.hi >>> 16;
+        let a_lolo = a.lo & 0xFFFF;
+        let a_lohi = a.lo >>> 16;
+        let a_hilo = a.hi & 0xFFFF;
+        let a_hihi = a.hi >>> 16;
+        let b_lolo = b.lo & 0xFFFF;
+        let b_lohi = b.lo >>> 16;
+        let b_hilo = b.hi & 0xFFFF;
+        let b_hihi = b.hi >>> 16;
 
-        var lolo = 0;
-        var lohi = 0;
-        var hilo = 0;
-        var hihi = 0;
+        let lolo = 0;
+        let lohi = 0;
+        let hilo = 0;
+        let hihi = 0;
         lolo = (a_lolo * b_lolo) | 0;
         lohi = lolo >>> 16;
         lohi = ((lohi & 0xFFFF) + a_lohi * b_lolo) | 0;
@@ -233,43 +227,43 @@ if (typeof teavm_globals.BigInt !== 'function') {
         hilo = ((hilo & 0xFFFF) + a_lolo * b_hilo) | 0;
         hihi = (hihi + (hilo >>> 16)) | 0;
         hihi = (hihi + a_hihi * b_lolo + a_hilo * b_lohi + a_lohi * b_hilo + a_lolo * b_hihi) | 0;
-        var result = new Long((lolo & 0xFFFF) | (lohi << 16), (hilo & 0xFFFF) | (hihi << 16));
+        let result = new Long((lolo & 0xFFFF) | (lohi << 16), (hilo & 0xFFFF) | (hihi << 16));
         return positive ? result : Long_neg(result);
     }
 
-    Long_div = function(a, b) {
+    Long_div = (a, b) => {
         if (Math.abs(a.hi) < Long_MAX_NORMAL && Math.abs(b.hi) < Long_MAX_NORMAL) {
             return Long_fromNumber(Long_toNumber(a) / Long_toNumber(b));
         }
         return Long_divRem(a, b)[0];
     }
 
-    Long_udiv = function(a, b) {
+    Long_udiv = (a, b) => {
         if (a.hi >= 0 && a.hi < Long_MAX_NORMAL && b.hi >= 0 && b.hi < Long_MAX_NORMAL) {
             return Long_fromNumber(Long_toNumber(a) / Long_toNumber(b));
         }
         return Long_udivRem(a, b)[0];
     }
 
-    Long_rem = function(a, b) {
+    Long_rem = (a, b) => {
         if (Math.abs(a.hi) < Long_MAX_NORMAL && Math.abs(b.hi) < Long_MAX_NORMAL) {
             return Long_fromNumber(Long_toNumber(a) % Long_toNumber(b));
         }
         return Long_divRem(a, b)[1];
     }
 
-    Long_urem = function(a, b) {
+    Long_urem = (a, b) => {
         if (a.hi >= 0 && a.hi < Long_MAX_NORMAL && b.hi >= 0 && b.hi < Long_MAX_NORMAL) {
             return Long_fromNumber(Long_toNumber(a) / Long_toNumber(b));
         }
         return Long_udivRem(a, b)[1];
     }
 
-    function Long_divRem(a, b) {
+    let Long_divRem = (a, b) => {
         if (b.lo === 0 && b.hi === 0) {
             throw new teavm_globals.Error("Division by zero");
         }
-        var positive = Long_isNegative(a) === Long_isNegative(b);
+        let positive = Long_isNegative(a) === Long_isNegative(b);
         if (Long_isNegative(a)) {
             a = Long_neg(a);
         }
@@ -278,45 +272,31 @@ if (typeof teavm_globals.BigInt !== 'function') {
         }
         a = new LongInt(a.lo, a.hi, 0);
         b = new LongInt(b.lo, b.hi, 0);
-        var q = LongInt_div(a, b);
+        let q = LongInt_div(a, b);
         a = new Long(a.lo, a.hi);
         q = new Long(q.lo, q.hi);
         return positive ? [q, a] : [Long_neg(q), Long_neg(a)];
-    }
+    };
 
-    function Long_udivRem(a, b) {
+    let Long_udivRem = (a, b) => {
         if (b.lo === 0 && b.hi === 0) {
             throw new teavm_globals.Error("Division by zero");
         }
         a = new LongInt(a.lo, a.hi, 0);
         b = new LongInt(b.lo, b.hi, 0);
-        var q = LongInt_div(a, b);
+        let q = LongInt_div(a, b);
         a = new Long(a.lo, a.hi);
         q = new Long(q.lo, q.hi);
         return [q, a];
-    }
+    };
 
-    function Long_shiftLeft16(a) {
-        return new Long(a.lo << 16, (a.lo >>> 16) | (a.hi << 16));
-    }
+    Long_and = (a, b) => new Long(a.lo & b.lo, a.hi & b.hi)
 
-    function Long_shiftRight16(a) {
-        return new Long((a.lo >>> 16) | (a.hi << 16), a.hi >>> 16);
-    }
+    Long_or = (a, b) => new Long(a.lo | b.lo, a.hi | b.hi)
 
-    Long_and = function(a, b) {
-        return new Long(a.lo & b.lo, a.hi & b.hi);
-    }
+    Long_xor = (a, b) => new Long(a.lo ^ b.lo, a.hi ^ b.hi)
 
-    Long_or = function(a, b) {
-        return new Long(a.lo | b.lo, a.hi | b.hi);
-    }
-
-    Long_xor = function(a, b) {
-        return new Long(a.lo ^ b.lo, a.hi ^ b.hi);
-    }
-
-    Long_shl = function(a, b) {
+    Long_shl = (a, b) => {
         b &= 63;
         if (b === 0) {
             return a;
@@ -329,7 +309,7 @@ if (typeof teavm_globals.BigInt !== 'function') {
         }
     }
 
-    Long_shr = function(a, b) {
+    Long_shr = (a, b) => {
         b &= 63;
         if (b === 0) {
             return a;
@@ -342,7 +322,7 @@ if (typeof teavm_globals.BigInt !== 'function') {
         }
     }
 
-    Long_shru = function(a, b) {
+    Long_shru = (a, b) => {
         b &= 63;
         if (b === 0) {
             return a;
@@ -355,9 +335,7 @@ if (typeof teavm_globals.BigInt !== 'function') {
         }
     }
 
-    Long_not = function(a) {
-        return new Long(~a.hi, ~a.lo);
-    }
+    Long_not = a => new Long(~a.hi, ~a.lo)
 
     // Represents a mutable 80-bit unsigned integer
     function LongInt(lo, hi, sup) {
@@ -366,12 +344,12 @@ if (typeof teavm_globals.BigInt !== 'function') {
         this.sup = sup;
     }
 
-    function LongInt_mul(a, b) {
-        var a_lolo = ((a.lo & 0xFFFF) * b) | 0;
-        var a_lohi = ((a.lo >>> 16) * b) | 0;
-        var a_hilo = ((a.hi & 0xFFFF) * b) | 0;
-        var a_hihi = ((a.hi >>> 16) * b) | 0;
-        var sup = (a.sup * b) | 0;
+    let LongInt_mul = (a, b) => {
+        let a_lolo = ((a.lo & 0xFFFF) * b) | 0;
+        let a_lohi = ((a.lo >>> 16) * b) | 0;
+        let a_hilo = ((a.hi & 0xFFFF) * b) | 0;
+        let a_hihi = ((a.hi >>> 16) * b) | 0;
+        let sup = (a.sup * b) | 0;
 
         a_lohi = (a_lohi + (a_lolo >>> 16)) | 0;
         a_hilo = (a_hilo + (a_lohi >>> 16)) | 0;
@@ -380,49 +358,49 @@ if (typeof teavm_globals.BigInt !== 'function') {
         a.lo = (a_lolo & 0xFFFF) | (a_lohi << 16);
         a.hi = (a_hilo & 0xFFFF) | (a_hihi << 16);
         a.sup = sup & 0xFFFF;
-    }
+    };
 
-    function LongInt_sub(a, b) {
-        var a_lolo = a.lo & 0xFFFF;
-        var a_lohi = a.lo >>> 16;
-        var a_hilo = a.hi & 0xFFFF;
-        var a_hihi = a.hi >>> 16;
-        var b_lolo = b.lo & 0xFFFF;
-        var b_lohi = b.lo >>> 16;
-        var b_hilo = b.hi & 0xFFFF;
-        var b_hihi = b.hi >>> 16;
+    let LongInt_sub = (a, b) => {
+        let a_lolo = a.lo & 0xFFFF;
+        let a_lohi = a.lo >>> 16;
+        let a_hilo = a.hi & 0xFFFF;
+        let a_hihi = a.hi >>> 16;
+        let b_lolo = b.lo & 0xFFFF;
+        let b_lohi = b.lo >>> 16;
+        let b_hilo = b.hi & 0xFFFF;
+        let b_hihi = b.hi >>> 16;
 
         a_lolo = (a_lolo - b_lolo) | 0;
         a_lohi = (a_lohi - b_lohi + (a_lolo >> 16)) | 0;
         a_hilo = (a_hilo - b_hilo + (a_lohi >> 16)) | 0;
         a_hihi = (a_hihi - b_hihi + (a_hilo >> 16)) | 0;
-        var sup = (a.sup - b.sup + (a_hihi >> 16)) | 0;
+        let sup = (a.sup - b.sup + (a_hihi >> 16)) | 0;
         a.lo = (a_lolo & 0xFFFF) | (a_lohi << 16);
         a.hi = (a_hilo & 0xFFFF) | (a_hihi << 16);
         a.sup = sup;
-    }
+    };
 
-    function LongInt_add(a, b) {
-        var a_lolo = a.lo & 0xFFFF;
-        var a_lohi = a.lo >>> 16;
-        var a_hilo = a.hi & 0xFFFF;
-        var a_hihi = a.hi >>> 16;
-        var b_lolo = b.lo & 0xFFFF;
-        var b_lohi = b.lo >>> 16;
-        var b_hilo = b.hi & 0xFFFF;
-        var b_hihi = b.hi >>> 16;
+    let LongInt_add = (a, b) => {
+        let a_lolo = a.lo & 0xFFFF;
+        let a_lohi = a.lo >>> 16;
+        let a_hilo = a.hi & 0xFFFF;
+        let a_hihi = a.hi >>> 16;
+        let b_lolo = b.lo & 0xFFFF;
+        let b_lohi = b.lo >>> 16;
+        let b_hilo = b.hi & 0xFFFF;
+        let b_hihi = b.hi >>> 16;
 
         a_lolo = (a_lolo + b_lolo) | 0;
         a_lohi = (a_lohi + b_lohi + (a_lolo >> 16)) | 0;
         a_hilo = (a_hilo + b_hilo + (a_lohi >> 16)) | 0;
         a_hihi = (a_hihi + b_hihi + (a_hilo >> 16)) | 0;
-        var sup = (a.sup + b.sup + (a_hihi >> 16)) | 0;
+        let sup = (a.sup + b.sup + (a_hihi >> 16)) | 0;
         a.lo = (a_lolo & 0xFFFF) | (a_lohi << 16);
         a.hi = (a_hilo & 0xFFFF) | (a_hihi << 16);
         a.sup = sup;
-    }
+    };
 
-    function LongInt_inc(a) {
+    let LongInt_inc = a => {
         a.lo = (a.lo + 1) | 0;
         if (a.lo === 0) {
             a.hi = (a.hi + 1) | 0;
@@ -430,9 +408,9 @@ if (typeof teavm_globals.BigInt !== 'function') {
                 a.sup = (a.sup + 1) & 0xFFFF;
             }
         }
-    }
+    };
 
-    function LongInt_dec(a) {
+    let LongInt_dec = a => {
         a.lo = (a.lo - 1) | 0;
         if (a.lo === -1) {
             a.hi = (a.hi - 1) | 0;
@@ -440,10 +418,10 @@ if (typeof teavm_globals.BigInt !== 'function') {
                 a.sup = (a.sup - 1) & 0xFFFF;
             }
         }
-    }
+    };
 
-    function LongInt_ucompare(a, b) {
-        var r = (a.sup - b.sup);
+    let LongInt_ucompare = (a, b) => {
+        let r = (a.sup - b.sup);
         if (r !== 0) {
             return r;
         }
@@ -460,11 +438,11 @@ if (typeof teavm_globals.BigInt !== 'function') {
             return r;
         }
         return (a.lo & 1) - (b.lo & 1);
-    }
+    };
 
-    function LongInt_numOfLeadingZeroBits(a) {
-        var n = 0;
-        var d = 16;
+    let LongInt_numOfLeadingZeroBits = a => {
+        let n = 0;
+        let d = 16;
         while (d > 0) {
             if ((a >>> d) !== 0) {
                 a >>>= d;
@@ -473,9 +451,9 @@ if (typeof teavm_globals.BigInt !== 'function') {
             d = (d / 2) | 0;
         }
         return 31 - n;
-    }
+    };
 
-    function LongInt_shl(a, b) {
+    let LongInt_shl = (a, b) => {
         if (b === 0) {
             return;
         }
@@ -500,9 +478,9 @@ if (typeof teavm_globals.BigInt !== 'function') {
             a.hi = 0;
             a.lo = 0;
         }
-    }
+    };
 
-    function LongInt_shr(a, b) {
+    let LongInt_shr = (a, b) => {
         if (b === 0) {
             return;
         }
@@ -527,27 +505,25 @@ if (typeof teavm_globals.BigInt !== 'function') {
             a.hi = 0;
             a.sup = 0;
         }
-    }
+    };
 
-    function LongInt_copy(a) {
-        return new LongInt(a.lo, a.hi, a.sup);
-    }
+    let LongInt_copy = a => new LongInt(a.lo, a.hi, a.sup);
 
-    function LongInt_div(a, b) {
+    let LongInt_div = (a, b) => {
         // Normalize divisor
-        var bits = b.hi !== 0 ? LongInt_numOfLeadingZeroBits(b.hi) : LongInt_numOfLeadingZeroBits(b.lo) + 32;
-        var sz = 1 + ((bits / 16) | 0);
-        var dividentBits = bits % 16;
+        let bits = b.hi !== 0 ? LongInt_numOfLeadingZeroBits(b.hi) : LongInt_numOfLeadingZeroBits(b.lo) + 32;
+        let sz = 1 + ((bits / 16) | 0);
+        let dividentBits = bits % 16;
         LongInt_shl(b, bits);
         LongInt_shl(a, dividentBits);
-        var q = new LongInt(0, 0, 0);
+        let q = new LongInt(0, 0, 0);
         while (sz-- > 0) {
             LongInt_shl(q, 16);
             // Calculate approximate q
-            var digitA = (a.hi >>> 16) + (0x10000 * a.sup);
-            var digitB = b.hi >>> 16;
-            var digit = (digitA / digitB) | 0;
-            var t = LongInt_copy(b);
+            let digitA = (a.hi >>> 16) + (0x10000 * a.sup);
+            let digitB = b.hi >>> 16;
+            let digit = (digitA / digitB) | 0;
+            let t = LongInt_copy(b);
             LongInt_mul(t, digit);
             // Adjust q either down or up
             if (LongInt_ucompare(t, a) >= 0) {
@@ -557,7 +533,7 @@ if (typeof teavm_globals.BigInt !== 'function') {
                 }
             } else {
                 while (true) {
-                    var nextT = LongInt_copy(t);
+                    let nextT = LongInt_copy(t);
                     LongInt_add(nextT, b);
                     if (LongInt_ucompare(nextT, a) > 0) {
                         break;
@@ -572,108 +548,61 @@ if (typeof teavm_globals.BigInt !== 'function') {
         }
         LongInt_shr(a, bits + 16);
         return q;
-    }
+    };
 } else {
-    Long_eq = function(a, b) {
-        return a === b;
-    }
+    Long_eq = (a, b) => a === b
 
-    Long_ne = function(a, b) {
-        return a !== b;
-    }
+    Long_ne = (a, b) => a !== b
 
-    Long_gt = function(a, b) {
-        return a > b;
-    }
+    Long_gt = (a, b) => a > b
 
-    Long_ge = function(a, b) {
-        return a >= b;
-    }
+    Long_ge = (a, b) => a >= b
 
-    Long_lt = function(a, b) {
-        return a < b;
-    }
+    Long_lt = (a, b) => a < b
 
-    Long_le = function(a, b) {
-        return a <= b;
-    }
+    Long_le = (a, b) => a <= b
 
-    Long_add = function(a, b) {
-        return teavm_globals.BigInt.asIntN(64, a + b);
-    }
+    Long_add = (a, b) => teavm_globals.BigInt.asIntN(64, a + b)
 
-    Long_inc = function(a) {
-        return teavm_globals.BigInt.asIntN(64, a + 1);
-    }
+    Long_inc = a => teavm_globals.BigInt.asIntN(64, a + 1)
 
-    Long_dec = function(a) {
-        return teavm_globals.BigInt.asIntN(64, a - 1);
-    }
+    Long_dec = a => teavm_globals.BigInt.asIntN(64, a - 1)
 
-    Long_neg = function(a) {
-        return teavm_globals.BigInt.asIntN(64, -a);
-    }
+    Long_neg = a => teavm_globals.BigInt.asIntN(64, -a)
 
-    Long_sub = function(a, b) {
-        return teavm_globals.BigInt.asIntN(64, a - b);
-    }
+    Long_sub = (a, b) => teavm_globals.BigInt.asIntN(64, a - b)
 
-    Long_compare = function(a, b) {
-        return a < b ? -1 : a > b ? 1 : 0;
-    }
-    Long_ucompare = function(a, b) {
+    Long_compare = (a, b) => a < b ? -1 : a > b ? 1 : 0
+    Long_ucompare = (a, b) => {
         a = teavm_globals.BigInt.asUintN(64, a);
         b = teavm_globals.BigInt.asUintN(64, b);
         return a < b ? -1 : a > b ? 1 : 0;
     }
 
-    Long_mul = function(a, b) {
-        return teavm_globals.BigInt.asIntN(64, a * b);
-    }
+    Long_mul = (a, b) => teavm_globals.BigInt.asIntN(64, a * b)
 
-    Long_div = function(a, b) {
-        return teavm_globals.BigInt.asIntN(64, a / b);
-    }
+    Long_div = (a, b) => teavm_globals.BigInt.asIntN(64, a / b)
 
-    Long_udiv = function(a, b) {
-        return teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, a) /
-            teavm_globals.BigInt.asUintN(64, b));
-    }
+    Long_udiv = (a, b) => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, a) /
+        teavm_globals.BigInt.asUintN(64, b))
 
-    Long_rem = function(a, b) {
-        return teavm_globals.BigInt.asIntN(64, a % b);
-    }
+    Long_rem = (a, b) => teavm_globals.BigInt.asIntN(64, a % b)
 
-    Long_urem = function(a, b) {
-        return teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, a) %
-            teavm_globals.BigInt.asUintN(64, b));
-    }
+    Long_urem = (a, b) => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, a) %
+        teavm_globals.BigInt.asUintN(64, b))
 
-    Long_and = function(a, b) {
-        return teavm_globals.BigInt.asIntN(64, a & b);
-    }
+    Long_and = (a, b) => teavm_globals.BigInt.asIntN(64, a & b)
 
-    Long_or = function(a, b) {
-        return teavm_globals.BigInt.asIntN(64, a | b);
-    }
+    Long_or = (a, b) => teavm_globals.BigInt.asIntN(64, a | b)
 
-    Long_xor = function(a, b) {
-        return teavm_globals.BigInt.asIntN(64, a ^ b);
-    }
+    Long_xor = (a, b) => teavm_globals.BigInt.asIntN(64, a ^ b)
 
-    Long_shl = function(a, b) {
-        return teavm_globals.BigInt.asIntN(64, a << teavm_globals.BigInt(b & 63));
-    }
+    Long_shl = (a, b) => teavm_globals.BigInt.asIntN(64, a << teavm_globals.BigInt(b & 63))
 
-    Long_shr = function(a, b) {
-        return teavm_globals.BigInt.asIntN(64, a >> teavm_globals.BigInt(b & 63));
-    }
+    Long_shr = (a, b) => teavm_globals.BigInt.asIntN(64, a >> teavm_globals.BigInt(b & 63))
 
-    Long_shru = function(a, b) {
-        return teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, a) >> teavm_globals.BigInt(b & 63));
-    }
+    Long_shru = (a, b) => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, a) >>
+        teavm_globals.BigInt(b & 63))
 
-    Long_not = function(a) {
-        return teavm_globals.BigInt.asIntN(64, ~a);
-    }
+    Long_not = a => teavm_globals.BigInt.asIntN(64, ~a)
 }

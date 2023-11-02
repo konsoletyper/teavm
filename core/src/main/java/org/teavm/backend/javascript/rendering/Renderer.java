@@ -184,7 +184,7 @@ public class Renderer implements RenderingManager {
 
     private void renderJavaStringToString() {
         writer.appendClass("java.lang.String").append(".prototype.toString").ws().append("=").ws().append("()")
-                .ws().append("=>").ws().append("{").indent().softNewLine();
+                .sameLineWs().append("=>").ws().append("{").indent().softNewLine();
         writer.append("return ").appendFunction("$rt_ustr").append("(this);").softNewLine();
         writer.outdent().append("};").newLine();
         writer.appendClass("java.lang.String").append(".prototype.valueOf").ws().append("=").ws()
@@ -193,7 +193,7 @@ public class Renderer implements RenderingManager {
 
     private void renderJavaObjectToString() {
         writer.appendClass("java.lang.Object").append(".prototype.toString").ws().append("=").ws()
-                .append("()").ws().append("=>").ws().append("{").indent().softNewLine();
+                .append("()").sameLineWs().append("=>").ws().append("{").indent().softNewLine();
         writer.append("return ").appendFunction("$rt_ustr").append("(")
                 .appendMethodBody(Object.class, "toString", String.class).append("(this));")
                 .softNewLine();
@@ -274,7 +274,7 @@ public class Renderer implements RenderingManager {
             if (fieldName.scoped) {
                 writer.append(naming.getScopeName()).append(".");
             } else {
-                writer.append("var ");
+                writer.append("let ");
             }
             writer.append(fieldName.value).ws().append("=").ws();
             context.constantToString(writer, value);
@@ -289,7 +289,7 @@ public class Renderer implements RenderingManager {
         writer.append("()").ws().append("{").indent().softNewLine();
         if (nonStaticFields.size() > 1) {
             thisAliased = true;
-            writer.append("var a").ws().append("=").ws().append("this;").ws();
+            writer.append("let a").ws().append("=").ws().append("this;").ws();
         }
         if (!cls.getClassHolder().getModifiers().contains(ElementModifier.INTERFACE)
                 && cls.getParentName() != null) {
@@ -324,7 +324,7 @@ public class Renderer implements RenderingManager {
         if (jsName.scoped) {
             writer.append(naming.getScopeName()).append(".");
         } else {
-            writer.append("var ");
+            writer.append("let ");
         }
         writer.append(jsName.value).ws().append("=").ws().appendFunction("$rt_classWithoutFields").append("(");
         if (cls.getClassHolder().hasModifier(ElementModifier.INTERFACE)) {
@@ -368,15 +368,15 @@ public class Renderer implements RenderingManager {
         String clinitCalled = (className.scoped ? naming.getScopeName() + "_" : "") + className.value
                 + "_$clinitCalled";
         if (isAsync) {
-            writer.append("var ").append(clinitCalled).ws().append("=").ws().append("false;").softNewLine();
+            writer.append("let ").append(clinitCalled).ws().append("=").ws().append("false;").softNewLine();
         }
 
         ScopedName name = naming.getNameForClassInit(cls.getName());
-        renderFunctionDeclaration(name);
-        writer.append("()").ws().append("{").softNewLine().indent();
+        renderLambdaDeclaration(name);
+        writer.append("()").sameLineWs().append("=>").ws().append("{").softNewLine().indent();
 
         if (isAsync) {
-            writer.append("var ").append(context.pointerName()).ws().append("=").ws()
+            writer.append("let ").append(context.pointerName()).ws().append("=").ws()
                     .append("0").append(";").softNewLine();
             writer.append("if").ws().append("(").appendFunction("$rt_resuming").append("())").ws().append("{")
                     .indent().softNewLine();
@@ -690,18 +690,23 @@ public class Renderer implements RenderingManager {
         MethodReference ref = method.reference;
         debugEmitter.emitMethod(ref.getDescriptor());
         ScopedName name = naming.getNameForInit(ref);
-        renderFunctionDeclaration(name);
-        writer.append("(");
+        renderLambdaDeclaration(name);
+        if (ref.parameterCount() != 1) {
+            writer.append("(");
+        }
         for (int i = 0; i < ref.parameterCount(); ++i) {
             if (i > 0) {
                 writer.append(",").ws();
             }
             writer.append(variableNameForInitializer(i));
         }
-        writer.append(")").ws().append("{").softNewLine().indent();
+        if (ref.parameterCount() != 1) {
+            writer.append(")");
+        }
+        writer.sameLineWs().append("=>").ws().append("{").softNewLine().indent();
 
         String instanceName = variableNameForInitializer(ref.parameterCount());
-        writer.append("var " + instanceName).ws().append("=").ws().append("new ").appendClass(
+        writer.append("let " + instanceName).ws().append("=").ws().append("new ").appendClass(
                 ref.getClassName()).append("();").softNewLine();
         writer.appendMethodBody(ref).append("(" + instanceName);
         for (int i = 0; i < ref.parameterCount(); ++i) {
@@ -787,15 +792,14 @@ public class Renderer implements RenderingManager {
         debugEmitter.emitMethod(ref.getDescriptor());
         ScopedName name = naming.getFullNameFor(ref);
 
-        renderFunctionDeclaration(name);
-        writer.append("(");
+        renderLambdaDeclaration(name);
         method.parameters.replay(writer, RememberedSource.FILTER_ALL);
         if (method.variables != null) {
             for (var variable : method.variables) {
                 variable.emit(debugEmitter);
             }
         }
-        writer.append(")").ws().append("{").indent().softNewLine();
+        writer.sameLineWs().append("=>").ws().append("{").indent().softNewLine();
         method.body.replay(writer, RememberedSource.FILTER_ALL);
 
         writer.outdent().append("}");
@@ -805,6 +809,15 @@ public class Renderer implements RenderingManager {
 
         writer.newLine();
         debugEmitter.emitMethod(null);
+    }
+
+    private void renderLambdaDeclaration(ScopedName name) {
+        if (name.scoped) {
+            writer.append(naming.getScopeName()).append(".").append(name.value);
+        } else {
+            writer.append("let ").append(name.value);
+        }
+        writer.ws().append("=").ws();
     }
 
     private void renderFunctionDeclaration(ScopedName name) {

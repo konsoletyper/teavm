@@ -112,6 +112,9 @@ public abstract class SourceWriter implements Appendable, SourceWriterSink {
     public abstract SourceWriter ws();
 
     @Override
+    public abstract SourceWriter sameLineWs();
+
+    @Override
     public abstract SourceWriter tokenBoundary();
 
     @Override

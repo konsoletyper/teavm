@@ -15,21 +15,21 @@
  */
 "use strict";
 
-var $rt_intern
+let $rt_intern
 if (teavm_javaMethodExists("java.lang.String", "intern()Ljava/lang/String;")) {
     $rt_intern = function() {
-        var map = teavm_globals.Object.create(null);
+        let map = teavm_globals.Object.create(null);
 
-        var get;
+        let get;
         if (typeof teavm_globals.WeakRef !== 'undefined') {
-            var registry = new teavm_globals.FinalizationRegistry(value => {
+            let registry = new teavm_globals.FinalizationRegistry(value => {
                 delete map[value];
             });
 
-            get = function (str) {
-                var key = $rt_ustr(str);
-                var ref = map[key];
-                var result = typeof ref !== 'undefined' ? ref.deref() : void 0;
+            get = str => {
+                let key = $rt_ustr(str);
+                let ref = map[key];
+                let result = typeof ref !== 'undefined' ? ref.deref() : void 0;
                 if (typeof result !== 'object') {
                     result = str;
                     map[key] = new teavm_globals.WeakRef(result);
@@ -38,9 +38,9 @@ if (teavm_javaMethodExists("java.lang.String", "intern()Ljava/lang/String;")) {
                 return result;
             }
         } else {
-            get = function (str) {
-                var key = $rt_ustr(str);
-                var result = map[key];
+            get = str => {
+                let key = $rt_ustr(str);
+                let result = map[key];
                 if (typeof result !== 'object') {
                     result = str;
                     map[key] = result;
@@ -52,7 +52,5 @@ if (teavm_javaMethodExists("java.lang.String", "intern()Ljava/lang/String;")) {
         return get;
     }();
 } else {
-    $rt_intern = function(str) {
-        return str;
-    }
+    $rt_intern = str => str;
 }

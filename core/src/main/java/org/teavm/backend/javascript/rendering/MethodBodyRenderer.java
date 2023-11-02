@@ -126,11 +126,18 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         if (modifiers.contains(ElementModifier.STATIC)) {
             startParam = 1;
         }
+        var count = reference.parameterCount() - startParam + 1;
+        if (count != 1) {
+            writer.append("(");
+        }
         for (int i = startParam; i <= reference.parameterCount(); ++i) {
             if (i > startParam) {
                 writer.append(",").ws();
             }
             writer.append(statementRenderer.variableName(i));
+        }
+        if (count != 1) {
+            writer.append(")");
         }
         parameters = writer.save();
         writer.clear();
@@ -165,7 +172,7 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
             variableNames.add("$$je");
         }
         if (!variableNames.isEmpty()) {
-            writer.append("var ");
+            writer.append("let ");
             for (int i = 0; i < variableNames.size(); ++i) {
                 if (i > 0) {
                     writer.append(",").ws();
@@ -227,7 +234,7 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         }
         variableNames.add(context.pointerName());
         variableNames.add(context.tempVarName());
-        writer.append("var ");
+        writer.append("let ");
         for (int i = 0; i < variableNames.size(); ++i) {
             if (i > 0) {
                 writer.append(",").ws();
@@ -246,7 +253,7 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         writer.append(context.pointerName()).ws().append('=').ws().append("0;").softNewLine();
         writer.append("if").ws().append("(").appendFunction("$rt_resuming").append("())").ws()
                 .append("{").indent().softNewLine();
-        writer.append("var ").append(context.threadName()).ws().append('=').ws()
+        writer.append("let ").append(context.threadName()).ws().append('=').ws()
                 .appendFunction("$rt_nativeThread").append("();").softNewLine();
         writer.append(context.pointerName()).ws().append('=').ws().append(context.threadName()).append(".")
                 .append(popName).append("();");

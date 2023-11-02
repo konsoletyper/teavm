@@ -68,6 +68,10 @@ public interface SourceWriterSink {
         return this;
     }
 
+    default SourceWriterSink sameLineWs() {
+        return this;
+    }
+
     default SourceWriterSink tokenBoundary() {
         return this;
     }

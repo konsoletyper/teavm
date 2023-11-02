@@ -37,6 +37,7 @@ public class RememberingSourceWriter extends SourceWriter {
     static final byte CLASS_INIT = 8;
     static final byte NEW_LINE = 9;
     static final byte WS = 10;
+    static final byte SAME_LINE_WS = 21;
     static final byte TOKEN_BOUNDARY = 11;
     static final byte SOFT_NEW_LINE = 12;
     static final byte INDENT = 13;
@@ -181,6 +182,13 @@ public class RememberingSourceWriter extends SourceWriter {
     public SourceWriter ws() {
         flush();
         commands.add(WS);
+        return this;
+    }
+
+    @Override
+    public SourceWriter sameLineWs() {
+        flush();
+        commands.add(SAME_LINE_WS);
         return this;
     }
 

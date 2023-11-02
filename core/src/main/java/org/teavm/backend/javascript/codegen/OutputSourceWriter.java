@@ -198,6 +198,20 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
     }
 
     @Override
+    public SourceWriter sameLineWs() {
+        if (!minified) {
+            try {
+                innerWriter.append(' ');
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            column++;
+            offset++;
+        }
+        return this;
+    }
+
+    @Override
     public SourceWriter tokenBoundary() {
         if (column >= lineWidth) {
             newLine();

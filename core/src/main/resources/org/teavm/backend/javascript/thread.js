@@ -24,7 +24,7 @@ function TeaVMThread(runner) {
     this.completeCallback = null;
 }
 TeaVMThread.prototype.push = function() {
-    for (var i = 0; i < arguments.length; ++i) {
+    for (let i = 0; i < arguments.length; ++i) {
         this.stack.push(arguments[i]);
     }
     return this;
@@ -68,7 +68,7 @@ TeaVMThread.prototype.resume = function() {
 };
 TeaVMThread.prototype.run = function() {
     $rt_currentNativeThread = this;
-    var result;
+    let result;
     try {
         result = this.runner();
     } catch (e) {
@@ -77,8 +77,8 @@ TeaVMThread.prototype.run = function() {
         $rt_currentNativeThread = null;
     }
     if (this.suspendCallback !== null) {
-        var self = this;
-        var callback = this.suspendCallback;
+        let self = this;
+        let callback = this.suspendCallback;
         this.suspendCallback = null;
         callback(() => self.resume());
     } else if (this.status === 0) {
@@ -86,28 +86,24 @@ TeaVMThread.prototype.run = function() {
     }
 };
 
-function $rt_suspending() {
-    var thread = $rt_nativeThread();
+let $rt_suspending = () => {
+    let thread = $rt_nativeThread();
     return thread != null && thread.isSuspending();
 }
-function $rt_resuming() {
-    var thread = $rt_nativeThread();
+let $rt_resuming = () => {
+    let thread = $rt_nativeThread();
     return thread != null && thread.isResuming();
 }
-function $rt_suspend(callback) {
-    var nativeThread = $rt_nativeThread();
+let $rt_suspend = callback => {
+    let nativeThread = $rt_nativeThread();
     if (nativeThread === null) {
         throw new teavm_globals.Error("Suspension point reached from non-threading context (perhaps, from native JS method).");
     }
     return nativeThread.suspend(callback);
 }
-function $rt_startThread(runner, callback) {
-    new TeaVMThread(runner).start(callback);
-}
-var $rt_currentNativeThread = null;
-function $rt_nativeThread() {
-    return $rt_currentNativeThread;
-}
-function $rt_invalidPointer() {
+let $rt_startThread = (runner, callback) => new TeaVMThread(runner).start(callback);
+let $rt_currentNativeThread = null;
+let $rt_nativeThread = () => $rt_currentNativeThread;
+let $rt_invalidPointer = () => {
     throw new teavm_globals.Error("Invalid recorded state");
 }

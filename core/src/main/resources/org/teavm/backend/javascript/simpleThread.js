@@ -15,8 +15,8 @@
  */
 "use strict";
 
-function $rt_startThread(runner, callback) {
-    var result;
+let $rt_startThread = (runner, callback) => {
+    let result;
     try {
         result = runner();
     } catch (e) {
@@ -28,14 +28,7 @@ function $rt_startThread(runner, callback) {
         throw result;
     }
 }
-function $rt_suspending() {
-    return false;
-}
-function $rt_resuming() {
-    return false;
-}
-function $rt_nativeThread() {
-    return null;
-}
-function $rt_invalidPointer() {
-}
+let $rt_suspending = () => false;
+let $rt_resuming = () => false;
+let $rt_nativeThread = () => null;
+let $rt_invalidPointer = () => {};
