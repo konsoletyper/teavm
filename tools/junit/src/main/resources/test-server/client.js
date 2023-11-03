@@ -18,7 +18,9 @@
 
 let logging = false;
 let deobfuscation = false;
-deobfuscator();
+if (typeof deobfuscator !== 'undefined') {
+    deobfuscator();
+}
 
 function tryConnect() {
     let ws = new WebSocket("ws://localhost:{{PORT}}/ws");

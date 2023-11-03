@@ -24,7 +24,8 @@ public class RememberedSource implements SourceFragment {
     public static final int FILTER_TEXT = 1;
     public static final int FILTER_REF = 2;
     public static final int FILTER_DEBUG = 4;
-    public static final int FILTER_ALL = FILTER_TEXT | FILTER_REF | FILTER_DEBUG;
+    public static final int FILTER_STATS = 8;
+    public static final int FILTER_ALL = FILTER_TEXT | FILTER_REF | FILTER_DEBUG | FILTER_STATS;
 
     private byte[] commands;
     private String chars;
@@ -196,6 +197,20 @@ public class RememberedSource implements SourceFragment {
                     }
                     break;
 
+                case RememberingSourceWriter.EMIT_VARIABLES:
+                    var count = intArgs[intArgIndex++];
+                    if ((filter & FILTER_DEBUG) != 0) {
+                        var names = new String[count];
+                        for (var i = 0; i < count; ++i) {
+                            names[i] = strings[intArgs[intArgIndex++]];
+                        }
+                        var jsName = strings[intArgs[intArgIndex++]];
+                        sink.emitVariables(names, jsName);
+                    } else {
+                        intArgIndex += count + 1;
+                    }
+                    break;
+
                 case RememberingSourceWriter.EMIT_CLASS:
                     if ((filter & FILTER_DEBUG) != 0) {
                         var classIndex = intArgs[intArgIndex];
@@ -210,6 +225,32 @@ public class RememberedSource implements SourceFragment {
                         sink.emitMethod(methodIndex >= 0 ? methodDescriptors[methodIndex] : null);
                     }
                     intArgIndex++;
+                    break;
+
+                case RememberingSourceWriter.MARK_CLASS_START:
+                    if ((filter & FILTER_STATS) != 0) {
+                        sink.markClassStart(strings[intArgs[intArgIndex]]);
+                    }
+                    intArgIndex++;
+                    break;
+
+                case RememberingSourceWriter.MARK_CLASS_END:
+                    if ((filter & FILTER_STATS) != 0) {
+                        sink.markClassEnd();
+                    }
+                    break;
+
+                case RememberingSourceWriter.MARK_SECTION_START:
+                    if ((filter & FILTER_STATS) != 0) {
+                        sink.markSectionStart(intArgs[intArgIndex]);
+                    }
+                    intArgIndex++;
+                    break;
+
+                case RememberingSourceWriter.MARK_SECTION_END:
+                    if ((filter & FILTER_STATS) != 0) {
+                        sink.markSectionEnd();
+                    }
                     break;
             }
         }

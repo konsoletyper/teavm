@@ -139,8 +139,23 @@ public abstract class SourceWriter implements Appendable, SourceWriterSink {
     public abstract SourceWriter emitStatementStart();
 
     @Override
+    public abstract SourceWriter emitVariables(String[] names, String jsName);
+
+    @Override
     public abstract void emitMethod(MethodDescriptor method);
 
     @Override
     public abstract void emitClass(String className);
+
+    @Override
+    public abstract void markClassStart(String className);
+
+    @Override
+    public abstract void markClassEnd();
+
+    @Override
+    public abstract void markSectionStart(int id);
+
+    @Override
+    public abstract void markSectionEnd();
 }

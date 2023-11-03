@@ -46,8 +46,13 @@ public class RememberingSourceWriter extends SourceWriter {
     static final byte ENTER_LOCATION = 16;
     static final byte EXIT_LOCATION = 17;
     static final byte EMIT_STATEMENT_START = 18;
+    static final byte EMIT_VARIABLES = 26;
     static final byte EMIT_METHOD = 19;
     static final byte EMIT_CLASS = 20;
+    static final byte MARK_CLASS_START = 22;
+    static final byte MARK_CLASS_END = 23;
+    static final byte MARK_SECTION_START = 24;
+    static final byte MARK_SECTION_END = 25;
 
     private boolean debug;
 
@@ -263,6 +268,20 @@ public class RememberingSourceWriter extends SourceWriter {
     }
 
     @Override
+    public SourceWriter emitVariables(String[] names, String jsName) {
+        if (debug) {
+            flush();
+            commands.add(EMIT_VARIABLES);
+            intArgs.add(names.length);
+            for (var name : names) {
+                appendStringArg(name);
+            }
+            appendStringArg(jsName);
+        }
+        return this;
+    }
+
+    @Override
     public void emitMethod(MethodDescriptor method) {
         if (!debug) {
             return;
@@ -288,6 +307,32 @@ public class RememberingSourceWriter extends SourceWriter {
         } else {
             appendStringArg(className);
         }
+    }
+
+    @Override
+    public void markClassStart(String className) {
+        flush();
+        commands.add(MARK_CLASS_START);
+        appendStringArg(className);
+    }
+
+    @Override
+    public void markClassEnd() {
+        flush();
+        commands.add(MARK_CLASS_END);
+    }
+
+    @Override
+    public void markSectionStart(int id) {
+        flush();
+        commands.add(MARK_SECTION_START);
+        intArgs.add(id);
+    }
+
+    @Override
+    public void markSectionEnd() {
+        flush();
+        commands.add(MARK_SECTION_END);
     }
 
     public void flush() {

@@ -15,7 +15,13 @@
  */
 package org.teavm.backend.javascript.codegen;
 
+import com.carrotsearch.hppc.IntIntHashMap;
+import com.carrotsearch.hppc.IntIntMap;
+import com.carrotsearch.hppc.ObjectIntHashMap;
+import com.carrotsearch.hppc.ObjectIntMap;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.model.FieldReference;
@@ -33,6 +39,12 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
     private int line;
     private int offset;
     private DebugInformationEmitter debugInformationEmitter = new DummyDebugInformationEmitter();
+    private String classMarkClass;
+    private int classMarkPos;
+    private ObjectIntMap<String> classSizes = new ObjectIntHashMap<>();
+    private int sectionMarkSection = -1;
+    private int sectionMarkPos;
+    private IntIntMap sectionSizes = new IntIntHashMap();
 
     OutputSourceWriter(NamingStrategy naming, Appendable innerWriter, int lineWidth) {
         this.naming = naming;
@@ -140,9 +152,6 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
     }
 
     private SourceWriter appendName(ScopedName name) {
-        if (name.scoped) {
-            append(naming.getScopeName()).append(".");
-        }
         append(name.value);
         return this;
     }
@@ -272,6 +281,12 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
     }
 
     @Override
+    public SourceWriter emitVariables(String[] names, String jsName) {
+        debugInformationEmitter.emitVariable(names, jsName);
+        return this;
+    }
+
+    @Override
     public void emitMethod(MethodDescriptor method) {
         debugInformationEmitter.emitMethod(method);
     }
@@ -294,5 +309,57 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
     @Override
     public int getOffset() {
         return offset;
+    }
+
+    @Override
+    public void markClassStart(String className) {
+        classMarkClass = className;
+        classMarkPos = offset;
+    }
+
+    @Override
+    public void markClassEnd() {
+        if (classMarkClass != null) {
+            var size = offset - classMarkPos;
+            if (size > 0) {
+                var currentSize = classSizes.get(classMarkClass);
+                classSizes.put(classMarkClass, currentSize + size);
+            }
+            classMarkClass = null;
+        }
+    }
+
+    @Override
+    public void markSectionStart(int id) {
+        sectionMarkSection = id;
+        sectionMarkPos = offset;
+    }
+
+    @Override
+    public void markSectionEnd() {
+        if (sectionMarkSection >= 0) {
+            int size = offset - sectionMarkPos;
+            if (size > 0) {
+                var currentSize = sectionSizes.get(sectionMarkSection);
+                sectionSizes.put(sectionMarkSection, currentSize + size);
+            }
+            sectionMarkSection = -1;
+        }
+    }
+
+    public Collection<String> getClassesInStats() {
+        var result = new ArrayList<String>();
+        for (var cursor : classSizes.keys()) {
+            result.add(cursor.value);
+        }
+        return result;
+    }
+
+    public int getClassSize(String className) {
+        return classSizes.get(className);
+    }
+
+    public int getSectionSize(int sectionId) {
+        return sectionSizes.get(sectionId);
     }
 }

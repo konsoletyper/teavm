@@ -25,10 +25,7 @@ import org.teavm.ast.MethodNode;
 import org.teavm.ast.MethodNodeVisitor;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.VariableNode;
-import org.teavm.backend.javascript.codegen.RememberedSource;
-import org.teavm.backend.javascript.codegen.RememberingSourceWriter;
 import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.backend.javascript.decompile.PreparedVariable;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.dependency.DependencyInfo;
@@ -45,20 +42,17 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
     private boolean minifying;
     private boolean async;
     private Set<MethodReference> asyncMethods;
-    private RememberingSourceWriter writer;
+    private SourceWriter writer;
     private StatementRenderer statementRenderer;
     private boolean threadLibraryUsed;
-    private RememberedSource body;
-    private RememberedSource parameters;
-    private PreparedVariable[] variables;
 
-    public MethodBodyRenderer(RenderingContext context, Diagnostics diagnostics, boolean minifying, boolean debug,
-            Set<MethodReference> asyncMethods) {
+    public MethodBodyRenderer(RenderingContext context, Diagnostics diagnostics, boolean minifying,
+            Set<MethodReference> asyncMethods, SourceWriter writer) {
         this.context = context;
         this.diagnostics = diagnostics;
         this.minifying = minifying;
         this.asyncMethods = asyncMethods;
-        writer = new RememberingSourceWriter(debug);
+        this.writer = writer;
         statementRenderer = new StatementRenderer(context, writer);
     }
 
@@ -71,15 +65,11 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         return context.getDependencyInfo();
     }
 
-    public void renderNative(Generator generator, boolean async, MethodReference reference,
-            Set<ElementModifier> modifiers) {
+    public void renderNative(Generator generator, boolean async, MethodReference reference) {
         threadLibraryUsed = false;
         this.async = async;
         statementRenderer.setAsync(async);
-        renderParameters(reference, modifiers);
         generator.generate(this, writer, reference);
-        body = writer.save();
-        writer.clear();
     }
 
     public void render(MethodNode node, boolean async) {
@@ -87,41 +77,18 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         this.async = async;
         statementRenderer.setAsync(async);
         statementRenderer.setCurrentMethod(node);
-        renderParameters(node.getReference(), node.getModifiers());
-        node.acceptVisitor(this);
-        body = writer.save();
         prepareVariables(node);
-        writer.clear();
-    }
-
-    public PreparedVariable[] getVariables() {
-        return variables;
+        node.acceptVisitor(this);
     }
 
     private void prepareVariables(MethodNode method) {
-        var variables = new ArrayList<PreparedVariable>();
         for (int i = 0; i < method.getVariables().size(); ++i) {
-            variables.add(new PreparedVariable(new String[] { method.getVariables().get(i).getName() },
-                    statementRenderer.variableName(i)));
+            writer.emitVariables(new String[] { method.getVariables().get(i).getName() },
+                    statementRenderer.variableName(i));
         }
-        this.variables = variables.toArray(new PreparedVariable[0]);
     }
 
-    public RememberedSource getBody() {
-        return body;
-    }
-
-    public RememberedSource getParameters() {
-        return parameters;
-    }
-
-    public void clear() {
-        body = null;
-        parameters = null;
-        variables = null;
-    }
-
-    private void renderParameters(MethodReference reference, Set<ElementModifier> modifiers) {
+    public void renderParameters(MethodReference reference, Set<ElementModifier> modifiers) {
         int startParam = 0;
         if (modifiers.contains(ElementModifier.STATIC)) {
             startParam = 1;
@@ -139,8 +106,6 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         if (count != 1) {
             writer.append(")");
         }
-        parameters = writer.save();
-        writer.clear();
     }
 
     private void appendMonitor(StatementRenderer statementRenderer, MethodNode methodNode) {

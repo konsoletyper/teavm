@@ -22,11 +22,7 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.model.ListableClassReaderSource;
 
 public interface RenderingManager extends ServiceRepository {
-    NamingStrategy getNaming();
-
     SourceWriter getWriter();
-
-    boolean isMinifying();
 
     ListableClassReaderSource getClassSource();
 
