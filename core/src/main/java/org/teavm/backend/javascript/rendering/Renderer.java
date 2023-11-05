@@ -176,8 +176,8 @@ public class Renderer implements RenderingManager {
     }
 
     private void renderJavaStringToString() {
-        writer.appendClass("java.lang.String").append(".prototype.toString").ws().append("=").ws().append("()")
-                .sameLineWs().append("=>").ws().append("{").indent().softNewLine();
+        writer.appendClass("java.lang.String").append(".prototype.toString").ws().append("=").ws()
+                .append("function()").ws().append("{").indent().softNewLine();
         writer.append("return ").appendFunction("$rt_ustr").append("(this);").softNewLine();
         writer.outdent().append("};").newLine();
         writer.appendClass("java.lang.String").append(".prototype.valueOf").ws().append("=").ws()
@@ -186,7 +186,7 @@ public class Renderer implements RenderingManager {
 
     private void renderJavaObjectToString() {
         writer.appendClass("java.lang.Object").append(".prototype.toString").ws().append("=").ws()
-                .append("()").sameLineWs().append("=>").ws().append("{").indent().softNewLine();
+                .append("function()").ws().append("{").indent().softNewLine();
         writer.append("return ").appendFunction("$rt_ustr").append("(")
                 .appendMethodBody(Object.class, "toString", String.class).append("(this));")
                 .softNewLine();
