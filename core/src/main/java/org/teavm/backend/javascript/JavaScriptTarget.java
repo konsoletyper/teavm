@@ -462,15 +462,13 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         int start = sourceWriter.getOffset();
 
         RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, sourceWriter);
+        runtimeRenderer.prepareAstParts(renderer.isThreadLibraryUsed());
+        declarations.replay(runtimeRenderer.sink, RememberedSource.FILTER_REF);
+        epilogue.replay(runtimeRenderer.sink, RememberedSource.FILTER_REF);
+        runtimeRenderer.removeUnusedParts();
         runtimeRenderer.renderRuntime();
-        runtimeRenderer.renderHandWrittenRuntime("long.js");
-        if (renderer.isThreadLibraryUsed()) {
-            runtimeRenderer.renderHandWrittenRuntime("thread.js");
-        } else {
-            runtimeRenderer.renderHandWrittenRuntime("simpleThread.js");
-        }
         declarations.write(sourceWriter, 0);
-        runtimeRenderer.renderHandWrittenRuntime("array.js");
+        runtimeRenderer.renderEpilogue();
         epilogue.write(sourceWriter, 0);
 
         printWrapperEnd(sourceWriter);

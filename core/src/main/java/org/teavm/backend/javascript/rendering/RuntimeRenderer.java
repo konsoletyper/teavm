@@ -20,16 +20,24 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ast.AstRoot;
 import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.codegen.SourceWriterSink;
+import org.teavm.backend.javascript.templating.AstRemoval;
+import org.teavm.backend.javascript.templating.RemovablePartsFinder;
 import org.teavm.backend.javascript.templating.TemplatingAstTransformer;
 import org.teavm.backend.javascript.templating.TemplatingAstWriter;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.vm.RenderingException;
 
 public class RuntimeRenderer {
+    private final List<AstRoot> runtimeAstParts = new ArrayList<>();
+    private final List<AstRoot> epilogueAstParts = new ArrayList<>();
+    private final RemovablePartsFinder removablePartsFinder = new RemovablePartsFinder();
     private final ClassReaderSource classSource;
     private final SourceWriter writer;
 
@@ -38,15 +46,35 @@ public class RuntimeRenderer {
         this.writer = writer;
     }
 
-    public void renderRuntime() throws RenderingException {
-        renderHandWrittenRuntime("runtime.js");
-        renderHandWrittenRuntime("intern.js");
+    public void prepareAstParts(boolean threadLibraryUsed) {
+        runtimeAstParts.add(prepareAstPart("runtime.js"));
+        runtimeAstParts.add(prepareAstPart("intern.js"));
+        runtimeAstParts.add(prepareAstPart("long.js"));
+        runtimeAstParts.add(prepareAstPart(threadLibraryUsed ? "thread.js" : "simpleThread.js"));
+        epilogueAstParts.add(prepareAstPart("array.js"));
     }
 
-    public void renderHandWrittenRuntime(String name)  {
-        AstRoot ast = parseRuntime(name);
+    public void renderRuntime() {
+        for (var ast : runtimeAstParts) {
+            renderHandWrittenRuntime(ast);
+        }
+    }
+
+    public void renderEpilogue() {
+        for (var ast : epilogueAstParts) {
+            renderHandWrittenRuntime(ast);
+        }
+    }
+
+    private AstRoot prepareAstPart(String name) {
+        var ast = parseRuntime(name);
         ast.visit(new StringConstantElimination());
         new TemplatingAstTransformer(classSource).visit(ast);
+        removablePartsFinder.visit(ast);
+        return ast;
+    }
+
+    private void renderHandWrittenRuntime(AstRoot ast)  {
         var astWriter = new TemplatingAstWriter(writer, null, null);
         astWriter.hoist(ast);
         astWriter.print(ast);
@@ -64,6 +92,24 @@ public class RuntimeRenderer {
             return factory.parse(reader, null, 0);
         } catch (IOException e) {
             throw new RenderingException(e);
+        }
+    }
+
+    public final SourceWriterSink sink = new SourceWriterSink() {
+        @Override
+        public SourceWriterSink appendFunction(String name) {
+            removablePartsFinder.markUsedDeclaration(name);
+            return this;
+        }
+    };
+
+    public void removeUnusedParts() {
+        var removal = new AstRemoval(removablePartsFinder.getAllRemovableParts());
+        for (var part : runtimeAstParts) {
+            removal.visit(part);
+        }
+        for (var part : epilogueAstParts) {
+            removal.visit(part);
         }
     }
 }
