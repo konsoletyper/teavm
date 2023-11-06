@@ -163,7 +163,7 @@ public class LongTest {
         assertEquals("Failed for 07654321765432", 07654321765432L,
                 Long.decode("07654321765432").longValue());
         try {
-            Integer.decode(null); // undocumented NPE
+            Long.decode(null); // undocumented NPE
             fail();
         } catch (NullPointerException e) {
             // ok
