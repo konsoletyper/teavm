@@ -72,6 +72,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
                 break;
         }
         long value = 0;
+        long maxValue = 1 + TLong.MAX_VALUE / radix;
         while (index < endIndex) {
             int digit = decodeDigit(s.charAt(index++));
             if (digit < 0) {
@@ -81,6 +82,9 @@ public class TLong extends TNumber implements TComparable<TLong> {
             if (digit >= radix) {
                 throw new TNumberFormatException("String contains digits out of radix " + radix + ": "
                         + s.subSequence(beginIndex, endIndex));
+            }
+            if (value > maxValue) {
+                throw new TNumberFormatException("The value is too big for integer type");
             }
             value = radix * value + digit;
             if (value < 0) {
