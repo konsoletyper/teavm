@@ -145,7 +145,7 @@ let $rt_arraycls = cls => {
             str += "]";
             return str;
         };
-        $rt_setCloneMethod(JavaArray.prototype, function() {
+        JavaArray.prototype[teavm_javaVirtualMethod('clone()Ljava/lang/Object;')] = function() {
             let dataCopy;
             if ('slice' in this.data) {
                 dataCopy = this.data.slice();
@@ -156,7 +156,7 @@ let $rt_arraycls = cls => {
                 }
             }
             return new ($rt_arraycls(this.type))(dataCopy);
-        });
+        };
         let name = "[" + cls.$meta.binaryName;
         JavaArray.$meta = {
             item: cls,
@@ -694,22 +694,8 @@ let $dbg_class = obj => {
         cls = cls.$meta.item;
     }
     let clsName = "";
-    if (cls === $rt_booleancls) {
-        clsName = "boolean";
-    } else if (cls === $rt_bytecls) {
-        clsName = "byte";
-    } else if (cls === $rt_shortcls) {
-        clsName = "short";
-    } else if (cls === $rt_charcls) {
-        clsName = "char";
-    } else if (cls === $rt_intcls) {
-        clsName = "int";
-    } else if (cls === $rt_longcl) {
-        clsName = "long";
-    } else if (cls === $rt_floatcls) {
-        clsName = "float";
-    } else if (cls === $rt_doublecls) {
-        clsName = "double";
+    if (cls.$meta.primitive) {
+        clsName = cls.$meta.name;
     } else {
         clsName = cls.$meta ? (cls.$meta.name || ("a/" + cls.name)) : "@" + cls.name;
     }
@@ -852,8 +838,6 @@ let $rt_substring = (string, start, end) => {
     $rt_substringSink = ($rt_substringSink + result.charCodeAt(result.length - 1)) | 0;
 }
 let $rt_substringSink = 0;
-
-let $rt_setCloneMethod = (target, method) => target[teavm_javaVirtualMethod('clone()Ljava/lang/Object;')] = method;
 
 let $rt_cls = (cls) => teavm_javaMethod("java.lang.Class",
         "getClass(Lorg/teavm/platform/PlatformClass;)Ljava/lang/Class;")(cls);

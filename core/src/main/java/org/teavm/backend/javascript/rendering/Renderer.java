@@ -343,17 +343,9 @@ public class Renderer implements RenderingManager {
         if (clinit != null && context.isDynamicInitializer(cls.getName())) {
             renderCallClinit(clinit, cls);
         }
-        if (!cls.hasModifier(ElementModifier.INTERFACE)
-                && !cls.hasModifier(ElementModifier.ABSTRACT)) {
-            for (var method : cls.getMethods()) {
-                if (!method.hasModifier(ElementModifier.STATIC)) {
-                    if (method.getName().equals("<init>")) {
-                        renderInitializer(method);
-                    }
-                }
-            }
-        }
 
+        var needsInitializers = !cls.hasModifier(ElementModifier.INTERFACE)
+            && !cls.hasModifier(ElementModifier.ABSTRACT);
         var hasLet = false;
         for (var method : cls.getMethods()) {
             if (!filterMethod(method)) {
@@ -366,6 +358,11 @@ public class Renderer implements RenderingManager {
                 writer.append(",").newLine();
             }
             renderBody(method, decompiler);
+            if (needsInitializers && !method.hasModifier(ElementModifier.STATIC)
+                    && method.getName().equals("<init>")) {
+                writer.append(",").newLine();
+                renderInitializer(method);
+            }
         }
         if (hasLet) {
             writer.append(";").newLine();
@@ -699,7 +696,7 @@ public class Renderer implements RenderingManager {
     private void renderInitializer(MethodReader method) {
         MethodReference ref = method.getReference();
         writer.emitMethod(ref.getDescriptor());
-        writer.append("let ").appendInit(ref).ws().append("=").ws();
+        writer.appendInit(ref).ws().append("=").ws();
         if (ref.parameterCount() != 1) {
             writer.append("(");
         }
@@ -724,8 +721,7 @@ public class Renderer implements RenderingManager {
         }
         writer.append(");").softNewLine();
         writer.append("return " + instanceName + ";").softNewLine();
-        writer.outdent().append("};");
-        writer.newLine();
+        writer.outdent().append("}");
         writer.emitMethod(null);
     }
 

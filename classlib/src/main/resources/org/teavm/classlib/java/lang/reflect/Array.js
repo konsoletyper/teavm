@@ -23,16 +23,7 @@ function getLength(array) {
 
 function newInstanceImpl(type, length) {
     if (type.$meta.primitive) {
-        switch (type) {
-            case $rt_booleanArrayCls: return $rt_createBooleanArray(length);
-            case $rt_byteArrayCls: return $rt_createByteArray(length);
-            case $rt_shortArrayCls: return $rt_createShortArray(length);
-            case $rt_charArrayCls: return $rt_createCharArray(length);
-            case $rt_intArrayCls: return $rt_createIntArray(length);
-            case $rt_longArrayCls: return $rt_createLongArray(length);
-            case $rt_floatArrayCls: return $rt_createFloatArray(length);
-            case $rt_doubleArrayCls: return $rt_createDoubleArray(length);
-        }
+        teavm_fragment("primitiveArrays");
     }
     return $rt_createArray(type, length);
 }

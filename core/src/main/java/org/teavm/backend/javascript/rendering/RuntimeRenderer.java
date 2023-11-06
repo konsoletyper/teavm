@@ -28,6 +28,7 @@ import org.mozilla.javascript.ast.AstRoot;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.codegen.SourceWriterSink;
 import org.teavm.backend.javascript.templating.AstRemoval;
+import org.teavm.backend.javascript.templating.LetJoiner;
 import org.teavm.backend.javascript.templating.RemovablePartsFinder;
 import org.teavm.backend.javascript.templating.TemplatingAstTransformer;
 import org.teavm.backend.javascript.templating.TemplatingAstWriter;
@@ -105,11 +106,14 @@ public class RuntimeRenderer {
 
     public void removeUnusedParts() {
         var removal = new AstRemoval(removablePartsFinder.getAllRemovableParts());
+        var letJoiner = new LetJoiner();
         for (var part : runtimeAstParts) {
             removal.visit(part);
+            letJoiner.visit(part);
         }
         for (var part : epilogueAstParts) {
             removal.visit(part);
+            letJoiner.visit(part);
         }
     }
 }
