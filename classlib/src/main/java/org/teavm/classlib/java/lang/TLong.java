@@ -73,6 +73,9 @@ public class TLong extends TNumber implements TComparable<TLong> {
         }
         long value = 0;
         long maxValue = 1 + TLong.MAX_VALUE / radix;
+        if (index == endIndex) {
+            throw new TNumberFormatException();
+        }
         while (index < endIndex) {
             int digit = decodeDigit(s.charAt(index++));
             if (digit < 0) {
