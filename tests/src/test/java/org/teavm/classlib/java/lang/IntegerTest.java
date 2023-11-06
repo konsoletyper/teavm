@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -48,12 +49,72 @@ public class IntegerTest {
         assertEquals(473, Integer.parseInt("[473]", 1, 4, 10));
         assertEquals(42, Integer.parseInt("[+42]", 1, 4, 10));
         assertEquals(-255, Integer.parseInt("[-FF]", 1, 4, 16));
+        try {
+            Integer.parseInt("[-FF]", 1, 5, 16);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Integer.parseInt("[-FF]", 1, 6, 16);
+            fail();
+        } catch (IndexOutOfBoundsException e) {
+            // ok
+        }
+        try {
+            Integer.parseInt("[-FF]", 1, 2, 16);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Integer.parseInt("[-FF]", 5, 4, 16);
+            fail();
+        } catch (IndexOutOfBoundsException e) {
+            // ok
+        }
     }
 
     @Test
-    public void parsesMinInteger() {
+    public void parsesCornerCases() {
         assertEquals(-2147483648, Integer.parseInt("-2147483648", 10));
         assertEquals(-2147483648, Integer.parseInt("-80000000", 16));
+        try {
+            Integer.parseInt("FFFF", 10);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Integer.parseInt("2147483648", 10);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Integer.parseInt("-2147483649", 10);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Integer.parseInt("80000000", 16);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Integer.parseInt("-80000001", 16);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Integer.parseInt("99999999999", 10);
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
     }
 
     @Test(expected = NumberFormatException.class)
@@ -86,6 +147,42 @@ public class IntegerTest {
         assertEquals(Integer.valueOf(65535), Integer.decode("+0xFFFF"));
         assertEquals(Integer.valueOf(-255), Integer.decode("-0xFF"));
         assertEquals(Integer.valueOf(2748), Integer.decode("+#ABC"));
+        try {
+            Integer.decode(null); // undocumented NPE
+            fail();
+        } catch (NullPointerException e) {
+            // ok
+        }
+        try {
+            Integer.decode("2147483648");
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Integer.decode("-2147483649");
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Integer.decode("0x80000000");
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Integer.decode("-0x80000001");
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
+        try {
+            Integer.decode("99999999999");
+            fail();
+        } catch (NumberFormatException e) {
+            // ok
+        }
     }
 
     @Test

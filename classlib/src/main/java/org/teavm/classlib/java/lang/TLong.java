@@ -73,7 +73,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
         }
         long value = 0;
         while (index < endIndex) {
-            int digit = TCharacter.getNumericValue(s.charAt(index++));
+            int digit = decodeDigit(s.charAt(index++));
             if (digit < 0) {
                 throw new TNumberFormatException("String contains invalid digits: "
                         + s.subSequence(beginIndex, endIndex));
@@ -107,8 +107,8 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     public static TLong decode(TString nm) throws TNumberFormatException {
-        if (nm == null || nm.isEmpty()) {
-            throw new TNumberFormatException("Can't parse empty or null string");
+        if (nm.isEmpty()) {
+            throw new TNumberFormatException("Can't parse empty string");
         }
         int index = 0;
         boolean negaive = false;
@@ -141,10 +141,14 @@ public class TLong extends TNumber implements TComparable<TLong> {
             throw new TNumberFormatException("The string does not represent a number");
         }
         long value = 0;
+        long maxValue = 1 + TLong.MAX_VALUE / radix;
         while (index < nm.length()) {
             int digit = decodeDigit(nm.charAt(index++));
-            if (digit >= radix) {
+            if (digit < 0 || digit >= radix) {
                 throw new TNumberFormatException("The string does not represent a number");
+            }
+            if (value > maxValue) {
+                throw new TNumberFormatException("The value is too big for long type");
             }
             value = value * radix + digit;
             if (value < 0) {
@@ -165,7 +169,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
         } else if (c >= 'A' && c <= 'Z') {
             return c - 'A' + 10;
         } else {
-            return 255;
+            return -1;
         }
     }
     @Override
@@ -358,9 +362,9 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     public static long reverseBytes(long i) {
-        i = ((i & 0xFF00FF00FF00FF00L) >> 8)  | ((i & 0x00FF00FF00FF00FFL) << 8);
-        i = ((i & 0xFFFF0000FFFF0000L) >> 16) | ((i & 0x0000FFFF0000FFFFL) << 16);
-        i = (i >> 32) | (i << 32);
+        i = ((i & 0xFF00FF00FF00FF00L) >>> 8)  | ((i & 0x00FF00FF00FF00FFL) << 8);
+        i = ((i & 0xFFFF0000FFFF0000L) >>> 16) | ((i & 0x0000FFFF0000FFFFL) << 16);
+        i = (i >>> 32) | (i << 32);
         return i;
     }
 
