@@ -87,7 +87,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
                         + s.subSequence(beginIndex, endIndex));
             }
             if (value > maxValue) {
-                throw new TNumberFormatException("The value is too big for integer type");
+                throw new TNumberFormatException("The value is too big for long type");
             }
             value = radix * value + digit;
             if (value < 0) {
