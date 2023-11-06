@@ -94,7 +94,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
                 if (index == endIndex && value == MIN_VALUE && negative) {
                     return MIN_VALUE;
                 }
-                throw new TNumberFormatException("The value is too big for int type: "
+                throw new TNumberFormatException("The value is too big for long type: "
                         + s.subSequence(beginIndex, endIndex));
             }
         }
