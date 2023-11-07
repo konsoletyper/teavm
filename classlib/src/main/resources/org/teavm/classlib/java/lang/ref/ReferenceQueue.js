@@ -28,6 +28,6 @@ function init() {
 }
 
 function poll() {
-    var value = this[teavm_javaField("java.lang.ref.ReferenceQueue", "inner")];
+    var value = this[teavm_javaField("java.lang.ref.ReferenceQueue", "inner")].shift();
     return typeof value !== 'undefined' ? value : null;
 }
