@@ -461,7 +461,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         int start = sourceWriter.getOffset();
 
-        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, sourceWriter);
+        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, sourceWriter,
+                controller.getClassInitializerInfo());
         runtimeRenderer.prepareAstParts(renderer.isThreadLibraryUsed());
         declarations.replay(runtimeRenderer.sink, RememberedSource.FILTER_REF);
         epilogue.replay(runtimeRenderer.sink, RememberedSource.FILTER_REF);

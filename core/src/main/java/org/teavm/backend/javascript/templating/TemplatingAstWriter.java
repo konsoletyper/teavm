@@ -30,14 +30,18 @@ import org.teavm.backend.javascript.rendering.DefaultGlobalNameWriter;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
+import org.teavm.model.analysis.ClassInitializerInfo;
 
 public class TemplatingAstWriter extends AstWriter {
     private Map<String, SourceFragment> names;
     private Scope scope;
     private Map<String, SourceFragment> fragments = new HashMap<>();
+    private ClassInitializerInfo classInitializerInfo;
 
-    public TemplatingAstWriter(SourceWriter writer, Map<String, SourceFragment> names, Scope scope) {
+    public TemplatingAstWriter(SourceWriter writer, Map<String, SourceFragment> names, Scope scope,
+            ClassInitializerInfo classInitializerInfo) {
         super(writer, new DefaultGlobalNameWriter(writer));
+        this.classInitializerInfo = classInitializerInfo;
         this.names = names;
         this.scope = scope;
         if (names != null) {
@@ -132,7 +136,12 @@ public class TemplatingAstWriter extends AstWriter {
         if (!(classArg instanceof StringLiteral)) {
             return false;
         }
-        writer.appendClassInit(((StringLiteral) classArg).getValue());
+        var className = ((StringLiteral) classArg).getValue();
+        if (classInitializerInfo == null || classInitializerInfo.isDynamicInitializer(className)) {
+            writer.appendClassInit(className);
+        } else {
+            writer.append("(()").ws().append("=>").ws().append("{})");
+        }
         return true;
     }
 

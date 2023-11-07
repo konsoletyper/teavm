@@ -75,7 +75,7 @@ public class JavaScriptTemplate {
             var thisFragment = parameters.apply(0);
             var body = node.getBody();
             return (writer, precedence) -> {
-                var astWriter = new TemplatingAstWriter(writer, nameParameters, node);
+                var astWriter = new TemplatingAstWriter(writer, nameParameters, node, null);
                 for (var entry : fragments.entrySet()) {
                     astWriter.setFragment(entry.getKey(), entry.getValue());
                 }

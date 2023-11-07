@@ -19,7 +19,6 @@ import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.AstRoot;
 import org.mozilla.javascript.ast.Block;
 import org.mozilla.javascript.ast.FunctionNode;
-import org.mozilla.javascript.ast.IfStatement;
 import org.mozilla.javascript.ast.Scope;
 import org.mozilla.javascript.ast.VariableDeclaration;
 import org.teavm.backend.javascript.ast.AstVisitor;
@@ -51,7 +50,7 @@ public class LetJoiner extends AstVisitor {
 
     private void visitMany(AstNode node) {
         VariableDeclaration previous = null;
-        for (var childNode = node.getFirstChild(); childNode != null; ) {
+        for (var childNode = node.getFirstChild(); childNode != null;) {
             var nextNode = childNode.getNext();
             var child = (AstNode) childNode;
             if (child instanceof VariableDeclaration) {

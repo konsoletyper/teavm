@@ -33,6 +33,7 @@ import org.teavm.backend.javascript.templating.RemovablePartsFinder;
 import org.teavm.backend.javascript.templating.TemplatingAstTransformer;
 import org.teavm.backend.javascript.templating.TemplatingAstWriter;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.vm.RenderingException;
 
 public class RuntimeRenderer {
@@ -41,10 +42,13 @@ public class RuntimeRenderer {
     private final RemovablePartsFinder removablePartsFinder = new RemovablePartsFinder();
     private final ClassReaderSource classSource;
     private final SourceWriter writer;
+    private final ClassInitializerInfo classInitializerInfo;
 
-    public RuntimeRenderer(ClassReaderSource classSource, SourceWriter writer) {
+    public RuntimeRenderer(ClassReaderSource classSource, SourceWriter writer,
+            ClassInitializerInfo classInitializerInfo) {
         this.classSource = classSource;
         this.writer = writer;
+        this.classInitializerInfo = classInitializerInfo;
     }
 
     public void prepareAstParts(boolean threadLibraryUsed) {
@@ -76,7 +80,7 @@ public class RuntimeRenderer {
     }
 
     private void renderHandWrittenRuntime(AstRoot ast)  {
-        var astWriter = new TemplatingAstWriter(writer, null, null);
+        var astWriter = new TemplatingAstWriter(writer, null, null, classInitializerInfo);
         astWriter.hoist(ast);
         astWriter.print(ast);
     }
