@@ -650,7 +650,7 @@ if (typeof Reflect === 'object') {
             value: JavaError
         },
         message: {
-            get: () => {
+            get() {
                 try {
                     let javaException = this[$rt_javaExceptionProp];
                     if (typeof javaException === 'object') {
