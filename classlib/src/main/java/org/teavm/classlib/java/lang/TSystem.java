@@ -24,6 +24,8 @@ import org.teavm.backend.c.runtime.fs.CFileSystem;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.wasm.runtime.WasmSupport;
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.classlib.impl.console.JSStderrPrintStream;
+import org.teavm.classlib.impl.console.JSStdoutPrintStream;
 import org.teavm.classlib.impl.console.StderrOutputStream;
 import org.teavm.classlib.impl.console.StdoutOutputStream;
 import org.teavm.classlib.java.io.TConsole;
@@ -55,14 +57,22 @@ public final class TSystem extends TObject {
 
     public static TPrintStream out() {
         if (outCache == null) {
-            outCache = new TPrintStream((TOutputStream) (Object) StdoutOutputStream.INSTANCE, false);
+            if (PlatformDetector.isJavaScript()) {
+                outCache = (TPrintStream) (Object) new JSStdoutPrintStream();
+            } else {
+                outCache = new TPrintStream((TOutputStream) (Object) StdoutOutputStream.INSTANCE, false);
+            }
         }
         return outCache;
     }
 
     public static TPrintStream err() {
         if (errCache == null) {
-            errCache = new TPrintStream((TOutputStream) (Object) StderrOutputStream.INSTANCE, false);
+            if (PlatformDetector.isJavaScript()) {
+                errCache = (TPrintStream) (Object) new JSStderrPrintStream();
+            } else {
+                errCache = new TPrintStream((TOutputStream) (Object) StderrOutputStream.INSTANCE, false);
+            }
         }
         return errCache;
     }

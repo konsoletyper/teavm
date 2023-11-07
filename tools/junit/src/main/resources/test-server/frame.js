@@ -188,43 +188,17 @@ let $rt_putStderrCustom = createOutputFunction(msg => {
 
 function createOutputFunction(printFunction) {
     let buffer = "";
-    let utf8Buffer = 0;
-    let utf8Remaining = 0;
-
-    function putCodePoint(ch) {
-        if (ch === 0xA) {
-            printFunction(buffer);
-            buffer = "";
-        } else if (ch < 0x10000) {
-            buffer += String.fromCharCode(ch);
-        } else {
-            ch = (ch - 0x10000) | 0;
-            var hi = (ch >> 10) + 0xD800;
-            var lo = (ch & 0x3FF) + 0xDC00;
-            buffer += String.fromCharCode(hi, lo);
-        }
-    }
-
-    return ch => {
-        if ((ch & 0x80) === 0) {
-            putCodePoint(ch);
-        } else if ((ch & 0xC0) === 0x80) {
-            if (utf8Buffer > 0) {
-                utf8Remaining <<= 6;
-                utf8Remaining |= ch & 0x3F;
-                if (--utf8Buffer === 0) {
-                    putCodePoint(utf8Remaining);
-                }
+    return msg => {
+        let index = 0;
+        while (true) {
+            let next = msg.indexOf('\n', index);
+            if (next < 0) {
+                break;
             }
-        } else if ((ch & 0xE0) === 0xC0) {
-            utf8Remaining = ch & 0x1F;
-            utf8Buffer = 1;
-        } else if ((ch & 0xF0) === 0xE0) {
-            utf8Remaining = ch & 0x0F;
-            utf8Buffer = 2;
-        } else if ((ch & 0xF8) === 0xF0) {
-            utf8Remaining = ch & 0x07;
-            utf8Buffer = 3;
+            printFunction(buffer + msg.substring(index, next));
+            buffer = "";
+            index = next + 1;
         }
-    };
+        buffer += msg.substring(index);
+    }
 }

@@ -397,55 +397,30 @@ let $rt_assertNotNaN = value => {
     }
     return value;
 }
-let $rt_createOutputFunction = printFunction => {
+
+let $rt_createOutputFunction = outputFunction => {
     let buffer = "";
-    let utf8Buffer = 0;
-    let utf8Remaining = 0;
-
-    let putCodePoint = ch =>{
-        if (ch === 0xA) {
-            printFunction(buffer);
-            buffer = "";
-        } else if (ch < 0x10000) {
-            buffer += String.fromCharCode(ch);
-        } else {
-            ch = (ch - 0x10000) | 0;
-            let hi = (ch >> 10) + 0xD800;
-            let lo = (ch & 0x3FF) + 0xDC00;
-            buffer += String.fromCharCode(hi, lo);
-        }
-    }
-
-    return ch => {
-        if ((ch & 0x80) === 0) {
-            putCodePoint(ch);
-        } else if ((ch & 0xC0) === 0x80) {
-            if (utf8Buffer > 0) {
-                utf8Remaining <<= 6;
-                utf8Remaining |= ch & 0x3F;
-                if (--utf8Buffer === 0) {
-                    putCodePoint(utf8Remaining);
-                }
+    return msg => {
+        let index = 0;
+        while (true) {
+            let next = msg.indexOf('\n', index);
+            if (next < 0) {
+                break;
             }
-        } else if ((ch & 0xE0) === 0xC0) {
-            utf8Remaining = ch & 0x1F;
-            utf8Buffer = 1;
-        } else if ((ch & 0xF0) === 0xE0) {
-            utf8Remaining = ch & 0x0F;
-            utf8Buffer = 2;
-        } else if ((ch & 0xF8) === 0xF0) {
-            utf8Remaining = ch & 0x07;
-            utf8Buffer = 3;
+            outputFunction(buffer + msg.substring(index, next));
+            buffer = "";
+            index = next + 1;
         }
-    };
+        buffer += msg.substring(index);
+    }
 }
 
 let $rt_putStdout = typeof teavm_globals.$rt_putStdoutCustom === "function"
     ? teavm_globals.$rt_putStdoutCustom
-    : typeof console === "object" ? $rt_createOutputFunction(function(msg) { console.info(msg); }) : function() {};
+    : typeof console === "object" ? $rt_createOutputFunction(msg => console.info(msg)) : () => {};
 let $rt_putStderr = typeof teavm_globals.$rt_putStderrCustom === "function"
     ? teavm_globals.$rt_putStderrCustom
-    : typeof console === "object" ? $rt_createOutputFunction(function(msg) { console.error(msg); }) : function() {};
+    : typeof console === "object" ? $rt_createOutputFunction(msg => console.error(msg)) : () => {};
 
 let $rt_packageData = null;
 let $rt_packages = data => {
