@@ -60,7 +60,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private String[] transformers = new String[0];
     private String[] classesToPreserve = new String[0];
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
-    private int minHeapSize = 4 * 1024 * 1204;
+    private int minHeapSize = 4 * 1024 * 1024;
     private int maxHeapSize = 128 * 1024 * 1024;
     private final List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
     private boolean heapDump;
