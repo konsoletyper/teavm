@@ -53,10 +53,18 @@ public class RuntimeRenderer {
 
     public void prepareAstParts(boolean threadLibraryUsed) {
         runtimeAstParts.add(prepareAstPart("runtime.js"));
-        runtimeAstParts.add(prepareAstPart("intern.js"));
+        runtimeAstParts.add(prepareAstPart("primitive.js"));
+        runtimeAstParts.add(prepareAstPart("numeric.js"));
         runtimeAstParts.add(prepareAstPart("long.js"));
+        runtimeAstParts.add(prepareAstPart("array.js"));
+        runtimeAstParts.add(prepareAstPart("string.js"));
+        runtimeAstParts.add(prepareAstPart("reflection.js"));
+        runtimeAstParts.add(prepareAstPart("exception.js"));
+        runtimeAstParts.add(prepareAstPart("check.js"));
+        runtimeAstParts.add(prepareAstPart("console.js"));
+        runtimeAstParts.add(prepareAstPart("metadata.js"));
         runtimeAstParts.add(prepareAstPart(threadLibraryUsed ? "thread.js" : "simpleThread.js"));
-        epilogueAstParts.add(prepareAstPart("array.js"));
+        epilogueAstParts.add(prepareAstPart("types.js"));
     }
 
     public void renderRuntime() {

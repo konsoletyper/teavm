@@ -15,6 +15,67 @@
  */
 "use strict";
 
+function Long(lo, hi) {
+    this.lo = lo | 0;
+    this.hi = hi | 0;
+}
+Long.prototype.__teavm_class__ = () => {
+    return "long";
+};
+let Long_isPositive = a => (a.hi & 0x80000000) === 0;
+let Long_isNegative = a => (a.hi & 0x80000000) !== 0;
+
+let Long_MAX_NORMAL = 1 << 18;
+let Long_ZERO;
+let Long_create;
+let Long_fromInt;
+let Long_fromNumber;
+let Long_toNumber;
+let Long_hi;
+let Long_lo;
+if (typeof teavm_globals.BigInt !== "function") {
+    Long.prototype.toString = function() {
+        let result = [];
+        let n = this;
+        let positive = Long_isPositive(n);
+        if (!positive) {
+            n = Long_neg(n);
+        }
+        let radix = new Long(10, 0);
+        do {
+            let divRem = Long_divRem(n, radix);
+            result.push(teavm_globals.String.fromCharCode(48 + divRem[1].lo));
+            n = divRem[0];
+        } while (n.lo !== 0 || n.hi !== 0);
+        result = result.reverse().join('');
+        return positive ? result : "-" + result;
+    };
+    Long.prototype.valueOf = function() {
+        return Long_toNumber(this);
+    };
+
+    Long_ZERO = new Long(0, 0);
+    Long_fromInt = val =>new Long(val, (-(val < 0)) | 0);
+    Long_fromNumber = val => val >= 0
+        ? new Long(val | 0, (val / 0x100000000) | 0)
+        : Long_neg(new Long(-val | 0, (-val / 0x100000000) | 0));
+
+    Long_create = (lo, hi) => new Long(lo, hi);
+    Long_toNumber = val => 0x100000000 * val.hi + (val.lo >>> 0);
+    Long_hi = val => val.hi;
+    Long_lo = val => val.lo;
+} else {
+    Long_ZERO = teavm_globals.BigInt(0);
+    Long_create = (lo, hi) => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt.asUintN(64, teavm_globals.BigInt(lo))
+        | teavm_globals.BigInt.asUintN(64, (teavm_globals.BigInt(hi) << teavm_globals.BigInt(32))));
+    Long_fromInt = val => teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt(val | 0));
+    Long_fromNumber = val =>  teavm_globals.BigInt.asIntN(64, teavm_globals.BigInt(
+        val >= 0 ? teavm_globals.Math.floor(val) : teavm_globals.Math.ceil(val)));
+    Long_toNumber = val => teavm_globals.Number(val);
+    Long_hi = val => teavm_globals.Number(teavm_globals.BigInt.asIntN(64, val >> teavm_globals.BigInt(32))) | 0;
+    Long_lo = val => teavm_globals.Number(teavm_globals.BigInt.asIntN(32, val)) | 0;
+}
+
 let Long_eq;
 let Long_ne;
 let Long_gt;
