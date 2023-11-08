@@ -280,7 +280,6 @@ public class StringTest {
     }
 
     @Test
-    @SkipPlatform({ TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
     public void getUTF8ByteArrayOfLongString() throws UnsupportedEncodingException {
         char[] chars = new char[8192];
         for (int i = 0; i < chars.length;) {

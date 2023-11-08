@@ -17,4 +17,6 @@ package org.teavm.interop;
 
 public abstract class Function {
     public static native <T extends Function> T get(Class<T> functionType, Class<?> cls, String methodName);
+
+    public static native boolean isNull(Function f);
 }

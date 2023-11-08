@@ -20,6 +20,7 @@ import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
+import org.teavm.interop.Function;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -32,6 +33,10 @@ public class FunctionIntrinsic implements WasmIntrinsic {
 
     @Override
     public boolean isApplicable(MethodReference methodReference) {
+        if (methodReference.getClassName().equals(Function.class.getName())
+                && methodReference.getName().equals("isNull")) {
+            return false;
+        }
         return classGenerator.isFunctionClass(methodReference.getClassName());
     }
 

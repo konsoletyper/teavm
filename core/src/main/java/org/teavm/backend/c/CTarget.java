@@ -58,6 +58,7 @@ import org.teavm.backend.c.intrinsic.AddressIntrinsic;
 import org.teavm.backend.c.intrinsic.AllocatorIntrinsic;
 import org.teavm.backend.c.intrinsic.ConsoleIntrinsic;
 import org.teavm.backend.c.intrinsic.ExceptionHandlingIntrinsic;
+import org.teavm.backend.c.intrinsic.FunctionClassIntrinsic;
 import org.teavm.backend.c.intrinsic.FunctionIntrinsic;
 import org.teavm.backend.c.intrinsic.GCIntrinsic;
 import org.teavm.backend.c.intrinsic.IntegerIntrinsic;
@@ -383,6 +384,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         intrinsics.add(new MutatorIntrinsic());
         intrinsics.add(new ExceptionHandlingIntrinsic());
         intrinsics.add(new FunctionIntrinsic(characteristics, exportDependencyListener.getResolvedMethods()));
+        intrinsics.add(new FunctionClassIntrinsic());
         intrinsics.add(new RuntimeClassIntrinsic());
         intrinsics.add(new FiberIntrinsic());
         intrinsics.add(new LongIntrinsic());
