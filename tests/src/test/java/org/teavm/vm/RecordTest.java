@@ -42,7 +42,7 @@ public class RecordTest {
 
     @Test
     public void toStringMethod() {
-        String s = new B(2, "q", 3L).toString();
+        String s = new B(2, "q", 3L, (byte) 4, (short) 5).toString();
 
         int index = 0;
 
@@ -50,33 +50,28 @@ public class RecordTest {
         assertTrue(index >= 0);
         ++index;
 
-        index = s.indexOf("x", index);
+        index = checkRecordKey(s, "a", "2", index);
+        index = checkRecordKey(s, "b", "q", index);
+        index = checkRecordKey(s, "c", "3", index);
+        index = checkRecordKey(s, "d", "4", index);
+        checkRecordKey(s, "e", "5", index);
+    }
+
+    private static int checkRecordKey(String s, String key, String value, int index) {
+        index = s.indexOf(key, index);
         assertTrue(index > 0);
         ++index;
 
-        index = s.indexOf("2", index);
+        index = s.indexOf(value, index);
         assertTrue(index > 0);
         ++index;
 
-        index = s.indexOf("y", index);
-        assertTrue(index > 0);
-        ++index;
-
-        index = s.indexOf("q", index);
-        assertTrue(index > 0);
-        ++index;
-
-        index = s.indexOf("z", index);
-        assertTrue(index > 0);
-        ++index;
-
-        index = s.indexOf("3", index);
-        assertTrue(index > 0);
+        return index;
     }
 
     record A(int x, String y) {
     }
 
-    record B(int x, String y, Long z) {
+    record B(int a, String b, Long c, byte d, short e) {
     }
 }
