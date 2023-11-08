@@ -75,7 +75,7 @@ public class ShadowStackIntrinsic implements Intrinsic {
                 context.writer().print("TEAVM_SET_EXCEPTION_HANDLER_SKIP");
                 break;
             case "setExceptionHandlerRestore":
-                context.writer().print("TEAVM_SET_EXCEPTION_HANDLER_RESTO");
+                context.writer().print("TEAVM_SET_EXCEPTION_HANDLER_RESTORE");
                 break;
             case "getStackTop":
                 context.writer().print("teavm_stackTop");
