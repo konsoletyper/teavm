@@ -69,5 +69,5 @@ version.ref = "shadow"
 [plugins]
 
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
-intellij = { id = "org.jetbrains.intellij", version = "1.13.3" }
+intellij = { id = "org.jetbrains.intellij", version = "1.16.0" }
 pluginPublish = { id = "com.gradle.plugin-publish", version = "1.1.0" }
