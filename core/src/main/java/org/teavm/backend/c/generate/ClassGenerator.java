@@ -740,11 +740,23 @@ public class ClassGenerator {
                 sizeExpr = "0";
             }
             if (cls != null) {
-                if (cls.hasModifier(ElementModifier.ENUM)) {
-                    flags |= RuntimeClass.ENUM;
+                if (cls.hasModifier(ElementModifier.ABSTRACT)) {
+                    flags |= RuntimeClass.ABSTRACT;
+                }
+                if (cls.hasModifier(ElementModifier.INTERFACE)) {
+                    flags |= RuntimeClass.INTERFACE;
+                }
+                if (cls.hasModifier(ElementModifier.FINAL)) {
+                    flags |= RuntimeClass.FINAL;
+                }
+                if (cls.hasModifier(ElementModifier.ANNOTATION)) {
+                    flags |= RuntimeClass.ANNOTATION;
                 }
                 if (cls.hasModifier(ElementModifier.SYNTHETIC)) {
                     flags |= RuntimeClass.SYNTHETIC;
+                }
+                if (cls.hasModifier(ElementModifier.ENUM)) {
+                    flags |= RuntimeClass.ENUM;
                 }
             }
             List<TagRegistry.Range> ranges = tagRegistry != null ? tagRegistry.getRanges(className) : null;

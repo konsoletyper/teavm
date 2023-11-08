@@ -21,13 +21,28 @@ import org.teavm.interop.Unmanaged;
 public class RuntimeClass extends RuntimeObject {
     public static final int INITIALIZED = 1;
     public static final int PRIMITIVE = 2;
-    public static final int ENUM = 4;
-    public static final int SYNTHETIC = 1024;
 
-    public static final int PRIMITIVE_SHIFT = 3;
+    public static final int PRIMITIVE_SHIFT = 2;
     public static final int PRIMITIVE_MASK = 15;
-    public static final int VM_TYPE_SHIFT = 7;
+    public static final int VM_TYPE_SHIFT = 6;
     public static final int VM_TYPE_MASK = 7;
+
+    public static final int FLAGS_SHIFT = 9;
+    public static final int ABSTRACT = 1 << FLAGS_SHIFT;
+    public static final int INTERFACE = 1 << (FLAGS_SHIFT + 1);
+    public static final int FINAL = 1 << (FLAGS_SHIFT + 2);
+    public static final int ENUM = 1 << (FLAGS_SHIFT + 3);
+    public static final int ANNOTATION = 1 << (FLAGS_SHIFT + 4);
+    public static final int SYNTHETIC = 1 << (FLAGS_SHIFT + 5);
+    public static final int BRIDGE = 1 << (FLAGS_SHIFT + 6);
+    public static final int DEPRECATED = 1 << (FLAGS_SHIFT + 7);
+    public static final int NATIVE = 1 << (FLAGS_SHIFT + 8);
+    public static final int STATIC = 1 << (FLAGS_SHIFT + 9);
+    public static final int STRICT = 1 << (FLAGS_SHIFT + 10);
+    public static final int SYNCHRONIZED = 1 << (FLAGS_SHIFT + 11);
+    public static final int TRANSIENT = 1 << (FLAGS_SHIFT + 12);
+    public static final int VARARGS = 1 << (FLAGS_SHIFT + 13);
+    public static final int VOLATILE = 1 << (FLAGS_SHIFT + 14);
 
     public static final int BOOLEAN_PRIMITIVE = 0;
     public static final int BYTE_PRIMITIVE = 1;

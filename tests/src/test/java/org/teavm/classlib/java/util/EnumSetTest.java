@@ -15,13 +15,22 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.*;
-import java.util.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class EnumSetTest {
@@ -199,7 +208,6 @@ public class EnumSetTest {
     }
 
     @Test
-    @SkipPlatform({ TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
     public void iterator() {
         Set<EnumFoo> set = EnumSet.noneOf(EnumFoo.class);
         set.add(EnumFoo.a);

@@ -45,6 +45,7 @@ public class PlatformClassIntrinsic implements Intrinsic {
                 break;
             case "setJavaClass":
                 break;
+            case "getFlags":
         }
     }
 }
