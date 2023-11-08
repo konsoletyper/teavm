@@ -24,6 +24,12 @@ javaVersion {
     version = JavaVersion.VERSION_21
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
 dependencies {
     testImplementation(project(":core"))
     testImplementation(project(":classlib"))
