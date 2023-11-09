@@ -17,11 +17,11 @@ trait Rule[T] {
 
   def |(other: => Rule[T]): Rule[T] = Rule.firstOf(this, other)
 
-  def *(): Rule[List[T]] = Rule.unlimited(this)
+  def * : Rule[List[T]] = Rule.unlimited(this)
 
   def >>[S](f: T => S): Rule[S] = Rule.andThen(this, f)
 
-  def ?(): Rule[Option[T]] = Rule.optional(this)
+  def ? : Rule[Option[T]] = Rule.optional(this)
 
   def debug(str: String) = Rule.rule { x =>
     val (result, rem) = parse(x)
