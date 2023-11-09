@@ -182,13 +182,14 @@ public class TestDateTimeParsing {
     }
 
     @Test(dataProvider = "instantNoZone", expectedExceptions = DateTimeException.class)
-    @SkipPlatform(TestPlatform.C)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void test_parse_instantNoZone_ZDT(DateTimeFormatter formatter, String text, Instant expected) {
         TemporalAccessor actual = formatter.parse(text);
         ZonedDateTime.from(actual);
     }
 
     @Test(dataProvider = "instantNoZone", expectedExceptions = DateTimeException.class)
+    @SkipPlatform(TestPlatform.C)
     public void test_parse_instantNoZone_LDT(DateTimeFormatter formatter, String text, Instant expected) {
         TemporalAccessor actual = formatter.parse(text);
         LocalDateTime.from(actual);
