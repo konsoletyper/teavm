@@ -32,6 +32,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
+import org.teavm.model.transformation.ClassInitInsertion;
 import org.teavm.model.util.ModelUtils;
 
 class DependencyClassSource implements ClassHolderSource {
@@ -44,13 +45,21 @@ class DependencyClassSource implements ClassHolderSource {
     boolean obfuscated;
     boolean strict;
     Map<String, Optional<ClassHolder>> cache = new LinkedHashMap<>(1000, 0.5f);
+    private ReferenceResolver referenceResolver;
+    private ClassInitInsertion classInitInsertion;
 
     DependencyClassSource(ClassReaderSource innerSource, Diagnostics diagnostics,
-            IncrementalDependencyRegistration dependencyRegistration) {
+            IncrementalDependencyRegistration dependencyRegistration, String[] platformTags) {
         this.innerSource = innerSource;
         this.diagnostics = diagnostics;
         innerHierarchy = new ClassHierarchy(innerSource);
         this.dependencyRegistration = dependencyRegistration;
+        referenceResolver = new ReferenceResolver(this, platformTags);
+        classInitInsertion = new ClassInitInsertion(this);
+    }
+
+    public ReferenceResolver getReferenceResolver() {
+        return referenceResolver;
     }
 
     @Override
@@ -75,10 +84,22 @@ class DependencyClassSource implements ClassHolderSource {
     }
 
     private ClassHolder findAndTransformClass(String name) {
-        ClassHolder cls = findClass(name);
-        if (cls != null && !transformers.isEmpty()) {
-            for (ClassHolderTransformer transformer : transformers) {
-                transformer.transformClass(cls, transformContext);
+        var cls = findClass(name);
+        if (cls != null) {
+            if (!transformers.isEmpty()) {
+                for (var transformer : transformers) {
+                    transformer.transformClass(cls, transformContext);
+                }
+            }
+            for (var method : cls.getMethods()) {
+                if (method.getProgram() != null) {
+                    var program = method.getProgram();
+                    method.setProgramSupplier(m -> {
+                        referenceResolver.resolve(m, program);
+                        classInitInsertion.apply(m, program);
+                        return program;
+                    });
+                }
             }
         }
         return cls;
@@ -108,7 +129,7 @@ class DependencyClassSource implements ClassHolderSource {
         transformers.add(transformer);
     }
 
-    public void cleanup() {
+    public void dispose() {
         transformers.clear();
     }
 

@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
-import java.util.function.Function;
 import org.objectweb.asm.tree.ClassNode;
 import org.teavm.cache.IncrementalDependencyProvider;
 import org.teavm.cache.IncrementalDependencyRegistration;
@@ -51,7 +50,6 @@ import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
-import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
@@ -87,7 +85,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private ClassLoader classLoader;
     private Map<String, Map<MethodDescriptor, Optional<MethodHolder>>> methodReaderCache = new HashMap<>(1000, 0.5f);
     private Map<MethodReference, MethodDependency> implementationCache = new HashMap<>();
-    private Function<FieldReference, FieldHolder> fieldReaderCache;
     private Map<String, Map<MethodDescriptor, MethodDependency>> methodCache = new HashMap<>();
     private Set<MethodReference> reachedMethods = new LinkedHashSet<>();
     private Set<MethodReference> readonlyReachedMethods = Collections.unmodifiableSet(reachedMethods);
@@ -118,18 +115,17 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     DependencyType classType;
 
     DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
-            Diagnostics diagnostics, ReferenceCache referenceCache) {
+            Diagnostics diagnostics, ReferenceCache referenceCache, String[] platformTags) {
         this.unprocessedClassSource = classSource;
         this.diagnostics = diagnostics;
         this.referenceCache = referenceCache;
-        this.classSource = new DependencyClassSource(classSource, diagnostics, incrementalCache);
+        this.classSource = new DependencyClassSource(classSource, diagnostics, incrementalCache, platformTags);
         agentClassSource = this.classSource;
         classHierarchy = new ClassHierarchy(this.classSource);
         this.classLoader = classLoader;
         this.services = services;
-        fieldReaderCache = new CachedFunction<>(preimage -> this.classSource.resolveMutable(preimage));
         fieldCache = new CachedFunction<>(preimage -> {
-            FieldReader field = fieldReaderCache.apply(preimage);
+            var field = this.classSource.getReferenceResolver().resolve(preimage);
             if (field != null && !field.getReference().equals(preimage)) {
                 return fieldCache.apply(field.getReference());
             }
@@ -274,6 +270,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             lock(dep, false);
             deferredTasks.add(() -> {
                 processInvokeDynamic(dep);
+                classSource.getReferenceResolver().use(dep.method.getReference(), diagnostics);
                 processMethod(dep);
                 dep.used = true;
             });
@@ -499,8 +496,10 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     abstract DependencyNode createClassValueNode(int degree, DependencyNode parent);
 
     void scheduleMethodAnalysis(MethodDependency dep) {
+        classSource.getReferenceResolver().use(dep.getReference(), diagnostics);
         deferredTasks.add(() -> {
             processInvokeDynamic(dep);
+            classSource.getReferenceResolver().use(dep.getReference(), diagnostics);
             processMethod(dep);
         });
     }
@@ -762,10 +761,8 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         }
 
         allNodes.clear();
-        classSource.cleanup();
         agent.cleanup();
         listeners.clear();
-        classSource.innerHierarchy = null;
 
         agentClassSource = classSourcePacker.pack(classSource,
                 ClassClosureAnalyzer.build(classSource, new ArrayList<>(classSource.cache.keySet())));
@@ -773,9 +770,10 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             classHierarchy = new ClassHierarchy(agentClassSource);
             generatedClassNames.addAll(classSource.getGeneratedClassNames());
         }
+        classSource.innerHierarchy = null;
+        classSource.dispose();
         classSource = null;
         methodReaderCache = null;
-        fieldReaderCache = null;
     }
 
     public void cleanupTypes() {

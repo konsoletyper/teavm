@@ -95,7 +95,6 @@ import org.teavm.model.optimization.UnreachableBasicBlockElimination;
 import org.teavm.model.optimization.UnusedVariableElimination;
 import org.teavm.model.text.ListingBuilder;
 import org.teavm.model.transformation.ClassInitializerInsertionTransformer;
-import org.teavm.model.util.MissingItemsProcessor;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.RegisterAllocator;
@@ -170,7 +169,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         classLoader = builder.classLoader;
         classSourcePacker = builder.classSourcePacker;
         dependencyAnalyzer = builder.dependencyAnalyzerFactory.create(builder.classSource, classLoader,
-                this, diagnostics, builder.referenceCache);
+                this, diagnostics, builder.referenceCache, target.getPlatformTags());
         dependencyAnalyzer.setObfuscated(builder.obfuscated);
         dependencyAnalyzer.setStrict(builder.strict);
         progressListener = new TeaVMProgressListener() {
@@ -569,8 +568,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     public ListableClassHolderSource link(DependencyAnalyzer dependency) {
         Linker linker = new Linker(dependency);
         var cutClasses = new MutableClassHolderSource();
-        var missingItemsProcessor = new MissingItemsProcessor(dependency,
-                dependency.getClassHierarchy(), diagnostics, target.getPlatformTags());
         if (wasCancelled()) {
             return cutClasses;
         }
@@ -584,7 +581,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             if (clsReader != null) {
                 ClassHolder cls = ModelUtils.copyClass(clsReader);
                 cutClasses.putClassHolder(cls);
-                missingItemsProcessor.processClass(cls);
                 linker.link(cls);
             }
             reportCompileProgress(++compileProgressValue);
@@ -962,8 +958,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     class PostProcessingClassHolderSource implements ListableClassHolderSource {
         private Linker linker = new Linker(dependencyAnalyzer);
-        private MissingItemsProcessor missingItemsProcessor = new MissingItemsProcessor(dependencyAnalyzer,
-                dependencyAnalyzer.getClassHierarchy(), diagnostics, target.getPlatformTags());
         private Map<String, ClassHolder> cache = new HashMap<>();
         private Set<String> classNames = Collections.unmodifiableSet(new HashSet<>(
                 dependencyAnalyzer.getReachableClasses().stream()
@@ -980,6 +974,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     return null;
                 }
                 ClassHolder cls = ModelUtils.copyClass(classReader, false);
+                linker.link(cls);
 
                 for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {
                     FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
@@ -994,8 +989,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                             : null;
                     if (program == null) {
                         program = ProgramUtils.copy(classReader.getMethod(method.getDescriptor()).getProgram());
-                        missingItemsProcessor.processMethod(method.getReference(), program);
-                        linker.link(method, program);
                         clinitInsertion.apply(method, program);
                         target.beforeInlining(program, method);
                         program = optimizeMethodCacheMiss(method, program);
