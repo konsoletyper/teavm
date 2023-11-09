@@ -251,36 +251,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         dep.use();
 
         dependencyAnalyzer.linkField(new FieldReference(String.class.getName(), "characters"));
-        dependencyAnalyzer.linkMethod(new MethodReference(String.class, "hashCode", int.class))
-                .propagate(0, "java.lang.String")
-                .use();
-        dependencyAnalyzer.linkMethod(new MethodReference(String.class, "equals", Object.class, boolean.class))
-                .propagate(0, "java.lang.String")
-                .propagate(1, "java.lang.String")
-                .use();
-
-        dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "clone", Object.class));
-        MethodDependency exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
-                NoClassDefFoundError.class, "<init>", String.class, void.class));
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "toString", String.class));
         dep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.Object"));
         dep.use();
 
-        exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoClassDefFoundError.class.getName()));
-        exceptionCons.getVariable(1).propagate(stringType);
-        exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(NoSuchFieldError.class, "<init>",
-                String.class, void.class));
-        exceptionCons.use();
-        exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoSuchFieldError.class.getName()));
-        exceptionCons.getVariable(1).propagate(stringType);
-        exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(NoSuchMethodError.class, "<init>",
-                String.class, void.class));
-        exceptionCons.use();
-        exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoSuchMethodError.class.getName()));
-        exceptionCons.getVariable(1).propagate(stringType);
-
-        exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
+        var exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
                 RuntimeException.class, "<init>", String.class, void.class));
         exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(RuntimeException.class.getName()));
         exceptionCons.getVariable(1).propagate(stringType);

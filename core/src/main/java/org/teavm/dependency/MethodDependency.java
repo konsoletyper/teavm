@@ -181,7 +181,6 @@ public class MethodDependency implements MethodDependencyInfo {
         return external;
     }
 
-
     void cleanup() {
         if (method != null) {
             present = true;

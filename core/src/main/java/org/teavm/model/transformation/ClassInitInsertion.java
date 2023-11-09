@@ -17,9 +17,9 @@ package org.teavm.model.transformation;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodDescriptor;
@@ -36,13 +36,13 @@ import org.teavm.model.util.DominatorWalkerContext;
 
 public class ClassInitInsertion {
     private static final MethodDescriptor CLINIT = new MethodDescriptor("<clinit>", void.class);
-    private DependencyInfo dependencyInfo;
+    private ClassReaderSource classSource;
 
-    public ClassInitInsertion(DependencyInfo dependencyInfo) {
-        this.dependencyInfo = dependencyInfo;
+    public ClassInitInsertion(ClassReaderSource classSource) {
+        this.classSource = classSource;
     }
 
-    public void apply(Program program, MethodReader method) {
+    public void apply(MethodReader method, Program program) {
         if (program.basicBlockCount() == 0) {
             return;
         }
@@ -127,7 +127,7 @@ public class ClassInitInsertion {
 
         private void initializeClass(String className, Instruction instruction) {
             if (markClassAsInitialized(className)) {
-                ClassReader cls = dependencyInfo.getClassSource().get(className);
+                ClassReader cls = classSource.get(className);
                 if (cls == null || cls.getMethod(CLINIT) != null) {
                     InitClassInstruction initInsn = new InitClassInstruction();
                     initInsn.setClassName(className);

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2023 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,14 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dependency;
+package org.teavm.classlib.java.lang;
 
-import org.teavm.common.ServiceRepository;
-import org.teavm.diagnostics.Diagnostics;
-import org.teavm.model.ClassReaderSource;
-import org.teavm.model.ReferenceCache;
+public class TIllegalAccessError extends TIncompatibleClassChangeError {
+    public TIllegalAccessError() {
+    }
 
-public interface DependencyAnalyzerFactory {
-    DependencyAnalyzer create(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
-            Diagnostics diagnostics, ReferenceCache referenceCache, String[] platformTags);
+    public TIllegalAccessError(String message) {
+        super(message);
+    }
 }

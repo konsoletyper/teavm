@@ -16,6 +16,7 @@
 package org.teavm.platform.plugin;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.interop.Async;
@@ -28,8 +29,11 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldHolder;
+import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.PrimitiveType;
 import org.teavm.model.Program;
@@ -38,9 +42,11 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.runtime.Fiber;
 
 public class AsyncMethodProcessor implements ClassHolderTransformer {
@@ -75,7 +81,7 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
                 }
 
                 if (lowLevel) {
-                    generateLowLevelCall(method, suffix++);
+                    generateLowLevelCall(method, suffix++, context);
                 } else {
                     generateCallerMethod(cls, method);
                 }
@@ -83,11 +89,9 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
         }
     }
 
-    private void generateLowLevelCall(MethodHolder method, int suffix) {
+    private void generateLowLevelCall(MethodHolder method, int suffix, ClassHolderTransformerContext context) {
         String className = method.getOwnerName() + "$" + method.getName() + "$" + suffix;
-        AnnotationHolder classNameAnnot = new AnnotationHolder(AsyncCaller.class.getName());
-        classNameAnnot.getValues().put("value", new AnnotationValue(className));
-        method.getAnnotations().add(classNameAnnot);
+        context.submit(generateCall(method, className));
 
         method.getModifiers().remove(ElementModifier.NATIVE);
 
@@ -294,5 +298,123 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
 
         cast.setTargetType(ValueType.object(call.getMethod().getClassName()));
         return call.getReceiver();
+    }
+
+    private ClassHolder generateCall(MethodReader method, String className) {
+        ClassHolder cls = generateClassDecl(method, className);
+        if (cls == null) {
+            return null;
+        }
+        cls.addMethod(generateConstructor(method, cls.getName()));
+        cls.addMethod(generateRun(method, cls.getName()));
+        return cls;
+    }
+
+    private ClassHolder generateClassDecl(MethodReader method, String className) {
+        ClassHolder cls = new ClassHolder(className);
+
+        cls.getInterfaces().add(Fiber.class.getName() + "$AsyncCall");
+
+        List<ValueType> types = new ArrayList<>();
+        if (!method.hasModifier(ElementModifier.STATIC)) {
+            types.add(ValueType.object(method.getOwnerName()));
+            FieldHolder field = new FieldHolder("instance");
+            field.setType(ValueType.object(method.getOwnerName()));
+            cls.addField(field);
+        }
+        ValueType[] parameterTypes = method.getParameterTypes();
+        for (int i = 0; i < parameterTypes.length; ++i) {
+            types.add(parameterTypes[i]);
+            FieldHolder field = new FieldHolder("param" + i);
+            field.setType(parameterTypes[i]);
+            cls.addField(field);
+        }
+        types.add(ValueType.VOID);
+        MethodHolder constructor = new MethodHolder("<init>", types.toArray(new ValueType[0]));
+        cls.addMethod(constructor);
+        return cls;
+    }
+
+    private MethodHolder generateConstructor(MethodReader method, String className) {
+        List<ValueType> types = new ArrayList<>();
+        if (!method.hasModifier(ElementModifier.STATIC)) {
+            types.add(ValueType.object(method.getOwnerName()));
+        }
+        Collections.addAll(types, method.getParameterTypes());
+        types.add(ValueType.VOID);
+        MethodHolder constructor = new MethodHolder("<init>", types.toArray(new ValueType[0]));
+
+        Program program = new Program();
+        constructor.setProgram(program);
+        BasicBlock block = program.createBasicBlock();
+        Variable instance = program.createVariable();
+
+        if (!method.hasModifier(ElementModifier.STATIC)) {
+            PutFieldInstruction putField = new PutFieldInstruction();
+            putField.setValue(program.createVariable());
+            putField.setField(new FieldReference(className, "instance"));
+            putField.setFieldType(ValueType.object(method.getOwnerName()));
+            putField.setInstance(instance);
+            block.add(putField);
+        }
+
+        for (int i = 0; i < method.parameterCount(); ++i) {
+            PutFieldInstruction putField = new PutFieldInstruction();
+            putField.setValue(program.createVariable());
+            putField.setField(new FieldReference(className, "param" + i));
+            putField.setFieldType(method.parameterType(i));
+            putField.setInstance(instance);
+            block.add(putField);
+        }
+
+        block.add(new ExitInstruction());
+        return constructor;
+    }
+
+    private MethodHolder generateRun(MethodReader method, String className) {
+        MethodHolder runMethod = new MethodHolder("run", ValueType.parse(AsyncCallback.class), ValueType.VOID);
+        Program program = new Program();
+        runMethod.setProgram(program);
+        BasicBlock block = program.createBasicBlock();
+        Variable instance = program.createVariable();
+        Variable callback = program.createVariable();
+
+        InvokeInstruction call = new InvokeInstruction();
+        call.setType(InvocationType.SPECIAL);
+        List<ValueType> types = new ArrayList<>();
+        ValueType[] parameterTypes = method.getParameterTypes();
+        List<Variable> arguments = new ArrayList<>(call.getArguments());
+
+        if (!method.hasModifier(ElementModifier.STATIC)) {
+            GetFieldInstruction getField = new GetFieldInstruction();
+            getField.setReceiver(program.createVariable());
+            getField.setInstance(instance);
+            getField.setField(new FieldReference(className, "instance"));
+            getField.setFieldType(ValueType.object(method.getOwnerName()));
+            block.add(getField);
+            call.setInstance(getField.getReceiver());
+        }
+        for (int i = 0; i < parameterTypes.length; ++i) {
+            GetFieldInstruction getField = new GetFieldInstruction();
+            getField.setReceiver(program.createVariable());
+            getField.setInstance(instance);
+            getField.setField(new FieldReference(className, "param" + i));
+            getField.setFieldType(parameterTypes[i]);
+            block.add(getField);
+            arguments.add(getField.getReceiver());
+            types.add(parameterTypes[i]);
+        }
+
+        types.add(ValueType.parse(AsyncCallback.class));
+        arguments.add(callback);
+
+        types.add(ValueType.VOID);
+        call.setMethod(new MethodReference(method.getOwnerName(), method.getName(), types.toArray(new ValueType[0])));
+        call.setArguments(arguments.toArray(new Variable[0]));
+        block.add(call);
+
+        block.add(new ExitInstruction());
+
+        return runMethod;
     }
 }

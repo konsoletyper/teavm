@@ -40,8 +40,9 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
     private Map<String, DependencyNode> subtypeNodes = new HashMap<>();
 
     public FastDependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader,
-            ServiceRepository services, Diagnostics diagnostics, ReferenceCache referenceCache) {
-        super(classSource, classLoader, services, diagnostics, referenceCache);
+            ServiceRepository services, Diagnostics diagnostics, ReferenceCache referenceCache,
+            String[] platformTags) {
+        super(classSource, classLoader, services, diagnostics, referenceCache, platformTags);
 
         instancesNode = new DependencyNode(this, null);
         classesNode = new DependencyNode(this, null);
