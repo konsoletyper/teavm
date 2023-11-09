@@ -29,3 +29,10 @@ teavm.js {
     addedToWebApp = true
     mainClass = "org.teavm.samples.scala.Client"
 }
+
+tasks.withType<ScalaCompile> {
+    scalaCompileOptions.additionalParameters = listOf(
+        "-feature",
+        "-deprecation",
+    )
+}
