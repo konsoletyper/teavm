@@ -34,7 +34,7 @@ import org.teavm.backend.javascript.ast.AstVisitor;
 
 public class RemovablePartsFinder extends AstVisitor {
     private Map<String, List<AstNode>> removableDeclarations = new HashMap<>();
-    private Map<String, Scope> removableDeclarationScopes = new HashMap<>();
+    private Set<Scope> removableDeclarationScopes = new HashSet<>();
     private Map<String, Set<String>> dependencies = new HashMap<>();
     private String insideDeclaration;
     private boolean topLevel = true;
@@ -44,7 +44,6 @@ public class RemovablePartsFinder extends AstVisitor {
         if (topLevel) {
             if (node.getName() != null && !node.getName().isEmpty()) {
                 removableDeclarations.computeIfAbsent(node.getName(), k -> new ArrayList<>()).add(node);
-                removableDeclarationScopes.put(node.getName(), scopeOfId(node.getName()));
             }
             topLevel = false;
             insideDeclaration = node.getName();
@@ -64,7 +63,6 @@ public class RemovablePartsFinder extends AstVisitor {
                 if (name != null) {
                     removableDeclarations.computeIfAbsent(name.getIdentifier(), k -> new ArrayList<>())
                             .add(initializer);
-                    removableDeclarationScopes.put(name.getIdentifier(), scopeOfId(name.getIdentifier()));
                     if (initializer.getInitializer() != null) {
                         topLevel = false;
                         insideDeclaration = name.getIdentifier();
@@ -86,7 +84,6 @@ public class RemovablePartsFinder extends AstVisitor {
             var name = extractName(assign.getLeft());
             removableDeclarations.computeIfAbsent(name.getIdentifier(), k -> new ArrayList<>())
                     .add(node.getExpression());
-            removableDeclarationScopes.put(name.getIdentifier(), scopeOfId(name.getIdentifier()));
             if (name != null) {
                 topLevel = false;
                 insideDeclaration = name.getIdentifier();
@@ -106,9 +103,11 @@ public class RemovablePartsFinder extends AstVisitor {
 
     @Override
     public void visit(Name node) {
-        if (scopeOfId(node.getIdentifier()) == removableDeclarationScopes.get(node.getIdentifier())
-                && insideDeclaration != null) {
-            dependencies.computeIfAbsent(insideDeclaration, k -> new HashSet<>()).add(node.getIdentifier());
+        if (insideDeclaration != null) {
+            var actualScope = scopeOfId(node.getIdentifier());
+            if (actualScope == null || removableDeclarationScopes.contains(actualScope)) {
+                dependencies.computeIfAbsent(insideDeclaration, k -> new HashSet<>()).add(node.getIdentifier());
+            }
         }
     }
 
@@ -140,5 +139,19 @@ public class RemovablePartsFinder extends AstVisitor {
             nodes.addAll(parts);
         }
         return nodes;
+    }
+
+    @Override
+    protected void onEnterScope(Scope scope) {
+        if (topLevel) {
+            removableDeclarationScopes.add(scope);
+        }
+    }
+
+    @Override
+    protected void onLeaveScope(Scope scope) {
+        if (topLevel) {
+            removableDeclarationScopes.remove(scope);
+        }
     }
 }

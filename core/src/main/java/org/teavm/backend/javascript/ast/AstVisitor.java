@@ -268,7 +268,7 @@ public class AstVisitor {
     public void visit(Scope node) {
         var scope = enterScope(node);
         visitChildren(node);
-        leaveScope(scope);
+        leaveScope(node, scope);
     }
 
     public void visit(LabeledStatement node) {
@@ -294,7 +294,7 @@ public class AstVisitor {
         var scope = enterScope(node);
         visitProperty(node, DoLoop::getBody, DoLoop::setBody, EMPTY_DEFAULT);
         visitProperty(node, DoLoop::getCondition, DoLoop::setCondition, NULL_DEFAULT);
-        leaveScope(scope);
+        leaveScope(node, scope);
     }
 
     public void visit(ForInLoop node) {
@@ -302,7 +302,7 @@ public class AstVisitor {
         visitProperty(node, ForInLoop::getIterator, ForInLoop::setIterator, NULL_DEFAULT);
         visitProperty(node, ForInLoop::getIteratedObject, ForInLoop::setIteratedObject, NULL_DEFAULT);
         visitProperty(node, ForInLoop::getBody, ForInLoop::setBody, EMPTY_DEFAULT);
-        leaveScope(scope);
+        leaveScope(node, scope);
     }
 
     public void visit(ForLoop node) {
@@ -311,14 +311,14 @@ public class AstVisitor {
         visitProperty(node, ForLoop::getCondition, ForLoop::setCondition, EMPTY_EXPR_DEFAULT);
         visitProperty(node, ForLoop::getIncrement, ForLoop::setIncrement, EMPTY_EXPR_DEFAULT);
         visitProperty(node, ForLoop::getBody, ForLoop::setBody, EMPTY_DEFAULT);
-        leaveScope(scope);
+        leaveScope(node, scope);
     }
 
     public void visit(WhileLoop node) {
         var scope = enterScope(node);
         visitProperty(node, WhileLoop::getCondition, WhileLoop::setCondition, NULL_DEFAULT);
         visitProperty(node, WhileLoop::getBody, WhileLoop::setBody, EMPTY_DEFAULT);
-        leaveScope(scope);
+        leaveScope(node, scope);
     }
 
     public void visit(IfStatement node) {
@@ -397,7 +397,7 @@ public class AstVisitor {
         }
         visitProperty(node, ArrayComprehension::getFilter, ArrayComprehension::setFilter);
         visitProperty(node, ArrayComprehension::getResult, ArrayComprehension::setResult);
-        leaveScope(scope);
+        leaveScope(node, scope);
     }
 
     public void visit(GeneratorExpression node) {
@@ -409,7 +409,7 @@ public class AstVisitor {
         }
         visitProperty(node, GeneratorExpression::getFilter, GeneratorExpression::setFilter);
         visitProperty(node, GeneratorExpression::getResult, GeneratorExpression::setResult);
-        leaveScope(scope);
+        leaveScope(node, scope);
     }
 
     public void visit(NumberLiteral node) {
@@ -452,14 +452,14 @@ public class AstVisitor {
         visitProperty(node, FunctionNode::getFunctionName, FunctionNode::setFunctionName);
         visitMany(node.getParams());
         visitChildren(node.getBody());
-        leaveScope(scope);
+        leaveScope(node, scope);
     }
 
     public void visit(LetNode node) {
         var scope = enterScope(node);
         visitProperty(node, LetNode::getVariables, LetNode::setVariables);
         visitProperty(node, LetNode::getBody, LetNode::setBody);
-        leaveScope(scope);
+        leaveScope(node, scope);
     }
 
     public void visit(ParenthesizedExpression node) {
@@ -492,6 +492,7 @@ public class AstVisitor {
 
 
     private Map<String, Scope> enterScope(Scope scope) {
+        onEnterScope(scope);
         if (scope.getSymbolTable() == null) {
             return Collections.emptyMap();
         }
@@ -503,7 +504,11 @@ public class AstVisitor {
         return map;
     }
 
-    private void leaveScope(Map<String, Scope> backup) {
+    protected void onEnterScope(Scope scope) {
+    }
+
+    private void leaveScope(Scope scope, Map<String, Scope> backup) {
+        onLeaveScope(scope);
         for (var entry : backup.entrySet()) {
             if (entry.getValue() == null) {
                 currentScopes.remove(entry.getKey());
@@ -511,6 +516,9 @@ public class AstVisitor {
                 currentScopes.put(entry.getKey(), entry.getValue());
             }
         }
+    }
+
+    protected void onLeaveScope(Scope scope) {
     }
 
     protected Scope scopeOfId(String id) {
