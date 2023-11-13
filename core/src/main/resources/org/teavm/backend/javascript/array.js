@@ -20,7 +20,6 @@ let $rt_createArray = (cls, sz) => {
     data.fill(null);
     return new ($rt_arraycls(cls))(data);
 }
-let $rt_createArrayFromData = (cls, init) => $rt_wrapArray(cls, init);
 let $rt_wrapArray = (cls, data) => new ($rt_arraycls(cls))(data);
 let $rt_createUnfilledArray = (cls, sz) => new ($rt_arraycls(cls))(new teavm_globals.Array(sz));
 let $rt_createLongArray;

@@ -1300,7 +1300,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             }
             writer.append("(");
         } else {
-            writer.appendFunction("$rt_createArrayFromData").append("(");
+            writer.appendFunction("$rt_wrapArray").append("(");
             context.typeToClsString(writer, expr.getType());
             writer.append(",").ws();
         }
