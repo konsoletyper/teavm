@@ -1,0 +1,37 @@
+<!--
+    Copyright 2014 Alexey Andreev.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+         http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Software 3D renderer</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <script type="text/javascript" charset="utf-8" src="js/software3d.js"></script>
+  </head>
+  <body onload="main()">
+  <div>
+    <canvas id="canvas" width="1024" height="768"></canvas>
+  </div>
+  <div><label for="worker-type">Worker type:</label> <select id="worker-type">
+    <option value="js">TeaVM JS</option>
+    <option value="webassembly">TeaVM WebAssembly</option>
+    <option value="kjs">Kotlin/JS</option>
+  </select></div>
+  <div><label for="workers">Workers:</label> <select id="workers"></select></div>
+  <div>Average frame rendering time, microseconds: <span id="performance-indicator"></span></div>
+  <div>By worker:</div>
+  <ol id="performance-indicators-by-workers"></ol>
+  </body>
+</html>

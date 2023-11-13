@@ -14,21 +14,21 @@
  *  limitations under the License.
  */
 
-plugins {
-    kotlin("multiplatform") version "1.9.20"
-    war
-    id("org.teavm")
-}
+package org.teavm.samples.software3d.rasterization
 
-dependencies {
-    teavm(teavm.libs.jsoApis)
-}
+import org.teavm.samples.software3d.geometry.MutableVector
+import org.teavm.samples.software3d.geometry.Vector
+import kotlin.jvm.JvmField
 
-teavm.js {
-    addedToWebApp = true
-    mainClass = "org.teavm.samples.kotlin.HelloKt"
-}
-
-kotlin {
-    jvm()
+class VertexParams {
+    @JvmField
+    val pos: MutableVector = MutableVector()
+    @JvmField
+    val orig: MutableVector = MutableVector()
+    @JvmField
+    val normal: MutableVector = MutableVector()
+    @JvmField
+    var ambient: Vector = Vector.zero
+    @JvmField
+    var diffuse: Vector = Vector.zero
 }

@@ -14,21 +14,8 @@
  *  limitations under the License.
  */
 
-plugins {
-    kotlin("multiplatform") version "1.9.20"
-    war
-    id("org.teavm")
-}
+package org.teavm.samples.software3d.geometry
 
-dependencies {
-    teavm(teavm.libs.jsoApis)
-}
+import org.teavm.samples.software3d.scene.Vertex
 
-teavm.js {
-    addedToWebApp = true
-    mainClass = "org.teavm.samples.kotlin.HelloKt"
-}
-
-kotlin {
-    jvm()
-}
+class Face(val a: Vertex, val b: Vertex, val c: Vertex)

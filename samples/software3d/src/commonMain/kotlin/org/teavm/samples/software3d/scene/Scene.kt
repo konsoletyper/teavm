@@ -14,21 +14,15 @@
  *  limitations under the License.
  */
 
-plugins {
-    kotlin("multiplatform") version "1.9.20"
-    war
-    id("org.teavm")
-}
+package org.teavm.samples.software3d.scene
 
-dependencies {
-    teavm(teavm.libs.jsoApis)
-}
+import org.teavm.samples.software3d.geometry.Matrix
+import org.teavm.samples.software3d.geometry.Vector
 
-teavm.js {
-    addedToWebApp = true
-    mainClass = "org.teavm.samples.kotlin.HelloKt"
-}
-
-kotlin {
-    jvm()
+class Scene {
+    val items: MutableList<Item> = mutableListOf()
+    var camera: Matrix = Matrix.identity
+    var lightPosition: Vector = Vector.zero
+    var lightColor: Vector = Vector.zero
+    var ambientColor: Vector = Vector.zero
 }

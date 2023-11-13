@@ -14,21 +14,24 @@
  *  limitations under the License.
  */
 
-plugins {
-    kotlin("multiplatform") version "1.9.20"
-    war
-    id("org.teavm")
-}
+package org.teavm.samples.software3d.rasterization
 
-dependencies {
-    teavm(teavm.libs.jsoApis)
-}
+import kotlin.jvm.JvmField
 
-teavm.js {
-    addedToWebApp = true
-    mainClass = "org.teavm.samples.kotlin.HelloKt"
-}
+class Raster(@JvmField val width: Int, @JvmField val height: Int) {
+    @JvmField var color: IntArray = IntArray(width * height)
+    @JvmField val depth: FloatArray = FloatArray(width * height)
 
-kotlin {
-    jvm()
+    fun pointer(x: Int, y: Int): Int = y * width + x
+
+    fun clear() {
+        color.fill(255 shl 24)
+        depth.fill(0f)
+    }
+
+    fun flip(): IntArray {
+        val result = color
+        color = IntArray(width * height)
+        return result
+    }
 }

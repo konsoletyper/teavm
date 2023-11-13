@@ -14,21 +14,31 @@
  *  limitations under the License.
  */
 
-plugins {
-    kotlin("multiplatform") version "1.9.20"
-    war
-    id("org.teavm")
-}
+package org.teavm.samples.software3d.geometry
 
-dependencies {
-    teavm(teavm.libs.jsoApis)
-}
+import kotlin.jvm.JvmField
 
-teavm.js {
-    addedToWebApp = true
-    mainClass = "org.teavm.samples.kotlin.HelloKt"
-}
+class MutableVector {
+    @JvmField
+    var x: Float = 0f
+    @JvmField
+    var y: Float = 0f
+    @JvmField
+    var z: Float = 0f
+    @JvmField
+    var w: Float = 0f
 
-kotlin {
-    jvm()
+    fun set(vector: Vector) {
+        x = vector.x
+        y = vector.y
+        z = vector.z
+        w = vector.w
+    }
+
+    fun normalizeW() {
+        x /= w
+        y /= w
+        z /= w
+        w = 1f
+    }
 }

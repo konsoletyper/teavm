@@ -1,0 +1,67 @@
+import org.teavm.gradle.api.OptimizationLevel
+import org.teavm.gradle.tasks.TeaVMTask
+
+/*
+ *  Copyright 2023 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+plugins {
+    kotlin("multiplatform") version "1.9.20"
+    war
+    id("org.teavm")
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+teavm.js {
+    addedToWebApp = true
+    mainClass = "org.teavm.samples.software3d.teavm.MainKt"
+}
+
+teavm.wasm {
+    addedToWebApp = true
+    mainClass = "org.teavm.samples.software3d.teavm.WasmWorkerKt"
+    optimization = OptimizationLevel.AGGRESSIVE
+    minHeapSize = 4
+}
+
+kotlin {
+    js {
+        browser {
+
+        }
+        binaries.executable()
+    }
+    jvm()
+    sourceSets.jvmMain.dependencies {
+        implementation(teavm.libs.jsoApis)
+    }
+}
+
+tasks.withType<TeaVMTask> {
+    classpath.from(kotlin.jvm().compilations["main"].output.classesDirs)
+}
+
+tasks.war {
+    dependsOn(tasks.named("jsBrowserDistribution"))
+    with(copySpec {
+        from(kotlin.js().binaries.executable().map { it.distribution.outputDirectory })
+        into("kjs")
+    })
+}

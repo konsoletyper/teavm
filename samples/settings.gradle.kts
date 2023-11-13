@@ -59,6 +59,7 @@ include("pi")
 include("kotlin")
 include("scala")
 include("web-apis")
+include("software3d")
 
 gradle.allprojects {
     apply<WarPlugin>()
