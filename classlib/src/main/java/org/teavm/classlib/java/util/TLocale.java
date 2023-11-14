@@ -36,6 +36,7 @@ import java.util.Arrays;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
+import org.teavm.classlib.java.lang.TString;
 import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
 import org.teavm.platform.metadata.StringResource;
@@ -88,7 +89,7 @@ public final class TLocale implements TCloneable, TSerializable {
         if (language == null || country == null || variant == null) {
             throw new NullPointerException();
         }
-        if (language.length() == 0 && country.length() == 0) {
+        if (language.isEmpty() && country.isEmpty()) {
             languageCode = "";
             countryCode = "";
             variantCode = variant;
@@ -200,18 +201,18 @@ public final class TLocale implements TCloneable, TSerializable {
     public String getDisplayName(TLocale locale) {
         int count = 0;
         StringBuilder buffer = new StringBuilder();
-        if (languageCode.length() > 0) {
+        if (!languageCode.isEmpty()) {
             buffer.append(getDisplayLanguage(locale));
             count++;
         }
-        if (countryCode.length() > 0) {
+        if (!countryCode.isEmpty()) {
             if (count == 1) {
                 buffer.append(" (");
             }
             buffer.append(getDisplayCountry(locale));
             count++;
         }
-        if (variantCode.length() > 0) {
+        if (!variantCode.isEmpty()) {
             if (count == 1) {
                 buffer.append(" (");
             } else if (count == 2) {
@@ -260,12 +261,12 @@ public final class TLocale implements TCloneable, TSerializable {
     public String toString() {
         StringBuilder result = new StringBuilder();
         result.append(languageCode);
-        if (countryCode.length() > 0) {
+        if (!countryCode.isEmpty()) {
             result.append('_');
             result.append(countryCode);
         }
-        if (variantCode.length() > 0 && result.length() > 0) {
-            if (0 == countryCode.length()) {
+        if (!variantCode.isEmpty() && result.length() > 0) {
+            if (countryCode.isEmpty()) {
                 result.append("__");
             } else {
                 result.append('_');
@@ -273,5 +274,19 @@ public final class TLocale implements TCloneable, TSerializable {
             result.append(variantCode);
         }
         return result.toString();
+    }
+
+    public TString toLanguageTag() {
+        StringBuilder result = new StringBuilder();
+        result.append(languageCode);
+        if (!countryCode.isEmpty()) {
+            result.append('-');
+            result.append(countryCode);
+        }
+        if (!variantCode.isEmpty() && result.length() > 0) {
+            result.append('-');
+            result.append(variantCode);
+        }
+        return new TString(result.toString().toCharArray());
     }
 }

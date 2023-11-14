@@ -195,15 +195,39 @@ public class JSStringInjector implements Injector, Function<ProviderContext, Inj
     }
 
     private void toLowerCaseJS(InjectorContext context) {
-        var writer = context.getWriter();
-        context.writeExpr(context.getArgument(0));
-        writer.append(".toLowerCase()");
+        if (context.argumentCount() == 1) {
+            var writer = context.getWriter();
+            context.writeExpr(context.getArgument(0));
+            writer.append(".toLowerCase()");
+            return;
+        }
+        if (context.argumentCount() == 2) {
+            var writer = context.getWriter();
+            context.writeExpr(context.getArgument(0));
+            writer.append(".toLocaleLowerCase(");
+            context.writeExpr(context.getArgument(1));
+            writer.append(")");
+            return;
+        }
+        throw new IllegalArgumentException();
     }
 
     private void toUpperCaseJS(InjectorContext context) {
-        var writer = context.getWriter();
-        context.writeExpr(context.getArgument(0));
-        writer.append(".toUpperCase()");
+        if (context.argumentCount() == 1) {
+            var writer = context.getWriter();
+            context.writeExpr(context.getArgument(0));
+            writer.append(".toUpperCase()");
+            return;
+        }
+        if (context.argumentCount() == 2) {
+            var writer = context.getWriter();
+            context.writeExpr(context.getArgument(0));
+            writer.append(".toLocaleUpperCase(");
+            context.writeExpr(context.getArgument(1));
+            writer.append(")");
+            return;
+        }
+        throw new IllegalArgumentException();
     }
 
     private void intern(InjectorContext context) {

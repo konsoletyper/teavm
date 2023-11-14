@@ -740,6 +740,9 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     @NoSideEffects
     private static native Object toLowerCaseJS(Object nativeString);
 
+    @NoSideEffects
+    private static native Object toLowerCaseJS(Object nativeString, Object languageTag);
+
     private TString toLowerCaseChars() {
         var chars = new char[charactersLength()];
         for (int i = 0; i < charactersLength(); ++i) {
@@ -766,6 +769,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString toLowerCase(TLocale locale) {
+        if (PlatformDetector.isJavaScript()) {
+            var upperCase = toLowerCaseJS(nativeString(), locale.toLanguageTag().nativeString());
+            return upperCase != nativeString() ? new TString(upperCase) : this;
+        }
         return toLowerCase();
     }
 
@@ -800,6 +807,9 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     @NoSideEffects
     private static native Object toUpperCaseJS(Object nativeString);
 
+    @NoSideEffects
+    private static native Object toUpperCaseJS(Object nativeString, Object languageTag);
+
     private TString toUpperCaseChars() {
         var chars = new char[charactersLength()];
         for (int i = 0; i < charactersLength(); ++i) {
@@ -825,6 +835,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString toUpperCase(TLocale locale) {
+        if (PlatformDetector.isJavaScript()) {
+            var upperCase = toUpperCaseJS(nativeString(), locale.toLanguageTag().nativeString());
+            return upperCase != nativeString() ? new TString(upperCase) : this;
+        }
         return toUpperCase();
     }
 
