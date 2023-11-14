@@ -1,6 +1,6 @@
 # TeaVM
 
- 
+[![.github/workflows/ci.yml](https://github.com/konsoletyper/teavm/actions/workflows/ci.yml/badge.svg)](https://github.com/konsoletyper/teavm/actions/workflows/ci.yml)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.teavm/teavm-maven-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.teavm/teavm-maven-plugin) 
 [![Download](https://teavm.org/maven/latestBadge.svg)](https://teavm.org/maven/_latest)
 [![Gitter chat](https://img.shields.io/badge/gitter-join%20chat-green.svg)](https://gitter.im/teavm/Lobby)
