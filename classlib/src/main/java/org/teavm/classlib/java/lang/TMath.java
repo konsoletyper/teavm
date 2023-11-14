@@ -166,57 +166,57 @@ public final class TMath extends TObject {
 
     public static int incrementExact(int a) {
         if (a == Integer.MAX_VALUE) {
-            throw new ArithmeticException("integer overflow");
+            throw new ArithmeticException();
         }
         return a + 1;
     }
 
     public static long incrementExact(long a) {
         if (a == Long.MAX_VALUE) {
-            throw new ArithmeticException("long overflow");
+            throw new ArithmeticException();
         }
         return a + 1L;
     }
 
     public static int decrementExact(int a) {
         if (a == Integer.MIN_VALUE) {
-            throw new ArithmeticException("integer overflow");
+            throw new ArithmeticException();
         }
         return a - 1;
     }
 
     public static long decrementExact(long a) {
         if (a == Long.MIN_VALUE) {
-            throw new ArithmeticException("long overflow");
+            throw new ArithmeticException();
         }
         return a - 1L;
     }
 
     public static int negateExact(int a) {
         if (a == Integer.MIN_VALUE) {
-            throw new ArithmeticException("integer overflow");
+            throw new ArithmeticException();
         }
         return -a;
     }
 
     public static long negateExact(long a) {
         if (a == Long.MIN_VALUE) {
-            throw new ArithmeticException("long overflow");
+            throw new ArithmeticException();
         }
         return -a;
     }
 
     public static int toIntExact(long value) {
         if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
-            throw new ArithmeticException("Calculation overflows an int: " + value);
+            throw new ArithmeticException();
         }
         return (int) value;
     }
 
     public static int addExact(int a, int b) {
         int sum = a + b;
-        if ((a ^ sum) < 0 && (a ^ b) >= 0) {
-            throw new ArithmeticException("Addition overflows an int: " + a + " + " + b);
+        if ((a ^ sum) < 0 && (a ^ b) >= 0) { // a and b samesigned, but sum is not
+            throw new ArithmeticException();
         }
         return sum;
     }
@@ -224,7 +224,7 @@ public final class TMath extends TObject {
     public static long addExact(long a, long b) {
         long sum = a + b;
         if ((a ^ sum) < 0 && (a ^ b) >= 0) {
-            throw new ArithmeticException("Addition overflows a long: " + a + " + " + b);
+            throw new ArithmeticException();
         }
         return sum;
     }
@@ -232,7 +232,7 @@ public final class TMath extends TObject {
     public static int subtractExact(int a, int b) {
         int result = a - b;
         if ((a ^ result) < 0 && (a ^ b) < 0) {
-            throw new ArithmeticException("Subtraction overflows an int: " + a + " - " + b);
+            throw new ArithmeticException();
         }
         return result;
     }
@@ -240,17 +240,24 @@ public final class TMath extends TObject {
     public static long subtractExact(long a, long b) {
         long result = a - b;
         if ((a ^ result) < 0 && (a ^ b) < 0) {
-            throw new ArithmeticException("Subtraction overflows a long: " + a + " - " + b);
+            throw new ArithmeticException();
         }
         return result;
     }
 
     public static int multiplyExact(int a, int b) {
-        long total = (long) a * (long) b;
-        if (total < Integer.MIN_VALUE || total > Integer.MAX_VALUE) {
-            throw new ArithmeticException("Multiplication overflows an int: " + a + " * " + b);
+        if (b == 1) {
+            return a;
+        } else if (a == 1) {
+            return b;
+        } else if (a == 0 || b == 0) {
+            return 0;
         }
-        return (int) total;
+        int total = a * b;
+        if (total / b != a || (a == Integer.MIN_VALUE && b == -1) || (b == Integer.MIN_VALUE && a == -1)) {
+            throw new ArithmeticException();
+        }
+        return total;
     }
 
     public static long multiplyExact(long a, int b) {
@@ -267,9 +274,25 @@ public final class TMath extends TObject {
         }
         long total = a * b;
         if (total / b != a || (a == Long.MIN_VALUE && b == -1) || (b == Long.MIN_VALUE && a == -1)) {
-            throw new ArithmeticException("Multiplication overflows a long: " + a + " * " + b);
+            throw new ArithmeticException();
         }
         return total;
+    }
+
+    public static int divideExact(int a, int b) {
+        int q = a / b;
+        if ((a & b & q) < 0) { // all 3 are negative
+            throw new ArithmeticException();
+        }
+        return q;
+    }
+
+    public static long divideExact(long a, long b) {
+        long q = a / b;
+        if ((a & b & q) < 0) { // all 3 are negative
+            throw new ArithmeticException();
+        }
+        return q;
     }
 
     @Unmanaged
