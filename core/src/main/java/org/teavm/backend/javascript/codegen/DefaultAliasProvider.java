@@ -134,6 +134,10 @@ public class DefaultAliasProvider implements AliasProvider {
         return makeUnique(knownAliases, knowAliasesCounter, "$java");
     }
 
+    @Override
+    public void reserveName(String name) {
+    }
+
     private ScopedName makeUniqueTopLevel(String suggested) {
         if (knownAliases.size() < topLevelAliasLimit) {
             return new ScopedName(false, makeUnique(knownAliases, knowAliasesCounter, suggested));

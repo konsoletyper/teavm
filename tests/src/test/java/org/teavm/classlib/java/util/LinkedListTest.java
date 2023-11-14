@@ -29,10 +29,8 @@ import java.util.NoSuchElementException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class LinkedListTest {
     @Test
     public void emptyListCreated() {
@@ -309,5 +307,21 @@ public class LinkedListTest {
         assertEquals(1, lit.nextIndex());
         lit.add("x");
         assertEquals(List.of("d", "x", "a"), list);
+    }
+
+    @Test
+    public void offerOrder() {
+        var list = new LinkedList<String>();
+        list.offer("1");
+        list.offer("2");
+        assertEquals("1", list.getFirst());
+        assertEquals("2", list.getLast());
+    }
+
+    @Test
+    public void testAddAllPositioned() {
+        LinkedList<String> ll = new LinkedList<>(Arrays.asList("a", "b", "c", "d"));
+        ll.addAll(2, new LinkedList<>(ll));
+        assertArrayEquals(new String[] {"a", "b", "a", "b", "c", "d", "c", "d"}, ll.toArray());
     }
 }

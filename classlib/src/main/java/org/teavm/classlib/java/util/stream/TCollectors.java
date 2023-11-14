@@ -63,6 +63,10 @@ public final class TCollectors {
         return toCollection(HashSet::new);
     }
 
+    public static <T> TCollector<T, ?, Set<T>> toUnmodifiableSet() {
+        return collectingAndThen(toSet(), Collections::unmodifiableSet);
+    }
+
     public static TCollector<CharSequence, ?, String> joining() {
         return TCollector.of(StringBuilder::new, StringBuilder::append, StringBuilder::append,
                 StringBuilder::toString);
@@ -88,6 +92,41 @@ public final class TCollectors {
         };
         return TCollector.of(StringBuilder::new, accumulator, combiner,
                 sb -> sb.insert(0, prefix).append(suffix).toString());
+    }
+
+    public static <T, A, R, K> TCollector<T, ?, K> mapping(Function<? super T, ? extends A> mapper,
+            TCollector<? super A, R, K> downstream) {
+        BiConsumer<R, ? super A> downstreamAccumulator = downstream.accumulator();
+        return TCollector.of(downstream.supplier(), (R r, T t) -> downstreamAccumulator.accept(r, mapper.apply(t)),
+                downstream.combiner(), downstream.finisher(),
+                downstream.characteristics().toArray(TCollector.Characteristics[]::new));
+    }
+
+    public static <T, A, R, K> TCollector<T, ?, K> flatMapping(
+            Function<? super T, ? extends TStream<? extends A>> mapper, TCollector<? super A, R, K> downstream) {
+        BiConsumer<R, ? super A> downstreamAccumulator = downstream.accumulator();
+        return TCollector.of(downstream.supplier(),
+                (R r, T t) -> {
+                    TStream<? extends A> result = mapper.apply(t);
+                    if (result != null) {
+                        result.forEach(a -> downstreamAccumulator.accept(r, a));
+                    }
+                },
+                downstream.combiner(), downstream.finisher(),
+                downstream.characteristics().toArray(TCollector.Characteristics[]::new));
+    }
+
+    public static <T, A, R> TCollector<T, ?, R> filtering(Predicate<? super T> predicate,
+            TCollector<? super T, A, R> downstream) {
+        BiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
+        return TCollector.of(downstream.supplier(),
+                (r, t) -> {
+                    if (predicate.test(t)) {
+                        downstreamAccumulator.accept(r, t);
+                    }
+                },
+                downstream.combiner(), downstream.finisher(),
+                downstream.characteristics().toArray(TCollector.Characteristics[]::new));
     }
 
     public static <E, K, V> TCollector<E, ?, Map<K, V>> toMap(Function<? super E, ? extends K> keyMapper,
@@ -116,9 +155,19 @@ public final class TCollectors {
                 TCollector.Characteristics.IDENTITY_FINISH);
     }
 
+    public static <E, K, V> TCollector<E, ?, Map<K, V>> toUnmodifiableMap(Function<? super E, ? extends K> keyMapper,
+            Function<? super E, ? extends V> valueMapper) {
+        return collectingAndThen(toMap(keyMapper, valueMapper), Collections::unmodifiableMap);
+    }
+
     public static <E, K, V> TCollector<E, ?, Map<K, V>> toMap(Function<? super E, ? extends K> keyMapper,
             Function<? super E, ? extends V> valueMapper, BinaryOperator<V> mergeFunction) {
         return toMap(keyMapper, valueMapper, mergeFunction, HashMap::new);
+    }
+
+    public static <E, K, V> TCollector<E, ?, Map<K, V>> toUnmodifiableMap(Function<? super E, ? extends K> keyMapper,
+            Function<? super E, ? extends V> valueMapper, BinaryOperator<V> mergeFunction) {
+        return collectingAndThen(toMap(keyMapper, valueMapper, mergeFunction), Collections::unmodifiableMap);
     }
 
     public static <E, K, V, M extends Map<K, V>> TCollector<E, ?, M> toMap(Function<? super E, ? extends K> keyMapper,

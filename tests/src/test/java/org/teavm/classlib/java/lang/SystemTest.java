@@ -25,10 +25,12 @@ import java.io.PrintStream;
 import java.util.Properties;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
+@EachTestCompiledSeparately
 public class SystemTest {
     @Test
     public void copiesArray() {

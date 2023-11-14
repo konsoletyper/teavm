@@ -42,15 +42,11 @@ public interface GeneratorContext extends ServiceRepository {
 
     boolean isAsync(MethodReference method);
 
-    boolean isAsyncFamily(MethodReference method);
-
     Diagnostics getDiagnostics();
 
     DependencyInfo getDependency();
 
     void typeToClassString(SourceWriter writer, ValueType type);
-
-    void useLongLibrary();
 
     boolean isDynamicInitializer(String className);
 }

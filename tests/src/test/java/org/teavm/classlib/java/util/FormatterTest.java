@@ -31,11 +31,11 @@ import java.util.MissingFormatWidthException;
 import java.util.UnknownFormatConversionException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class FormatterTest {
     @Test(expected = UnknownFormatConversionException.class)
     public void unexpectedEndOfFormatString() {
@@ -110,6 +110,7 @@ public class FormatterTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void formatsChar() {
         assertEquals("x:  Y:\uDBFF\uDFFF ", new Formatter().format("%c:%3C:%-3c", 'x', 'y', 0x10ffff).toString());
 

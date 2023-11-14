@@ -17,7 +17,10 @@ package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.impl.Base64Impl;
 
-public class TBase64 {
+public final class TBase64 {
+    private TBase64() {
+    }
+
     public static Encoder getEncoder() {
         return new Encoder(Base64Impl.alphabet, true);
     }
@@ -53,11 +56,11 @@ public class TBase64 {
         }
     }
 
-    public Decoder getDecoder() {
+    public static Decoder getDecoder() {
         return new Decoder(Base64Impl.reverse);
     }
 
-    public Decoder getUrlDecoder() {
+    public static Decoder getUrlDecoder() {
         return new Decoder(Base64Impl.urlReverse);
     }
 

@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.javascript.rendering;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -45,7 +44,7 @@ public final class RenderingUtil {
         return sb.toString();
     }
 
-    public static void writeString(SourceWriter writer, String s) throws IOException {
+    public static void writeString(SourceWriter writer, String s) {
         if (s.isEmpty()) {
             writer.append("\"\"");
             return;

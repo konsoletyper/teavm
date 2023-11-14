@@ -125,7 +125,7 @@ public class JavaScriptConvGenerator implements Generator {
 
         writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.String")
                 .append(") {").indent().softNewLine();
-        writer.append("return $rt_str(" + obj + ");").softNewLine();
+        writer.append("return ").appendFunction("$rt_str").append("(").append(obj).append(");").softNewLine();
 
         writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Boolean")
                 .append(") {").indent().softNewLine();
@@ -157,17 +157,17 @@ public class JavaScriptConvGenerator implements Generator {
                 .append(") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(valueOfDoubleMethod).append("(" + obj + ");").softNewLine();
 
-        writer.outdent().append("} else if (" + type + " === $rt_intcls() || " + type + " === $rt_bytecls() || "
-                + type + " === $rt_shortcls() ||" + type + " == $rt_charcls()) {").indent().softNewLine();
+        writer.outdent().append("} else if (" + type + " === $rt_intcls || " + type + " === $rt_bytecls || "
+                + type + " === $rt_shortcls ||" + type + " == $rt_charcls) {").indent().softNewLine();
         writer.append("return " + obj + "|0;").softNewLine();
 
-        writer.outdent().append("} else if (" + type + " === $rt_longcls()) {").indent().softNewLine();
+        writer.outdent().append("} else if (" + type + " === $rt_longcls) {").indent().softNewLine();
         writer.append("return Long_fromInt(" + obj + "|0);").softNewLine();
 
-        writer.outdent().append("} else if (" + type + " === $rt_doublecls() || " + type + " == $rt_floatcls()) {")
+        writer.outdent().append("} else if (" + type + " === $rt_doublecls || " + type + " == $rt_floatcls) {")
                 .indent().softNewLine();
         writer.append("return " + obj + ";").softNewLine();
-        writer.outdent().append("} else if (" + type + " === $rt_booleancls()) {").indent().softNewLine();
+        writer.outdent().append("} else if (" + type + " === $rt_booleancls) {").indent().softNewLine();
         writer.append("return " + obj + "?1:0;").softNewLine();
 
         writer.outdent().append("} else if (" + obj + " instanceof Array) {").indent().softNewLine();
@@ -179,7 +179,7 @@ public class JavaScriptConvGenerator implements Generator {
         writer.append("return arr;").softNewLine();
 
         writer.outdent().append("} else if (typeof " + obj + " === 'string') {").indent().softNewLine();
-        writer.append("return $rt_str(" + obj + ");").softNewLine();
+        writer.append("return ").appendFunction("$rt_str").append("(" + obj + ");").softNewLine();
 
         writer.outdent().append("} else if (typeof " + obj + " === 'number') {").indent().softNewLine();
         writer.append("if ((" + obj + "|0) === " + obj + ") {").indent().softNewLine();

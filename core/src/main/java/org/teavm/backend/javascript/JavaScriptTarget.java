@@ -16,7 +16,6 @@
 package org.teavm.backend.javascript;
 
 import com.carrotsearch.hppc.ObjectIntHashMap;
-import com.carrotsearch.hppc.ObjectIntMap;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -36,28 +35,24 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
-import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.ControlFlowEntry;
-import org.teavm.ast.RegularMethodNode;
-import org.teavm.ast.analysis.LocationGraphBuilder;
-import org.teavm.ast.decompilation.DecompilationException;
-import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.javascript.codegen.AliasProvider;
 import org.teavm.backend.javascript.codegen.DefaultAliasProvider;
 import org.teavm.backend.javascript.codegen.DefaultNamingStrategy;
 import org.teavm.backend.javascript.codegen.MinifyingAliasProvider;
+import org.teavm.backend.javascript.codegen.OutputSourceWriter;
+import org.teavm.backend.javascript.codegen.OutputSourceWriterBuilder;
+import org.teavm.backend.javascript.codegen.RememberedSource;
+import org.teavm.backend.javascript.codegen.RememberingSourceWriter;
 import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.backend.javascript.codegen.SourceWriterBuilder;
-import org.teavm.backend.javascript.decompile.PreparedClass;
-import org.teavm.backend.javascript.decompile.PreparedMethod;
 import org.teavm.backend.javascript.intrinsics.ref.ReferenceQueueGenerator;
 import org.teavm.backend.javascript.intrinsics.ref.ReferenceQueueTransformer;
 import org.teavm.backend.javascript.intrinsics.ref.WeakReferenceDependencyListener;
 import org.teavm.backend.javascript.intrinsics.ref.WeakReferenceGenerator;
 import org.teavm.backend.javascript.intrinsics.ref.WeakReferenceTransformer;
+import org.teavm.backend.javascript.rendering.NameFrequencyEstimator;
 import org.teavm.backend.javascript.rendering.Renderer;
 import org.teavm.backend.javascript.rendering.RenderingContext;
 import org.teavm.backend.javascript.rendering.RenderingUtil;
@@ -66,13 +61,9 @@ import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
-import org.teavm.backend.javascript.spi.ModuleImporter;
-import org.teavm.backend.javascript.spi.ModuleImporterContext;
 import org.teavm.backend.javascript.spi.VirtualMethodContributor;
 import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
-import org.teavm.cache.AstCacheEntry;
-import org.teavm.cache.AstDependencyExtractor;
-import org.teavm.cache.CacheStatus;
+import org.teavm.backend.javascript.templating.JavaScriptTemplateFactory;
 import org.teavm.cache.EmptyMethodNodeCache;
 import org.teavm.cache.MethodNodeCache;
 import org.teavm.debugging.information.DebugInformationEmitter;
@@ -81,23 +72,18 @@ import org.teavm.debugging.information.SourceLocation;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyAnalyzer;
-import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.DependencyType;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.interop.Platforms;
-import org.teavm.model.AnnotationHolder;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
-import org.teavm.model.ClassHolder;
-import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassHolderSource;
-import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -113,8 +99,6 @@ import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.NullCheckFilter;
 import org.teavm.model.transformation.NullCheckInsertion;
-import org.teavm.model.util.AsyncMethodFinder;
-import org.teavm.model.util.ProgramUtils;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.RenderingException;
 import org.teavm.vm.TeaVMTarget;
@@ -135,19 +119,17 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private final Map<MethodReference, Injector> methodInjectors = new HashMap<>();
     private final List<Function<ProviderContext, Generator>> generatorProviders = new ArrayList<>();
     private final List<Function<ProviderContext, Injector>> injectorProviders = new ArrayList<>();
-    private final List<Function<ProviderContext, ModuleImporter>> moduleImporterProviders = new ArrayList<>();
     private final List<RendererListener> rendererListeners = new ArrayList<>();
     private DebugInformationEmitter debugEmitter;
     private MethodNodeCache astCache = EmptyMethodNodeCache.INSTANCE;
     private final Set<MethodReference> asyncMethods = new HashSet<>();
-    private final Set<MethodReference> asyncFamilyMethods = new HashSet<>();
     private List<VirtualMethodContributor> customVirtualMethods = new ArrayList<>();
     private int topLevelNameLimit = 500000;
-    private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
     private boolean strict;
     private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
     private NullCheckInsertion nullCheckInsertion = new NullCheckInsertion(NullCheckFilter.EMPTY);
     private final Map<String, String> importedModules = new LinkedHashMap<>();
+    private JavaScriptTemplateFactory templateFactory;
 
     @Override
     public List<ClassHolderTransformer> getTransformers() {
@@ -166,7 +148,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     public void setController(TeaVMTargetController controller) {
         this.controller = controller;
 
-        var weakRefGenerator = new WeakReferenceGenerator();
+        templateFactory = new JavaScriptTemplateFactory(controller.getClassLoader(),
+                controller.getDependencyInfo().getClassSource());
+
+        var weakRefGenerator = new WeakReferenceGenerator(templateFactory);
         methodGenerators.put(new MethodReference(WeakReference.class, "<init>", Object.class,
                 ReferenceQueue.class, void.class), weakRefGenerator);
         methodGenerators.put(new MethodReference(WeakReference.class, "get", Object.class), weakRefGenerator);
@@ -200,11 +185,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     @Override
     public void addInjectorProvider(Function<ProviderContext, Injector> provider) {
         injectorProviders.add(provider);
-    }
-
-    @Override
-    public void addModuleImporterProvider(Function<ProviderContext, ModuleImporter> provider) {
-        moduleImporterProviders.add(provider);
     }
 
     /**
@@ -266,9 +246,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         dep.getResult().propagate(dependencyAnalyzer.getType("java.lang.Class"));
         dep.use();
 
-        dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class));
+        dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "<init>", Object.class, void.class));
         dep.getVariable(0).propagate(stringType);
-        dep.getVariable(1).propagate(dependencyAnalyzer.getType("[C"));
         dep.use();
 
         dependencyAnalyzer.linkField(new FieldReference(String.class.getName(), "characters"));
@@ -397,24 +376,15 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     private void emit(ListableClassHolderSource classes, Writer writer, BuildTarget target) {
-        List<PreparedClass> clsNodes = modelToAst(classes);
-        prepareModules(classes);
-        if (controller.wasCancelled()) {
-            return;
-        }
-
         AliasProvider aliasProvider = obfuscated
                 ? new MinifyingAliasProvider(topLevelNameLimit)
                 : new DefaultAliasProvider(topLevelNameLimit);
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, controller.getUnprocessedClassSource());
-        SourceWriterBuilder builder = new SourceWriterBuilder(naming);
-        builder.setMinified(obfuscated);
-        SourceWriter sourceWriter = builder.build(writer);
-
         DebugInformationEmitter debugEmitterToUse = debugEmitter;
         if (debugEmitterToUse == null) {
             debugEmitterToUse = new DummyDebugInformationEmitter();
         }
+
         var virtualMethodContributorContext = new VirtualMethodContributorContextImpl(classes);
         RenderingContext renderingContext = new RenderingContext(debugEmitterToUse,
                 controller.getUnprocessedClassSource(), classes,
@@ -428,85 +398,90 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             }
         };
         renderingContext.setMinifying(obfuscated);
-        Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
-                controller.getDiagnostics(), renderingContext);
-        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, sourceWriter);
-        renderer.setProperties(controller.getProperties());
-        renderer.setMinifying(obfuscated);
-        renderer.setProgressConsumer(controller::reportProgress);
-        if (debugEmitter != null) {
-            for (PreparedClass preparedClass : clsNodes) {
-                for (PreparedMethod preparedMethod : preparedClass.getMethods()) {
-                    if (preparedMethod.cfg != null) {
-                        emitCFG(debugEmitter, preparedMethod.cfg);
-                    }
-                }
-                if (controller.wasCancelled()) {
-                    return;
-                }
-            }
-            renderer.setDebugEmitter(debugEmitter);
+
+        if (controller.wasCancelled()) {
+            return;
         }
-        renderer.getDebugEmitter().setLocationProvider(sourceWriter);
+
+        var builder = new OutputSourceWriterBuilder(naming);
+        builder.setMinified(obfuscated);
+
+        for (var className : classes.getClassNames()) {
+            var cls = classes.get(className);
+            for (var method : cls.getMethods()) {
+                preprocessNativeMethod(method);
+            }
+        }
         for (var entry : methodInjectors.entrySet()) {
             renderingContext.addInjector(entry.getKey(), entry.getValue());
         }
-        try {
-            printWrapperStart(sourceWriter);
 
-            for (RendererListener listener : rendererListeners) {
-                listener.begin(renderer, target);
-            }
-            int start = sourceWriter.getOffset();
+        var rememberingWriter = new RememberingSourceWriter(debugEmitter != null);
+        var renderer = new Renderer(rememberingWriter, asyncMethods, renderingContext, controller.getDiagnostics(),
+                methodGenerators, astCache, controller.getCacheStatus(), templateFactory);
+        renderer.setProperties(controller.getProperties());
+        renderer.setProgressConsumer(controller::reportProgress);
 
-            renderer.prepare(clsNodes);
-            runtimeRenderer.renderRuntime();
-            sourceWriter.append("var ").append(renderer.getNaming().getScopeName()).ws().append("=").ws()
-                    .append("Object.create(null);").newLine();
-            if (!renderer.render(clsNodes)) {
-                return;
-            }
-            runtimeRenderer.renderHandWrittenRuntime("array.js");
-            renderer.renderStringPool();
-            renderer.renderStringConstants();
-            renderer.renderCompatibilityStubs();
-
-            if (renderer.isLongLibraryUsed()) {
-                runtimeRenderer.renderHandWrittenRuntime("long.js");
-                renderer.renderLongRuntimeAliases();
-            }
-            if (renderer.isThreadLibraryUsed()) {
-                runtimeRenderer.renderHandWrittenRuntime("thread.js");
-            } else {
-                runtimeRenderer.renderHandWrittenRuntime("simpleThread.js");
-            }
-
-            for (var entry : controller.getEntryPoints().entrySet()) {
-                sourceWriter.append("$rt_exports.").append(entry.getKey()).ws().append("=").ws();
-                var ref = entry.getValue().getMethod();
-                sourceWriter.append("$rt_mainStarter(").appendMethodBody(ref);
-                sourceWriter.append(");").newLine();
-                sourceWriter.append("$rt_exports.").append(entry.getKey()).append(".").append("javaException")
-                        .ws().append("=").ws().append("$rt_javaException;").newLine();
-            }
-
-            for (var listener : rendererListeners) {
-                listener.complete();
-            }
-
-            printWrapperEnd(sourceWriter);
-
-            int totalSize = sourceWriter.getOffset() - start;
-            printStats(renderer, totalSize);
-        } catch (IOException e) {
-            throw new RenderingException("IO Error occurred", e);
+        for (var listener : rendererListeners) {
+            listener.begin(renderer, target);
         }
+        if (!renderer.render(classes, controller.isFriendlyToDebugger())) {
+            return;
+        }
+        var declarations = rememberingWriter.save();
+        rememberingWriter.clear();
+
+        renderer.renderStringPool();
+        renderer.renderStringConstants();
+        renderer.renderCompatibilityStubs();
+        for (var entry : controller.getEntryPoints().entrySet()) {
+            rememberingWriter.appendFunction("$rt_exports").append(".").append(entry.getKey()).ws().append("=").ws();
+            var ref = entry.getValue().getMethod();
+            rememberingWriter.appendFunction("$rt_mainStarter").append("(").appendMethodBody(ref);
+            rememberingWriter.append(");").newLine();
+            rememberingWriter.appendFunction("$rt_exports").append(".").append(entry.getKey()).append(".")
+                    .append("javaException").ws().append("=").ws().appendFunction("$rt_javaException")
+                    .append(";").newLine();
+        }
+
+        for (var listener : rendererListeners) {
+            listener.complete();
+        }
+        var epilogue = rememberingWriter.save();
+        rememberingWriter.clear();
+
+        var frequencyEstimator = new NameFrequencyEstimator();
+        declarations.replay(frequencyEstimator, RememberedSource.FILTER_REF);
+        epilogue.replay(frequencyEstimator, RememberedSource.FILTER_REF);
+        frequencyEstimator.apply(naming);
+
+        var sourceWriter = builder.build(writer);
+        sourceWriter.setDebugInformationEmitter(debugEmitterToUse);
+        printWrapperStart(sourceWriter);
+
+        int start = sourceWriter.getOffset();
+
+        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, sourceWriter,
+                controller.getClassInitializerInfo());
+        runtimeRenderer.prepareAstParts(renderer.isThreadLibraryUsed());
+        declarations.replay(runtimeRenderer.sink, RememberedSource.FILTER_REF);
+        epilogue.replay(runtimeRenderer.sink, RememberedSource.FILTER_REF);
+        runtimeRenderer.removeUnusedParts();
+        runtimeRenderer.renderRuntime();
+        declarations.write(sourceWriter, 0);
+        runtimeRenderer.renderEpilogue();
+        epilogue.write(sourceWriter, 0);
+
+        printWrapperEnd(sourceWriter);
+
+        int totalSize = sourceWriter.getOffset() - start;
+        printStats(sourceWriter, totalSize);
     }
 
-    private void printWrapperStart(SourceWriter writer) throws IOException {
+    private void printWrapperStart(SourceWriter writer) {
         writer.append("\"use strict\";").newLine();
         printUmdStart(writer);
-        writer.append("function($rt_globals,").ws().append("$rt_exports");
+        writer.append("function(").appendFunction("$rt_exports");
         for (var moduleName : importedModules.values()) {
             writer.append(",").ws().appendFunction(moduleName);
         }
@@ -514,11 +489,11 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     private String importModule(String name) {
-        return importedModules.get(name);
+        return importedModules.computeIfAbsent(name, n -> "$rt_imported_" + importedModules.size());
     }
 
-    private void printUmdStart(SourceWriter writer) throws IOException {
-        writer.append("(function(root,").ws().append("module)").appendBlockStart();
+    private void printUmdStart(SourceWriter writer) {
+        writer.append("(function(module)").appendBlockStart();
         writer.appendIf().append("typeof define").ws().append("===").ws().append("'function'")
                 .ws().append("&&").ws().append("define.amd)").appendBlockStart();
         writer.append("define(['exports'");
@@ -530,7 +505,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             writer.append(',').ws().appendFunction(moduleAlias);
         }
         writer.append(")").ws().appendBlockStart();
-        writer.append("module(root,").ws().append("exports");
+        writer.append("module(exports");
         for (var moduleAlias : importedModules.values()) {
             writer.append(',').ws().appendFunction(moduleAlias);
         }
@@ -539,39 +514,44 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         writer.appendElseIf().append("typeof exports").ws()
                 .append("===").ws().append("'object'").ws().append("&&").ws()
+                .append("exports").ws().append("!==").ws().append("null").ws().append("&&").ws()
                 .append("typeof exports.nodeName").ws().append("!==").ws().append("'string')").appendBlockStart();
-        writer.append("module(global,").ws().append("exports");
+        writer.append("module(exports");
         for (var moduleName : importedModules.keySet()) {
             writer.append(',').ws().append("require(\"").append(RenderingUtil.escapeString(moduleName)).append("\")");
         }
         writer.append(");").softNewLine();
 
         writer.appendElse();
-        writer.append("module(root,").ws().append("root);").softNewLine();
-        writer.appendBlockEnd();
-        writer.outdent().append("}(typeof self").ws().append("!==").ws().append("'undefined'")
+        writer.append("module(");
+        writer.outdent().append("typeof self").ws().append("!==").ws().append("'undefined'")
                 .ws().append("?").ws().append("self")
-                .ws().append(":").ws().append("this,")
-                .ws();
+                .ws().append(":").ws().append("this");
+
+        writer.append(");").softNewLine();
+        writer.appendBlockEnd();
+        writer.outdent().append("}(");
     }
 
-    private void printWrapperEnd(SourceWriter writer) throws IOException {
+    private void printWrapperEnd(SourceWriter writer) {
         writer.outdent().append("}));").newLine();
     }
 
-    private void printStats(Renderer renderer, int totalSize) {
+    private void printStats(OutputSourceWriter writer, int totalSize) {
         if (!Boolean.parseBoolean(System.getProperty("teavm.js.stats", "false"))) {
             return;
         }
 
         System.out.println("Total output size: " + STATS_NUM_FORMAT.format(totalSize));
-        System.out.println("Metadata size: " + getSizeWithPercentage(renderer.getMetadataSize(), totalSize));
-        System.out.println("String pool size: " + getSizeWithPercentage(renderer.getStringPoolSize(), totalSize));
+        System.out.println("Metadata size: " + getSizeWithPercentage(
+                writer.getSectionSize(Renderer.SECTION_METADATA), totalSize));
+        System.out.println("String pool size: " + getSizeWithPercentage(
+                writer.getSectionSize(Renderer.SECTION_STRING_POOL), totalSize));
 
-        ObjectIntMap<String> packageSizeMap = new ObjectIntHashMap<>();
-        for (String className : renderer.getClassesInStats()) {
+        var packageSizeMap = new ObjectIntHashMap<String>();
+        for (String className : writer.getClassesInStats()) {
             String packageName = className.substring(0, className.lastIndexOf('.') + 1);
-            int classSize = renderer.getClassSize(className);
+            int classSize = writer.getClassSize(className);
             packageSizeMap.put(packageName, packageSizeMap.getOrDefault(packageName, 0) + classSize);
         }
 
@@ -585,176 +565,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     private String getSizeWithPercentage(int size, int totalSize) {
         return STATS_NUM_FORMAT.format(size) + " (" + STATS_PERCENT_FORMAT.format((double) size / totalSize) + ")";
-    }
-
-    private void prepareModules(ListableClassHolderSource classes) {
-        var context = new ImporterContext(classes);
-        for (var className : classes.getClassNames()) {
-            var cls = classes.get(className);
-            for (var method : cls.getMethods()) {
-                if (method.getModifiers().contains(ElementModifier.ABSTRACT)) {
-                    continue;
-                }
-
-                var providerContext = new ProviderContextImpl(method.getReference());
-                for (var provider : moduleImporterProviders) {
-                    var importer = provider.apply(providerContext);
-                    if (importer != null) {
-                        context.method = method;
-                        importer.importModules(context);
-                        context.method = null;
-                    }
-                }
-            }
-        }
-    }
-
-    private List<PreparedClass> modelToAst(ListableClassHolderSource classes) {
-        AsyncMethodFinder asyncFinder = new AsyncMethodFinder(controller.getDependencyInfo().getCallGraph(),
-                controller.getDependencyInfo());
-        asyncFinder.find(classes);
-        asyncMethods.addAll(asyncFinder.getAsyncMethods());
-        asyncFamilyMethods.addAll(asyncFinder.getAsyncFamilyMethods());
-        Set<MethodReference> splitMethods = new HashSet<>(asyncMethods);
-        splitMethods.addAll(asyncFamilyMethods);
-
-        Decompiler decompiler = new Decompiler(classes, splitMethods, controller.isFriendlyToDebugger());
-
-        List<PreparedClass> classNodes = new ArrayList<>();
-        for (String className : getClassOrdering(classes)) {
-            ClassHolder cls = classes.get(className);
-            for (MethodHolder method : cls.getMethods()) {
-                preprocessNativeMethod(method);
-                if (controller.wasCancelled()) {
-                    break;
-                }
-            }
-            classNodes.add(decompile(decompiler, cls));
-        }
-        return classNodes;
-    }
-
-    private List<String> getClassOrdering(ListableClassHolderSource classes) {
-        List<String> sequence = new ArrayList<>();
-        Set<String> visited = new HashSet<>();
-        for (String className : classes.getClassNames()) {
-            orderClasses(classes, className, visited, sequence);
-        }
-        return sequence;
-    }
-
-    private void orderClasses(ClassHolderSource classes, String className, Set<String> visited, List<String> order) {
-        if (!visited.add(className)) {
-            return;
-        }
-        ClassHolder cls = classes.get(className);
-        if (cls == null) {
-            return;
-        }
-        if (cls.getParent() != null) {
-            orderClasses(classes, cls.getParent(), visited, order);
-        }
-        for (String iface : cls.getInterfaces()) {
-            orderClasses(classes, iface, visited, order);
-        }
-        order.add(className);
-    }
-
-    private PreparedClass decompile(Decompiler decompiler, ClassHolder cls) {
-        PreparedClass clsNode = new PreparedClass(cls);
-        for (MethodHolder method : cls.getMethods()) {
-            if (method.getModifiers().contains(ElementModifier.ABSTRACT)) {
-                continue;
-            }
-            if ((!isBootstrap() && method.getAnnotations().get(InjectedBy.class.getName()) != null)
-                    || methodInjectors.containsKey(method.getReference())) {
-                continue;
-            }
-            if (!method.hasModifier(ElementModifier.NATIVE) && !method.hasProgram()) {
-                continue;
-            }
-
-            PreparedMethod preparedMethod = method.hasModifier(ElementModifier.NATIVE)
-                    ? decompileNative(method)
-                    : decompile(decompiler, method);
-            clsNode.getMethods().add(preparedMethod);
-        }
-        return clsNode;
-    }
-
-    private PreparedMethod decompileNative(MethodHolder method) {
-        MethodReference reference = method.getReference();
-        Generator generator = methodGenerators.get(reference);
-        if (generator == null && !isBootstrap()) {
-            AnnotationHolder annotHolder = method.getAnnotations().get(GeneratedBy.class.getName());
-            if (annotHolder == null) {
-                throw new DecompilationException("Method " + method.getOwnerName() + "." + method.getDescriptor()
-                        + " is native, but no " + GeneratedBy.class.getName() + " annotation found");
-            }
-            ValueType annotValue = annotHolder.getValues().get("value").getJavaClass();
-            String generatorClassName = ((ValueType.Object) annotValue).getClassName();
-            try {
-                Class<?> generatorClass = Class.forName(generatorClassName, true, controller.getClassLoader());
-                generator = (Generator) generatorClass.newInstance();
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new DecompilationException("Error instantiating generator " + generatorClassName
-                        + " for native method " + method.getOwnerName() + "." + method.getDescriptor());
-            }
-        }
-
-        return new PreparedMethod(method, null, generator, asyncMethods.contains(reference), null);
-    }
-
-    private PreparedMethod decompile(Decompiler decompiler, MethodHolder method) {
-        MethodReference reference = method.getReference();
-        if (asyncMethods.contains(reference)) {
-            AsyncMethodNode node = decompileAsync(decompiler, method);
-            ControlFlowEntry[] cfg = ProgramUtils.getLocationCFG(method.getProgram());
-            return new PreparedMethod(method, node, null, false, cfg);
-        } else {
-            AstCacheEntry entry = decompileRegular(decompiler, method);
-            return new PreparedMethod(method, entry.method, null, false, entry.cfg);
-        }
-    }
-
-    private AstCacheEntry decompileRegular(Decompiler decompiler, MethodHolder method) {
-        if (astCache == null) {
-            return decompileRegularCacheMiss(decompiler, method);
-        }
-
-        CacheStatus cacheStatus = controller.getCacheStatus();
-        AstCacheEntry entry = !cacheStatus.isStaleMethod(method.getReference())
-                ? astCache.get(method.getReference(), cacheStatus)
-                : null;
-        if (entry == null) {
-            entry = decompileRegularCacheMiss(decompiler, method);
-            RegularMethodNode finalNode = entry.method;
-            astCache.store(method.getReference(), entry, () -> dependencyExtractor.extract(finalNode));
-        }
-        return entry;
-    }
-
-    private AstCacheEntry decompileRegularCacheMiss(Decompiler decompiler, MethodHolder method) {
-        RegularMethodNode node = decompiler.decompileRegular(method);
-        ControlFlowEntry[] cfg = LocationGraphBuilder.build(node.getBody());
-        return new AstCacheEntry(node, cfg);
-    }
-
-    private AsyncMethodNode decompileAsync(Decompiler decompiler, MethodHolder method) {
-        if (astCache == null) {
-            return decompiler.decompileAsync(method);
-        }
-
-        CacheStatus cacheStatus = controller.getCacheStatus();
-        AsyncMethodNode node = !cacheStatus.isStaleMethod(method.getReference())
-                ? astCache.getAsync(method.getReference(), cacheStatus)
-                : null;
-        if (node == null) {
-            node = decompiler.decompileAsync(method);
-            AsyncMethodNode finalNode = node;
-            astCache.storeAsync(method.getReference(), node, () -> dependencyExtractor.extract(finalNode));
-        }
-        return node;
     }
 
     private void preprocessNativeMethod(MethodHolder method) {
@@ -913,50 +723,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         @Override
         public ClassReaderSource getClassSource() {
             return classSource;
-        }
-    }
-
-    class ImporterContext implements ModuleImporterContext {
-        private ListableClassReaderSource classSource;
-        MethodReader method;
-
-        ImporterContext(ListableClassReaderSource classSource) {
-            this.classSource = classSource;
-        }
-
-        @Override
-        public MethodReader getMethod() {
-            return method;
-        }
-
-        @Override
-        public void importModule(String name) {
-            importedModules.computeIfAbsent(name, n -> "$rt_import_" + importedModules.size());
-        }
-
-        @Override
-        public ListableClassReaderSource getClassSource() {
-            return classSource;
-        }
-
-        @Override
-        public ClassLoader getClassLoader() {
-            return controller.getClassLoader();
-        }
-
-        @Override
-        public Properties getProperties() {
-            return JavaScriptTarget.this.controller.getProperties();
-        }
-
-        @Override
-        public DependencyInfo getDependency() {
-            return controller.getDependencyInfo();
-        }
-
-        @Override
-        public <T> T getService(Class<T> type) {
-            return controller.getServices().getService(type);
         }
     }
 }

@@ -15,74 +15,23 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
-import org.teavm.dependency.DependencyAgent;
-import org.teavm.dependency.DependencyNode;
-import org.teavm.dependency.DependencyPlugin;
-import org.teavm.dependency.MethodDependency;
+import org.teavm.backend.javascript.templating.JavaScriptTemplate;
+import org.teavm.backend.javascript.templating.JavaScriptTemplateFactory;
 import org.teavm.model.MethodReference;
 
-public class SystemNativeGenerator implements Generator, DependencyPlugin {
-    @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        switch (methodRef.getName()) {
-            case "doArrayCopy":
-                generateArrayCopy(context, writer);
-                break;
-            case "currentTimeMillis":
-                generateCurrentTimeMillis(writer);
-                break;
-        }
+public class SystemNativeGenerator implements Generator {
+    private JavaScriptTemplate template;
+
+    public SystemNativeGenerator(JavaScriptTemplateFactory templateFactory) {
+        template = templateFactory.createFromResource("org/teavm/classlib/java/lang/System.js");
     }
 
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method) {
-        switch (method.getReference().getName()) {
-            case "doArrayCopy":
-                reachArrayCopy(method);
-                break;
-        }
-    }
-
-    private void generateArrayCopy(GeneratorContext context, SourceWriter writer) throws IOException {
-        String src = context.getParameterName(1);
-        String srcPos = context.getParameterName(2);
-        String dest = context.getParameterName(3);
-        String destPos = context.getParameterName(4);
-        String length = context.getParameterName(5);
-        writer.append("if").ws().append("(").append(length).ws().append("===").ws().append("0)").ws().append("{")
-                .indent().softNewLine();
-        writer.append("return;").ws().softNewLine();
-        writer.outdent().append("}").ws().append("else ");
-        writer.append("if").ws().append("(typeof " + src + ".data.buffer").ws().append("!==").ws()
-                .append("'undefined')").ws().append("{").indent().softNewLine();
-        writer.append(dest + ".data.set(" + src + ".data.subarray(" + srcPos + ",").ws()
-                .append(srcPos).ws().append("+").ws().append(length).append("),").ws()
-                .append(destPos).append(");").softNewLine();
-        writer.outdent().append("}").ws().append("else ");
-        writer.append("if (" + src + " !== " +  dest + " || " + destPos + " < " + srcPos + ") {").indent().newLine();
-        writer.append("for (var i = 0; i < " + length + "; i = (i + 1) | 0) {").indent().softNewLine();
-        writer.append(dest + ".data[" + destPos + "++] = " + src + ".data[" + srcPos + "++];").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.outdent().append("}").ws().append("else").ws().append("{").indent().softNewLine();
-        writer.append(srcPos + " = (" + srcPos + " + " + length + ") | 0;").softNewLine();
-        writer.append(destPos + " = (" + destPos + " + " + length + ") | 0;").softNewLine();
-        writer.append("for (var i = 0; i < " + length + "; i = (i + 1) | 0) {").indent().softNewLine();
-        writer.append(dest + ".data[--" + destPos + "] = " + src + ".data[--" + srcPos + "];").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.outdent().append("}").softNewLine();
-    }
-
-    private void generateCurrentTimeMillis(SourceWriter writer) throws IOException {
-        writer.append("return Long_fromNumber(new Date().getTime());").softNewLine();
-    }
-
-    private void reachArrayCopy(MethodDependency method) {
-        DependencyNode src = method.getVariable(1);
-        DependencyNode dest = method.getVariable(3);
-        src.getArrayItem().connect(dest.getArrayItem());
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
+        var fragment = template.builder(methodRef.getName()).withContext(context).build();
+        fragment.write(writer, 0);
     }
 }

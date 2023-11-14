@@ -47,6 +47,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
@@ -55,23 +56,27 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.NoSuchElementException;
+import java.util.SequencedMap;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
-@SuppressWarnings({ "UnnecessaryTemporaryOnConversionToString", "SuspiciousMethodCalls" })
+@SuppressWarnings("SuspiciousMethodCalls")
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TreeMapTest {
 
     public static class ReversedComparator implements Comparator<Object> {
@@ -150,9 +155,9 @@ public class TreeMapTest {
     public void test_ConstructorLjava_util_Map() {
         // Test for method java.util.TreeMap(java.util.Map)
         TreeMap<Object, Object> myTreeMap = new TreeMap<>(new HashMap<>(tm));
-        assertTrue("Map is incorrect size", myTreeMap.size() == objArray.length);
+        assertEquals("Map is incorrect size", objArray.length, myTreeMap.size());
         for (Object element : objArray) {
-            assertTrue("Map has incorrect mappings", myTreeMap.get(element.toString()).equals(element));
+            assertEquals("Map has incorrect mappings", myTreeMap.get(element.toString()), element);
         }
     }
 
@@ -708,5 +713,146 @@ public class TreeMapTest {
         assertEquals("{3=15, 4=20, 6=13}", map.subMap(3, 9).toString());
         assertEquals("{10=119}", map.subMap(10, 29).toString());
         assertEquals("{}", map.subMap(29, 100).toString());
+    }
+
+    @Test
+    public void iteratorRemove() {
+        var keys = new String[] { "a", "b", "c", "d", "e", "f", "g" };
+        for (var i = 1; i < keys.length; ++i) {
+            for (var j = 0; j < i; ++j) {
+                var map = new TreeMap<String, Integer>();
+                for (var k = 0; k < i; ++k) {
+                    map.put(keys[k], k);
+                }
+                var iter = map.keySet().iterator();
+                for (var k = 0; k < i; ++k) {
+                    assertEquals(keys[k], iter.next());
+                    if (k == j) {
+                        iter.remove();
+                    }
+                }
+                assertFalse(iter.hasNext());
+            }
+        }
+    }
+
+    private static final List<Integer> BASE_LIST = Arrays.asList(1, 6, 2, 5, 3, 4);
+
+    private SequencedMap<Integer, String> generateMap() {
+        return BASE_LIST.stream().collect(Collectors.toMap(Function.identity(), i -> Integer.toString(i),
+                (a, b) -> a, TreeMap::new));
+    }
+
+    @Test
+    public void testSequencedMap() {
+        SequencedMap<Integer, String> map = generateMap();
+        assertEquals(Map.entry(1, "1"), map.pollFirstEntry());
+        assertArrayEquals(new Integer[] { 2, 3, 4, 5, 6 }, map.keySet().toArray(new Integer[0]));
+        assertEquals(Map.entry(6, "6"), map.pollLastEntry());
+        assertArrayEquals(new Integer[] { 2, 3, 4, 5 }, map.keySet().toArray(new Integer[0]));
+        assertEquals(Map.entry(5, "5"), map.pollLastEntry());
+        assertArrayEquals(new Integer[] { 2, 3, 4 }, map.keySet().toArray(new Integer[0]));
+        assertEquals(Map.entry(2, "2"), map.firstEntry());
+        assertEquals(Map.entry(4, "4"), map.lastEntry());
+        try {
+            map.putFirst(1, "1");
+            fail();
+        } catch (UnsupportedOperationException e) {
+            // ok
+        }
+        map.put(7, "7");
+        try {
+            map.putLast(3, "3");
+            fail();
+        } catch (UnsupportedOperationException e) {
+            // ok
+        }
+        assertArrayEquals(new Integer[] { 2, 3, 4, 7 }, map.keySet().toArray(new Integer[0]));
+        map = generateMap().reversed();
+        assertEquals(Map.entry(6, "6"), map.pollFirstEntry());
+        assertArrayEquals(new Integer[] { 5, 4, 3, 2, 1 }, map.keySet().toArray(new Integer[0]));
+        assertEquals(Map.entry(1, "1"), map.pollLastEntry());
+        assertArrayEquals(new Integer[] { 5, 4, 3, 2 }, map.keySet().toArray(new Integer[0]));
+        assertEquals(Map.entry(2, "2"), map.pollLastEntry());
+        assertArrayEquals(new Integer[] { 5, 4, 3 }, map.keySet().toArray(new Integer[0]));
+        assertEquals(Map.entry(5, "5"), map.firstEntry());
+        assertEquals(Map.entry(3, "3"), map.lastEntry());
+        try {
+            map.putFirst(1, "1");
+            fail();
+        } catch (UnsupportedOperationException e) {
+            // ok
+        }
+        map.put(7, "7");
+        try {
+            map.putLast(6, "6");
+            fail();
+        } catch (UnsupportedOperationException e) {
+            // ok
+        }
+        assertArrayEquals(new Integer[] { 7, 5, 4, 3 }, map.keySet().toArray(new Integer[0]));
+    }
+
+    @Test
+    public void testSequencedIterators() {
+        SequencedMap<Integer, String> map = generateMap();
+        Iterator<Integer> it = map.keySet().iterator();
+        assertTrue(it.hasNext());
+        assertEquals(1, it.next().intValue());
+        assertTrue(it.hasNext());
+        assertEquals(2, it.next().intValue());
+        it.remove();
+        assertArrayEquals(new Integer[] { 1, 3, 4, 5, 6 }, map.keySet().toArray(new Integer[0]));
+        map = map.reversed();
+        it = map.keySet().iterator();
+        assertTrue(it.hasNext());
+        assertEquals(6, it.next().intValue());
+        assertTrue(it.hasNext());
+        assertEquals(5, it.next().intValue());
+        it.remove();
+        assertArrayEquals(new Integer[] { 6, 4, 3, 1 }, map.keySet().toArray(new Integer[0]));
+        map = generateMap();
+        Iterator<String> sit = map.sequencedValues().iterator();
+        assertTrue(sit.hasNext());
+        assertEquals("1", sit.next());
+        assertTrue(sit.hasNext());
+        assertEquals("2", sit.next());
+        sit.remove();
+        assertArrayEquals(new String[] { "1", "3", "4", "5", "6" }, map.values().toArray(new String[0]));
+        map = map.reversed();
+        sit = map.sequencedValues().iterator();
+        assertTrue(sit.hasNext());
+        assertEquals("6", sit.next());
+        assertTrue(sit.hasNext());
+        assertEquals("5", sit.next());
+        sit.remove();
+        assertArrayEquals(new String[] { "6", "4", "3", "1" }, map.values().toArray(new String[0]));
+    }
+
+    @Test
+    public void testEmpty() {
+        var empty = new TreeMap<>();
+        assertNull(empty.pollFirstEntry());
+        assertNull(empty.pollLastEntry());
+        assertNull(empty.firstEntry());
+        assertNull(empty.lastEntry());
+        try {
+            empty.entrySet().iterator().next();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+        try {
+            empty.keySet().iterator().next();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
+        try {
+            empty.values().iterator().next();
+            fail();
+        } catch (NoSuchElementException e) {
+            // ok
+        }
     }
 }

@@ -15,7 +15,6 @@
  */
 package org.teavm.junit;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.RenderingManager;
@@ -51,22 +50,22 @@ class TestExceptionPlugin implements TeaVMPlugin {
             RenderingManager manager;
 
             @Override
-            public void begin(RenderingManager manager, BuildTarget buildTarget) throws IOException {
+            public void begin(RenderingManager manager, BuildTarget buildTarget) {
                 this.manager = manager;
             }
 
             @Override
-            public void complete() throws IOException {
+            public void complete() {
                 renderExceptionMessage(manager.getWriter());
             }
         });
     }
 
-    private void renderExceptionMessage(SourceWriter writer) throws IOException {
+    private void renderExceptionMessage(SourceWriter writer) {
         writer.appendClass("java.lang.Throwable").append(".prototype.getMessage").ws().append("=").ws()
                 .append("function()").ws().append("{").indent().softNewLine();
-        writer.append("return $rt_ustr(this.").appendMethod("getMessage", String.class).append("());")
-                .softNewLine();
+        writer.append("return ").appendFunction("$rt_ustr").append("(this.")
+                .appendMethod("getMessage", String.class).append("());").softNewLine();
         writer.outdent().append("};").newLine();
     }
 }

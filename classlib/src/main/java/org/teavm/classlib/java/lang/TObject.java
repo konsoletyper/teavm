@@ -273,6 +273,7 @@ public class TObject {
 
     @DelegateTo("hashCodeLowLevelImpl")
     @NoSideEffects
+    @Unmanaged
     private static native int hashCodeLowLevel(TObject obj);
 
     @Unmanaged
@@ -282,6 +283,7 @@ public class TObject {
 
     @DelegateTo("setHashCodeLowLevelImpl")
     @NoSideEffects
+    @Unmanaged
     private static native void setHashCodeLowLevel(TObject obj, int value);
 
     @Unmanaged

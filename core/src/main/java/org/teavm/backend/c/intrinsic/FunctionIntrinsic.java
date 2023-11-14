@@ -36,8 +36,8 @@ public class FunctionIntrinsic implements Intrinsic {
 
     @Override
     public boolean canHandle(MethodReference method) {
-        if (method.getClassName().equals(Function.class.getName()) && method.getName().equals("get")) {
-            return true;
+        if (method.getClassName().equals(Function.class.getName())) {
+            return method.getName().equals("get");
         }
         return characteristics.isFunction(method.getClassName());
     }

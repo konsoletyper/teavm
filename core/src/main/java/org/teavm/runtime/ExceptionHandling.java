@@ -117,24 +117,26 @@ public final class ExceptionHandling {
                 }
 
                 if (!isJumpSupported()) {
-                    ShadowStack.setExceptionHandlerId(stackFrame, callSiteId - 1);
+                    ShadowStack.setExceptionHandlerSkip(stackFrame);
                 }
             }
             stackFrame = ShadowStack.getNextStackFrame(stackFrame);
         }
 
         if (stackFrame == null) {
-            stackFrame = ShadowStack.getStackTop();
-            while (stackFrame != null) {
-                int callSiteId = ShadowStack.getCallSiteId(stackFrame);
-                if (callSiteId >= 0) {
-                    ShadowStack.setExceptionHandlerId(stackFrame, callSiteId + 1);
+            if (!isJumpSupported()) {
+                stackFrame = ShadowStack.getStackTop();
+                while (stackFrame != null) {
+                    int callSiteId = ShadowStack.getCallSiteId(stackFrame);
+                    if (callSiteId >= 0) {
+                        ShadowStack.setExceptionHandlerRestore(stackFrame);
+                    }
+                    stackFrame = ShadowStack.getNextStackFrame(stackFrame);
                 }
-                stackFrame = ShadowStack.getNextStackFrame(stackFrame);
             }
             printStack();
             abort();
-        } else if (isJumpSupported()) {
+        } else {
             jumpToFrame(stackFrame, handlerId);
         }
     }

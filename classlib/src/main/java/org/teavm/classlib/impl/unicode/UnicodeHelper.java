@@ -126,6 +126,26 @@ public final class UnicodeHelper {
         return data;
     }
 
+    public static CharMapping createCharMapping(int[] data) {
+        var result = new int[65536];
+        var last = 0;
+        var lastValue = 0;
+        for (var i = 0; i < data.length; i += 2) {
+            var key = data[i];
+            var value = data[i + 1];
+            if (key >= result.length) {
+                if (key == last) {
+                    break;
+                }
+                key = result.length;
+            }
+            Arrays.fill(result, last, key, lastValue);
+            last = key;
+            lastValue = value;
+        }
+        return new CharMapping(data, result);
+    }
+
     public static char encodeByte(byte b) {
         if (b < '\"' - ' ') {
             return (char) (b + ' ');

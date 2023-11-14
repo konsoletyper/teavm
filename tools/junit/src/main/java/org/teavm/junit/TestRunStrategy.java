@@ -18,13 +18,11 @@ package org.teavm.junit;
 import java.io.IOException;
 
 interface TestRunStrategy {
-    void beforeAll();
+    default void beforeAll() {
+    }
 
-    void afterAll();
-
-    void beforeThread();
-
-    void afterThread();
+    default void afterAll() {
+    }
 
     void runTest(TestRun run) throws IOException;
 }

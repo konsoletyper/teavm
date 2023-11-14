@@ -48,7 +48,6 @@ public class RemoteBuildRequest implements Serializable {
     public WasmBinaryVersion wasmVersion;
     public int minHeapSize;
     public int maxHeapSize;
-    public boolean longjmpSupported;
     public boolean heapDump;
     public boolean shortFileNames;
     public boolean assertionsRemoved;

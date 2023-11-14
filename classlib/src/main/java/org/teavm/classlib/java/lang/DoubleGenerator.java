@@ -15,15 +15,23 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
 public class DoubleGenerator implements Injector {
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
-        context.getWriter().append("$rt_").append(methodRef.getName()).append("(");
+    public void generate(InjectorContext context, MethodReference methodRef) {
+        if (methodRef.getName().equals("doubleEqualsJs")) {
+            context.getWriter().appendFunction("$rt_equalDoubles").append("(");
+            context.writeExpr(context.getArgument(0));
+            context.getWriter().append(',').ws();
+            context.writeExpr(context.getArgument(1));
+            context.getWriter().append(')');
+            return;
+        }
+        var functionName = "$rt_" + methodRef.getName();
+        context.getWriter().appendFunction(functionName).append("(");
         context.writeExpr(context.getArgument(0));
         context.getWriter().append(")");
     }

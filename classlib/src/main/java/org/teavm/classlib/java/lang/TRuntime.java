@@ -55,7 +55,7 @@ public class TRuntime {
      * its best effort to recycle all discarded objects. The name gc stands for
      * "garbage collector". The Java Virtual Machine performs this recycling
      * process automatically as needed even if the gc method is not invoked
-     * explicitly. The method System.gc() is the conventional and convenient
+     * explicitly. The method System.js.gc() is the conventional and convenient
      * means of invoking this method.
      */
     public void gc() {

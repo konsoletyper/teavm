@@ -35,6 +35,8 @@ public class ShadowStackIntrinsic implements WasmIntrinsic {
             case "getStackRootPointer":
             case "getCallSiteId":
             case "setExceptionHandlerId":
+            case "setExceptionHandlerSkip":
+            case "setExceptionHandlerRestore":
                 return true;
             default:
                 return false;

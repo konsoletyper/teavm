@@ -15,9 +15,8 @@
  */
 package org.teavm.platform.plugin;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 
 public interface ResourceWriter {
-    void write(SourceWriter writer) throws IOException;
+    void write(SourceWriter writer);
 }

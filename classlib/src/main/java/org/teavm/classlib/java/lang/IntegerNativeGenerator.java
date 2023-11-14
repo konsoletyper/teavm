@@ -15,36 +15,32 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
 public class IntegerNativeGenerator implements Injector {
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+    public void generate(InjectorContext context, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "divideUnsigned":
-                context.getWriter().append("$rt_udiv(");
-                context.writeExpr(context.getArgument(0));
-                context.getWriter().append(",").ws();
-                context.writeExpr(context.getArgument(1));
-                context.getWriter().append(")");
+                generateRuntimeCall(context, "$rt_udiv");
                 break;
             case "remainderUnsigned":
-                context.getWriter().append("$rt_umod(");
-                context.writeExpr(context.getArgument(0));
-                context.getWriter().append(",").ws();
-                context.writeExpr(context.getArgument(1));
-                context.getWriter().append(")");
+                generateRuntimeCall(context, "$rt_umod");
                 break;
             case "compareUnsigned":
-                context.getWriter().append("$rt_ucmp(");
-                context.writeExpr(context.getArgument(0));
-                context.getWriter().append(",").ws();
-                context.writeExpr(context.getArgument(1));
-                context.getWriter().append(")");
+                generateRuntimeCall(context, "$rt_ucmp");
                 break;
         }
+    }
+
+
+    private void generateRuntimeCall(InjectorContext context, String name) {
+        context.getWriter().appendFunction(name).append("(");
+        context.writeExpr(context.getArgument(0));
+        context.getWriter().append(",").ws();
+        context.writeExpr(context.getArgument(1));
+        context.getWriter().append(")");
     }
 }

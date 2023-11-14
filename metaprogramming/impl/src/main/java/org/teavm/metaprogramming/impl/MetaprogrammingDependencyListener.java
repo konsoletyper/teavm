@@ -26,6 +26,7 @@ import org.teavm.metaprogramming.impl.model.MethodDescriber;
 import org.teavm.metaprogramming.impl.model.MethodModel;
 import org.teavm.metaprogramming.impl.optimization.Optimizations;
 import org.teavm.metaprogramming.impl.reflect.ReflectContext;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -45,8 +46,8 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
         describer = new MethodDescriber(MetaprogrammingImpl.createDiagnostics(), agent.getClassSource());
 
         MetaprogrammingImpl.classLoader = proxyClassLoader;
-        MetaprogrammingImpl.classSource = agent.getClassSource();
-        MetaprogrammingImpl.hierarchy = agent.getClassHierarchy();
+        MetaprogrammingImpl.classSource = agent.getUnprocessedClassSource();
+        MetaprogrammingImpl.hierarchy = new ClassHierarchy(agent.getUnprocessedClassSource());
         MetaprogrammingImpl.incrementalDependencies = agent.getIncrementalCache();
         MetaprogrammingImpl.agent = agent;
         MetaprogrammingImpl.reflectContext = new ReflectContext(agent.getClassHierarchy(), proxyClassLoader);

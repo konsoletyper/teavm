@@ -16,13 +16,23 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
+@SkipPlatform(TestPlatform.WASI)
 public class MathTest {
+    private static void sameDouble(double a, double b) {
+        assertEquals(Double.valueOf(a), Double.valueOf(b));
+    }
+
+    private static void sameFloat(float a, float b) {
+        assertEquals(Float.valueOf(a), Float.valueOf(b));
+    }
+
     @Test
     public void sinComputed() {
         assertEquals(0.90929742682568, Math.sin(2), 1E-14);
@@ -62,52 +72,50 @@ public class MathTest {
 
     @Test
     public void testAbs() {
-        assertEquals(Float.valueOf(Float.POSITIVE_INFINITY), Float.valueOf(Math.abs(Float.NEGATIVE_INFINITY)));
-        assertEquals(Double.valueOf(Double.POSITIVE_INFINITY), Double.valueOf(Math.abs(Double.NEGATIVE_INFINITY)));
-        assertEquals(Double.valueOf(5.0), Double.valueOf(Math.abs(-5.0)));
-        assertEquals(Double.valueOf(3.0), Double.valueOf(Math.abs(3.0)));
-        assertEquals(Double.valueOf(3.0), Double.valueOf(Math.abs(-3.0)));
-        assertEquals(Double.valueOf(5.0), Double.valueOf(Math.abs(5.0)));
-        assertEquals(Float.valueOf(0.0f), Float.valueOf(Math.abs(-0.0f)));
-        assertEquals(Float.valueOf(0.0f), Float.valueOf(Math.abs(0.0f)));
-        assertEquals(Double.valueOf(0.0), Double.valueOf(Math.abs(-0.0)));
-        assertEquals(Double.valueOf(0.0), Double.valueOf(Math.abs(0.0)));
+        sameFloat(Float.POSITIVE_INFINITY, Math.abs(Float.NEGATIVE_INFINITY));
+        sameDouble(Double.POSITIVE_INFINITY, Math.abs(Double.NEGATIVE_INFINITY));
+        sameDouble(5.0, Math.abs(-5.0));
+        sameDouble(3.0, Math.abs(3.0));
+        sameDouble(3.0, Math.abs(-3.0));
+        sameDouble(5.0, Math.abs(5.0));
+        sameFloat(0.0f, Math.abs(-0.0f));
+        sameFloat(0.0f, Math.abs(0.0f));
+        sameDouble(0.0, Math.abs(-0.0));
+        sameDouble(0.0, Math.abs(0.0));
     }
 
     @Test
     public void signumWorks() {
-        assertEquals(Double.valueOf(1.0), Double.valueOf(Math.signum(3.0)));
-        assertEquals(Double.valueOf(-1.0), Double.valueOf(Math.signum(-4.0)));
-        assertEquals(Float.valueOf(1f), Float.valueOf(Math.signum(3f)));
-        assertEquals(Float.valueOf(-1f), Float.valueOf(Math.signum(-4f)));
+        sameDouble(1.0, Math.signum(3.0));
+        sameDouble(-1.0, Math.signum(-4.0));
+        sameFloat(1f, Math.signum(3f));
+        sameFloat(-1f, Math.signum(-4f));
 
-        assertEquals(Double.valueOf(0.0), Double.valueOf(Math.signum(0.0)));
-        assertEquals(Double.valueOf(-0.0), Double.valueOf(Math.signum(-0.0)));
-        assertTrue(Double.isNaN(Math.signum(Double.NaN)));
-        assertEquals(Float.valueOf(0.0f), Float.valueOf(Math.signum(0.0f)));
-        assertEquals(Float.valueOf(-0.0f), Float.valueOf(Math.signum(-0.0f)));
-        assertTrue(Float.isNaN(Math.signum(Float.NaN)));
-        assertEquals(Double.valueOf(-1.0), Double.valueOf(Math.signum(-Double.MIN_VALUE)));
-        assertEquals(Double.valueOf(1.0), Double.valueOf(Math.signum(Double.MIN_VALUE)));
+        sameDouble(0.0, Math.signum(0.0));
+        sameDouble(-0.0, Math.signum(-0.0));
+        sameDouble(Double.NaN, Math.signum(Double.NaN));
+        sameFloat(0.0f, Math.signum(0.0f));
+        sameFloat(-0.0f, Math.signum(-0.0f));
+        sameFloat(Float.NaN, Math.signum(Float.NaN));
+        sameDouble(-1.0, Math.signum(-Double.MIN_VALUE));
+        sameDouble(1.0, Math.signum(Double.MIN_VALUE));
 
-        assertEquals(Float.valueOf(-1), Float.valueOf(Math.signum(Float.NEGATIVE_INFINITY)));
-        assertEquals(Float.valueOf(1), Float.valueOf(Math.signum(Float.POSITIVE_INFINITY)));
+        sameFloat((float) -1, Math.signum(Float.NEGATIVE_INFINITY));
+        sameFloat(1F, Math.signum(Float.POSITIVE_INFINITY));
     }
 
     @Test
     public void copySignWorks() {
-        assertEquals(Double.valueOf(1.0), Double.valueOf(Math.copySign(1.0, 0.0)));
-        assertEquals(Double.valueOf(-1.0), Double.valueOf(Math.copySign(1.0, -0.0)));
-        assertEquals(Double.valueOf(1.0), Double.valueOf(Math.copySign(1.0, Double.NaN)));
-        assertEquals(Double.valueOf(Double.NaN), Double.valueOf(Math.copySign(Double.NaN, -1.0)));
-        assertEquals(Double.valueOf(Double.POSITIVE_INFINITY),
-                Double.valueOf(Math.copySign(Double.NEGATIVE_INFINITY, 1.0)));
-        assertEquals(Float.valueOf(1.0f), Float.valueOf(Math.copySign(1.0f, 0.0f)));
-        assertEquals(Float.valueOf(-1.0f), Float.valueOf(Math.copySign(1.0f, -0.0f)));
-        assertEquals(Float.valueOf(1.0f), Float.valueOf(Math.copySign(1.0f, Float.NaN)));
-        assertEquals(Float.valueOf(Float.NaN), Float.valueOf(Math.copySign(Float.NaN, -1.0f)));
-        assertEquals(Float.valueOf(Float.POSITIVE_INFINITY),
-                Float.valueOf(Math.copySign(Float.NEGATIVE_INFINITY, 1.0f)));
+        sameDouble(1.0, Math.copySign(1.0, 0.0));
+        sameDouble(-1.0, Math.copySign(1.0, -0.0));
+        sameDouble(1.0, Math.copySign(1.0, Double.NaN));
+        sameDouble(Double.NaN, Math.copySign(Double.NaN, -1.0));
+        sameDouble(Double.POSITIVE_INFINITY, Math.copySign(Double.NEGATIVE_INFINITY, 1.0));
+        sameFloat(1.0f, Math.copySign(1.0f, 0.0f));
+        sameFloat(-1.0f, Math.copySign(1.0f, -0.0f));
+        sameFloat(1.0f, Math.copySign(1.0f, Float.NaN));
+        sameFloat(Float.NaN, Math.copySign(Float.NaN, -1.0f));
+        sameFloat(Float.POSITIVE_INFINITY, Math.copySign(Float.NEGATIVE_INFINITY, 1.0f));
     }
 
     @Test
@@ -120,34 +128,34 @@ public class MathTest {
 
     @Test
     public void nextWorks() {
-        assertEquals(Double.valueOf(-Double.MIN_VALUE), Double.valueOf(Math.nextDown(0.0)));
-        assertEquals(Double.valueOf(Double.MIN_VALUE), Double.valueOf(Math.nextUp(0.0)));
-        assertEquals(Double.valueOf(-Double.MIN_VALUE), Double.valueOf(Math.nextDown(-0.0)));
-        assertEquals(Double.valueOf(Double.MIN_VALUE), Double.valueOf(Math.nextUp(-0.0)));
-        assertEquals(Float.valueOf(-Float.MIN_VALUE), Float.valueOf(Math.nextDown(0.0f)));
-        assertEquals(Float.valueOf(Float.MIN_VALUE), Float.valueOf(Math.nextUp(0.0f)));
-        assertEquals(Float.valueOf(-Float.MIN_VALUE), Float.valueOf(Math.nextDown(-0.0f)));
-        assertEquals(Float.valueOf(Float.MIN_VALUE), Float.valueOf(Math.nextUp(-0.0f)));
-        assertEquals(Double.valueOf(0.10000000000000002), Double.valueOf(Math.nextUp(0.1)));
-        assertEquals(Double.valueOf(0.9999999999999999), Double.valueOf(Math.nextDown(1.0)));
-        assertEquals(Double.valueOf(-0.09999999999999999), Double.valueOf(Math.nextUp(-0.1)));
-        assertEquals(Double.valueOf(-1.0000000000000002), Double.valueOf(Math.nextDown(-1.0)));
-        assertEquals(Float.valueOf(0.10000001f), Float.valueOf(Math.nextUp(0.1f)));
-        assertEquals(Float.valueOf(0.99999994f), Float.valueOf(Math.nextDown(1.0f)));
-        assertEquals(Float.valueOf(-0.099999994f), Float.valueOf(Math.nextUp(-0.1f)));
-        assertEquals(Float.valueOf(-1.0000001f), Float.valueOf(Math.nextDown(-1.0f)));
-        assertEquals(Float.valueOf(Float.NEGATIVE_INFINITY), Float.valueOf(Math.nextDown(Float.NEGATIVE_INFINITY)));
-        assertEquals(Float.valueOf(Float.intBitsToFloat(Float.floatToIntBits(Float.POSITIVE_INFINITY) - 1)),
-                Float.valueOf(Math.nextDown(Float.POSITIVE_INFINITY)));
-        assertEquals(Float.valueOf(Float.POSITIVE_INFINITY), Float.valueOf(Math.nextUp(Float.POSITIVE_INFINITY)));
-        assertEquals(Float.valueOf(Float.intBitsToFloat(Float.floatToIntBits(Float.NEGATIVE_INFINITY) - 1)),
-                Float.valueOf(Math.nextUp(Float.NEGATIVE_INFINITY)));
-        assertEquals(Double.valueOf(Double.NEGATIVE_INFINITY), Double.valueOf(Math.nextDown(Double.NEGATIVE_INFINITY)));
-        assertEquals(Double.valueOf(Double.longBitsToDouble(Double.doubleToLongBits(Double.POSITIVE_INFINITY) - 1)),
-                Double.valueOf(Math.nextDown(Double.POSITIVE_INFINITY)));
-        assertEquals(Double.valueOf(Double.POSITIVE_INFINITY), Double.valueOf(Math.nextUp(Double.POSITIVE_INFINITY)));
-        assertEquals(Double.valueOf(Double.longBitsToDouble(Double.doubleToLongBits(Double.NEGATIVE_INFINITY) - 1)),
-                Double.valueOf(Math.nextUp(Double.NEGATIVE_INFINITY)));
+        sameDouble(-Double.MIN_VALUE, Math.nextDown(0.0));
+        sameDouble(Double.MIN_VALUE, Math.nextUp(0.0));
+        sameDouble(-Double.MIN_VALUE, Math.nextDown(-0.0));
+        sameDouble(Double.MIN_VALUE, Math.nextUp(-0.0));
+        sameFloat(-Float.MIN_VALUE, Math.nextDown(0.0f));
+        sameFloat(Float.MIN_VALUE, Math.nextUp(0.0f));
+        sameFloat(-Float.MIN_VALUE, Math.nextDown(-0.0f));
+        sameFloat(Float.MIN_VALUE, Math.nextUp(-0.0f));
+        sameDouble(0.10000000000000002, Math.nextUp(0.1));
+        sameDouble(0.9999999999999999, Math.nextDown(1.0));
+        sameDouble(-0.09999999999999999, Math.nextUp(-0.1));
+        sameDouble(-1.0000000000000002, Math.nextDown(-1.0));
+        sameFloat(0.10000001f, Math.nextUp(0.1f));
+        sameFloat(0.99999994f, Math.nextDown(1.0f));
+        sameFloat(-0.099999994f, Math.nextUp(-0.1f));
+        sameFloat(-1.0000001f, Math.nextDown(-1.0f));
+        sameFloat(Float.NEGATIVE_INFINITY, Math.nextDown(Float.NEGATIVE_INFINITY));
+        sameFloat(Float.intBitsToFloat(Float.floatToIntBits(Float.POSITIVE_INFINITY) - 1),
+                Math.nextDown(Float.POSITIVE_INFINITY));
+        sameFloat(Float.POSITIVE_INFINITY, Math.nextUp(Float.POSITIVE_INFINITY));
+        sameFloat(Float.intBitsToFloat(Float.floatToIntBits(Float.NEGATIVE_INFINITY) - 1),
+                Math.nextUp(Float.NEGATIVE_INFINITY));
+        sameDouble(Double.NEGATIVE_INFINITY, Math.nextDown(Double.NEGATIVE_INFINITY));
+        sameDouble(Double.longBitsToDouble(Double.doubleToLongBits(Double.POSITIVE_INFINITY) - 1),
+                Math.nextDown(Double.POSITIVE_INFINITY));
+        sameDouble(Double.POSITIVE_INFINITY, Math.nextUp(Double.POSITIVE_INFINITY));
+        sameDouble(Double.longBitsToDouble(Double.doubleToLongBits(Double.NEGATIVE_INFINITY) - 1),
+                Math.nextUp(Double.NEGATIVE_INFINITY));
     }
 
     @Test
@@ -164,5 +172,29 @@ public class MathTest {
         assertEquals(1024, Math.getExponent(Double.POSITIVE_INFINITY));
         assertEquals(1024, Math.getExponent(Double.NEGATIVE_INFINITY));
         assertEquals(1024, Math.getExponent(Double.NaN));
+    }
+
+    @Test
+    public void minMax() {
+        sameDouble(-1.0, Math.max(-2.0, -1.0));
+        sameDouble(-2.0, Math.min(-2.0, -1.0));
+        sameDouble(Double.NaN, Math.min(Double.NaN, Double.POSITIVE_INFINITY));
+        sameDouble(Double.NaN, Math.min(Double.POSITIVE_INFINITY, Double.NaN));
+        sameDouble(Double.NaN, Math.max(Double.NaN, Double.POSITIVE_INFINITY));
+        sameDouble(Double.NaN, Math.max(Double.POSITIVE_INFINITY, Double.NaN));
+        sameDouble(-0.0, Math.min(-0.0, 0.0));
+        sameDouble(-0.0, Math.min(0.0, -0.0));
+        sameDouble(0.0, Math.max(-0.0, 0.0));
+        sameDouble(0.0, Math.max(0.0, -0.0));
+        sameFloat(-1.0f, Math.max(-2.0f, -1.0f));
+        sameFloat(-2.0f, Math.min(-2.0f, -1.0f));
+        sameFloat(Float.NaN, Math.min(Float.NaN, Float.POSITIVE_INFINITY));
+        sameFloat(Float.NaN, Math.min(Float.POSITIVE_INFINITY, Float.NaN));
+        sameFloat(Float.NaN, Math.max(Float.NaN, Float.POSITIVE_INFINITY));
+        sameFloat(Float.NaN, Math.max(Float.POSITIVE_INFINITY, Float.NaN));
+        sameFloat(-0.0f, Math.min(-0.0f, 0.0f));
+        sameFloat(-0.0f, Math.min(0.0f, -0.0f));
+        sameFloat(0.0f, Math.max(-0.0f, 0.0f));
+        sameFloat(0.0f, Math.max(0.0f, -0.0f));
     }
 }

@@ -15,7 +15,6 @@
  */
 package org.teavm.incremental;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.FieldReference;
@@ -23,10 +22,9 @@ import org.teavm.model.MethodReference;
 
 public class EntryPointGenerator implements Injector {
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+    public void generate(InjectorContext context, MethodReference methodRef) {
         context.getWriter().append("main.result = (");
         context.writeExpr(context.getArgument(0));
-        context.getWriter().append(").").appendField(new FieldReference("java.lang.String", "characters"));
-        context.getWriter().append(".data");
+        context.getWriter().append(").").appendField(new FieldReference("java.lang.String", "nativeString"));
     }
 }

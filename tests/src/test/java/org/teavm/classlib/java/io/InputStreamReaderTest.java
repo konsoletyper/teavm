@@ -17,15 +17,15 @@ package org.teavm.classlib.java.io;
 
 import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class InputStreamReaderTest {
     @Test
     public void readsChars() throws IOException {
@@ -79,5 +79,23 @@ public class InputStreamReaderTest {
         for (int i = 0; i < chars.length; ++i) {
             assertEquals(str.charAt(i), chars[i]);
         }
+    }
+
+    @Test
+    public void underflowWhileFillingBuffer() throws IOException {
+        var bos = new ByteArrayOutputStream();
+        bos.write(0x24);
+        for (var i = 0; i < 20000; ++i) {
+            bos.write(0xC2);
+            bos.write(0xA2);
+        }
+
+        var bis = new ByteArrayInputStream(bos.toByteArray());
+        var reader = new InputStreamReader(bis, StandardCharsets.UTF_8);
+        assertEquals(0x24, reader.read());
+        for (var i = 0; i < 20000; ++i) {
+            assertEquals(0xA2, reader.read());
+        }
+        assertEquals(-1, reader.read());
     }
 }

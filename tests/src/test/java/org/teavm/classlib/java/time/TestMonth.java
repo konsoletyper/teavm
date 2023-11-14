@@ -69,7 +69,6 @@ import java.util.List;
 import java.util.Locale;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -78,7 +77,6 @@ import org.testng.annotations.Test;
  */
 @Test
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TestMonth extends AbstractDateTimeTest {
 
     private static final int MAX_LENGTH = 12;

@@ -78,8 +78,6 @@ public interface BuildStrategy {
 
     void setMaxHeapSize(int maxHeapSize);
 
-    void setLongjmpSupported(boolean value);
-
     void setHeapDump(boolean heapDump);
 
     void setShortFileNames(boolean shortFileNames);

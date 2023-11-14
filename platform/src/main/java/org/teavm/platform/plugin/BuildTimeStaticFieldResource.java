@@ -15,7 +15,6 @@
  */
 package org.teavm.platform.plugin;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.model.FieldReference;
 import org.teavm.platform.metadata.StaticFieldResource;
@@ -32,7 +31,7 @@ class BuildTimeStaticFieldResource implements StaticFieldResource, ResourceWrite
     }
 
     @Override
-    public void write(SourceWriter writer) throws IOException {
+    public void write(SourceWriter writer) {
         writer.appendField(field);
     }
 }

@@ -151,9 +151,6 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter(property = "teavm.processMemory", defaultValue = "512")
     private int processMemory;
 
-    @Parameter(property = "teavm.longjmpSupported", defaultValue = "true")
-    private boolean longjmpSupported;
-
     @Parameter(property = "teavm.heapDump", defaultValue = "false")
     private boolean heapDump;
 
@@ -298,7 +295,6 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setCacheDirectory(cacheDirectory.getAbsolutePath());
             builder.setTargetType(targetType);
             builder.setWasmVersion(wasmVersion);
-            builder.setLongjmpSupported(longjmpSupported);
             builder.setHeapDump(heapDump);
             BuildResult result;
             result = builder.build();

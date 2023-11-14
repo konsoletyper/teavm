@@ -30,7 +30,7 @@ import org.teavm.platform.metadata.MetadataGeneratorContext;
 import org.teavm.platform.metadata.ResourceMap;
 
 public class TimeZoneGenerator implements MetadataGenerator {
-    public static final String TIMEZONE_DB_VERSION = "2022g";
+    public static final String TIMEZONE_DB_VERSION = "2023c";
     public static final String TIMEZONE_DB_PATH = "org/teavm/classlib/impl/tz/tzdata" + TIMEZONE_DB_VERSION + ".zip";
 
     public static void compile(ZoneInfoCompiler compiler, ClassLoader classLoader) {

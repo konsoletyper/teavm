@@ -114,7 +114,6 @@ public class TClass<T> extends TObject implements TAnnotatedElement, TType {
         return Address.ofObject(this).<RuntimeClass>toStructure().isSupertypeOf.apply(other);
     }
 
-    @Unmanaged
     public String getName() {
         if (PlatformDetector.isLowLevel()) {
             String result = getNameCache(this);
@@ -355,19 +354,19 @@ public class TClass<T> extends TObject implements TAnnotatedElement, TType {
         return fields.clone();
     }
 
-    public TField getDeclaredField(String name) throws TNoSuchFieldError {
+    public TField getDeclaredField(String name) throws TNoSuchFieldException {
         for (TField field : getDeclaredFields()) {
             if (field.getName().equals(name)) {
                 return field;
             }
         }
-        throw new TNoSuchFieldError();
+        throw new TNoSuchFieldException();
     }
 
-    public TField getField(String name) throws TNoSuchFieldError {
+    public TField getField(String name) throws TNoSuchFieldException {
         TField result = findField(name, new HashSet<>());
         if (result == null) {
-            throw new TNoSuchFieldError();
+            throw new TNoSuchFieldException();
         }
         return result;
     }

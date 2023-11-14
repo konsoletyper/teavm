@@ -15,7 +15,6 @@
  */
 package org.teavm.platform.plugin;
 
-import java.io.IOException;
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.Expr;
 import org.teavm.backend.javascript.spi.Injector;
@@ -25,7 +24,7 @@ import org.teavm.model.ValueType;
 
 class ResourceAccessorInjector implements Injector {
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+    public void generate(InjectorContext context, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "get":
             case "getProperty":
@@ -87,7 +86,7 @@ class ResourceAccessorInjector implements Injector {
                 context.getWriter().append('(');
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().ws().append("!==").ws().append("null").ws().append("?").ws();
-                context.getWriter().append("$rt_str(");
+                context.getWriter().appendFunction("$rt_str").append("(");
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().append(")").ws().append(':').ws().append("null)");
                 break;
@@ -95,14 +94,14 @@ class ResourceAccessorInjector implements Injector {
                 context.getWriter().append('(');
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().ws().append("!==").ws().append("null").ws().append("?").ws();
-                context.getWriter().append("$rt_ustr(");
+                context.getWriter().appendFunction("$rt_ustr").append("(");
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().append(")").ws().append(':').ws().append("null)");
                 break;
         }
     }
 
-    private void writePropertyAccessor(InjectorContext context, Expr property) throws IOException {
+    private void writePropertyAccessor(InjectorContext context, Expr property) {
         if (property instanceof ConstantExpr) {
             String str = (String) ((ConstantExpr) property).getValue();
             if (str.isEmpty()) {
@@ -114,12 +113,12 @@ class ResourceAccessorInjector implements Injector {
                 return;
             }
         }
-        context.getWriter().append("[$rt_ustr(");
+        context.getWriter().append("[").appendFunction("$rt_ustr").append("(");
         context.writeExpr(property);
         context.getWriter().append(")]");
     }
 
-    private void writeStringExpr(InjectorContext context, Expr expr) throws IOException {
+    private void writeStringExpr(InjectorContext context, Expr expr) {
         if (expr instanceof ConstantExpr) {
             String str = (String) ((ConstantExpr) expr).getValue();
             context.getWriter().append('"');
@@ -127,7 +126,7 @@ class ResourceAccessorInjector implements Injector {
             context.getWriter().append('"');
             return;
         }
-        context.getWriter().append("$rt_ustr(");
+        context.getWriter().appendFunction("$rt_ustr").append("(");
         context.writeExpr(expr);
         context.getWriter().append(")");
     }

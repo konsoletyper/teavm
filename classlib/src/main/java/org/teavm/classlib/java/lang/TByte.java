@@ -21,6 +21,7 @@ public class TByte extends TNumber implements TComparable<TByte> {
     public static final Class<Byte> TYPE = byte.class;
     public static final int SIZE = 8;
     public static final int BYTES = 1;
+    private static TByte[] byteCache = ensureByteCache();
     private final byte value;
 
     public TByte(byte value) {
@@ -56,9 +57,16 @@ public class TByte extends TNumber implements TComparable<TByte> {
         return value;
     }
 
-    public static TByte valueOf(byte value) {
-        // TODO: add caching
-        return new TByte(value);
+    public static TByte valueOf(byte i) {
+        return byteCache[i + 128];
+    }
+
+    private static TByte[] ensureByteCache() {
+        TByte[] byteCache = new TByte[256];
+        for (int j = 0; j < byteCache.length; ++j) {
+            byteCache[j] = new TByte((byte) (j - 128));
+        }
+        return byteCache;
     }
 
     public static String toString(byte value) {
@@ -111,7 +119,7 @@ public class TByte extends TNumber implements TComparable<TByte> {
 
     public static byte parseByte(String s, int radix) throws TNumberFormatException {
         int value = TInteger.parseInt(s, radix);
-        if (value < MIN_VALUE || value >= MAX_VALUE) {
+        if (value < MIN_VALUE || value > MAX_VALUE) {
             throw new TNumberFormatException();
         }
         return (byte) value;

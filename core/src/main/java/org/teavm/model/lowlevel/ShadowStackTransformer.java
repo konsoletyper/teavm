@@ -37,13 +37,10 @@ import org.teavm.runtime.ShadowStack;
 public class ShadowStackTransformer {
     private Characteristics characteristics;
     private GCShadowStackContributor gcContributor;
-    private boolean exceptionHandling;
-    private int callSiteIdGen;
 
-    public ShadowStackTransformer(Characteristics characteristics, boolean exceptionHandling) {
+    public ShadowStackTransformer(Characteristics characteristics) {
         gcContributor = new GCShadowStackContributor(characteristics);
         this.characteristics = characteristics;
-        this.exceptionHandling = exceptionHandling;
     }
 
     public void apply(Program program, MethodReader method) {
@@ -52,27 +49,16 @@ public class ShadowStackTransformer {
         }
 
         int shadowStackSize = gcContributor.contribute(program, method);
-        boolean exceptions;
-        if (exceptionHandling) {
-            List<CallSiteDescriptor> callSites = new ArrayList<>();
-            var exceptionContributor = new ExceptionHandlingShadowStackContributor(characteristics, callSites,
-                            method.getReference(), program);
-            exceptionContributor.callSiteIdGen = callSiteIdGen;
-            exceptions = exceptionContributor.contribute();
-            callSiteIdGen = exceptionContributor.callSiteIdGen;
-            CallSiteDescriptor.save(callSites, program.getAnnotations());
-        } else {
-            exceptions = false;
-            outer: for (BasicBlock block : program.getBasicBlocks()) {
-                if (!block.getTryCatchBlocks().isEmpty()) {
+        var exceptions = false;
+        outer: for (BasicBlock block : program.getBasicBlocks()) {
+            if (!block.getTryCatchBlocks().isEmpty()) {
+                exceptions = true;
+                break;
+            }
+            for (Instruction insn : block) {
+                if (ExceptionHandlingUtil.isCallInstruction(characteristics, insn)) {
                     exceptions = true;
-                    break;
-                }
-                for (Instruction insn : block) {
-                    if (ExceptionHandlingShadowStackContributor.isCallInstruction(characteristics, insn)) {
-                        exceptions = true;
-                        break outer;
-                    }
+                    break outer;
                 }
             }
         }

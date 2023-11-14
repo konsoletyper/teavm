@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
-import org.apache.commons.io.IOUtils;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.RenderingUtil;
 import org.teavm.backend.javascript.spi.Injector;
@@ -36,7 +35,7 @@ import org.teavm.model.MethodReference;
 
 public class ClassLoaderNativeGenerator implements Injector {
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+    public void generate(InjectorContext context, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "supplyResources":
                 generateSupplyResources(context);
@@ -44,7 +43,7 @@ public class ClassLoaderNativeGenerator implements Injector {
         }
     }
 
-    private void generateSupplyResources(InjectorContext context) throws IOException {
+    private void generateSupplyResources(InjectorContext context) {
         SourceWriter writer = context.getWriter();
         writer.append("{").indent();
 
@@ -69,14 +68,16 @@ public class ClassLoaderNativeGenerator implements Injector {
                 }
                 first = false;
                 writer.newLine();
-                byte[] dataBytes = Base64Impl.encode(IOUtils.toByteArray(new BufferedInputStream(input)), true);
+                byte[] dataBytes = Base64Impl.encode(new BufferedInputStream(input).readAllBytes(), true);
                 char[] dataChars = new char[dataBytes.length];
                 for (int i = 0; i < dataBytes.length; ++i) {
                     dataChars[i] = (char) dataBytes[i];
                 }
                 RenderingUtil.writeString(writer, resource);
-                writer.ws().append(':').ws();
+                writer.append(':').ws();
                 RenderingUtil.writeString(writer, new String(dataChars));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
 

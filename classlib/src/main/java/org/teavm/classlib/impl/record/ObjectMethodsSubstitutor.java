@@ -20,6 +20,7 @@ import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DynamicCallSite;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.MethodHandle;
+import org.teavm.model.PrimitiveType;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ConditionEmitter;
 import org.teavm.model.emit.ConditionProducer;
@@ -177,7 +178,16 @@ public class ObjectMethodsSubstitutor implements BootstrapMethodSubstitutor {
             String fieldTitle = (index == 0 ? "" : ", ") + fieldName + "=";
             resultVar = resultVar.invokeVirtual("append", StringBuilder.class, pe.constant(fieldTitle));
             ValueEmitter thisField = InvokeDynamicUtil.invoke(pe, getter, thisVar);
-            if (!(getter.getValueType() instanceof ValueType.Primitive)) {
+            if (getter.getValueType() instanceof ValueType.Primitive) {
+                PrimitiveType primitive = ((ValueType.Primitive) getter.getValueType()).getKind();
+                switch (primitive) {
+                    case BYTE:
+                    case SHORT:
+                        thisField = thisField.cast(int.class);
+                        break;
+                    default:
+                }
+            } else {
                 thisField = thisField.cast(Object.class);
             }
             resultVar = resultVar.invokeVirtual("append", StringBuilder.class, thisField);

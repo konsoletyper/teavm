@@ -95,6 +95,8 @@ typedef struct TeaVM_StackFrame {
 #define TEAVM_WITH_CALL_SITE_ID(id, expr) (TEAVM_CALL_SITE(id), (expr))
 #define TEAVM_EXCEPTION_HANDLER (teavm_shadowStack.header.callSiteId)
 #define TEAVM_SET_EXCEPTION_HANDLER(frame, id) (((TeaVM_StackFrame*) (frame))->callSiteId = (id))
+#define TEAVM_SET_EXCEPTION_HANDLER_SKIP(frame) (((TeaVM_StackFrame*) (frame))->callSiteId++)
+#define TEAVM_SET_EXCEPTION_HANDLER_RESTORE(frame) (((TeaVM_StackFrame*) (frame))->callSiteId--)
 #define TEAVM_GET_NEXT_FRAME(frame) (((TeaVM_StackFrame*) (frame))->next)
 #define TEAVM_GET_CALL_SITE_ID(frame) (((TeaVM_StackFrame*) (frame))->callSiteId)
 

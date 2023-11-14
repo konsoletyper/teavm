@@ -15,17 +15,13 @@
  */
 package org.teavm.backend.javascript.rendering;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Predicate;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
@@ -39,11 +35,9 @@ import org.teavm.interop.PlatformMarker;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
-import org.teavm.model.InliningInfo;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
-import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.ClassInitializerInfo;
 
@@ -57,14 +51,12 @@ public abstract class RenderingContext {
     private NamingStrategy naming;
     private DependencyInfo dependencyInfo;
     private Predicate<MethodReference> virtualPredicate;
-    private final Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
     private final Map<String, Integer> stringPoolMap = new HashMap<>();
     private final List<String> stringPool = new ArrayList<>();
     private final List<String> readonlyStringPool = Collections.unmodifiableList(stringPool);
     private final Map<MethodReference, InjectorHolder> injectorMap = new HashMap<>();
     private boolean minifying;
     private ClassInitializerInfo classInitializerInfo;
-    private TextLocation lastEmittedLocation = TextLocation.EMPTY;
     private boolean strict;
 
     public RenderingContext(DebugInformationEmitter debugEmitter,
@@ -130,83 +122,6 @@ public abstract class RenderingContext {
         return classInitializerInfo.isDynamicInitializer(className);
     }
 
-    public void pushLocation(TextLocation location) {
-        LocationStackEntry prevEntry = locationStack.peek();
-        if (location != null) {
-            if (prevEntry == null || !location.equals(prevEntry.location)) {
-                emitLocation(location);
-            }
-        } else {
-            if (prevEntry != null) {
-                emitLocation(TextLocation.EMPTY);
-            }
-        }
-        locationStack.push(new LocationStackEntry(location));
-    }
-
-    public void popLocation() {
-        LocationStackEntry prevEntry = locationStack.pop();
-        LocationStackEntry entry = locationStack.peek();
-        if (entry != null) {
-            if (!entry.location.equals(prevEntry.location)) {
-                emitLocation(entry.location);
-            }
-        } else {
-            emitLocation(TextLocation.EMPTY);
-        }
-    }
-
-    private void emitLocation(TextLocation location) {
-        if (lastEmittedLocation.equals(location)) {
-            return;
-        }
-
-        String fileName = lastEmittedLocation.getFileName();
-        int lineNumber = lastEmittedLocation.getLine();
-        if (lastEmittedLocation.getInlining() != location.getInlining()) {
-            InliningInfo[] newPath = location.getInliningPath();
-            InliningInfo[] prevPath = lastEmittedLocation.getInliningPath();
-
-            InliningInfo lastCommonInlining = null;
-            int pathIndex = 0;
-            while (pathIndex < prevPath.length && pathIndex < newPath.length
-                    && prevPath[pathIndex].equals(newPath[pathIndex])) {
-                lastCommonInlining = prevPath[pathIndex++];
-            }
-
-            InliningInfo prevInlining = lastEmittedLocation.getInlining();
-            while (prevInlining != lastCommonInlining) {
-                debugEmitter.exitLocation();
-                fileName = prevInlining.getFileName();
-                lineNumber = prevInlining.getLine();
-                prevInlining = prevInlining.getParent();
-            }
-
-            while (pathIndex < newPath.length) {
-                InliningInfo inlining = newPath[pathIndex++];
-                emitSimpleLocation(fileName, lineNumber, inlining.getFileName(), inlining.getLine());
-                fileName = null;
-                lineNumber = -1;
-
-                debugEmitter.enterLocation();
-                debugEmitter.emitClass(inlining.getMethod().getClassName());
-                debugEmitter.emitMethod(inlining.getMethod().getDescriptor());
-            }
-        }
-
-        emitSimpleLocation(fileName, lineNumber, location.getFileName(), location.getLine());
-        lastEmittedLocation = location;
-    }
-
-
-    private void emitSimpleLocation(String fileName, int lineNumber, String newFileName, int newLineNumber) {
-        if (Objects.equals(fileName, newFileName) && lineNumber == newLineNumber) {
-            return;
-        }
-
-        debugEmitter.emitLocation(newFileName, newLineNumber);
-    }
-
     public boolean isMinifying() {
         return minifying;
     }
@@ -222,7 +137,7 @@ public abstract class RenderingContext {
         return readonlyStringPool;
     }
 
-    public void constantToString(SourceWriter writer, Object cst) throws IOException {
+    public void constantToString(SourceWriter writer, Object cst) {
         if (cst == null) {
             writer.append("null");
         }
@@ -297,7 +212,7 @@ public abstract class RenderingContext {
         }
     }
 
-    public void typeToClsString(SourceWriter writer, ValueType type) throws IOException {
+    public void typeToClsString(SourceWriter writer, ValueType type) {
         int arrayCount = 0;
         while (type instanceof ValueType.Array) {
             arrayCount++;
@@ -305,40 +220,40 @@ public abstract class RenderingContext {
         }
 
         for (int i = 0; i < arrayCount; ++i) {
-            writer.append("$rt_arraycls(");
+            writer.appendFunction("$rt_arraycls").append("(");
         }
 
         if (type instanceof ValueType.Object) {
             ValueType.Object objType = (ValueType.Object) type;
             writer.appendClass(objType.getClassName());
         } else if (type instanceof ValueType.Void) {
-            writer.append("$rt_voidcls()");
+            writer.appendFunction("$rt_voidcls");
         } else if (type instanceof ValueType.Primitive) {
             ValueType.Primitive primitiveType = (ValueType.Primitive) type;
             switch (primitiveType.getKind()) {
                 case BOOLEAN:
-                    writer.append("$rt_booleancls()");
+                    writer.appendFunction("$rt_booleancls");
                     break;
                 case CHARACTER:
-                    writer.append("$rt_charcls()");
+                    writer.appendFunction("$rt_charcls");
                     break;
                 case BYTE:
-                    writer.append("$rt_bytecls()");
+                    writer.appendFunction("$rt_bytecls");
                     break;
                 case SHORT:
-                    writer.append("$rt_shortcls()");
+                    writer.appendFunction("$rt_shortcls");
                     break;
                 case INTEGER:
-                    writer.append("$rt_intcls()");
+                    writer.appendFunction("$rt_intcls");
                     break;
                 case LONG:
-                    writer.append("$rt_longcls()");
+                    writer.appendFunction("$rt_longcls");
                     break;
                 case FLOAT:
-                    writer.append("$rt_floatcls()");
+                    writer.appendFunction("$rt_floatcls");
                     break;
                 case DOUBLE:
-                    writer.append("$rt_doublecls()");
+                    writer.appendFunction("$rt_doublecls");
                     break;
                 default:
                     throw new IllegalArgumentException("The type is not renderable");
@@ -366,14 +281,6 @@ public abstract class RenderingContext {
 
     public String threadName() {
         return minifying ? "$T" : "$thread";
-    }
-
-    private static class LocationStackEntry {
-        final TextLocation location;
-
-        LocationStackEntry(TextLocation location) {
-            this.location = location;
-        }
     }
 
     public void addInjector(MethodReference method, Injector injector) {

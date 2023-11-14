@@ -40,6 +40,8 @@ public class WasmRuntimeIntrinsic implements WasmIntrinsic {
             case "lt":
             case "gtu":
             case "ltu":
+            case "min":
+            case "max":
             case "initStack":
             case "callFunctionFromTable":
                 return true;
@@ -63,8 +65,15 @@ public class WasmRuntimeIntrinsic implements WasmIntrinsic {
             case "gtu":
                 return comparison(WasmIntBinaryOperation.GT_UNSIGNED, WasmFloatBinaryOperation.GT,
                         invocation, manager);
+            case "min":
+                return comparison(WasmIntBinaryOperation.GT_SIGNED, WasmFloatBinaryOperation.MIN,
+                        invocation, manager);
+            case "max":
+                return comparison(WasmIntBinaryOperation.GT_SIGNED, WasmFloatBinaryOperation.MAX,
+                        invocation, manager);
             case "callFunctionFromTable": {
                 var call = new WasmIndirectCall(manager.generate(invocation.getArguments().get(0)));
+                call.getParameterTypes().add(WasmType.INT32);
                 call.getArguments().add(manager.generate(invocation.getArguments().get(1)));
                 return call;
             }

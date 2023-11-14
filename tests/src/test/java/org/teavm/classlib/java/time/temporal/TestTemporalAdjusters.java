@@ -61,7 +61,6 @@ import java.time.Month;
 import java.time.temporal.TemporalAdjusters;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -70,7 +69,6 @@ import org.testng.annotations.Test;
  */
 @Test
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TestTemporalAdjusters {
 
     //-----------------------------------------------------------------------

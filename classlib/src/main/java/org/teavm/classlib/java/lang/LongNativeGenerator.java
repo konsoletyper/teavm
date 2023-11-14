@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
@@ -23,28 +22,26 @@ import org.teavm.model.MethodReference;
 
 public class LongNativeGenerator implements Generator {
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         switch (methodRef.getName()) {
             case "compare":
-                writer.append("return Long_compare(").append(context.getParameterName(1)).append(", ")
-                        .append(context.getParameterName(2)).append(");").softNewLine();
-                context.useLongLibrary();
+                generateRuntimeCall(context, writer, "Long_compare");
                 break;
             case "compareUnsigned":
-                writer.append("return Long_ucompare(").append(context.getParameterName(1)).append(", ")
-                        .append(context.getParameterName(2)).append(");").softNewLine();
-                context.useLongLibrary();
+                generateRuntimeCall(context, writer, "Long_ucompare");
                 break;
             case "divideUnsigned":
-                writer.append("return Long_udiv(").append(context.getParameterName(1)).append(", ")
-                        .append(context.getParameterName(2)).append(");").softNewLine();
-                context.useLongLibrary();
+                generateRuntimeCall(context, writer, "Long_udiv");
                 break;
             case "remainderUnsigned":
-                writer.append("return Long_urem(").append(context.getParameterName(1)).append(", ")
-                        .append(context.getParameterName(2)).append(");").softNewLine();
-                context.useLongLibrary();
+                generateRuntimeCall(context, writer, "Long_urem");
                 break;
         }
+    }
+
+    private void generateRuntimeCall(GeneratorContext context, SourceWriter writer, String name) {
+        writer.append("return ").appendFunction(name).append("(").append(context.getParameterName(1))
+                .append(",").ws()
+                .append(context.getParameterName(2)).append(");").softNewLine();
     }
 }

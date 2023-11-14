@@ -16,17 +16,12 @@
 package org.teavm.backend.javascript.rendering;
 
 import java.util.Properties;
-import org.teavm.backend.javascript.codegen.NamingStrategy;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.ListableClassReaderSource;
 
 public interface RenderingManager extends ServiceRepository {
-    NamingStrategy getNaming();
-
     SourceWriter getWriter();
-
-    boolean isMinifying();
 
     ListableClassReaderSource getClassSource();
 

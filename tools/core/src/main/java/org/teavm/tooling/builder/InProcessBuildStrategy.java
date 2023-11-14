@@ -53,17 +53,16 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private boolean fastDependencyAnalysis;
     private boolean obfuscated;
     private boolean strict;
-    private int maxTopLevelNames;
+    private int maxTopLevelNames = 1000000;
     private boolean sourceMapsFileGenerated;
     private boolean debugInformationGenerated;
     private boolean sourceFilesCopied;
     private String[] transformers = new String[0];
     private String[] classesToPreserve = new String[0];
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
-    private int minHeapSize = 4 * 1024 * 1204;
+    private int minHeapSize = 4 * 1024 * 1024;
     private int maxHeapSize = 128 * 1024 * 1024;
     private final List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
-    private boolean longjmpSupported = true;
     private boolean heapDump;
     private TeaVMProgressListener progressListener;
     private Properties properties = new Properties();
@@ -209,11 +208,6 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
-    public void setLongjmpSupported(boolean longjmpSupported) {
-        this.longjmpSupported = longjmpSupported;
-    }
-
-    @Override
     public void setHeapDump(boolean heapDump) {
         this.heapDump = heapDump;
     }
@@ -257,7 +251,6 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setWasmVersion(wasmVersion);
         tool.setMinHeapSize(minHeapSize);
         tool.setMaxHeapSize(maxHeapSize);
-        tool.setLongjmpSupported(longjmpSupported);
         tool.setHeapDump(heapDump);
         tool.setShortFileNames(shortFileNames);
         tool.setAssertionsRemoved(assertionsRemoved);

@@ -34,7 +34,7 @@ public class THashSet<E> extends TAbstractSet<E> implements TCloneable, TSeriali
      * Constructs a new empty instance of {@code HashSet}.
      */
     public THashSet() {
-        this(new THashMap<E, THashSet<E>>());
+        this(new THashMap<>());
     }
 
     /**
@@ -44,7 +44,7 @@ public class THashSet<E> extends TAbstractSet<E> implements TCloneable, TSeriali
      *            the initial capacity of this {@code HashSet}.
      */
     public THashSet(int capacity) {
-        this(new THashMap<E, THashSet<E>>(capacity));
+        this(new THashMap<>(capacity));
     }
 
     /**
@@ -57,7 +57,7 @@ public class THashSet<E> extends TAbstractSet<E> implements TCloneable, TSeriali
      *            the initial load factor.
      */
     public THashSet(int capacity, float loadFactor) {
-        this(new THashMap<E, THashSet<E>>(capacity, loadFactor));
+        this(new THashMap<>(capacity, loadFactor));
     }
 
     /**
@@ -68,7 +68,7 @@ public class THashSet<E> extends TAbstractSet<E> implements TCloneable, TSeriali
      *            the collection of elements to add.
      */
     public THashSet(TCollection<? extends E> collection) {
-        this(new THashMap<E, THashSet<E>>(collection.size() < 6 ? 11 : collection.size() * 2));
+        this(new THashMap<>(collection.size() < 6 ? 11 : collection.size() * 2));
         for (TIterator<? extends E> iter = collection.iterator(); iter.hasNext();) {
             add(iter.next());
         }
@@ -179,12 +179,15 @@ public class THashSet<E> extends TAbstractSet<E> implements TCloneable, TSeriali
         return backingMap.size();
     }
 
-    THashMap<E, THashSet<E>> createBackingMap(int capacity, float loadFactor) {
-        return new THashMap<>(capacity, loadFactor);
-    }
-
     @Override
     public Object clone() {
         return new THashSet<>(this);
+    }
+
+    public static <T> THashSet<T> newHashSet(int size) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        return new THashSet<>(THashMap.capacity(size));
     }
 }

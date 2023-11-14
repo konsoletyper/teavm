@@ -279,7 +279,7 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
         }
 
         void analyzeInitializer(String className) {
-            if (className.equals(currentClass)) {
+            if (className.equals(currentClass) || className.equals(methodInfo.method.getClassName())) {
                 return;
             }
 

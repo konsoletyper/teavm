@@ -15,8 +15,6 @@
  */
 package org.teavm.backend.javascript.rendering;
 
-import java.io.IOException;
-
 public interface NameEmitter {
-    void emit(int precedence) throws IOException;
+    void emit(int precedence);
 }

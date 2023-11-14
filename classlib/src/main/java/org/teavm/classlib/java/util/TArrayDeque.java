@@ -16,9 +16,10 @@
 package org.teavm.classlib.java.util;
 
 import java.util.Arrays;
-import org.teavm.classlib.java.lang.*;
+import org.teavm.classlib.java.io.TSerializable;
+import org.teavm.classlib.java.lang.TCloneable;
 
-public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> {
+public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E>, TCloneable, TSerializable {
     private int version;
     private Object[] array;
     private int head;
@@ -38,8 +39,8 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
         } else {
             array = new Object[c.size() + 1];
             int index = 0;
-            for (TIterator<? extends E> iter = c.iterator(); iter.hasNext();) {
-                array[index++] = iter.next();
+            for (var it = c.iterator(); it.hasNext();) {
+                array[index++] = it.next();
             }
             tail = array.length - 1;
         }
@@ -47,28 +48,19 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
 
     @Override
     public void addFirst(E e) {
-        if (e == null) {
-            throw new TNullPointerException();
-        }
+        TObjects.requireNonNull(e);
         ensureCapacity(size() + 1);
-        --head;
-        if (head < 0) {
-            head += array.length;
-        }
+        head = modDec(head, array.length);
         array[head] = e;
         ++version;
     }
 
     @Override
     public void addLast(E e) {
-        if (e == null) {
-            throw new TNullPointerException();
-        }
+        TObjects.requireNonNull(e);
         ensureCapacity(size() + 1);
-        array[tail++] = e;
-        if (tail >= array.length) {
-            tail = 0;
-        }
+        array[tail] = e;
+        tail = modInc(tail, array.length);
         ++version;
     }
 
@@ -110,10 +102,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
         @SuppressWarnings("unchecked")
         E result = (E) array[head];
         array[head] = null;
-        head++;
-        if (head >= array.length) {
-            head = 0;
-        }
+        head = modInc(head, array.length);
         ++version;
         return result;
     }
@@ -123,10 +112,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
         if (head == tail) {
             return null;
         }
-        --tail;
-        if (tail < 0) {
-            tail = array.length - 1;
-        }
+        tail = modDec(tail, array.length);
         @SuppressWarnings("unchecked")
         E result = (E) array[tail];
         array[tail] = null;
@@ -161,7 +147,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
     @Override
     @SuppressWarnings("unchecked")
     public E peekLast() {
-        return !isEmpty() ? (E) array[tail > 0 ? tail - 1 : array.length - 1] : null;
+        return !isEmpty() ? (E) array[modDec(tail, array.length)] : null;
     }
 
     @Override
@@ -169,9 +155,9 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
         if (o == null) {
             return false;
         }
-        for (TIterator<E> iter = iterator(); iter.hasNext();) {
-            if (iter.next().equals(o)) {
-                iter.remove();
+        for (var it = iterator(); it.hasNext();) {
+            if (it.next().equals(o)) {
+                it.remove();
                 return true;
             }
         }
@@ -183,9 +169,9 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
         if (o == null) {
             return false;
         }
-        for (TIterator<E> iter = descendingIterator(); iter.hasNext();) {
-            if (iter.next().equals(o)) {
-                iter.remove();
+        for (var it = descendingIterator(); it.hasNext();) {
+            if (it.next().equals(o)) {
+                it.remove();
                 return true;
             }
         }
@@ -243,68 +229,85 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
         return head == tail;
     }
 
-    private void removeAt(int index) {
+    private boolean removeAt(int index) {
         if (head < tail) {
             if (tail - index < index - head) {
                 for (int i = index + 1; i < tail; ++i) {
                     array[i - 1] = array[i];
                 }
                 array[--tail] = null;
+                return true;
             } else {
                 for (int i = index - 1; i >= head; --i) {
                     array[i + 1] = array[i];
                 }
                 array[head++] = null;
+                return false;
             }
         } else {
             if (index >= head) {
                 for (int i = index - 1; i >= head; --i) {
                     array[i + 1] = array[i];
                 }
-                array[head++] = null;
-                if (head >= array.length) {
-                    head = 0;
-                }
+                array[head] = null;
+                head = modInc(head, array.length);
+                return false;
             } else {
                 for (int i = index + 1; i < tail; ++i) {
                     array[i - 1] = array[i];
                 }
-                if (--tail < 0) {
-                    tail += array.length;
-                }
+                tail = modDec(tail, array.length);
                 array[tail] = null;
+                return true;
             }
         }
     }
 
+    private static int modInc(int i, int mod) {
+        return ++i == mod ? 0 : i;
+    }
+
+    private static int modDec(int i, int mod) {
+        return --i == -1 ? mod - 1 : i;
+    }
+
     @Override
     public TIterator<E> iterator() {
-        return new TIterator<E>() {
+        return new TIterator<>() {
             private int refVersion = version;
             private int index = head;
             private int lastIndex = -1;
-            private boolean wrapped = head <= tail;
-            @Override public boolean hasNext() {
-                return !wrapped || index < tail;
+            private int left = size();
+
+            @Override
+            public boolean hasNext() {
+                return left > 0;
             }
-            @Override public E next() {
+
+            @Override
+            public E next() {
+                if (--left < 0) {
+                    throw new TNoSuchElementException();
+                }
                 if (version > refVersion) {
                     throw new TConcurrentModificationException();
                 }
                 lastIndex = index;
                 @SuppressWarnings("unchecked")
-                E result = (E) array[index++];
-                if (index >= array.length) {
-                    index = 0;
-                    wrapped = true;
-                }
+                E result = (E) array[index];
+                index = modInc(index, array.length);
                 return result;
             }
-            @Override public void remove() {
+
+            @Override
+            public void remove() {
                 if (lastIndex < 0) {
                     throw new IllegalStateException();
                 }
-                removeAt(lastIndex);
+                boolean toLeft = removeAt(lastIndex);
+                if (toLeft) {
+                    index = modInc(index, array.length);
+                }
                 lastIndex = -1;
             }
         };
@@ -312,30 +315,41 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
 
     @Override
     public TIterator<E> descendingIterator() {
-        return new TIterator<E>() {
+        return new TIterator<>() {
             private int refVersion = version;
             private int index = tail;
             private int lastIndex = -1;
-            private boolean wrapped = head <= tail;
-            @Override public boolean hasNext() {
-                return !wrapped || index > head;
+            private int left = size();
+
+            @Override
+            public boolean hasNext() {
+                return left > 0;
             }
-            @Override public E next() {
+
+            @Override
+            public E next() {
+                if (--left < 0) {
+                    throw new TNoSuchElementException();
+                }
                 if (version > refVersion) {
                     throw new TConcurrentModificationException();
                 }
-                --index;
-                if (index < 0) {
-                    index = array.length - 1;
-                    wrapped = true;
-                }
+                index = modDec(index, array.length);
                 lastIndex = index;
                 @SuppressWarnings("unchecked")
                 E result = (E) array[index];
                 return result;
             }
-            @Override public void remove() {
-                removeAt(lastIndex);
+
+            @Override
+            public void remove() {
+                if (lastIndex < 0) {
+                    throw new IllegalStateException();
+                }
+                boolean toLeft = removeAt(lastIndex);
+                if (!toLeft) {
+                    index = modInc(index, array.length);
+                }
                 lastIndex = -1;
             }
         };
@@ -345,9 +359,9 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
         if (capacity < array.length) {
             return;
         }
-        int newArraySize = TMath.max(array.length * 2, capacity * 3 / 2 + 1);
+        int newArraySize = Math.max(array.length * 2, capacity * 3 / 2 + 1);
         if (newArraySize < 1) {
-            newArraySize = TInteger.MAX_VALUE;
+            newArraySize = Integer.MAX_VALUE;
         }
         Object[] newArray = new Object[newArraySize];
         int j = 0;

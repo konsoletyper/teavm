@@ -474,6 +474,9 @@ public class TArrays extends TObject {
     }
 
     public static void sort(int[] a, int fromIndex, int toIndex) {
+        if (fromIndex > toIndex) {
+            throw new IllegalArgumentException();
+        }
         int[] subarray = new int[toIndex - fromIndex];
         for (int i = fromIndex; i < toIndex; ++i) {
             subarray[i - fromIndex] = a[i];
@@ -536,6 +539,9 @@ public class TArrays extends TObject {
     }
 
     public static void sort(long[] a, int fromIndex, int toIndex) {
+        if (fromIndex > toIndex) {
+            throw new IllegalArgumentException();
+        }
         long[] subarray = new long[toIndex - fromIndex];
         for (int i = fromIndex; i < toIndex; ++i) {
             subarray[i - fromIndex] = a[i];
@@ -598,6 +604,9 @@ public class TArrays extends TObject {
     }
 
     public static void sort(short[] a, int fromIndex, int toIndex) {
+        if (fromIndex > toIndex) {
+            throw new IllegalArgumentException();
+        }
         short[] subarray = new short[toIndex - fromIndex];
         for (int i = fromIndex; i < toIndex; ++i) {
             subarray[i - fromIndex] = a[i];
@@ -660,6 +669,9 @@ public class TArrays extends TObject {
     }
 
     public static void sort(char[] a, int fromIndex, int toIndex) {
+        if (fromIndex > toIndex) {
+            throw new IllegalArgumentException();
+        }
         char[] subarray = new char[toIndex - fromIndex];
         for (int i = fromIndex; i < toIndex; ++i) {
             subarray[i - fromIndex] = a[i];
@@ -722,6 +734,9 @@ public class TArrays extends TObject {
     }
 
     public static void sort(byte[] a, int fromIndex, int toIndex) {
+        if (fromIndex > toIndex) {
+            throw new IllegalArgumentException();
+        }
         byte[] subarray = new byte[toIndex - fromIndex];
         for (int i = fromIndex; i < toIndex; ++i) {
             subarray[i - fromIndex] = a[i];
@@ -784,6 +799,9 @@ public class TArrays extends TObject {
     }
 
     public static void sort(float[] a, int fromIndex, int toIndex) {
+        if (fromIndex > toIndex) {
+            throw new IllegalArgumentException();
+        }
         float[] subarray = new float[toIndex - fromIndex];
         for (int i = fromIndex; i < toIndex; ++i) {
             subarray[i - fromIndex] = a[i];
@@ -835,7 +853,7 @@ public class TArrays extends TObject {
             }
             float p = a[from];
             float q = a[from2];
-            if (p <= q) {
+            if (Float.compare(p, q) <= 0) {
                 b[index++] = p;
                 ++from;
             } else {
@@ -846,6 +864,9 @@ public class TArrays extends TObject {
     }
 
     public static void sort(double[] a, int fromIndex, int toIndex) {
+        if (fromIndex > toIndex) {
+            throw new IllegalArgumentException();
+        }
         double[] subarray = new double[toIndex - fromIndex];
         for (int i = fromIndex; i < toIndex; ++i) {
             subarray[i - fromIndex] = a[i];
@@ -897,7 +918,7 @@ public class TArrays extends TObject {
             }
             double p = a[from];
             double q = a[from2];
-            if (p <= q) {
+            if (Double.compare(p, q) <= 0) {
                 b[index++] = p;
                 ++from;
             } else {
@@ -916,6 +937,9 @@ public class TArrays extends TObject {
     }
 
     public static <T> void sort(T[] a, int fromIndex, int toIndex, TComparator<? super T> c) {
+        if (fromIndex > toIndex) {
+            throw new IllegalArgumentException();
+        }
         if (c == null) {
             c = TComparator.NaturalOrder.instance();
         }
@@ -993,28 +1017,20 @@ public class TArrays extends TObject {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }
-        if (fromIndex == toIndex) {
-            return -1;
-        }
         int l = fromIndex;
         int u = toIndex - 1;
-        while (true) {
+        while (l <= u) {
             int i = (l + u) / 2;
             int e = a[i];
             if (e == key) {
                 return i;
             } else if (key < e) {
                 u = i - 1;
-                if (u < l) {
-                    return -i - 1;
-                }
             } else {
                 l = i + 1;
-                if (l > u) {
-                    return -i - 2;
-                }
             }
         }
+        return -l - 1;
     }
 
     public static int binarySearch(long[] a, long key) {
@@ -1025,28 +1041,20 @@ public class TArrays extends TObject {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }
-        if (fromIndex == toIndex) {
-            return -1;
-        }
         int l = fromIndex;
         int u = toIndex - 1;
-        while (true) {
+        while (l <= u) {
             int i = (l + u) / 2;
             long e = a[i];
             if (e == key) {
                 return i;
             } else if (e > key) {
                 u = i - 1;
-                if (u < l) {
-                    return -i - 1;
-                }
             } else {
                 l = i + 1;
-                if (l > u) {
-                    return -i - 2;
-                }
             }
         }
+        return -l - 1;
     }
 
     public static int binarySearch(short[] a, short key) {
@@ -1057,28 +1065,20 @@ public class TArrays extends TObject {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }
-        if (fromIndex == toIndex) {
-            return -1;
-        }
         int l = fromIndex;
         int u = toIndex - 1;
-        while (true) {
+        while (l <= u) {
             int i = (l + u) / 2;
             short e = a[i];
             if (e == key) {
                 return i;
             } else if (e > key) {
                 u = i - 1;
-                if (u < l) {
-                    return -i - 1;
-                }
             } else {
                 l = i + 1;
-                if (l > u) {
-                    return -i - 2;
-                }
             }
         }
+        return -l - 1;
     }
 
     public static int binarySearch(char[] a, char key) {
@@ -1089,28 +1089,20 @@ public class TArrays extends TObject {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }
-        if (fromIndex == toIndex) {
-            return -1;
-        }
         int l = fromIndex;
         int u = toIndex - 1;
-        while (true) {
+        while (l <= u) {
             int i = (l + u) / 2;
             char e = a[i];
             if (e == key) {
                 return i;
             } else if (e > key) {
                 u = i - 1;
-                if (u < l) {
-                    return -i - 1;
-                }
             } else {
                 l = i + 1;
-                if (l > u) {
-                    return -i - 2;
-                }
             }
         }
+        return -l - 1;
     }
 
     public static int binarySearch(byte[] a, byte key) {
@@ -1121,28 +1113,20 @@ public class TArrays extends TObject {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }
-        if (fromIndex == toIndex) {
-            return -1;
-        }
         int l = fromIndex;
         int u = toIndex - 1;
-        while (true) {
+        while (l <= u) {
             int i = (l + u) / 2;
             byte e = a[i];
             if (e == key) {
                 return i;
             } else if (e > key) {
                 u = i - 1;
-                if (u < l) {
-                    return -i - 1;
-                }
             } else {
                 l = i + 1;
-                if (l > u) {
-                    return -i - 2;
-                }
             }
         }
+        return -l - 1;
     }
 
     public static int binarySearch(double[] a, double key) {
@@ -1153,28 +1137,21 @@ public class TArrays extends TObject {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }
-        if (fromIndex == toIndex) {
-            return -1;
-        }
         int l = fromIndex;
         int u = toIndex - 1;
-        while (true) {
+        while (l <= u) {
             int i = (l + u) / 2;
             double e = a[i];
-            if (e == key) {
-                return i;
-            } else if (e > key) {
-                u = i - 1;
-                if (u < l) {
-                    return -i - 1;
-                }
-            } else {
+            int cmp = Double.compare(e, key);
+            if (cmp < 0) {
                 l = i + 1;
-                if (l > u) {
-                    return -i - 2;
-                }
+            } else if (cmp > 0) {
+                u = i - 1;
+            } else {
+                return i;
             }
         }
+        return -l - 1;
     }
 
     public static int binarySearch(float[] a, float key) {
@@ -1185,28 +1162,21 @@ public class TArrays extends TObject {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }
-        if (fromIndex == toIndex) {
-            return -1;
-        }
         int l = fromIndex;
         int u = toIndex - 1;
-        while (true) {
+        while (l <= u) {
             int i = (l + u) / 2;
             float e = a[i];
-            if (e == key) {
-                return i;
-            } else if (e > key) {
-                u = i - 1;
-                if (u < l) {
-                    return -i - 1;
-                }
-            } else {
+            int cmp = Float.compare(e, key);
+            if (cmp < 0) {
                 l = i + 1;
-                if (l > u) {
-                    return -i - 2;
-                }
+            } else if (cmp > 0) {
+                u = i - 1;
+            } else {
+                return i;
             }
         }
+        return -l - 1;
     }
 
     public static int binarySearch(Object[] a, Object key) {
@@ -1228,12 +1198,9 @@ public class TArrays extends TObject {
         if (fromIndex > toIndex) {
             throw new TIllegalArgumentException();
         }
-        if (fromIndex == toIndex) {
-            return -1;
-        }
         int l = fromIndex;
         int u = toIndex - 1;
-        while (true) {
+        while (l <= u) {
             int i = (l + u) / 2;
             T e = a[i];
             int cmp = c.compare(key, e);
@@ -1241,16 +1208,11 @@ public class TArrays extends TObject {
                 return i;
             } else if (cmp < 0) {
                 u = i - 1;
-                if (u < l) {
-                    return -i - 1;
-                }
             } else {
                 l = i + 1;
-                if (l > u) {
-                    return -i - 2;
-                }
             }
         }
+        return -l - 1;
     }
 
     private static int mismatchImpl(long[] a, int aStart, long[] a2, int a2Start, int length) {
@@ -1500,7 +1462,7 @@ public class TArrays extends TObject {
 
     private static int mismatchImpl(float[] a, int aStart, float[] a2, int a2Start, int length) {
         for (int i = 0; i < length; ++i) {
-            if (a[i + aStart] != a2[i + a2Start]) {
+            if (Float.compare(a[i + aStart], a2[i + a2Start]) != 0) {
                 return i;
             }
         }
@@ -1549,7 +1511,7 @@ public class TArrays extends TObject {
 
     private static int mismatchImpl(double[] a, int aStart, double[] a2, int a2Start, int length) {
         for (int i = 0; i < length; ++i) {
-            if (a[i + aStart] != a2[i + a2Start]) {
+            if (Double.compare(a[i + aStart], a2[i + a2Start]) != 0) {
                 return i;
             }
         }

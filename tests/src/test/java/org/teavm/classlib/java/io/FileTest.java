@@ -36,11 +36,11 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.interop.PlatformMarker;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class FileTest {
     private static String platformId = "JDK" + System.getProperty("java.vm.version").replace('.', '-');
     
@@ -1666,6 +1666,7 @@ public class FileTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WASI)
     public void renameToLjava_io_File() throws IOException {
         String base = tempDirectory.getPath();
         File dir = new File(base, platformId);
@@ -1751,6 +1752,7 @@ public class FileTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WASI)
     public void setReadOnly() throws IOException {
         File f1 = null;
         File f2 = null;

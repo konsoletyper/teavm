@@ -15,8 +15,10 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Locale;
-import org.teavm.backend.javascript.spi.GeneratedBy;
+import java.util.Objects;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.io.TUnsupportedEncodingException;
@@ -35,35 +37,51 @@ import org.teavm.interop.NoSideEffects;
 public class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
     private static final char[] EMPTY_CHARS = new char[0];
     private static final TString EMPTY = new TString();
-    public static final TComparator<TString> CASE_INSENSITIVE_ORDER = TString::compareToIgnoreCase;
-    private char[] characters;
+    public static final TComparator<TString> CASE_INSENSITIVE_ORDER = (o1, o2) -> o1.compareToIgnoreCase(o2);
     private transient int hashCode;
 
     public TString() {
-        this.characters = EMPTY_CHARS;
+        initWithEmptyChars();
     }
+
+    @NoSideEffects
+    private native void initWithEmptyChars();
 
     public TString(TString other) {
-        characters = other.characters;
+        borrowChars(other);
     }
+
+    @NoSideEffects
+    private native void borrowChars(TString other);
 
     public TString(char[] characters) {
-        this(characters, 0, characters.length);
+        initWithCharArray(characters, 0, characters.length);
     }
 
-    public TString(char[] value, int offset, int count) {
-        this.characters = new char[count];
-        System.arraycopy(value, offset, this.characters, 0, count);
+    public TString(Object nativeString) {
     }
+
+    private native Object nativeString();
+
+    public TString(char[] value, int offset, int count) {
+        Objects.checkFromIndexSize(offset, count, value.length);
+        initWithCharArray(value, offset, count);
+    }
+
+    @NoSideEffects
+    private native void initWithCharArray(char[] value, int offset, int count);
 
     static TString fromArray(char[] characters) {
         var s = new TString();
-        s.characters = characters;
+        s.takeCharArray(characters);
         return s;
     }
 
+    @NoSideEffects
+    private native void takeCharArray(char[] characters);
+
     public TString(byte[] bytes, int offset, int length, TString charsetName) throws TUnsupportedEncodingException {
-        this(bytes, offset, length, TCharset.forName(charsetName.toString()));
+        initWithBytes(bytes, offset, length, TCharset.forName(charsetName.toString()));
     }
 
     public TString(byte[] bytes, int offset, int length, TCharset charset) {
@@ -75,19 +93,19 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString(byte[] bytes) {
-        this(bytes, 0, bytes.length);
+        initWithBytes(bytes, 0, bytes.length, TUTF8Charset.INSTANCE);
     }
 
     public TString(byte[] bytes, TString charsetName) throws TUnsupportedEncodingException {
-        this(bytes, 0, bytes.length, charsetName);
+        initWithBytes(bytes, 0, bytes.length, TCharset.forName(charsetName.toString()));
     }
 
     public TString(byte[] bytes, TCharset charset) {
-        this(bytes, 0, bytes.length, charset);
+        initWithBytes(bytes, 0, bytes.length, charset);
     }
 
     public TString(int[] codePoints, int offset, int count) {
-        characters = new char[count * 2];
+        var characters = new char[count * 2];
         int charCount = 0;
         for (int i = 0; i < count; ++i) {
             int codePoint = codePoints[offset++];
@@ -101,24 +119,31 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         if (charCount < characters.length) {
             characters = TArrays.copyOf(characters, charCount);
         }
+        takeCharArray(characters);
     }
 
     private void initWithBytes(byte[] bytes, int offset, int length, TCharset charset) {
         TCharBuffer buffer = charset.decode(TByteBuffer.wrap(bytes, offset, length));
+        char[] characters;
         if (buffer.hasArray() && buffer.position() == 0 && buffer.limit() == buffer.capacity()) {
             characters = buffer.array();
         } else {
             characters = new char[buffer.remaining()];
             buffer.get(characters);
         }
+        takeCharArray(characters);
+    }
+
+    public TString(TStringBuffer sb) {
+        initWithCharArray(sb.buffer, 0, sb.length());
     }
 
     public TString(TStringBuilder sb) {
-        this(sb.buffer, 0, sb.length());
+        initWithCharArray(sb.buffer, 0, sb.length());
     }
 
     private TString(int length) {
-        this.characters = new char[length];
+        takeCharArray(new char[length]);
     }
 
     private static TString allocate(int size) {
@@ -127,10 +152,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     @Override
     public char charAt(int index) {
-        if (index < 0 || index >= characters.length) {
+        if (index < 0 || index >= charactersLength()) {
             throw new TStringIndexOutOfBoundsException();
         }
-        return characters[index];
+        return charactersGet(index);
     }
 
     public int codePointAt(int index) {
@@ -151,17 +176,23 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     @Override
     public int length() {
-        return characters.length;
+        return charactersLength();
     }
+
+    @NoSideEffects
+    private native int charactersLength();
+
+    @NoSideEffects
+    private native char charactersGet(int index);
 
     @Override
     public boolean isEmpty() {
-        return characters.length == 0;
+        return charactersLength() == 0;
     }
     
     public boolean isBlank() {
-        for (int i = 0; i < characters.length; i++) {
-            if (characters[i] != ' ') {
+        for (int i = 0; i < charactersLength(); i++) {
+            if (charactersGet(i) != ' ') {
                 return false;
             }
         }
@@ -173,15 +204,18 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
                 || dstBegin + (srcEnd - srcBegin) > dst.length) {
             throw new TIndexOutOfBoundsException();
         }
-        System.arraycopy(characters, srcBegin, dst, dstBegin, srcEnd - srcBegin);
+        copyCharsToArray(srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 
+    @NoSideEffects
+    private native void copyCharsToArray(int begin, char[] dst, int dstBegin, int length);
+
     public boolean contentEquals(TStringBuffer buffer) {
-        if (characters.length != buffer.length()) {
+        if (charactersLength() != buffer.length()) {
             return false;
         }
-        for (int i = 0; i < characters.length; ++i) {
-            if (characters[i] != buffer.charAt(i)) {
+        for (int i = 0; i < charactersLength(); ++i) {
+            if (charactersGet(i) != buffer.charAt(i)) {
                 return false;
             }
         }
@@ -192,11 +226,11 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         if (this == charSeq) {
             return true;
         }
-        if (characters.length != charSeq.length()) {
+        if (charactersLength() != charSeq.length()) {
             return false;
         }
-        for (int i = 0; i < characters.length; ++i) {
-            if (characters[i] != charSeq.charAt(i)) {
+        for (int i = 0; i < charactersLength(); ++i) {
+            if (charactersGet(i) != charSeq.charAt(i)) {
                 return false;
             }
         }
@@ -303,8 +337,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         fromIndex = Math.max(0, fromIndex);
         if (ch < TCharacter.MIN_SUPPLEMENTARY_CODE_POINT) {
             char bmpChar = (char) ch;
-            for (int i = fromIndex; i < characters.length; ++i) {
-                if (characters[i] == bmpChar) {
+            for (int i = fromIndex; i < charactersLength(); ++i) {
+                if (charactersGet(i) == bmpChar) {
                     return i;
                 }
             }
@@ -312,8 +346,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         } else {
             char hi = TCharacter.highSurrogate(ch);
             char lo = TCharacter.lowSurrogate(ch);
-            for (int i = fromIndex; i < characters.length - 1; ++i) {
-                if (characters[i] == hi && characters[i + 1] == lo) {
+            for (int i = fromIndex; i < charactersLength() - 1; ++i) {
+                if (charactersGet(i) == hi && charactersGet(i + 1) == lo) {
                     return i;
                 }
             }
@@ -330,7 +364,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         if (ch < TCharacter.MIN_SUPPLEMENTARY_CODE_POINT) {
             char bmpChar = (char) ch;
             for (int i = fromIndex; i >= 0; --i) {
-                if (characters[i] == bmpChar) {
+                if (charactersGet(i) == bmpChar) {
                     return i;
                 }
             }
@@ -339,7 +373,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             char hi = TCharacter.highSurrogate(ch);
             char lo = TCharacter.lowSurrogate(ch);
             for (int i = fromIndex; i >= 1; --i) {
-                if (characters[i] == lo && characters[i - 1] == hi) {
+                if (charactersGet(i) == lo && charactersGet(i - 1) == hi) {
                     return i - 1;
                 }
             }
@@ -389,17 +423,26 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString substring(int beginIndex, int endIndex) {
-        if (beginIndex > endIndex) {
-            throw new TIndexOutOfBoundsException();
-        }
+        int length = charactersLength();
         if (beginIndex == endIndex) {
             return EMPTY;
         }
-        if (beginIndex == 0 && endIndex == length()) {
+
+        if (beginIndex == 0 && endIndex == length) {
             return this;
         }
-        return new TString(characters, beginIndex, endIndex - beginIndex);
+
+        if (PlatformDetector.isJavaScript()) {
+            if (beginIndex < 0 || beginIndex > endIndex || endIndex > length) {
+                throw new TStringIndexOutOfBoundsException();
+            }
+            return new TString(substringJS(nativeString(), beginIndex, endIndex));
+        }
+        return new TString(fastCharArray(), beginIndex, endIndex - beginIndex);
     }
+
+    @NoSideEffects
+    private native static Object substringJS(Object nativeString, int start, int end);
 
     public TString substring(int beginIndex) {
         return substring(beginIndex, length());
@@ -486,6 +529,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString strip() {
+        if (PlatformDetector.isJavaScript()) {
+            var result = stripJS(nativeString());
+            return result != nativeString() ? new TString(result) : this;
+        }
         var lower = 0;
         var upper = length() - 1;
         while (lower <= upper && Character.isWhitespace(charAt(lower))) {
@@ -497,7 +544,13 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return substring(lower, upper + 1);
     }
 
+    private static native Object stripJS(Object nativeString);
+
     public TString stripLeading() {
+        if (PlatformDetector.isJavaScript()) {
+            var result = stripLeadingJS(nativeString());
+            return result != nativeString() ? new TString(result) : this;
+        }
         var lower = 0;
         while (lower < length() && Character.isWhitespace(charAt(lower))) {
             ++lower;
@@ -505,7 +558,13 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return substring(lower, length());
     }
 
+    private static native Object stripLeadingJS(Object nativeString);
+
     public TString stripTrailing() {
+        if (PlatformDetector.isJavaScript()) {
+            var result = stripTrailingJS(nativeString());
+            return result != nativeString() ? new TString(result) : this;
+        }
         var upper = length() - 1;
         while (0 <= upper && Character.isWhitespace(charAt(upper))) {
             --upper;
@@ -513,15 +572,17 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return substring(0, upper + 1);
     }
 
+    private static native Object stripTrailingJS(Object nativeString);
+
     @Override
     public String toString() {
         return (String) (Object) this;
     }
 
     public char[] toCharArray() {
-        char[] array = new char[characters.length];
+        char[] array = new char[charactersLength()];
         for (int i = 0; i < array.length; ++i) {
-            array[i] = characters[i];
+            array[i] = charAt(i);
         }
         return array;
     }
@@ -578,16 +639,20 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         if (!(other instanceof TString)) {
             return false;
         }
-        TString str = (TString) other;
-        if (str.length() != length()) {
-            return false;
-        }
-        for (int i = 0; i < str.length(); ++i) {
-            if (charAt(i) != str.charAt(i)) {
+        var str = (TString) other;
+        if (PlatformDetector.isJavaScript()) {
+            return nativeString() == str.nativeString();
+        } else {
+            if (str.length() != length()) {
                 return false;
             }
+            for (int i = 0; i < str.length(); ++i) {
+                if (charAt(i) != str.charAt(i)) {
+                    return false;
+                }
+            }
+            return true;
         }
-        return true;
     }
 
     public boolean equalsIgnoreCase(TString other) {
@@ -609,7 +674,11 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public byte[] getBytes(TString charsetName) throws TUnsupportedEncodingException {
-        return getBytes(TCharset.forName(charsetName.toString()));
+        try {
+            return getBytes(TCharset.forName(charsetName.toString()));
+        } catch (UnsupportedCharsetException | IllegalCharsetNameException x) {
+            throw new TUnsupportedEncodingException();
+        }
     }
 
     public byte[] getBytes() {
@@ -617,7 +686,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public byte[] getBytes(TCharset charset) {
-        TByteBuffer buffer = charset.encode(TCharBuffer.wrap(characters));
+        TByteBuffer buffer = charset.encode(TCharBuffer.wrap(fastCharArray()));
         if (buffer.hasArray() && buffer.position() == 0 && buffer.limit() == buffer.capacity()) {
             return buffer.array();
         } else {
@@ -627,106 +696,139 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         }
     }
 
+    @NoSideEffects
+    private native char[] fastCharArray();
+
     @Override
     public int hashCode() {
         if (hashCode == 0) {
-            for (char c : characters) {
-                hashCode = 31 * hashCode + c;
+            for (var i = 0; i < charactersLength(); ++i) {
+                hashCode = 31 * hashCode + charactersGet(i);
             }
         }
         return hashCode;
     }
 
-    @GeneratedBy(StringNativeGenerator.class)
-    @PluggableDependency(StringNativeGenerator.class)
-    @NoSideEffects
-    private static native TString toLowerCaseNative(TString str);
-
-    @GeneratedBy(StringNativeGenerator.class)
-    @PluggableDependency(StringNativeGenerator.class)
-    @NoSideEffects
-    private static native TString toLocaleLowerCaseNative(TString str, String localeTag);
-
-    private static TString toLowerCaseImpl(char[] characters) {
-        if (characters.length == 0) {
-            return EMPTY;
+    public TString toLowerCase() {
+        if (PlatformDetector.isJavaScript()) {
+            var lowerCase = toLowerCaseJS(nativeString());
+            return lowerCase != nativeString() ? new TString(lowerCase) : this;
         }
-        int[] codePoints = new int[characters.length];
+
+        if (isEmpty()) {
+            return this;
+        }
+
+        var hasCharsToTransform = false;
+        var hasSurrogates = false;
+        for (var i = 0; i < charactersLength(); ++i) {
+            var c = charactersGet(i);
+            if (Character.toLowerCase(c) != c) {
+                hasCharsToTransform = true;
+                break;
+            }
+            if (Character.isSurrogate(c)) {
+                hasSurrogates = true;
+            }
+        }
+        if (!hasCharsToTransform) {
+            return this;
+        }
+        return hasSurrogates ? toLowerCaseCodePoints() : toLowerCaseChars();
+    }
+
+    @NoSideEffects
+    private static native Object toLowerCaseJS(Object nativeString);
+
+    private TString toLowerCaseChars() {
+        var chars = new char[charactersLength()];
+        for (int i = 0; i < charactersLength(); ++i) {
+            chars[i] = TCharacter.toLowerCase(charactersGet(i));
+        }
+        return new TString(chars);
+    }
+
+    private TString toLowerCaseCodePoints() {
+        int[] codePoints = new int[charactersLength()];
         int codePointCount = 0;
-        for (int i = 0; i < characters.length; ++i) {
-            if (i == characters.length - 1 || !TCharacter.isHighSurrogate(characters[i])
-                    || !TCharacter.isLowSurrogate(characters[i + 1])) {
-                codePoints[codePointCount++] = TCharacter.toLowerCase(characters[i]);
+        var length = charactersLength();
+        for (int i = 0; i < charactersLength(); ++i) {
+            if (i == length - 1 || !TCharacter.isHighSurrogate(charactersGet(i))
+                    || !TCharacter.isLowSurrogate(charactersGet(i + 1))) {
+                codePoints[codePointCount++] = TCharacter.toLowerCase(charactersGet(i));
             } else {
                 codePoints[codePointCount++] = TCharacter.toLowerCase(TCharacter.toCodePoint(
-                        characters[i], characters[i + 1]));
+                        charactersGet(i), charactersGet(i + 1)));
                 ++i;
             }
         }
         return new TString(codePoints, 0, codePointCount);
-    }
-
-    public TString toLowerCase() {
-        if (PlatformDetector.isJavaScript()) {
-            return toLowerCaseNative(this);
-        }
-        return toLowerCaseImpl(characters);
     }
 
     public TString toLowerCase(TLocale locale) {
-        if (PlatformDetector.isJavaScript()) {
-            String tag = locale.toLanguageTag();
-            return tag.isEmpty() ? toLowerCaseNative(this) : toLocaleLowerCaseNative(this, tag);
-        }
-        return toLowerCaseImpl(characters);
-    }
-
-    @GeneratedBy(StringNativeGenerator.class)
-    @PluggableDependency(StringNativeGenerator.class)
-    @NoSideEffects
-    private static native TString toUpperCaseNative(TString str);
-
-    @GeneratedBy(StringNativeGenerator.class)
-    @PluggableDependency(StringNativeGenerator.class)
-    @NoSideEffects
-    private static native TString toLocaleUpperCaseNative(TString str, String localeTag);
-
-    private static TString toUpperCaseImpl(char[] characters) {
-        if (characters.length == 0) {
-            return EMPTY;
-        }
-        int[] codePoints = new int[characters.length];
-        int codePointCount = 0;
-        for (int i = 0; i < characters.length; ++i) {
-            if (i == characters.length - 1 || !TCharacter.isHighSurrogate(characters[i])
-                    || !TCharacter.isLowSurrogate(characters[i + 1])) {
-                codePoints[codePointCount++] = TCharacter.toUpperCase(characters[i]);
-            } else {
-                codePoints[codePointCount++] = TCharacter.toUpperCase(TCharacter.toCodePoint(
-                        characters[i], characters[i + 1]));
-                ++i;
-            }
-        }
-        return new TString(codePoints, 0, codePointCount);
+        return toLowerCase();
     }
 
     public TString toUpperCase() {
         if (PlatformDetector.isJavaScript()) {
-            return toUpperCaseNative(this);
+            var upperCase = toUpperCaseJS(nativeString());
+            return upperCase != nativeString() ? new TString(upperCase) : this;
         }
-        return toUpperCaseImpl(characters);
+
+        if (isEmpty()) {
+            return this;
+        }
+
+        var hasCharsToTransform = false;
+        var hasSurrogates = false;
+        for (var i = 0; i < charactersLength(); ++i) {
+            var c = charactersGet(i);
+            if (Character.toUpperCase(c) != c) {
+                hasCharsToTransform = true;
+                break;
+            }
+            if (Character.isSurrogate(c)) {
+                hasSurrogates = true;
+            }
+        }
+        if (!hasCharsToTransform) {
+            return this;
+        }
+        return hasSurrogates ? toUpperCaseCodePoints() : toUpperCaseChars();
+    }
+
+    @NoSideEffects
+    private static native Object toUpperCaseJS(Object nativeString);
+
+    private TString toUpperCaseChars() {
+        var chars = new char[charactersLength()];
+        for (int i = 0; i < charactersLength(); ++i) {
+            chars[i] = TCharacter.toUpperCase(charactersGet(i));
+        }
+        return new TString(chars);
+    }
+
+    private TString toUpperCaseCodePoints() {
+        int[] codePoints = new int[charactersLength()];
+        int codePointCount = 0;
+        for (int i = 0; i < charactersLength(); ++i) {
+            if (i == charactersLength() - 1 || !TCharacter.isHighSurrogate(charactersGet(i))
+                    || !TCharacter.isLowSurrogate(charactersGet(i + 1))) {
+                codePoints[codePointCount++] = TCharacter.toUpperCase(charactersGet(i));
+            } else {
+                codePoints[codePointCount++] = TCharacter.toUpperCase(TCharacter.toCodePoint(
+                        charactersGet(i), charactersGet(i + 1)));
+                ++i;
+            }
+        }
+        return new TString(codePoints, 0, codePointCount);
     }
 
     public TString toUpperCase(TLocale locale) {
-        if (PlatformDetector.isJavaScript()) {
-            String tag = locale.toLanguageTag();
-            return tag.isEmpty() ? toUpperCaseNative(this) : toLocaleUpperCaseNative(this, tag);
-        }
-        return toUpperCaseImpl(characters);
+        return toUpperCase();
     }
 
-    @GeneratedBy(StringNativeGenerator.class)
-    @PluggableDependency(StringNativeGenerator.class)
+    @PluggableDependency(StringNativeDependency.class)
     @NoSideEffects
     public native TString intern();
 
@@ -809,10 +911,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         if (count == 1) {
             return this;
         }
-        if (characters.length == 0 || count == 0) {
+        if (charactersLength() == 0 || count == 0) {
             return EMPTY;
         }
-        var chars = new char[characters.length * count];
+        var chars = new char[charactersLength() * count];
         var j = 0;
         for (int i = 0; i < count; i++) {
             getChars(0, length(), chars, j);

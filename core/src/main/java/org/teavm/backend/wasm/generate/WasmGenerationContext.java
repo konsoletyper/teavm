@@ -37,6 +37,8 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableProvider;
+import org.teavm.model.lowlevel.CallSiteDescriptor;
+import org.teavm.model.lowlevel.Characteristics;
 
 public class WasmGenerationContext {
     private ClassReaderSource classSource;
@@ -46,15 +48,17 @@ public class WasmGenerationContext {
     private TagRegistry tagRegistry;
     private WasmStringPool stringPool;
     public final NameProvider names;
+    public final Characteristics characteristics;
     private Map<MethodReference, ImportedMethod> importedMethods = new HashMap<>();
     private List<WasmIntrinsic> intrinsics = new ArrayList<>();
     private List<WasmMethodGenerator> generators = new ArrayList<>();
     private Map<MethodReference, IntrinsicHolder> intrinsicCache = new HashMap<>();
     private Map<MethodReference, GeneratorHolder> generatorCache = new HashMap<>();
+    public final List<CallSiteDescriptor> callSites = new ArrayList<>();
 
     public WasmGenerationContext(ClassReaderSource classSource, WasmModule module, Diagnostics diagnostics,
             VirtualTableProvider vtableProvider, TagRegistry tagRegistry, WasmStringPool stringPool,
-            NameProvider names) {
+            NameProvider names, Characteristics characteristics) {
         this.classSource = classSource;
         this.module = module;
         this.diagnostics = diagnostics;
@@ -62,6 +66,7 @@ public class WasmGenerationContext {
         this.tagRegistry = tagRegistry;
         this.stringPool = stringPool;
         this.names = names;
+        this.characteristics = characteristics;
     }
 
     public void addIntrinsic(WasmIntrinsic intrinsic) {

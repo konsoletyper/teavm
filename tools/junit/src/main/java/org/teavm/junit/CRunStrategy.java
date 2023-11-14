@@ -34,22 +34,6 @@ class CRunStrategy implements TestRunStrategy {
     }
 
     @Override
-    public void beforeAll() {
-    }
-
-    @Override
-    public void afterAll() {
-    }
-
-    @Override
-    public void beforeThread() {
-    }
-
-    @Override
-    public void afterThread() {
-    }
-
-    @Override
     public void runTest(TestRun run) throws IOException {
         try {
             String exeName = "run_test";
@@ -57,11 +41,11 @@ class CRunStrategy implements TestRunStrategy {
                 exeName += ".exe";
             }
 
-            File outputFile = new File(run.getBaseDirectory(), exeName);
-            boolean compilerSuccess = compile(run.getBaseDirectory());
+            var sourcesDir = new File(run.getBaseDirectory(), run.getFileName());
+            var outputFile = new File(sourcesDir, exeName);
+            var compilerSuccess = compile(sourcesDir);
             if (!compilerSuccess) {
-                run.getCallback().error(new RuntimeException("C compiler error"));
-                return;
+                throw new RuntimeException("C compiler error");
             }
 
             List<String> runtimeOutput = new ArrayList<>();
@@ -77,12 +61,11 @@ class CRunStrategy implements TestRunStrategy {
             }
             if (!stdout.isEmpty() && stdout.get(stdout.size() - 1).equals("SUCCESS")) {
                 writeLines(runtimeOutput);
-                run.getCallback().complete();
             } else {
-                run.getCallback().error(new RuntimeException("Test failed:\n" + mergeLines(runtimeOutput)));
+                throw new RuntimeException("Test failed:\n" + mergeLines(runtimeOutput));
             }
         } catch (InterruptedException e) {
-            run.getCallback().complete();
+            Thread.currentThread().interrupt();
         }
     }
 

@@ -32,107 +32,107 @@ final class JS {
     private JS() {
     }
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native JSObject arrayData(Object array);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
     public static native byte[] dataToByteArray(JSObject obj);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
     public static native char[] dataToCharArray(JSObject obj);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
     public static native short[] dataToShortArray(JSObject obj);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
     public static native int[] dataToIntArray(JSObject obj);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
     public static native float[] dataToFloatArray(JSObject obj);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
     public static native double[] dataToDoubleArray(JSObject obj);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
     public static native JSObject[] dataToArray(JSObject obj);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native JSObject wrap(byte value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native JSObject wrap(short value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native JSObject wrap(int value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native JSObject wrap(char value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native JSObject wrap(float value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native JSObject wrap(double value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native JSObject wrap(boolean value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native JSObject wrap(String value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native byte unwrapByte(JSObject value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native char unwrapCharacter(JSObject value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native short unwrapShort(JSObject value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native int unwrapInt(JSObject value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native float unwrapFloat(JSObject value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native double unwrapDouble(JSObject value);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native boolean unwrapBoolean(JSObject value);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
     public static native String unwrapString(JSObject value);
 
@@ -448,97 +448,97 @@ final class JS {
         return JS::unwrapStringArray;
     }
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i, JSObject j);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k,
             JSObject l);
 
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k,
             JSObject l, JSObject m);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @JSBody(params = { "instance", "index" }, script = "return instance[index];")
     public static native JSObject get(JSObject instance, JSObject index);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @JSBody(params = { "instance", "index" }, script = "return instance[index];")
     @NoSideEffects
     public static native JSObject getPure(JSObject instance, JSObject index);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @JSBody(params = { "instance", "index", "obj" }, script = "instance[index] = obj;")
     public static native void set(JSObject instance, JSObject index, JSObject obj);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeInjector.class)
     @JSBody(params = { "instance", "index", "obj" }, script = "instance[index] = obj;")
     @NoSideEffects
     public static native void setPure(JSObject instance, JSObject index, JSObject obj);
 
     @GeneratedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject function(JSObject instance, JSObject property);
 
     @GeneratedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeInjector.class)
     public static native JSObject functionAsObject(JSObject instance, JSObject property);
 }

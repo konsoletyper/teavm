@@ -95,11 +95,12 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
                 break;
         }
         int value = 0;
+        int maxValue = 1 + TInteger.MAX_VALUE / radix;
         if (index == endIndex) {
             throw new TNumberFormatException();
         }
         while (index < endIndex) {
-            int digit = TCharacter.getNumericValue(s.charAt(index++));
+            int digit = decodeDigit(s.charAt(index++));
             if (digit < 0) {
                 throw new TNumberFormatException("String contains invalid digits: "
                         + s.subSequence(beginIndex, endIndex));
@@ -107,6 +108,9 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
             if (digit >= radix) {
                 throw new TNumberFormatException("String contains digits out of radix " + radix + ": "
                         + s.subSequence(beginIndex, endIndex));
+            }
+            if (value > maxValue) {
+                throw new TNumberFormatException("The value is too big for integer type");
             }
             value = radix * value + digit;
             if (value < 0) {
@@ -205,8 +209,8 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     }
 
     public static TInteger decode(String nm) throws TNumberFormatException {
-        if (nm == null || nm.isEmpty()) {
-            throw new TNumberFormatException("Can't parse empty or null string");
+        if (nm.isEmpty()) {
+            throw new TNumberFormatException("Can't parse empty string");
         }
         int index = 0;
         boolean negaive = false;
@@ -239,10 +243,14 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
             throw new TNumberFormatException("The string does not represent a number");
         }
         int value = 0;
+        int maxValue = 1 + TInteger.MAX_VALUE / radix;
         while (index < nm.length()) {
             int digit = decodeDigit(nm.charAt(index++));
-            if (digit >= radix) {
+            if (digit < 0 || digit >= radix) {
                 throw new TNumberFormatException("The string does not represent a number");
+            }
+            if (value > maxValue) {
+                throw new TNumberFormatException("The value is too big for integer type");
             }
             value = value * radix + digit;
             if (value < 0) {
@@ -263,7 +271,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         } else if (c >= 'A' && c <= 'Z') {
             return c - 'A' + 10;
         } else {
-            return 255;
+            return -1;
         }
     }
 

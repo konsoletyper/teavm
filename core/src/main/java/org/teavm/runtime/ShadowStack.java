@@ -48,4 +48,8 @@ public final class ShadowStack {
     public static native int getExceptionHandlerId();
 
     public static native void setExceptionHandlerId(Address stackFrame, int id);
+
+    public static native void setExceptionHandlerSkip(Address stackFrame);
+
+    public static native void setExceptionHandlerRestore(Address stackFrame);
 }

@@ -48,7 +48,6 @@ public class GenerationContext {
     private BuildTarget buildTarget;
     private ClassInitializerInfo classInitializerInfo;
     private boolean incremental;
-    private boolean longjmp;
     private boolean vmAssertions;
     private boolean heapDump;
     private boolean obfuscated;
@@ -57,7 +56,7 @@ public class GenerationContext {
             DependencyInfo dependencies, StringPool stringPool, NameProvider names, FileNameProvider fileNames,
             Diagnostics diagnostics, ClassReaderSource classSource, List<Intrinsic> intrinsics,
             List<Generator> generators, Predicate<MethodReference> asyncMethods, BuildTarget buildTarget,
-            ClassInitializerInfo classInitializerInfo, boolean incremental, boolean longjmp, boolean vmAssertions,
+            ClassInitializerInfo classInitializerInfo, boolean incremental, boolean vmAssertions,
             boolean heapDump, boolean obfuscated) {
         this.virtualTableProvider = virtualTableProvider;
         this.characteristics = characteristics;
@@ -73,7 +72,6 @@ public class GenerationContext {
         this.buildTarget = buildTarget;
         this.classInitializerInfo = classInitializerInfo;
         this.incremental = incremental;
-        this.longjmp = longjmp;
         this.vmAssertions = vmAssertions;
         this.heapDump = heapDump;
         this.obfuscated = obfuscated;
@@ -147,10 +145,6 @@ public class GenerationContext {
 
     public boolean isIncremental() {
         return incremental;
-    }
-
-    public boolean isLongjmp() {
-        return longjmp;
     }
 
     public boolean isHeapDump() {

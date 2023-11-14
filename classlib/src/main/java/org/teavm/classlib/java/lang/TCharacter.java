@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.util.Objects;
+import org.teavm.classlib.impl.unicode.CharMapping;
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
 import org.teavm.platform.metadata.StringResource;
 
@@ -87,9 +89,9 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     public static final int BYTES = SIZE / Byte.SIZE;
     static final int ERROR = 0xFFFFFFFF;
     private static int[] digitMapping;
-    private static int[] titleCaseMapping;
-    private static int[] upperCaseMapping;
-    private static int[] lowerCaseMapping;
+    private static CharMapping titleCaseMapping;
+    private static CharMapping upperCaseMapping;
+    private static CharMapping lowerCaseMapping;
     private static UnicodeHelper.Range[] classMapping;
     private final char value;
     private static TCharacter[] characterCache = new TCharacter[128];
@@ -176,7 +178,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int charCount(int codePoint) {
-        return isSupplementaryCodePoint(codePoint) ? 2 : 1;
+        return codePoint >= MIN_SUPPLEMENTARY_CODE_POINT ? 2 : 1;
     }
 
     public static int toCodePoint(char high, char low) {
@@ -198,6 +200,9 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int codePointAt(char[] a, int index, int limit) {
+        if (index >= limit || index < 0 || limit > a.length) {
+            throw new IndexOutOfBoundsException();
+        }
         if (index >= limit - 1 || !isHighSurrogate(a[index]) || !isLowSurrogate(a[index + 1])) {
             return a[index];
         } else {
@@ -217,8 +222,11 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int codePointBefore(char[] a, int index, int start) {
+        if (index > a.length || index <= start || start < 0) {
+            throw new IndexOutOfBoundsException();
+        }
         if (index <= start + 1 || !isLowSurrogate(a[index - 1]) || !isHighSurrogate(a[index - 2])) {
-            return a[index];
+            return a[index - 1];
         } else {
             return toCodePoint(a[index - 2], a[index - 1]);
         }
@@ -241,9 +249,10 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return mapChar(getLowerCaseMapping(), ch);
     }
 
-    private static int[] getLowerCaseMapping() {
+    private static CharMapping getLowerCaseMapping() {
         if (lowerCaseMapping == null) {
-            lowerCaseMapping = UnicodeHelper.decodeCaseMapping(acquireLowerCaseMapping().getValue());
+            lowerCaseMapping = UnicodeHelper.createCharMapping(
+                    UnicodeHelper.decodeCaseMapping(acquireLowerCaseMapping().getValue()));
         }
         return lowerCaseMapping;
     }
@@ -259,9 +268,10 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return mapChar(getUpperCaseMapping(), codePoint);
     }
 
-    private static int[] getUpperCaseMapping() {
+    private static CharMapping getUpperCaseMapping() {
         if (upperCaseMapping == null) {
-            upperCaseMapping = UnicodeHelper.decodeCaseMapping(acquireUpperCaseMapping().getValue());
+            upperCaseMapping = UnicodeHelper.createCharMapping(
+                    UnicodeHelper.decodeCaseMapping(acquireUpperCaseMapping().getValue()));
         }
         return upperCaseMapping;
     }
@@ -280,21 +290,27 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return (char) toTitleCase((int) c);
     }
 
-    private static int[] getTitleCaseMapping() {
+    private static CharMapping getTitleCaseMapping() {
         if (titleCaseMapping == null) {
-            titleCaseMapping = UnicodeHelper.decodeCaseMapping(acquireTitleCaseMapping().getValue());
+            titleCaseMapping = UnicodeHelper.createCharMapping(
+                    UnicodeHelper.decodeCaseMapping(acquireTitleCaseMapping().getValue()));
         }
         return titleCaseMapping;
     }
 
     private static native StringResource acquireTitleCaseMapping();
 
-    private static int mapChar(int[] table, int codePoint) {
-        int index = binarySearchTable(table, codePoint);
-        if (index < 0 || index >= table.length / 2) {
+    private static int mapChar(CharMapping table, int codePoint) {
+        if (codePoint < table.fastTable.length) {
+            return codePoint + table.fastTable[codePoint];
+        }
+
+        var binSearchTable = table.binarySearchTable;
+        int index = binarySearchTable(binSearchTable, codePoint);
+        if (index < 0 || index * 2 >= binSearchTable.length) {
             return 0;
         }
-        return codePoint + table[index * 2 + 1];
+        return codePoint + binSearchTable[index * 2 + 1];
     }
 
     private static int binarySearchTable(int[] data, int key) {
@@ -354,7 +370,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static char forDigit(int digit, int radix) {
-        if (radix < MIN_RADIX || radix > MAX_RADIX || digit >= radix) {
+        if (radix < MIN_RADIX || radix > MAX_RADIX || digit < 0 || digit >= radix) {
             return '\0';
         }
         return digit < 10 ? (char) ('0' + digit) : (char) ('a' + digit - 10);
@@ -387,6 +403,9 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     private static native StringResource obtainClasses();
 
     public static int toChars(int codePoint, char[] dst, int dstIndex) {
+        if (!isValidCodePoint(codePoint)) {
+            throw new IllegalArgumentException();
+        }
         if (codePoint >= MIN_SUPPLEMENTARY_CODE_POINT) {
             dst[dstIndex] = highSurrogate(codePoint);
             dst[dstIndex + 1] = lowSurrogate(codePoint);
@@ -398,6 +417,9 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static char[] toChars(int codePoint) {
+        if (!isValidCodePoint(codePoint)) {
+            throw new IllegalArgumentException();
+        }
         if (codePoint >= MIN_SUPPLEMENTARY_CODE_POINT) {
             return new char[] { highSurrogate(codePoint), lowSurrogate(codePoint) };
         } else {
@@ -406,6 +428,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int codePointCount(TCharSequence seq, int beginIndex, int endIndex) {
+        Objects.checkFromToIndex(beginIndex, endIndex, seq.length());
         int count = endIndex - beginIndex;
         --endIndex;
         for (int i = beginIndex; i < endIndex; ++i) {
@@ -418,6 +441,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int codePointCount(char[] a, int offset, int count) {
+        Objects.checkFromIndexSize(offset, count, a.length);
         int r = count;
         --count;
         for (int i = 0; i < count; ++i) {
@@ -430,23 +454,66 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int offsetByCodePoints(TCharSequence seq, int index, int codePointOffset) {
-        for (int i = 0; i < codePointOffset; ++i) {
-            if (index < seq.length() - 1 && isHighSurrogate(seq.charAt(index))
-                    && isLowSurrogate(seq.charAt(index + 1))) {
-                index += 2;
-            } else {
-                index++;
+        if (codePointOffset >= 0) {
+            int i;
+            for (i = 0; i < codePointOffset && index < seq.length(); ++i) {
+                if (index < seq.length() - 1 && isHighSurrogate(seq.charAt(index))
+                        && isLowSurrogate(seq.charAt(index + 1))) {
+                    index += 2;
+                } else {
+                    index++;
+                }
+            }
+            if (i < codePointOffset) {
+                throw new IndexOutOfBoundsException();
+            }
+        } else {
+            int i;
+            for (i = codePointOffset; i < 0 && index > 0; ++i) {
+                if (index > 0 && isLowSurrogate(seq.charAt(index - 1))
+                        && isHighSurrogate(seq.charAt(index - 2))) {
+                    index -= 2;
+                } else {
+                    index--;
+                }
+            }
+            if (i < 0) {
+                throw new IndexOutOfBoundsException();
             }
         }
         return index;
     }
 
     public static int offsetByCodePoints(char[] a, int start, int count, int index, int codePointOffset) {
-        for (int i = 0; i < codePointOffset; ++i) {
-            if (index < count - 1 && isHighSurrogate(a[index + start]) && isLowSurrogate(a[index + start + 1])) {
-                index += 2;
-            } else {
-                index++;
+        if (count > a.length - start || start < 0 || count < 0
+                || index < start || index > start + count) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (codePointOffset >= 0) {
+            int i;
+            for (i = 0; i < codePointOffset && index < start + count; ++i) {
+                if (index < count - 1 && isHighSurrogate(a[index])
+                        && isLowSurrogate(a[index + 1])) {
+                    index += 2;
+                } else {
+                    index++;
+                }
+            }
+            if (i < codePointOffset) {
+                throw new IndexOutOfBoundsException();
+            }
+        } else {
+            int i;
+            for (i = codePointOffset; i < 0 && index > start; ++i) {
+                if (index > start && isLowSurrogate(a[index - 1])
+                        && isHighSurrogate(a[index - 2])) {
+                    index -= 2;
+                } else {
+                    index--;
+                }
+            }
+            if (i < 0) {
+                throw new IndexOutOfBoundsException();
             }
         }
         return index;

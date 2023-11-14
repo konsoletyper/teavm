@@ -18,6 +18,10 @@ package org.teavm.backend.wasm.intrinsics;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
+import org.teavm.backend.wasm.model.expression.WasmIntBinary;
+import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
@@ -32,6 +36,7 @@ public class PlatformClassMetadataIntrinsic implements WasmIntrinsic {
     private static final FieldReference SIMPLE_NAME_FIELD = new FieldReference(RUNTIME_CLASS, "simpleName");
     private static final FieldReference ENCLOSING_CLASS_FIELD = new FieldReference(RUNTIME_CLASS, "enclosingClass");
     private static final FieldReference DECLARING_CLASS_FIELD = new FieldReference(RUNTIME_CLASS, "declaringClass");
+    private static final FieldReference FLAGS_FIELD = new FieldReference(RUNTIME_CLASS, "flags");
 
     @Override
     public boolean isApplicable(MethodReference methodReference) {
@@ -45,6 +50,7 @@ public class PlatformClassMetadataIntrinsic implements WasmIntrinsic {
             case "getSimpleName":
             case "getEnclosingClass":
             case "getDeclaringClass":
+            case "getFlags":
                 return true;
         }
         return false;
@@ -65,6 +71,11 @@ public class PlatformClassMetadataIntrinsic implements WasmIntrinsic {
                 return fieldAccess(manager, invocation, ENCLOSING_CLASS_FIELD);
             case "getDeclaringClass":
                 return fieldAccess(manager, invocation, DECLARING_CLASS_FIELD);
+            case "getFlags": {
+                var flags = fieldAccess(manager, invocation, FLAGS_FIELD);
+                return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHR_UNSIGNED, flags,
+                        new WasmInt32Constant(RuntimeClass.FLAGS_SHIFT));
+            }
             default:
                 return new WasmUnreachable();
         }

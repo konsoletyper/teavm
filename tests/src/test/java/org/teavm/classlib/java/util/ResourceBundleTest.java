@@ -24,9 +24,11 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
+@EachTestCompiledSeparately
 public class ResourceBundleTest {
     @Test
     public void getObjectLjava_lang_String() {

@@ -549,7 +549,7 @@ public final class TTemplateCollections {
 
         @Override
         public boolean containsKey(Object key) {
-            if (key == null) {
+            if (key == null || data.length == 0) {
                 return false;
             }
             int suggestedIndex = Math.abs(key.hashCode()) % data.length;
@@ -799,9 +799,7 @@ public final class TTemplateCollections {
             }
             if (object instanceof TMap.Entry) {
                 TMap.Entry<?, ?> entry = (TMap.Entry<?, ?>) object;
-                return (key == null ? entry.getKey() == null : key.equals(entry.getKey()))
-                        && (value == null ? entry.getValue() == null : value
-                                .equals(entry.getValue()));
+                return TObjects.equals(key, entry.getKey()) && TObjects.equals(value, entry.getValue());
             }
             return false;
         }
@@ -818,8 +816,7 @@ public final class TTemplateCollections {
 
         @Override
         public int hashCode() {
-            return (key == null ? 0 : key.hashCode())
-                    ^ (value == null ? 0 : value.hashCode());
+            return TObjects.hashCode(key) ^ TObjects.hashCode(value);
         }
 
         @Override

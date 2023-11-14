@@ -25,9 +25,11 @@ import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
+@EachTestCompiledSeparately
 public class LambdaTest {
     @Test
     public void lambdaWithMarkers() {

@@ -24,6 +24,12 @@ javaVersion {
     version = JavaVersion.VERSION_21
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
 dependencies {
     testImplementation(project(":core"))
     testImplementation(project(":classlib"))
@@ -40,49 +46,43 @@ dependencies {
 
 tasks.test {
     systemProperty("teavm.junit.target", layout.buildDirectory.dir("teavm-tests").get().asFile.absolutePath)
-    systemProperty("teavm.junit.threads", "1")
     val browser = providers.gradleProperty("teavm.tests.browser").orElse("browser-chrome").get()
 
     systemProperty("teavm.junit.js", providers.gradleProperty("teavm.tests.js").orElse("true").get())
     systemProperty("teavm.junit.js.runner", browser)
     systemProperty("teavm.junit.minified", providers.gradleProperty("teavm.tests.minified").orElse("false").get())
-    systemProperty("teavm.junit.optimized", providers.gradleProperty("teavm.tests.optimized").orElse("false").get())
+    systemProperty("teavm.junit.optimized", providers.gradleProperty("teavm.tests.optimized").orElse("true").get())
     systemProperty("teavm.junit.js.decodeStack", providers.gradleProperty("teavm.tests.decodeStack")
             .orElse("false").get())
 
-    systemProperty("teavm.junit.wasm", providers.gradleProperty("teavm.tests.wasm").orElse("false").get())
+    systemProperty("teavm.junit.wasm", providers.gradleProperty("teavm.tests.wasm").orElse("true").get())
     systemProperty("teavm.junit.wasm.runner", browser)
 
-    systemProperty("teavm.junit.wasi", providers.gradleProperty("teavm.tests.wasi").orElse("false").get())
+    systemProperty("teavm.junit.wasi", providers.gradleProperty("teavm.tests.wasi").orElse("true").get())
     systemProperty("teavm.junit.wasi.runner", providers.gradleProperty("teavm.tests.wasi.runner")
             .orElse("./run-wasi.sh").get())
 
-    systemProperty("teavm.junit.c", providers.gradleProperty("teavm.tests.c").orElse("false").get())
+    systemProperty("teavm.junit.c", providers.gradleProperty("teavm.tests.c").orElse("true").get())
     systemProperty("teavm.junit.c.compiler", providers.gradleProperty("teavm.tests.c.compiler")
             .orElse("compile-c-unix-fast.sh").get())
 
-    jvmArgumentProviders += object : CommandLineArgumentProvider {
-        override fun asArguments(): Iterable<String> {
-            val dependencies = configurations.testRuntimeClasspath.get()
-                    .incoming.resolutionResult.allDependencies
-                    .asSequence()
-                    .filterIsInstance<ResolvedDependencyResult>()
-                    .map { it.requested }
-                    .filterIsInstance<ProjectComponentSelector>()
-                    .map { project.rootProject.project(it.projectPath) }
-            val projects = dependencies + project
-            val dirs = projects.map { it.layout.projectDirectory }.flatMap {
-                sequenceOf(
-                    it.dir("src/main/java"),
-                    it.dir("src/test/java")
-                )
-            }
-            val result = dirs
-                    .map { it.asFile.absolutePath }
-                    .joinToString(File.pathSeparator)
-            return listOf("-Dteavm.junit.sourceDirs=$result")
-        }
+    val dependencies = configurations.testRuntimeClasspath.get()
+            .incoming.resolutionResult.allDependencies
+            .asSequence()
+            .filterIsInstance<ResolvedDependencyResult>()
+            .map { it.requested }
+            .filterIsInstance<ProjectComponentSelector>()
+            .map { project.rootProject.project(it.projectPath) }
+    val projects = dependencies + project
+    val dirs = projects.map { it.layout.projectDirectory }.flatMap {
+        sequenceOf(
+                it.dir("src/main/java"),
+                it.dir("src/test/java")
+        )
     }
+    systemProperty("teavm.junit.sourceDirs", dirs
+            .map { it.asFile.absolutePath }
+            .joinToString(File.pathSeparator))
 
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
 }

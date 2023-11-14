@@ -74,6 +74,7 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
         if (!isBootstrap()) {
             TeaVMWasmHost wasmHost = host.getExtension(TeaVMWasmHost.class);
             if (wasmHost != null) {
+                host.add(new ResourceLowLevelTransformer());
                 metadataGeneratorConsumers.add((constructor, method, generator) -> {
                     wasmHost.add(ctx -> new MetadataIntrinsic(ctx.getClassSource(), ctx.getClassLoader(),
                             ctx.getServices(), ctx.getProperties(), constructor, method, generator));
@@ -95,7 +96,7 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
 
             TeaVMCHost cHost = host.getExtension(TeaVMCHost.class);
             if (cHost != null) {
-                host.add(new ResourceCTransformer());
+                host.add(new ResourceLowLevelTransformer());
                 MetadataCIntrinsic metadataCIntrinsic = new MetadataCIntrinsic();
                 cHost.addGenerator(ctx -> {
                     metadataCIntrinsic.init(ctx.getClassSource(), ctx.getClassLoader(),

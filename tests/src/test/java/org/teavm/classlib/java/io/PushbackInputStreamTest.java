@@ -41,11 +41,9 @@ import java.io.PushbackInputStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
 @SuppressWarnings("resource")
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class PushbackInputStreamTest {
     PushbackInputStream pis;
 

@@ -15,7 +15,7 @@
  */
 package org.teavm.backend.c.generate;
 
-import static org.teavm.model.lowlevel.ExceptionHandlingShadowStackContributor.isManagedMethodCall;
+import static org.teavm.model.lowlevel.ExceptionHandlingUtil.isManagedMethodCall;
 import com.carrotsearch.hppc.IntContainer;
 import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
@@ -469,7 +469,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     }
 
     private boolean needsCallSiteId() {
-        return context.isLongjmp() && managed;
+        return managed;
     }
 
     @Override
@@ -1357,9 +1357,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         }
         writer.println(";");
 
-        if (context.isLongjmp()) {
-            writer.println("TEAVM_UNREACHABLE");
-        }
+        writer.println("TEAVM_UNREACHABLE");
 
         popLocation(statement.getLocation());
     }

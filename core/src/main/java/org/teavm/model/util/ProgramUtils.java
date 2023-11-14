@@ -18,6 +18,7 @@ package org.teavm.model.util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.teavm.ast.ControlFlowEntry;
@@ -249,5 +250,47 @@ public final class ProgramUtils {
             }
         }
         return varsDefinedInBlock;
+    }
+
+    public static void truncateBlock(Instruction instruction) {
+        var transitionExtractor = new TransitionExtractor();
+        var block = instruction.getBasicBlock();
+        if (block.getLastInstruction() != null) {
+            block.getLastInstruction().acceptVisitor(transitionExtractor);
+        }
+        for (var successor : transitionExtractor.getTargets()) {
+            successor.removeIncomingsFrom(block);
+        }
+
+        if (!block.getTryCatchBlocks().isEmpty()) {
+            var handlers = new LinkedHashSet<BasicBlock>();
+            for (var tryCatch : block.getTryCatchBlocks()) {
+                handlers.add(tryCatch.getHandler());
+            }
+
+            var next = instruction;
+            var assignExtractor = new AssignmentExtractor();
+            while (next != null) {
+                next.acceptVisitor(assignExtractor);
+                var definition = assignExtractor.getResult();
+                if (definition != null) {
+                    for (var handler : handlers) {
+                        for (var phi : handler.getPhis()) {
+                            for (var iter = phi.getIncomings().iterator(); iter.hasNext();) {
+                                var incoming = iter.next();
+                                if (incoming.getSource() == block && incoming.getValue() == definition) {
+                                    iter.remove();
+                                }
+                            }
+                        }
+                    }
+                }
+                next = next.getNext();
+            }
+        }
+
+        while (instruction.getNext() != null) {
+            instruction.getNext().delete();
+        }
     }
 }

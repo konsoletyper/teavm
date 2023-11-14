@@ -29,10 +29,8 @@ import java.util.function.Function;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class ConcurrentHashMapTest {
     @Test
     public void constructor() {

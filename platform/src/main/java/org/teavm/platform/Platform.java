@@ -21,6 +21,7 @@ import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
+import org.teavm.interop.Function;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.interop.Platforms;
@@ -124,7 +125,7 @@ public final class Platform {
 
     @Unmanaged
     private static void initClassLowLevel(RuntimeClass cls) {
-        if (cls.init != null) {
+        if (!Function.isNull(cls.init)) {
             cls.init.run();
         }
     }

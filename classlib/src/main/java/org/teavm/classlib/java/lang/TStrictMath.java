@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang;
 public final class TStrictMath extends TObject {
     public static final double E = 2.71828182845904523536;
     public static final double PI = 3.14159265358979323846;
+    public static final double TAU = 2 * PI;
 
     private TStrictMath() {
     }
@@ -228,5 +229,21 @@ public final class TStrictMath extends TObject {
 
     public static float nextUp(float f) {
         return TMath.nextUp(f);
+    }
+
+    public static int clamp(long value, int min, int max) {
+        return TMath.clamp(value, min, max);
+    }
+
+    public static long clamp(long value, long min, long max) {
+        return TMath.clamp(value, min, max);
+    }
+
+    public static double clamp(double value, double min, double max) {
+        return TMath.clamp(value, min, max);
+    }
+
+    public static float clamp(float value, float min, float max) {
+        return TMath.clamp(value, min, max);
     }
 }

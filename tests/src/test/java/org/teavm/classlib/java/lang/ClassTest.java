@@ -24,9 +24,12 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class ClassTest {
@@ -111,6 +114,7 @@ public class ClassTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void instanceCreatedThroughReflection() throws Exception {
         Runnable instance = (Runnable) Class.forName(TestObject.class.getName()).newInstance();
         instance.run();
@@ -119,6 +123,22 @@ public class ClassTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    public void instanceCreatedThoughReflectionWithConstantName() throws Exception {
+        var cls = Class.forName("org.teavm.classlib.java.lang.ClassTest$ClassReferredByConstantName");
+        assertArrayEquals(new Class<?>[] { Supplier.class }, cls.getInterfaces());
+        assertEquals(Object.class, cls.getSuperclass());
+    }
+
+    private static class ClassReferredByConstantName implements Supplier<String> {
+        @Override
+        public String get() {
+            return "constantNameWorks";
+        }
+    }
+
+    @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void instanceCreatedThroughReflectionAsync() throws Exception {
         Runnable instance = TestObjectAsync.class.newInstance();
         instance.run();
@@ -160,6 +180,7 @@ public class ClassTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void annotationsExposed() {
         Annotation[] annotations = A.class.getAnnotations();
         assertEquals(1, annotations.length);
@@ -167,6 +188,7 @@ public class ClassTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void annotationFieldsExposed() {
         AnnotWithDefaultField annot = B.class.getAnnotation(AnnotWithDefaultField.class);
         assertEquals(2, annot.x());
@@ -175,6 +197,7 @@ public class ClassTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void annotationFieldTypesSupported() {
         AnnotWithVariousFields annot = D.class.getAnnotation(AnnotWithVariousFields.class);
         assertEquals(true, annot.a());
@@ -195,6 +218,7 @@ public class ClassTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void getInterfaces() {
         assertEquals(0, SuperclassWithoutInterfaces.class.getInterfaces().length);
         assertEquals(Set.of(TestInterface1.class, TestInterface2.class),

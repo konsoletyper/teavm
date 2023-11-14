@@ -81,6 +81,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             || shouldLog;
     static final boolean dependencyReport = System.getProperty("org.teavm.dependencyReport", "false").equals("true");
     private int classNameSuffix;
+    private ClassReaderSource unprocessedClassSource;
     private DependencyClassSource classSource;
     ClassReaderSource agentClassSource;
     private ClassLoader classLoader;
@@ -118,6 +119,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics, ReferenceCache referenceCache) {
+        this.unprocessedClassSource = classSource;
         this.diagnostics = diagnostics;
         this.referenceCache = referenceCache;
         this.classSource = new DependencyClassSource(classSource, diagnostics, incrementalCache);
@@ -198,6 +200,10 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     @Override
     public ClassReaderSource getClassSource() {
         return classSource != null ? classSource : agentClassSource;
+    }
+
+    public ClassReaderSource getUnprocessedClassSource() {
+        return unprocessedClassSource;
     }
 
     public boolean isSynthesizedClass(String className) {

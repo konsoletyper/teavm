@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.javascript.spi;
 
-import java.io.IOException;
 import java.util.Properties;
 import org.teavm.ast.Expr;
 import org.teavm.backend.javascript.codegen.SourceWriter;
@@ -37,9 +36,9 @@ public interface InjectorContext extends ServiceRepository {
 
     Properties getProperties();
 
-    void writeEscaped(String str) throws IOException;
+    void writeEscaped(String str);
 
-    void writeType(ValueType type) throws IOException;
+    void writeType(ValueType type);
 
     void writeExpr(Expr expr);
 

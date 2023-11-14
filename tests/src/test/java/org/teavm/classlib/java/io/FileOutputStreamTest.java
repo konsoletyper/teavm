@@ -27,11 +27,11 @@ import java.io.IOException;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class FileOutputStreamTest {
     private String fileName;
     private String fileString =
@@ -284,6 +284,7 @@ public class FileOutputStreamTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WASI)
     public void repeatedWrite() throws IOException {
         f = new File(System.getProperty("user.home"), "test.txt");
         fos = new FileOutputStream(f);

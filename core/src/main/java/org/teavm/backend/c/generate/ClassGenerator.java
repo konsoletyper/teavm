@@ -258,7 +258,7 @@ public class ClassGenerator {
         ClassGenerationContext classContext = new ClassGenerationContext(context, includes, prologueWriter,
                 initWriter, currentClassName);
         codeGenerator = new CodeGenerator(classContext, codeWriter, includes);
-        if (context.isLongjmp() && !context.isIncremental()) {
+        if (!context.isIncremental()) {
             codeGenerator.setCallSites(callSites);
         }
     }
@@ -334,18 +334,15 @@ public class ClassGenerator {
             }
 
             List<CallSiteDescriptor> callSites = null;
-            if (context.isLongjmp()) {
-                if (context.isIncremental()) {
-                    callSites = new ArrayList<>();
-                    codeGenerator.setCallSites(callSites);
-                }
+            if (context.isIncremental()) {
+                callSites = new ArrayList<>();
+                codeGenerator.setCallSites(callSites);
             }
 
             codeGenerator.generateMethod(methodNode);
 
             if (context.isIncremental()) {
-                generateCallSites(method.getReference(),
-                        context.isLongjmp() ? callSites : CallSiteDescriptor.extract(method.getProgram()));
+                generateCallSites(method.getReference(), callSites);
                 codeWriter.println("#undef TEAVM_ALLOC_STACK");
             }
         }
@@ -743,11 +740,23 @@ public class ClassGenerator {
                 sizeExpr = "0";
             }
             if (cls != null) {
-                if (cls.hasModifier(ElementModifier.ENUM)) {
-                    flags |= RuntimeClass.ENUM;
+                if (cls.hasModifier(ElementModifier.ABSTRACT)) {
+                    flags |= RuntimeClass.ABSTRACT;
+                }
+                if (cls.hasModifier(ElementModifier.INTERFACE)) {
+                    flags |= RuntimeClass.INTERFACE;
+                }
+                if (cls.hasModifier(ElementModifier.FINAL)) {
+                    flags |= RuntimeClass.FINAL;
+                }
+                if (cls.hasModifier(ElementModifier.ANNOTATION)) {
+                    flags |= RuntimeClass.ANNOTATION;
                 }
                 if (cls.hasModifier(ElementModifier.SYNTHETIC)) {
                     flags |= RuntimeClass.SYNTHETIC;
+                }
+                if (cls.hasModifier(ElementModifier.ENUM)) {
+                    flags |= RuntimeClass.ENUM;
                 }
             }
             List<TagRegistry.Range> ranges = tagRegistry != null ? tagRegistry.getRanges(className) : null;
@@ -1273,7 +1282,7 @@ public class ClassGenerator {
         codeWriter.outdent().println("}");
 
         GeneratorContextImpl generatorContext = new GeneratorContextImpl(codeGenerator.getClassContext(),
-                bodyWriter, writerBefore, codeWriter, includes, callSites, context.isLongjmp());
+                bodyWriter, writerBefore, codeWriter, includes, callSites);
         generator.generate(generatorContext, methodRef);
         try {
             generatorContext.flush();

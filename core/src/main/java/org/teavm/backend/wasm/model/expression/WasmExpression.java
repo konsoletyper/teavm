@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.model.expression;
 
+import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.model.TextLocation;
 
 public abstract class WasmExpression {
@@ -32,4 +33,26 @@ public abstract class WasmExpression {
     }
 
     public abstract void acceptVisitor(WasmExpressionVisitor visitor);
+
+    public boolean isTerminating() {
+        return false;
+    }
+
+    public static WasmExpression defaultValueOfType(WasmType type) {
+        if (type == null) {
+            return null;
+        }
+        switch (type) {
+            case INT32:
+                return new WasmInt32Constant(0);
+            case INT64:
+                return new WasmInt64Constant(0);
+            case FLOAT32:
+                return new WasmFloat32Constant(0);
+            case FLOAT64:
+                return new WasmFloat64Constant(0);
+            default:
+                throw new IllegalArgumentException();
+        }
+    }
 }

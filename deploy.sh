@@ -49,6 +49,12 @@ function deploy_teavm {
   GRADLE+=" -Pteavm.publish.url=sftp://$TEAVM_DEPLOY_SERVER/maven/repository"
   GRADLE+=" -Pteavm.publish.username=$TEAVM_DEPLOY_LOGIN"
   GRADLE+=" -Pteavm.publish.password=$TEAVM_DEPLOY_PASSWORD"
+  GRADLE+=" -Pteavm.tests.optimized=true"
+  GRADLE+=" -Pteavm.tests.js=true"
+  GRADLE+=" -Pteavm.tests.c=true"
+  GRADLE+=" -Pteavm.tests.wasm=true"
+  GRADLE+=" -Pteavm.tests.wasi=true"
+  GRADLE+=" -Pteavm.junit.js.decodeStack=false"
 
   $GRADLE build || { echo 'Build failed' ; return 1; }
   $GRADLE --max-workers 4 publishAllPublicationsToTeavmRepository || { echo 'Deploy failed' ; return 1; }

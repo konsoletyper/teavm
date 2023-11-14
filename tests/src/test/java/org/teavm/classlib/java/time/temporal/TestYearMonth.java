@@ -82,7 +82,6 @@ import java.util.Set;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.AbstractDateTimeTest;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -92,7 +91,6 @@ import org.testng.annotations.Test;
  */
 @Test
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TestYearMonth extends AbstractDateTimeTest {
 
     private YearMonth test2008x06;

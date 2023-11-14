@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.text.DoubleSynthesizer;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
@@ -201,7 +202,18 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         if (this == other) {
             return true;
         }
-        return other instanceof TDouble && doubleToLongBits(((TDouble) other).value) == doubleToLongBits(value);
+        return other instanceof TDouble && equals(value, ((TDouble) other).value);
+    }
+
+    private static boolean equals(double a, double b) {
+        return PlatformDetector.isJavaScript() ? doubleEqualsJs(a, b) : equalsWithBits(a, b);
+    }
+
+    @InjectedBy(DoubleGenerator.class)
+    private static native boolean doubleEqualsJs(double a, double b);
+
+    private static boolean equalsWithBits(double a, double b) {
+        return a != a ? b != b : doubleToRawLongBits(a) == doubleToRawLongBits(b);
     }
 
     @Override
@@ -281,9 +293,13 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         int sz = 0;
         long bits = doubleToLongBits(d);
         boolean subNormal = false;
+        boolean negative = (bits & (1L << 63)) != 0;
         int exp = (int) ((bits >>> 52) & 0x7FF) - 1023;
         long mantissa = bits & 0xFFFFFFFFFFFFFL;
         if (exp == -1023) {
+            if (mantissa == 0) {
+                return negative ? "-0x0.0p0" : "0x0.0p0";
+            }
             ++exp;
             subNormal = true;
         }
@@ -302,7 +318,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         buffer[sz++] = subNormal ? '0' : '1';
         buffer[sz++] = 'x';
         buffer[sz++] = '0';
-        if ((bits & (1L << 63)) != 0) {
+        if (negative) {
             buffer[sz++] = '-';
         }
         int half = sz / 2;

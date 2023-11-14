@@ -38,11 +38,12 @@ import java.util.TimeZone;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
+@SkipPlatform(TestPlatform.WASI)
 public class MessageFormatTest {
     private MessageFormat format1;
     private MessageFormat format2;

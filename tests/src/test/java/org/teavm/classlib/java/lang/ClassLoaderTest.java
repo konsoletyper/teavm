@@ -23,11 +23,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
+@EachTestCompiledSeparately
 public class ClassLoaderTest {
     @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void loadsResources() {
         assertEquals("q", loadResource("1"));
         assertEquals("qw", loadResource("2"));
@@ -41,6 +46,7 @@ public class ClassLoaderTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void returnsNullForNonExistentResource() {
         InputStream input = ClassLoader.getSystemClassLoader().getResourceAsStream("non-existent-resource.txt");
         assertNull(input);

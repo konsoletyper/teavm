@@ -38,12 +38,16 @@ public interface TNavigableMap<K, V> extends TSortedMap<K, V> {
 
     K higherKey(K key);
 
+    @Override
     Entry<K, V> firstEntry();
 
+    @Override
     Entry<K, V> lastEntry();
 
+    @Override
     Entry<K, V> pollFirstEntry();
 
+    @Override
     Entry<K, V> pollLastEntry();
 
     TNavigableMap<K, V> descendingMap();
@@ -57,4 +61,14 @@ public interface TNavigableMap<K, V> extends TSortedMap<K, V> {
     TNavigableMap<K, V> headMap(K toKey, boolean inclusive);
 
     TNavigableMap<K, V> tailMap(K fromKey, boolean inclusive);
+
+    @Override
+    default TSequencedSet<K> sequencedKeySet() {
+        return navigableKeySet();
+    }
+
+    @Override
+    default TNavigableMap<K, V> reversed() {
+        return descendingMap();
+    }
 }

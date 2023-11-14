@@ -25,9 +25,13 @@ import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
+@EachTestCompiledSeparately
 public class StringTest {
     @Test
     public void charsExtracted() {
@@ -103,7 +107,7 @@ public class StringTest {
     }
 
     @Test
-    public void endsWithWorkds() {
+    public void endsWithWorks() {
         assertTrue("12345".endsWith("45"));
     }
 
@@ -326,12 +330,14 @@ public class StringTest {
     }
 
     @Test
+    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
     public void interns() {
         assertSame("xabc".substring(1).intern(), "abcx".substring(0, 3).intern());
         assertSame("xabc".substring(1).intern(), "abc");
     }
 
     @Test
+    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
     public void internsConstants() {
         assertSame("abc", ("a" + "bc").intern());
     }
@@ -363,5 +369,5 @@ public class StringTest {
         assertTrue(new String(new char[] { ' ', ' ' }).isBlank());
         assertFalse(new String(new char[] { ' ', 'x', ' ' }).isBlank());
         assertFalse(new String(new char[] { 'a', ' ' }).isBlank());
-    }    
+    }
 }

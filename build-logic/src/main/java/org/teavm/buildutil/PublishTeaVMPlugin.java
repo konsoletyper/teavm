@@ -45,11 +45,16 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
         target.getExtensions().add(PublishTeaVMExtension.class, EXTENSION_NAME, extension);
 
         target.afterEvaluate(p -> target.getExtensions().configure(PublishingExtension.class, publishing -> {
-            publishing.publications(publications -> {
-                publications.create("java", MavenPublication.class, publication -> {
-                    customizePublication(target, publication, extension);
+            var pluginMavenPublication = publishing.getPublications().findByName("pluginMaven");
+            if (pluginMavenPublication == null) {
+                publishing.publications(publications -> {
+                    publications.create("java", MavenPublication.class, publication -> {
+                        customizePublication(target, publication, extension, true);
+                    });
                 });
-            });
+            } else {
+                customizePublication(target, (MavenPublication) pluginMavenPublication, extension, false);
+            }
             if (publish) {
                 var signing = target.getExtensions().getByType(SigningExtension.class);
                 publishing.getPublications().configureEach(signing::sign);
@@ -90,12 +95,15 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
         });
     }
 
-    private void customizePublication(Project project, MavenPublication publication, ExtensionImpl extension) {
+    private void customizePublication(Project project, MavenPublication publication, ExtensionImpl extension,
+            boolean includeComponent) {
         publication.setGroupId("org.teavm");
         if (extension.getArtifactId() != null) {
             publication.setArtifactId(extension.getArtifactId());
         }
-        publication.from(project.getComponents().getByName("java"));
+        if (includeComponent) {
+            publication.from(project.getComponents().getByName("java"));
+        }
         if (extension.packaging != null) {
             publication.getPom().setPackaging(extension.packaging);
         }

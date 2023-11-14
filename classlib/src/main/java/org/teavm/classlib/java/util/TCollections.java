@@ -18,10 +18,11 @@ package org.teavm.classlib.java.util;
 import java.util.RandomAccess;
 import org.teavm.classlib.java.lang.*;
 import org.teavm.classlib.java.util.TMap.Entry;
+import org.teavm.classlib.java.util.random.TRandomGenerator;
 
 public class TCollections extends TObject {
     @SuppressWarnings("rawtypes")
-    public static final TSet EMPTY_SET = new TTemplateCollections.AbstractImmutableSet<Object>() {
+    public static final TSet EMPTY_SET = new TTemplateCollections.AbstractImmutableSet<>() {
         @Override public int size() {
             return 0;
         }
@@ -40,7 +41,7 @@ public class TCollections extends TObject {
     };
 
     @SuppressWarnings("rawtypes")
-    public static final TMap EMPTY_MAP = new TTemplateCollections.AbstractImmutableMap<Object, Object>() {
+    public static final TMap EMPTY_MAP = new TTemplateCollections.AbstractImmutableMap<>() {
         @Override public TSet<Entry<Object, Object>> entrySet() {
             return emptySet();
         }
@@ -63,7 +64,7 @@ public class TCollections extends TObject {
     };
 
     @SuppressWarnings("rawtypes")
-    public static final TList EMPTY_LIST = new TTemplateCollections.AbstractImmutableList<Object>() {
+    public static final TList EMPTY_LIST = new TTemplateCollections.AbstractImmutableList<>() {
         @Override public Object get(int index) {
             throw new TIndexOutOfBoundsException();
         }
@@ -86,7 +87,7 @@ public class TCollections extends TObject {
         }
     };
 
-    private static final TIterator<?> EMPTY_ITERATOR = new TIterator<Object>() {
+    private static final TIterator<?> EMPTY_ITERATOR = new TIterator<>() {
         @Override public boolean hasNext() {
             return false;
         }
@@ -98,7 +99,7 @@ public class TCollections extends TObject {
         }
     };
 
-    private static final TListIterator<?> EMPTY_LIST_ITERATOR = new TListIterator<Object>() {
+    private static final TListIterator<?> EMPTY_LIST_ITERATOR = new TListIterator<>() {
         @Override public boolean hasNext() {
             return false;
         }
@@ -144,7 +145,7 @@ public class TCollections extends TObject {
     }
 
     public static <T> TEnumeration<T> emptyEnumeration() {
-        return new TEnumeration<T>() {
+        return new TEnumeration<>() {
             @Override public boolean hasMoreElements() {
                 return false;
             }
@@ -174,26 +175,18 @@ public class TCollections extends TObject {
 
     public static <K, V> TMap<K, V> singletonMap(final K key, final V value) {
         final TSet<Entry<K, V>> entries = singleton(new TAbstractMap.SimpleImmutableEntry<>(key, value));
-        return new TAbstractMap<K, V>() {
+        return new TAbstractMap<>() {
             @Override public TSet<Entry<K, V>> entrySet() {
                 return entries;
             }
         };
     }
 
-    public static <T> TList<T> unmodifiableList(final TList<? extends T> list) {
-        return new TAbstractList<T>() {
-            @Override public T get(int index) {
-                return list.get(index);
-            }
-            @Override public int size() {
-                return list.size();
-            }
-        };
-    }
-
     public static <T> TList<T> nCopies(final int n, final T o) {
-        return new TAbstractList<T>() {
+        if (n < 0) {
+            throw new IllegalArgumentException();
+        }
+        return new TAbstractList<>() {
             @Override public T get(int index) {
                 if (index < 0 || index >= n) {
                     throw new TIndexOutOfBoundsException();
@@ -283,8 +276,12 @@ public class TCollections extends TObject {
         shuffle(list, new TRandom());
     }
 
-    @SuppressWarnings("unchecked")
     public static void shuffle(TList<?> list, TRandom rnd) {
+        shuffle(list, (TRandomGenerator) rnd);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static void shuffle(TList<?> list, TRandomGenerator rnd) {
         if (list instanceof TRandomAccess) {
             shuffleRandomAccess(list, rnd);
         } else {
@@ -295,7 +292,7 @@ public class TCollections extends TObject {
         }
     }
 
-    private static void shuffleRandomAccess(TList<?> list, TRandom rnd) {
+    private static void shuffleRandomAccess(TList<?> list, TRandomGenerator rnd) {
         for (int i = list.size() - 1; i > 0; --i) {
             int j = rnd.nextInt(i + 1);
             swap(list, i, j);
@@ -460,19 +457,38 @@ public class TCollections extends TObject {
         return -1;
     }
 
+    public static <T> TList<T> unmodifiableList(final TList<? extends T> list) {
+        TObjects.requireNonNull(list);
+        return new TAbstractList<>() {
+            @Override public T get(int index) {
+                return list.get(index);
+            }
+            @Override public int size() {
+                return list.size();
+            }
+            @Override public boolean remove(Object o) {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
+
     public static <T> TCollection<T> unmodifiableCollection(final TCollection<? extends T> c) {
-        return new TAbstractCollection<T>() {
+        TObjects.requireNonNull(c);
+        return new TAbstractCollection<>() {
             @Override public TIterator<T> iterator() {
                 return unmodifiableIterator(c.iterator());
             }
             @Override public int size() {
                 return c.size();
             }
+            @Override public boolean remove(Object o) {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 
     private static <T> TIterator<T> unmodifiableIterator(final TIterator<? extends T> c) {
-        return new TIterator<T>() {
+        return new TIterator<>() {
             @Override public boolean hasNext() {
                 return c.hasNext();
             }
@@ -486,39 +502,50 @@ public class TCollections extends TObject {
     }
 
     public static <T> TSet<T> unmodifiableSet(final TSet<? extends T> s) {
-        return new TAbstractSet<T>() {
+        TObjects.requireNonNull(s);
+        return new TAbstractSet<>() {
             @Override public TIterator<T> iterator() {
                 return unmodifiableIterator(s.iterator());
             }
             @Override public int size() {
                 return s.size();
             }
+            @Override public boolean remove(Object o) {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 
     public static <K, V> TMap<K, V> unmodifiableMap(final TMap<? extends K, ? extends V> m) {
-        return new TAbstractMap<K, V>() {
+        TObjects.requireNonNull(m);
+        return new TAbstractMap<>() {
             @Override public TSet<Entry<K, V>> entrySet() {
                 return unmodifiableMapEntrySet(m.entrySet());
+            }
+            @Override public V remove(Object o) {
+                throw new UnsupportedOperationException();
             }
         };
     }
 
     private static <K, V> TSet<Entry<K, V>> unmodifiableMapEntrySet(
             final TSet<? extends Entry<? extends K, ? extends V>> c) {
-        return new TAbstractSet<Entry<K, V>>() {
+        return new TAbstractSet<>() {
             @Override public int size() {
                 return c.size();
             }
             @Override public TIterator<Entry<K, V>> iterator() {
                 return unmodifiableMapEntryIterator(c.iterator());
             }
+            @Override public boolean remove(Object o) {
+                throw new UnsupportedOperationException();
+            }
         };
     }
 
     private static <K, V> TIterator<Entry<K, V>> unmodifiableMapEntryIterator(
             final TIterator<? extends Entry<? extends K, ? extends V>> c) {
-        return new TIterator<Entry<K, V>>() {
+        return new TIterator<>() {
             @Override public boolean hasNext() {
                 return c.hasNext();
             }
@@ -552,15 +579,19 @@ public class TCollections extends TObject {
         return (TComparator<T>) reverseOrder;
     }
 
+    @SuppressWarnings("unchecked")
     private static TComparator<Object> reverseOrder = (o1, o2) -> ((TComparable<Object>) o2).compareTo(o1);
 
     public static <T> TComparator<T> reverseOrder(final TComparator<T> cmp) {
+        if (cmp == null) {
+            return reverseOrder();
+        }
         return (o1, o2) -> -cmp.compare(o1, o2);
     }
 
     public static <T> TEnumeration<T> enumeration(TCollection<T> c) {
         final TIterator<T> iter = c.iterator();
-        return new TEnumeration<T>() {
+        return new TEnumeration<>() {
             @Override public boolean hasMoreElements() {
                 return iter.hasNext();
             }
@@ -624,6 +655,16 @@ public class TCollections extends TObject {
     }
 
     public static <E> TSet<E> newSetFromMap(TMap<E, TBoolean> map) {
+        if (!map.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
         return new TSetFromMap<>(map);
+    }
+
+    public static <E> TSequencedSet<E> newSequencedSetFromMap(TSequencedMap<E, TBoolean> map) {
+        if (!map.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+        return new TSetFromMap.SequencedSetFromMap<E>(map);
     }
 }

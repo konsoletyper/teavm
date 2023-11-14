@@ -57,7 +57,5 @@ public interface GeneratorContext {
 
     void importMethod(MethodReference method, boolean isStatic);
 
-    boolean usesLongjmp();
-
     CallSiteDescriptor createCallSite(CallSiteLocation[] locations, ExceptionHandlerDescriptor[] exceptionHandlers);
 }

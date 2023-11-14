@@ -34,6 +34,8 @@ public class PlatformClassMetadataIntrinsic implements Intrinsic {
             RuntimeClass.class.getName(), "declaringClass");
     private static final FieldReference ENCLOSING_CLASS_FIELD = new FieldReference(
             RuntimeClass.class.getName(), "enclosingClass");
+    private static final FieldReference FLAGS_FIELD = new FieldReference(
+            RuntimeClass.class.getName(), "flags");
 
     @Override
     public boolean canHandle(MethodReference method) {
@@ -47,6 +49,7 @@ public class PlatformClassMetadataIntrinsic implements Intrinsic {
             case "getSimpleName":
             case "getDeclaringClass":
             case "getEnclosingClass":
+            case "getFlags":
                 return true;
         }
         return false;
@@ -80,6 +83,11 @@ public class PlatformClassMetadataIntrinsic implements Intrinsic {
                 break;
             case "getEnclosingClass":
                 printFieldAccess(context, invocation, ENCLOSING_CLASS_FIELD);
+                break;
+            case "getFlags":
+                context.writer().print("(");
+                printFieldAccess(context, invocation, FLAGS_FIELD);
+                context.writer().print(" >> " + RuntimeClass.FLAGS_SHIFT + ")");
                 break;
         }
     }

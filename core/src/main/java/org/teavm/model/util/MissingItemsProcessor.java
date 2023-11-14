@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.teavm.dependency.DependencyInfo;
@@ -27,8 +26,38 @@ import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.SupportedOn;
 import org.teavm.interop.UnsupportedOn;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
+import org.teavm.model.AnnotationContainerReader;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassReader;
+import org.teavm.model.FieldReference;
+import org.teavm.model.Instruction;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
+import org.teavm.model.TextLocation;
+import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.AbstractInstructionVisitor;
+import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.ConstructArrayInstruction;
+import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.ConstructMultiArrayInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
+import org.teavm.model.instructions.InitClassInstruction;
+import org.teavm.model.instructions.InstructionVisitor;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.IsInstanceInstruction;
+import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 
 public class MissingItemsProcessor {
@@ -98,45 +127,7 @@ public class MissingItemsProcessor {
     }
 
     private void truncateBlock(Instruction instruction) {
-        var transitionExtractor = new TransitionExtractor();
-        var block = instruction.getBasicBlock();
-        if (block.getLastInstruction() != null) {
-            block.getLastInstruction().acceptVisitor(transitionExtractor);
-        }
-        for (var successor : transitionExtractor.getTargets()) {
-            successor.removeIncomingsFrom(block);
-        }
-
-        if (!block.getTryCatchBlocks().isEmpty()) {
-            var handlers = new LinkedHashSet<BasicBlock>();
-            for (var tryCatch : block.getTryCatchBlocks()) {
-                handlers.add(tryCatch.getHandler());
-            }
-
-            var next = instruction;
-            var assignExtractor = new AssignmentExtractor();
-            while (next != null) {
-                next.acceptVisitor(assignExtractor);
-                var definition = assignExtractor.getResult();
-                if (definition != null) {
-                    for (var handler : handlers) {
-                        for (var phi : handler.getPhis()) {
-                            for (var iter = phi.getIncomings().iterator(); iter.hasNext();) {
-                                var incoming = iter.next();
-                                if (incoming.getSource() == block && incoming.getValue() == definition) {
-                                    iter.remove();
-                                }
-                            }
-                        }
-                    }
-                }
-                next = next.getNext();
-            }
-        }
-
-        while (instruction.getNext() != null) {
-            instruction.getNext().delete();
-        }
+        ProgramUtils.truncateBlock(instruction);
         instruction.insertNextAll(instructionsToAdd);
         instruction.delete();
     }

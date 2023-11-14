@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.impl;
 
-import java.io.IOException;
 import org.mozilla.javascript.Node;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.Block;
@@ -44,7 +43,7 @@ class JSBodyAstEmitter implements JSBodyEmitter {
     }
 
     @Override
-    public void emit(InjectorContext context) throws IOException {
+    public void emit(InjectorContext context) {
         var astWriter = new AstWriter(context.getWriter(), new DefaultGlobalNameWriter(context.getWriter()));
         int paramIndex = 0;
         if (!isStatic) {
@@ -148,7 +147,7 @@ class JSBodyAstEmitter implements JSBodyEmitter {
     }
 
     @Override
-    public void emit(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void emit(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         var astWriter = new AstWriter(writer, new DefaultGlobalNameWriter(writer));
         int paramIndex = 1;
         if (!isStatic) {

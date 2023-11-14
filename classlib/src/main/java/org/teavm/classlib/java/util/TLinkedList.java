@@ -95,17 +95,7 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque
 
     @Override
     public boolean offer(E e) {
-        Entry<E> entry = new Entry<>();
-        entry.item = e;
-        entry.next = firstEntry;
-        if (firstEntry != null) {
-            firstEntry.previous = entry;
-        } else {
-            lastEntry = entry;
-        }
-        firstEntry = entry;
-        ++modCount;
-        ++size;
+        addLast(e);
         return true;
     }
 
@@ -149,7 +139,17 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque
 
     @Override
     public void addFirst(E e) {
-        offer(e);
+        Entry<E> entry = new Entry<>();
+        entry.item = e;
+        entry.next = firstEntry;
+        if (firstEntry != null) {
+            firstEntry.previous = entry;
+        } else {
+            lastEntry = entry;
+        }
+        firstEntry = entry;
+        ++modCount;
+        ++size;
     }
 
     @Override

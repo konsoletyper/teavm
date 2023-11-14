@@ -26,10 +26,8 @@ import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class UTF8Test {
     private String hex = ""
             + "D097D0B4D0B5D181D18C20D0B220D0BCD0BED0B5D0BC20D0BED0B1D18AD18FD181D0BDD0B5D0BDD0B8D0B820D18F20D0BED"

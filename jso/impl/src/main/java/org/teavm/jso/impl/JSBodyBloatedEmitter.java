@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.impl;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.backend.javascript.spi.InjectorContext;
@@ -38,7 +37,7 @@ class JSBodyBloatedEmitter implements JSBodyEmitter {
     }
 
     @Override
-    public void emit(InjectorContext context) throws IOException {
+    public void emit(InjectorContext context) {
         emit(context.getWriter(), new EmissionStrategy() {
             @Override
             public void emitArgument(int argument) {
@@ -46,28 +45,28 @@ class JSBodyBloatedEmitter implements JSBodyEmitter {
             }
 
             @Override
-            public void emitModule(String name) throws IOException {
+            public void emitModule(String name) {
                 context.getWriter().append(context.importModule(name));
             }
         });
     }
 
     @Override
-    public void emit(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+    public void emit(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         emit(writer, new EmissionStrategy() {
             @Override
-            public void emitArgument(int argument) throws IOException {
+            public void emitArgument(int argument) {
                 writer.append(context.getParameterName(argument + 1));
             }
 
             @Override
-            public void emitModule(String name) throws IOException {
+            public void emitModule(String name) {
                 writer.append(context.importModule(name));
             }
         });
     }
 
-    private void emit(SourceWriter writer, EmissionStrategy strategy) throws IOException {
+    private void emit(SourceWriter writer, EmissionStrategy strategy) {
         int bodyParamCount = isStatic ? method.parameterCount() : method.parameterCount() - 1;
 
         writer.append("if (!").appendMethodBody(method).append(".$native)").ws().append('{').indent().newLine();
@@ -151,8 +150,8 @@ class JSBodyBloatedEmitter implements JSBodyEmitter {
     }
 
     interface EmissionStrategy {
-        void emitArgument(int argument) throws IOException;
+        void emitArgument(int argument);
 
-        void emitModule(String name) throws IOException;
+        void emitModule(String name);
     }
 }

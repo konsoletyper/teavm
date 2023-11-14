@@ -23,6 +23,7 @@ description = "implementation of JSO"
 
 dependencies {
     compileOnly(project(":core"))
+    compileOnly(project(":platform"))
 
     implementation(libs.rhino)
     implementation(project(":jso:core"))

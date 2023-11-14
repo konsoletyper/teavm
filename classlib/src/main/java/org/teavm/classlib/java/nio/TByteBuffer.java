@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.nio;
 
+import java.util.Objects;
 import org.teavm.classlib.java.lang.TComparable;
 
 public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBuffer> {
@@ -45,6 +46,7 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
     }
 
     public static TByteBuffer wrap(byte[] array, int offset, int length) {
+        Objects.checkFromIndexSize(offset, length, array.length);
         return new TByteBufferImpl(0, array.length, array, offset, offset + length, false, false);
     }
 

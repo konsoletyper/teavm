@@ -15,7 +15,6 @@
  */
 package org.teavm.platform.plugin;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
@@ -23,9 +22,10 @@ import org.teavm.model.MethodReference;
 
 class ResourceAccessorGenerator implements Generator {
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        writer.append("var result = [];").softNewLine();
-        writer.append("for (var key in ").append(context.getParameterName(1)).append(") {").indent().softNewLine();
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
+        writer.append("let result").ws().append("=").ws().append("[];").softNewLine();
+        writer.append("for").ws().append("(let key in ").append(context.getParameterName(1)).append(")").ws()
+                .append("{").indent().softNewLine();
         writer.append("result.push(key);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return result;").softNewLine();

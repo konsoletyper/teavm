@@ -112,8 +112,9 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.temporal.MockFieldNoValue;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.WholeClassCompilation;
+import org.teavm.junit.TestPlatform;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -123,7 +124,6 @@ import org.testng.annotations.Test;
  */
 @Test
 @RunWith(TeaVMTestRunner.class)
-@WholeClassCompilation
 public class TestZonedDateTime extends AbstractDateTimeTest {
 
     private static final ZoneOffset OFFSET_0100 = ZoneOffset.ofHours(1);
@@ -1456,6 +1456,7 @@ public class TestZonedDateTime extends AbstractDateTimeTest {
     }
 
     @Test(expectedExceptions = NullPointerException.class)
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void test_plus_longUnit_null() {
         testDateTimeParis.plus(0, null);
     }

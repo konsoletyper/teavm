@@ -23,10 +23,10 @@ public class WasmSupport {
     private WasmSupport() {
     }
 
-    @Import(name = "putwcharsOut", module = "teavm")
+    @Import(name = "putwcharsErr", module = "teavm")
     public static native void putCharsStderr(Address address, int count);
 
-    @Import(name = "putwcharsErr", module = "teavm")
+    @Import(name = "putwcharsOut", module = "teavm")
     public static native void putCharsStdout(Address address, int count);
 
     public static long currentTimeMillis() {

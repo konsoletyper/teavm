@@ -21,7 +21,7 @@ package org.teavm.classlib.java.util;
  * @param <K>
  * @param <V>
  */
-public interface TSortedMap<K, V> extends TMap<K, V> {
+public interface TSortedMap<K, V> extends TSequencedMap<K, V> {
     TComparator<? super K> comparator();
 
     TSortedMap<K, V> subMap(K fromKey, K toKey);
