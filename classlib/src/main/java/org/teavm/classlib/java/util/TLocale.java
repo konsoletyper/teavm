@@ -36,6 +36,7 @@ import java.util.Arrays;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
+import org.teavm.classlib.java.lang.TString;
 import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
 import org.teavm.platform.metadata.StringResource;
@@ -275,7 +276,7 @@ public final class TLocale implements TCloneable, TSerializable {
         return result.toString();
     }
 
-    public String toLanguageTag() {
+    public TString toLanguageTag() {
         StringBuilder result = new StringBuilder();
         result.append(languageCode);
         if (!countryCode.isEmpty()) {
@@ -286,6 +287,6 @@ public final class TLocale implements TCloneable, TSerializable {
             result.append('-');
             result.append(variantCode);
         }
-        return result.toString();
+        return new TString(result.toString().toCharArray());
     }
 }

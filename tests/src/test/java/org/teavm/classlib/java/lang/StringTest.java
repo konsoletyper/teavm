@@ -309,20 +309,21 @@ public class StringTest {
         assertEquals('d', str.charAt(8));
     }
 
+    @Test
+    public void convertsCase() {
+        assertEquals("foo bar", "FoO bAr".toLowerCase());
+        assertEquals("FOO BAR", "FoO bAr".toUpperCase());
+    }
+
     private String common = "i̇stanbul";
     private String turkish = "istanbul";
 
     @Test
-    public void makesLowerCase() {
-        assertEquals("foo bar", "FoO bAr".toLowerCase());
+    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
+    public void convertsCaseLocaled() {
         assertEquals(turkish, "İstanbul".toLowerCase(new Locale("tr", "TR")));
         assertEquals(common, "İstanbul".toLowerCase(Locale.US));
         assertNotEquals(turkish, common);
-    }
-
-    @Test
-    public void makesUpperCase() {
-        assertEquals("FOO BAR", "FoO bAr".toUpperCase());
         assertEquals("İSTANBUL", common.toUpperCase(Locale.US));
         assertEquals("İSTANBUL", turkish.toUpperCase(new Locale("tr", "TR")));
         assertNotEquals(common.toUpperCase(Locale.US), turkish.toUpperCase(new Locale("tr", "TR")));
