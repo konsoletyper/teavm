@@ -1,3 +1,3 @@
 export LC_ALL=C
 SOURCE_DIR=$(pwd)
-gcc -g -O0 -lrt -lm all.c -o run_test
+gcc -g -O0 -lrt all.c -o run_test -lm
