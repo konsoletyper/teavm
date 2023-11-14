@@ -770,7 +770,6 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     public TString toLowerCase(TLocale locale) {
         if (PlatformDetector.isJavaScript()) {
-            System.out.println(locale.toLanguageTag());
             var upperCase = toLowerCaseJS(nativeString(), locale.toLanguageTag().nativeString());
             return upperCase != nativeString() ? new TString(upperCase) : this;
         }
@@ -837,7 +836,6 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     public TString toUpperCase(TLocale locale) {
         if (PlatformDetector.isJavaScript()) {
-            System.out.println(locale.toLanguageTag());
             var upperCase = toUpperCaseJS(nativeString(), locale.toLanguageTag().nativeString());
             return upperCase != nativeString() ? new TString(upperCase) : this;
         }
