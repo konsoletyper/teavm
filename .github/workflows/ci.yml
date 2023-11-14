@@ -37,9 +37,21 @@ jobs:
           fi
         done
         echo "${args[@]}"
-        ./gradlew "${args[@]}" build
+        ./gradlew "${args[@]}" test
     - uses: actions/upload-artifact@v3
       if: failure()
       with:
         name: "test-reports-${{ matrix.platform }}"
         path: "tests/build/reports/tests/test"
+  checkstyle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v3
+        with:
+          java-version: 11
+          distribution: adopt
+      - uses: gradle/gradle-build-action@v2
+      - run: |
+          ./gradlew build -x test
