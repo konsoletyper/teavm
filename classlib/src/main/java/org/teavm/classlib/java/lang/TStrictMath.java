@@ -275,7 +275,7 @@ public final class TStrictMath extends TObject {
         return TMath.tanh(x);
     }
 
-    public static double hypot(double x,  double y) {
+    public static double hypot(double x, double y) {
         return TMath.hypot(x, y);
     }
 
