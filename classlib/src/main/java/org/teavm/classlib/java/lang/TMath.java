@@ -164,6 +164,114 @@ public final class TMath extends TObject {
         return a - floorDiv(a, b) * b;
     }
 
+    public static int incrementExact(int a) {
+        if (a == Integer.MAX_VALUE) {
+            throw new ArithmeticException("integer overflow");
+        }
+        return a + 1;
+    }
+
+    public static long incrementExact(long a) {
+        if (a == Long.MAX_VALUE) {
+            throw new ArithmeticException("long overflow");
+        }
+        return a + 1L;
+    }
+
+    public static int decrementExact(int a) {
+        if (a == Integer.MIN_VALUE) {
+            throw new ArithmeticException("integer overflow");
+        }
+        return a - 1;
+    }
+
+    public static long decrementExact(long a) {
+        if (a == Long.MIN_VALUE) {
+            throw new ArithmeticException("long overflow");
+        }
+        return a - 1L;
+    }
+
+    public static int negateExact(int a) {
+        if (a == Integer.MIN_VALUE) {
+            throw new ArithmeticException("integer overflow");
+        }
+        return -a;
+    }
+
+    public static long negateExact(long a) {
+        if (a == Long.MIN_VALUE) {
+            throw new ArithmeticException("long overflow");
+        }
+        return -a;
+    }
+
+    public static int toIntExact(long value) {
+        if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
+            throw new ArithmeticException("Calculation overflows an int: " + value);
+        }
+        return (int) value;
+    }
+
+    public static int addExact(int a, int b) {
+        int sum = a + b;
+        if ((a ^ sum) < 0 && (a ^ b) >= 0) {
+            throw new ArithmeticException("Addition overflows an int: " + a + " + " + b);
+        }
+        return sum;
+    }
+
+    public static long addExact(long a, long b) {
+        long sum = a + b;
+        if ((a ^ sum) < 0 && (a ^ b) >= 0) {
+            throw new ArithmeticException("Addition overflows a long: " + a + " + " + b);
+        }
+        return sum;
+    }
+
+    public static int subtractExact(int a, int b) {
+        int result = a - b;
+        if ((a ^ result) < 0 && (a ^ b) < 0) {
+            throw new ArithmeticException("Subtraction overflows an int: " + a + " - " + b);
+        }
+        return result;
+    }
+
+    public static long subtractExact(long a, long b) {
+        long result = a - b;
+        if ((a ^ result) < 0 && (a ^ b) < 0) {
+            throw new ArithmeticException("Subtraction overflows a long: " + a + " - " + b);
+        }
+        return result;
+    }
+
+    public static int multiplyExact(int a, int b) {
+        long total = (long) a * (long) b;
+        if (total < Integer.MIN_VALUE || total > Integer.MAX_VALUE) {
+            throw new ArithmeticException("Multiplication overflows an int: " + a + " * " + b);
+        }
+        return (int) total;
+    }
+
+    public static long multiplyExact(long a, int b) {
+        return multiplyExact(a, (long) b);
+    }
+
+    public static long multiplyExact(long a, long b) {
+        if (b == 1) {
+            return a;
+        } else if (a == 1) {
+            return b;
+        } else if (a == 0 || b == 0) {
+            return 0;
+        }
+        long total = a * b;
+        if (total / b != a || (a == Long.MIN_VALUE && b == -1) || (b == Long.MIN_VALUE && a == -1)) {
+            throw new ArithmeticException("Multiplication overflows a long: " + a + " * " + b);
+        }
+        return total;
+    }
+
     @Unmanaged
     public static double random() {
         if (PlatformDetector.isC()) {
