@@ -328,6 +328,7 @@ public class StringTest {
         assertEquals("İSTANBUL", turkish.toUpperCase(new Locale("tr", "TR")));
         assertNotEquals(common.toUpperCase(Locale.US), turkish.toUpperCase(new Locale("tr", "TR")));
         assertEquals(common.toUpperCase(Locale.US), common.toUpperCase(Locale.CANADA));
+        assertEquals(common.toUpperCase(Locale.US), common.toUpperCase(Locale.ROOT));
     }
 
     @Test
