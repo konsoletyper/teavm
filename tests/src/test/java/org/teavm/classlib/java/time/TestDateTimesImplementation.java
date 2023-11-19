@@ -48,9 +48,7 @@ package org.teavm.classlib.java.time;
 
 import static org.testng.Assert.assertEquals;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -309,7 +307,6 @@ public class TestDateTimesImplementation {
     }
 
     @Test(dataProvider = "safeMultiplyLongLongProviderOverflow", expectedExceptions = ArithmeticException.class)
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void test_safeMultiplyLongLong_overflow(long a, long b) {
         Math.multiplyExact(a, b);
     }

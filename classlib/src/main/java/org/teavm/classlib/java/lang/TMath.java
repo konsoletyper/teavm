@@ -254,7 +254,7 @@ public final class TMath extends TObject {
             return 0;
         }
         int total = a * b;
-        if (total / b != a || (a == Integer.MIN_VALUE && b == -1) || (b == Integer.MIN_VALUE && a == -1)) {
+        if ((a == Integer.MIN_VALUE && b == -1) || (b == Integer.MIN_VALUE && a == -1) || total / b != a) {
             throw new ArithmeticException();
         }
         return total;
@@ -273,26 +273,24 @@ public final class TMath extends TObject {
             return 0;
         }
         long total = a * b;
-        if (total / b != a || (a == Long.MIN_VALUE && b == -1) || (b == Long.MIN_VALUE && a == -1)) {
+        if ((a == Long.MIN_VALUE && b == -1) || (b == Long.MIN_VALUE && a == -1) || total / b != a) {
             throw new ArithmeticException();
         }
         return total;
     }
 
     public static int divideExact(int a, int b) {
-        int q = a / b;
-        if ((a & b & q) < 0) { // all 3 are negative
+        if (a == Integer.MIN_VALUE && b == -1) {
             throw new ArithmeticException();
         }
-        return q;
+        return a / b;
     }
 
     public static long divideExact(long a, long b) {
-        long q = a / b;
-        if ((a & b & q) < 0) { // all 3 are negative
+        if (a == Long.MIN_VALUE && b == -1) {
             throw new ArithmeticException();
         }
-        return q;
+        return a / b;
     }
 
     @Unmanaged

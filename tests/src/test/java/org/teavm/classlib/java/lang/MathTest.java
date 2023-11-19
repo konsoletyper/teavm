@@ -202,7 +202,6 @@ public class MathTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.C})
     public void exacts() {
         try {
             Math.incrementExact(Integer.MAX_VALUE);
@@ -248,6 +247,12 @@ public class MathTest {
         }
         try {
             Math.multiplyExact(1 << 30, 2);
+            fail();
+        } catch (ArithmeticException e) {
+            // ok
+        }
+        try {
+            Math.divideExact(Integer.MIN_VALUE, -1);
             fail();
         } catch (ArithmeticException e) {
             // ok
