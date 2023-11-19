@@ -65,7 +65,7 @@ class RenderWorker {
         renderer.render()
         val perfEnd = System.nanoTime()
         val buffer = extractBuffer(raster.flip())
-        postMessageFromWorker(JSObjects.createWithoutProto<JSMapLike<JSObject>>().apply {
+        Window.worker().postMessage(JSObjects.createWithoutProto<JSMapLike<JSObject>>().apply {
             set("data", buffer)
             set("time", JSNumber.valueOf((perfEnd - perfStart).toInt()))
         }, JSArray.of(buffer))

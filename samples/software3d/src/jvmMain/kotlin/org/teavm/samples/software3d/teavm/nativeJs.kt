@@ -18,15 +18,7 @@ package org.teavm.samples.software3d.teavm
 
 import org.teavm.jso.JSBody
 import org.teavm.jso.JSByRef
-import org.teavm.jso.JSObject
-import org.teavm.jso.core.JSArray
 import org.teavm.jso.typedarrays.ArrayBuffer
 
 @JSBody(params = ["data"], script = "return data.buffer;")
 external fun extractBuffer(@JSByRef data: IntArray): ArrayBuffer
-
-@JSBody(params = ["message", "transferable"], script = "self.postMessage(message, transferable);")
-external fun postMessageFromWorker(message: JSObject, transferable: JSArray<out JSObject>)
-
-@JSBody(script = "return navigator.hardwareConcurrency;")
-external fun cpuCount(): Int

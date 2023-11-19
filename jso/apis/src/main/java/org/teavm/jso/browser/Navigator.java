@@ -40,4 +40,7 @@ public final class Navigator {
     
     @JSBody(script = "return navigator.getGamepads();")
     public static native Gamepad[] getGamepads();
+
+    @JSBody(script = "return navigator.hardwareConcurrency")
+    public static native int hardwareConcurrency();
 }

@@ -35,7 +35,7 @@ fun main(args: Array<out String>) {
 fun runController() {
     val performanceIndicator = HTMLDocument.current().getElementById("performance-indicator")
     var performanceIndicatorByWorkers: List<HTMLElement> = emptyList()
-    val maxWorkers = cpuCount()
+    val maxWorkers = Runtime.getRuntime().availableProcessors()
     var workerType = WorkerType.JS
     val controller = Controller(SCENE_WIDTH, SCENE_HEIGHT) { index, value ->
         if (index == -1) {

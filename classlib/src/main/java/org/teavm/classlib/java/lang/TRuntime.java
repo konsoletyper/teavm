@@ -16,6 +16,9 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.interop.DelegateTo;
+import org.teavm.interop.Platforms;
+import org.teavm.interop.SupportedOn;
+import org.teavm.jso.browser.Navigator;
 import org.teavm.runtime.GC;
 
 /**
@@ -84,5 +87,10 @@ public class TRuntime {
 
     private long totalMemoryLowLevel() {
         return GC.availableBytes();
+    }
+
+    @SupportedOn(Platforms.JAVASCRIPT)
+    public int availableProcessors() {
+        return Navigator.hardwareConcurrency();
     }
 }

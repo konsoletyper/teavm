@@ -155,12 +155,18 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
 
     public abstract void postMessage(JSObject message);
 
+    public abstract void postMessage(JSObject message, JSArrayReader<JSObject> transfer);
+
     public abstract void postMessage(JSObject message, String targetOrigin);
 
     public abstract void postMessage(JSObject message, String targetOrigin, JSArrayReader<JSObject> transfer);
 
     public final void postMessage(JSObject message, String targetOrigin, JSObject... transfer) {
         postMessage(message, targetOrigin, JSArray.of(transfer));
+    }
+
+    public final void postMessage(JSObject message, JSObject... transfer) {
+        postMessage(message, JSArray.of(transfer));
     }
 
     @JSBody(script = "return window;")
