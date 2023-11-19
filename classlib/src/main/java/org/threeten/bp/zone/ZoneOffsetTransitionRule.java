@@ -57,7 +57,6 @@ import org.threeten.bp.LocalTime;
 import org.threeten.bp.Month;
 import org.threeten.bp.ZoneOffset;
 import org.threeten.bp.chrono.IsoChronology;
-import org.threeten.bp.jdk8.Jdk8Methods;
 
 /**
  * A rule expressing how to create a transition.
@@ -422,9 +421,9 @@ public final class ZoneOffsetTransitionRule implements Serializable {
             buf.append(time);
         } else {
             long timeOfDaysMins = time.toSecondOfDay() / 60 + adjustDays * 24 * 60;
-            appendZeroPad(buf, Jdk8Methods.floorDiv(timeOfDaysMins, 60));
+            appendZeroPad(buf, Math.floorDiv(timeOfDaysMins, 60));
             buf.append(':');
-            appendZeroPad(buf, Jdk8Methods.floorMod(timeOfDaysMins, 60));
+            appendZeroPad(buf, Math.floorMod(timeOfDaysMins, 60));
         }
         buf.append(" ").append(timeDefinition)
             .append(", standard offset ").append(standardOffset)

@@ -57,7 +57,6 @@ import org.threeten.bp.ZoneId;
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.chrono.IsoChronology;
 import org.threeten.bp.format.DateTimeFormatterBuilder.ReducedPrinterParser;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.TemporalAccessor;
 import org.threeten.bp.temporal.TemporalField;
 import org.threeten.bp.temporal.TemporalQueries;
@@ -470,7 +469,7 @@ public final class DateTimeParseContext {
                 throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
             }
             long value = fieldValues.get(field);
-            return Jdk8Methods.safeToInt(value);
+            return Math.toIntExact(value);
         }
         @Override
         public long getLong(TemporalField field) {

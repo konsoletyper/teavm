@@ -66,7 +66,6 @@ import org.threeten.bp.LocalDate;
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.chrono.IsoChronology;
 import org.threeten.bp.format.ResolverStyle;
-import org.threeten.bp.jdk8.Jdk8Methods;
 
 /**
  * Fields and units specific to the ISO-8601 calendar system,
@@ -286,8 +285,8 @@ public final class IsoFields {
                 if (resolverStyle == ResolverStyle.LENIENT) {
                     long qoy = qoyLong;
                     date = LocalDate.of(y, 1, 1);
-                    date = date.plusMonths(Jdk8Methods.safeMultiply(Jdk8Methods.safeSubtract(qoy, 1), 3));
-                    date = date.plusDays(Jdk8Methods.safeSubtract(doq, 1));
+                    date = date.plusMonths(Math.multiplyExact(Math.subtractExact(qoy, 1), 3));
+                    date = date.plusDays(Math.subtractExact(doq, 1));
                 } else {
                     int qoy = QUARTER_OF_YEAR.range().checkValidIntValue(qoyLong, QUARTER_OF_YEAR);
                     if (resolverStyle == ResolverStyle.STRICT) {
@@ -395,7 +394,7 @@ public final class IsoFields {
             @Override
             public <R extends Temporal> R adjustInto(R temporal, long newValue) {
                 range().checkValidValue(newValue, this);
-                return (R) temporal.plus(Jdk8Methods.safeSubtract(newValue, getFrom(temporal)), WEEKS);
+                return (R) temporal.plus(Math.subtractExact(newValue, getFrom(temporal)), WEEKS);
             }
             @Override
             public TemporalAccessor resolve(Map<TemporalField, Long> fieldValues,
@@ -617,7 +616,7 @@ public final class IsoFields {
         public <R extends Temporal> R addTo(R temporal, long periodToAdd) {
             switch (this) {
                 case WEEK_BASED_YEARS:
-                    long added = Jdk8Methods.safeAdd(temporal.get(WEEK_BASED_YEAR), periodToAdd);
+                    long added = Math.addExact(temporal.get(WEEK_BASED_YEAR), periodToAdd);
                     return (R) temporal.with(WEEK_BASED_YEAR, added);
                 case QUARTER_YEARS:
                     // no overflow (256 is multiple of 4)
@@ -631,7 +630,7 @@ public final class IsoFields {
         public long between(Temporal temporal1, Temporal temporal2) {
             switch (this) {
                 case WEEK_BASED_YEARS:
-                    return Jdk8Methods.safeSubtract(temporal2.getLong(WEEK_BASED_YEAR),
+                    return Math.subtractExact(temporal2.getLong(WEEK_BASED_YEAR),
                             temporal1.getLong(WEEK_BASED_YEAR));
                 case QUARTER_YEARS:
                     return temporal1.until(temporal2, MONTHS) / 3;

@@ -60,7 +60,6 @@ import java.util.Objects;
 import org.threeten.bp.chrono.ChronoLocalDateTime;
 import org.threeten.bp.format.DateTimeFormatter;
 import org.threeten.bp.format.DateTimeParseException;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.ChronoUnit;
 import org.threeten.bp.temporal.Temporal;
@@ -372,8 +371,8 @@ public final class LocalDateTime
     public static LocalDateTime ofEpochSecond(long epochSecond, int nanoOfSecond, ZoneOffset offset) {
         Objects.requireNonNull(offset, "offset");
         long localSecond = epochSecond + offset.getTotalSeconds();  // overflow caught later
-        long localEpochDay = Jdk8Methods.floorDiv(localSecond, SECONDS_PER_DAY);
-        int secsOfDay = Jdk8Methods.floorMod(localSecond, SECONDS_PER_DAY);
+        long localEpochDay = Math.floorDiv(localSecond, SECONDS_PER_DAY);
+        int secsOfDay = Math.floorMod(localSecond, SECONDS_PER_DAY);
         LocalDate date = LocalDate.ofEpochDay(localEpochDay);
         LocalTime time = LocalTime.ofSecondOfDay(secsOfDay, nanoOfSecond);
         return new LocalDateTime(date, time);
@@ -1421,8 +1420,8 @@ public final class LocalDateTime
                 + (hours % HOURS_PER_DAY) * NANOS_PER_HOUR;        //   max  86400000000000
         long curNoD = time.toNanoOfDay();                       //   max  86400000000000
         totNanos = totNanos * sign + curNoD;                    // total 432000000000000
-        totDays += Jdk8Methods.floorDiv(totNanos, NANOS_PER_DAY);
-        long newNoD = Jdk8Methods.floorMod(totNanos, NANOS_PER_DAY);
+        totDays += Math.floorDiv(totNanos, NANOS_PER_DAY);
+        long newNoD = Math.floorMod(totNanos, NANOS_PER_DAY);
         LocalTime newTime = newNoD == curNoD ? time : LocalTime.ofNanoOfDay(newNoD);
         return with(newDate.plusDays(totDays), newTime);
     }
@@ -1548,26 +1547,26 @@ public final class LocalDateTime
                 long amount = daysUntil;
                 switch (f) {
                     case NANOS:
-                        amount = Jdk8Methods.safeMultiply(amount, NANOS_PER_DAY);
-                        return Jdk8Methods.safeAdd(amount, timeUntil);
+                        amount = Math.multiplyExact(amount, NANOS_PER_DAY);
+                        return Math.addExact(amount, timeUntil);
                     case MICROS:
-                        amount = Jdk8Methods.safeMultiply(amount, MICROS_PER_DAY);
-                        return Jdk8Methods.safeAdd(amount, timeUntil / 1000);
+                        amount = Math.multiplyExact(amount, MICROS_PER_DAY);
+                        return Math.addExact(amount, timeUntil / 1000);
                     case MILLIS:
-                        amount = Jdk8Methods.safeMultiply(amount, MILLIS_PER_DAY);
-                        return Jdk8Methods.safeAdd(amount, timeUntil / 1000000);
+                        amount = Math.multiplyExact(amount, MILLIS_PER_DAY);
+                        return Math.addExact(amount, timeUntil / 1000000);
                     case SECONDS:
-                        amount = Jdk8Methods.safeMultiply(amount, SECONDS_PER_DAY);
-                        return Jdk8Methods.safeAdd(amount, timeUntil / NANOS_PER_SECOND);
+                        amount = Math.multiplyExact(amount, SECONDS_PER_DAY);
+                        return Math.addExact(amount, timeUntil / NANOS_PER_SECOND);
                     case MINUTES:
-                        amount = Jdk8Methods.safeMultiply(amount, MINUTES_PER_DAY);
-                        return Jdk8Methods.safeAdd(amount, timeUntil / NANOS_PER_MINUTE);
+                        amount = Math.multiplyExact(amount, MINUTES_PER_DAY);
+                        return Math.addExact(amount, timeUntil / NANOS_PER_MINUTE);
                     case HOURS:
-                        amount = Jdk8Methods.safeMultiply(amount, HOURS_PER_DAY);
-                        return Jdk8Methods.safeAdd(amount, timeUntil / NANOS_PER_HOUR);
+                        amount = Math.multiplyExact(amount, HOURS_PER_DAY);
+                        return Math.addExact(amount, timeUntil / NANOS_PER_HOUR);
                     case HALF_DAYS:
-                        amount = Jdk8Methods.safeMultiply(amount, 2);
-                        return Jdk8Methods.safeAdd(amount, timeUntil / (NANOS_PER_HOUR * 12));
+                        amount = Math.multiplyExact(amount, 2);
+                        return Math.addExact(amount, timeUntil / (NANOS_PER_HOUR * 12));
                 }
                 throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
             }

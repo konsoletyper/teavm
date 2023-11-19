@@ -68,7 +68,6 @@ import org.threeten.bp.Year;
 import org.threeten.bp.chrono.ChronoLocalDate;
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.format.ResolverStyle;
-import org.threeten.bp.jdk8.Jdk8Methods;
 
 /**
  * Localized definitions of the day-of-week, week-of-month and week-of-year fields.
@@ -642,7 +641,7 @@ public final class WeekFields implements Serializable {
             // Offset the ISO DOW by the start of this week
             int sow = weekDef.getFirstDayOfWeek().getValue();
             int isoDow = temporal.get(ChronoField.DAY_OF_WEEK);
-            int dow = Jdk8Methods.floorMod(isoDow - sow, 7) + 1;
+            int dow = Math.floorMod(isoDow - sow, 7) + 1;
 
             if (rangeUnit == ChronoUnit.WEEKS) {
                 return dow;
@@ -665,7 +664,7 @@ public final class WeekFields implements Serializable {
 
         private int localizedDayOfWeek(TemporalAccessor temporal, int sow) {
             int isoDow = temporal.get(DAY_OF_WEEK);
-            return Jdk8Methods.floorMod(isoDow - sow, 7) + 1;
+            return Math.floorMod(isoDow - sow, 7) + 1;
         }
 
         private long localizedWeekOfMonth(TemporalAccessor temporal, int dow) {
@@ -683,7 +682,7 @@ public final class WeekFields implements Serializable {
         private int localizedWOWBY(TemporalAccessor temporal) {
             int sow = weekDef.getFirstDayOfWeek().getValue();
             int isoDow = temporal.get(DAY_OF_WEEK);
-            int dow = Jdk8Methods.floorMod(isoDow - sow, 7) + 1;
+            int dow = Math.floorMod(isoDow - sow, 7) + 1;
             long woy = localizedWeekOfYear(temporal, dow);
             if (woy == 0) {
                 ChronoLocalDate previous = Chronology.from(temporal).date(temporal).minus(1, ChronoUnit.WEEKS);
@@ -703,7 +702,7 @@ public final class WeekFields implements Serializable {
         private int localizedWBY(TemporalAccessor temporal) {
             int sow = weekDef.getFirstDayOfWeek().getValue();
             int isoDow = temporal.get(DAY_OF_WEEK);
-            int dow = Jdk8Methods.floorMod(isoDow - sow, 7) + 1;
+            int dow = Math.floorMod(isoDow - sow, 7) + 1;
             int year = temporal.get(YEAR);
             long woy = localizedWeekOfYear(temporal, dow);
             if (woy == 0) {
@@ -729,7 +728,7 @@ public final class WeekFields implements Serializable {
          */
         private int startOfWeekOffset(int day, int dow) {
             // offset of first day corresponding to the day of week in first 7 days (zero origin)
-            int weekStart = Jdk8Methods.floorMod(day - dow, 7);
+            int weekStart = Math.floorMod(day - dow, 7);
             int offset = -weekStart;
             if (weekStart + 1 > weekDef.getMinimalDaysInFirstWeek()) {
                 // The previous week has the minimum days in the current month to be a 'week'
@@ -795,7 +794,7 @@ public final class WeekFields implements Serializable {
             if (rangeUnit == WEEKS) {  // day-of-week
                 final long value = fieldValues.remove(this);
                 int localDow = range.checkValidIntValue(value, this);
-                int isoDow = Jdk8Methods.floorMod((sow - 1) + (localDow - 1), 7) + 1;
+                int isoDow = Math.floorMod((sow - 1) + (localDow - 1), 7) + 1;
                 fieldValues.put(DAY_OF_WEEK, (long) isoDow);
                 return null;
             }
@@ -810,7 +809,7 @@ public final class WeekFields implements Serializable {
                 }
                 Chronology chrono = Chronology.from(partialTemporal);  // defaults to ISO
                 int isoDow = DAY_OF_WEEK.checkValidIntValue(fieldValues.get(DAY_OF_WEEK));
-                int dow = Jdk8Methods.floorMod(isoDow - sow, 7) + 1;
+                int dow = Math.floorMod(isoDow - sow, 7) + 1;
                 final int wby = range().checkValidIntValue(fieldValues.get(this), this);
                 ChronoLocalDate date;
                 long days;
@@ -844,7 +843,7 @@ public final class WeekFields implements Serializable {
                 return null;
             }
             int isoDow = DAY_OF_WEEK.checkValidIntValue(fieldValues.get(DAY_OF_WEEK));
-            int dow = Jdk8Methods.floorMod(isoDow - sow, 7) + 1;
+            int dow = Math.floorMod(isoDow - sow, 7) + 1;
             int year = YEAR.checkValidIntValue(fieldValues.get(YEAR));
             Chronology chrono = Chronology.from(partialTemporal);  // defaults to ISO
             if (rangeUnit == MONTHS) {  // week-of-month
@@ -976,7 +975,7 @@ public final class WeekFields implements Serializable {
             // Offset the ISO DOW by the start of this week
             int sow = weekDef.getFirstDayOfWeek().getValue();
             int isoDow = temporal.get(ChronoField.DAY_OF_WEEK);
-            int dow = Jdk8Methods.floorMod(isoDow - sow, 7) + 1;
+            int dow = Math.floorMod(isoDow - sow, 7) + 1;
 
             int offset = startOfWeekOffset(temporal.get(field), dow);
             ValueRange fieldRange = temporal.range(field);
@@ -987,7 +986,7 @@ public final class WeekFields implements Serializable {
         private ValueRange rangeWOWBY(TemporalAccessor temporal) {
             int sow = weekDef.getFirstDayOfWeek().getValue();
             int isoDow = temporal.get(DAY_OF_WEEK);
-            int dow = Jdk8Methods.floorMod(isoDow - sow, 7) + 1;
+            int dow = Math.floorMod(isoDow - sow, 7) + 1;
             long woy = localizedWeekOfYear(temporal, dow);
             if (woy == 0) {
                 return rangeWOWBY(Chronology.from(temporal).date(temporal).minus(2, ChronoUnit.WEEKS));

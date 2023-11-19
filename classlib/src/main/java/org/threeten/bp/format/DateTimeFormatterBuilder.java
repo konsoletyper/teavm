@@ -86,7 +86,6 @@ import org.threeten.bp.ZoneOffset;
 import org.threeten.bp.chrono.ChronoLocalDate;
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.format.SimpleDateTimeTextProvider.LocaleStore;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.IsoFields;
 import org.threeten.bp.temporal.TemporalAccessor;
@@ -2967,8 +2966,8 @@ public final class DateTimeFormatterBuilder {
             if (inSec >= -SECONDS_0000_TO_1970) {
                 // current era
                 long zeroSecs = inSec - SECONDS_PER_10000_YEARS + SECONDS_0000_TO_1970;
-                long hi = Jdk8Methods.floorDiv(zeroSecs, SECONDS_PER_10000_YEARS) + 1;
-                long lo = Jdk8Methods.floorMod(zeroSecs, SECONDS_PER_10000_YEARS);
+                long hi = Math.floorDiv(zeroSecs, SECONDS_PER_10000_YEARS) + 1;
+                long lo = Math.floorMod(zeroSecs, SECONDS_PER_10000_YEARS);
                 LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, 0, ZoneOffset.UTC);
                 if (hi > 0) {
                     buf.append('+').append(hi);
@@ -3064,7 +3063,7 @@ public final class DateTimeFormatterBuilder {
             try {
                 LocalDateTime ldt = LocalDateTime.of(year, month, day, hour, min, sec, 0).plusDays(days);
                 instantSecs = ldt.toEpochSecond(ZoneOffset.UTC);
-                instantSecs += Jdk8Methods.safeMultiply(yearParsed / 10000L, SECONDS_PER_10000_YEARS);
+                instantSecs += Math.multiplyExact(yearParsed / 10000L, SECONDS_PER_10000_YEARS);
             } catch (RuntimeException ex) {
                 return ~position;
             }
@@ -3120,7 +3119,7 @@ public final class DateTimeFormatterBuilder {
             if (offsetSecs == null) {
                 return false;
             }
-            int totalSecs = Jdk8Methods.safeToInt(offsetSecs);
+            int totalSecs = Math.toIntExact(offsetSecs);
             if (totalSecs == 0) {
                 buf.append(noOffsetText);
             } else {
@@ -3253,7 +3252,7 @@ public final class DateTimeFormatterBuilder {
             if (style == TextStyle.FULL) {
                 return new OffsetIdPrinterParser("", "+HH:MM:ss").print(context, buf);
             }
-            int totalSecs = Jdk8Methods.safeToInt(offsetSecs);
+            int totalSecs = Math.toIntExact(offsetSecs);
             if (totalSecs != 0) {
                 int absHours = Math.abs((totalSecs / 3600) % 100);  // anything larger than 99 silently dropped
                 int absMinutes = Math.abs((totalSecs / 60) % 60);

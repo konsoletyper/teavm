@@ -59,7 +59,6 @@ import org.threeten.bp.LocalDate;
 import org.threeten.bp.LocalDateTime;
 import org.threeten.bp.Year;
 import org.threeten.bp.ZoneOffset;
-import org.threeten.bp.jdk8.Jdk8Methods;
 
 /**
  * The rules describing how the zone offset varies through the year and historically.
@@ -479,7 +478,7 @@ final class StandardZoneRules extends ZoneRules implements Serializable {
     private int findYear(long epochSecond, ZoneOffset offset) {
         // inline for performance
         long localSecond = epochSecond + offset.getTotalSeconds();
-        long localEpochDay = Jdk8Methods.floorDiv(localSecond, 86400);
+        long localEpochDay = Math.floorDiv(localSecond, 86400);
         return LocalDate.ofEpochDay(localEpochDay).getYear();
     }
 

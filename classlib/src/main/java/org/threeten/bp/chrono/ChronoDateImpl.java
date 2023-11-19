@@ -50,7 +50,6 @@ import java.io.Serializable;
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.LocalDate;
 import org.threeten.bp.LocalTime;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoUnit;
 import org.threeten.bp.temporal.Temporal;
 import org.threeten.bp.temporal.TemporalAdjuster;
@@ -140,12 +139,12 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
             ChronoUnit f = (ChronoUnit) unit;
             switch (f) {
                 case DAYS: return plusDays(amountToAdd);
-                case WEEKS: return plusDays(Jdk8Methods.safeMultiply(amountToAdd, 7));
+                case WEEKS: return plusDays(Math.multiplyExact(amountToAdd, 7));
                 case MONTHS: return plusMonths(amountToAdd);
                 case YEARS: return plusYears(amountToAdd);
-                case DECADES: return plusYears(Jdk8Methods.safeMultiply(amountToAdd, 10));
-                case CENTURIES: return plusYears(Jdk8Methods.safeMultiply(amountToAdd, 100));
-                case MILLENNIA: return plusYears(Jdk8Methods.safeMultiply(amountToAdd, 1000));
+                case DECADES: return plusYears(Math.multiplyExact(amountToAdd, 10));
+                case CENTURIES: return plusYears(Math.multiplyExact(amountToAdd, 100));
+                case MILLENNIA: return plusYears(Math.multiplyExact(amountToAdd, 1000));
 //                case ERAS: throw new DateTimeException("Unable to add era,
 //                standard calendar system only has one era");
 //                case FOREVER: return (period == 0 ? this : (period > 0 ? LocalDate.MAX_DATE : LocalDate.MIN_DATE));
@@ -204,7 +203,7 @@ abstract class ChronoDateImpl<D extends ChronoLocalDate>
      * @throws DateTimeException if the result exceeds the supported date range
      */
     ChronoDateImpl<D> plusWeeks(long weeksToAdd) {
-        return plusDays(Jdk8Methods.safeMultiply(weeksToAdd, 7));
+        return plusDays(Math.multiplyExact(weeksToAdd, 7));
     }
 
     /**

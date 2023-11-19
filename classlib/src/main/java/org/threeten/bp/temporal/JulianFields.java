@@ -55,7 +55,6 @@ import java.util.Objects;
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.format.ResolverStyle;
-import org.threeten.bp.jdk8.Jdk8Methods;
 
 /**
  * A set of date fields that provide access to Julian Days.
@@ -245,7 +244,7 @@ public final class JulianFields {
             if (!range().isValidValue(newValue)) {
                 throw new DateTimeException("Invalid value: " + name + " " + newValue);
             }
-            return (R) dateTime.with(EPOCH_DAY, Jdk8Methods.safeSubtract(newValue, offset));
+            return (R) dateTime.with(EPOCH_DAY, Math.subtractExact(newValue, offset));
         }
 
         @Override
@@ -260,7 +259,7 @@ public final class JulianFields {
                 TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
             long value = fieldValues.remove(this);
             Chronology chrono = Chronology.from(partialTemporal);
-            return chrono.dateEpochDay(Jdk8Methods.safeSubtract(value, offset));
+            return chrono.dateEpochDay(Math.subtractExact(value, offset));
         }
 
         //-----------------------------------------------------------------------

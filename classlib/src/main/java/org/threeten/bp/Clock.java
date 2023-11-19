@@ -51,7 +51,6 @@ import static org.threeten.bp.LocalTime.NANOS_PER_SECOND;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.TimeZone;
-import org.threeten.bp.jdk8.Jdk8Methods;
 
 /**
  * A clock providing access to the current instant, date and time using a time-zone.
@@ -527,7 +526,7 @@ public abstract class Clock {
         }
         @Override
         public long millis() {
-            return Jdk8Methods.safeAdd(baseClock.millis(), offset.toMillis());
+            return Math.addExact(baseClock.millis(), offset.toMillis());
         }
         @Override
         public Instant instant() {
@@ -577,17 +576,17 @@ public abstract class Clock {
         @Override
         public long millis() {
             long millis = baseClock.millis();
-            return millis - Jdk8Methods.floorMod(millis, tickNanos / 1000000L);
+            return millis - Math.floorMod(millis, tickNanos / 1000000L);
         }
         @Override
         public Instant instant() {
             if ((tickNanos % 1000000) == 0) {
                 long millis = baseClock.millis();
-                return Instant.ofEpochMilli(millis - Jdk8Methods.floorMod(millis, tickNanos / 1000000L));
+                return Instant.ofEpochMilli(millis - Math.floorMod(millis, tickNanos / 1000000L));
             }
             Instant instant = baseClock.instant();
             long nanos = instant.getNano();
-            long adjust = Jdk8Methods.floorMod(nanos, tickNanos);
+            long adjust = Math.floorMod(nanos, tickNanos);
             return instant.minusNanos(adjust);
         }
         @Override

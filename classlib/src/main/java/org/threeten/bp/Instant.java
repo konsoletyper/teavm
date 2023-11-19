@@ -61,7 +61,6 @@ import org.threeten.bp.format.DateTimeFormatter;
 import org.threeten.bp.format.DateTimeFormatterBuilder;
 import org.threeten.bp.format.DateTimeParseException;
 import org.threeten.bp.format.DateTimePrintContext;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.ChronoUnit;
 import org.threeten.bp.temporal.Temporal;
@@ -302,8 +301,8 @@ public final class Instant
      * @throws ArithmeticException if numeric overflow occurs
      */
     public static Instant ofEpochSecond(long epochSecond, long nanoAdjustment) {
-        long secs = Jdk8Methods.safeAdd(epochSecond, Jdk8Methods.floorDiv(nanoAdjustment, NANOS_PER_SECOND));
-        int nos = Jdk8Methods.floorMod(nanoAdjustment, NANOS_PER_SECOND);
+        long secs = Math.addExact(epochSecond, Math.floorDiv(nanoAdjustment, NANOS_PER_SECOND));
+        int nos = Math.floorMod(nanoAdjustment, NANOS_PER_SECOND);
         return create(secs, nos);
     }
 
@@ -318,8 +317,8 @@ public final class Instant
      * @throws DateTimeException if the instant exceeds the maximum or minimum instant
      */
     public static Instant ofEpochMilli(long epochMilli) {
-        long secs = Jdk8Methods.floorDiv(epochMilli, 1000);
-        int mos = Jdk8Methods.floorMod(epochMilli, 1000);
+        long secs = Math.floorDiv(epochMilli, 1000);
+        int mos = Math.floorMod(epochMilli, 1000);
         return create(secs, mos * NANOS_PER_MILLI);
     }
 
@@ -694,7 +693,7 @@ public final class Instant
             throw new DateTimeException("Unit must divide into a standard day without remainder");
         }
         long nod = (seconds % LocalTime.SECONDS_PER_DAY) * LocalTime.NANOS_PER_SECOND + nanos;
-        long result = Jdk8Methods.floorDiv(nod, dur) * dur;
+        long result = Math.floorDiv(nod, dur) * dur;
         return plusNanos(result - nod);
     }
 
@@ -722,10 +721,10 @@ public final class Instant
                 case MICROS: return plus(amountToAdd / 1000000, (amountToAdd % 1000000) * 1000);
                 case MILLIS: return plusMillis(amountToAdd);
                 case SECONDS: return plusSeconds(amountToAdd);
-                case MINUTES: return plusSeconds(Jdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_MINUTE));
-                case HOURS: return plusSeconds(Jdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_HOUR));
-                case HALF_DAYS: return plusSeconds(Jdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_DAY / 2));
-                case DAYS: return plusSeconds(Jdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_DAY));
+                case MINUTES: return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_MINUTE));
+                case HOURS: return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_HOUR));
+                case HALF_DAYS: return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_DAY / 2));
+                case DAYS: return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_DAY));
             }
             throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
@@ -790,8 +789,8 @@ public final class Instant
         if ((secondsToAdd | nanosToAdd) == 0) {
             return this;
         }
-        long epochSec = Jdk8Methods.safeAdd(seconds, secondsToAdd);
-        epochSec = Jdk8Methods.safeAdd(epochSec, nanosToAdd / NANOS_PER_SECOND);
+        long epochSec = Math.addExact(seconds, secondsToAdd);
+        epochSec = Math.addExact(epochSec, nanosToAdd / NANOS_PER_SECOND);
         nanosToAdd = nanosToAdd % NANOS_PER_SECOND;
         long nanoAdjustment = nanos + nanosToAdd;  // safe int+NANOS_PER_SECOND
         return ofEpochSecond(epochSec, nanoAdjustment);
@@ -985,7 +984,7 @@ public final class Instant
             switch (f) {
                 case NANOS: return nanosUntil(end);
                 case MICROS: return nanosUntil(end) / 1000;
-                case MILLIS: return Jdk8Methods.safeSubtract(end.toEpochMilli(), toEpochMilli());
+                case MILLIS: return Math.subtractExact(end.toEpochMilli(), toEpochMilli());
                 case SECONDS: return secondsUntil(end);
                 case MINUTES: return secondsUntil(end) / SECONDS_PER_MINUTE;
                 case HOURS: return secondsUntil(end) / SECONDS_PER_HOUR;
@@ -998,13 +997,13 @@ public final class Instant
     }
 
     private long nanosUntil(Instant end) {
-        long secsDiff = Jdk8Methods.safeSubtract(end.seconds, seconds);
-        long totalNanos = Jdk8Methods.safeMultiply(secsDiff, NANOS_PER_SECOND);
-        return Jdk8Methods.safeAdd(totalNanos, end.nanos - nanos);
+        long secsDiff = Math.subtractExact(end.seconds, seconds);
+        long totalNanos = Math.multiplyExact(secsDiff, NANOS_PER_SECOND);
+        return Math.addExact(totalNanos, end.nanos - nanos);
     }
 
     private long secondsUntil(Instant end) {
-        long secsDiff = Jdk8Methods.safeSubtract(end.seconds, seconds);
+        long secsDiff = Math.subtractExact(end.seconds, seconds);
         long nanosDiff = end.nanos - nanos;
         if (secsDiff > 0 && nanosDiff < 0) {
             secsDiff--;
@@ -1067,8 +1066,8 @@ public final class Instant
      */
     public long toEpochMilli() {
         if (seconds >= 0) {
-            long millis = Jdk8Methods.safeMultiply(seconds, MILLIS_PER_SEC);
-            return Jdk8Methods.safeAdd(millis, nanos / NANOS_PER_MILLI);
+            long millis = Math.multiplyExact(seconds, MILLIS_PER_SEC);
+            return Math.addExact(millis, nanos / NANOS_PER_MILLI);
         } else {
             // prevent an overflow in seconds * 1000
             // instead of going form the second farther away from 0
@@ -1076,8 +1075,8 @@ public final class Instant
             // we go from the second closer to 0 away from 0
             // that way we always stay in the valid long range
             // seconds + 1 can not overflow because it is negative
-            long millis = Jdk8Methods.safeMultiply(seconds + 1, MILLIS_PER_SEC);
-            return Jdk8Methods.safeSubtract(millis, MILLIS_PER_SEC - nanos / NANOS_PER_MILLI);
+            long millis = Math.multiplyExact(seconds + 1, MILLIS_PER_SEC);
+            return Math.subtractExact(millis, MILLIS_PER_SEC - nanos / NANOS_PER_MILLI);
         }
     }
 

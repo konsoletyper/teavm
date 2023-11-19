@@ -62,7 +62,6 @@ import org.threeten.bp.DayOfWeek;
 import org.threeten.bp.LocalDate;
 import org.threeten.bp.LocalTime;
 import org.threeten.bp.ZoneId;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.TemporalAccessor;
 import org.threeten.bp.temporal.TemporalAdjuster;
@@ -746,7 +745,7 @@ public final class HijrahDate
         if (years == 0) {
             return this;
         }
-        int newYear = Jdk8Methods.safeAdd(this.yearOfEra, (int) years);
+        int newYear = Math.addExact(this.yearOfEra, (int) years);
         return HijrahDate.of(this.era, newYear, this.monthOfYear, this.dayOfMonth);
     }
 
@@ -761,9 +760,9 @@ public final class HijrahDate
         newMonth = newMonth % 12;
         while (newMonth < 0) {
             newMonth += 12;
-            years = Jdk8Methods.safeSubtract(years, 1);
+            years = Math.subtractExact(years, 1);
         }
-        int newYear = Jdk8Methods.safeAdd(this.yearOfEra, years);
+        int newYear = Math.addExact(this.yearOfEra, years);
         return HijrahDate.of(this.era, newYear, newMonth + 1, this.dayOfMonth);
     }
 

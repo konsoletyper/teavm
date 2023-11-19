@@ -82,7 +82,6 @@ import org.threeten.bp.chrono.ChronoLocalDateTime;
 import org.threeten.bp.chrono.ChronoZonedDateTime;
 import org.threeten.bp.chrono.Chronology;
 import org.threeten.bp.chrono.IsoChronology;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.TemporalAccessor;
 import org.threeten.bp.temporal.TemporalField;
@@ -518,25 +517,25 @@ public final class DateTimeBuilder
                         if (nos == null) {
                             nos = 0L;
                         }
-                        long totalNanos = Jdk8Methods.safeMultiply(hodVal, 3600000000000L);
-                        totalNanos = Jdk8Methods.safeAdd(totalNanos, Jdk8Methods.safeMultiply(moh, 60000000000L));
-                        totalNanos = Jdk8Methods.safeAdd(totalNanos, Jdk8Methods.safeMultiply(som, 1000000000L));
-                        totalNanos = Jdk8Methods.safeAdd(totalNanos, nos);
-                        int excessDays = (int) Jdk8Methods.floorDiv(totalNanos, 86400000000000L);  // safe int cast
-                        long nod = Jdk8Methods.floorMod(totalNanos, 86400000000000L);
+                        long totalNanos = Math.multiplyExact(hodVal, 3600000000000L);
+                        totalNanos = Math.addExact(totalNanos, Math.multiplyExact(moh, 60000000000L));
+                        totalNanos = Math.addExact(totalNanos, Math.multiplyExact(som, 1000000000L));
+                        totalNanos = Math.addExact(totalNanos, nos);
+                        int excessDays = (int) Math.floorDiv(totalNanos, 86400000000000L);  // safe int cast
+                        long nod = Math.floorMod(totalNanos, 86400000000000L);
                         addObject(LocalTime.ofNanoOfDay(nod));
                         this.excessDays = Period.ofDays(excessDays);
                     } else {
-                        long totalSecs = Jdk8Methods.safeMultiply(hodVal, 3600L);
-                        totalSecs = Jdk8Methods.safeAdd(totalSecs, Jdk8Methods.safeMultiply(moh, 60L));
-                        int excessDays = (int) Jdk8Methods.floorDiv(totalSecs, 86400L);  // safe int cast
-                        long sod = Jdk8Methods.floorMod(totalSecs, 86400L);
+                        long totalSecs = Math.multiplyExact(hodVal, 3600L);
+                        totalSecs = Math.addExact(totalSecs, Math.multiplyExact(moh, 60L));
+                        int excessDays = (int) Math.floorDiv(totalSecs, 86400L);  // safe int cast
+                        long sod = Math.floorMod(totalSecs, 86400L);
                         addObject(LocalTime.ofSecondOfDay(sod));
                         this.excessDays = Period.ofDays(excessDays);
                     }
                 } else {
-                    int excessDays = Jdk8Methods.safeToInt(Jdk8Methods.floorDiv(hodVal, 24L));
-                    hodVal = Jdk8Methods.floorMod(hodVal, 24);
+                    int excessDays = Math.toIntExact(Math.floorDiv(hodVal, 24L));
+                    hodVal = Math.floorMod(hodVal, 24);
                     addObject(LocalTime.of((int) hodVal, 0));
                     this.excessDays = Period.ofDays(excessDays);
                 }

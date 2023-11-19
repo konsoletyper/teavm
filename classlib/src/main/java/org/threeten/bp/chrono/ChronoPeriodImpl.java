@@ -55,7 +55,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.threeten.bp.DateTimeException;
-import org.threeten.bp.jdk8.Jdk8Methods;
 import org.threeten.bp.temporal.ChronoField;
 import org.threeten.bp.temporal.Temporal;
 import org.threeten.bp.temporal.TemporalAmount;
@@ -115,9 +114,9 @@ final class ChronoPeriodImpl
             if (amount.getChronology().equals(getChronology())) {
                 return new ChronoPeriodImpl(
                         chronology,
-                        Jdk8Methods.safeAdd(years, amount.years),
-                        Jdk8Methods.safeAdd(months, amount.months),
-                        Jdk8Methods.safeAdd(days, amount.days));
+                        Math.addExact(years, amount.years),
+                        Math.addExact(months, amount.months),
+                        Math.addExact(days, amount.days));
             }
         }
         throw new DateTimeException("Unable to add amount: " + amountToAdd);
@@ -130,9 +129,9 @@ final class ChronoPeriodImpl
             if (amount.getChronology().equals(getChronology())) {
                 return new ChronoPeriodImpl(
                         chronology,
-                        Jdk8Methods.safeSubtract(years, amount.years),
-                        Jdk8Methods.safeSubtract(months, amount.months),
-                        Jdk8Methods.safeSubtract(days, amount.days));
+                        Math.subtractExact(years, amount.years),
+                        Math.subtractExact(months, amount.months),
+                        Math.subtractExact(days, amount.days));
             }
         }
         throw new DateTimeException("Unable to subtract amount: " + amountToSubtract);
@@ -142,9 +141,9 @@ final class ChronoPeriodImpl
     public ChronoPeriod multipliedBy(int scalar) {
         return new ChronoPeriodImpl(
                 chronology,
-                Jdk8Methods.safeMultiply(years, scalar),
-                Jdk8Methods.safeMultiply(months, scalar),
-                Jdk8Methods.safeMultiply(days, scalar));
+                Math.multiplyExact(years, scalar),
+                Math.multiplyExact(months, scalar),
+                Math.multiplyExact(days, scalar));
     }
 
     @Override
@@ -153,8 +152,8 @@ final class ChronoPeriodImpl
             long monthLength = chronology.range(ChronoField.MONTH_OF_YEAR).getMaximum()
                     - chronology.range(ChronoField.MONTH_OF_YEAR).getMinimum() + 1;
             long total = years * monthLength + months;
-            int years = Jdk8Methods.safeToInt(total / monthLength);
-            int months = Jdk8Methods.safeToInt(total % monthLength);
+            int years = Math.toIntExact(total / monthLength);
+            int months = Math.toIntExact(total % monthLength);
             return new ChronoPeriodImpl(chronology, years, months, days);
         }
         return this;
