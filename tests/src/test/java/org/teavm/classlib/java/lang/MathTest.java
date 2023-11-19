@@ -16,6 +16,9 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipPlatform;
@@ -196,5 +199,90 @@ public class MathTest {
         sameFloat(-0.0f, Math.min(0.0f, -0.0f));
         sameFloat(0.0f, Math.max(-0.0f, 0.0f));
         sameFloat(0.0f, Math.max(0.0f, -0.0f));
+    }
+
+    @Test
+    public void exacts() {
+        try {
+            Math.incrementExact(Integer.MAX_VALUE);
+            fail();
+        } catch (ArithmeticException e) {
+            // ok
+        }
+        try {
+            Math.negateExact(Integer.MIN_VALUE);
+            fail();
+        } catch (ArithmeticException e) {
+            // ok
+        }
+        try {
+            Math.toIntExact((long) Integer.MAX_VALUE + 1);
+            fail();
+        } catch (ArithmeticException e) {
+            // ok
+        }
+        try {
+            Math.addExact(Integer.MAX_VALUE, Integer.MAX_VALUE);
+            fail();
+        } catch (ArithmeticException e) {
+            // ok
+        }
+        try {
+            Math.subtractExact(Integer.MIN_VALUE, 2);
+            fail();
+        } catch (ArithmeticException e) {
+            // ok
+        }
+        try {
+            Math.multiplyExact(Integer.MIN_VALUE, -1);
+            fail();
+        } catch (ArithmeticException e) {
+            // ok
+        }
+        try {
+            Math.multiplyExact(Integer.MIN_VALUE, 2);
+            fail();
+        } catch (ArithmeticException e) {
+            // ok
+        }
+        try {
+            Math.multiplyExact(1 << 30, 2);
+            fail();
+        } catch (ArithmeticException e) {
+            // ok
+        }
+        try {
+            Math.divideExact(Integer.MIN_VALUE, -1);
+            fail();
+        } catch (ArithmeticException e) {
+            // ok
+        }
+        IntStream.rangeClosed(-10, 10).forEach(x -> {
+            assertEquals(x + 1, Math.incrementExact(x));
+            assertEquals(x - 1, Math.decrementExact(x));
+            assertEquals(-x, Math.negateExact(x));
+            IntStream.rangeClosed(-10, 10).forEach(y -> {
+                assertEquals(x + y, Math.addExact(x, y));
+                assertEquals(x - y, Math.subtractExact(x, y));
+                assertEquals(x * y, Math.multiplyExact(x, y));
+                if (y != 0) {
+                    assertEquals(x / y, Math.divideExact(x, y));
+                }
+            });
+        });
+        LongStream.rangeClosed(-10, 10).forEach(x -> {
+            assertEquals(x + 1, Math.incrementExact(x));
+            assertEquals(x - 1, Math.decrementExact(x));
+            assertEquals(-x, Math.negateExact(x));
+            assertEquals((int) x, Math.toIntExact(x));
+            LongStream.rangeClosed(-10, 10).forEach(y -> {
+                assertEquals(x + y, Math.addExact(x, y));
+                assertEquals(x - y, Math.subtractExact(x, y));
+                assertEquals(x * y, Math.multiplyExact(x, y));
+                if (y != 0) {
+                    assertEquals(x / y, Math.divideExact(x, y));
+                }
+            });
+        });
     }
 }

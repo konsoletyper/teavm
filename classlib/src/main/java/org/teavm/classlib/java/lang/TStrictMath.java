@@ -107,6 +107,94 @@ public final class TStrictMath extends TObject {
         return TMath.round(a);
     }
 
+    public static int floorDiv(int a, int b) {
+        return TMath.floorDiv(a, b);
+    }
+
+    public static long floorDiv(long a, int b) {
+        return TMath.floorDiv(a, b);
+    }
+
+    public static long floorDiv(long a, long b) {
+        return TMath.floorDiv(a, b);
+    }
+
+    public static int floorMod(int a, int b) {
+        return TMath.floorMod(a, b);
+    }
+
+    public static int floorMod(long a, int b) {
+        return TMath.floorMod(a, b);
+    }
+
+    public static long floorMod(long a, long b) {
+        return TMath.floorMod(a, b);
+    }
+
+    public static int addExact(int a, int b) {
+        return TMath.addExact(a, b);
+    }
+
+    public static long addExact(long a, long b) {
+        return TMath.addExact(a, b);
+    }
+
+    public static int subtractExact(int a, int b) {
+        return TMath.subtractExact(a, b);
+    }
+
+    public static long subtractExact(long a, long b) {
+        return TMath.subtractExact(a, b);
+    }
+
+    public static int multiplyExact(int a, int b) {
+        return TMath.multiplyExact(a, b);
+    }
+
+    public static long multiplyExact(long a, int b) {
+        return TMath.multiplyExact(a, b);
+    }
+
+    public static long multiplyExact(long a, long b) {
+        return TMath.multiplyExact(a, b);
+    }
+
+    public static int divideExact(int a, int b) {
+        return TMath.divideExact(a, b);
+    }
+
+    public static long divideExact(long a, long b) {
+        return TMath.divideExact(a, b);
+    }
+
+    public static int incrementExact(int a) {
+        return TMath.incrementExact(a);
+    }
+
+    public static long incrementExact(long a) {
+        return TMath.incrementExact(a);
+    }
+
+    public static int decrementExact(int a) {
+        return TMath.decrementExact(a);
+    }
+
+    public static long decrementExact(long a) {
+        return TMath.decrementExact(a);
+    }
+
+    public static int negateExact(int a) {
+        return TMath.negateExact(a);
+    }
+
+    public static long negateExact(long a) {
+        return TMath.negateExact(a);
+    }
+
+    public static int toIntExact(long value) {
+        return TMath.toIntExact(value);
+    }
+
     public static double random() {
         return TMath.random();
     }
