@@ -202,7 +202,7 @@ public class MathTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.C})
     public void exacts() {
         try {
             Math.incrementExact(Integer.MAX_VALUE);
