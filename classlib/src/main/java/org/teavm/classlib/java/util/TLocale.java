@@ -278,7 +278,7 @@ public final class TLocale implements TCloneable, TSerializable {
 
     public TString toLanguageTag() {
         StringBuilder result = new StringBuilder();
-        result.append(languageCode);
+        result.append(languageCode.isEmpty() ? "und" : languageCode);
         if (!countryCode.isEmpty()) {
             result.append('-');
             result.append(countryCode);

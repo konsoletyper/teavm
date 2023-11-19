@@ -70,5 +70,6 @@ public class LocaleTest {
         assertEquals("zh-CN", Locale.SIMPLIFIED_CHINESE.toLanguageTag());
         assertEquals("en-GB", Locale.UK.toLanguageTag());
         assertEquals("en-US", Locale.US.toLanguageTag());
+        assertEquals("und", Locale.ROOT.toLanguageTag());
     }
 }
