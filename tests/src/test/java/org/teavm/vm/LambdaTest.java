@@ -17,12 +17,15 @@ package org.teavm.vm;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.EachTestCompiledSeparately;
@@ -78,6 +81,31 @@ public class LambdaTest {
     @Test
     public void unusedLambda() {
         Consumer<String> foo = bar -> { };
+    }
+
+    @Test
+    public void methodReferenceUnboxing() {
+        var map = Map.of(1, 23.0, 2, 42.0);
+        ToDoubleFunction<Integer> f = map::get;
+        assertEquals(23.0, f.applyAsDouble(1), 0.01);
+        assertNotEquals(24.0, f.applyAsDouble(1), 0.01);
+        assertEquals(42.0, f.applyAsDouble(2), 0.01);
+
+        var intMap = Map.of(1, 23, 2, 42);
+        ToDoubleFunction<Integer> g = intMap::get;
+        assertEquals(23.0, g.applyAsDouble(1), 0.01);
+        assertNotEquals(24.0, g.applyAsDouble(1), 0.01);
+        assertEquals(42.0, g.applyAsDouble(2), 0.01);
+    }
+
+    @Test
+    public void methodReferenceBoxing() {
+        java.util.function.Function<Integer, Object> f = this::intFunction;
+        assertEquals(25, f.apply(23));
+    }
+
+    private int intFunction(int a) {
+        return a + 2;
     }
 
     private String acceptIntPredicate(IntPredicate p) {
