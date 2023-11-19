@@ -188,19 +188,35 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         } else if (from instanceof ValueType.Primitive && to instanceof ValueType.Object) {
             String primitiveClass = ((ValueType.Object) to).getClassName();
             PrimitiveType toType = getWrappedPrimitive(primitiveClass);
+            var fromType = (ValueType.Primitive) from;
             if (toType == null) {
-                return arg;
+                return arg.getProgramEmitter().invoke(fromType.getBoxedType().getClassName(), "valueOf",
+                        fromType.getBoxedType(), arg);
             }
             arg = tryConvertArgument(arg, from, ValueType.primitive(toType));
             return arg.getProgramEmitter().invoke(primitiveClass, "valueOf", to, arg);
         } else if (from instanceof ValueType.Object && to instanceof ValueType.Primitive) {
-            String primitiveClass = ((ValueType.Object) from).getClassName();
-            PrimitiveType fromType = getWrappedPrimitive(primitiveClass);
-            if (fromType == null) {
-                return arg;
+            var fromClass = ((ValueType.Object) from).getClassName();
+            var primitiveType = (ValueType.Primitive) to;
+            if (fromClass.equals("java.lang.Object")) {
+                switch (primitiveType.getKind()) {
+                    case BYTE:
+                    case SHORT:
+                    case INTEGER:
+                    case LONG:
+                    case FLOAT:
+                    case DOUBLE:
+                        arg = arg.cast(ValueType.object("java.lang.Number"));
+                        break;
+                    case BOOLEAN:
+                        arg = arg.cast(ValueType.object("java.lang.Boolean"));
+                        break;
+                    case CHARACTER:
+                        arg = arg.cast(ValueType.object("java.lang.Character"));
+                        break;
+                }
             }
-            arg = arg.invokeVirtual(primitiveName(fromType) + "Value", ValueType.primitive(fromType));
-            return tryConvertArgument(arg, ValueType.primitive(fromType), to);
+            return arg.invokeVirtual(primitiveName(primitiveType.getKind()) + "Value", primitiveType);
         } else {
             return arg.cast(to);
         }
