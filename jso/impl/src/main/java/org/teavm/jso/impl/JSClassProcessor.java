@@ -631,7 +631,7 @@ class JSClassProcessor {
         }
         if (isProperSetIndexer(method.getDescriptor())) {
             var index = invoke.getArguments().get(0);
-            marshaller.wrapArgument(callLocation, index, method.parameterType(0), types.typeOf(index), false);
+            index = marshaller.wrapArgument(callLocation, index, method.parameterType(0), types.typeOf(index), false);
             var value = invoke.getArguments().get(1);
             value = marshaller.wrapArgument(callLocation, value, method.parameterType(1),
                     types.typeOf(value), false);
