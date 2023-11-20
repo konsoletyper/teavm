@@ -34,7 +34,9 @@ let $rt_createOutputFunction = outputFunction => {
 
 let $rt_putStdout = typeof teavm_globals.$rt_putStdoutCustom === "function"
     ? teavm_globals.$rt_putStdoutCustom
-    : typeof console === "object" ? $rt_createOutputFunction(msg => console.info(msg)) : () => {};
+    : typeof teavm_globals.console === "object"
+        ? $rt_createOutputFunction(msg => teavm_globals.console.info(msg)) : () => {};
 let $rt_putStderr = typeof teavm_globals.$rt_putStderrCustom === "function"
     ? teavm_globals.$rt_putStderrCustom
-    : typeof console === "object" ? $rt_createOutputFunction(msg => console.error(msg)) : () => {};
+    : typeof teavm_globals.console === "object"
+        ? $rt_createOutputFunction(msg => teavm_globals.console.error(msg)) : () => {};
