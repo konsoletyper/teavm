@@ -328,7 +328,7 @@ public class AstWriter {
             writer.softNewLine();
         }
         writer.outdent().append('}');
-        leaveScope(scope);
+        leaveScope(scope, node);
     }
 
     private void print(LabeledStatement node) {
@@ -376,7 +376,7 @@ public class AstWriter {
         writer.append("while").ws().append('(');
         print(node.getCondition());
         writer.append(");");
-        leaveScope(scope);
+        leaveScope(scope, node);
     }
 
     private void print(ForInLoop node) {
@@ -391,7 +391,7 @@ public class AstWriter {
         print(node.getIteratedObject());
         writer.append(')').ws();
         print(node.getBody());
-        leaveScope(scope);
+        leaveScope(scope, node);
     }
 
     private void print(ForLoop node) {
@@ -404,7 +404,7 @@ public class AstWriter {
         print(node.getIncrement());
         writer.append(')').ws();
         print(node.getBody());
-        leaveScope(scope);
+        leaveScope(scope, node);
     }
 
     private void print(WhileLoop node) {
@@ -413,7 +413,7 @@ public class AstWriter {
         print(node.getCondition());
         writer.append(')').ws();
         print(node.getBody());
-        leaveScope(scope);
+        leaveScope(scope, node);
     }
 
     private void print(IfStatement node) {
@@ -634,7 +634,7 @@ public class AstWriter {
         }
         print(node.getResult());
         writer.append(']');
-        leaveScope(scope);
+        leaveScope(scope, node);
     }
 
     private void print(GeneratorExpression node) {
@@ -654,7 +654,7 @@ public class AstWriter {
         }
         print(node.getResult());
         writer.append(')');
-        leaveScope(scope);
+        leaveScope(scope, node);
     }
 
     private void print(NumberLiteral node) {
@@ -722,7 +722,7 @@ public class AstWriter {
         print(node.getRight());
     }
 
-    private void print(FunctionNode node) {
+    protected void print(FunctionNode node) {
         var scope = enterScope(node);
         var isArrow = node.getFunctionType() == FunctionNode.ARROW_FUNCTION;
         if (!isArrow) {
@@ -759,7 +759,7 @@ public class AstWriter {
             print(node.getBody());
         }
 
-        leaveScope(scope);
+        leaveScope(scope, node);
     }
 
     private void print(LetNode node) {
@@ -768,7 +768,7 @@ public class AstWriter {
         printList(node.getVariables().getVariables());
         writer.append(')');
         print(node.getBody());
-        leaveScope(scope);
+        leaveScope(scope, node);
     }
 
     private void print(ParenthesizedExpression node, int precedence) {
@@ -975,10 +975,14 @@ public class AstWriter {
             map.put(name, currentScopes.get(name));
             currentScopes.put(name, scope);
         }
+        onEnterScope(scope);
         return map;
     }
 
-    private void leaveScope(Map<String, Scope> backup) {
+    protected void onEnterScope(Scope scope) {
+    }
+
+    private void leaveScope(Map<String, Scope> backup, Scope scope) {
         for (var entry : backup.entrySet()) {
             if (entry.getValue() == null) {
                 currentScopes.remove(entry.getKey());
@@ -986,6 +990,10 @@ public class AstWriter {
                 currentScopes.put(entry.getKey(), entry.getValue());
             }
         }
+        onLeaveScope(scope);
+    }
+
+    protected void onLeaveScope(Scope scope) {
     }
 
     protected Scope scopeOfId(String id) {

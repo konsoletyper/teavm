@@ -33,6 +33,7 @@ let Long_fromNumber;
 let Long_toNumber;
 let Long_hi;
 let Long_lo;
+let Long_divRem;
 if (typeof teavm_globals.BigInt !== "function") {
     Long.prototype.toString = function() {
         let result = [];
@@ -320,7 +321,7 @@ if (typeof teavm_globals.BigInt !== 'function') {
         return Long_udivRem(a, b)[1];
     }
 
-    let Long_divRem = (a, b) => {
+    Long_divRem = (a, b) => {
         if (b.lo === 0 && b.hi === 0) {
             throw new teavm_globals.Error("Division by zero");
         }
