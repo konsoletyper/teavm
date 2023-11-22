@@ -34,4 +34,8 @@ class Raster(@JvmField val width: Int, @JvmField val height: Int) {
         color = IntArray(width * height)
         return result
     }
+
+    companion object {
+        fun calculateHeight(height: Int, step: Int, offset: Int): Int = ((height + step - 2 - offset) / step) + 1
+    }
 }

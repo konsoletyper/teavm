@@ -39,6 +39,7 @@ teavm.wasm {
     mainClass = "org.teavm.samples.software3d.teavm.WasmWorkerKt"
     optimization = OptimizationLevel.AGGRESSIVE
     minHeapSize = 4
+    maxHeapSize = 32
 }
 
 kotlin {

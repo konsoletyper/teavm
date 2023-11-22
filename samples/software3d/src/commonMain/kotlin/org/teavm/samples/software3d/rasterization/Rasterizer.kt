@@ -104,7 +104,7 @@ class Rasterizer(val raster: Raster, val offset: Int, val step: Int) {
             val ex = s2.pos.x + d2x * k2
             val startIntX = ceil(sx).toInt().coerceAtLeast(0)
             val endIntX = ceil(ex).toInt().coerceAtMost(raster.width)
-            if (startIntX + 1 == endIntX || startIntX >= raster.width || endIntX <= 0) {
+            if (startIntX >= endIntX || startIntX >= raster.width || endIntX <= 0) {
                 y += step
                 continue
             }

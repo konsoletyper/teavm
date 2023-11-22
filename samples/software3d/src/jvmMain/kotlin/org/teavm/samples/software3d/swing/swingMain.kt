@@ -47,10 +47,10 @@ fun main() {
     }
 
     val (scene, updater) = geometry()
-    val taskCount = Runtime.getRuntime().availableProcessors()
+    val taskCount = 1// Runtime.getRuntime().availableProcessors()
     println("Running on $taskCount CPUs")
-    val rasters = (0 until taskCount).map { Raster(SCENE_WIDTH, SCENE_HEIGHT / taskCount) }
-    val renderers = rasters.mapIndexed() { index, raster ->
+    val rasters = (0 until taskCount).map { Raster(SCENE_WIDTH, (SCENE_HEIGHT + taskCount - 1) / taskCount) }
+    val renderers = rasters.mapIndexed { index, raster ->
         Renderer(scene, raster, index, taskCount).apply {
             projection = Matrix.projection(-1f, 1f, -1f, 1f, 2f, 10f)
             viewport = Matrix.translation(SCENE_WIDTH / 2f, SCENE_HEIGHT / 2f, 0f) *

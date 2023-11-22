@@ -42,7 +42,7 @@ private fun init(data: dynamic) {
     val step = data.step as Int
     val offset = data.offset as Int
     val (scene, updaterF) = geometry()
-    raster = Raster(width, height / step)
+    raster = Raster(width, Raster.calculateHeight(height, step, offset))
     updater = updaterF
     renderer = Renderer(scene, raster, offset, step).apply {
         projection = Matrix.projection(-1f, 1f, -1f, 1f, 2f, 10f)

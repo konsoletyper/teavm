@@ -49,7 +49,7 @@ class RenderWorker {
         height = (params["height"] as JSNumber).intValue()
         val step = (params["step"] as JSNumber).intValue()
         val offset = (params["offset"] as JSNumber).intValue()
-        raster = Raster(width, height / step)
+        raster = Raster(width, Raster.calculateHeight(height, step, offset))
         updater = updaterF
         renderer = Renderer(scene, raster, offset, step).apply {
             projection = Matrix.projection(-1f, 1f, -1f, 1f, 2f, 10f)
