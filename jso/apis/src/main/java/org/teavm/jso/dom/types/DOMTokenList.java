@@ -30,7 +30,17 @@ public interface DOMTokenList extends JSObject {
 
     void add(String token);
 
+    void add(String token1, String token2);
+
+    void add(String... tokens);
+
     void remove(String token);
 
+    void remove(String token1, String token2);
+
+    void remove(String... tokens);
+
     boolean toggle(String token);
+
+    boolean toggle(String token, boolean force);
 }

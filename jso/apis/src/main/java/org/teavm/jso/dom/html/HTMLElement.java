@@ -86,34 +86,13 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     String getAccessKeyLabel();
 
     @JSProperty
-    int getClientWidth();
-
-    @JSProperty
-    int getClientHeight();
-
-    @JSProperty
     int getAbsoluteLeft();
 
     @JSProperty
     int getAbsoluteTop();
 
     @JSProperty
-    int getScrollLeft();
-
-    @JSProperty
-    void setScrollLeft(int scrollLeft);
-
-    @JSProperty
-    int getScrollTop();
-
-    @JSProperty
-    void setScrollTop(int scrollTop);
-
-    @JSProperty
-    int getScrollWidth();
-
-    @JSProperty
-    int getScrollHeight();
+    HTMLElement getOffsetParent();
 
     @JSProperty
     int getOffsetWidth();
@@ -132,30 +111,12 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     HTMLDocument getOwnerDocument();
 
     @JSProperty
-    HTMLCollection getChildren();
-
-    @JSProperty
-    String getInnerHTML();
-
-    @JSProperty
-    void setInnerHTML(String content);
-
-    @JSProperty
     String getInnerText();
 
     @JSProperty
     void setInnerText(String content);
 
     TextRectangle getBoundingClientRect();
-
-    @JSProperty
-    String getClassName();
-
-    @JSProperty
-    void setClassName(String className);
-
-    @JSProperty
-    DOMTokenList getClassList();
 
     default HTMLElement withAttr(String name, String value) {
         setAttribute(name, value);
