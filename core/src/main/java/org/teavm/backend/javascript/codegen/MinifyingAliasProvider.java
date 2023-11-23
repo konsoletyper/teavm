@@ -23,19 +23,12 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 public class MinifyingAliasProvider implements AliasProvider {
-    private int topLevelAliasLimit;
     private static final String startLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final String startVirtualLetters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private int lastSuffix;
-    private int lastScopedSuffix;
     private int lastVirtual;
     private final Set<String> usedAliases = new HashSet<>();
     private final Set<String> usedVirtualAliases = new HashSet<>();
-    private final Set<String> usedScopedAliases = new HashSet<>();
-
-    public MinifyingAliasProvider(int topLevelAliasLimit) {
-        this.topLevelAliasLimit = topLevelAliasLimit;
-    }
 
     @Override
     public String getFieldAlias(FieldReference field) {
@@ -47,12 +40,12 @@ public class MinifyingAliasProvider implements AliasProvider {
     }
 
     @Override
-    public ScopedName getStaticFieldAlias(FieldReference field) {
+    public String getStaticFieldAlias(FieldReference field) {
         return createTopLevelName();
     }
 
     @Override
-    public ScopedName getStaticMethodAlias(MethodReference method) {
+    public String getStaticMethodAlias(MethodReference method) {
         return createTopLevelName();
     }
 
@@ -66,7 +59,7 @@ public class MinifyingAliasProvider implements AliasProvider {
     }
 
     @Override
-    public ScopedName getClassAlias(String className) {
+    public String getClassAlias(String className) {
         return createTopLevelName();
     }
 
@@ -76,17 +69,8 @@ public class MinifyingAliasProvider implements AliasProvider {
     }
 
     @Override
-    public ScopedName getClassInitAlias(String className) {
+    public String getClassInitAlias(String className) {
         return createTopLevelName();
-    }
-
-    @Override
-    public String getScopeAlias() {
-        String result;
-        do {
-            result = RenderingUtil.indexToId(lastSuffix++, startLetters);
-        } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
-        return result;
     }
 
     @Override
@@ -94,19 +78,11 @@ public class MinifyingAliasProvider implements AliasProvider {
         usedAliases.add(name);
     }
 
-    private ScopedName createTopLevelName() {
-        if (usedAliases.size() < topLevelAliasLimit) {
-            String result;
-            do {
-                result = RenderingUtil.indexToId(lastSuffix++, startLetters);
-            } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
-            return new ScopedName(false, result);
-        } else {
-            String result;
-            do {
-                result = RenderingUtil.indexToId(lastScopedSuffix++, startLetters);
-            } while (!usedScopedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
-            return new ScopedName(true, result);
-        }
+    private String createTopLevelName() {
+        String result;
+        do {
+            result = RenderingUtil.indexToId(lastSuffix++, startLetters);
+        } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
+        return result;
     }
 }

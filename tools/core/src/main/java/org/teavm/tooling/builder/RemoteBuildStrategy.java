@@ -135,11 +135,6 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
-    public void setMaxTopLevelNames(int maxTopLevelNames) {
-        request.maxTopLevelNames = maxTopLevelNames;
-    }
-
-    @Override
     public void setTransformers(String[] transformers) {
         request.transformers = transformers.clone();
     }

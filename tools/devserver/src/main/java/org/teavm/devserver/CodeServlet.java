@@ -829,7 +829,6 @@ public class CodeServlet extends HttpServlet {
         jsTarget.setObfuscated(false);
         jsTarget.setAstCache(astCache);
         jsTarget.setDebugEmitter(debugInformationBuilder);
-        jsTarget.setTopLevelNameLimit(2000);
         jsTarget.setStrict(true);
         vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
         vm.setCacheStatus(classSource);

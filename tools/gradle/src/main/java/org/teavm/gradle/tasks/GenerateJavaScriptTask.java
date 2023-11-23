@@ -18,7 +18,6 @@ package org.teavm.gradle.tasks;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
-import org.teavm.gradle.api.OptimizationLevel;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.builder.BuildStrategy;
 
@@ -53,8 +52,5 @@ public abstract class GenerateJavaScriptTask extends TeaVMTask {
         builder.setStrict(getStrict().get());
         builder.setSourceMapsFileGenerated(getSourceMap().get());
         builder.setEntryPointName(getEntryPointName().get());
-        if (getOptimization().get() == OptimizationLevel.NONE) {
-            builder.setMaxTopLevelNames(1000);
-        }
     }
 }

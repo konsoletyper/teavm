@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import org.teavm.ast.ControlFlowEntry;
-import org.teavm.backend.javascript.codegen.AliasProvider;
 import org.teavm.backend.javascript.codegen.DefaultAliasProvider;
 import org.teavm.backend.javascript.codegen.DefaultNamingStrategy;
 import org.teavm.backend.javascript.codegen.MinifyingAliasProvider;
@@ -124,7 +123,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private MethodNodeCache astCache = EmptyMethodNodeCache.INSTANCE;
     private final Set<MethodReference> asyncMethods = new HashSet<>();
     private List<VirtualMethodContributor> customVirtualMethods = new ArrayList<>();
-    private int topLevelNameLimit = 500000;
     private boolean strict;
     private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
     private NullCheckInsertion nullCheckInsertion = new NullCheckInsertion(NullCheckFilter.EMPTY);
@@ -210,10 +208,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     public void setDebugEmitter(DebugInformationEmitter debugEmitter) {
         this.debugEmitter = debugEmitter;
-    }
-
-    public void setTopLevelNameLimit(int topLevelNameLimit) {
-        this.topLevelNameLimit = topLevelNameLimit;
     }
 
     public void setStrict(boolean strict) {
@@ -352,9 +346,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     private void emit(ListableClassHolderSource classes, Writer writer, BuildTarget target) {
-        AliasProvider aliasProvider = obfuscated
-                ? new MinifyingAliasProvider(topLevelNameLimit)
-                : new DefaultAliasProvider(topLevelNameLimit);
+        var aliasProvider = obfuscated ? new MinifyingAliasProvider() : new DefaultAliasProvider();
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, controller.getUnprocessedClassSource());
         DebugInformationEmitter debugEmitterToUse = debugEmitter;
         if (debugEmitterToUse == null) {
@@ -426,10 +418,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         var epilogue = rememberingWriter.save();
         rememberingWriter.clear();
 
-        var frequencyEstimator = new NameFrequencyEstimator();
-        declarations.replay(frequencyEstimator, RememberedSource.FILTER_REF);
-        epilogue.replay(frequencyEstimator, RememberedSource.FILTER_REF);
-        frequencyEstimator.apply(naming);
+        if (renderingContext.isMinifying()) {
+            var frequencyEstimator = new NameFrequencyEstimator();
+            declarations.replay(frequencyEstimator, RememberedSource.FILTER_REF);
+            epilogue.replay(frequencyEstimator, RememberedSource.FILTER_REF);
+            frequencyEstimator.apply(naming);
+        }
 
         var sourceWriter = builder.build(writer);
         sourceWriter.setDebugInformationEmitter(debugEmitterToUse);

@@ -56,8 +56,6 @@ public interface BuildStrategy {
 
     void setStrict(boolean strict);
 
-    void setMaxTopLevelNames(int maxTopLevelNames);
-
     void setProperties(Properties properties);
 
     void setTransformers(String[] transformers);

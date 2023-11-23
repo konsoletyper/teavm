@@ -33,13 +33,12 @@ public class DefaultNamingStrategy implements NamingStrategy {
     private final AliasProvider aliasProvider;
     private final ClassReaderSource classSource;
     private final Map<MethodDescriptor, String> aliases = new HashMap<>();
-    private final Map<Key, ScopedName> privateAliases = new HashMap<>();
-    private final Map<String, ScopedName> classAliases = new HashMap<>();
+    private final Map<Key, String> privateAliases = new HashMap<>();
+    private final Map<String, String> classAliases = new HashMap<>();
     private final Map<FieldReference, String> fieldAliases = new HashMap<>();
-    private final Map<FieldReference, ScopedName> staticFieldAliases = new HashMap<>();
+    private final Map<FieldReference, String> staticFieldAliases = new HashMap<>();
     private final Map<String, String> functionAliases = new HashMap<>();
-    private final Map<String, ScopedName> classInitAliases = new HashMap<>();
-    private String scopeName;
+    private final Map<String, String> classInitAliases = new HashMap<>();
 
     public DefaultNamingStrategy(AliasProvider aliasProvider, ClassReaderSource classSource) {
         this.aliasProvider = aliasProvider;
@@ -47,7 +46,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     @Override
-    public ScopedName getNameFor(String cls) {
+    public String getNameFor(String cls) {
         return classAliases.computeIfAbsent(cls, key -> aliasProvider.getClassAlias(cls));
     }
 
@@ -62,16 +61,16 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     @Override
-    public ScopedName getFullNameFor(MethodReference method) {
+    public String getFullNameFor(MethodReference method) {
         return getFullNameFor(method, NO_CLASSIFIER);
     }
 
     @Override
-    public ScopedName getNameForInit(MethodReference method) {
+    public String getNameForInit(MethodReference method) {
         return getFullNameFor(method, INIT_CLASSIFIER);
     }
 
-    private ScopedName getFullNameFor(MethodReference method, byte classifier) {
+    private String getFullNameFor(MethodReference method, byte classifier) {
         MethodReference originalMethod = method;
         method = getRealMethod(method);
         if (method == null) {
@@ -98,8 +97,8 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     @Override
-    public ScopedName getFullNameFor(FieldReference field) {
-        ScopedName alias = staticFieldAliases.get(field);
+    public String getFullNameFor(FieldReference field) {
+        var alias = staticFieldAliases.get(field);
         if (alias == null) {
             FieldReference realField = getRealField(field);
             if (realField.equals(field)) {
@@ -118,16 +117,8 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     @Override
-    public ScopedName getNameForClassInit(String className) {
+    public String getNameForClassInit(String className) {
         return classInitAliases.computeIfAbsent(className, key -> aliasProvider.getClassInitAlias(key));
-    }
-
-    @Override
-    public String getScopeName() {
-        if (scopeName == null) {
-            scopeName = aliasProvider.getScopeAlias();
-        }
-        return scopeName;
     }
 
     @Override

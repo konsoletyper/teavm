@@ -20,23 +20,21 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 public interface NamingStrategy {
-    ScopedName getNameFor(String cls);
+    String getNameFor(String cls);
 
     String getNameFor(MethodDescriptor method);
 
-    ScopedName getNameForInit(MethodReference method);
+    String getNameForInit(MethodReference method);
 
-    ScopedName getFullNameFor(MethodReference method);
+    String getFullNameFor(MethodReference method);
 
     String getNameFor(FieldReference field);
 
-    ScopedName getFullNameFor(FieldReference method);
+    String getFullNameFor(FieldReference method);
 
     String getNameForFunction(String name);
 
-    ScopedName getNameForClassInit(String className);
-
-    String getScopeName();
+    String getNameForClassInit(String className);
 
     void reserveName(String name);
 }

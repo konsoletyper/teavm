@@ -151,8 +151,8 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
         return appendName(naming.getNameForClassInit(className));
     }
 
-    private SourceWriter appendName(ScopedName name) {
-        append(name.value);
+    private SourceWriter appendName(String name) {
+        append(name);
         return this;
     }
 

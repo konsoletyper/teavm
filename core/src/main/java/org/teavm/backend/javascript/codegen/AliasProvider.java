@@ -22,19 +22,17 @@ import org.teavm.model.MethodReference;
 public interface AliasProvider {
     String getFieldAlias(FieldReference field);
 
-    ScopedName getStaticFieldAlias(FieldReference field);
+    String getStaticFieldAlias(FieldReference field);
 
-    ScopedName getStaticMethodAlias(MethodReference method);
+    String getStaticMethodAlias(MethodReference method);
 
     String getMethodAlias(MethodDescriptor method);
 
-    ScopedName getClassAlias(String className);
+    String getClassAlias(String className);
 
     String getFunctionAlias(String name);
 
-    ScopedName getClassInitAlias(String className);
-
-    String getScopeAlias();
+    String getClassInitAlias(String className);
 
     void reserveName(String name);
 }

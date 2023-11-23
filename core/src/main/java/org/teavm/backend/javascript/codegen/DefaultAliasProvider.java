@@ -26,21 +26,14 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 public class DefaultAliasProvider implements AliasProvider {
-    private int topLevelAliasLimit;
-    private final Map<String, ScopedName> classAliases = new HashMap<>();
+    private final Map<String, String> classAliases = new HashMap<>();
     private final Set<String> knownAliases = new HashSet<>(200, 0.5f);
     private final ObjectIntMap<String> knowAliasesCounter = new ObjectIntHashMap<>();
-    private final Set<String> knownScopedAliases = new HashSet<>(200, 0.5f);
-    private final ObjectIntMap<String> knowScopedAliasesCounter = new ObjectIntHashMap<>();
     private final Set<String> knownVirtualAliases = new HashSet<>(200, 0.5f);
     private final ObjectIntMap<String> knowVirtualAliasesCounter = new ObjectIntHashMap<>();
 
-    public DefaultAliasProvider(int topLevelAliasLimit) {
-        this.topLevelAliasLimit = topLevelAliasLimit;
-    }
-
     @Override
-    public ScopedName getClassAlias(String cls) {
+    public String getClassAlias(String cls) {
         return classAliases.computeIfAbsent(cls, key -> makeUniqueTopLevel(suggestAliasForClass(key)));
     }
 
@@ -95,7 +88,7 @@ public class DefaultAliasProvider implements AliasProvider {
     }
 
     @Override
-    public ScopedName getStaticMethodAlias(MethodReference method) {
+    public String getStaticMethodAlias(MethodReference method) {
         String suggested = method.getDescriptor().getName();
         switch (suggested) {
             case "<init>":
@@ -106,7 +99,7 @@ public class DefaultAliasProvider implements AliasProvider {
                 break;
         }
 
-        return makeUniqueTopLevel(getClassAlias(method.getClassName()).value + "_" + suggested);
+        return makeUniqueTopLevel(getClassAlias(method.getClassName()) + "_" + suggested);
     }
 
     @Override
@@ -115,8 +108,8 @@ public class DefaultAliasProvider implements AliasProvider {
     }
 
     @Override
-    public ScopedName getStaticFieldAlias(FieldReference field) {
-        return makeUniqueTopLevel(getClassAlias(field.getClassName()).value + "_" + field.getFieldName());
+    public String getStaticFieldAlias(FieldReference field) {
+        return makeUniqueTopLevel(getClassAlias(field.getClassName()) + "_" + field.getFieldName());
     }
 
     @Override
@@ -125,25 +118,16 @@ public class DefaultAliasProvider implements AliasProvider {
     }
 
     @Override
-    public ScopedName getClassInitAlias(String className) {
+    public String getClassInitAlias(String className) {
         return makeUniqueTopLevel(suggestAliasForClass(className) + "_$callClinit");
-    }
-
-    @Override
-    public String getScopeAlias() {
-        return makeUnique(knownAliases, knowAliasesCounter, "$java");
     }
 
     @Override
     public void reserveName(String name) {
     }
 
-    private ScopedName makeUniqueTopLevel(String suggested) {
-        if (knownAliases.size() < topLevelAliasLimit) {
-            return new ScopedName(false, makeUnique(knownAliases, knowAliasesCounter, suggested));
-        } else {
-            return new ScopedName(true, makeUnique(knownScopedAliases, knowScopedAliasesCounter, suggested));
-        }
+    private String makeUniqueTopLevel(String suggested) {
+        return makeUnique(knownAliases, knowAliasesCounter, suggested);
     }
 
     private String sanitize(String s) {
