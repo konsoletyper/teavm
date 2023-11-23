@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
@@ -63,8 +64,8 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TSequencedMa
             rehash(capacity);
         }
         for (var it = map.entrySet().iterator(); it.hasNext();) {
-            TMap.Entry<? extends K, ? extends V> entry = it.next();
-            putImpl(entry.getKey(), entry.getValue(), false);
+            var entry = it.next();
+            putImpl(entry.getKey(), entry.getValue(), false, accessOrder);
         }
     }
 
@@ -127,32 +128,21 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TSequencedMa
 
     @Override
     public V getOrDefault(Object key, V defaultValue) {
-        LinkedHashMapEntry<K, V> m;
+        LinkedHashMapEntry<K, V> entry;
         if (key == null) {
-            m = (LinkedHashMapEntry<K, V>) findNullKeyEntry();
+            entry = (LinkedHashMapEntry<K, V>) findNullKeyEntry();
         } else {
             int hash = key.hashCode();
             int index = (hash & 0x7FFFFFFF) % elementData.length;
-            m = (LinkedHashMapEntry<K, V>) findNonNullKeyEntry(key, index, hash);
+            entry = (LinkedHashMapEntry<K, V>) findNonNullKeyEntry(key, index, hash);
         }
-        if (m == null) {
+        if (entry == null) {
             return defaultValue;
         }
-        if (accessOrder && tail != m) {
-            LinkedHashMapEntry<K, V> p = m.chainBackward;
-            LinkedHashMapEntry<K, V> n = m.chainForward;
-            n.chainBackward = p;
-            if (p != null) {
-                p.chainForward = n;
-            } else {
-                head = n;
-            }
-            m.chainForward = null;
-            m.chainBackward = tail;
-            tail.chainForward = m;
-            tail = m;
+        if (accessOrder) {
+            linkEntry(entry, false);
         }
-        return m.value;
+        return entry.value;
     }
 
     @Override
@@ -161,128 +151,103 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TSequencedMa
     }
 
     private HashEntry<K, V> createHashedEntry(K key, int index, int hash, boolean first) {
-        LinkedHashMapEntry<K, V> m = new LinkedHashMapEntry<>(key, hash);
-        m.next = elementData[index];
-        elementData[index] = m;
-        linkEntry(m, first);
-        return m;
+        var entry = new LinkedHashMapEntry<K, V>(key, hash);
+        entry.next = elementData[index];
+        elementData[index] = entry;
+        if (first) {
+            if (head != null) {
+                head.chainBackward = entry;
+            } else {
+                tail = entry;
+            }
+            entry.chainForward = head;
+            head = entry;
+        } else {
+            if (tail != null) {
+                tail.chainForward = entry;
+            } else {
+                head = entry;
+            }
+            entry.chainBackward = tail;
+            tail = entry;
+        }
+        return entry;
     }
 
     @Override
     public V put(K key, V value) {
-        return putImpl(key, value, false);
+        var oldSize = size();
+        var existing = putImpl(key, value, false, accessOrder);
+        if (size() != oldSize) {
+            if (removeEldestEntry(head)) {
+                removeLinkedEntry(head);
+            }
+        }
+        return existing;
     }
 
-    V putImpl(K key, V value, boolean first) {
-        LinkedHashMapEntry<K, V> m;
+    V putImpl(K key, V value, boolean first, boolean forceMotion) {
+        LinkedHashMapEntry<K, V> entry;
         if (elementCount == 0) {
             head = null;
             tail = null;
         }
-        if (key == null) {
-            m = (LinkedHashMapEntry<K, V>) findNullKeyEntry();
-            if (m == null) {
-                modCount++;
-                // Check if we need to remove the oldest entry. The check
-                // includes accessOrder since an accessOrder LinkedHashMap does
-                // not record the oldest member in 'head'.
-                if (++elementCount > threshold) {
-                    rehash();
-                }
-                m = (LinkedHashMapEntry<K, V>) createHashedEntry(null, 0, 0, first);
-            } else {
-                linkEntry(m, first);
+        int hash = Objects.hashCode(key);
+        int index = (hash & Integer.MAX_VALUE) % elementData.length;
+        entry = (LinkedHashMapEntry<K, V>) (key != null ? findNonNullKeyEntry(key, index, hash) : findNullKeyEntry());
+        if (entry == null) {
+            modCount++;
+            if (++elementCount > threshold) {
+                rehash();
+                index = (hash & Integer.MAX_VALUE) % elementData.length;
             }
-        } else {
-            int hash = key.hashCode();
-            int index = (hash & Integer.MAX_VALUE) % elementData.length;
-            m = (LinkedHashMapEntry<K, V>) findNonNullKeyEntry(key, index, hash);
-            if (m == null) {
-                modCount++;
-                if (++elementCount > threshold) {
-                    rehash();
-                    index = (hash & Integer.MAX_VALUE) % elementData.length;
-                }
-                m = (LinkedHashMapEntry<K, V>) createHashedEntry(key, index, hash, first);
-            } else {
-                linkEntry(m, first);
-            }
+            entry = (LinkedHashMapEntry<K, V>) createHashedEntry(key, index, hash, first);
+        } else if (forceMotion) {
+            linkEntry(entry, first);
         }
 
-        V result = m.value;
-        m.value = value;
-
-        if (removeEldestEntry(head)) {
-            remove(head.key);
-        }
-
-        return result;
+        var existing = entry.value;
+        entry.value = value;
+        return existing;
     }
 
-    void linkEntry(LinkedHashMapEntry<K, V> m, boolean first) {
-        if (head == null) {
-            // Check if the map is empty
-            head = m;
-            tail = m;
-            return;
-        }
-
-        // we need to link the new entry into either the head or tail
-        // of the chain depending on if the LinkedHashMap is accessOrder or not
-        LinkedHashMapEntry<K, V> p = m.chainBackward;
-        LinkedHashMapEntry<K, V> n = m.chainForward;
-        if (p == null) {
+    private void linkEntry(LinkedHashMapEntry<K, V> entry, boolean first) {
+        if (first) {
+            var p = entry.chainBackward;
+            if (p == null) {
+                return;
+            }
+            var n = entry.chainForward;
             if (n != null) {
-                // Existing entry must be the head but not the tail
-                if (!first && accessOrder) {
-                    head = n;
-                    n.chainBackward = null;
-                    m.chainBackward = tail;
-                    m.chainForward = null;
-                    tail.chainForward = m;
-                    tail = m;
-                }
+                n.chainBackward = p;
             } else {
-                // This is a new entry
-                m.chainBackward = first ? null : tail;
-                m.chainForward = first ? head : null;
-                if (first) {
-                    head.chainBackward = m;
-                    head = m;
-                } else {
-                    tail.chainForward = m;
-                    tail = m;
-                }
+                tail = p;
             }
+            p.chainForward = n;
+            if (head != null) {
+                head.chainBackward = entry;
+            }
+            entry.chainForward = head;
+            entry.chainBackward = null;
+            head = entry;
         } else {
+            var n = entry.chainForward;
             if (n == null) {
-                // Existing entry must be the tail but not the head
-                if (first && accessOrder) {
-                    tail = p;
-                    p.chainForward = null;
-                    m.chainBackward = null;
-                    m.chainForward = head;
-                    head.chainBackward = m;
-                    head = m;
-                }
-            } else {
-                if (elementCount > 1 && accessOrder) {
-                    // Existing entry is neither the head nor tail
-                    p.chainForward = n;
-                    n.chainBackward = p;
-                    if (first) {
-                        m.chainForward = head;
-                        m.chainBackward = null;
-                        head.chainBackward = m;
-                        head = m;
-                    } else {
-                        m.chainForward = null;
-                        m.chainBackward = tail;
-                        tail.chainForward = m;
-                        tail = m;
-                    }
-                }
+                return;
             }
+            var p = entry.chainBackward;
+            if (p != null) {
+                p.chainForward = n;
+            } else {
+                head = n;
+            }
+            n.chainBackward = p;
+            if (tail != null) {
+                tail.chainForward = entry;
+            }
+            entry.chainBackward = tail;
+            entry.chainForward = null;
+            tail = entry;
         }
     }
 
@@ -324,12 +289,23 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TSequencedMa
 
     @Override
     public V remove(Object key) {
-        LinkedHashMapEntry<K, V> m = (LinkedHashMapEntry<K, V>) removeByKey(key);
+        var m = (LinkedHashMapEntry<K, V>) removeByKey(key);
         if (m == null) {
             return null;
         }
-        LinkedHashMapEntry<K, V> p = m.chainBackward;
-        LinkedHashMapEntry<K, V> n = m.chainForward;
+        unlinkEntry(m);
+
+        return m.value;
+    }
+
+    void removeLinkedEntry(LinkedHashMapEntry<K, V> entry) {
+        removeEntry(entry);
+        unlinkEntry(entry);
+    }
+
+    private void unlinkEntry(LinkedHashMapEntry<K, V> entry) {
+        var p = entry.chainBackward;
+        var n = entry.chainForward;
         if (p != null) {
             p.chainForward = n;
             if (n != null) {
@@ -345,7 +321,6 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TSequencedMa
                 tail = null;
             }
         }
-        return m.value;
     }
 
     @Override
@@ -391,12 +366,12 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TSequencedMa
 
     @Override
     public V putFirst(K k, V v) {
-        return putImpl(k, v, true);
+        return putImpl(k, v, true, true);
     }
 
     @Override
     public V putLast(K k, V v) {
-        return putImpl(k, v, false);
+        return putImpl(k, v, false, true);
     }
 
     @Override
