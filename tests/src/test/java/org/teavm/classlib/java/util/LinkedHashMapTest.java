@@ -59,8 +59,7 @@ import org.junit.runner.RunWith;
 import org.teavm.classlib.support.MapTest2Support;
 import org.teavm.junit.TeaVMTestRunner;
 
-@SuppressWarnings({ "UnnecessaryUnboxing", "ClassInitializerMayBeStatic",
-        "MismatchedQueryAndUpdateOfCollection" })
+@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 @RunWith(TeaVMTestRunner.class)
 public class LinkedHashMapTest {
 
@@ -555,7 +554,7 @@ public class LinkedHashMapTest {
 
     @Test
     public void testSequencedMap() {
-        SequencedMap<Integer, String> map = generateMap();
+        var map = generateMap();
         assertEquals(Map.entry(1, "1"), map.pollFirstEntry());
         assertArrayEquals(new Integer[] { 6, 2, 5, 3, 4 }, map.keySet().toArray(new Integer[0]));
         assertEquals(Map.entry(4, "4"), map.pollLastEntry());
@@ -568,6 +567,7 @@ public class LinkedHashMapTest {
         map.put(7, "7");
         map.putLast(3, "3");
         assertArrayEquals(new Integer[] { 1, 6, 2, 5, 7, 3 }, map.keySet().toArray(new Integer[0]));
+
         map = generateMap().reversed();
         assertEquals(Map.entry(4, "4"), map.pollFirstEntry());
         assertArrayEquals(new Integer[] { 3, 5, 2, 6, 1 }, map.keySet().toArray(new Integer[0]));
@@ -581,12 +581,14 @@ public class LinkedHashMapTest {
         map.put(7, "7");
         map.putLast(6, "6");
         assertArrayEquals(new Integer[] { 7, 1, 3, 5, 2, 6 }, map.keySet().toArray(new Integer[0]));
+
         map = generateAccessOrderMap();
         map.putFirst(3, "3");
         map.put(5, "5");
         map.putLast(2, "2");
         assertArrayEquals(new Integer[] { 3, 1, 6, 4, 5, 2 }, map.keySet().toArray(new Integer[0]));
         assertArrayEquals(new Integer[] { 2, 5, 4, 6, 1, 3 }, map.reversed().keySet().toArray(new Integer[0]));
+
         map = generateAccessOrderMap();
         map.putFirst(1, "1");
         assertArrayEquals(new Integer[] { 1, 6, 2, 5, 3, 4 }, map.keySet().toArray(new Integer[0]));
@@ -597,6 +599,7 @@ public class LinkedHashMapTest {
         map.putFirst(6, "6");
         assertArrayEquals(new Integer[] { 6, 2, 5, 3, 4, 1 }, map.keySet().toArray(new Integer[0]));
         assertArrayEquals(new Integer[] { 1, 4, 3, 5, 2, 6 }, map.reversed().keySet().toArray(new Integer[0]));
+
         map = generateAccessOrderMap().reversed();
         assertArrayEquals(new Integer[] { 4, 3, 5, 2, 6, 1 }, map.keySet().toArray(new Integer[0]));
         map.putFirst(1, "1");
@@ -669,5 +672,39 @@ public class LinkedHashMapTest {
         } catch (NoSuchElementException e) {
             // ok
         }
+    }
+
+    @Test
+    public void reinsertPutDoesNotChangeOrder() {
+        var map = new LinkedHashMap<String, String>();
+        map.put("a", "1");
+        map.put("b", "2");
+        assertArrayEquals(new String[] { "1", "2" }, map.values().toArray(new String[0]));
+
+        map.put("a", "3");
+        assertArrayEquals(new String[] { "3", "2" }, map.values().toArray(new String[0]));
+    }
+
+    @Test
+    public void removesEldestEntry() {
+        var map = new LinkedHashMap<String, String>() {
+            @Override
+            protected boolean removeEldestEntry(Entry<String, String> eldest) {
+                return size() > 3;
+            }
+        };
+        map.put("a", "1");
+        map.put("b", "2");
+        map.put("c", "3");
+        assertArrayEquals(new String[] { "1", "2", "3" }, map.values().toArray(new String[0]));
+
+        map.put("c", "4");
+        assertArrayEquals(new String[] { "1", "2", "4" }, map.values().toArray(new String[0]));
+
+        map.put("d", "5");
+        assertArrayEquals(new String[] { "2", "4", "5" }, map.values().toArray(new String[0]));
+
+        map.put("a", "6");
+        assertArrayEquals(new String[] { "4", "5", "6" }, map.values().toArray(new String[0]));
     }
 }

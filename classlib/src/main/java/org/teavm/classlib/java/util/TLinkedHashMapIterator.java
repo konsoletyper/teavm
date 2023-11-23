@@ -53,7 +53,7 @@ class TLinkedHashMapIterator<K, V> {
             throw new IllegalStateException();
         }
         checkConcurrentMod();
-        base.remove(currentEntry.key);
+        base.removeLinkedEntry(currentEntry);
         currentEntry = null;
         expectedModCount++;
     }

@@ -20,7 +20,11 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import org.teavm.classlib.java.io.TSerializable;
-import org.teavm.classlib.java.lang.*;
+import org.teavm.classlib.java.lang.TCloneNotSupportedException;
+import org.teavm.classlib.java.lang.TCloneable;
+import org.teavm.classlib.java.lang.TIllegalArgumentException;
+import org.teavm.classlib.java.lang.TIllegalStateException;
+import org.teavm.classlib.java.lang.TObject;
 import org.teavm.interop.Rename;
 
 public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TSerializable {
@@ -192,10 +196,10 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         @Override
         public boolean remove(Object object) {
             if (object instanceof TMap.Entry) {
-                TMap.Entry<?, ?> oEntry = (TMap.Entry<?, ?>) object;
-                TMap.Entry<K, V> entry = associatedMap.entryByKey(oEntry.getKey());
+                var oEntry = (TMap.Entry<?, ?>) object;
+                var entry = associatedMap.entryByKey(oEntry.getKey());
                 if (entry != null && TObjects.equals(entry.getValue(), oEntry.getValue())) {
-                    associatedMap.removeByKey(entry.getKey());
+                    associatedMap.removeEntry(entry);
                     return true;
                 }
             }
@@ -529,6 +533,21 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             return entry.value;
         }
         return null;
+    }
+
+    final void removeEntry(HashEntry<K, V> entry) {
+        int index = entry.origKeyHash & (elementData.length - 1);
+        var m = elementData[index];
+        if (m == entry) {
+            elementData[index] = entry.next;
+        } else {
+            while (m.next != entry) {
+                m = m.next;
+            }
+            m.next = entry.next;
+        }
+        modCount++;
+        elementCount--;
     }
 
     final HashEntry<K, V> removeByKey(Object key) {
