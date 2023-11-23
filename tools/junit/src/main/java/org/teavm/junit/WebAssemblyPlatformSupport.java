@@ -62,13 +62,16 @@ class WebAssemblyPlatformSupport extends BaseWebAssemblyPlatformSupport {
     }
 
     @Override
+    boolean isEnabled() {
+        return Boolean.getBoolean(WASM_ENABLED);
+    }
+
+    @Override
     List<TeaVMTestConfiguration<WasmTarget>> getConfigurations() {
         List<TeaVMTestConfiguration<WasmTarget>> configurations = new ArrayList<>();
-        if (Boolean.getBoolean(WASM_ENABLED)) {
-            configurations.add(TeaVMTestConfiguration.WASM_DEFAULT);
-            if (Boolean.getBoolean(OPTIMIZED)) {
-                configurations.add(TeaVMTestConfiguration.WASM_OPTIMIZED);
-            }
+        configurations.add(TeaVMTestConfiguration.WASM_DEFAULT);
+        if (Boolean.getBoolean(OPTIMIZED)) {
+            configurations.add(TeaVMTestConfiguration.WASM_OPTIMIZED);
         }
         return configurations;
     }

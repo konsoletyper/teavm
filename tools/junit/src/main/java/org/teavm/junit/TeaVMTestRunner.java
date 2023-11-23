@@ -110,9 +110,11 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         platforms.add(new CPlatformSupport(classSource, referenceCache));
 
         for (var platform : platforms) {
-            var runStrategy = platform.createRunStrategy(outputDir);
-            if (runStrategy != null) {
-                runners.put(platform.getPlatform(), runStrategy);
+            if (platform.isEnabled()) {
+                var runStrategy = platform.createRunStrategy(outputDir);
+                if (runStrategy != null) {
+                    runners.put(platform.getPlatform(), runStrategy);
+                }
             }
         }
 
@@ -734,15 +736,14 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         return new Failure(description, throwable);
     }
 
-    private boolean submitRun(TestRun run) throws IOException {
+    private void submitRun(TestRun run) throws IOException {
         runsInCurrentClass.add(run);
         var strategy = runners.get(run.getKind());
         if (strategy == null) {
-            return false;
+            return;
         }
 
         strategy.runTest(run);
-        return true;
     }
 
     private File getOutputPath(Method method, TestPlatformSupport<?> platform) {

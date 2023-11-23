@@ -45,6 +45,8 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
         this.referenceCache = referenceCache;
     }
 
+    abstract boolean isEnabled();
+
     abstract TestRunStrategy createRunStrategy(File outputDir);
 
     abstract TestPlatform getPlatform();

@@ -19,7 +19,6 @@ final class PropertyNames {
     static final String PATH_PARAM = "teavm.junit.target";
     static final String JS_RUNNER = "teavm.junit.js.runner";
     static final String WASM_RUNNER = "teavm.junit.wasm.runner";
-    static final String THREAD_COUNT = "teavm.junit.threads";
     static final String JS_ENABLED = "teavm.junit.js";
     static final String JS_DECODE_STACK = "teavm.junit.js.decodeStack";
     static final String C_ENABLED = "teavm.junit.c";

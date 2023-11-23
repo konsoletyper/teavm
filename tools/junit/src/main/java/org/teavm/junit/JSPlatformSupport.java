@@ -80,16 +80,19 @@ class JSPlatformSupport extends TestPlatformSupport<JavaScriptTarget> {
     }
 
     @Override
+    boolean isEnabled() {
+        return Boolean.parseBoolean(System.getProperty(JS_ENABLED, "true"));
+    }
+
+    @Override
     List<TeaVMTestConfiguration<JavaScriptTarget>> getConfigurations() {
         List<TeaVMTestConfiguration<JavaScriptTarget>> configurations = new ArrayList<>();
-        if (Boolean.parseBoolean(System.getProperty(JS_ENABLED, "true"))) {
-            configurations.add(TeaVMTestConfiguration.JS_DEFAULT);
-            if (Boolean.getBoolean(MINIFIED)) {
-                configurations.add(TeaVMTestConfiguration.JS_MINIFIED);
-            }
-            if (Boolean.getBoolean(OPTIMIZED)) {
-                configurations.add(TeaVMTestConfiguration.JS_OPTIMIZED);
-            }
+        configurations.add(TeaVMTestConfiguration.JS_DEFAULT);
+        if (Boolean.getBoolean(MINIFIED)) {
+            configurations.add(TeaVMTestConfiguration.JS_MINIFIED);
+        }
+        if (Boolean.getBoolean(OPTIMIZED)) {
+            configurations.add(TeaVMTestConfiguration.JS_OPTIMIZED);
         }
         return configurations;
     }

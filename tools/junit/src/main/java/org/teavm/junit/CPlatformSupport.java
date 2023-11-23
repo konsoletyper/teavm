@@ -62,13 +62,16 @@ class CPlatformSupport extends TestPlatformSupport<CTarget> {
     }
 
     @Override
+    boolean isEnabled() {
+        return Boolean.getBoolean(C_ENABLED);
+    }
+
+    @Override
     List<TeaVMTestConfiguration<CTarget>> getConfigurations() {
         List<TeaVMTestConfiguration<CTarget>> configurations = new ArrayList<>();
-        if (Boolean.getBoolean(C_ENABLED)) {
-            configurations.add(TeaVMTestConfiguration.C_DEFAULT);
-            if (Boolean.getBoolean(OPTIMIZED)) {
-                configurations.add(TeaVMTestConfiguration.C_OPTIMIZED);
-            }
+        configurations.add(TeaVMTestConfiguration.C_DEFAULT);
+        if (Boolean.getBoolean(OPTIMIZED)) {
+            configurations.add(TeaVMTestConfiguration.C_OPTIMIZED);
         }
         return configurations;
     }
