@@ -794,8 +794,6 @@ public class Renderer implements RenderingManager {
         writer.emitMethod(ref.getDescriptor());
 
         writer.appendMethodBody(ref).ws().append("=").ws();
-        methodBodyRenderer.renderParameters(ref, method.getModifiers());
-        writer.sameLineWs().append("=>").ws().append("{").indent().softNewLine();
         if (method.hasModifier(ElementModifier.NATIVE)) {
             renderNativeBody(method, classSource);
         } else {
@@ -822,6 +820,7 @@ public class Renderer implements RenderingManager {
         }
 
         var async = asyncMethods.contains(reference);
+        renderMethodPrologue(reference, method.getModifiers());
         methodBodyRenderer.renderNative(generator, async, reference);
         threadLibraryUsed |= methodBodyRenderer.isThreadLibraryUsed();
     }
@@ -885,8 +884,16 @@ public class Renderer implements RenderingManager {
             var entry = decompileRegular(decompiler, method);
             node = entry.method;
         }
+
+        methodBodyRenderer.setCurrentMethod(node);
+        renderMethodPrologue(method.getReference(), method.getModifiers());
         methodBodyRenderer.render(node, async);
         threadLibraryUsed |= methodBodyRenderer.isThreadLibraryUsed();
+    }
+
+    private void renderMethodPrologue(MethodReference reference, Set<ElementModifier> modifier) {
+        methodBodyRenderer.renderParameters(reference, modifier);
+        writer.sameLineWs().append("=>").ws().append("{").indent().softNewLine();
     }
 
     private AstCacheEntry decompileRegular(Decompiler decompiler, MethodHolder method) {

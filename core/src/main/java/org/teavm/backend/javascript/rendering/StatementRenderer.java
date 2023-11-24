@@ -120,6 +120,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         variableNameGenerator.setCurrentMethod(null);
         locationStack.clear();
         lastEmittedLocation = TextLocation.EMPTY;
+        variableNameGenerator.clear();
     }
 
     public boolean isAsync() {

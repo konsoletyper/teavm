@@ -56,6 +56,10 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         statementRenderer = new StatementRenderer(context, writer);
     }
 
+    public void setCurrentMethod(MethodNode node) {
+        statementRenderer.setCurrentMethod(node);
+    }
+
     public boolean isThreadLibraryUsed() {
         return threadLibraryUsed;
     }
@@ -76,9 +80,9 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         threadLibraryUsed = false;
         this.async = async;
         statementRenderer.setAsync(async);
-        statementRenderer.setCurrentMethod(node);
         prepareVariables(node);
         node.acceptVisitor(this);
+        statementRenderer.clear();
     }
 
     private void prepareVariables(MethodNode method) {
