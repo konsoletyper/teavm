@@ -37,6 +37,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
 import org.teavm.tooling.sources.DirectorySourceFileProvider;
@@ -147,7 +148,9 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
 
         tool.setSourceMapsFileGenerated(request.sourceMapsFileGenerated);
         tool.setDebugInformationGenerated(request.debugInformationGenerated);
-        tool.setSourceFilesCopied(request.sourceFilesCopied);
+        if (request.sourceFilePolicy != null) {
+            tool.setSourceFilePolicy(TeaVMSourceFilePolicy.valueOf(request.sourceFilePolicy));
+        }
         if (request.properties != null) {
             tool.getProperties().putAll(request.properties);
         }

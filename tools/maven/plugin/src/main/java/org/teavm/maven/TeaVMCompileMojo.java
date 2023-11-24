@@ -39,6 +39,7 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.TeaVMProblemRenderer;
+import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.builder.BuildException;
 import org.teavm.tooling.builder.BuildResult;
@@ -177,7 +178,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setIncremental(incremental);
             builder.setDebugInformationGenerated(debugInformationGenerated);
             builder.setSourceMapsFileGenerated(sourceMapsGenerated);
-            builder.setSourceFilesCopied(sourceFilesCopied);
+            builder.setSourceFilePolicy(sourceFilesCopied
+                    ? TeaVMSourceFilePolicy.COPY
+                    : TeaVMSourceFilePolicy.DO_NOTHING);
             builder.setMinHeapSize(minHeapSize * 1024 * 1024);
             builder.setMaxHeapSize(maxHeapSize * 1024 * 1024);
             builder.setShortFileNames(shortFileNames);

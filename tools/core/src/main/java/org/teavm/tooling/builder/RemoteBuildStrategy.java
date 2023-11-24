@@ -25,6 +25,7 @@ import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.Problem;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.tooling.EmptyTeaVMToolLog;
+import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMToolLog;
 import org.teavm.tooling.daemon.RemoteBuildCallback;
@@ -100,7 +101,14 @@ public class RemoteBuildStrategy implements BuildStrategy {
 
     @Override
     public void setSourceFilesCopied(boolean sourceFilesCopied) {
-        request.sourceFilesCopied = sourceFilesCopied;
+        request.sourceFilePolicy = sourceFilesCopied
+                ? TeaVMSourceFilePolicy.COPY.name()
+                : TeaVMSourceFilePolicy.DO_NOTHING.name();
+    }
+
+    @Override
+    public void setSourceFilePolicy(TeaVMSourceFilePolicy sourceFilePolicy) {
+        request.sourceFilePolicy = sourceFilePolicy.name();
     }
 
     @Override

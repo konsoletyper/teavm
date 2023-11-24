@@ -27,4 +27,6 @@ public interface TeaVMJSConfiguration extends TeaVMWebConfiguration {
     Property<String> getEntryPointName();
 
     Property<String> getTargetFileName();
+
+    Property<SourceFilePolicy> getSourceFilePolicy();
 }

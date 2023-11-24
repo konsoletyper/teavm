@@ -17,9 +17,11 @@ package org.teavm.debugging.information;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
 import org.teavm.common.JsonUtil;
 
-class SourceMapsWriter {
+public class SourceMapsWriter {
     private static final String BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     private Writer output;
     private int lastLine;
@@ -27,9 +29,14 @@ class SourceMapsWriter {
     private int lastSourceLine;
     private int lastSourceFile;
     private boolean first;
+    private List<SourceFileResolver> sourceFileResolvers = new ArrayList<>();
 
     public SourceMapsWriter(Writer output) {
         this.output = output;
+    }
+
+    public void addSourceResolver(SourceFileResolver sourceFileResolver) {
+        sourceFileResolvers.add(sourceFileResolver);
     }
 
     public void write(String generatedFile, String sourceRoot, DebugInformation debugInfo) throws IOException {
@@ -46,7 +53,15 @@ class SourceMapsWriter {
                 output.write(',');
             }
             output.write("\"");
-            JsonUtil.writeEscapedString(output, debugInfo.fileNames[i]);
+            var name = debugInfo.fileNames[i];
+            for (var resolver : sourceFileResolvers) {
+                var resolvedName = resolver.resolveFile(name);
+                if (resolvedName != null) {
+                    name = resolvedName;
+                    break;
+                }
+            }
+            JsonUtil.writeEscapedString(output, name);
             output.write("\"");
         }
         output.write("]");

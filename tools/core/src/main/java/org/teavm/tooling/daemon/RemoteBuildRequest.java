@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
+import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.vm.TeaVMOptimizationLevel;
 
@@ -36,7 +37,7 @@ public class RemoteBuildRequest implements Serializable {
     public String tagetFileName = "";
     public boolean sourceMapsFileGenerated;
     public boolean debugInformationGenerated;
-    public boolean sourceFilesCopied;
+    public String sourceFilePolicy = TeaVMSourceFilePolicy.DO_NOTHING.name();
     public boolean incremental;
     public String cacheDirectory;
     public boolean obfuscated;

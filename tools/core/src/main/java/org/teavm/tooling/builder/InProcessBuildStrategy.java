@@ -30,6 +30,7 @@ import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.tooling.EmptyTeaVMToolLog;
+import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
@@ -55,7 +56,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private boolean strict;
     private boolean sourceMapsFileGenerated;
     private boolean debugInformationGenerated;
-    private boolean sourceFilesCopied;
+    private TeaVMSourceFilePolicy sourceMapsSourcePolicy;
     private String[] transformers = new String[0];
     private String[] classesToPreserve = new String[0];
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
@@ -122,7 +123,17 @@ public class InProcessBuildStrategy implements BuildStrategy {
 
     @Override
     public void setSourceFilesCopied(boolean sourceFilesCopied) {
-        this.sourceFilesCopied = sourceFilesCopied;
+        if ((sourceMapsSourcePolicy == TeaVMSourceFilePolicy.COPY) == sourceFilesCopied) {
+            return;
+        }
+        sourceMapsSourcePolicy = sourceFilesCopied
+                ? TeaVMSourceFilePolicy.COPY
+                : TeaVMSourceFilePolicy.DO_NOTHING;
+    }
+
+    @Override
+    public void setSourceFilePolicy(TeaVMSourceFilePolicy sourceFilePolicy) {
+        this.sourceMapsSourcePolicy = sourceFilePolicy;
     }
 
     @Override
@@ -233,7 +244,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
 
         tool.setSourceMapsFileGenerated(sourceMapsFileGenerated);
         tool.setDebugInformationGenerated(debugInformationGenerated);
-        tool.setSourceFilesCopied(sourceFilesCopied);
+        tool.setSourceFilePolicy(sourceMapsSourcePolicy);
 
         tool.setObfuscated(obfuscated);
         tool.setStrict(strict);

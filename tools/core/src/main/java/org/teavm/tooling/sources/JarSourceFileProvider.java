@@ -80,5 +80,10 @@ public class JarSourceFileProvider implements SourceFileProvider {
         public InputStream open() throws IOException {
             return file.getInputStream(entry);
         }
+
+        @Override
+        public File getFile() {
+            return null;
+        }
     }
 }

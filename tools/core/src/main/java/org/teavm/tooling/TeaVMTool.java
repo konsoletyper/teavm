@@ -49,6 +49,7 @@ import org.teavm.cache.EmptyProgramCache;
 import org.teavm.cache.FileSymbolTable;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
+import org.teavm.debugging.information.SourceMapsWriter;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.FastDependencyAnalyzer;
 import org.teavm.dependency.PreciseDependencyAnalyzer;
@@ -61,7 +62,6 @@ import org.teavm.model.ReferenceCache;
 import org.teavm.model.transformation.AssertionRemoval;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.tooling.sources.SourceFileProvider;
-import org.teavm.tooling.sources.SourceFilesCopier;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.DirectoryBuildTarget;
 import org.teavm.vm.TeaVM;
@@ -81,7 +81,7 @@ public class TeaVMTool {
     private Properties properties = new Properties();
     private boolean debugInformationGenerated;
     private boolean sourceMapsFileGenerated;
-    private boolean sourceFilesCopied;
+    private TeaVMSourceFilePolicy sourceFilePolicy = TeaVMSourceFilePolicy.DO_NOTHING;
     private boolean incremental;
     private File cacheDirectory = new File("./teavm-cache");
     private List<String> transformers = new ArrayList<>();
@@ -177,12 +177,23 @@ public class TeaVMTool {
         this.sourceMapsFileGenerated = sourceMapsFileGenerated;
     }
 
+    @Deprecated
     public boolean isSourceFilesCopied() {
-        return sourceFilesCopied;
+        return sourceFilePolicy == TeaVMSourceFilePolicy.COPY;
     }
 
+    @Deprecated
     public void setSourceFilesCopied(boolean sourceFilesCopied) {
-        this.sourceFilesCopied = sourceFilesCopied;
+        if (isSourceFilesCopied() == sourceFilesCopied) {
+            return;
+        }
+        sourceFilePolicy = sourceFilesCopied
+                ? TeaVMSourceFilePolicy.COPY
+                : TeaVMSourceFilePolicy.DO_NOTHING;
+    }
+
+    public void setSourceFilePolicy(TeaVMSourceFilePolicy sourceFilePolicy) {
+        this.sourceFilePolicy = sourceFilePolicy;
     }
 
     public Properties getProperties() {
@@ -527,14 +538,48 @@ public class TeaVMTool {
             File sourceMapsFile = new File(targetDirectory, sourceMapsFileName);
             try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(sourceMapsFile),
                     StandardCharsets.UTF_8)) {
-                debugInfo.writeAsSourceMaps(sourceMapsOut, "src", getResolvedTargetFileName());
+                writeSourceMaps(sourceMapsOut, debugInfo);
             }
             generatedFiles.add(sourceMapsFile);
             log.info("Source maps successfully written");
         }
-        if (sourceFilesCopied) {
-            copySourceFiles();
-            log.info("Source files successfully written");
+    }
+
+    private void writeSourceMaps(Writer out, DebugInformation debugInfo) throws IOException {
+        var sourceMapWriter = new SourceMapsWriter(out);
+        for (var provider : sourceFileProviders) {
+            provider.open();
+        }
+
+        var targetDir = new File(targetDirectory, "src");
+        if (sourceFilePolicy != TeaVMSourceFilePolicy.DO_NOTHING) {
+            sourceMapWriter.addSourceResolver(fileName -> {
+                for (var provider : sourceFileProviders) {
+                    var sourceFile = provider.getSourceFile(fileName);
+                    if (sourceFile != null) {
+                        if (sourceFilePolicy == TeaVMSourceFilePolicy.COPY || sourceFile.getFile() == null) {
+                            var outputFile = new File(targetDir, fileName);
+                            outputFile.getParentFile().mkdirs();
+                            try (var input = sourceFile.open();
+                                    var output = new FileOutputStream(outputFile)) {
+                                input.transferTo(output);
+                            }
+                            if (sourceFilePolicy == TeaVMSourceFilePolicy.LINK_LOCAL_FILES) {
+                                return "file://" + outputFile.getCanonicalPath();
+                            }
+                        } else {
+                            return "file://" + sourceFile.getFile().getCanonicalPath();
+                        }
+                        break;
+                    }
+                }
+                return null;
+            });
+        }
+        sourceMapWriter.write(getResolvedTargetFileName(), "src", debugInfo);
+
+        for (var provider : sourceFileProviders) {
+            provider.close();
         }
     }
 
@@ -552,16 +597,6 @@ public class TeaVMTool {
 
         log.info("Classes compiled: " + classCount);
         log.info("Methods compiled: " + methodCount);
-    }
-
-    private void copySourceFiles() {
-        if (vm.getWrittenClasses() == null) {
-            return;
-        }
-        SourceFilesCopier copier = new SourceFilesCopier(sourceFileProviders, generatedFiles::add);
-        copier.addClasses(vm.getWrittenClasses());
-        copier.setLog(log);
-        copier.copy(new File(targetDirectory, "src"));
     }
 
     private List<ClassHolderTransformer> resolveTransformers() {

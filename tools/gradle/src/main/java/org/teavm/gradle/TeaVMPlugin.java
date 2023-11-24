@@ -16,10 +16,16 @@
 package org.teavm.gradle;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
+import org.gradle.api.artifacts.result.ResolvedDependencyResult;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
@@ -83,15 +89,17 @@ public class TeaVMPlugin implements Plugin<Project> {
     }
 
     private void registerSourceSet(Project project) {
-        var sourceSets = project.getExtensions().getByType(SourceSetContainer.class);
-        var sourceSet = sourceSets.create(SOURCE_SET_NAME);
-        var main = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getOutput();
-        sourceSet.setRuntimeClasspath(sourceSet.getRuntimeClasspath().plus(main)
-                .plus(project.getConfigurations().getByName(CLASSPATH_CONFIGURATION_NAME)));
-        sourceSet.setCompileClasspath(sourceSet.getCompileClasspath().plus(main)
-                .plus(project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)));
-        sourceSet.java(java -> { });
-        project.getDependencies().add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, sourceSet.getOutput());
+        var sourceSets = project.getExtensions().findByType(SourceSetContainer.class);
+        if (sourceSets != null) {
+            var sourceSet = sourceSets.create(SOURCE_SET_NAME);
+            var main = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getOutput();
+            sourceSet.setRuntimeClasspath(sourceSet.getRuntimeClasspath().plus(main)
+                    .plus(project.getConfigurations().getByName(CLASSPATH_CONFIGURATION_NAME)));
+            sourceSet.setCompileClasspath(sourceSet.getCompileClasspath().plus(main)
+                    .plus(project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)));
+            sourceSet.java(java -> { });
+            project.getDependencies().add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, sourceSet.getOutput());
+        }
     }
 
     private void registerTasks(Project project) {
@@ -113,7 +121,57 @@ public class TeaVMPlugin implements Plugin<Project> {
             task.getTargetFileName().convention(js.getTargetFileName());
             task.getStrict().convention(js.getStrict());
             task.getEntryPointName().convention(js.getEntryPointName());
+            task.getSourceFilePolicy().convention(js.getSourceFilePolicy());
+
+            task.getSourceFiles().from(project.provider(() -> {
+                var result = new ArrayList<File>();
+                addSourceDirs(project, result);
+                return result;
+            }));
+            task.getSourceFiles().from(project.provider(() -> {
+                var dependencies = project.getConfigurations()
+                        .getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
+                        .getIncoming()
+                        .getResolutionResult()
+                        .getAllDependencies();
+
+                var result = new ArrayList<File>();
+                for (var dependencyResult : dependencies) {
+                    if (!(dependencyResult instanceof ResolvedDependencyResult)) {
+                        continue;
+                    }
+                    var id = ((ResolvedDependencyResult) dependencyResult).getSelected().getId();
+                    if (id instanceof ProjectComponentIdentifier) {
+                        var path = ((ProjectComponentIdentifier) id).getProjectPath();
+                        var refProject = project.getRootProject().findProject(path);
+                        if (refProject != null) {
+                            addSourceDirs(refProject, result);
+                        }
+                    } else if (id instanceof ModuleComponentIdentifier) {
+                        var moduleId = (ModuleComponentIdentifier) id;
+                        var sourcesDep = project.getDependencies().create(Map.of(
+                                "group", moduleId.getGroup(),
+                                "name", moduleId.getModuleIdentifier().getName(),
+                                "version", moduleId.getVersion(),
+                                "classifier", "sources"
+                        ));
+                        var tmpConfig = project.getConfigurations().detachedConfiguration(sourcesDep);
+                        tmpConfig.setTransitive(false);
+                        result.addAll(tmpConfig.getFiles());
+                    }
+                }
+                return result;
+            }));
         });
+    }
+
+    private void addSourceDirs(Project project, List<File> result) {
+        var sourceSets = project.getExtensions().findByType(SourceSetContainer.class);
+        if (sourceSets != null) {
+            for (var sourceSet : sourceSets) {
+                result.addAll(sourceSet.getAllJava().getSourceDirectories().getFiles());
+            }
+        }
     }
 
     private void registerWasmTask(Project project, Configuration configuration) {
@@ -202,8 +260,10 @@ public class TeaVMPlugin implements Plugin<Project> {
 
         var project = task.getProject();
 
-        var sourceSets = project.getExtensions().getByType(SourceSetContainer.class);
-        task.getClasspath().from(sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getOutput());
-        task.getClasspath().from(sourceSets.getByName(SOURCE_SET_NAME).getOutput());
+        var sourceSets = project.getExtensions().findByType(SourceSetContainer.class);
+        if (sourceSets != null) {
+            task.getClasspath().from(sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getOutput());
+            task.getClasspath().from(sourceSets.getByName(SOURCE_SET_NAME).getOutput());
+        }
     }
 }

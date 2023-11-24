@@ -38,7 +38,7 @@ public class DirectorySourceFileProvider implements SourceFileProvider {
     @Override
     public SourceFileInfo getSourceFile(String fullPath) throws IOException {
         File file = new File(baseDirectory, fullPath);
-        return file.exists() ? new DirectorySourceFile(file) : null;
+        return file.isFile() ? new DirectorySourceFile(file) : null;
     }
 
     static class DirectorySourceFile implements SourceFileInfo {
@@ -56,6 +56,11 @@ public class DirectorySourceFileProvider implements SourceFileProvider {
         @Override
         public InputStream open() throws IOException {
             return new FileInputStream(file);
+        }
+
+        @Override
+        public File getFile() {
+            return file;
         }
     }
 }
