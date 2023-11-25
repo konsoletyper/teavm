@@ -21,6 +21,7 @@ import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.model.ObjectFactory;
 import org.teavm.gradle.api.OptimizationLevel;
+import org.teavm.gradle.api.SourceFilePolicy;
 import org.teavm.gradle.api.TeaVMCConfiguration;
 import org.teavm.gradle.api.TeaVMCommonConfiguration;
 import org.teavm.gradle.api.TeaVMExtension;
@@ -67,6 +68,9 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         js.getAddedToWebApp().convention(property("js.addedToWebApp").map(Boolean::parseBoolean).orElse(false));
         js.getOptimization().convention(property("js.optimization").map(OptimizationLevel::valueOf)
                 .orElse(OptimizationLevel.BALANCED));
+        js.getSourceFilePolicy().convention(property("js.sourceFilePolicy")
+                .map(SourceFilePolicy::valueOf)
+                .orElse(SourceFilePolicy.DO_NOTHING));
     }
 
     private void setupWasmDefaults() {

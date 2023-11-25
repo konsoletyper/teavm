@@ -157,7 +157,9 @@ public class TeaVMPlugin implements Plugin<Project> {
                         ));
                         var tmpConfig = project.getConfigurations().detachedConfiguration(sourcesDep);
                         tmpConfig.setTransitive(false);
-                        result.addAll(tmpConfig.getFiles());
+                        if (!tmpConfig.getResolvedConfiguration().hasError()) {
+                            result.addAll(tmpConfig.getResolvedConfiguration().getLenientConfiguration().getFiles());
+                        }
                     }
                 }
                 return result;
