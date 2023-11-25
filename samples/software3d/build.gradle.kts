@@ -57,6 +57,7 @@ kotlin {
 
 tasks.withType<TeaVMTask> {
     classpath.from(kotlin.jvm().compilations["main"].output.classesDirs)
+    classpath.from(kotlin.jvm().compilations["main"].runtimeDependencyFiles)
 }
 
 tasks.war {
