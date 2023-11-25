@@ -647,7 +647,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         InliningStrategy inliningStrategy;
         if (optimizationLevel == TeaVMOptimizationLevel.FULL) {
-            inliningStrategy = new DefaultInliningStrategy(20, 7, 300, false);
+            inliningStrategy = new DefaultInliningStrategy(20, 7, 3000, false);
         } else {
             inliningStrategy = new DefaultInliningStrategy(100, 7, 300, true);
         }
