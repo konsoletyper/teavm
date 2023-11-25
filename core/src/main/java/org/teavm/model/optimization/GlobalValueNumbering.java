@@ -465,7 +465,7 @@ public class GlobalValueNumbering implements MethodOptimization {
                             }
                             break;
                         case COMPARE:
-                            evaluatedConstant = Float.compare(p, q);
+                            evaluatedConstant = p > q ? 1 : p < q ? -1 : p == q ? 0 : 1;
                             break;
                         case AND:
                         case OR:
@@ -501,7 +501,7 @@ public class GlobalValueNumbering implements MethodOptimization {
                             }
                             break;
                         case COMPARE:
-                            evaluatedConstant = Double.compare(p, q);
+                            evaluatedConstant = p > q ? 1 : p < q ? -1 : p == q ? 0 : 1;
                             break;
                         case AND:
                         case OR:
