@@ -102,12 +102,14 @@ class Controller(
             })
         }
         onRenderComplete = { index, buffer ->
-            buffers[index] = buffer
-            if (--pending == 0) {
-                performanceMeasure.endFrame()
-                Window.requestAnimationFrame {
-                    displayBuffers(buffers)
-                    renderFrame()
+            if (buffers[index] == null) {
+                buffers[index] = buffer
+                if (--pending == 0) {
+                    performanceMeasure.endFrame()
+                    Window.requestAnimationFrame {
+                        displayBuffers(buffers)
+                        renderFrame()
+                    }
                 }
             }
         }
