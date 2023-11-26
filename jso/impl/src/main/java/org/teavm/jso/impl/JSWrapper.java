@@ -165,14 +165,14 @@ public final class JSWrapper {
         if (o == null) {
             return null;
         }
-        return ((JSWrapper) o).js;
+        return o instanceof JSWrapper ? ((JSWrapper) o).js : directJavaToJs(o);
     }
 
     public static JSObject maybeUnwrap(Object o) {
         if (o == null) {
             return null;
         }
-        return isJava(o) ? unwrap(o) : directJavaToJs(o);
+        return o instanceof JSWrapper ? unwrap(o) : directJavaToJs(o);
     }
 
     public static JSObject javaToJs(Object o) {
