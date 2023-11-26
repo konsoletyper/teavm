@@ -110,7 +110,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         platforms.add(new CPlatformSupport(classSource, referenceCache));
 
         for (var platform : platforms) {
-            if (platform.isEnabled()) {
+            if (platform.isEnabled() && !platform.getConfigurations().isEmpty()) {
                 var runStrategy = platform.createRunStrategy(outputDir);
                 if (runStrategy != null) {
                     runners.put(platform.getPlatform(), runStrategy);
@@ -148,7 +148,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     @Override
     public void run(RunNotifier notifier) {
         for (var platform : platforms) {
-            if (!platform.getConfigurations().isEmpty()) {
+            if (platform.isEnabled() && !platform.getConfigurations().isEmpty()) {
                 participatingPlatforms.add(platform);
             }
         }
@@ -228,7 +228,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     @SuppressWarnings("unchecked")
     private boolean compileClassForPlatform(TestPlatformSupport<?> platform, List<Method> children,
             Description description, RunNotifier notifier) {
-        if (hasChildrenToRun(children, platform.getPlatform())) {
+        if (platform.isEnabled() && hasChildrenToRun(children, platform.getPlatform())) {
             for (var configuration : platform.getConfigurations()) {
                 var path = getOutputPathForClass(platform);
                 var castPlatform = (TestPlatformSupport<TeaVMTarget>) platform;
@@ -337,7 +337,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         MethodReference reference = new MethodReference(child.getDeclaringClass().getName(), descriptor);
 
         for (var platform : participatingPlatforms) {
-            if (shouldRunChild(child, platform.getPlatform())) {
+            if (platform.isEnabled() && shouldRunChild(child, platform.getPlatform())) {
                 var outputPath = getOutputPathForClass(platform);
                 var outputPathForMethod = getOutputPath(child, platform);
                 for (var configuration : platform.getConfigurations()) {
@@ -357,7 +357,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
         try {
             for (var platform : participatingPlatforms) {
-                if (shouldRunChild(child, platform.getPlatform())) {
+                if (platform.isEnabled() && shouldRunChild(child, platform.getPlatform())) {
                     File outputPath = getOutputPath(child, platform);
                     for (var configuration : platform.getConfigurations()) {
                         @SuppressWarnings("unchecked")
