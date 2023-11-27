@@ -59,6 +59,9 @@ public final class JSWrapper {
             return null;
         }
         var js = directJavaToJs(o);
+        if (isJSImplementation(o)) {
+            return o;
+        }
         if (wrappers != null) {
             var type = JSObjects.typeOf(js);
             if (type.equals("object") || type.equals("function")) {
@@ -161,18 +164,21 @@ public final class JSWrapper {
     @NoSideEffects
     public static native boolean isJava(JSObject obj);
 
+    @NoSideEffects
+    private static native boolean isJSImplementation(Object obj);
+
     public static JSObject unwrap(Object o) {
         if (o == null) {
             return null;
         }
-        return o instanceof JSWrapper ? ((JSWrapper) o).js : directJavaToJs(o);
+        return isJSImplementation(o) ? directJavaToJs(o) : ((JSWrapper) o).js;
     }
 
     public static JSObject maybeUnwrap(Object o) {
         if (o == null) {
             return null;
         }
-        return o instanceof JSWrapper ? unwrap(o) : directJavaToJs(o);
+        return isJava(o) ? unwrap(o) : directJavaToJs(o);
     }
 
     public static JSObject javaToJs(Object o) {
