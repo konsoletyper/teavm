@@ -36,11 +36,13 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
     private static String variableChars = "abcdefghijklmnopqrstuvwxyz";
     private SourceWriter writer;
     private ListableClassReaderSource classSource;
+    private JSTypeHelper typeHelper;
 
     @Override
     public void begin(RenderingManager context, BuildTarget buildTarget) {
         writer = context.getWriter();
         classSource = context.getClassSource();
+        typeHelper = new JSTypeHelper(context.getClassSource());
     }
 
     @Override
@@ -49,6 +51,8 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
             return;
         }
 
+        writer.append("let ").appendFunction("$rt_jso_marker").ws().append("=").ws()
+                .append("$rt_globals.Symbol").append("('jsoClass');").newLine();
         writer.append("(function()").ws().append("{").softNewLine().indent();
         writer.append("var c;").softNewLine();
         for (String className : classSource.getClassNames()) {
@@ -75,19 +79,22 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
                     }
                 }
             }
-            if (methods.isEmpty() && properties.isEmpty()) {
+
+            var isJsClassImpl = typeHelper.isJavaScriptImplementation(className);
+            if (methods.isEmpty() && properties.isEmpty() && !isJsClassImpl) {
                 continue;
             }
 
-            boolean first = true;
+            writer.append("c").ws().append("=").ws().appendClass(className).append(".prototype;")
+                    .softNewLine();
+            if (isJsClassImpl) {
+                writer.append("c[").appendFunction("$rt_jso_marker").append("]").ws().append("=").ws().append("true;")
+                        .softNewLine();
+            }
+
             for (var aliasEntry : methods.entrySet()) {
                 if (classReader.getMethod(aliasEntry.getValue()) == null) {
                     continue;
-                }
-                if (first) {
-                    writer.append("c").ws().append("=").ws().appendClass(className).append(".prototype;")
-                            .softNewLine();
-                    first = false;
                 }
                 if (isKeyword(aliasEntry.getKey())) {
                     writer.append("c[\"").append(aliasEntry.getKey()).append("\"]");
@@ -101,11 +108,6 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
                 var propInfo = aliasEntry.getValue();
                 if (propInfo.getter == null || classReader.getMethod(propInfo.getter) == null) {
                     continue;
-                }
-                if (first) {
-                    writer.append("c").ws().append("=").ws().appendClass(className).append(".prototype;")
-                            .softNewLine();
-                    first = false;
                 }
                 writer.append("Object.defineProperty(c,")
                         .ws().append("\"").append(aliasEntry.getKey()).append("\",")
@@ -129,7 +131,8 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
     private boolean hasClassesToExpose() {
         for (String className : classSource.getClassNames()) {
             ClassReader cls = classSource.get(className);
-            if (cls.getMethods().stream().anyMatch(method -> getPublicAlias(method) != null)) {
+            if (cls.getMethods().stream().anyMatch(method -> getPublicAlias(method) != null)
+                    || typeHelper.isJavaScriptImplementation(className)) {
                 return true;
             }
         }

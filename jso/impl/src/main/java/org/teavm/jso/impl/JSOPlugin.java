@@ -72,6 +72,8 @@ public class JSOPlugin implements TeaVMPlugin {
                 wrapperGenerator);
         jsHost.add(new MethodReference(JSWrapper.class, "jsToWrapper", JSObject.class, JSWrapper.class),
                 wrapperGenerator);
+        jsHost.add(new MethodReference(JSWrapper.class, "isJSImplementation", Object.class, boolean.class),
+                wrapperGenerator);
 
         host.add(new MethodReference(JSWrapper.class, "jsToWrapper", JSObject.class, JSWrapper.class),
                 wrapperGenerator);
