@@ -288,6 +288,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class,
                 "throwArrayIndexOutOfBoundsException", void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class,
+                "throwNegativeArraySizeException", void.class)).use();
+
         dependencyAnalyzer.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class))
                 .propagate(0, NullPointerException.class.getName())
                 .use();

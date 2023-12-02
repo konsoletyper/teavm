@@ -81,6 +81,14 @@
         return index;
     }
 
+    inline static int32_t teavm_checkNegativeSize(int32_t index) {
+        if (index < 0) {
+            teavm_throwNegativeArraySizeException();
+            TEAVM_UNREACHABLE
+        }
+        return index;
+    }
+
 #else
     #define TEAVM_JUMP_SUPPORTED 0
     #define TEAVM_JUMP_TO_FRAME(frame, id)

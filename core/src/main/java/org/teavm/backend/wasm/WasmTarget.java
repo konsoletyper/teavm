@@ -387,6 +387,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class,
                 "throwArrayIndexOutOfBoundsException", void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class,
+                "throwNegativeArraySizeException", void.class)).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "catchException",
                 Throwable.class)).use();

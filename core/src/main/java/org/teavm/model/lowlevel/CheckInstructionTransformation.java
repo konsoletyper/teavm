@@ -28,6 +28,8 @@ import org.teavm.model.instructions.BinaryOperation;
 import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.ConstructArrayInstruction;
+import org.teavm.model.instructions.ConstructMultiArrayInstruction;
 import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
@@ -62,6 +64,10 @@ public class CheckInstructionTransformation {
                         replaceNullCheck(splitter, program, (NullCheckInstruction) instruction);
                     } else if (instruction instanceof BoundCheckInstruction) {
                         replaceBoundCheck(splitter, program, (BoundCheckInstruction) instruction);
+                    } else if (instruction instanceof ConstructArrayInstruction) {
+                        replaceConstructArray(splitter, program, (ConstructArrayInstruction) instruction);
+                    } else if (instruction instanceof ConstructMultiArrayInstruction) {
+                        replaceConstructMultiArray(splitter, program, (ConstructMultiArrayInstruction) instruction);
                     }
                 }
             }
@@ -78,6 +84,68 @@ public class CheckInstructionTransformation {
         }
 
         splitter.fixProgram();
+    }
+
+    private void replaceConstructMultiArray(BasicBlockSplitter splitter, Program program,
+            ConstructMultiArrayInstruction constructArray) {
+        BasicBlock block = constructArray.getBasicBlock();
+        BasicBlock continueBlock = splitter.split(block, constructArray);
+        BasicBlock throwBlock = program.createBasicBlock();
+
+        InvokeInstruction throwNASE = new InvokeInstruction();
+        throwNASE.setType(InvocationType.SPECIAL);
+        throwNASE.setMethod(new MethodReference(ExceptionHandling.class, "throwNegativeArraySizeException",
+                void.class));
+        throwNASE.setLocation(constructArray.getLocation());
+        throwBlock.add(throwNASE);
+
+        jumpToReturn(program, constructArray, throwBlock);
+
+//   TODO what to do to compare all dimensions using "or" ? BranchingInstruction jumpIfNegative = new BranchingInstruction(BranchingCondition.LESS);
+//        jumpIfNegative.setOperand(constructArray.getValue());
+//        jumpIfNegative.setConsequent(throwBlock);
+//        jumpIfNegative.setAlternative(continueBlock);
+//        jumpIfNegative.setLocation(constructArray.getLocation());
+//        constructArray.replace(jumpIfNegative);
+
+        AssignInstruction assign = new AssignInstruction();
+        // TODO what to do here ? assign.setAssignee(nullCheck.getValue());
+        assign.setReceiver(constructArray.getReceiver());
+        assign.setLocation(constructArray.getLocation());
+        continueBlock.addFirst(assign);
+
+        next = continueBlock;
+    }
+
+    private void replaceConstructArray(BasicBlockSplitter splitter, Program program,
+            ConstructArrayInstruction constructArray) {
+        BasicBlock block = constructArray.getBasicBlock();
+        BasicBlock continueBlock = splitter.split(block, constructArray);
+        BasicBlock throwBlock = program.createBasicBlock();
+
+        InvokeInstruction throwNASE = new InvokeInstruction();
+        throwNASE.setType(InvocationType.SPECIAL);
+        throwNASE.setMethod(new MethodReference(ExceptionHandling.class, "throwNegativeArraySizeException",
+                void.class));
+        throwNASE.setLocation(constructArray.getLocation());
+        throwBlock.add(throwNASE);
+
+        jumpToReturn(program, constructArray, throwBlock);
+
+        BranchingInstruction jumpIfNegative = new BranchingInstruction(BranchingCondition.LESS);
+        jumpIfNegative.setOperand(constructArray.getSize());
+        jumpIfNegative.setConsequent(throwBlock);
+        jumpIfNegative.setAlternative(continueBlock);
+        jumpIfNegative.setLocation(constructArray.getLocation());
+        constructArray.replace(jumpIfNegative);
+
+        AssignInstruction assign = new AssignInstruction();
+        // TODO what to do here ? assign.setAssignee(nullCheck.getValue());
+        assign.setReceiver(constructArray.getReceiver());
+        assign.setLocation(constructArray.getLocation());
+        continueBlock.addFirst(assign);
+
+        next = continueBlock;
     }
 
     private void replaceNullCheck(BasicBlockSplitter splitter, Program program, NullCheckInstruction nullCheck) {
