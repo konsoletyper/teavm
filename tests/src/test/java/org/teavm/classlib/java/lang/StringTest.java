@@ -376,6 +376,6 @@ public class StringTest {
     @Test
     public void testChars() {
         assertEquals(0, "".chars().toArray().length);
-        assertEquals(new int[] {'A', 'B', 'C', '1', '2', '3'}, "ABC123".chars().toArray());
+        assertArrayEquals(new int[] {'A', 'B', 'C', '1', '2', '3'}, "ABC123".chars().toArray());
     }
 }
