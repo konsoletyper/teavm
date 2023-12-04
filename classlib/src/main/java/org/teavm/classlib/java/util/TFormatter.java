@@ -31,6 +31,7 @@ import java.util.IllegalFormatConversionException;
 import java.util.Locale;
 import java.util.UnknownFormatConversionException;
 import org.teavm.classlib.impl.IntegerUtil;
+import org.teavm.classlib.java.text.TDecimalFormat;
 
 public final class TFormatter implements Closeable, Flushable {
     private Locale locale;
@@ -240,8 +241,64 @@ public final class TFormatter implements Closeable, Flushable {
                     formatRadixInt(specifier, 4, true);
                     break;
 
+                case 'f':
+                    formatFloat(specifier, false);
+                    break;
+
                 default:
                     throw new UnknownFormatConversionException(String.valueOf(specifier));
+            }
+        }
+
+        private void formatFloat(char specifier, boolean upperCase) throws IOException {
+            verifyFlags(specifier, MASK_FOR_INT_DECIMAL_FORMAT);
+            verifyFloatFlags();
+
+            TDecimalFormat format = new TDecimalFormat();
+            format.setMaximumIntegerDigits(width);
+            format.setMaximumFractionDigits(precision);
+            format.setDecimalFormatSymbols(new DecimalFormatSymbols(locale));
+            format.setGroupingUsed((flags & TFormattableFlags.GROUPING_SEPARATOR) != 0);
+            if ((flags & TFormattableFlags.PARENTHESIZED_NEGATIVE) != 0) {
+                format.setNegativePrefix("(");
+                format.setNegativeSuffix(")");
+            }
+            if ((flags & TFormattableFlags.SIGNED) != 0) {
+                format.setPositivePrefix("+"); // dfs has no plus sign
+            } else if ((flags & TFormattableFlags.LEADING_SPACE) != 0) {
+                format.setPositivePrefix(" ");
+            }
+
+            StringBuilder sb;
+            Object arg = args[argumentIndex];
+            if (arg instanceof Double) {
+                double value = (Double) arg;
+                sb = new StringBuilder(format.format(Math.abs(value)));
+            } else if (arg instanceof Float) {
+                float value = (Float) arg;
+                sb = new StringBuilder(format.format(Math.abs(value)));
+            } else {
+                throw new IllegalFormatConversionException(specifier, arg != null ? arg.getClass() : null);
+            }
+
+            if ((flags & TFormattableFlags.ZERO_PADDED) != 0) {
+                for (int i = sb.length(); i < width; ++i) {
+                    sb.append(Character.forDigit(0, 10));
+                }
+            }
+
+            formatGivenString(upperCase, sb.toString());
+        }
+
+        private void verifyFloatFlags() {
+            if ((flags & TFormattableFlags.SIGNED) != 0 && (flags & TFormattableFlags.LEADING_SPACE) != 0) {
+                throw new TIllegalFormatFlagsException("+ ");
+            }
+            if ((flags & TFormattableFlags.ZERO_PADDED) != 0 && (flags & TFormattableFlags.LEFT_JUSTIFY) != 0) {
+                throw new TIllegalFormatFlagsException("0-");
+            }
+            if ((flags & TFormattableFlags.LEFT_JUSTIFY) != 0 && width < 0) {
+                throw new TMissingFormatWidthException(format.substring(formatSpecifierStart, index));
             }
         }
 
