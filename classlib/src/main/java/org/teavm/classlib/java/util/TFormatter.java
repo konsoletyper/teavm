@@ -273,10 +273,10 @@ public final class TFormatter implements Closeable, Flushable {
             Object arg = args[argumentIndex];
             if (arg instanceof Double) {
                 double value = (Double) arg;
-                sb = new StringBuilder(format.format(Math.abs(value)));
+                sb = new StringBuilder(format.format(value));
             } else if (arg instanceof Float) {
                 float value = (Float) arg;
-                sb = new StringBuilder(format.format(Math.abs(value)));
+                sb = new StringBuilder(format.format(value));
             } else {
                 throw new IllegalFormatConversionException(specifier, arg != null ? arg.getClass() : null);
             }
