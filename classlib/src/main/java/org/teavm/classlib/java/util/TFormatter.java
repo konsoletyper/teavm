@@ -255,14 +255,13 @@ public final class TFormatter implements Closeable, Flushable {
             verifyFlags(specifier, MASK_FOR_INT_DECIMAL_FORMAT);
             verifyFloatFlags();
 
-            DecimalFormatSymbols symbols = new DecimalFormatSymbols(locale);
             TDecimalFormat format = new TDecimalFormat();
             format.setMaximumIntegerDigits(width);
             if ((flags & TFormattableFlags.ZERO_PADDED) != 0) {
                 format.setMinimumIntegerDigits(width);
             }
             format.setMaximumFractionDigits(precision);
-            format.setDecimalFormatSymbols(symbols);
+            format.setDecimalFormatSymbols(new DecimalFormatSymbols(locale));
             format.setGroupingUsed((flags & TFormattableFlags.GROUPING_SEPARATOR) != 0);
             if ((flags & TFormattableFlags.PARENTHESIZED_NEGATIVE) != 0) {
                 format.setNegativePrefix("(");
