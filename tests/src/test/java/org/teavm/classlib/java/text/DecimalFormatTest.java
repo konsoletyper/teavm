@@ -489,8 +489,8 @@ public class DecimalFormatTest {
         format.setMaximumFractionDigits(6);
         format.setMinimumFractionDigits(6);
         format.setGroupingUsed(false);
-        assertEquals("1.200000", format.format((Object)1.2));
-        assertEquals("12.200000", format.format((Object)12.2));
+        assertEquals("1.200000", format.format((Object) 1.2));
+        assertEquals("12.200000", format.format((Object) 12.2));
         format.setMaximumFractionDigits(0);
         format.setMinimumFractionDigits(0);
         format.setMaximumIntegerDigits(5);

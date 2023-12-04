@@ -265,13 +265,17 @@ public class FormatterTest {
         assertEquals("(1,234.6)", new Formatter(Locale.US).format("%0,(9.1f", -1234.6).toString());
 
         assertEquals("1 12 123 1,234 12,345 123,456 1,234,567", new Formatter(Locale.US)
-                .format("%,.0f %,.0f %,.0f %,.0f %,.0f %,.0f %,.0f", 1f, 12f, 123f, 1234f, 12345f, 123456f, 1234567f).toString());
+                .format("%,.0f %,.0f %,.0f %,.0f %,.0f %,.0f %,.0f", 1f, 12f, 123f, 1234f, 12345f, 123456f, 1234567f)
+                .toString());
 
-        assertEquals(" -123.1:-234.2 ", new Formatter(Locale.US).format("%7.1f:%-7.1f", -123.1, -234.2).toString());
+        assertEquals(" -123.1:-234.2 ", new Formatter(Locale.US)
+                .format("%7.1f:%-7.1f", -123.1, -234.2).toString());
 
-        assertEquals("+123.1 +123.2 +0.3", new Formatter(Locale.US).format("%+.1f %+05.1f %+.1f", 123.1, 123.2, 0.3).toString());
+        assertEquals("+123.1 +123.2 +0.3", new Formatter(Locale.US)
+                .format("%+.1f %+05.1f %+.1f", 123.1, 123.2, 0.3).toString());
 
-        assertEquals(": 123.0:-123.0:", new Formatter(Locale.US).format(":% .1f:% .1f:", 123f, -123d).toString());
+        assertEquals(": 123.0:-123.0:", new Formatter(Locale.US)
+                .format(":% .1f:% .1f:", 123f, -123d).toString());
 
         assertEquals("12.050", new Formatter(Locale.US).format("%4.3f", 12.05).toString());
     }
