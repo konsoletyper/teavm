@@ -25,7 +25,6 @@ public class TStringCharsStream extends TSimpleIntStreamImpl {
 
     public TStringCharsStream(TString string) {
         this.string = Objects.requireNonNull(string);
-        this.index = 0;
     }
 
     @Override
