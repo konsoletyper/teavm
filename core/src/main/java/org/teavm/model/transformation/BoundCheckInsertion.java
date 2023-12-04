@@ -32,10 +32,13 @@ import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
 import org.teavm.model.instructions.BinaryOperation;
 import org.teavm.model.instructions.BoundCheckInstruction;
+import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.GetElementInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.instructions.PutElementInstruction;
@@ -43,6 +46,7 @@ import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.DominatorWalker;
 import org.teavm.model.util.DominatorWalkerCallback;
 import org.teavm.model.util.PhiUpdater;
+import org.teavm.runtime.ExceptionHandling;
 
 public class BoundCheckInsertion {
     public void transformProgram(Program program, MethodReference methodReference) {
@@ -206,6 +210,7 @@ public class BoundCheckInsertion {
                         }
                         break;
 
+
                     case LESS_OR_EQUAL:
                         if (arrayLengthVars[left] >= 0) {
                             comparisonMode = ComparisonMode.LESS_THAN_ARRAY_LENGTH;
@@ -311,11 +316,48 @@ public class BoundCheckInsertion {
             int size = index(insn.getSize());
             int receiver = index(insn.getReceiver());
             if (isConstant[size]) {
-                isConstantSizedArray[receiver] = true;
-                constantValue[receiver] = constantValue[size];
+                int val = constantValue[size];
+                if (val < 0) {
+                    Instruction throwNASE = throwNASE();
+                    throwNASE.setLocation(insn.getLocation());
+                    insn.replace(throwNASE);
+                    return;
+                } else {
+                    isConstantSizedArray[receiver] = true;
+                    constantValue[receiver] = constantValue[size];
+                }
+            } else {
+                BasicBlock continueBlock = insn.getProgram().createBasicBlock();
+                continueBlock.addFirst(insn);
+
+                BasicBlock throwBlock = insn.getProgram().createBasicBlock();
+                Instruction throwNASE = throwNASE();
+                throwBlock.add(throwNASE);
+
+                IntegerConstantInstruction zero = new IntegerConstantInstruction();
+                zero.setConstant(0);
+
+                BranchingInstruction jumpIfNegative = new BranchingInstruction(BranchingCondition.LESS);
+                BinaryInstruction cmp = new BinaryInstruction(BinaryOperation.COMPARE, NumericOperandType.INT);
+                cmp.setFirstOperand(insn.getSize());
+                // cmp.setSecondOperand()
+                zero.setReceiver(cmp.getSecondOperand());
+                jumpIfNegative.setOperand(insn.getSize());
+                jumpIfNegative.setConsequent(throwBlock);
+                jumpIfNegative.setAlternative(continueBlock);
+                jumpIfNegative.setLocation(insn.getLocation());
+                insn.replace(jumpIfNegative);
             }
             arrayLengthVars[size] = receiver;
             arrayLengthReverseVars[receiver] = size;
+        }
+
+        private Instruction throwNASE() {
+            InvokeInstruction throwNASE = new InvokeInstruction();
+            throwNASE.setType(InvocationType.SPECIAL);
+            throwNASE.setMethod(new MethodReference(ExceptionHandling.class, "throwNegativeArraySizeException",
+                    void.class));
+            return throwNASE;
         }
 
         @Override
@@ -332,6 +374,11 @@ public class BoundCheckInsertion {
                 arrayLengthVars[receiver] = array;
                 arrayLengthReverseVars[array] = receiver;
             }
+            addGuard();
+        }
+
+        private void addGuard() {
+
         }
 
         @Override
