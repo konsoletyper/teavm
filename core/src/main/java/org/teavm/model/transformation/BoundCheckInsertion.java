@@ -340,7 +340,7 @@ public class BoundCheckInsertion {
                 BranchingInstruction jumpIfNegative = new BranchingInstruction(BranchingCondition.LESS);
                 BinaryInstruction cmp = new BinaryInstruction(BinaryOperation.COMPARE, NumericOperandType.INT);
                 cmp.setFirstOperand(insn.getSize());
-                // cmp.setSecondOperand()
+                // TODO this is unclear what to do here cmp.setSecondOperand()
                 zero.setReceiver(cmp.getSecondOperand());
                 jumpIfNegative.setOperand(insn.getSize());
                 jumpIfNegative.setConsequent(throwBlock);
@@ -374,11 +374,6 @@ public class BoundCheckInsertion {
                 arrayLengthVars[receiver] = array;
                 arrayLengthReverseVars[array] = receiver;
             }
-            addGuard();
-        }
-
-        private void addGuard() {
-
         }
 
         @Override
