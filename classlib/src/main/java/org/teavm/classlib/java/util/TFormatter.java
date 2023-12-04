@@ -255,33 +255,71 @@ public final class TFormatter implements Closeable, Flushable {
             verifyFlags(specifier, MASK_FOR_INT_DECIMAL_FORMAT);
             verifyFloatFlags();
 
+            if (precision == -1) {
+                precision = 6;
+            }
+
+            Object arg = args[argumentIndex];
+            boolean negative;
+            if (arg instanceof Double) {
+                negative = (Double) arg < 0;
+            } else if (arg instanceof Float) {
+                negative = (Float) arg < 0;
+            } else if (arg instanceof BigDecimal) {
+                negative = ((BigDecimal) arg).signum() < 0;
+            } else {
+                throw new IllegalFormatConversionException(specifier, arg == null ? null : arg.getClass());
+            }
+
             TDecimalFormat format = new TDecimalFormat();
-            format.setMaximumIntegerDigits(width);
-            if ((flags & TFormattableFlags.ZERO_PADDED) != 0) {
-                format.setMinimumIntegerDigits(width);
+            format.setDecimalFormatSymbols(new DecimalFormatSymbols(locale));
+            if (width != -1) {
+                int decimalSize = predictDecimalSize(negative, format);
+                format.setMaximumIntegerDigits(decimalSize);
+                if ((flags & TFormattableFlags.ZERO_PADDED) != 0) {
+                    format.setMinimumIntegerDigits(decimalSize);
+                }
             }
             format.setMaximumFractionDigits(precision);
-            format.setDecimalFormatSymbols(new DecimalFormatSymbols(locale));
+            format.setMinimumFractionDigits(precision);
             format.setGroupingUsed((flags & TFormattableFlags.GROUPING_SEPARATOR) != 0);
             if ((flags & TFormattableFlags.PARENTHESIZED_NEGATIVE) != 0) {
                 format.setNegativePrefix("(");
                 format.setNegativeSuffix(")");
             }
             if ((flags & TFormattableFlags.SIGNED) != 0) {
-                format.setPositivePrefix("+"); // dfs has no plus sign
+                format.setPositivePrefix("+"); // DecimalFormatSymbols has no plus sign
             } else if ((flags & TFormattableFlags.LEADING_SPACE) != 0) {
                 format.setPositivePrefix(" ");
             }
 
-            String str;
-            Object arg = args[argumentIndex];
-            if (arg instanceof Double || arg instanceof Float || arg instanceof BigDecimal) {
-                str = format.format(arg);
-            } else {
-                throw new IllegalFormatConversionException(specifier, arg != null ? arg.getClass() : null);
-            }
+            String str = format.format(arg);
+
+            precision = -1; // prevent formatGivenString from trimming
 
             formatGivenString(upperCase, str);
+        }
+
+        private int predictDecimalSize(boolean negative, TDecimalFormat format) {
+            int decimalSize = width;
+            if (precision > 0) {
+                decimalSize -= precision + 1; // width also includes decimal places. Subtract them!
+            }
+            // signs take up space as well. Also subtract them!
+            if (negative) {
+                if ((flags & TFormattableFlags.PARENTHESIZED_NEGATIVE) != 0) {
+                    decimalSize -= 2;
+                } else {
+                    decimalSize--;
+                }
+            } else if ((flags & (TFormattableFlags.SIGNED | TFormattableFlags.LEADING_SPACE)) != 0) {
+                decimalSize--;
+            }
+            // the grouping separator also takes up space. You know the drill.
+            if ((flags & TFormattableFlags.GROUPING_SEPARATOR) != 0) {
+                decimalSize -= decimalSize / (format.getGroupingSize() + 1);
+            }
+            return decimalSize;
         }
 
         private void verifyFloatFlags() {

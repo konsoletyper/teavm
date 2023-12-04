@@ -257,6 +257,7 @@ public class FormatterTest {
     @Test
     public void formatsDouble() {
         assertEquals("1.200000", new Formatter(Locale.US).format("%f", 1.2).toString());
+        assertEquals("12.200000", new Formatter(Locale.US).format("%f", 12.2).toString());
 
         assertEquals("00002", new Formatter(Locale.US).format("%05.0f", 2.3).toString());
         assertEquals("-0023", new Formatter(Locale.US).format("%05.0f", -23f).toString());
