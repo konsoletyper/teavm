@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -276,6 +277,9 @@ public final class TFormatter implements Closeable, Flushable {
                 sb = new StringBuilder(format.format(value));
             } else if (arg instanceof Float) {
                 float value = (Float) arg;
+                sb = new StringBuilder(format.format(value));
+            } else if (arg instanceof BigDecimal) {
+                BigDecimal value = (BigDecimal) arg;
                 sb = new StringBuilder(format.format(value));
             } else {
                 throw new IllegalFormatConversionException(specifier, arg != null ? arg.getClass() : null);
