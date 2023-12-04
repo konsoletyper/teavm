@@ -21,10 +21,11 @@ import org.teavm.classlib.java.lang.TString;
 
 public class TStringCharsStream extends TSimpleIntStreamImpl {
     private final TString string;
-    private int index = 0;
+    private int index;
 
     public TStringCharsStream(TString string) {
         this.string = Objects.requireNonNull(string);
+        this.index = 0;
     }
 
     @Override
