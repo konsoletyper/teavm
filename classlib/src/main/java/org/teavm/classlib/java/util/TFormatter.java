@@ -255,10 +255,14 @@ public final class TFormatter implements Closeable, Flushable {
             verifyFlags(specifier, MASK_FOR_INT_DECIMAL_FORMAT);
             verifyFloatFlags();
 
+            DecimalFormatSymbols symbols = new DecimalFormatSymbols(locale);
             TDecimalFormat format = new TDecimalFormat();
             format.setMaximumIntegerDigits(width);
+            if ((flags & TFormattableFlags.ZERO_PADDED) != 0) {
+                format.setMinimumIntegerDigits(width);
+            }
             format.setMaximumFractionDigits(precision);
-            format.setDecimalFormatSymbols(new DecimalFormatSymbols(locale));
+            format.setDecimalFormatSymbols(symbols);
             format.setGroupingUsed((flags & TFormattableFlags.GROUPING_SEPARATOR) != 0);
             if ((flags & TFormattableFlags.PARENTHESIZED_NEGATIVE) != 0) {
                 format.setNegativePrefix("(");
@@ -270,28 +274,15 @@ public final class TFormatter implements Closeable, Flushable {
                 format.setPositivePrefix(" ");
             }
 
-            StringBuilder sb;
+            String str;
             Object arg = args[argumentIndex];
-            if (arg instanceof Double) {
-                double value = (Double) arg;
-                sb = new StringBuilder(format.format(value));
-            } else if (arg instanceof Float) {
-                float value = (Float) arg;
-                sb = new StringBuilder(format.format(value));
-            } else if (arg instanceof BigDecimal) {
-                BigDecimal value = (BigDecimal) arg;
-                sb = new StringBuilder(format.format(value));
+            if (arg instanceof Double || arg instanceof Float || arg instanceof BigDecimal) {
+                str = format.format(arg);
             } else {
                 throw new IllegalFormatConversionException(specifier, arg != null ? arg.getClass() : null);
             }
 
-            if ((flags & TFormattableFlags.ZERO_PADDED) != 0) {
-                for (int i = sb.length(); i < width; ++i) {
-                    sb.append(Character.forDigit(0, 10));
-                }
-            }
-
-            formatGivenString(upperCase, sb.toString());
+            formatGivenString(upperCase, str);
         }
 
         private void verifyFloatFlags() {
