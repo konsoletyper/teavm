@@ -31,6 +31,8 @@ import org.teavm.classlib.java.util.TComparator;
 import org.teavm.classlib.java.util.TFormatter;
 import org.teavm.classlib.java.util.TLocale;
 import org.teavm.classlib.java.util.regex.TPattern;
+import org.teavm.classlib.java.util.stream.TIntStream;
+import org.teavm.classlib.java.util.stream.intimpl.TStringCharsStream;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.NoSideEffects;
 
@@ -585,6 +587,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             array[i] = charAt(i);
         }
         return array;
+    }
+
+    public TIntStream chars() {
+        return new TStringCharsStream(this);
     }
 
     public static String valueOf(Object obj) {
