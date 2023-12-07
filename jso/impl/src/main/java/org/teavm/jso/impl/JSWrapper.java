@@ -35,6 +35,7 @@ public final class JSWrapper {
             ? JSMap.create() : null;
     private static final JSMap<JSNumber, JSWeakRef<JSObject>> numberWrappers = JSWeakRef.isSupported()
             ? JSMap.create() : null;
+    private static JSWeakRef<JSObject> undefinedWrapper;
     private static final JSFinalizationRegistry stringFinalizationRegistry;
     private static final JSFinalizationRegistry numberFinalizationRegistry;
     private static int hashCodeGen;
@@ -59,12 +60,13 @@ public final class JSWrapper {
             return null;
         }
         var js = directJavaToJs(o);
-        if (isJSImplementation(o)) {
+        var type = JSObjects.typeOf(js);
+        var isObject = type.equals("object") || type.equals("function");
+        if (isObject && isJSImplementation(o)) {
             return o;
         }
         if (wrappers != null) {
-            var type = JSObjects.typeOf(js);
-            if (type.equals("object") || type.equals("function")) {
+            if (isObject) {
                 var existingRef = get(wrappers, js);
                 var existing = !JSObjects.isUndefined(existingRef) ? deref(existingRef) : JSObjects.undefined();
                 if (JSObjects.isUndefined(existing)) {
@@ -96,6 +98,17 @@ public final class JSWrapper {
                     var wrapperAsJs = wrapperToJs(wrapper);
                     set(numberWrappers, jsNumber, createWeakRef(wrapperAsJs));
                     register(numberFinalizationRegistry, wrapperAsJs, jsNumber);
+                    return wrapper;
+                } else {
+                    return jsToWrapper(existing);
+                }
+            } else if (type.equals("undefined")) {
+                var existingRef = undefinedWrapper;
+                var existing = existingRef != null ? deref(existingRef) : JSObjects.undefined();
+                if (JSObjects.isUndefined(existing)) {
+                    var wrapper = new JSWrapper(js);
+                    var wrapperAsJs = wrapperToJs(wrapper);
+                    undefinedWrapper = createWeakRef(wrapperAsJs);
                     return wrapper;
                 } else {
                     return jsToWrapper(existing);
