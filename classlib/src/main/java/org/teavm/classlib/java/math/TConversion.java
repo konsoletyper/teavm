@@ -66,7 +66,7 @@ class TConversion {
             return val.toString();
         }
         double bitsForRadixDigit;
-        bitsForRadixDigit = Math.log(radix) / Math.log(2);
+        bitsForRadixDigit = Integer.SIZE - Integer.numberOfLeadingZeros(radix) - 1;
         int resLengthInChars = (int) (val.abs().bitLength() / bitsForRadixDigit + ((sign < 0) ? 1 : 0)) + 1;
 
         char[] result = new char[resLengthInChars];
