@@ -479,6 +479,22 @@ public class DecimalFormatTest {
         assertEquals("23.00 RUB", format.format(23));
     }
 
+    @Test
+    public void formatsManual() {
+        DecimalFormat format = new DecimalFormat();
+        format.setDecimalFormatSymbols(new DecimalFormatSymbols(Locale.US));
+        format.setMaximumFractionDigits(6);
+        format.setMinimumFractionDigits(6);
+        format.setGroupingUsed(false);
+        assertEquals("1.200000", format.format((Object) 1.2));
+        assertEquals("12.200000", format.format((Object) 12.2));
+        format.setMaximumFractionDigits(0);
+        format.setMinimumFractionDigits(0);
+        format.setMaximumIntegerDigits(5);
+        format.setMinimumIntegerDigits(5);
+        assertEquals("00002", format.format((Object) 2.0));
+    }
+
     private DecimalFormat createFormat(String format) {
         return new DecimalFormat(format, symbols);
     }

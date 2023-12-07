@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -31,6 +32,7 @@ import java.util.IllegalFormatConversionException;
 import java.util.Locale;
 import java.util.UnknownFormatConversionException;
 import org.teavm.classlib.impl.IntegerUtil;
+import org.teavm.classlib.java.text.TDecimalFormat;
 
 public final class TFormatter implements Closeable, Flushable {
     private Locale locale;
@@ -240,8 +242,95 @@ public final class TFormatter implements Closeable, Flushable {
                     formatRadixInt(specifier, 4, true);
                     break;
 
+                case 'f':
+                    formatFloat(specifier, false);
+                    break;
+
                 default:
                     throw new UnknownFormatConversionException(String.valueOf(specifier));
+            }
+        }
+
+        private void formatFloat(char specifier, boolean upperCase) throws IOException {
+            verifyFlags(specifier, MASK_FOR_INT_DECIMAL_FORMAT);
+            verifyFloatFlags();
+
+            if (precision == -1) {
+                precision = 6;
+            }
+
+            Object arg = args[argumentIndex];
+            boolean negative;
+            if (arg instanceof Double) {
+                negative = (Double) arg < 0;
+            } else if (arg instanceof Float) {
+                negative = (Float) arg < 0;
+            } else if (arg instanceof BigDecimal) {
+                negative = ((BigDecimal) arg).signum() < 0;
+            } else {
+                throw new IllegalFormatConversionException(specifier, arg == null ? null : arg.getClass());
+            }
+
+            TDecimalFormat format = new TDecimalFormat();
+            format.setDecimalFormatSymbols(new DecimalFormatSymbols(locale));
+            if (width != -1) {
+                int decimalSize = predictDecimalSize(negative, format);
+                format.setMaximumIntegerDigits(decimalSize);
+                if ((flags & TFormattableFlags.ZERO_PADDED) != 0) {
+                    format.setMinimumIntegerDigits(decimalSize);
+                }
+            }
+            format.setMaximumFractionDigits(precision);
+            format.setMinimumFractionDigits(precision);
+            format.setGroupingUsed((flags & TFormattableFlags.GROUPING_SEPARATOR) != 0);
+            if ((flags & TFormattableFlags.PARENTHESIZED_NEGATIVE) != 0) {
+                format.setNegativePrefix("(");
+                format.setNegativeSuffix(")");
+            }
+            if ((flags & TFormattableFlags.SIGNED) != 0) {
+                format.setPositivePrefix("+"); // DecimalFormatSymbols has no plus sign
+            } else if ((flags & TFormattableFlags.LEADING_SPACE) != 0) {
+                format.setPositivePrefix(" ");
+            }
+
+            String str = format.format(arg);
+
+            precision = -1; // prevent formatGivenString from trimming
+
+            formatGivenString(upperCase, str);
+        }
+
+        private int predictDecimalSize(boolean negative, TDecimalFormat format) {
+            int decimalSize = width;
+            if (precision > 0) {
+                decimalSize -= precision + 1; // width also includes decimal places. Subtract them!
+            }
+            // signs take up space as well. Also subtract them!
+            if (negative) {
+                if ((flags & TFormattableFlags.PARENTHESIZED_NEGATIVE) != 0) {
+                    decimalSize -= 2;
+                } else {
+                    decimalSize--;
+                }
+            } else if ((flags & (TFormattableFlags.SIGNED | TFormattableFlags.LEADING_SPACE)) != 0) {
+                decimalSize--;
+            }
+            // the grouping separator also takes up space. You know the drill.
+            if ((flags & TFormattableFlags.GROUPING_SEPARATOR) != 0) {
+                decimalSize -= decimalSize / (format.getGroupingSize() + 1);
+            }
+            return decimalSize;
+        }
+
+        private void verifyFloatFlags() {
+            if ((flags & TFormattableFlags.SIGNED) != 0 && (flags & TFormattableFlags.LEADING_SPACE) != 0) {
+                throw new TIllegalFormatFlagsException("+ ");
+            }
+            if ((flags & TFormattableFlags.ZERO_PADDED) != 0 && (flags & TFormattableFlags.LEFT_JUSTIFY) != 0) {
+                throw new TIllegalFormatFlagsException("0-");
+            }
+            if ((flags & TFormattableFlags.LEFT_JUSTIFY) != 0 && width < 0) {
+                throw new TMissingFormatWidthException(format.substring(formatSpecifierStart, index));
             }
         }
 
