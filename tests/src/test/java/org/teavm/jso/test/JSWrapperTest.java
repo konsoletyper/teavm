@@ -311,6 +311,16 @@ public class JSWrapperTest {
         }));
     }
 
+    @Test
+    public void wrapUndefined() {
+        field1 = JSObjects.undefined();
+        assertEquals("undefined", field1.toString());
+        assertEquals(JSObjects.undefined(), field1);
+        assertSame(JSObjects.undefined(), field1);
+        assertTrue(field1 instanceof JSObject);
+        assertTrue(JSObjects.isUndefined(field1));
+    }
+
     private void callSetProperty(Object instance, Object o) {
         setProperty(instance, "foo", o);
     }
