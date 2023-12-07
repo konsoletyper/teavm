@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.math;
 
 import java.io.Serializable;
+import org.teavm.classlib.impl.text.DoubleAnalyzer;
 
 /**
  * This class represents immutable arbitrary precision decimal numbers. Each
@@ -1691,7 +1692,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         // The ANSI standard X3.274-1996 algorithm
         int m = Math.abs(n);
         int mcPrecision = mc.getPrecision();
-        int elength = (int) Math.log10(m) + 1;   // decimal digits in 'n'
+        int elength = (int) DoubleAnalyzer.fastIntLog10(m) + 1;   // decimal digits in 'n'
         int oneBitMask; // mask of bits
         TBigDecimal accum; // the single accumulator
         TMathContext newPrecision = mc; // MathContext by default
@@ -1850,7 +1851,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             } else if (bitLength >= 1) {
                 doubleUnsc = smallValue;
             }
-            decimalDigits += Math.log10(Math.abs(doubleUnsc));
+            decimalDigits += DoubleAnalyzer.fastIntLog10(Math.abs(doubleUnsc));
         } else {
             // (bitLength >= 1024)
             /* To calculate the precision for large numbers
@@ -2816,7 +2817,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
                     Long.signum(fraction) * (5 + compRem),
                     mc.getRoundingMode());
             // If after to add the increment the precision changed, we normalize the size
-            if (Math.log10(Math.abs(integer)) >= mc.getPrecision()) {
+            if (DoubleAnalyzer.fastIntLog10(Math.abs(integer)) >= mc.getPrecision()) {
                 integer /= 10;
                 newScale--;
             }

@@ -22,8 +22,19 @@ public final class DoubleAnalyzer {
     public static final int DECIMAL_PRECISION = 18;
     public static final long DOUBLE_MAX_POS = 100000000000000000L;
     private static final long MAX_MANTISSA = Long.divideUnsigned(-1, 10);
+    private static final Result resultForLog10 = new Result();
 
     private DoubleAnalyzer() {
+    }
+
+    public static int fastIntLog10(double d) {
+        var result = resultForLog10;
+        analyze(d, result);
+        var exponent = result.exponent;
+        if (exponent < 0 && result.mantissa > 100000000000000000L) {
+            ++exponent;
+        }
+        return exponent;
     }
 
     public static void analyze(double d, Result result) {

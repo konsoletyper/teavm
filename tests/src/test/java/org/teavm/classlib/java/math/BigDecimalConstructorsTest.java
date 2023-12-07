@@ -44,12 +44,9 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@SkipPlatform(TestPlatform.WASI)
 public class BigDecimalConstructorsTest {
     /**
      * check ONE
