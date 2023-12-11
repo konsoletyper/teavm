@@ -47,7 +47,7 @@ fun main() {
     }
 
     val (scene, updater) = geometry()
-    val taskCount = 1// Runtime.getRuntime().availableProcessors()
+    val taskCount = Runtime.getRuntime().availableProcessors()
     println("Running on $taskCount CPUs")
     val rasters = (0 until taskCount).map { Raster(SCENE_WIDTH, (SCENE_HEIGHT + taskCount - 1) / taskCount) }
     val renderers = rasters.mapIndexed { index, raster ->
