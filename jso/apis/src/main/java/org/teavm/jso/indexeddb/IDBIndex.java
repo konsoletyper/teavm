@@ -16,6 +16,7 @@
 package org.teavm.jso.indexeddb;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSString;
@@ -36,8 +37,9 @@ public abstract class IDBIndex implements JSObject, IDBCursorSource {
         }
     }
 
-    @JSBody(script = "return this;")
-    private native String[] unwrapStringArray(JSObject obj);
+    @JSBody(params = "obj", script = "return obj;")
+    @JSByRef
+    private static native String[] unwrapStringArray(JSObject obj);
 
     @JSProperty
     public abstract boolean isMultiEntry();
