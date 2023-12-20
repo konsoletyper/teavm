@@ -15,27 +15,9 @@
  */
 package org.teavm.gradle.api;
 
-import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.provider.ListProperty;
-import org.gradle.api.provider.MapProperty;
-import org.gradle.api.provider.Property;
-
-public interface TeaVMCommonConfiguration {
-    Property<String> getMainClass();
-
-    Property<Boolean> getDebugInformation();
-
-    Property<Boolean> getFastGlobalAnalysis();
-
-    Property<OptimizationLevel> getOptimization();
-
-    MapProperty<String, String> getProperties();
-
-    ListProperty<String> getPreservedClasses();
-
-    Property<Boolean> getOutOfProcess();
-
-    Property<Integer> getProcessMemory();
-
-    DirectoryProperty getOutputDir();
+public enum JSModuleType {
+    COMMON_JS,
+    UMD,
+    NONE,
+    ES2015
 }

@@ -20,6 +20,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.Problem;
@@ -140,6 +141,11 @@ public class RemoteBuildStrategy implements BuildStrategy {
     @Override
     public void setStrict(boolean strict) {
         request.strict = strict;
+    }
+
+    @Override
+    public void setJsModuleType(JSModuleType jsModuleType) {
+        request.jsModuleType = jsModuleType;
     }
 
     @Override

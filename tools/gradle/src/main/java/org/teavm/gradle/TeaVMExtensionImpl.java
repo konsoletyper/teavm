@@ -16,10 +16,10 @@
 package org.teavm.gradle;
 
 import groovy.lang.Closure;
-import java.io.File;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.model.ObjectFactory;
+import org.teavm.gradle.api.JSModuleType;
 import org.teavm.gradle.api.OptimizationLevel;
 import org.teavm.gradle.api.SourceFilePolicy;
 import org.teavm.gradle.api.TeaVMCConfiguration;
@@ -63,6 +63,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         js.getObfuscated().convention(property("js.obfuscated").map(Boolean::parseBoolean).orElse(true));
         js.getSourceMap().convention(property("js.sourceMap").map(Boolean::parseBoolean).orElse(false));
         js.getStrict().convention(property("js.strict").map(Boolean::parseBoolean).orElse(false));
+        js.getModuleType().convention(property("js.moduleType").map(JSModuleType::valueOf).orElse(JSModuleType.UMD));
         js.getEntryPointName().convention("main");
         js.getTargetFileName().convention(project.provider(() -> project.getName() + ".js"));
         js.getAddedToWebApp().convention(property("js.addedToWebApp").map(Boolean::parseBoolean).orElse(false));
@@ -104,7 +105,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     }
 
     private void setupAllDefaults() {
-        all.getOutputDir().convention(new File(project.getBuildDir(), "generated/teavm"));
+        all.getOutputDir().convention(project.getLayout().getBuildDirectory().dir("generated/teavm"));
         all.getDebugInformation().convention(property("debugInformation").map(Boolean::parseBoolean).orElse(false));
         all.getOptimization().convention(OptimizationLevel.BALANCED);
         all.getFastGlobalAnalysis().convention(property("fastGlobalAnalysis").map(Boolean::parseBoolean).orElse(false));

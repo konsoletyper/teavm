@@ -36,6 +36,7 @@ import org.teavm.backend.c.CTarget;
 import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.backend.c.generate.ShorteningFileNameProvider;
 import org.teavm.backend.c.generate.SimpleFileNameProvider;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.backend.wasm.WasmRuntimeType;
 import org.teavm.backend.wasm.WasmTarget;
@@ -75,6 +76,7 @@ public class TeaVMTool {
     private TeaVMTargetType targetType = TeaVMTargetType.JAVASCRIPT;
     private String targetFileName = "";
     private boolean obfuscated = true;
+    private JSModuleType jsModuleType = JSModuleType.UMD;
     private boolean strict;
     private String mainClass;
     private String entryPointName = "main";
@@ -127,6 +129,10 @@ public class TeaVMTool {
 
     public void setObfuscated(boolean obfuscated) {
         this.obfuscated = obfuscated;
+    }
+
+    public void setJsModuleType(JSModuleType jsModuleType) {
+        this.jsModuleType = jsModuleType;
     }
 
     public void setStrict(boolean strict) {
@@ -334,6 +340,7 @@ public class TeaVMTool {
         debugEmitter = debugInformationGenerated || sourceMapsFileGenerated
                 ? new DebugInformationBuilder(referenceCache) : null;
         javaScriptTarget.setDebugEmitter(debugEmitter);
+        javaScriptTarget.setModuleType(jsModuleType);
 
         return javaScriptTarget;
     }

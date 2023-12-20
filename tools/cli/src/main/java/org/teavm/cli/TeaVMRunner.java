@@ -28,6 +28,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.ConsoleTeaVMToolLog;
 import org.teavm.tooling.TeaVMProblemRenderer;
@@ -145,11 +146,10 @@ public final class TeaVMRunner {
                 .desc("Maximum heap size in megabytes (for C and WebAssembly)")
                 .build());
         options.addOption(Option.builder()
-                .longOpt("max-toplevel-names")
-                .argName("number")
+                .longOpt("js-module-type")
+                .argName("module-type")
                 .hasArg()
-                .desc("Maximum number of names kept in top-level scope ("
-                        + "other will be put in a separate object. 10000 by default.")
+                .desc("JavaScript module type (umd, common-js, none, es2015).")
                 .build());
     }
 
@@ -240,6 +240,30 @@ public final class TeaVMRunner {
     private void parseGenerationOptions() {
         tool.setObfuscated(commandLine.hasOption("m"));
         tool.setStrict(commandLine.hasOption("strict"));
+        parseJsModuleOption();
+    }
+
+    private void parseJsModuleOption() {
+        if (!commandLine.hasOption("js-module-type")) {
+            return;
+        }
+        switch (commandLine.getOptionValue("js-module-type")) {
+            case "umd":
+                tool.setJsModuleType(JSModuleType.UMD);
+                break;
+            case "common-js":
+                tool.setJsModuleType(JSModuleType.COMMON_JS);
+                break;
+            case "none":
+                tool.setJsModuleType(JSModuleType.NONE);
+                break;
+            case "es2015":
+                tool.setJsModuleType(JSModuleType.ES2015);
+                break;
+            default:
+                System.err.print("Wrong JS module type level");
+                printUsage();
+        }
     }
 
     private void parseDebugOptions() {

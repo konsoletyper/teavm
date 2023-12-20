@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.ProblemProvider;
@@ -53,6 +54,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.ADVANCED;
     private boolean fastDependencyAnalysis;
     private boolean obfuscated;
+    private JSModuleType jsModuleType;
     private boolean strict;
     private boolean sourceMapsFileGenerated;
     private boolean debugInformationGenerated;
@@ -168,6 +170,11 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setJsModuleType(JSModuleType jsModuleType) {
+        this.jsModuleType = jsModuleType;
+    }
+
+    @Override
     public void setTransformers(String[] transformers) {
         this.transformers = transformers.clone();
     }
@@ -247,6 +254,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setSourceFilePolicy(sourceMapsSourcePolicy);
 
         tool.setObfuscated(obfuscated);
+        tool.setJsModuleType(jsModuleType);
         tool.setStrict(strict);
         tool.setIncremental(incremental);
         tool.getTransformers().addAll(Arrays.asList(transformers));

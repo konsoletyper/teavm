@@ -25,15 +25,17 @@ class TestRun {
     private String fileName;
     private TestPlatform kind;
     private String argument;
+    private boolean module;
 
     TestRun(String name, File baseDirectory, Method method, String fileName, TestPlatform kind,
-            String argument) {
+            String argument, boolean module) {
         this.name = name;
         this.baseDirectory = baseDirectory;
         this.method = method;
         this.fileName = fileName;
         this.kind = kind;
         this.argument = argument;
+        this.module = module;
     }
 
     public String getName() {
@@ -58,5 +60,9 @@ class TestRun {
 
     public String getArgument() {
         return argument;
+    }
+
+    public boolean isModule() {
+        return module;
     }
 }

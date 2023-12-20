@@ -22,7 +22,9 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSBodyImport;
 import org.teavm.junit.AttachJavaScript;
 import org.teavm.junit.EachTestCompiledSeparately;
+import org.teavm.junit.JsModuleTest;
 import org.teavm.junit.OnlyPlatform;
+import org.teavm.junit.ServeJS;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
@@ -47,9 +49,16 @@ public class ImportModuleTest {
         assertEquals(23, runTestFunction());
     }
 
+    @Test
+    @JsModuleTest
+    @ServeJS(from = "org/teavm/jso/test/es2015.js", as = "testModule.js")
+    public void es2015() {
+        assertEquals(23, runTestFunction());
+    }
+
     @JSBody(
             script = "return testModule.foo();",
-            imports = @JSBodyImport(alias = "testModule", fromModule = "testModule.js")
+            imports = @JSBodyImport(alias = "testModule", fromModule = "./testModule.js")
     )
     private static native int runTestFunction();
 }

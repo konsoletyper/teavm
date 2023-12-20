@@ -128,6 +128,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private NullCheckInsertion nullCheckInsertion = new NullCheckInsertion(NullCheckFilter.EMPTY);
     private final Map<String, String> importedModules = new LinkedHashMap<>();
     private JavaScriptTemplateFactory templateFactory;
+    private JSModuleType moduleType = JSModuleType.UMD;
 
     @Override
     public List<ClassHolderTransformer> getTransformers() {
@@ -212,6 +213,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     public void setStrict(boolean strict) {
         this.strict = strict;
+    }
+
+    public void setModuleType(JSModuleType moduleType) {
+        this.moduleType = moduleType;
     }
 
     @Override
@@ -403,11 +408,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         renderer.renderStringConstants();
         renderer.renderCompatibilityStubs();
         for (var entry : controller.getEntryPoints().entrySet()) {
-            rememberingWriter.appendFunction("$rt_exports").append(".").append(entry.getKey()).ws().append("=").ws();
+            var alias = "$rt_export_" + entry.getKey();
             var ref = entry.getValue().getMethod();
-            rememberingWriter.appendFunction("$rt_mainStarter").append("(").appendMethodBody(ref);
+            rememberingWriter.append("let ").appendFunction(alias).ws().append("=").ws()
+                    .appendFunction("$rt_mainStarter").append("(").appendMethodBody(ref);
             rememberingWriter.append(");").newLine();
-            rememberingWriter.appendFunction("$rt_exports").append(".").append(entry.getKey()).append(".")
+            rememberingWriter.appendFunction(alias).append(".")
                     .append("javaException").ws().append("=").ws().appendFunction("$rt_javaException")
                     .append(";").newLine();
         }
@@ -450,16 +456,28 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     private void printWrapperStart(SourceWriter writer) {
         writer.append("\"use strict\";").newLine();
-        printUmdStart(writer);
-        writer.append("function(").appendFunction("$rt_exports");
-        for (var moduleName : importedModules.values()) {
-            writer.append(",").ws().appendFunction(moduleName);
-        }
-        writer.append(")").appendBlockStart();
+        printModuleStart(writer);
     }
 
     private String importModule(String name) {
         return importedModules.computeIfAbsent(name, n -> "$rt_imported_" + importedModules.size());
+    }
+
+    private void printModuleStart(SourceWriter writer) {
+        switch (moduleType) {
+            case UMD:
+                printUmdStart(writer);
+                break;
+            case COMMON_JS:
+                printCommonJsStart(writer);
+                break;
+            case NONE:
+                printIIFStart(writer);
+                break;
+            case ES2015:
+                printES2015Start(writer);
+                break;
+        }
     }
 
     private void printUmdStart(SourceWriter writer) {
@@ -501,10 +519,101 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         writer.append(");").softNewLine();
         writer.appendBlockEnd();
         writer.outdent().append("}(");
+
+        writer.append("function(").appendFunction("$rt_exports");
+        for (var moduleName : importedModules.values()) {
+            writer.append(",").ws().appendFunction(moduleName);
+        }
+        writer.append(")").appendBlockStart();
+    }
+
+    private void printIIFStart(SourceWriter writer) {
+        for (var exportedName : controller.getEntryPoints().keySet()) {
+            writer.append("var ").appendGlobal(exportedName).append(";").softNewLine();
+        }
+        writer.append("(function()").appendBlockStart();
+
+        for (var entry : importedModules.entrySet()) {
+            var moduleName = entry.getKey();
+            var alias = entry.getValue();
+            writer.append("let ").appendFunction(alias).ws().append('=').ws().append("this[\"")
+                    .append(RenderingUtil.escapeString(moduleName)).append("\"];").softNewLine();
+        }
+    }
+
+    private void printCommonJsStart(SourceWriter writer) {
+        for (var entry : importedModules.entrySet()) {
+            var moduleName = entry.getKey();
+            var alias = entry.getValue();
+            writer.append("let ").appendFunction(alias).ws().append('=').ws().append("require(\"")
+                    .append(RenderingUtil.escapeString(moduleName)).append("\");").softNewLine();
+        }
+    }
+
+    private void printES2015Start(SourceWriter writer) {
+        for (var entry : importedModules.entrySet()) {
+            var moduleName = entry.getKey();
+            var alias = entry.getValue();
+            writer.append("import").ws().append("*").ws().append("as ").appendFunction(alias)
+                    .append(" from").ws().append("\"")
+                    .append(RenderingUtil.escapeString(moduleName)).append("\";").softNewLine();
+        }
     }
 
     private void printWrapperEnd(SourceWriter writer) {
+        switch (moduleType) {
+            case UMD:
+                printUmdEnd(writer);
+                break;
+            case COMMON_JS:
+                printCommonJsEnd(writer);
+                break;
+            case NONE:
+                printIFFEnd(writer);
+                break;
+            case ES2015:
+                printES2015End(writer);
+                break;
+        }
+    }
+
+    private void printUmdEnd(SourceWriter writer) {
+        for (var export : controller.getEntryPoints().keySet()) {
+            writer.appendFunction("$rt_exports").append(".").append(export).ws().append("=").ws()
+                    .appendFunction("$rt_export_" + export);
+        }
         writer.outdent().append("}));").newLine();
+    }
+
+    private void printCommonJsEnd(SourceWriter writer) {
+        for (var export : controller.getEntryPoints().keySet()) {
+            writer.appendFunction("exports.").append(export).ws().append("=").ws()
+                    .appendFunction("$rt_export_" + export).append(";").softNewLine();
+        }
+    }
+
+    private void printIFFEnd(SourceWriter writer) {
+        for (var exportedName : controller.getEntryPoints().keySet()) {
+            writer.appendGlobal(exportedName).ws().append("=").ws().appendFunction("$rt_export_" + exportedName)
+                    .append(";").softNewLine();
+        }
+        writer.outdent().append("})();");
+    }
+
+    private void printES2015End(SourceWriter writer) {
+        if (controller.getEntryPoints().isEmpty()) {
+            return;
+        }
+        writer.append("export").ws().append("{").ws();
+        var first = true;
+        for (var exportedName : controller.getEntryPoints().keySet()) {
+            if (!first) {
+                writer.append(",").ws();
+            }
+            first = false;
+            writer.appendFunction("$rt_export_" + exportedName).append(" as ").append(exportedName);
+        }
+        writer.ws().append("};").softNewLine();
     }
 
     private void printStats(OutputSourceWriter writer, int totalSize) {

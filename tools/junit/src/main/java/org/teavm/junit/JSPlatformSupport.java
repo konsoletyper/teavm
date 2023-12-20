@@ -27,10 +27,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
@@ -99,7 +102,7 @@ class JSPlatformSupport extends TestPlatformSupport<JavaScriptTarget> {
 
     @Override
     CompileResult compile(Consumer<TeaVM> additionalProcessing, String baseName,
-            TeaVMTestConfiguration<JavaScriptTarget> configuration, File path) {
+            TeaVMTestConfiguration<JavaScriptTarget> configuration, File path, AnnotatedElement element) {
         boolean decodeStack = Boolean.parseBoolean(System.getProperty(JS_DECODE_STACK, "true"));
         var debugEmitter = new DebugInformationBuilder(new ReferenceCache());
         Supplier<JavaScriptTarget> targetSupplier = () -> {
@@ -108,6 +111,9 @@ class JSPlatformSupport extends TestPlatformSupport<JavaScriptTarget> {
             if (decodeStack) {
                 target.setDebugEmitter(debugEmitter);
                 target.setStackTraceIncluded(true);
+            }
+            if (isModule(element)) {
+                target.setModuleType(JSModuleType.ES2015);
             }
             return target;
         };
@@ -139,6 +145,19 @@ class JSPlatformSupport extends TestPlatformSupport<JavaScriptTarget> {
                 postBuild, additionalProcessing, baseName);
     }
 
+    private boolean isModule(AnnotatedElement element) {
+        if (element.isAnnotationPresent(JsModuleTest.class)) {
+            return true;
+        }
+        if (element instanceof Method) {
+            var cls = ((Method) element).getDeclaringClass();
+            if (cls.isAnnotationPresent(JsModuleTest.class)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     void additionalOutput(File outputPath, File outputPathForMethod, TeaVMTestConfiguration<?> configuration,
             MethodReference reference) {
@@ -149,6 +168,29 @@ class JSPlatformSupport extends TestPlatformSupport<JavaScriptTarget> {
     void additionalSingleTestOutput(File outputPathForMethod, TeaVMTestConfiguration<?> configuration,
             MethodReference reference) {
         htmlSingleTestOutput(outputPathForMethod, configuration, "teavm-run-test.html");
+    }
+
+    @Override
+    void additionalOutputForAllConfigurations(File outputPath, Method method) {
+        var annotations = new ArrayList<ServeJS>();
+        var list = method.getAnnotation(ServeJSList.class);
+        if (list != null) {
+            annotations.addAll(List.of(list.value()));
+        }
+        var single = method.getAnnotation(ServeJS.class);
+        if (single != null) {
+            annotations.add(single);
+        }
+        var loader = JSPlatformSupport.class.getClassLoader();
+        for (var item : annotations) {
+            var outputFile = new File(outputPath, item.as());
+            try (var input = loader.getResourceAsStream(item.from());
+                    var output = new FileOutputStream(outputFile)) {
+                input.transferTo(output);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @Override

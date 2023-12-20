@@ -20,6 +20,7 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
+import org.teavm.gradle.api.JSModuleType;
 import org.teavm.gradle.api.SourceFilePolicy;
 import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTargetType;
@@ -29,6 +30,7 @@ public abstract class GenerateJavaScriptTask extends TeaVMTask {
     public GenerateJavaScriptTask() {
         getObfuscated().convention(true);
         getStrict().convention(false);
+        getModuleType().convention(JSModuleType.UMD);
         getSourceMap().convention(false);
         getSourceFilePolicy().convention(SourceFilePolicy.DO_NOTHING);
         getEntryPointName().convention("main");
@@ -41,6 +43,10 @@ public abstract class GenerateJavaScriptTask extends TeaVMTask {
     @Input
     @Optional
     public abstract Property<Boolean> getStrict();
+
+    @Input
+    @Optional
+    public abstract Property<JSModuleType> getModuleType();
 
     @Input
     @Optional
@@ -62,6 +68,20 @@ public abstract class GenerateJavaScriptTask extends TeaVMTask {
         builder.setTargetType(TeaVMTargetType.JAVASCRIPT);
         builder.setObfuscated(getObfuscated().get());
         builder.setStrict(getStrict().get());
+        switch (getModuleType().get()) {
+            case UMD:
+                builder.setJsModuleType(org.teavm.backend.javascript.JSModuleType.UMD);
+                break;
+            case COMMON_JS:
+                builder.setJsModuleType(org.teavm.backend.javascript.JSModuleType.COMMON_JS);
+                break;
+            case NONE:
+                builder.setJsModuleType(org.teavm.backend.javascript.JSModuleType.NONE);
+                break;
+            case ES2015:
+                builder.setJsModuleType(org.teavm.backend.javascript.JSModuleType.ES2015);
+                break;
+        }
         builder.setSourceMapsFileGenerated(getSourceMap().get());
         builder.setEntryPointName(getEntryPointName().get());
         for (var file : getSourceFiles()) {

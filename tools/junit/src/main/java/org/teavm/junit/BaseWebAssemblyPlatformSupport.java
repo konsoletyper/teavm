@@ -17,6 +17,7 @@ package org.teavm.junit;
 
 import static org.teavm.junit.PropertyNames.SOURCE_DIRS;
 import java.io.File;
+import java.lang.reflect.AnnotatedElement;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.function.Consumer;
@@ -42,7 +43,7 @@ abstract class BaseWebAssemblyPlatformSupport extends TestPlatformSupport<WasmTa
 
     @Override
     CompileResult compile(Consumer<TeaVM> additionalProcessing, String baseName,
-            TeaVMTestConfiguration<WasmTarget> configuration, File path) {
+            TeaVMTestConfiguration<WasmTarget> configuration, File path, AnnotatedElement element) {
         Supplier<WasmTarget> targetSupplier = () -> {
             WasmTarget target = new WasmTarget();
             target.setRuntimeType(getRuntimeType());

@@ -117,6 +117,7 @@ public class TeaVMPlugin implements Plugin<Project> {
             var js = extension.getJs();
             applyToTask(js, task, configuration);
             task.getObfuscated().convention(js.getObfuscated());
+            task.getModuleType().convention(js.getModuleType());
             task.getSourceMap().convention(js.getSourceMap());
             task.getTargetFileName().convention(js.getTargetFileName());
             task.getStrict().convention(js.getStrict());
@@ -230,7 +231,7 @@ public class TeaVMPlugin implements Plugin<Project> {
                     var relPath = extension.getJs().getRelativePathInOutputDir();
                     task.with(project.copySpec(spec -> {
                         spec.into(relPath);
-                        spec.from(project.files(outDir.map(dir -> new File(dir, relPath.get()))));
+                        spec.from(project.files(outDir.map(dir -> new File(dir.getAsFile(), relPath.get()))));
                         spec.setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE);
                     }));
                 }
@@ -240,7 +241,7 @@ public class TeaVMPlugin implements Plugin<Project> {
                     var relPath = extension.getWasm().getRelativePathInOutputDir();
                     task.with(project.copySpec(spec -> {
                         spec.into(relPath);
-                        spec.from(project.files(outDir.map(dir -> new File(dir, relPath.get()))));
+                        spec.from(project.files(outDir.map(dir -> new File(dir.getAsFile(), relPath.get()))));
                     }));
                 }
             }
@@ -259,7 +260,7 @@ public class TeaVMPlugin implements Plugin<Project> {
         task.getProperties().putAll(configuration.getProperties());
         task.getDaemonClasspath().from(toolsConfiguration);
         task.getOutputDir().convention(configuration.getOutputDir().map(
-                d -> new File(d, configuration.getRelativePathInOutputDir().get())));
+                d -> new File(d.getAsFile(), configuration.getRelativePathInOutputDir().get())));
 
         var project = task.getProject();
 

@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTargetType;
@@ -42,6 +43,7 @@ public class RemoteBuildRequest implements Serializable {
     public String cacheDirectory;
     public boolean obfuscated;
     public boolean strict;
+    public JSModuleType jsModuleType;
     public Properties properties;
     public TeaVMOptimizationLevel optimizationLevel;
     public boolean fastDependencyAnalysis;

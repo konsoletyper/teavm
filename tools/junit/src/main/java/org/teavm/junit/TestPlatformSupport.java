@@ -18,6 +18,8 @@ package org.teavm.junit;
 import static org.teavm.junit.TestUtil.resourceToFile;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -58,7 +60,7 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
     abstract List<TeaVMTestConfiguration<T>> getConfigurations();
 
     abstract CompileResult compile(Consumer<TeaVM> additionalProcessing, String baseName,
-            TeaVMTestConfiguration<T> configuration, File path);
+            TeaVMTestConfiguration<T> configuration, File path, AnnotatedElement element);
 
     abstract boolean usesFileName();
 
@@ -153,6 +155,9 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
 
     void additionalSingleTestOutput(File outputPathForMethod, TeaVMTestConfiguration<?> configuration,
             MethodReference reference) {
+    }
+
+    void additionalOutputForAllConfigurations(File outputPath, Method method) {
     }
 
     protected final void htmlOutput(File outputPath, File outputPathForMethod, TeaVMTestConfiguration<?> configuration,

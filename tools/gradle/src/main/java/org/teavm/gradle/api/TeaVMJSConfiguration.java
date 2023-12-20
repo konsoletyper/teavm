@@ -22,6 +22,8 @@ public interface TeaVMJSConfiguration extends TeaVMWebConfiguration {
 
     Property<Boolean> getStrict();
 
+    Property<JSModuleType> getModuleType();
+
     Property<Boolean> getSourceMap();
 
     Property<String> getEntryPointName();

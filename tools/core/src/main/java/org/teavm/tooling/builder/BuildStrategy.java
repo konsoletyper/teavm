@@ -17,6 +17,7 @@ package org.teavm.tooling.builder;
 
 import java.util.List;
 import java.util.Properties;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTargetType;
@@ -59,6 +60,8 @@ public interface BuildStrategy {
     void setObfuscated(boolean obfuscated);
 
     void setStrict(boolean strict);
+
+    void setJsModuleType(JSModuleType jsModuleType);
 
     void setProperties(Properties properties);
 

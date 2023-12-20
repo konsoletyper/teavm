@@ -31,8 +31,8 @@ window.addEventListener("message", event => {
             break;
 
         case "WASM":
-            const runtimeFile = request.file + "-runtime.js";
-            appendFiles([runtimeFile], 0, () => {
+            const runtimeFile = request.file.path + "-runtime.js";
+            appendFiles([{ path: runtimeFile, type: "regular" }], 0, () => {
                 launchWasmTest(request.file, request.argument, response => {
                     event.source.postMessage(response, "*");
                 });
@@ -47,21 +47,29 @@ function appendFiles(files, index, callback, errorCallback) {
     if (index === files.length) {
         callback();
     } else {
-        let fileName = files[index];
-        let script = document.createElement("script");
-        script.onload = () => {
-            appendFiles(files, index + 1, callback, errorCallback);
-        };
-        script.onerror = () => {
-            errorCallback("failed to load script " + fileName);
-        };
-        script.src = fileName;
-        document.body.appendChild(script);
+        let file = files[index];
+        if (file.type === "module") {
+            import("./" + file.path).then(module => {
+                window.main = module.main;
+                appendFiles(files, index + 1, callback, errorCallback);
+            });
+        } else {
+            let script = document.createElement("script");
+            script.onload = () => {
+                appendFiles(files, index + 1, callback, errorCallback);
+            };
+            script.onerror = () => {
+                errorCallback("failed to load script " + file.path);
+            };
+            script.src = file.path;
+            document.body.appendChild(script);
+        }
     }
 }
 
 function launchTest(argument, callback) {
-    main(argument ? [argument] : [], result => {
+    let m = typeof main === "undefined" ? window.main : main;
+    m(argument ? [argument] : [], result => {
         if (result instanceof Error) {
             callback(wrapResponse({
                 status: "failed",
@@ -88,7 +96,7 @@ function launchTest(argument, callback) {
     }
 }
 
-function launchWasmTest(path, argument, callback) {
+function launchWasmTest(file, argument, callback) {
     let output = [];
     let outputBuffer = "";
     let outputBufferStderr = "";
@@ -142,7 +150,7 @@ function launchWasmTest(path, argument, callback) {
 
     let instance = null;
 
-    TeaVM.wasm.load(path, {
+    TeaVM.wasm.load(file.path, {
         installImports: function(o) {
             o.teavm.putwcharsOut = (chars, count) => putwchars(instance, chars, count);
             o.teavm.putwcharsErr = (chars, count) => putwcharsStderr(instance, chars, count);

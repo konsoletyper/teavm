@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 konsoletyper.
+ *  Copyright 2023 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,24 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.junit;
 
-function require(name) {
-    switch (name) {
-        case "./testModule.js": {
-            return {
-                foo() {
-                    return 23;
-                }
-            }
-        }
-        default:
-            throw new Error("Unknown module: " + name);
-    }
-}
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-let global = this;
-let exports = {};
-
-function main() {
-    exports.main.apply(this, arguments);
+@Target({ ElementType.TYPE, ElementType.METHOD })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface ServeJSList {
+    ServeJS[] value();
 }

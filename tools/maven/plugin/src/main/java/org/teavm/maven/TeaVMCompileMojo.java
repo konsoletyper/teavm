@@ -37,6 +37,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMSourceFilePolicy;
@@ -82,6 +83,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
 
     @Parameter(property = "teavm.strict", defaultValue = "false")
     private boolean strict;
+
+    @Parameter(property = "teavm.jsModuleType", defaultValue = "UMD")
+    private JSModuleType jsModuleType;
 
     @Parameter
     private Properties properties;
@@ -164,6 +168,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setClassPathEntries(prepareClassPath());
             builder.setObfuscated(minifying);
             builder.setStrict(strict);
+            builder.setJsModuleType(jsModuleType);
             builder.setTargetDirectory(targetDirectory.getAbsolutePath());
             if (transformers != null) {
                 builder.setTransformers(transformers);

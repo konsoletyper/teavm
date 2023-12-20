@@ -50,7 +50,7 @@ tasks.test {
 
     systemProperty("teavm.junit.js", providers.gradleProperty("teavm.tests.js").orElse("true").get())
     systemProperty("teavm.junit.js.runner", browser)
-    systemProperty("teavm.junit.minified", providers.gradleProperty("teavm.tests.minified").orElse("false").get())
+    systemProperty("teavm.junit.minified", providers.gradleProperty("teavm.tests.minified").orElse("true").get())
     systemProperty("teavm.junit.optimized", providers.gradleProperty("teavm.tests.optimized").orElse("true").get())
     systemProperty("teavm.junit.js.decodeStack", providers.gradleProperty("teavm.tests.decodeStack")
             .orElse("false").get())

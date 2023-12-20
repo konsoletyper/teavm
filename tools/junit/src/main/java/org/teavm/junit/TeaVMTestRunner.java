@@ -133,7 +133,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         this.testClass = testClass;
     }
 
-
     @Override
     public Description getDescription() {
         if (suiteDescription == null) {
@@ -234,7 +233,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 var castPlatform = (TestPlatformSupport<TeaVMTarget>) platform;
                 var castConfiguration = (TeaVMTestConfiguration<TeaVMTarget>) configuration;
                 var result = castPlatform.compile(wholeClass(children, platform.getPlatform()), "classTest",
-                        castConfiguration, path);
+                        castConfiguration, path, testClass);
                 if (!result.success) {
                     notifier.fireTestFailure(createFailure(description, result));
                     return false;
@@ -344,9 +343,10 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                     var testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), false,
                             platform.getExtension());
                     runs.add(createTestRun(configuration, testPath, child, platform.getPlatform(),
-                            reference.toString()));
+                            reference.toString(), isModule(child)));
                     platform.additionalOutput(outputPath, outputPathForMethod, configuration, reference);
                 }
+                platform.additionalOutputForAllConfigurations(outputPath, child);
             }
         }
     }
@@ -364,13 +364,15 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                         var castPlatform = (TestPlatformSupport<TeaVMTarget>) platform;
                         @SuppressWarnings("unchecked")
                         var castConfig = (TeaVMTestConfiguration<TeaVMTarget>) configuration;
-                        var compileResult = castPlatform.compile(singleTest(child), "test", castConfig, outputPath);
+                        var compileResult = castPlatform.compile(singleTest(child), "test", castConfig, outputPath,
+                                child);
                         var run = prepareRun(configuration, child, compileResult, notifier, platform.getPlatform());
                         if (run != null) {
                             runs.add(run);
                             platform.additionalSingleTestOutput(outputPath, configuration, reference);
                         }
                     }
+                    platform.additionalOutputForAllConfigurations(outputPath, child);
                 }
             }
         } catch (Throwable e) {
@@ -711,13 +713,18 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             return null;
         }
 
-        return createTestRun(configuration, result.file, child, kind, null);
+        return createTestRun(configuration, result.file, child, kind, null, isModule(child));
+    }
+
+    private boolean isModule(Method method) {
+        return method.isAnnotationPresent(JsModuleTest.class)
+                || method.getDeclaringClass().isAnnotationPresent(JsModuleTest.class);
     }
 
     private TestRun createTestRun(TeaVMTestConfiguration<?> configuration, File file, Method child, TestPlatform kind,
-            String argument) {
+            String argument, boolean module) {
         return new TestRun(generateName(child.getName(), configuration), file.getParentFile(), child,
-                file.getName(), kind, argument);
+                file.getName(), kind, argument, module);
     }
 
     private String generateName(String baseName, TeaVMTestConfiguration<?> configuration) {

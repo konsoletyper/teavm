@@ -181,13 +181,20 @@ class BrowserRunStrategy implements TestRunStrategy {
         ObjectNode testNode = nf.objectNode();
         testNode.set("type", nf.textNode(type));
         testNode.set("name", nf.textNode(run.getFileName()));
-        testNode.set("file", nf.textNode("tests/" + relPath));
+
+        var fileNode = nf.objectNode();
+        fileNode.set("path", nf.textNode("tests/" + relPath));
+        fileNode.set("type", nf.textNode(run.isModule() ? "module" : "regular"));
+        testNode.set("file", fileNode);
 
         var additionalJs = additionalJs(run);
         if (additionalJs.length > 0) {
             var additionalJsJson = nf.arrayNode();
             for (var additionalFile : additionalJs) {
-                additionalJsJson.add("resources/" + additionalFile);
+                var additionFileObj = nf.objectNode();
+                additionFileObj.set("path", nf.textNode("resources/" + additionalFile));
+                additionFileObj.set("type", nf.textNode("regular"));
+                additionalJsJson.add(additionFileObj);
             }
             testNode.set("additionalFiles", additionalJsJson);
         }
