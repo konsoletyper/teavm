@@ -24,7 +24,7 @@ description = "An archetype that creates a simple web application with enabled T
 
 tasks.processResources {
     expand(
-            "teavmVersion" to version,
+            "teavmVersion" to providers.gradleProperty("teavm.project.version").get(),
     )
 }
 
