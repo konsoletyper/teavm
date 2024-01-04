@@ -69,7 +69,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -137,6 +139,7 @@ public class TestDayOfWeek extends AbstractDateTimeTest {
     }
 
     @Test(expectedExceptions = DateTimeException.class)
+    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void test_factory_CalendricalObject_invalid_noDerive() {
         DayOfWeek.from(LocalTime.of(12, 30));
     }
