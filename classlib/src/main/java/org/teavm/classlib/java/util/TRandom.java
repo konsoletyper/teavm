@@ -15,15 +15,10 @@
  */
 package org.teavm.classlib.java.util;
 
-import org.teavm.backend.wasm.runtime.WasmSupport;
-import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.RandomUtils;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.util.random.TRandomGenerator;
-import org.teavm.interop.Import;
-import org.teavm.interop.Unmanaged;
-import org.teavm.jso.JSBody;
 
 public class TRandom extends TObject implements TRandomGenerator, TSerializable {
     /** A stored gaussian value for nextGaussian() */
@@ -66,18 +61,8 @@ public class TRandom extends TObject implements TRandomGenerator, TSerializable 
 
     @Override
     public double nextDouble() {
-        if (PlatformDetector.isC()) {
-            return crand();
-        } else if (PlatformDetector.isWebAssembly()) {
-            return WasmSupport.random();
-        } else {
-            return random();
-        }
+        return Math.random();
     }
-
-    @Import(name = "teavm_rand")
-    @Unmanaged
-    private static native double crand();
 
     /**
      * Generate a random number with Gaussian distribution:
@@ -101,9 +86,4 @@ public class TRandom extends TObject implements TRandomGenerator, TSerializable 
 
         return pair[0];
     }
-
-    @JSBody(script = "return Math.random();")
-    @Import(module = "teavmMath", name = "random")
-    @Unmanaged
-    private static native double random();
 }
