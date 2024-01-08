@@ -17,7 +17,7 @@
 mkdir -p build-dir
 
 git fetch
-git archive master | tar -x -C build-dir || { echo 'Git archive failed' ; exit 1; }
+git archive HEAD | tar -x -C build-dir || { echo 'Git archive failed' ; exit 1; }
 
 TEAVM_RELEASE_VERSION=$1
 
