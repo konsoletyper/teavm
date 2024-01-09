@@ -129,6 +129,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private final Map<String, String> importedModules = new LinkedHashMap<>();
     private JavaScriptTemplateFactory templateFactory;
     private JSModuleType moduleType = JSModuleType.UMD;
+    private List<ExportedDeclaration> exports = new ArrayList<>();
     private int maxTopLevelNames = 80_000;
 
     @Override
@@ -398,7 +399,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         var rememberingWriter = new RememberingSourceWriter(debugEmitter != null);
         var renderer = new Renderer(rememberingWriter, asyncMethods, renderingContext, controller.getDiagnostics(),
-                methodGenerators, astCache, controller.getCacheStatus(), templateFactory);
+                methodGenerators, astCache, controller.getCacheStatus(), templateFactory, exports,
+                controller.getEntryPoint());
         renderer.setProperties(controller.getProperties());
         renderer.setProgressConsumer(controller::reportProgress);
 
@@ -414,15 +416,19 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         renderer.renderStringPool();
         renderer.renderStringConstants();
         renderer.renderCompatibilityStubs();
-        for (var entry : controller.getEntryPoints().entrySet()) {
-            var alias = "$rt_export_" + entry.getKey();
-            var ref = entry.getValue().getMethod();
+
+        var alias = "$rt_export_main";
+        var ref = new MethodReference(controller.getEntryPoint(), "main", ValueType.parse(String[].class),
+                ValueType.parse(void.class));
+        if (classes.resolve(ref) != null) {
             rememberingWriter.startVariableDeclaration().appendFunction(alias)
                     .appendFunction("$rt_mainStarter").append("(").appendMethod(ref);
             rememberingWriter.append(")").endDeclaration();
             rememberingWriter.appendFunction(alias).append(".")
                     .append("javaException").ws().append("=").ws().appendFunction("$rt_javaException")
                     .append(";").newLine();
+            exports.add(new ExportedDeclaration(w -> w.appendFunction(alias),
+                    n -> n.functionName(alias), controller.getEntryPointName()));
         }
 
         for (var listener : rendererListeners) {
@@ -448,8 +454,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         for (var module : importedModules.values()) {
             naming.functionName(module);
         }
-        for (var exportedName : controller.getEntryPoints().keySet()) {
-            naming.functionName("$rt_export_" + exportedName);
+        for (var export : exports) {
+            export.nameFreq.accept(naming);
         }
         var frequencyEstimator = new NameFrequencyEstimator();
         runtime.replay(frequencyEstimator, RememberedSource.FILTER_REF);
@@ -553,8 +559,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     private void printIIFStart(SourceWriter writer) {
-        for (var exportedName : controller.getEntryPoints().keySet()) {
-            writer.append("var ").appendGlobal(exportedName).append(";").softNewLine();
+        for (var export : exports) {
+            writer.append("var ").appendGlobal(export.alias).append(";").softNewLine();
         }
         writer.append("(function()").appendBlockStart();
 
@@ -603,40 +609,42 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     private void printUmdEnd(SourceWriter writer) {
-        for (var export : controller.getEntryPoints().keySet()) {
-            writer.appendFunction("$rt_exports").append(".").append(export).ws().append("=").ws()
-                    .appendFunction("$rt_export_" + export).append(";").softNewLine();
+        for (var export : exports) {
+            writer.appendFunction("$rt_exports").append(".").append(export.alias).ws()
+                    .append("=").ws();
+            export.name.accept(writer);
+            writer.append(";").softNewLine();
         }
         writer.outdent().append("}));").newLine();
     }
 
     private void printCommonJsEnd(SourceWriter writer) {
-        for (var export : controller.getEntryPoints().keySet()) {
-            writer.appendFunction("exports.").append(export).ws().append("=").ws()
-                    .appendFunction("$rt_export_" + export).append(";").softNewLine();
+        for (var export : exports) {
+            writer.append("exports.").append(export.alias).ws().append("=").ws();
+            export.name.accept(writer);
+            writer.append(";").softNewLine();
         }
     }
 
     private void printIFFEnd(SourceWriter writer) {
-        for (var exportedName : controller.getEntryPoints().keySet()) {
-            writer.appendGlobal(exportedName).ws().append("=").ws().appendFunction("$rt_export_" + exportedName)
-                    .append(";").softNewLine();
+        for (var export : exports) {
+            writer.appendGlobal(export.alias).ws().append("=").ws();
+            export.name.accept(writer);
+            writer.append(";").softNewLine();
         }
         writer.outdent().append("})();");
     }
 
     private void printES2015End(SourceWriter writer) {
-        if (controller.getEntryPoints().isEmpty()) {
-            return;
-        }
         writer.append("export").ws().append("{").ws();
         var first = true;
-        for (var exportedName : controller.getEntryPoints().keySet()) {
+        for (var export : exports) {
             if (!first) {
                 writer.append(",").ws();
             }
             first = false;
-            writer.appendFunction("$rt_export_" + exportedName).append(" as ").append(exportedName);
+            export.name.accept(writer);
+            writer.append(" as ").append(export.alias);
         }
         writer.ws().append("};").softNewLine();
     }

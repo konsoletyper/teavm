@@ -136,7 +136,7 @@ public class DependencyTest {
 
         MethodReference testMethod = new MethodReference(DependencyTestData.class,
                 testName.getMethodName(), void.class);
-        vm.entryPoint(DependencyTestData.class.getName());
+        vm.setEntryPoint(DependencyTestData.class.getName());
         vm.build(fileName -> new ByteArrayOutputStream(), "out");
 
         List<Problem> problems = vm.getProblemProvider().getSevereProblems();

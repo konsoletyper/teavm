@@ -85,7 +85,7 @@ function launchTest(argument, callback) {
             return teavmException;
         }
         let stack = "";
-        let je = main.javaException(e);
+        let je = main.javaException ? main.javaException(e) : void 0;
         if (je && je.constructor.$meta) {
             stack = je.constructor.$meta.name + ": ";
             stack += je.getMessage();

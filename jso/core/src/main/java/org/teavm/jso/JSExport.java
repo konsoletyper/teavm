@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,25 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.vm;
+package org.teavm.jso;
 
-import org.teavm.dependency.MethodDependency;
-import org.teavm.model.MethodReference;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class TeaVMEntryPoint {
-    String publicName;
-    MethodDependency methodDep;
-
-    TeaVMEntryPoint(String publicName, MethodDependency methodDep) {
-        this.publicName = publicName;
-        this.methodDep = methodDep;
-    }
-
-    public String getPublicName() {
-        return publicName;
-    }
-
-    public MethodReference getMethod() {
-        return methodDep.getReference();
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface JSExport {
 }

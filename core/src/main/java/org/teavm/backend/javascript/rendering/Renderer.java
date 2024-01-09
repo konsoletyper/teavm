@@ -35,6 +35,7 @@ import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.analysis.LocationGraphBuilder;
 import org.teavm.ast.decompilation.DecompilationException;
 import org.teavm.ast.decompilation.Decompiler;
+import org.teavm.backend.javascript.ExportedDeclaration;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.Generator;
@@ -89,11 +90,15 @@ public class Renderer implements RenderingManager {
     private JavaScriptTemplateFactory templateFactory;
     private boolean threadLibraryUsed;
     private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
+    private List<ExportedDeclaration> exports;
+    private String entryPoint;
+
     public static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
 
     public Renderer(SourceWriter writer, Set<MethodReference> asyncMethods, RenderingContext context,
             Diagnostics diagnostics, Map<MethodReference, Generator> generators,
-            MethodNodeCache astCache, CacheStatus cacheStatus, JavaScriptTemplateFactory templateFactory) {
+            MethodNodeCache astCache, CacheStatus cacheStatus, JavaScriptTemplateFactory templateFactory,
+            List<ExportedDeclaration> exports, String entryPoint) {
         this.writer = writer;
         this.classSource = context.getClassSource();
         this.classLoader = context.getClassLoader();
@@ -106,11 +111,34 @@ public class Renderer implements RenderingManager {
         this.astCache = astCache;
         this.cacheStatus = cacheStatus;
         this.templateFactory = templateFactory;
+        this.exports = exports;
+        this.entryPoint = entryPoint;
     }
 
     @Override
     public SourceWriter getWriter() {
         return writer;
+    }
+
+    @Override
+    public String getEntryPoint() {
+        return entryPoint;
+    }
+
+    @Override
+    public void exportMethod(MethodReference method, String alias) {
+        exports.add(new ExportedDeclaration(w -> w.appendMethod(method), n -> n.methodName(method), alias));
+    }
+
+    @Override
+    public void exportClass(String className, String alias) {
+        exports.add(new ExportedDeclaration(w -> w.appendClass(className), n -> n.className(className), alias));
+    }
+
+    @Override
+    public void exportFunction(String functionName, String alias) {
+        exports.add(new ExportedDeclaration(w -> w.appendFunction(functionName),
+                n -> n.functionName(functionName), alias));
     }
 
     public boolean isThreadLibraryUsed() {

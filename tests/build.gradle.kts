@@ -38,6 +38,7 @@ dependencies {
     testImplementation(project(":metaprogramming:impl"))
     testImplementation(project(":tools:core"))
     testImplementation(project(":tools:junit"))
+    testImplementation(project(":tools:browser-runner"))
     testImplementation(libs.hppc)
     testImplementation(libs.rhino)
     testImplementation(libs.junit)

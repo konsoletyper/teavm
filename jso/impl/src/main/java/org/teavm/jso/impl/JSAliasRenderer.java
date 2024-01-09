@@ -16,12 +16,16 @@
 package org.teavm.jso.impl;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Predicate;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.RenderingManager;
 import org.teavm.backend.javascript.spi.VirtualMethodContributor;
 import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
+import org.teavm.jso.JSClass;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassReaderSource;
@@ -36,103 +40,208 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
     private SourceWriter writer;
     private ListableClassReaderSource classSource;
     private JSTypeHelper typeHelper;
+    private RenderingManager context;
 
     @Override
     public void begin(RenderingManager context, BuildTarget buildTarget) {
         writer = context.getWriter();
         classSource = context.getClassSource();
         typeHelper = new JSTypeHelper(context.getClassSource());
+        this.context = context;
     }
 
     @Override
     public void complete() {
+        exportClasses();
+        exportModule();
+    }
+
+    private void exportClasses() {
         if (!hasClassesToExpose()) {
             return;
         }
 
         writer.startVariableDeclaration().appendFunction("$rt_jso_marker")
                 .appendGlobal("Symbol").append("('jsoClass')").endDeclaration();
-        writer.append("(function()").ws().append("{").softNewLine().indent();
-        writer.append("var c;").softNewLine();
-        for (String className : classSource.getClassNames()) {
-            ClassReader classReader = classSource.get(className);
-            var methods = new HashMap<String, MethodDescriptor>();
-            var properties = new HashMap<String, PropertyInfo>();
-            for (var method : classReader.getMethods()) {
-                var methodAlias = getPublicAlias(method);
-                if (methodAlias != null) {
-                    switch (methodAlias.kind) {
-                        case METHOD:
-                            methods.put(methodAlias.name, method.getDescriptor());
-                            break;
-                        case GETTER: {
-                            var propInfo = properties.computeIfAbsent(methodAlias.name, k -> new PropertyInfo());
-                            propInfo.getter = method.getDescriptor();
-                            break;
-                        }
-                        case SETTER: {
-                            var propInfo = properties.computeIfAbsent(methodAlias.name, k -> new PropertyInfo());
-                            propInfo.setter = method.getDescriptor();
-                            break;
-                        }
-                    }
+        writer.append("(()").ws().append("=>").ws().append("{").softNewLine().indent();
+        writer.append("let c;").softNewLine();
+        for (var className : classSource.getClassNames()) {
+            var classReader = classSource.get(className);
+            var hasExportedMembers = false;
+            hasExportedMembers |= exportClassInstanceMembers(classReader);
+            if (!className.equals(context.getEntryPoint())) {
+                hasExportedMembers |= exportClassStaticMembers(classReader);
+                if (hasExportedMembers && !typeHelper.isJavaScriptClass(className)
+                        && !typeHelper.isJavaScriptImplementation(className)) {
+                    exportClassFromModule(classReader);
                 }
-            }
-
-            var isJsClassImpl = typeHelper.isJavaScriptImplementation(className);
-            if (methods.isEmpty() && properties.isEmpty() && !isJsClassImpl) {
-                continue;
-            }
-
-            writer.append("c").ws().append("=").ws().appendClass(className).append(".prototype;")
-                    .softNewLine();
-            if (isJsClassImpl) {
-                writer.append("c[").appendFunction("$rt_jso_marker").append("]").ws().append("=").ws().append("true;")
-                        .softNewLine();
-            }
-
-            for (var aliasEntry : methods.entrySet()) {
-                if (classReader.getMethod(aliasEntry.getValue()) == null) {
-                    continue;
-                }
-                if (isKeyword(aliasEntry.getKey())) {
-                    writer.append("c[\"").append(aliasEntry.getKey()).append("\"]");
-                } else {
-                    writer.append("c.").append(aliasEntry.getKey());
-                }
-                writer.ws().append("=").ws().append("c.").appendVirtualMethod(aliasEntry.getValue())
-                        .append(";").softNewLine();
-            }
-            for (var aliasEntry : properties.entrySet()) {
-                var propInfo = aliasEntry.getValue();
-                if (propInfo.getter == null || classReader.getMethod(propInfo.getter) == null) {
-                    continue;
-                }
-                writer.append("Object.defineProperty(c,")
-                        .ws().append("\"").append(aliasEntry.getKey()).append("\",")
-                        .ws().append("{").indent().softNewLine();
-                writer.append("get:").ws().append("c.").appendVirtualMethod(propInfo.getter);
-                if (propInfo.setter != null && classReader.getMethod(propInfo.setter) != null) {
-                    writer.append(",").softNewLine();
-                    writer.append("set:").ws().append("c.").appendVirtualMethod(propInfo.setter);
-                }
-                writer.softNewLine().outdent().append("});").softNewLine();
-            }
-
-            FieldReader functorField = getFunctorField(classReader);
-            if (functorField != null) {
-                writeFunctor(classReader, functorField.getReference());
             }
         }
         writer.outdent().append("})();").newLine();
     }
 
+    private boolean exportClassInstanceMembers(ClassReader classReader) {
+        var members = collectMembers(classReader, method -> !method.hasModifier(ElementModifier.STATIC));
+
+        var isJsClassImpl = typeHelper.isJavaScriptImplementation(classReader.getName());
+        if (members.methods.isEmpty() && members.properties.isEmpty() && !isJsClassImpl) {
+            return false;
+        }
+
+        writer.append("c").ws().append("=").ws().appendClass(classReader.getName()).append(".prototype;")
+                .softNewLine();
+        if (isJsClassImpl) {
+            writer.append("c[").appendFunction("$rt_jso_marker").append("]").ws().append("=").ws().append("true;")
+                    .softNewLine();
+        }
+
+        for (var aliasEntry : members.methods.entrySet()) {
+            if (classReader.getMethod(aliasEntry.getValue()) == null) {
+                continue;
+            }
+            appendMethodAlias(aliasEntry.getKey());
+            writer.ws().append("=").ws().append("c.").appendVirtualMethod(aliasEntry.getValue())
+                    .append(";").softNewLine();
+        }
+        for (var aliasEntry : members.properties.entrySet()) {
+            var propInfo = aliasEntry.getValue();
+            if (propInfo.getter == null || classReader.getMethod(propInfo.getter) == null) {
+                continue;
+            }
+            appendPropertyAlias(aliasEntry.getKey());
+            writer.append("get:").ws().append("c.").appendVirtualMethod(propInfo.getter);
+            if (propInfo.setter != null && classReader.getMethod(propInfo.setter) != null) {
+                writer.append(",").softNewLine();
+                writer.append("set:").ws().append("c.").appendVirtualMethod(propInfo.setter);
+            }
+            writer.softNewLine().outdent().append("});").softNewLine();
+        }
+
+        var functorField = getFunctorField(classReader);
+        if (functorField != null) {
+            writeFunctor(classReader, functorField.getReference());
+        }
+
+        return true;
+    }
+
+    private boolean exportClassStaticMembers(ClassReader classReader) {
+        var members = collectMembers(classReader, c -> c.hasModifier(ElementModifier.STATIC));
+
+        if (members.methods.isEmpty() && members.properties.isEmpty()) {
+            return false;
+        }
+
+        writer.append("c").ws().append("=").ws().appendClass(classReader.getName()).append(";").softNewLine();
+
+        for (var aliasEntry : members.methods.entrySet()) {
+            appendMethodAlias(aliasEntry.getKey());
+            var fullRef = new MethodReference(classReader.getName(), aliasEntry.getValue());
+            writer.ws().append("=").ws().appendMethod(fullRef).append(";").softNewLine();
+        }
+        for (var aliasEntry : members.properties.entrySet()) {
+            var propInfo = aliasEntry.getValue();
+            if (propInfo.getter == null) {
+                continue;
+            }
+            appendPropertyAlias(aliasEntry.getKey());
+            var fullGetter = new MethodReference(classReader.getName(), propInfo.getter);
+            writer.append("get:").ws().appendMethod(fullGetter);
+            if (propInfo.setter != null) {
+                writer.append(",").softNewLine();
+                var fullSetter = new MethodReference(classReader.getName(), propInfo.setter);
+                writer.append("set:").ws().appendMethod(fullSetter);
+            }
+            writer.softNewLine().outdent().append("});").softNewLine();
+        }
+
+        return true;
+    }
+
+    private void appendMethodAlias(String name) {
+        if (isKeyword(name)) {
+            writer.append("c[\"").append(name).append("\"]");
+        } else {
+            writer.append("c.").append(name);
+        }
+    }
+
+    private void appendPropertyAlias(String name) {
+        writer.append("Object.defineProperty(c,")
+                .ws().append("\"").append(name).append("\",")
+                .ws().append("{").indent().softNewLine();
+    }
+
+    private Members collectMembers(ClassReader classReader, Predicate<MethodReader> filter) {
+        var methods = new HashMap<String, MethodDescriptor>();
+        var properties = new HashMap<String, PropertyInfo>();
+        for (var method : classReader.getMethods()) {
+            if (!filter.test(method)) {
+                continue;
+            }
+            var methodAlias = getPublicAlias(method);
+            if (methodAlias != null) {
+                switch (methodAlias.kind) {
+                    case METHOD:
+                        methods.put(methodAlias.name, method.getDescriptor());
+                        break;
+                    case GETTER: {
+                        var propInfo = properties.computeIfAbsent(methodAlias.name, k -> new PropertyInfo());
+                        propInfo.getter = method.getDescriptor();
+                        break;
+                    }
+                    case SETTER: {
+                        var propInfo = properties.computeIfAbsent(methodAlias.name, k -> new PropertyInfo());
+                        propInfo.setter = method.getDescriptor();
+                        break;
+                    }
+                }
+            }
+        }
+        return new Members(methods, properties);
+    }
+
+    private void exportModule() {
+        var cls = classSource.get(context.getEntryPoint());
+        for (var method : cls.getMethods()) {
+            if (!method.hasModifier(ElementModifier.STATIC)) {
+                continue;
+            }
+            var methodAlias = getPublicAlias(method);
+            if (methodAlias != null && methodAlias.kind == AliasKind.METHOD) {
+                context.exportMethod(method.getReference(), methodAlias.name);
+            }
+        }
+    }
+
+    private void exportClassFromModule(ClassReader cls) {
+        var name = cls.getSimpleName();
+        if (name == null) {
+            name = cls.getName().substring(cls.getName().lastIndexOf('.') + 1);
+        }
+        var jsExport = cls.getAnnotations().get(JSClass.class.getName());
+        if (jsExport != null) {
+            var nameValue = jsExport.getValue("name");
+            if (nameValue != null) {
+                var nameValueString = nameValue.getString();
+                if (!nameValueString.isEmpty()) {
+                    name = nameValueString;
+                }
+            }
+        }
+        context.exportClass(cls.getName(), name);
+    }
+
     private boolean hasClassesToExpose() {
         for (String className : classSource.getClassNames()) {
             ClassReader cls = classSource.get(className);
-            if (cls.getMethods().stream().anyMatch(method -> getPublicAlias(method) != null)
-                    || typeHelper.isJavaScriptImplementation(className)) {
+            if (typeHelper.isJavaScriptImplementation(className)) {
                 return true;
+            }
+            for (var method : cls.getMethods()) {
+                if (!method.hasModifier(ElementModifier.STATIC) && getPublicAlias(method) != null) {
+                    return true;
+                }
             }
         }
         return false;
@@ -242,12 +351,22 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
         return methodReader != null && getPublicAlias(methodReader) != null;
     }
 
-    static class PropertyInfo {
+    private static class Members {
+        final Map<String, MethodDescriptor> methods;
+        final Map<String, PropertyInfo> properties;
+
+        Members(Map<String, MethodDescriptor> methods, Map<String, PropertyInfo> properties) {
+            this.methods = methods;
+            this.properties = properties;
+        }
+    }
+
+    private static class PropertyInfo {
         MethodDescriptor getter;
         MethodDescriptor setter;
     }
 
-    static class Alias {
+    private static class Alias {
         final String name;
         final AliasKind kind;
 
@@ -257,7 +376,7 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
         }
     }
 
-    enum AliasKind {
+    private enum AliasKind {
         METHOD,
         GETTER,
         SETTER

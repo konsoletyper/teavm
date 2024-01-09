@@ -204,7 +204,7 @@ public class IncrementalTest {
             target.setObfuscated(false);
             target.setStrict(true);
             vm.add(new EntryPointTransformer(entryPoint));
-            vm.entryPoint(EntryPoint.class.getName());
+            vm.setEntryPoint(EntryPoint.class.getName());
             vm.installPlugins();
             vm.build(buildTarget, name);
             List<Problem> problems = vm.getProblemProvider().getSevereProblems();

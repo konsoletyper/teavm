@@ -457,8 +457,9 @@ public class TeaVMTool {
             for (ClassHolderTransformer transformer : resolveTransformers()) {
                 vm.add(transformer);
             }
-            if (mainClass != null) {
-                vm.entryPoint(mainClass, entryPointName != null ? entryPointName : "main");
+            vm.setEntryPoint(mainClass);
+            if (entryPointName != null) {
+                vm.setEntryPointName(entryPointName);
             }
             for (String className : classesToPreserve) {
                 vm.preserveType(className);

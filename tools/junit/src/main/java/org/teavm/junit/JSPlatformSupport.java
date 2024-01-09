@@ -35,6 +35,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.javascript.JavaScriptTarget;
+import org.teavm.browserrunner.BrowserRunner;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.model.ClassHolderSource;
@@ -49,22 +50,10 @@ class JSPlatformSupport extends TestPlatformSupport<JavaScriptTarget> {
 
     @Override
     TestRunStrategy createRunStrategy(File outputDir) {
-        String runStrategyName = System.getProperty(JS_RUNNER);
-        if (runStrategyName != null) {
-            switch (runStrategyName) {
-                case "browser":
-                    return new BrowserRunStrategy(outputDir, "JAVASCRIPT", BrowserRunStrategy::customBrowser);
-                case "browser-chrome":
-                    return new BrowserRunStrategy(outputDir, "JAVASCRIPT", BrowserRunStrategy::chromeBrowser);
-                case "browser-firefox":
-                    return new BrowserRunStrategy(outputDir, "JAVASCRIPT", BrowserRunStrategy::firefoxBrowser);
-                case "none":
-                    return null;
-                default:
-                    throw new RuntimeException("Unknown run strategy: " + runStrategyName);
-            }
-        }
-        return null;
+        var runStrategyName = System.getProperty(JS_RUNNER);
+        return runStrategyName != null
+                ? new BrowserRunStrategy(outputDir, "JAVASCRIPT", BrowserRunner.pickBrowser(runStrategyName))
+                : null;
     }
 
     @Override

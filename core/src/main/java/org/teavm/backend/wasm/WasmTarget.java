@@ -105,7 +105,6 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
-import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.backend.wasm.optimization.UnusedFunctionElimination;
 import org.teavm.backend.wasm.render.ReportingWasmBinaryStatsCollector;
 import org.teavm.backend.wasm.render.WasmBinaryRenderer;
@@ -176,7 +175,6 @@ import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 import org.teavm.runtime.ShadowStack;
 import org.teavm.vm.BuildTarget;
-import org.teavm.vm.TeaVMEntryPoint;
 import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.TeaVMTargetController;
 import org.teavm.vm.spi.TeaVMHostExtension;
@@ -1197,29 +1195,23 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
             switch (invocation.getMethod().getName()) {
                 case "runMain": {
-                    var entryPointIter = controller.getEntryPoints().values().iterator();
-                    if (entryPointIter.hasNext()) {
-                        TeaVMEntryPoint entryPoint = entryPointIter.next();
-                        String name = manager.getNames().forMethod(entryPoint.getMethod());
-                        WasmCall call = new WasmCall(name);
-                        var arg = manager.generate(invocation.getArguments().get(0));
-                        if (manager.isManagedMethodCall(entryPoint.getMethod())) {
-                            var block = new WasmBlock(false);
-                            block.setType(WasmType.INT32);
-                            var callSiteId = manager.generateCallSiteId(invocation.getLocation());
-                            block.getBody().add(manager.generateRegisterCallSite(callSiteId,
-                                    invocation.getLocation()));
-                            block.getBody().add(arg);
-                            arg = block;
-                        }
-                        call.getArguments().add(arg);
-                        call.setLocation(invocation.getLocation());
-                        return call;
-                    } else {
-                        var unreachable = new WasmUnreachable();
-                        unreachable.setLocation(invocation.getLocation());
-                        return unreachable;
+                    var entryPoint = new MethodReference(controller.getEntryPoint(),
+                            "main", ValueType.parse(String[].class), ValueType.parse(void.class));
+                    String name = manager.getNames().forMethod(entryPoint);
+                    WasmCall call = new WasmCall(name);
+                    var arg = manager.generate(invocation.getArguments().get(0));
+                    if (manager.isManagedMethodCall(entryPoint)) {
+                        var block = new WasmBlock(false);
+                        block.setType(WasmType.INT32);
+                        var callSiteId = manager.generateCallSiteId(invocation.getLocation());
+                        block.getBody().add(manager.generateRegisterCallSite(callSiteId,
+                                invocation.getLocation()));
+                        block.getBody().add(arg);
+                        arg = block;
                     }
+                    call.getArguments().add(arg);
+                    call.setLocation(invocation.getLocation());
+                    return call;
                 }
                 case "setCurrentThread": {
                     String name = manager.getNames().forMethod(new MethodReference(Thread.class,

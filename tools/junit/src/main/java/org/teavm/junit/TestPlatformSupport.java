@@ -93,7 +93,7 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
 
             new TestExceptionPlugin().install(vm);
 
-            vm.entryPoint(entryPoint);
+            vm.setEntryPoint(entryPoint);
 
             if (usesFileName()) {
                 if (!outputFile.getParentFile().exists()) {

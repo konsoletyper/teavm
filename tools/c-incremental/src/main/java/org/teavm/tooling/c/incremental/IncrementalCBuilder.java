@@ -346,7 +346,10 @@ public class IncrementalCBuilder {
         vm.installPlugins();
 
         vm.setLastKnownClasses(lastReachedClasses);
-        vm.entryPoint(mainClass, mainFunctionName != null ? mainFunctionName : "main");
+        vm.setEntryPoint(mainClass);
+        if (mainFunctionName != null) {
+            vm.setEntryPointName(mainFunctionName);
+        }
 
         log.info("Starting build");
         progressListener.last = 0;

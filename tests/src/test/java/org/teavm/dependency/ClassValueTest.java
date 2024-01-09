@@ -79,7 +79,7 @@ public class ClassValueTest {
         TeaVM vm = new TeaVMBuilder(target).build();
         vm.add(new DependencyTestPatcher(getClass().getName(), methodName));
         vm.installPlugins();
-        vm.entryPoint(getClass().getName());
+        vm.setEntryPoint(getClass().getName());
         vm.build(fileName -> new ByteArrayOutputStream(), "tmp");
         if (!vm.getProblemProvider().getSevereProblems().isEmpty()) {
             fail("Code compiled with errors:\n" + describeProblems(vm));

@@ -127,6 +127,17 @@ class JSValueMarshaller {
                 }
             }
             if (!className.equals("java.lang.String")) {
+                if (!typeHelper.isJavaScriptClass(className) && !typeHelper.isJavaScriptImplementation(className)) {
+                    var unwrapNative = new InvokeInstruction();
+                    unwrapNative.setLocation(location);
+                    unwrapNative.setType(InvocationType.SPECIAL);
+                    unwrapNative.setMethod(new MethodReference(JSWrapper.class,
+                            "dependencyJavaToJs", Object.class, JSObject.class));
+                    unwrapNative.setArguments(var);
+                    unwrapNative.setReceiver(program.createVariable());
+                    replacement.add(unwrapNative);
+                    return unwrapNative.getReceiver();
+                }
                 return var;
             }
         }
@@ -317,6 +328,15 @@ class JSValueMarshaller {
                 return unwrap(var, "unwrapString", JSMethods.JS_OBJECT, stringType, location.getSourceLocation());
             } else if (typeHelper.isJavaScriptClass(className)) {
                 return var;
+            } else {
+                var wrapNative = new InvokeInstruction();
+                wrapNative.setLocation(location.getSourceLocation());
+                wrapNative.setType(InvocationType.SPECIAL);
+                wrapNative.setMethod(LIGHTWEIGHT_JS_TO_JAVA);
+                wrapNative.setArguments(var);
+                wrapNative.setReceiver(program.createVariable());
+                replacement.add(wrapNative);
+                return wrapNative.getReceiver();
             }
         } else if (type instanceof ValueType.Array) {
             return unwrapArray(location, var, (ValueType.Array) type);

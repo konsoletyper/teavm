@@ -50,14 +50,17 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
     private Map<MethodReference, MethodInfo> methodInfoMap = new HashMap<>();
     private ListableClassReaderSource classes;
     private ClassHierarchy hierarchy;
+    private String entryPoint;
     private List<String> order = new ArrayList<>();
     private List<? extends String> readonlyOrder = Collections.unmodifiableList(order);
     private String currentAnalyzedClass;
     private DependencyInfo dependencyInfo;
 
-    public ClassInitializerAnalysis(ListableClassReaderSource classes, ClassHierarchy hierarchy) {
+    public ClassInitializerAnalysis(ListableClassReaderSource classes, ClassHierarchy hierarchy,
+            String entryPoint) {
         this.classes = classes;
         this.hierarchy = hierarchy;
+        this.entryPoint = entryPoint;
     }
 
     public void analyze(DependencyInfo dependencyInfo) {
@@ -97,6 +100,11 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
             case DYNAMIC:
             case STATIC:
                 return;
+        }
+
+        if (className.equals(entryPoint)) {
+            classStatuses.put(className, DYNAMIC);
+            return;
         }
 
         var cls = classes.get(className);

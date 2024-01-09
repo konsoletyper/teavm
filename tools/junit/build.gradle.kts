@@ -21,9 +21,6 @@ plugins {
 
 description = "Test runner for JUnit and TestNG annotations"
 
-configurations {
-    create("js")
-}
 
 dependencies {
     compileOnly(libs.junit)
@@ -33,26 +30,7 @@ dependencies {
 
     implementation(project(":core"))
     implementation(project(":tools:core"))
-    implementation(libs.jackson.annotations)
-    implementation(libs.jackson.databind)
-    implementation(libs.javax.servlet)
-    implementation(libs.jetty.server)
-    implementation(libs.jetty.websocket.server)
-    implementation(libs.jetty.websocket.client)
-    implementation(libs.jetty.websocket.client)
-
-    "js"(project(":tools:deobfuscator-js", "js"))
-}
-
-tasks.withType<Jar>().configureEach {
-    if (name == "relocateJar") {
-        dependsOn(configurations["js"])
-        from(project.provider { configurations["js"].map { zipTree(it) } }) {
-            include("deobfuscator-lib.js")
-            into("test-server")
-            rename { "deobfuscator.js" }
-        }
-    }
+    implementation(project(":tools:browser-runner"))
 }
 
 teavmPublish {

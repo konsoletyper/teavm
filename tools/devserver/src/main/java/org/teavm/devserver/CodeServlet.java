@@ -838,7 +838,7 @@ public class CodeServlet extends HttpServlet {
         vm.installPlugins();
 
         vm.setLastKnownClasses(lastReachedClasses);
-        vm.entryPoint(mainClass);
+        vm.setEntryPoint(mainClass);
 
         log.info("Starting build");
         progressListener.last = 0;

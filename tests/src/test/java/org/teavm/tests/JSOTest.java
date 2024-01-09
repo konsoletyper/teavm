@@ -97,7 +97,7 @@ public class JSOTest {
         TeaVM vm = new TeaVMBuilder(new JavaScriptTarget()).build();
         vm.add(new DependencyTestPatcher(JSOTest.class.getName(), methodName));
         vm.installPlugins();
-        vm.entryPoint(JSOTest.class.getName());
+        vm.setEntryPoint(JSOTest.class.getName());
         vm.build(name -> new ByteArrayOutputStream(), "tmp");
         return vm.getProblemProvider().getSevereProblems();
     }

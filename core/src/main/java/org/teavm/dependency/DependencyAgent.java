@@ -24,9 +24,18 @@ import org.teavm.model.*;
 
 public class DependencyAgent implements DependencyInfo, ServiceRepository {
     private DependencyAnalyzer analyzer;
+    private String entryPoint;
 
     DependencyAgent(DependencyAnalyzer analyzer) {
         this.analyzer = analyzer;
+    }
+
+    public String getEntryPoint() {
+        return entryPoint;
+    }
+
+    void setEntryPoint(String entryPoint) {
+        this.entryPoint = entryPoint;
     }
 
     public DependencyNode createNode() {

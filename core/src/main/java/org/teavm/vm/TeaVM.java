@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -73,6 +72,7 @@ import org.teavm.model.ProgramCache;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.ClassInitializerAnalysis;
 import org.teavm.model.analysis.ClassInitializerInfo;
+import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.optimization.ArrayUnwrapMotion;
@@ -134,12 +134,13 @@ import org.teavm.vm.spi.TeaVMPlugin;
 public class TeaVM implements TeaVMHost, ServiceRepository {
     private static final MethodDescriptor MAIN_METHOD_DESC = new MethodDescriptor("main",
             ValueType.arrayOf(ValueType.object("java.lang.String")), ValueType.VOID);
+    private static final MethodDescriptor CLINIT_DESC = new MethodDescriptor("<clinit>", ValueType.VOID);
 
     private final DependencyAnalyzer dependencyAnalyzer;
     private final AccumulationDiagnostics diagnostics = new AccumulationDiagnostics();
     private final ClassLoader classLoader;
-    private final Map<String, TeaVMEntryPoint> entryPoints = new LinkedHashMap<>();
-    private final Map<String, TeaVMEntryPoint> readonlyEntryPoints = Collections.unmodifiableMap(entryPoints);
+    private String entryPoint;
+    private String entryPointName = "main";
     private final Set<String> preservedClasses = new HashSet<>();
     private final Set<String> readonlyPreservedClasses = Collections.unmodifiableSet(preservedClasses);
     private final Map<Class<?>, Object> services = new HashMap<>();
@@ -284,39 +285,50 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         return target.getPlatformTags();
     }
 
-    public void entryPoint(String className, String name) {
-        if (entryPoints.containsKey(name)) {
-            throw new IllegalArgumentException("Entry point with public name `" + name + "' already defined "
-                    + "for class " + className);
-        }
-
-        var cls = dependencyAnalyzer.getClassSource().get(className);
-        if (cls == null) {
-            diagnostics.error(null, "There's no main class: '{{c0}}'", className);
-            return;
-        }
-
-        if (cls.getMethod(MAIN_METHOD_DESC) == null) {
-            diagnostics.error(null, "Specified main class '{{c0}}' does not have method '" + MAIN_METHOD_DESC + "'",
-                    cls.getName());
-            return;
-        }
-
-        var mainMethod = dependencyAnalyzer.linkMethod(new MethodReference(className,
-                "main", ValueType.parse(String[].class), ValueType.VOID));
-
-        var entryPoint = new TeaVMEntryPoint(name, mainMethod);
-        dependencyAnalyzer.defer(() -> {
-            dependencyAnalyzer.linkClass(className).initClass(null);
-            mainMethod.getVariable(1).propagate(dependencyAnalyzer.getType("[Ljava/lang/String;"));
-            mainMethod.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getType("java.lang.String"));
-            mainMethod.use();
-        });
-        entryPoints.put(name, entryPoint);
+    public void setEntryPoint(String entryPoint) {
+        this.entryPoint = entryPoint;
     }
 
-    public void entryPoint(String className) {
-        entryPoint(className, "main");
+    public void setEntryPointName(String entryPointName) {
+        this.entryPointName = entryPointName;
+    }
+
+    private void processEntryPoint() {
+        dependencyAnalyzer.setEntryPoint(entryPoint);
+        dependencyAnalyzer.addClassTransformer((c, context) -> {
+            if (c.getName().equals(entryPoint)) {
+                var clinit = c.getMethod(CLINIT_DESC);
+                if (clinit == null) {
+                    clinit = new MethodHolder(CLINIT_DESC);
+                    clinit.getModifiers().add(ElementModifier.STATIC);
+                    var clinitProg = new Program();
+                    clinitProg.createVariable();
+                    var block = clinitProg.createBasicBlock();
+                    block.add(new ExitInstruction());
+                    clinit.setProgram(clinitProg);
+                    c.addMethod(clinit);
+                }
+            }
+        });
+
+        var cls = dependencyAnalyzer.getClassSource().get(entryPoint);
+        if (cls == null) {
+            diagnostics.error(null, "There's no main class: '{{c0}}'", entryPoint);
+            return;
+        }
+
+        var mainMethod = cls.getMethod(MAIN_METHOD_DESC) != null
+                ? dependencyAnalyzer.linkMethod(new MethodReference(entryPoint,
+                        "main", ValueType.parse(String[].class), ValueType.VOID))
+                : null;
+        dependencyAnalyzer.defer(() -> {
+            dependencyAnalyzer.linkClass(entryPoint).initClass(null);
+            if (mainMethod != null) {
+                mainMethod.getVariable(1).propagate(dependencyAnalyzer.getType("[Ljava/lang/String;"));
+                mainMethod.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getType("java.lang.String"));
+                mainMethod.use();
+            }
+        });
     }
 
     public void preserveType(String className) {
@@ -368,6 +380,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
 
+        processEntryPoint();
         dependencyAnalyzer.setAsyncSupported(target.isAsyncSupported());
         dependencyAnalyzer.setInterruptor(() -> {
             int progress = dependencyAnalyzer.getReachableClasses().size();
@@ -453,7 +466,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             }
 
             var classInitializerAnalysis = new ClassInitializerAnalysis(classSet,
-                    dependencyAnalyzer.getClassHierarchy());
+                    dependencyAnalyzer.getClassHierarchy(), entryPoint);
             classInitializerAnalysis.analyze(dependencyAnalyzer);
             classInitializerInfo = classInitializerAnalysis;
             insertClassInit(classSet);
@@ -535,13 +548,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             }
         }
 
-        var initializers = target.getInitializerMethods();
-        if (initializers == null) {
-            initializers = entryPoints.values().stream().map(ep -> ep.getMethod()).collect(Collectors.toList());
-        }
-        for (var initMethod : initializers) {
-            addInitializersToEntryPoint(classes, initMethod);
-        }
+        addInitializersToEntryPoint(classes, new MethodReference(entryPoint, CLINIT_DESC));
     }
 
     private void addInitializersToEntryPoint(ClassHolderSource classes, MethodReference methodRef) {
@@ -560,7 +567,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         Instruction first = block.getFirstInstruction();
         for (String className : classInitializerInfo.getInitializationOrder()) {
             var invoke = new InvokeInstruction();
-            invoke.setMethod(new MethodReference(className, "<clinit>", ValueType.VOID));
+            invoke.setMethod(new MethodReference(className, CLINIT_DESC));
             first.insertPrevious(invoke);
         }
     }
@@ -914,8 +921,13 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         @Override
-        public Map<String, TeaVMEntryPoint> getEntryPoints() {
-            return readonlyEntryPoints;
+        public String getEntryPoint() {
+            return entryPoint;
+        }
+
+        @Override
+        public String getEntryPointName() {
+            return entryPointName;
         }
 
         @Override
@@ -1032,9 +1044,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         ListableClassReaderSourceAdapter(ClassReaderSource classSource, Set<String> classes) {
             this.classSource = classSource;
-            this.classes = Collections.unmodifiableSet(classes.stream()
+            this.classes = classes.stream()
                     .filter(className -> classSource.get(className) != null)
-                    .collect(Collectors.toSet()));
+                    .collect(Collectors.toUnmodifiableSet());
         }
 
         @Override
