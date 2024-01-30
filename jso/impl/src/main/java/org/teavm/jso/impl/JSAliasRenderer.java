@@ -50,8 +50,8 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
             return;
         }
 
-        writer.append("let ").appendFunction("$rt_jso_marker").ws().append("=").ws()
-                .appendGlobal("Symbol").append("('jsoClass');").newLine();
+        writer.startVariableDeclaration().appendFunction("$rt_jso_marker")
+                .appendGlobal("Symbol").append("('jsoClass')").endDeclaration();
         writer.append("(function()").ws().append("{").softNewLine().indent();
         writer.append("var c;").softNewLine();
         for (String className : classSource.getClassNames()) {
@@ -100,7 +100,7 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
                 } else {
                     writer.append("c.").append(aliasEntry.getKey());
                 }
-                writer.ws().append("=").ws().append("c.").appendMethod(aliasEntry.getValue())
+                writer.ws().append("=").ws().append("c.").appendVirtualMethod(aliasEntry.getValue())
                         .append(";").softNewLine();
             }
             for (var aliasEntry : properties.entrySet()) {
@@ -111,10 +111,10 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
                 writer.append("Object.defineProperty(c,")
                         .ws().append("\"").append(aliasEntry.getKey()).append("\",")
                         .ws().append("{").indent().softNewLine();
-                writer.append("get:").ws().append("c.").appendMethod(propInfo.getter);
+                writer.append("get:").ws().append("c.").appendVirtualMethod(propInfo.getter);
                 if (propInfo.setter != null && classReader.getMethod(propInfo.setter) != null) {
                     writer.append(",").softNewLine();
-                    writer.append("set:").ws().append("c.").appendMethod(propInfo.setter);
+                    writer.append("set:").ws().append("c.").appendVirtualMethod(propInfo.setter);
                 }
                 writer.softNewLine().outdent().append("});").softNewLine();
             }
@@ -198,7 +198,7 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
         writer.append("this.").appendField(functorField).ws().append('=').ws().append("function(");
         appendArguments(functorMethod.parameterCount());
         writer.append(")").ws().append('{').indent().softNewLine();
-        writer.append("return self.").appendMethod(functorMethod).append('(');
+        writer.append("return self.").appendVirtualMethod(functorMethod).append('(');
         appendArguments(functorMethod.parameterCount());
         writer.append(");").softNewLine();
         writer.outdent().append("};").softNewLine();

@@ -241,6 +241,15 @@ public final class TeaVMRunner {
         tool.setObfuscated(commandLine.hasOption("m"));
         tool.setStrict(commandLine.hasOption("strict"));
         parseJsModuleOption();
+
+        if (commandLine.hasOption("max-toplevel-names")) {
+            try {
+                tool.setMaxTopLevelNames(Integer.parseInt(commandLine.getOptionValue("max-toplevel-names")));
+            } catch (NumberFormatException e) {
+                System.err.println("'--max-toplevel-names' must be integer number");
+                printUsage();
+            }
+        }
     }
 
     private void parseJsModuleOption() {

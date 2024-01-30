@@ -78,6 +78,7 @@ public class TeaVMTool {
     private boolean obfuscated = true;
     private JSModuleType jsModuleType = JSModuleType.UMD;
     private boolean strict;
+    private int maxTopLevelNames = 80_000;
     private String mainClass;
     private String entryPointName = "main";
     private Properties properties = new Properties();
@@ -137,6 +138,10 @@ public class TeaVMTool {
 
     public void setStrict(boolean strict) {
         this.strict = strict;
+    }
+
+    public void setMaxTopLevelNames(int maxTopLevelNames) {
+        this.maxTopLevelNames = maxTopLevelNames;
     }
 
     public boolean isIncremental() {
@@ -336,6 +341,7 @@ public class TeaVMTool {
         javaScriptTarget = new JavaScriptTarget();
         javaScriptTarget.setObfuscated(obfuscated);
         javaScriptTarget.setStrict(strict);
+        javaScriptTarget.setMaxTopLevelNames(maxTopLevelNames);
 
         debugEmitter = debugInformationGenerated || sourceMapsFileGenerated
                 ? new DebugInformationBuilder(referenceCache) : null;

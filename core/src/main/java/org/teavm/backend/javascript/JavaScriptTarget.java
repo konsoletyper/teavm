@@ -129,6 +129,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private final Map<String, String> importedModules = new LinkedHashMap<>();
     private JavaScriptTemplateFactory templateFactory;
     private JSModuleType moduleType = JSModuleType.UMD;
+    private int maxTopLevelNames = 80_000;
 
     @Override
     public List<ClassHolderTransformer> getTransformers() {
@@ -226,6 +227,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     public void setStackTraceIncluded(boolean stackTraceIncluded) {
         this.stackTraceIncluded = stackTraceIncluded;
+    }
+
+    public void setMaxTopLevelNames(int maxTopLevelNames) {
+        this.maxTopLevelNames = maxTopLevelNames;
     }
 
     @Override
@@ -351,7 +356,9 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     private void emit(ListableClassHolderSource classes, Writer writer, BuildTarget target) {
-        var aliasProvider = obfuscated ? new MinifyingAliasProvider() : new DefaultAliasProvider();
+        var aliasProvider = obfuscated
+                ? new MinifyingAliasProvider(maxTopLevelNames)
+                : new DefaultAliasProvider(maxTopLevelNames);
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, controller.getUnprocessedClassSource());
         DebugInformationEmitter debugEmitterToUse = debugEmitter;
         if (debugEmitterToUse == null) {
@@ -410,9 +417,9 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         for (var entry : controller.getEntryPoints().entrySet()) {
             var alias = "$rt_export_" + entry.getKey();
             var ref = entry.getValue().getMethod();
-            rememberingWriter.append("let ").appendFunction(alias).ws().append("=").ws()
-                    .appendFunction("$rt_mainStarter").append("(").appendMethodBody(ref);
-            rememberingWriter.append(");").newLine();
+            rememberingWriter.startVariableDeclaration().appendFunction(alias)
+                    .appendFunction("$rt_mainStarter").append("(").appendMethod(ref);
+            rememberingWriter.append(")").endDeclaration();
             rememberingWriter.appendFunction(alias).append(".")
                     .append("javaException").ws().append("=").ws().appendFunction("$rt_javaException")
                     .append(";").newLine();
@@ -424,31 +431,49 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         var epilogue = rememberingWriter.save();
         rememberingWriter.clear();
 
-        if (renderingContext.isMinifying()) {
-            var frequencyEstimator = new NameFrequencyEstimator();
-            declarations.replay(frequencyEstimator, RememberedSource.FILTER_REF);
-            epilogue.replay(frequencyEstimator, RememberedSource.FILTER_REF);
-            frequencyEstimator.apply(naming);
-        }
-
-        var sourceWriter = builder.build(writer);
-        sourceWriter.setDebugInformationEmitter(debugEmitterToUse);
-        printWrapperStart(sourceWriter);
-
-        int start = sourceWriter.getOffset();
-
-        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, sourceWriter,
-                controller.getClassInitializerInfo());
+        var runtimeRenderer = new RuntimeRenderer(classes, rememberingWriter, controller.getClassInitializerInfo());
         runtimeRenderer.prepareAstParts(renderer.isThreadLibraryUsed());
         declarations.replay(runtimeRenderer.sink, RememberedSource.FILTER_REF);
         epilogue.replay(runtimeRenderer.sink, RememberedSource.FILTER_REF);
         runtimeRenderer.removeUnusedParts();
         runtimeRenderer.renderRuntime();
-        declarations.write(sourceWriter, 0);
+        var runtime = rememberingWriter.save();
+        rememberingWriter.clear();
         runtimeRenderer.renderEpilogue();
+        var runtimeEpilogue = rememberingWriter.save();
+        rememberingWriter.clear();
+
+        naming.additionalScopeName();
+        naming.functionName("$rt_exports");
+        for (var module : importedModules.values()) {
+            naming.functionName(module);
+        }
+        for (var exportedName : controller.getEntryPoints().keySet()) {
+            naming.functionName("$rt_export_" + exportedName);
+        }
+        var frequencyEstimator = new NameFrequencyEstimator();
+        runtime.replay(frequencyEstimator, RememberedSource.FILTER_REF);
+        runtimeEpilogue.replay(frequencyEstimator, RememberedSource.FILTER_REF);
+        declarations.replay(frequencyEstimator, RememberedSource.FILTER_REF);
+        epilogue.replay(frequencyEstimator, RememberedSource.FILTER_REF);
+        frequencyEstimator.apply(naming);
+
+        var sourceWriter = builder.build(writer);
+        sourceWriter.setDebugInformationEmitter(debugEmitterToUse);
+        printWrapperStart(sourceWriter);
+        if (frequencyEstimator.hasAdditionalScope()) {
+            sourceWriter.append("let ").append(naming.additionalScopeName()).ws().append('=').ws()
+                    .append("{};").softNewLine();
+        }
+
+        int start = sourceWriter.getOffset();
+        runtime.write(sourceWriter, 0);
+        declarations.write(sourceWriter, 0);
+        runtimeEpilogue.write(sourceWriter, 0);
         epilogue.write(sourceWriter, 0);
 
-        printWrapperEnd(sourceWriter);
+        printModuleEnd(sourceWriter);
+        sourceWriter.finish();
 
         int totalSize = sourceWriter.getOffset() - start;
         printStats(sourceWriter, totalSize);
@@ -560,7 +585,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         }
     }
 
-    private void printWrapperEnd(SourceWriter writer) {
+    private void printModuleEnd(SourceWriter writer) {
         switch (moduleType) {
             case UMD:
                 printUmdEnd(writer);
@@ -580,7 +605,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private void printUmdEnd(SourceWriter writer) {
         for (var export : controller.getEntryPoints().keySet()) {
             writer.appendFunction("$rt_exports").append(".").append(export).ws().append("=").ws()
-                    .appendFunction("$rt_export_" + export);
+                    .appendFunction("$rt_export_" + export).append(";").softNewLine();
         }
         writer.outdent().append("}));").newLine();
     }

@@ -188,7 +188,7 @@ public class Renderer implements RenderingManager {
         writer.appendClass("java.lang.Object").append(".prototype.toString").ws().append("=").ws()
                 .append("function()").ws().append("{").indent().softNewLine();
         writer.append("return ").appendFunction("$rt_ustr").append("(")
-                .appendMethodBody(Object.class, "toString", String.class).append("(this));")
+                .appendMethod(Object.class, "toString", String.class).append("(this));")
                 .softNewLine();
         writer.outdent().append("};").newLine();
     }
@@ -265,7 +265,6 @@ public class Renderer implements RenderingManager {
             renderFullClassFunctionDeclaration(cls, nonStaticFields);
         }
 
-        var hasLet = false;
         for (FieldHolder field : staticFields) {
             Object value = field.getInitialValue();
             if (value == null) {
@@ -278,23 +277,16 @@ public class Renderer implements RenderingManager {
                 value = null;
             }
 
-            if (!hasLet) {
-                writer.append("let ");
-                hasLet = true;
-            } else {
-                writer.append(",").ws();
-            }
-            writer.appendStaticField(fieldRef).ws().append("=").ws();
+            writer.startVariableDeclaration().appendStaticField(fieldRef);
             context.constantToString(writer, value);
-        }
-        if (hasLet) {
-            writer.append(";").newLine();
+            writer.endDeclaration();
         }
     }
 
     private void renderFullClassFunctionDeclaration(ClassReader cls, List<FieldHolder> nonStaticFields) {
         boolean thisAliased = false;
-        writer.append("function ").appendClass(cls.getName()).append("()").ws().append("{").indent().softNewLine();
+        writer.startFunctionDeclaration().appendClass(cls.getName()).append("()").ws().append("{")
+                .indent().softNewLine();
         if (nonStaticFields.size() > 1) {
             thisAliased = true;
             writer.append("let a").ws().append("=").ws().append("this;").ws();
@@ -321,18 +313,18 @@ public class Renderer implements RenderingManager {
         }
 
         writer.outdent().append("}");
-        writer.newLine();
+        writer.endDeclaration();
     }
 
     private void renderShortClassFunctionDeclaration(ClassReader cls) {
-        writer.append("let ").appendClass(cls.getName()).ws().append("=").ws()
+        writer.startVariableDeclaration().appendClass(cls.getName())
                 .appendFunction("$rt_classWithoutFields").append("(");
         if (cls.hasModifier(ElementModifier.INTERFACE)) {
             writer.append("0");
         } else if (!cls.getParent().equals("java.lang.Object")) {
             writer.appendClass(cls.getParent());
         }
-        writer.append(");").newLine();
+        writer.append(")").endDeclaration();
     }
 
     private void renderMethodBodies(ClassHolder cls, Decompiler decompiler) {
@@ -346,27 +338,19 @@ public class Renderer implements RenderingManager {
 
         var needsInitializers = !cls.hasModifier(ElementModifier.INTERFACE)
             && !cls.hasModifier(ElementModifier.ABSTRACT);
-        var hasLet = false;
         for (var method : cls.getMethods()) {
             if (!filterMethod(method)) {
                 continue;
             }
-            if (!hasLet) {
-                writer.append("let ");
-                hasLet = true;
-            } else {
-                writer.append(",").newLine();
-            }
+            writer.startVariableDeclaration();
             renderBody(method, decompiler);
+            writer.endDeclaration();
             if (needsInitializers && !method.hasModifier(ElementModifier.STATIC)
                     && method.getName().equals("<init>")) {
-                writer.append(",").newLine();
                 renderInitializer(method);
             }
         }
-        if (hasLet) {
-            writer.append(";").newLine();
-        }
+
 
         writer.emitClass(null);
     }
@@ -390,11 +374,10 @@ public class Renderer implements RenderingManager {
 
         var clinitCalledField = new FieldReference(cls.getName(), "$_teavm_clinitCalled_$");
         if (isAsync) {
-            writer.append("let ").appendStaticField(clinitCalledField).ws().append("=").ws().append("false;")
-                    .softNewLine();
+            writer.startVariableDeclaration().appendStaticField(clinitCalledField).append("false").endDeclaration();
         }
 
-        writer.append("let ").appendClassInit(cls.getName()).ws().append("=").ws();
+        writer.startVariableDeclaration().appendClassInit(cls.getName());
         writer.append("()").sameLineWs().append("=>").ws().append("{").softNewLine().indent();
 
         if (isAsync) {
@@ -423,7 +406,7 @@ public class Renderer implements RenderingManager {
             writer.outdent().append("case 1:").indent().softNewLine();
         }
 
-        writer.appendMethodBody(new MethodReference(cls.getName(), clinit.getDescriptor()))
+        writer.appendMethod(new MethodReference(cls.getName(), clinit.getDescriptor()))
                 .append("();").softNewLine();
 
         if (isAsync) {
@@ -438,8 +421,7 @@ public class Renderer implements RenderingManager {
             writer.appendFunction("$rt_nativeThread").append("().push(" + context.pointerName() + ");").softNewLine();
         }
 
-        writer.outdent().append("};");
-        writer.newLine();
+        writer.outdent().append("}").endDeclaration();
     }
 
     private void renderEraseClinit(ClassReader cls) {
@@ -696,7 +678,7 @@ public class Renderer implements RenderingManager {
     private void renderInitializer(MethodReader method) {
         MethodReference ref = method.getReference();
         writer.emitMethod(ref.getDescriptor());
-        writer.appendInit(ref).ws().append("=").ws();
+        writer.startVariableDeclaration().appendInit(ref);
         if (ref.parameterCount() != 1) {
             writer.append("(");
         }
@@ -714,14 +696,14 @@ public class Renderer implements RenderingManager {
         String instanceName = variableNameForInitializer(ref.parameterCount());
         writer.append("let " + instanceName).ws().append("=").ws().append("new ").appendClass(
                 ref.getClassName()).append("();").softNewLine();
-        writer.appendMethodBody(ref).append("(" + instanceName);
+        writer.appendMethod(ref).append("(" + instanceName);
         for (int i = 0; i < ref.parameterCount(); ++i) {
             writer.append(",").ws();
             writer.append(variableNameForInitializer(i));
         }
         writer.append(");").softNewLine();
         writer.append("return " + instanceName + ";").softNewLine();
-        writer.outdent().append("}");
+        writer.outdent().append("}").endDeclaration();
         writer.emitMethod(null);
     }
 
@@ -753,7 +735,7 @@ public class Renderer implements RenderingManager {
     }
 
     private void emitVirtualDeclaration(MethodReference ref) {
-        String methodName = context.getNaming().getNameFor(ref.getDescriptor());
+        String methodName = context.getNaming().instanceMethodName(ref.getDescriptor());
         writer.append("\"").append(methodName).append("\"");
         writer.append(",").ws();
         emitVirtualFunctionWrapper(ref);
@@ -762,7 +744,7 @@ public class Renderer implements RenderingManager {
     private void emitVirtualFunctionWrapper(MethodReference method) {
         if (method.parameterCount() <= 4) {
             writer.appendFunction("$rt_wrapFunction" + method.parameterCount());
-            writer.append("(").appendMethodBody(method).append(")");
+            writer.append("(").appendMethod(method).append(")");
             return;
         }
 
@@ -781,7 +763,7 @@ public class Renderer implements RenderingManager {
         if (method.getDescriptor().getResultType() != ValueType.VOID) {
             writer.append("return ");
         }
-        writer.appendMethodBody(method).append("(");
+        writer.appendMethod(method).append("(");
         writer.append("this");
         for (String arg : args) {
             writer.append(",").ws().append(arg);
@@ -793,7 +775,7 @@ public class Renderer implements RenderingManager {
         MethodReference ref = method.getReference();
         writer.emitMethod(ref.getDescriptor());
 
-        writer.appendMethodBody(ref).ws().append("=").ws();
+        writer.appendMethod(ref);
         if (method.hasModifier(ElementModifier.NATIVE)) {
             renderNativeBody(method, classSource);
         } else {

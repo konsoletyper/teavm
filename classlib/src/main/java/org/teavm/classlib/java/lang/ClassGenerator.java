@@ -272,7 +272,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         if (method.getResultType() != ValueType.VOID) {
             writer.append("return ");
         }
-        writer.appendMethodBody(method.getReference());
+        writer.appendMethod(method.getReference());
 
         writer.append('(');
         boolean first = true;
@@ -315,30 +315,30 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
-                    writer.appendMethodBody(new MethodReference(Boolean.class, "valueOf", boolean.class,
+                    writer.appendMethod(new MethodReference(Boolean.class, "valueOf", boolean.class,
                             Boolean.class));
                     break;
                 case BYTE:
-                    writer.appendMethodBody(new MethodReference(Byte.class, "valueOf", byte.class, Byte.class));
+                    writer.appendMethod(new MethodReference(Byte.class, "valueOf", byte.class, Byte.class));
                     break;
                 case SHORT:
-                    writer.appendMethodBody(new MethodReference(Short.class, "valueOf", short.class, Short.class));
+                    writer.appendMethod(new MethodReference(Short.class, "valueOf", short.class, Short.class));
                     break;
                 case CHARACTER:
-                    writer.appendMethodBody(new MethodReference(Character.class, "valueOf", char.class,
+                    writer.appendMethod(new MethodReference(Character.class, "valueOf", char.class,
                             Character.class));
                     break;
                 case INTEGER:
-                    writer.appendMethodBody(new MethodReference(Integer.class, "valueOf", int.class, Integer.class));
+                    writer.appendMethod(new MethodReference(Integer.class, "valueOf", int.class, Integer.class));
                     break;
                 case LONG:
-                    writer.appendMethodBody(new MethodReference(Long.class, "valueOf", long.class, Long.class));
+                    writer.appendMethod(new MethodReference(Long.class, "valueOf", long.class, Long.class));
                     break;
                 case FLOAT:
-                    writer.appendMethodBody(new MethodReference(Float.class, "valueOf", float.class, Float.class));
+                    writer.appendMethod(new MethodReference(Float.class, "valueOf", float.class, Float.class));
                     break;
                 case DOUBLE:
-                    writer.appendMethodBody(new MethodReference(Double.class, "valueOf", double.class, Double.class));
+                    writer.appendMethod(new MethodReference(Double.class, "valueOf", double.class, Double.class));
                     break;
             }
             writer.append('(');
@@ -355,28 +355,28 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
-                    writer.appendMethodBody(new MethodReference(Boolean.class, "booleanValue", boolean.class));
+                    writer.appendMethod(new MethodReference(Boolean.class, "booleanValue", boolean.class));
                     break;
                 case BYTE:
-                    writer.appendMethodBody(new MethodReference(Byte.class, "byteValue", byte.class));
+                    writer.appendMethod(new MethodReference(Byte.class, "byteValue", byte.class));
                     break;
                 case SHORT:
-                    writer.appendMethodBody(new MethodReference(Short.class, "shortValue", short.class));
+                    writer.appendMethod(new MethodReference(Short.class, "shortValue", short.class));
                     break;
                 case CHARACTER:
-                    writer.appendMethodBody(new MethodReference(Character.class, "charValue", char.class));
+                    writer.appendMethod(new MethodReference(Character.class, "charValue", char.class));
                     break;
                 case INTEGER:
-                    writer.appendMethodBody(new MethodReference(Integer.class, "intValue", int.class));
+                    writer.appendMethod(new MethodReference(Integer.class, "intValue", int.class));
                     break;
                 case LONG:
-                    writer.appendMethodBody(new MethodReference(Long.class, "longValue", long.class));
+                    writer.appendMethod(new MethodReference(Long.class, "longValue", long.class));
                     break;
                 case FLOAT:
-                    writer.appendMethodBody(new MethodReference(Float.class, "floatValue", float.class));
+                    writer.appendMethod(new MethodReference(Float.class, "floatValue", float.class));
                     break;
                 case DOUBLE:
-                    writer.appendMethodBody(new MethodReference(Double.class, "doubleValue", double.class));
+                    writer.appendMethod(new MethodReference(Double.class, "doubleValue", double.class));
                     break;
             }
             writer.append('(');

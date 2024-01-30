@@ -65,7 +65,7 @@ class TestExceptionPlugin implements TeaVMPlugin {
         writer.appendClass("java.lang.Throwable").append(".prototype.getMessage").ws().append("=").ws()
                 .append("function()").ws().append("{").indent().softNewLine();
         writer.append("return ").appendFunction("$rt_ustr").append("(this.")
-                .appendMethod("getMessage", String.class).append("());").softNewLine();
+                .appendVirtualMethod("getMessage", String.class).append("());").softNewLine();
         writer.outdent().append("};").newLine();
     }
 }

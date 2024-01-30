@@ -28,7 +28,6 @@ import org.mozilla.javascript.ast.AstRoot;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.codegen.SourceWriterSink;
 import org.teavm.backend.javascript.templating.AstRemoval;
-import org.teavm.backend.javascript.templating.LetJoiner;
 import org.teavm.backend.javascript.templating.RemovablePartsFinder;
 import org.teavm.backend.javascript.templating.TemplatingAstTransformer;
 import org.teavm.backend.javascript.templating.TemplatingAstWriter;
@@ -69,13 +68,13 @@ public class RuntimeRenderer {
 
     public void renderRuntime() {
         for (var ast : runtimeAstParts) {
-            renderHandWrittenRuntime(ast);
+            renderRuntimePart(ast);
         }
     }
 
     public void renderEpilogue() {
         for (var ast : epilogueAstParts) {
-            renderHandWrittenRuntime(ast);
+            renderRuntimePart(ast);
         }
     }
 
@@ -87,7 +86,7 @@ public class RuntimeRenderer {
         return ast;
     }
 
-    private void renderHandWrittenRuntime(AstRoot ast)  {
+    private void renderRuntimePart(AstRoot ast)  {
         var astWriter = new TemplatingAstWriter(writer, null, null, classInitializerInfo);
         astWriter.hoist(ast);
         astWriter.print(ast);
@@ -118,14 +117,11 @@ public class RuntimeRenderer {
 
     public void removeUnusedParts() {
         var removal = new AstRemoval(removablePartsFinder.getAllRemovableParts());
-        var letJoiner = new LetJoiner();
         for (var part : runtimeAstParts) {
             removal.visit(part);
-            letJoiner.visit(part);
         }
         for (var part : epilogueAstParts) {
             removal.visit(part);
-            letJoiner.visit(part);
         }
     }
 }

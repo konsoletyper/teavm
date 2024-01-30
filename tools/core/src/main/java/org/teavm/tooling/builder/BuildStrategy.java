@@ -63,6 +63,8 @@ public interface BuildStrategy {
 
     void setJsModuleType(JSModuleType jsModuleType);
 
+    void setMaxTopLevelNames(int maxTopLevelNames);
+
     void setProperties(Properties properties);
 
     void setTransformers(String[] transformers);

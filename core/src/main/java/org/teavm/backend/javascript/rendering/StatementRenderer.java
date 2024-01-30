@@ -1100,10 +1100,10 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 expr.getArguments().get(0).acceptVisitor(this);
             }
             MethodReference method = expr.getMethod();
-            String name = naming.getNameFor(method.getDescriptor());
+            String name = naming.instanceMethodName(method.getDescriptor());
             switch (expr.getType()) {
                 case STATIC:
-                    writer.appendMethodBody(method).append("(");
+                    writer.appendMethod(method).append("(");
                     for (int i = 0; i < expr.getArguments().size(); ++i) {
                         if (i > 0) {
                             writer.append(",").ws();
@@ -1113,7 +1113,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     }
                     break;
                 case SPECIAL:
-                    writer.appendMethodBody(method).append("(");
+                    writer.appendMethod(method).append("(");
                     precedence = Precedence.min();
                     expr.getArguments().get(0).acceptVisitor(this);
                     for (int i = 1; i < expr.getArguments().size(); ++i) {
@@ -1507,13 +1507,13 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(MonitorEnterStatement statement) {
         if (async) {
-            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_METHOD).append("(");
+            writer.appendMethod(NameFrequencyEstimator.MONITOR_ENTER_METHOD).append("(");
             precedence = Precedence.min();
             statement.getObjectRef().acceptVisitor(this);
             writer.append(");").softNewLine();
             emitSuspendChecker();
         } else {
-            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_SYNC_METHOD).append('(');
+            writer.appendMethod(NameFrequencyEstimator.MONITOR_ENTER_SYNC_METHOD).append('(');
             precedence = Precedence.min();
             statement.getObjectRef().acceptVisitor(this);
             writer.append(");").softNewLine();
@@ -1530,12 +1530,12 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(MonitorExitStatement statement) {
         if (async) {
-            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_METHOD).append("(");
+            writer.appendMethod(NameFrequencyEstimator.MONITOR_EXIT_METHOD).append("(");
             precedence = Precedence.min();
             statement.getObjectRef().acceptVisitor(this);
             writer.append(");").softNewLine();
         } else {
-            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_SYNC_METHOD).append('(');
+            writer.appendMethod(NameFrequencyEstimator.MONITOR_EXIT_SYNC_METHOD).append('(');
             precedence = Precedence.min();
             statement.getObjectRef().acceptVisitor(this);
             writer.append(");").softNewLine();

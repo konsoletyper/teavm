@@ -155,7 +155,7 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         statementRenderer.setCurrentPart(0);
 
         if (method.getModifiers().contains(ElementModifier.SYNCHRONIZED)) {
-            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_SYNC_METHOD);
+            writer.appendMethod(NameFrequencyEstimator.MONITOR_ENTER_SYNC_METHOD);
             writer.append("(");
             appendMonitor(statementRenderer, method);
             writer.append(");").softNewLine();
@@ -168,7 +168,7 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         if (method.getModifiers().contains(ElementModifier.SYNCHRONIZED)) {
             writer.outdent().append("}").ws().append("finally").ws().append("{").indent().softNewLine();
 
-            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_SYNC_METHOD);
+            writer.appendMethod(NameFrequencyEstimator.MONITOR_EXIT_SYNC_METHOD);
             writer.append("(");
             appendMonitor(statementRenderer, method);
             writer.append(");").softNewLine();
@@ -242,7 +242,7 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         for (int i = 0; i < methodNode.getBody().size(); ++i) {
             writer.append("case ").append(i).append(":").indent().softNewLine();
             if (i == 0 && methodNode.getModifiers().contains(ElementModifier.SYNCHRONIZED)) {
-                writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_METHOD);
+                writer.appendMethod(NameFrequencyEstimator.MONITOR_ENTER_METHOD);
                 writer.append("(");
                 appendMonitor(statementRenderer, methodNode);
                 writer.append(");").softNewLine();
@@ -260,7 +260,7 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
             writer.outdent().append("}").ws().append("finally").ws().append('{').indent().softNewLine();
             writer.append("if").ws().append("(!").appendFunction("$rt_suspending").append("())")
                     .ws().append("{").indent().softNewLine();
-            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_METHOD).append("(");
+            writer.appendMethod(NameFrequencyEstimator.MONITOR_EXIT_METHOD).append("(");
             appendMonitor(statementRenderer, methodNode);
             writer.append(");").softNewLine();
             writer.outdent().append('}').softNewLine();

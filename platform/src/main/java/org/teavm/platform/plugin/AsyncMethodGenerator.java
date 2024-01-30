@@ -49,7 +49,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Virtua
         template.builder("asyncMethod")
                 .withContext(context)
                 .withFragment("callMethod", (w, p) -> {
-                    w.appendMethodBody(asyncRef).append('(');
+                    w.appendMethod(asyncRef).append('(');
                     ClassReader cls = context.getClassSource().get(methodRef.getClassName());
                     MethodReader method = cls.getMethod(methodRef.getDescriptor());
                     int start = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;

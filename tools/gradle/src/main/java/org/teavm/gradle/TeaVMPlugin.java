@@ -123,6 +123,7 @@ public class TeaVMPlugin implements Plugin<Project> {
             task.getStrict().convention(js.getStrict());
             task.getEntryPointName().convention(js.getEntryPointName());
             task.getSourceFilePolicy().convention(js.getSourceFilePolicy());
+            task.getMaxTopLevelNames().convention(js.getMaxTopLevelNames());
 
             task.getSourceFiles().from(project.provider(() -> {
                 var result = new ArrayList<File>();

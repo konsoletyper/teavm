@@ -44,6 +44,7 @@ public class RemoteBuildRequest implements Serializable {
     public boolean obfuscated;
     public boolean strict;
     public JSModuleType jsModuleType;
+    public int maxTopLevelNames = 80_000;
     public Properties properties;
     public TeaVMOptimizationLevel optimizationLevel;
     public boolean fastDependencyAnalysis;

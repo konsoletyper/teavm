@@ -38,6 +38,11 @@ public class NameFrequencyEstimator implements SourceWriterSink {
 
     private Map<String, Entry> entries = new HashMap<>();
     private Set<String> reservedNames = new HashSet<>();
+    private boolean hasAdditionalScope;
+
+    public boolean hasAdditionalScope() {
+        return hasAdditionalScope;
+    }
 
     @Override
     public SourceWriterSink appendClass(String cls) {
@@ -45,7 +50,7 @@ public class NameFrequencyEstimator implements SourceWriterSink {
         var entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = naming -> naming.getNameFor(cls);
+            entry.operation = naming -> naming.className(cls).scoped;
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -58,7 +63,10 @@ public class NameFrequencyEstimator implements SourceWriterSink {
         var entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = naming -> naming.getNameFor(field);
+            entry.operation = naming -> {
+                naming.instanceFieldName(field);
+                return false;
+            };
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -71,7 +79,7 @@ public class NameFrequencyEstimator implements SourceWriterSink {
         var entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = naming -> naming.getFullNameFor(field);
+            entry.operation = naming -> naming.fieldName(field).scoped;
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -79,12 +87,15 @@ public class NameFrequencyEstimator implements SourceWriterSink {
     }
 
     @Override
-    public SourceWriterSink appendMethod(MethodDescriptor method) {
+    public SourceWriterSink appendVirtualMethod(MethodDescriptor method) {
         var key = "r:" + method;
         var entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = naming -> naming.getNameFor(method);
+            entry.operation = naming -> {
+                naming.instanceMethodName(method);
+                return false;
+            };
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -92,12 +103,12 @@ public class NameFrequencyEstimator implements SourceWriterSink {
     }
 
     @Override
-    public SourceWriterSink appendMethodBody(MethodReference method) {
+    public SourceWriterSink appendMethod(MethodReference method) {
         var key = "R:" + method;
         var entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = naming -> naming.getFullNameFor(method);
+            entry.operation = naming -> naming.methodName(method).scoped;
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -110,7 +121,7 @@ public class NameFrequencyEstimator implements SourceWriterSink {
         var entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = naming -> naming.getNameForFunction(name);
+            entry.operation = naming -> naming.functionName(name).scoped;
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -129,7 +140,7 @@ public class NameFrequencyEstimator implements SourceWriterSink {
         var entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = naming -> naming.getNameForInit(method);
+            entry.operation = naming -> naming.initializerName(method).scoped;
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -142,7 +153,7 @@ public class NameFrequencyEstimator implements SourceWriterSink {
         var entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = naming -> naming.getNameForClassInit(className);
+            entry.operation = naming -> naming.classInitializerName(className).scoped;
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -156,7 +167,7 @@ public class NameFrequencyEstimator implements SourceWriterSink {
         var entryList = new ArrayList<>(entries.values());
         entryList.sort((o1, o2) -> Integer.compare(o2.frequency, o1.frequency));
         for (var entry : entryList) {
-            entry.operation.perform(naming);
+            hasAdditionalScope |= entry.operation.perform(naming);
         }
     }
 
@@ -166,6 +177,6 @@ public class NameFrequencyEstimator implements SourceWriterSink {
     }
 
     private interface NamingOperation {
-        void perform(NamingStrategy naming);
+        boolean perform(NamingStrategy naming);
     }
 }

@@ -63,11 +63,18 @@ public abstract class GenerateJavaScriptTask extends TeaVMTask {
     @Optional
     public abstract Property<SourceFilePolicy> getSourceFilePolicy();
 
+    @Input
+    @Optional
+    public abstract Property<Integer> getMaxTopLevelNames();
+
     @Override
     protected void setupBuilder(BuildStrategy builder) {
         builder.setTargetType(TeaVMTargetType.JAVASCRIPT);
         builder.setObfuscated(getObfuscated().get());
         builder.setStrict(getStrict().get());
+        if (getMaxTopLevelNames().isPresent()) {
+            builder.setMaxTopLevelNames(getMaxTopLevelNames().get());
+        }
         switch (getModuleType().get()) {
             case UMD:
                 builder.setJsModuleType(org.teavm.backend.javascript.JSModuleType.UMD);

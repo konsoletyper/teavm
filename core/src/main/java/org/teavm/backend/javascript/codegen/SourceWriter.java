@@ -76,25 +76,37 @@ public abstract class SourceWriter implements Appendable, SourceWriterSink {
     public abstract SourceWriter appendStaticField(FieldReference field);
 
     @Override
-    public abstract SourceWriter appendMethod(MethodDescriptor method);
+    public abstract SourceWriter appendVirtualMethod(MethodDescriptor method);
 
-    public SourceWriter appendMethod(String name, Class<?>... params) {
-        return appendMethod(new MethodDescriptor(name, params));
+    public SourceWriter appendVirtualMethod(String name, Class<?>... params) {
+        return appendVirtualMethod(new MethodDescriptor(name, params));
     }
 
     @Override
-    public abstract SourceWriter appendMethodBody(MethodReference method);
+    public abstract SourceWriter appendMethod(MethodReference method);
 
-    public SourceWriter appendMethodBody(String className, String name, ValueType... params) {
-        return appendMethodBody(new MethodReference(className, new MethodDescriptor(name, params)));
+    public SourceWriter appendMethod(String className, String name, ValueType... params) {
+        return appendMethod(new MethodReference(className, new MethodDescriptor(name, params)));
     }
 
-    public SourceWriter appendMethodBody(Class<?> cls, String name, Class<?>... params) {
-        return appendMethodBody(new MethodReference(cls, name, params));
+    public SourceWriter appendMethod(Class<?> cls, String name, Class<?>... params) {
+        return appendMethod(new MethodReference(cls, name, params));
     }
 
     @Override
     public abstract SourceWriter appendFunction(String name);
+
+    @Override
+    public abstract SourceWriter startFunctionDeclaration();
+
+    @Override
+    public abstract SourceWriter startVariableDeclaration();
+
+    @Override
+    public abstract SourceWriter endDeclaration();
+
+    @Override
+    public abstract SourceWriter declareVariable();
 
     @Override
     public abstract SourceWriter appendGlobal(String name);

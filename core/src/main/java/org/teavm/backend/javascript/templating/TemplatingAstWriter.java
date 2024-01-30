@@ -16,9 +16,7 @@
 package org.teavm.backend.javascript.templating;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import org.mozilla.javascript.ast.ElementGet;
 import org.mozilla.javascript.ast.FunctionCall;
 import org.mozilla.javascript.ast.FunctionNode;
@@ -39,8 +37,6 @@ public class TemplatingAstWriter extends AstWriter {
     private Scope scope;
     private Map<String, SourceFragment> fragments = new HashMap<>();
     private ClassInitializerInfo classInitializerInfo;
-    private Set<Scope> topLevelScopes = new HashSet<>();
-    private boolean inFunction;
 
     public TemplatingAstWriter(SourceWriter writer, Map<String, SourceFragment> names, Scope scope,
             ClassInitializerInfo classInitializerInfo) {
@@ -113,7 +109,7 @@ public class TemplatingAstWriter extends AstWriter {
         }
         var method = new MethodReference(((StringLiteral) classArg).getValue(),
                 MethodDescriptor.parse(((StringLiteral) methodArg).getValue()));
-        writer.appendMethodBody(method);
+        writer.appendMethod(method);
         return true;
     }
 
@@ -210,7 +206,7 @@ public class TemplatingAstWriter extends AstWriter {
         }
         var method = MethodDescriptor.parse(((StringLiteral) arg).getValue());
         print(get.getTarget());
-        writer.append('.').appendMethod(method);
+        writer.append('.').appendVirtualMethod(method);
         return true;
     }
 
@@ -250,27 +246,7 @@ public class TemplatingAstWriter extends AstWriter {
     }
 
     @Override
-    protected void print(FunctionNode node) {
-        if (inFunction) {
-            super.print(node);
-        } else {
-            inFunction = true;
-            super.print(node);
-            inFunction = false;
-        }
-    }
-
-    @Override
-    protected void onEnterScope(Scope scope) {
-        if (names == null && !inFunction) {
-            topLevelScopes.add(scope);
-        }
-    }
-
-    @Override
-    protected void onLeaveScope(Scope scope) {
-        if (names == null && !inFunction) {
-            topLevelScopes.remove(scope);
-        }
+    protected boolean isTopLevel() {
+        return names == null;
     }
 }

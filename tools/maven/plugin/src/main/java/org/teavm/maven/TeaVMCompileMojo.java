@@ -87,6 +87,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter(property = "teavm.jsModuleType", defaultValue = "UMD")
     private JSModuleType jsModuleType;
 
+    @Parameter(property = "teavm.maxTopLevelNames", defaultValue = "80000")
+    private int maxTopLevelNames = 80_000;
+
     @Parameter
     private Properties properties;
 
@@ -169,6 +172,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setObfuscated(minifying);
             builder.setStrict(strict);
             builder.setJsModuleType(jsModuleType);
+            builder.setMaxTopLevelNames(maxTopLevelNames);
             builder.setTargetDirectory(targetDirectory.getAbsolutePath());
             if (transformers != null) {
                 builder.setTransformers(transformers);

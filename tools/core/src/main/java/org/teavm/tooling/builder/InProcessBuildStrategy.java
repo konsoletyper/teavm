@@ -56,6 +56,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private boolean obfuscated;
     private JSModuleType jsModuleType;
     private boolean strict;
+    private int maxTopLevelNames = 80_000;
     private boolean sourceMapsFileGenerated;
     private boolean debugInformationGenerated;
     private TeaVMSourceFilePolicy sourceMapsSourcePolicy;
@@ -175,6 +176,11 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setMaxTopLevelNames(int maxTopLevelNames) {
+        this.maxTopLevelNames = maxTopLevelNames;
+    }
+
+    @Override
     public void setTransformers(String[] transformers) {
         this.transformers = transformers.clone();
     }
@@ -256,6 +262,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setObfuscated(obfuscated);
         tool.setJsModuleType(jsModuleType);
         tool.setStrict(strict);
+        tool.setMaxTopLevelNames(maxTopLevelNames);
         tool.setIncremental(incremental);
         tool.getTransformers().addAll(Arrays.asList(transformers));
         tool.getClassesToPreserve().addAll(Arrays.asList(classesToPreserve));

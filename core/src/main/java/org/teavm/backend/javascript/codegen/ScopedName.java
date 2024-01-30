@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Alexey Andreev.
+ *  Copyright 2024 konsoletyper.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,24 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle.api;
+package org.teavm.backend.javascript.codegen;
 
-import org.gradle.api.provider.Property;
+public class ScopedName {
+    public final String name;
+    public final boolean scoped;
 
-public interface TeaVMJSConfiguration extends TeaVMWebConfiguration {
-    Property<Boolean> getObfuscated();
-
-    Property<Boolean> getStrict();
-
-    Property<JSModuleType> getModuleType();
-
-    Property<Boolean> getSourceMap();
-
-    Property<String> getEntryPointName();
-
-    Property<String> getTargetFileName();
-
-    Property<SourceFilePolicy> getSourceFilePolicy();
-
-    Property<Integer> getMaxTopLevelNames();
+    public ScopedName(String name, boolean scoped) {
+        this.name = name;
+        this.scoped = scoped;
+    }
 }

@@ -42,6 +42,10 @@ public class RememberingSourceWriter extends SourceWriter {
     static final byte SOFT_NEW_LINE = 12;
     static final byte INDENT = 13;
     static final byte OUTDENT = 14;
+    static final byte START_FUNCTION = 27;
+    static final byte START_VARIABLE = 28;
+    static final byte END_DECLARATION = 29;
+    static final byte DECLARE_VARIABLE = 30;
     static final byte EMIT_LOCATION = 15;
     static final byte ENTER_LOCATION = 16;
     static final byte EXIT_LOCATION = 17;
@@ -72,6 +76,8 @@ public class RememberingSourceWriter extends SourceWriter {
 
     private List<MethodReference> methods = new ArrayList<>();
     private ObjectIntMap<MethodReference> methodIndexes = new ObjectIntHashMap<>();
+
+    private boolean isInDeclaration;
 
     public RememberingSourceWriter(boolean debug) {
         this.debug = debug;
@@ -129,7 +135,7 @@ public class RememberingSourceWriter extends SourceWriter {
     }
 
     @Override
-    public SourceWriter appendMethod(MethodDescriptor method) {
+    public SourceWriter appendVirtualMethod(MethodDescriptor method) {
         flush();
         commands.add(METHOD);
         appendMethodDescriptorArg(method);
@@ -137,7 +143,7 @@ public class RememberingSourceWriter extends SourceWriter {
     }
 
     @Override
-    public SourceWriter appendMethodBody(MethodReference method) {
+    public SourceWriter appendMethod(MethodReference method) {
         flush();
         commands.add(METHOD_BODY);
         appendMethodArg(method);
@@ -222,6 +228,49 @@ public class RememberingSourceWriter extends SourceWriter {
     public SourceWriter outdent() {
         flush();
         commands.add(OUTDENT);
+        return this;
+    }
+
+    @Override
+    public SourceWriter startFunctionDeclaration() {
+        checkNotInDeclaration();
+        isInDeclaration = true;
+        flush();
+        commands.add(START_FUNCTION);
+        return this;
+    }
+
+    @Override
+    public SourceWriter startVariableDeclaration() {
+        checkNotInDeclaration();
+        isInDeclaration = true;
+        flush();
+        commands.add(START_VARIABLE);
+        return this;
+    }
+
+    private void checkNotInDeclaration() {
+        if (isInDeclaration) {
+            throw new IllegalStateException();
+        }
+    }
+
+    @Override
+    public SourceWriter endDeclaration() {
+        if (!isInDeclaration) {
+            throw new IllegalStateException();
+        }
+        isInDeclaration = false;
+        flush();
+        commands.add(END_DECLARATION);
+        return this;
+    }
+
+    @Override
+    public SourceWriter declareVariable() {
+        checkNotInDeclaration();
+        flush();
+        commands.add(DECLARE_VARIABLE);
         return this;
     }
 

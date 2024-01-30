@@ -44,7 +44,7 @@ public class ServiceLoaderJSSupport implements Generator {
                                 }
                                 first = false;
                                 writer.append("[").appendClass(implName).append(",").ws()
-                                        .appendMethodBody(new MethodReference(implName, INIT_METHOD))
+                                        .appendMethod(new MethodReference(implName, INIT_METHOD))
                                         .append("]");
                             }
                         }
