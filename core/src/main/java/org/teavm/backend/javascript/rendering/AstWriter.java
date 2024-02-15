@@ -460,7 +460,7 @@ public class AstWriter {
         print(node.getTryBlock());
         for (CatchClause cc : node.getCatchClauses()) {
             writer.ws().append("catch").ws().append('(');
-            writer.append(cc.getVarName().getIdentifier());
+            print(cc.getVarName());
             if (cc.getCatchCondition() != null) {
                 writer.append(" if ");
                 print(cc.getCatchCondition());
