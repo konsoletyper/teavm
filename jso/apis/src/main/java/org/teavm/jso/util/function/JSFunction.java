@@ -16,9 +16,12 @@
 package org.teavm.jso.util.function;
 
 import java.util.Objects;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
 
 @FunctionalInterface
-public interface JSFunction<T, R> {
+@JSFunctor
+public interface JSFunction<T, R> extends JSObject {
     R apply(T t);
 
     default <V> JSFunction<T, V> andThen(JSFunction<? super R, ? extends V> after) {

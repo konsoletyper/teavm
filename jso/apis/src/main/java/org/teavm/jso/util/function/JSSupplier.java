@@ -15,7 +15,11 @@
  */
 package org.teavm.jso.util.function;
 
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
+
 @FunctionalInterface
-public interface JSSupplier<R> {
+@JSFunctor
+public interface JSSupplier<R> extends JSObject {
     R get();
 }

@@ -16,9 +16,12 @@
 package org.teavm.jso.util.function;
 
 import java.util.Objects;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
 
 @FunctionalInterface
-public interface JSConsumer<T> {
+@JSFunctor
+public interface JSConsumer<T> extends JSObject {
     void accept(T t);
 
     default JSConsumer<T> andThen(JSConsumer<? super T> after) {
