@@ -1,0 +1,12 @@
+.hljs-keyword {
+    font-weight: bold;
+}
+.hljs-class .hljs-title {
+    color: #9BB01D;
+}
+.hljs-annotation {
+    color: #FFA500;
+}
+.hljs-string, .hljs-number {
+    color: red;
+}
