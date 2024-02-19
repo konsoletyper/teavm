@@ -17,6 +17,8 @@ package org.teavm.backend.javascript.rendering;
 
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -517,7 +519,16 @@ public class Renderer implements RenderingManager {
             }
             writer.append("],").ws();
 
-            writer.append(ElementModifier.pack(cls.readModifiers())).append(',').ws();
+            var flags = ElementModifier.pack(cls.readModifiers());
+            if (cls.hasModifier(ElementModifier.ANNOTATION)) {
+                var retention = cls.getAnnotations().get(Retention.class.getName());
+                if (retention != null && retention.getValue("value").getEnumValue().getFieldName().equals("RUNTIME")) {
+                    if (cls.getAnnotations().get(Inherited.class.getName()) != null) {
+                        flags |= 32768;
+                    }
+                }
+            }
+            writer.append(flags).append(',').ws();
             writer.append(cls.getLevel().ordinal()).append(',').ws();
 
             if (!requiredMetadata.enclosingClass() && !requiredMetadata.declaringClass()

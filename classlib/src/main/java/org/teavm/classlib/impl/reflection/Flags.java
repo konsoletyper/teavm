@@ -34,6 +34,7 @@ public final class Flags {
     public static final int TRANSIENT = 4096;
     public static final int VARARGS = 8192;
     public static final int VOLATILE = 16384;
+    public static final int INHERITED_ANNOTATION = 32768;
 
     public static final int PACKAGE_PRIVATE = 0;
     public static final int PRIVATE = 1;

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,6 +59,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement, TType {
     String canonicalName;
     private PlatformClass platformClass;
     private TAnnotation[] annotationsCache;
+    private TAnnotation[] declaredAnnotationsCache;
     private Map<TClass<?>, TAnnotation> annotationsByType;
     private TField[] declaredFields;
     private TField[] fields;
@@ -744,14 +746,33 @@ public class TClass<T> extends TObject implements TAnnotatedElement, TType {
     @Override
     public TAnnotation[] getAnnotations() {
         if (annotationsCache == null) {
-            annotationsCache = (TAnnotation[]) Platform.getAnnotations(getPlatformClass());
+            TClass<?> cls = this;
+            var initial = true;
+            var map = new LinkedHashMap<Class<?>, TAnnotation>();
+            while (cls != null) {
+                for (var annot : cls.getDeclaredAnnotations()) {
+                    var platformClass = ((TClass<?>) (Object) annot.annotationType()).platformClass;
+                    if (initial || (platformClass.getMetadata().getFlags() & Flags.INHERITED_ANNOTATION) != 0) {
+                        map.putIfAbsent(annot.annotationType(), annot);
+                    }
+                }
+                cls = cls.getSuperclass();
+                initial = false;
+            }
+            annotationsCache = map.values().toArray(new TAnnotation[0]);
         }
         return annotationsCache.clone();
     }
 
     @Override
     public TAnnotation[] getDeclaredAnnotations() {
-        return getAnnotations();
+        if (declaredAnnotationsCache == null) {
+            declaredAnnotationsCache = (TAnnotation[]) Platform.getAnnotations(getPlatformClass());
+            if (declaredAnnotationsCache == null) {
+                declaredAnnotationsCache = new TAnnotation[0];
+            }
+        }
+        return declaredAnnotationsCache.clone();
     }
 
     private void ensureAnnotationsByType() {
