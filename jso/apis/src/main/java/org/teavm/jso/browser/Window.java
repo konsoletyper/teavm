@@ -66,6 +66,9 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
     public abstract int getOuterHeight();
 
     @JSProperty
+    public abstract int getScrollX();
+
+    @JSProperty
     public abstract int getScrollY();
 
     @JSProperty
