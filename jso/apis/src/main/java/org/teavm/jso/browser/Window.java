@@ -25,8 +25,6 @@ import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.html.HTMLIFrameElement;
 
 public abstract class Window implements JSObject, WindowEventTarget, StorageProvider, JSArrayReader<HTMLIFrameElement> {
-    private static Window cachedInstance;
-
     private Window() {
     }
 
