@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,17 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.json;
+package org.teavm.jso.test;
 
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
 @JSClass
-public final class JSON implements JSObject {
-    private JSON() {
+public class ClassWithConstructor implements JSObject {
+    public ClassWithConstructor(int foo) {
     }
 
-    public static native String stringify(JSObject object);
+    public ClassWithConstructor() {
+    }
 
-    public static native JSObject parse(String string);
+    @JSProperty
+    public native int getFoo();
+
+    public native String bar();
+
+    public static native String staticMethod();
 }

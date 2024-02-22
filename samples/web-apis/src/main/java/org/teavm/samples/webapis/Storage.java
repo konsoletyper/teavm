@@ -41,7 +41,7 @@ public final class Storage {
             var key = document.getElementById("key").<HTMLInputElement>cast().getValue();
             var value = document.getElementById("value").<HTMLInputElement>cast().getValue();
 
-            if (key != null && key.length() > 0 && value != null && value.length() > 0) {
+            if (key != null && !key.isEmpty() && value != null && !value.isEmpty()) {
                 storage.setItem(key, value);
                 draw();
             }
@@ -49,7 +49,7 @@ public final class Storage {
         HTMLButtonElement deleteButton = document.getElementById("delete-button").cast();
         deleteButton.listenClick(e -> {
             String key = document.getElementById("key").<HTMLInputElement>cast().getValue();
-            if (key != null && key.length() > 0) {
+            if (key != null && !key.isEmpty()) {
                 storage.removeItem(key);
                 draw();
             }

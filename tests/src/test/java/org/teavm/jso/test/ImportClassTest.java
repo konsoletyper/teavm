@@ -21,6 +21,7 @@ import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
+import org.teavm.junit.AttachJavaScript;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
@@ -39,6 +40,23 @@ public class ImportClassTest {
         set(o, "bar", 42);
         assertEquals(23, o.get("foo"));
         assertEquals(42, o.get("bar"));
+    }
+
+    @Test
+    @AttachJavaScript("org/teavm/jso/test/classWithConstructor.js")
+    public void constructor() {
+        var o = new ClassWithConstructor();
+        assertEquals(99, o.getFoo());
+        assertEquals("bar called", o.bar());
+
+        o = new ClassWithConstructor(23);
+        assertEquals(23, o.getFoo());
+    }
+
+    @Test
+    @AttachJavaScript("org/teavm/jso/test/classWithConstructor.js")
+    public void staticMethod() {
+        assertEquals("static method called", ClassWithConstructor.staticMethod());
     }
 
     @JSBody(script = "return {};")

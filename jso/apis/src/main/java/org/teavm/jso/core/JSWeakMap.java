@@ -17,19 +17,25 @@ package org.teavm.jso.core;
 
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 
-public abstract class JSWeakMap<K, V> implements JSObject {
-    public abstract V get(K key);
+@JSClass(name = "WeakMap")
+public class JSWeakMap<K, V> implements JSObject {
+    public JSWeakMap() {
+    }
 
-    public abstract boolean has(K key);
+    public native V get(K key);
 
-    public abstract JSWeakMap<K, V> set(K key, V value);
+    public native boolean has(K key);
 
-    public abstract boolean remove(K key);
+    public native JSWeakMap<K, V> set(K key, V value);
+
+    public native boolean remove(K key);
 
     @JSBody(script = "return new WeakMap();")
     @NoSideEffects
+    @Deprecated
     public static native <K, V> JSWeakMap<K, V> create();
 
     @JSBody(script = "return typeof WeakMap !== 'undefined';")

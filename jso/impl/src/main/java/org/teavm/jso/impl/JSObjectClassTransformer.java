@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSExport;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
@@ -81,6 +82,11 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             }
         }
         processor.createJSMethods(cls);
+
+        if (cls.hasModifier(ElementModifier.ABSTRACT)
+                || cls.getAnnotations().get(JSClass.class.getName()) != null && isJavaScriptClass(cls)) {
+            return;
+        }
 
         MethodReference functorMethod = processor.isFunctor(cls.getName());
         if (functorMethod != null) {
@@ -275,6 +281,18 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         if (!addInterfaces(exposedCls, cls)) {
             addExportedMethods(exposedCls, cls);
         }
+    }
+
+    private boolean isJavaScriptClass(ClassReader cls) {
+        if (cls.getParent() != null && typeHelper.isJavaScriptClass(cls.getParent())) {
+            return true;
+        }
+        for (var itf : cls.getInterfaces()) {
+            if (typeHelper.isJavaScriptClass(itf)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean addInterfaces(ExposedClass exposedCls, ClassReader cls) {

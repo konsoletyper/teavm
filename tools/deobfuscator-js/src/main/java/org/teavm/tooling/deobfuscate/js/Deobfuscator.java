@@ -34,14 +34,14 @@ import org.teavm.jso.typedarrays.Int8Array;
 import org.teavm.model.MethodReference;
 
 public final class Deobfuscator {
-    private static final JSRegExp FRAME_PATTERN = JSRegExp.create(""
+    private static final JSRegExp FRAME_PATTERN = new JSRegExp(""
             + "(^ +at ([^(]+) *\\((.+):([0-9]+):([0-9]+)\\) *$)|"
             + "(^([^@]*)@(.+):([0-9]+):([0-9]+)$)");
     private DebugInformation debugInformation;
     private String classesFileName;
 
     public Deobfuscator(ArrayBuffer buffer, String classesFileName) throws IOException {
-        Int8Array array = Int8Array.create(buffer);
+        var array = new Int8Array(buffer);
         debugInformation = DebugInformation.read(new Int8ArrayInputStream(array));
         this.classesFileName = classesFileName;
     }
@@ -51,7 +51,7 @@ public final class Deobfuscator {
     }
 
     private static void loadDeobfuscator(String fileName, String classesFileName) {
-        XMLHttpRequest xhr = XMLHttpRequest.create();
+        var xhr = new XMLHttpRequest();
         xhr.setResponseType("arraybuffer");
         xhr.onComplete(() -> {
             installDeobfuscator(xhr.getResponse().cast(), classesFileName);

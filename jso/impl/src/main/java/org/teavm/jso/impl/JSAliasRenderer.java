@@ -239,7 +239,7 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
                 return true;
             }
             for (var method : cls.getMethods()) {
-                if (!method.hasModifier(ElementModifier.STATIC) && getPublicAlias(method) != null) {
+                if (getPublicAlias(method) != null) {
                     return true;
                 }
             }

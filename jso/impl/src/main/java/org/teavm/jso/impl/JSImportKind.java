@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,17 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.json;
+package org.teavm.jso.impl;
 
-import org.teavm.jso.JSClass;
-import org.teavm.jso.JSObject;
-
-@JSClass
-public final class JSON implements JSObject {
-    private JSON() {
-    }
-
-    public static native String stringify(JSObject object);
-
-    public static native JSObject parse(String string);
+enum JSImportKind {
+    PROPERTY,
+    INDEXER,
+    METHOD
 }

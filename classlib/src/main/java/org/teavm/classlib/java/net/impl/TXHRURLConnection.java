@@ -65,7 +65,7 @@ public class TXHRURLConnection extends THttpURLConnection {
             return;
         }
 
-        xhr = XMLHttpRequest.create();
+        xhr = new XMLHttpRequest();
         xhr.open(method, url.toString());
         for (Map.Entry<String, List<String>> entry : getRequestProperties().entrySet()) {
             for (String value : entry.getValue()) {
@@ -97,7 +97,7 @@ public class TXHRURLConnection extends THttpURLConnection {
                 responseCode = -1;
             }
 
-            Int8Array array = Int8Array.create((ArrayBuffer) xhr.getResponse());
+            var array = new Int8Array((ArrayBuffer) xhr.getResponse());
             byte[] bytes = new byte[array.getLength()];
             for (int i = 0; i < bytes.length; ++i) {
                 bytes[i] = array.get(i);
@@ -119,7 +119,7 @@ public class TXHRURLConnection extends THttpURLConnection {
 
         if (outputStream != null) {
             byte[] bytes = outputStream.toByteArray();
-            Int8Array array = Int8Array.create(bytes.length);
+            var array = new Int8Array(bytes.length);
             for (int i = 0; i < bytes.length; ++i) {
                 array.set(i, bytes[i]);
             }

@@ -16,6 +16,7 @@
 package org.teavm.jso.websocket;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.Event;
@@ -24,60 +25,73 @@ import org.teavm.jso.dom.events.MessageEvent;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.ArrayBufferView;
 
-public abstract class WebSocket implements JSObject {
+@JSClass
+public class WebSocket implements JSObject {
+  public WebSocket(String url) {
+  }
+
+  public WebSocket(String url, String protocols) {
+  }
+
+  public WebSocket(String url, String[] protocols) {
+  }
+
   @JSProperty("onclose")
-  public abstract void onClose(EventListener<CloseEvent> eventListener);
+  public native void onClose(EventListener<CloseEvent> eventListener);
 
   @JSProperty("onerror")
-  public abstract void onError(EventListener<Event> eventListener);
+  public native void onError(EventListener<Event> eventListener);
 
   @JSProperty("onmessage")
-  public abstract void onMessage(EventListener<MessageEvent> eventListener);
+  public native void onMessage(EventListener<MessageEvent> eventListener);
 
   @JSProperty("onopen")
-  public abstract void onOpen(EventListener<Event> eventListener);
+  public native void onOpen(EventListener<Event> eventListener);
 
   @JSBody(params = "url", script = "return new WebSocket(url);")
+  @Deprecated
   public static native WebSocket create(String url);
 
   @JSBody(params = { "url", "protocols" }, script = "return new WebSocket(url, protocols);")
+  @Deprecated
   public static native WebSocket create(String url, String protocols);
 
   @JSBody(params = { "url", "protocols" }, script = "return new WebSocket(url, protocols);")
+  @Deprecated
   public static native WebSocket create(String url, String[] protocols);
 
-  public abstract void close();
+  public native void close();
 
-  public abstract void close(int code);
+  public native void close(int code);
 
-  public abstract void close(int code, String reason);
+  public native void close(int code, String reason);
 
-  public abstract void send(String data);
+  public native void send(String data);
 
-  public abstract void send(ArrayBuffer data);
+  public native void send(ArrayBuffer data);
 
-  public abstract void send(ArrayBufferView data);
-
-  @JSProperty
-  public abstract String getBinaryType();
+  public native void send(ArrayBufferView data);
 
   @JSProperty
-  public abstract void setBinaryType(String binaryType);
+  public native String getBinaryType();
 
   @JSProperty
-  public abstract int getBufferedAmount();
+  public native void setBinaryType(String binaryType);
 
   @JSProperty
-  public abstract String getExtensions();
+  public native int getBufferedAmount();
 
   @JSProperty
-  public abstract String getProtocol();
+  public native String getExtensions();
 
   @JSProperty
-  public abstract int getReadyState();
+  public native String getProtocol();
 
   @JSProperty
-  public abstract String getUrl();
+  public native int getReadyState();
+
+  @JSProperty
+  public native String getUrl();
 
   @JSBody(script = "return typeof WebSocket !== 'undefined';")
   public static native boolean isSupported();

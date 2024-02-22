@@ -18,6 +18,7 @@ package org.teavm.jso.impl;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,10 +36,7 @@ import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSFunctor;
-import org.teavm.jso.JSIndexer;
-import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
 import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationReader;
@@ -63,6 +61,7 @@ import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
+import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.GetElementInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
@@ -91,6 +90,8 @@ class JSClassProcessor {
     private final JSBodyRepository repository;
     private final JavaInvocationProcessor javaInvocationProcessor;
     private Program program;
+    private int[] variableAliases;
+    private boolean[] nativeConstructedObjects;
     private JSTypeInference types;
     private final List<Instruction> replacement = new ArrayList<>();
     private final JSTypeHelper typeHelper;
@@ -98,6 +99,7 @@ class JSClassProcessor {
     private final Map<MethodReference, MethodReader> overriddenMethodCache = new HashMap<>();
     private JSValueMarshaller marshaller;
     private IncrementalDependencyRegistration incrementalCache;
+    private JSImportAnnotationCache annotationCache;
 
     JSClassProcessor(ClassReaderSource classSource, JSTypeHelper typeHelper, JSBodyRepository repository,
             Diagnostics diagnostics, IncrementalDependencyRegistration incrementalCache) {
@@ -107,6 +109,8 @@ class JSClassProcessor {
         this.diagnostics = diagnostics;
         this.incrementalCache = incrementalCache;
         javaInvocationProcessor = new JavaInvocationProcessor(typeHelper, repository, classSource, diagnostics);
+
+        annotationCache = new JSImportAnnotationCache(classSource, diagnostics);
     }
 
     public ClassReaderSource getClassSource() {
@@ -220,6 +224,48 @@ class JSClassProcessor {
     private void setCurrentProgram(Program program) {
         this.program = program;
         marshaller = new JSValueMarshaller(diagnostics, typeHelper, classSource, program, replacement);
+        findVariableAliases();
+    }
+
+    private void findVariableAliases() {
+        if (program == null) {
+            return;
+        }
+        variableAliases = new int[program.variableCount()];
+        nativeConstructedObjects = new boolean[program.variableCount()];
+        var resolved = new boolean[program.variableCount()];
+        Arrays.fill(resolved, true);
+        for (var i = 0; i < variableAliases.length; ++i) {
+            variableAliases[i] = i;
+        }
+        for (var block : program.getBasicBlocks()) {
+            for (var instruction : block) {
+                if (instruction instanceof AssignInstruction) {
+                    var assign = (AssignInstruction) instruction;
+                    var from = assign.getAssignee().getIndex();
+                    var to = assign.getReceiver().getIndex();
+                    variableAliases[to] = from;
+                    resolved[assign.getAssignee().getIndex()] = true;
+                } else if (instruction instanceof ConstructInstruction) {
+                    var construct = (ConstructInstruction) instruction;
+                    if (typeHelper.isJavaScriptClass(construct.getType())) {
+                        nativeConstructedObjects[construct.getReceiver().getIndex()] = true;
+                    }
+                }
+            }
+        }
+        for (var i = 0; i < variableAliases.length; ++i) {
+            getVariableAlias(i, resolved);
+        }
+    }
+
+    private int getVariableAlias(int index, boolean[] resolved) {
+        if (resolved[index]) {
+            return variableAliases[index];
+        }
+        resolved[index] = true;
+        variableAliases[index] = getVariableAlias(variableAliases[index], resolved);
+        return variableAliases[index];
     }
 
     void processProgram(MethodHolder methodToProcess) {
@@ -266,8 +312,27 @@ class JSClassProcessor {
                             methodToProcess.getResultType()));
                 } else if (insn instanceof ClassConstantInstruction) {
                     processClassConstant((ClassConstantInstruction) insn);
+                } else if (insn instanceof ConstructInstruction) {
+                    processConstructObject((ConstructInstruction) insn);
+                } else if (insn instanceof AssignInstruction) {
+                    var assign = (AssignInstruction) insn;
+                    var index = variableAliases[assign.getReceiver().getIndex()];
+                    if (nativeConstructedObjects[index]) {
+                        assign.delete();
+                    }
                 }
             }
+        }
+
+        var varMapper = new InstructionVariableMapper(v -> {
+            if (v.getIndex() < nativeConstructedObjects.length
+                    && nativeConstructedObjects[variableAliases[v.getIndex()]]) {
+                return program.variableAt(variableAliases[v.getIndex()]);
+            }
+            return v;
+        });
+        for (var block : program.getBasicBlocks()) {
+            varMapper.apply(block);
         }
     }
 
@@ -344,6 +409,12 @@ class JSClassProcessor {
 
     private void processClassConstant(ClassConstantInstruction insn) {
         insn.setConstant(processType(insn.getConstant()));
+    }
+
+    private void processConstructObject(ConstructInstruction insn) {
+        if (nativeConstructedObjects[insn.getReceiver().getIndex()]) {
+            insn.delete();
+        }
     }
 
     private ValueType processType(ValueType type) {
@@ -485,11 +556,21 @@ class JSClassProcessor {
             return false;
         }
 
-        if (method.hasModifier(ElementModifier.STATIC)) {
-            return false;
+        if (method.getName().equals("<init>")) {
+            return processConstructor(method, callLocation, invoke);
         }
 
+        var isStatic = method.hasModifier(ElementModifier.STATIC);
+        if (isStatic) {
+            switch (method.getOwnerName()) {
+                case "org.teavm.platform.PlatformQueue":
+                    return false;
+            }
+        }
         if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
+            if (isStatic) {
+                return false;
+            }
             MethodReader overridden = getOverriddenMethod(method);
             if (overridden != null) {
                 diagnostics.error(callLocation, "JS final method {{m0}} overrides {{m1}}. "
@@ -511,13 +592,18 @@ class JSClassProcessor {
             return false;
         }
 
-        if (method.getAnnotations().get(JSProperty.class.getName()) != null) {
-            return processProperty(method, callLocation, invoke);
-        } else if (method.getAnnotations().get(JSIndexer.class.getName()) != null) {
-            return processIndexer(method, callLocation, invoke);
-        } else {
-            return processMethod(method, callLocation, invoke);
+        var annot = annotationCache.get(method.getReference(), callLocation);
+        if (annot != null) {
+            switch (annot.kind) {
+                case PROPERTY:
+                    return processProperty(method, annot.name, callLocation, invoke);
+                case INDEXER:
+                    return processIndexer(method, callLocation, invoke);
+                case METHOD:
+                    return processMethod(method, annot.name, callLocation, invoke);
+            }
         }
+        return processMethod(method, null, callLocation, invoke);
     }
 
     private boolean processJSBodyInvocation(MethodReader method, CallLocation callLocation, InvokeInstruction invoke,
@@ -577,16 +663,17 @@ class JSClassProcessor {
         return true;
     }
 
-    private boolean processProperty(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
+    private boolean processProperty(MethodReader method, String suggestedName, CallLocation callLocation,
+            InvokeInstruction invoke) {
         boolean pure = method.getAnnotations().get(NO_SIDE_EFFECTS) != null;
-        if (isProperGetter(method)) {
-            String propertyName = extractSuggestedPropertyName(method);
+        if (isProperGetter(method, suggestedName)) {
+            var propertyName = suggestedName;
             if (propertyName == null) {
                 propertyName = method.getName().charAt(0) == 'i' ? cutPrefix(method.getName(), 2)
                         : cutPrefix(method.getName(), 3);
             }
             Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
-            addPropertyGet(propertyName, invoke.getInstance(), result, invoke.getLocation(), pure);
+            addPropertyGet(propertyName, getCallTarget(invoke), result, invoke.getLocation(), pure);
             if (result != null) {
                 result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType(), false,
                         canBeOnlyJava(invoke.getReceiver()));
@@ -594,15 +681,15 @@ class JSClassProcessor {
             }
             return true;
         }
-        if (isProperSetter(method)) {
-            String propertyName = extractSuggestedPropertyName(method);
+        if (isProperSetter(method, suggestedName)) {
+            var propertyName = suggestedName;
             if (propertyName == null) {
                 propertyName = cutPrefix(method.getName(), 3);
             }
             var value = invoke.getArguments().get(0);
             value = marshaller.wrapArgument(callLocation, value,
                     method.parameterType(0), types.typeOf(value), false);
-            addPropertySet(propertyName, invoke.getInstance(), value, invoke.getLocation(), pure);
+            addPropertySet(propertyName, getCallTarget(invoke), value, invoke.getLocation(), pure);
             return true;
         }
         diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript property "
@@ -610,17 +697,11 @@ class JSClassProcessor {
         return false;
     }
 
-    private String extractSuggestedPropertyName(MethodReader method) {
-        AnnotationReader annot = method.getAnnotations().get(JSProperty.class.getName());
-        AnnotationValue value = annot.getValue("value");
-        return value != null ? value.getString() : null;
-    }
-
     private boolean processIndexer(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
         if (isProperGetIndexer(method.getDescriptor())) {
             Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
             var index = invoke.getArguments().get(0);
-            addIndexerGet(invoke.getInstance(), marshaller.wrapArgument(callLocation, index,
+            addIndexerGet(getCallTarget(invoke), marshaller.wrapArgument(callLocation, index,
                     method.parameterType(0), types.typeOf(index), false), result, invoke.getLocation());
             if (result != null) {
                 result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType(), false,
@@ -635,7 +716,7 @@ class JSClassProcessor {
             var value = invoke.getArguments().get(1);
             value = marshaller.wrapArgument(callLocation, value, method.parameterType(1),
                     types.typeOf(value), false);
-            addIndexerSet(invoke.getInstance(), index, value, invoke.getLocation());
+            addIndexerSet(getCallTarget(invoke), index, value, invoke.getLocation());
             return true;
         }
         diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript indexer "
@@ -678,17 +759,11 @@ class JSClassProcessor {
         return type != JSType.JS && type != JSType.MIXED;
     }
 
-    private boolean processMethod(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
-        String name = method.getName();
-
-        AnnotationReader methodAnnot = method.getAnnotations().get(JSMethod.class.getName());
-        if (methodAnnot != null) {
-            AnnotationValue redefinedMethodName = methodAnnot.getValue("value");
-            if (redefinedMethodName != null) {
-                name = redefinedMethodName.getString();
-            }
+    private boolean processMethod(MethodReader method, String name, CallLocation callLocation,
+            InvokeInstruction invoke) {
+        if (name == null) {
+            name = method.getName();
         }
-
         boolean[] byRefParams = new boolean[method.parameterCount() + 1];
         if (!validateSignature(method, callLocation, byRefParams)) {
             return false;
@@ -700,7 +775,7 @@ class JSClassProcessor {
         newInvoke.setType(InvocationType.SPECIAL);
         newInvoke.setReceiver(result);
         List<Variable> newArguments = new ArrayList<>();
-        newArguments.add(invoke.getInstance());
+        newArguments.add(getCallTarget(invoke));
         newArguments.add(marshaller.addStringWrap(marshaller.addString(name, invoke.getLocation()),
                 invoke.getLocation()));
         newInvoke.setLocation(invoke.getLocation());
@@ -717,6 +792,38 @@ class JSClassProcessor {
                     canBeOnlyJava(invoke.getReceiver()));
             copyVar(result, invoke.getReceiver(), invoke.getLocation());
         }
+
+        return true;
+    }
+
+    private Variable getCallTarget(InvokeInstruction invoke) {
+        return invoke.getInstance() != null
+                ? invoke.getInstance()
+                : marshaller.classRef(invoke.getMethod().getClassName(), invoke.getLocation());
+    }
+
+    private boolean processConstructor(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
+        var byRefParams = new boolean[method.parameterCount() + 1];
+        if (!validateSignature(method, callLocation, byRefParams)) {
+            return false;
+        }
+
+        var result = program.variableAt(variableAliases[invoke.getInstance().getIndex()]);
+        var newInvoke = new InvokeInstruction();
+        newInvoke.setMethod(JSMethods.construct(method.parameterCount()));
+        newInvoke.setType(InvocationType.SPECIAL);
+        newInvoke.setReceiver(result);
+        var newArguments = new ArrayList<Variable>();
+        newArguments.add(marshaller.classRef(invoke.getMethod().getClassName(), invoke.getLocation()));
+        newInvoke.setLocation(invoke.getLocation());
+        for (int i = 0; i < invoke.getArguments().size(); ++i) {
+            var arg = invoke.getArguments().get(i);
+            arg = marshaller.wrapArgument(callLocation, arg,
+                    method.parameterType(i), types.typeOf(arg), byRefParams[i]);
+            newArguments.add(arg);
+        }
+        newInvoke.setArguments(newArguments.toArray(new Variable[0]));
+        replacement.add(newInvoke);
 
         return true;
     }
@@ -997,11 +1104,11 @@ class JSClassProcessor {
         return null;
     }
 
-    private boolean isProperGetter(MethodReader method) {
+    private boolean isProperGetter(MethodReader method, String suggestedName) {
         if (method.parameterCount() > 0 || !typeHelper.isSupportedType(method.getResultType())) {
             return false;
         }
-        if (extractSuggestedPropertyName(method) != null) {
+        if (suggestedName != null) {
             return true;
         }
 
@@ -1013,13 +1120,13 @@ class JSClassProcessor {
         return isProperPrefix(method.getName(), "get");
     }
 
-    private boolean isProperSetter(MethodReader method) {
+    private boolean isProperSetter(MethodReader method, String suggestedName) {
         if (method.parameterCount() != 1 || !typeHelper.isSupportedType(method.parameterType(0))
                 || method.getResultType() != ValueType.VOID) {
             return false;
         }
 
-        return extractSuggestedPropertyName(method) != null || isProperPrefix(method.getName(), "set");
+        return suggestedName != null || isProperPrefix(method.getName(), "set");
     }
 
     private boolean isProperPrefix(String name, String prefix) {

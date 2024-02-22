@@ -56,6 +56,18 @@ public class ImportModuleTest {
         assertEquals(23, runTestFunction());
     }
 
+    @Test
+    @JsModuleTest
+    @ServeJS(from = "org/teavm/jso/test/classWithConstructorInModule.js", as = "testModule.js")
+    public void classConstructor() {
+        var o = new ClassWithConstructorInModule();
+        assertEquals(99, o.getFoo());
+        assertEquals("bar called", o.bar());
+
+        o = new ClassWithConstructorInModule(23);
+        assertEquals(23, o.getFoo());
+    }
+
     @JSBody(
             script = "return testModule.foo();",
             imports = @JSBodyImport(alias = "testModule", fromModule = "./testModule.js")

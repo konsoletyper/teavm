@@ -17,6 +17,7 @@ package org.teavm.jso.webaudio;
 
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSByRef;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
@@ -24,108 +25,110 @@ import org.teavm.jso.dom.html.HTMLMediaElement;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Float32Array;
 
-public abstract class AudioContext implements JSObject {
+@JSClass
+public class AudioContext implements JSObject {
     public static final String STATE_SUSPENDED = "suspended";
     public static final String STATE_RUNNING = "running";
     public static final String STATE_CLOSE = "close";
 
     @JSProperty
-    public abstract AudioDestinationNode getDestination();
+    public native AudioDestinationNode getDestination();
 
     @JSProperty
-    public abstract float getSampleRate();
+    public native float getSampleRate();
 
     @JSProperty
-    public abstract double getCurrentTime();
+    public native double getCurrentTime();
 
     @JSProperty
-    public abstract AudioListener getListener();
+    public native AudioListener getListener();
 
     @JSProperty
-    public abstract String getState();
+    public native String getState();
 
     @JSProperty("onstatechange")
-    public abstract void setOnStateChange(EventListener<MediaEvent> listener);
+    public native void setOnStateChange(EventListener<MediaEvent> listener);
 
     @JSProperty("onstatechange")
-    public abstract EventListener<MediaEvent> getOnStateChange();
+    public native EventListener<MediaEvent> getOnStateChange();
 
-    public abstract void suspend();
+    public native void suspend();
 
-    public abstract void resume();
+    public native void resume();
 
-    public abstract void close();
+    public native void close();
 
-    public abstract AudioBuffer createBuffer(int numberOfChannels, int length, float sampleRate);
+    public native AudioBuffer createBuffer(int numberOfChannels, int length, float sampleRate);
 
-    public abstract AudioBuffer decodeAudioData(ArrayBuffer audioData, DecodeSuccessCallback successCallback,
+    public native AudioBuffer decodeAudioData(ArrayBuffer audioData, DecodeSuccessCallback successCallback,
             DecodeErrorCallback errorCallback);
 
-    public abstract AudioBuffer decodeAudioData(ArrayBuffer audioData, DecodeSuccessCallback successCallback);
+    public native AudioBuffer decodeAudioData(ArrayBuffer audioData, DecodeSuccessCallback successCallback);
 
-    public abstract AudioBuffer decodeAudioData(ArrayBuffer audioData);
+    public native AudioBuffer decodeAudioData(ArrayBuffer audioData);
 
-    public abstract AudioBufferSourceNode createBufferSource();
+    public native AudioBufferSourceNode createBufferSource();
 
-    public abstract MediaElementAudioSourceNode createMediaElementSource(HTMLMediaElement mediaElement);
+    public native MediaElementAudioSourceNode createMediaElementSource(HTMLMediaElement mediaElement);
 
-    public abstract MediaStreamAudioSourceNode createMediaStreamSource(MediaStream mediaStream);
+    public native MediaStreamAudioSourceNode createMediaStreamSource(MediaStream mediaStream);
 
-    public abstract MediaStreamAudioDestinationNode createMediaStreamDestination();
+    public native MediaStreamAudioDestinationNode createMediaStreamDestination();
 
-    public abstract AudioWorker createAudioWorker();
+    public native AudioWorker createAudioWorker();
 
-    public abstract ScriptProcessorNode createScriptProcessor(int bufferSize, int numberOfInputChannels,
+    public native ScriptProcessorNode createScriptProcessor(int bufferSize, int numberOfInputChannels,
             int numberOfOutputChannels);
 
-    public abstract ScriptProcessorNode createScriptProcessor(int bufferSize, int numberOfInputChannels);
+    public native ScriptProcessorNode createScriptProcessor(int bufferSize, int numberOfInputChannels);
 
-    public abstract ScriptProcessorNode createScriptProcessor(int bufferSize);
+    public native ScriptProcessorNode createScriptProcessor(int bufferSize);
 
-    public abstract ScriptProcessorNode createScriptProcessor();
+    public native ScriptProcessorNode createScriptProcessor();
 
-    public abstract AnalyserNode createAnalyser();
+    public native AnalyserNode createAnalyser();
 
-    public abstract GainNode createGain();
+    public native GainNode createGain();
 
-    public abstract DelayNode createDelay(double maxDelayTime);
+    public native DelayNode createDelay(double maxDelayTime);
 
-    public abstract DelayNode createDelay();
+    public native DelayNode createDelay();
 
-    public abstract BiquadFilterNode createBiquadFilter();
+    public native BiquadFilterNode createBiquadFilter();
 
-    public abstract IIRFilterNode createIIRFilter(Float32Array feedforward, Float32Array feedback);
+    public native IIRFilterNode createIIRFilter(Float32Array feedforward, Float32Array feedback);
 
-    public abstract WaveShaperNode createWaveShaper();
+    public native WaveShaperNode createWaveShaper();
 
-    public abstract PannerNode createPanner();
+    public native PannerNode createPanner();
 
-    public abstract StereoPannerNode createStereoPanner();
+    public native StereoPannerNode createStereoPanner();
 
-    public abstract ConvolverNode createConvolver();
+    public native ConvolverNode createConvolver();
 
-    public abstract ChannelSplitterNode createChannelSplitter(int numberOfOutputs);
+    public native ChannelSplitterNode createChannelSplitter(int numberOfOutputs);
 
-    public abstract ChannelSplitterNode createChannelSplitter();
+    public native ChannelSplitterNode createChannelSplitter();
 
-    public abstract ChannelMergerNode createChannelMerger(int numberOfInputs);
+    public native ChannelMergerNode createChannelMerger(int numberOfInputs);
 
-    public abstract ChannelMergerNode createChannelMerger();
+    public native ChannelMergerNode createChannelMerger();
 
-    public abstract DynamicsCompressorNode createDynamicsCompressor();
+    public native DynamicsCompressorNode createDynamicsCompressor();
 
-    public abstract OscillatorNode createOscillator();
+    public native OscillatorNode createOscillator();
 
-    public abstract PeriodicWave createPeriodicWave(Float32Array real, Float32Array image,
+    public native PeriodicWave createPeriodicWave(Float32Array real, Float32Array image,
             PeriodicWaveConstraints constraints);
 
-    public abstract PeriodicWave createPeriodicWave(@JSByRef float[] real, @JSByRef float[] image,
+    public native PeriodicWave createPeriodicWave(@JSByRef float[] real, @JSByRef float[] image,
             PeriodicWaveConstraints constraints);
 
-    public abstract PeriodicWave createPeriodicWave(Float32Array real, Float32Array image);
+    public native PeriodicWave createPeriodicWave(Float32Array real, Float32Array image);
 
-    public abstract PeriodicWave createPeriodicWave(@JSByRef float[] real, @JSByRef float[] image);
+    public native PeriodicWave createPeriodicWave(@JSByRef float[] real, @JSByRef float[] image);
 
-    @JSBody(script = "var Context = window.AudioContext || window.webkitAudioContext; return new Context();")
+    @JSBody(script = "return new Context();")
+    @Deprecated
     public static native AudioContext create();
 }

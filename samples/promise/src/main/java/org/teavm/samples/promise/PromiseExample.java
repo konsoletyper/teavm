@@ -103,7 +103,7 @@ public final class PromiseExample {
     }
 
     private static void runSimplePromise() {
-        var promise = JSPromise.create((resolve, reject) -> {
+        new JSPromise<>((resolve, reject) -> {
             report("Simple promise execution");
 
             report("Resolving with 'success'");
@@ -112,7 +112,7 @@ public final class PromiseExample {
     }
 
     private static void runComplexPromise() {
-        var promise = JSPromise.create((resolve, reject) -> {
+        new JSPromise<>((resolve, reject) -> {
             report("Complex promise execution");
 
             report("Resolving with 'step1'");
@@ -155,7 +155,7 @@ public final class PromiseExample {
         .flatThen(value -> {
             report("Resolved with '" + value + "'");
             report("... and resolve with new promise");
-            return JSPromise.create((resolve, reject) -> {
+            return new JSPromise<>((resolve, reject) -> {
                 report("Inner promise");
                 report("Reject with 'step from inner'");
                 reject.accept("step from inner");
@@ -176,7 +176,7 @@ public final class PromiseExample {
     }
 
     private static void runLongRunningPromise(Object lock) {
-        var promise = JSPromise.create((resolve, reject) -> {
+        var promise = new JSPromise<>((resolve, reject) -> {
             report("Long promise exection");
             report("Wait for a while...");
             Window.setTimeout(() -> {
@@ -193,7 +193,7 @@ public final class PromiseExample {
     }
 
     private static void combinePromises(Object lock) throws InterruptedException {
-        JSArray<JSPromise<String>> promises = JSArray.create(3);
+        var promises = new JSArray<JSPromise<String>>(3);
 
         report("Start 3 successful promises");
         promises.set(0, JSPromise.resolve("success1"));
@@ -245,7 +245,7 @@ public final class PromiseExample {
 
         var settledPromises = JSPromise.allSettled(promises);
         settledPromises.then(value -> {
-            report(Integer.toString(value.getLength()) + " promises settled to:");
+            report(value.getLength() + " promises settled to:");
             for (int i = 0; i < value.getLength(); ++i) {
                 var item = value.get(i);
                 var msg = "-- Promise " + i + " " + item.getStatus() + " with: ";
@@ -313,9 +313,9 @@ public final class PromiseExample {
         }
 
         report("Start 3 delayed promises");
-        promises.set(0, JSPromise.create((resolve, reject) -> Window.setTimeout(() -> resolve.accept("success1"), 200)));
-        promises.set(1, JSPromise.create((resolve, reject) -> Window.setTimeout(() -> reject.accept("failure1"), 100)));
-        promises.set(2, JSPromise.create((resolve, reject) -> Window.setTimeout(() -> resolve.accept("success3"), 50)));
+        promises.set(0, new JSPromise<>((resolve, reject) -> Window.setTimeout(() -> resolve.accept("success1"), 200)));
+        promises.set(1, new JSPromise<>((resolve, reject) -> Window.setTimeout(() -> reject.accept("failure1"), 100)));
+        promises.set(2, new JSPromise<>((resolve, reject) -> Window.setTimeout(() -> resolve.accept("success3"), 50)));
 
         anyPromise = JSPromise.race(promises);
         anyPromise.then(value -> {
@@ -337,9 +337,9 @@ public final class PromiseExample {
         }
 
         report("Start 3 delayed promises");
-        promises.set(0, JSPromise.create((resolve, reject) -> Window.setTimeout(() -> resolve.accept("success1"), 200)));
-        promises.set(1, JSPromise.create((resolve, reject) -> Window.setTimeout(() -> reject.accept("failure1"), 50)));
-        promises.set(2, JSPromise.create((resolve, reject) -> Window.setTimeout(() -> resolve.accept("success3"), 100)));
+        promises.set(0, new JSPromise<>((resolve, reject) -> Window.setTimeout(() -> resolve.accept("success1"), 200)));
+        promises.set(1, new JSPromise<>((resolve, reject) -> Window.setTimeout(() -> reject.accept("failure1"), 50)));
+        promises.set(2, new JSPromise<>((resolve, reject) -> Window.setTimeout(() -> resolve.accept("success3"), 100)));
 
         anyPromise = JSPromise.race(promises);
         anyPromise.then(value -> {
@@ -397,11 +397,11 @@ public final class PromiseExample {
         }
 
         report("Pass promise to native method");
-        handlePromise(JSPromise.create((resolve, reject) -> {
+        handlePromise(new JSPromise<>((resolve, reject) -> {
             resolve.accept(JSString.valueOf("Resolved from Java"));
         }));
 
-        handlePromise(JSPromise.create((resolve, reject) -> {
+        handlePromise(new JSPromise<>((resolve, reject) -> {
             reject.accept(JSString.valueOf("Rejected from Java"));
         }));
     }

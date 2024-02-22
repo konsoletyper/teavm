@@ -18,7 +18,9 @@ package org.teavm.jso.impl;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSModule;
 import org.teavm.jso.JSObject;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
@@ -552,5 +554,91 @@ class JSValueMarshaller {
         nameInsn.setLocation(location);
         replacement.add(nameInsn);
         return var;
+    }
+
+    Variable classRef(String className, TextLocation location) {
+        String name = null;
+        String module = null;
+        var cls = classSource.get(className);
+        if (cls != null) {
+            name = cls.getSimpleName();
+            var jsExport = cls.getAnnotations().get(JSClass.class.getName());
+            if (jsExport != null) {
+                var nameValue = jsExport.getValue("name");
+                if (nameValue != null) {
+                    var nameValueString = nameValue.getString();
+                    if (!nameValueString.isEmpty()) {
+                        name = nameValueString;
+                    }
+                }
+            }
+            var jsModule = cls.getAnnotations().get(JSModule.class.getName());
+            if (jsModule != null) {
+                module = jsModule.getValue("value").getString();
+            }
+        }
+        if (name == null) {
+            name = cls.getName().substring(cls.getName().lastIndexOf('.') + 1);
+        }
+        return module != null ? moduleRef(module, name, location) : globalRef(name, location);
+    }
+
+    Variable globalRef(String name, TextLocation location) {
+        var nameInsn = new StringConstantInstruction();
+        nameInsn.setReceiver(program.createVariable());
+        nameInsn.setConstant(name);
+        nameInsn.setLocation(location);
+        replacement.add(nameInsn);
+
+        var invoke = new InvokeInstruction();
+        invoke.setType(InvocationType.SPECIAL);
+        invoke.setMethod(JSMethods.GLOBAL);
+        invoke.setArguments(nameInsn.getReceiver());
+        invoke.setReceiver(program.createVariable());
+        invoke.setLocation(location);
+        replacement.add(invoke);
+
+        return invoke.getReceiver();
+    }
+
+    Variable moduleRef(String module, String name, TextLocation location) {
+        var moduleNameInsn = new StringConstantInstruction();
+        moduleNameInsn.setReceiver(program.createVariable());
+        moduleNameInsn.setConstant(module);
+        moduleNameInsn.setLocation(location);
+        replacement.add(moduleNameInsn);
+
+        var invoke = new InvokeInstruction();
+        invoke.setType(InvocationType.SPECIAL);
+        invoke.setMethod(JSMethods.IMPORT_MODULE);
+        invoke.setArguments(moduleNameInsn.getReceiver());
+        invoke.setReceiver(program.createVariable());
+        invoke.setLocation(location);
+        replacement.add(invoke);
+
+        var nameInsn = new StringConstantInstruction();
+        nameInsn.setReceiver(program.createVariable());
+        nameInsn.setConstant(name);
+        nameInsn.setLocation(location);
+        replacement.add(nameInsn);
+
+        var wrapName = new InvokeInstruction();
+        wrapName.setType(InvocationType.SPECIAL);
+        wrapName.setMethod(referenceCache.getCached(new MethodReference(JS.class, "wrap",
+                String.class, JSObject.class)));
+        wrapName.setReceiver(program.createVariable());
+        wrapName.setArguments(nameInsn.getReceiver());
+        wrapName.setLocation(location);
+        replacement.add(wrapName);
+
+        var get = new InvokeInstruction();
+        get.setType(InvocationType.SPECIAL);
+        get.setMethod(JSMethods.GET_PURE);
+        get.setReceiver(program.createVariable());
+        get.setArguments(invoke.getReceiver(), wrapName.getReceiver());
+        get.setLocation(location);
+        replacement.add(get);
+
+        return get.getReceiver();
     }
 }

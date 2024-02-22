@@ -17,16 +17,26 @@ package org.teavm.jso.core;
 
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-public abstract class JSRegExp implements JSObject {
+@JSClass(name = "RegExp")
+public class JSRegExp implements JSObject {
+    public JSRegExp(String pattern) {
+    }
+
+    public JSRegExp(String pattern, String flags) {
+    }
+
     @JSBody(params = "pattern", script = "return new RegExp(pattern);")
     @NoSideEffects
+    @Deprecated
     public static native JSRegExp create(String pattern);
 
     @JSBody(params = { "pattern", "flags" }, script = "return new RegExp(pattern, flags);")
     @NoSideEffects
+    @Deprecated
     public static native JSRegExp create(String pattern, String flags);
 
     public static JSRegExp create(String pattern, JSRegExpFlag... flags) {
@@ -60,23 +70,23 @@ public abstract class JSRegExp implements JSObject {
     }
 
     @JSProperty
-    public abstract boolean isGlobal();
+    public native boolean isGlobal();
 
     @JSProperty
-    public abstract boolean isIgnoreCase();
+    public native boolean isIgnoreCase();
 
     @JSProperty
-    public abstract boolean isMultiline();
+    public native boolean isMultiline();
 
     @JSProperty
-    public abstract int getLastIndex();
+    public native int getLastIndex();
 
     @JSProperty
-    public abstract JSString getSource();
+    public native JSString getSource();
 
-    public abstract JSArray<JSString> exec(JSString text);
+    public native JSArray<JSString> exec(JSString text);
 
-    public abstract boolean test(JSString text);
+    public native boolean test(JSString text);
 
-    public abstract boolean test(String text);
+    public native boolean test(String text);
 }

@@ -16,26 +16,47 @@
 package org.teavm.jso.typedarrays;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
 
-public abstract class Uint8ClampedArray extends ArrayBufferView {
-    @JSIndexer
-    public abstract short get(int index);
+@JSClass
+public class Uint8ClampedArray extends ArrayBufferView {
+    public Uint8ClampedArray(int length) {
+    }
+
+    public Uint8ClampedArray(ArrayBuffer buffer) {
+    }
+
+    public Uint8ClampedArray(ArrayBufferView buffer) {
+    }
+
+    public Uint8ClampedArray(ArrayBuffer buffer, int offset, int length) {
+    }
+
+    public Uint8ClampedArray(ArrayBuffer buffer, int offset) {
+    }
 
     @JSIndexer
-    public abstract void set(int index, int value);
+    public native short get(int index);
+
+    @JSIndexer
+    public native void set(int index, int value);
 
     @JSBody(params = "length", script = "return new Uint8ClampedArray(length);")
+    @Deprecated
     public static native Uint8ClampedArray create(int length);
 
     @JSBody(params = "buffer", script = "return new Uint8ClampedArray(buffer);")
+    @Deprecated
     public static native Uint8ClampedArray create(ArrayBuffer buffer);
 
     @JSBody(params = "buffer", script = "return new Uint8ClampedArray(buffer);")
+    @Deprecated
     public static native Uint8ClampedArray create(ArrayBufferView buffer);
 
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new "
             + "Uint8ClampedArray(buffer, offset, length);")
+    @Deprecated
     public static native Uint8ClampedArray create(ArrayBuffer buffer, int offset, int length);
 
     @JSBody(params = { "buffer", "offset" }, script = "return new Uint8ClampedArray(buffer, offset);")

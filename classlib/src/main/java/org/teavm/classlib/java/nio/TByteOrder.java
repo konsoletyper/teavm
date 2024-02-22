@@ -34,10 +34,10 @@ public final class TByteOrder {
     public static TByteOrder nativeOrder() {
         if (nativeOrder == null) {
             if (PlatformDetector.isJavaScript()) {
-                var buffer = ArrayBuffer.create(2);
-                var shortArray = Int16Array.create(buffer);
+                var buffer = new ArrayBuffer(2);
+                var shortArray = new Int16Array(buffer);
                 shortArray.set(0, (short) 1);
-                var byteArray = Int8Array.create(buffer);
+                var byteArray = new Int8Array(buffer);
                 nativeOrder = byteArray.get(0) == 0 ? BIG_ENDIAN : LITTLE_ENDIAN;
             } else {
                 var array = new short[1];

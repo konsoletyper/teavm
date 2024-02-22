@@ -36,7 +36,6 @@ public abstract class JSString implements JSObject {
     @NoSideEffects
     public static native JSString valueOf(String str);
 
-    @JSBody(params = "code", script = "return String.fromCharCode(code)")
     @NoSideEffects
     public static native JSString fromCharCode(int code);
 

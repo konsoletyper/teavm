@@ -17,14 +17,19 @@ package org.teavm.jso.core;
 
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 
-public abstract class JSFinalizationRegistry implements JSObject {
-    public abstract void register(Object obj, Object token);
+@JSClass(name = "FinalizationRegistry")
+public class JSFinalizationRegistry implements JSObject {
+    public JSFinalizationRegistry(JSFinalizationRegistryConsumer consumer) {
+    }
+
+    public native void register(Object obj, Object token);
 
     @JSBody(params = "consumer", script = "return new FinalizationRegistry(consumer);")
+    @Deprecated
     public static native JSFinalizationRegistry create(JSFinalizationRegistryConsumer consumer);
-
 
     @JSBody(script = "return typeof FinalizationRegistry !== 'undefined';")
     @NoSideEffects

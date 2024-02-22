@@ -75,7 +75,7 @@ public class TSecureRandom extends TRandom {
     @Override
     public void nextBytes(byte[] bytes) {
         if (PlatformDetector.isJavaScript() && Crypto.isSupported()) {
-            Uint8Array buffer = Uint8Array.create(bytes.length);
+            var buffer = new Uint8Array(bytes.length);
             Crypto.current().getRandomValues(buffer);
 
             for (int i = 0; i < bytes.length; ++i) {

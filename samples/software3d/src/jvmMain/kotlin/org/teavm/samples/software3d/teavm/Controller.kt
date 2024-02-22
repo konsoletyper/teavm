@@ -55,7 +55,7 @@ class Controller(
             WorkerType.KOTLIN_JS -> "kjs/software3d.js"
         }
         workers = (0 until tasks).map { index ->
-            Worker.create(scriptName).apply {
+            Worker(scriptName).apply {
                 postMessage(JSObjects.createWithoutProto<JSMapLike<JSObject>>().apply {
                     set("type", JSString.valueOf("init"))
                     set("width", JSNumber.valueOf(width))
@@ -118,8 +118,8 @@ class Controller(
     private fun displayBuffers(buffers: Array<out ArrayBuffer?>) {
         for (y in 0 until height) {
             val buffer = buffers[y % buffers.size]!!
-            val array = Uint8ClampedArray.create(buffer, width * 4 * (y / buffers.size), width * 4)
-            val imageData = ImageData.create(array, width, 1)
+            val array = Uint8ClampedArray(buffer, width * 4 * (y / buffers.size), width * 4)
+            val imageData = ImageData(array, width, 1)
             context.putImageData(imageData, 0.0, y.toDouble())
         }
     }

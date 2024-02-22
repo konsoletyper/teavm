@@ -28,13 +28,13 @@ import org.teavm.jso.core.JSWeakMap;
 import org.teavm.jso.core.JSWeakRef;
 
 public final class JSWrapper {
-    private static final JSWeakMap<JSObject, JSNumber> hashCodes = JSWeakMap.create();
+    private static final JSWeakMap<JSObject, JSNumber> hashCodes = new JSWeakMap<>();
     private static final JSWeakMap<JSObject, JSWeakRef<JSObject>> wrappers = JSWeakRef.isSupported()
-            ? JSWeakMap.create() : null;
+            ? new JSWeakMap<>() : null;
     private static final JSMap<JSString, JSWeakRef<JSObject>> stringWrappers = JSWeakRef.isSupported()
-            ? JSMap.create() : null;
+            ? new JSMap<>() : null;
     private static final JSMap<JSNumber, JSWeakRef<JSObject>> numberWrappers = JSWeakRef.isSupported()
-            ? JSMap.create() : null;
+            ? new JSMap<>() : null;
     private static JSWeakRef<JSObject> undefinedWrapper;
     private static final JSFinalizationRegistry stringFinalizationRegistry;
     private static final JSFinalizationRegistry numberFinalizationRegistry;
@@ -44,10 +44,10 @@ public final class JSWrapper {
 
     static {
         stringFinalizationRegistry = stringWrappers != null
-                ? JSFinalizationRegistry.create(token -> stringWrappers.delete((JSString) token))
+                ? new JSFinalizationRegistry(token -> stringWrappers.delete((JSString) token))
                 : null;
         numberFinalizationRegistry = numberWrappers != null
-                ? JSFinalizationRegistry.create(token -> numberWrappers.delete((JSNumber) token))
+                ? new JSFinalizationRegistry(token -> numberWrappers.delete((JSNumber) token))
                 : null;
     }
 

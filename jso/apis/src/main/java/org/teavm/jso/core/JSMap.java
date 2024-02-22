@@ -17,20 +17,26 @@ package org.teavm.jso.core;
 
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 
-public abstract class JSMap<K extends JSObject, V extends JSObject> implements JSObject {
-    public abstract V get(K key);
+@JSClass(name = "Map")
+public class JSMap<K extends JSObject, V extends JSObject> implements JSObject {
+    public JSMap() {
+    }
 
-    public abstract boolean has(K key);
+    public native V get(K key);
 
-    public abstract JSMap<K, V> set(K key, V value);
+    public native boolean has(K key);
 
-    public abstract boolean delete(K key);
+    public native JSMap<K, V> set(K key, V value);
 
-    public abstract void clear();
+    public native boolean delete(K key);
+
+    public native void clear();
 
     @JSBody(script = "return new Map();")
     @NoSideEffects
+    @Deprecated
     public static native <K extends JSObject, V extends JSObject> JSMap<K, V> create();
 }

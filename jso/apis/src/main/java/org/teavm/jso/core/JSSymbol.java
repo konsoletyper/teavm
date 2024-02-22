@@ -19,7 +19,10 @@ import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 
-public abstract class JSSymbol<T> implements JSObject {
+public class JSSymbol<T> implements JSObject {
+    private JSSymbol() {
+    }
+
     @JSBody(params = "name", script = "return Symbol(name);")
     public static native <T> JSSymbol<T> create(String name);
 

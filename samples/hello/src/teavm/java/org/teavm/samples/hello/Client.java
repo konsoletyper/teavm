@@ -37,7 +37,7 @@ public final class Client {
     private static void sayHello() {
         helloButton.setDisabled(true);
         thinkingPanel.getStyle().setProperty("display", "");
-        var xhr = XMLHttpRequest.create();
+        var xhr = new XMLHttpRequest();
         xhr.onComplete(() -> receiveResponse(xhr.getResponseText()));
         xhr.open("GET", "hello");
         xhr.send();

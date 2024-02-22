@@ -16,29 +16,33 @@
 package org.teavm.jso.browser;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 import org.teavm.jso.gamepad.Gamepad;
 import org.teavm.jso.geolocation.Geolocation;
 
-public final class Navigator {
+@JSClass(name = "navigator")
+public final class Navigator implements JSObject {
     private Navigator() {
     }
 
-    @JSBody(script = "return navigator.onLine;")
+    @JSProperty("onLine")
     public static native boolean isOnline();
 
-    @JSBody(script = "return navigator.geolocation;")
+    @JSProperty
     public static native Geolocation getGeolocation();
 
     @JSBody(script = "return (\"geolocation\" in navigator);")
     public static native boolean isGeolocationAvailable();
 
-    @JSBody(script = "return navigator.language;")
+    @JSProperty
     public static native String getLanguage();
 
-    @JSBody(script = "return navigator.languages;")
+    @JSProperty
     public static native String[] getLanguages();
     
-    @JSBody(script = "return navigator.getGamepads();")
+    @JSProperty
     public static native Gamepad[] getGamepads();
 
     @JSBody(script = "return navigator.hardwareConcurrency")

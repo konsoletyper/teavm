@@ -17,6 +17,7 @@ package org.teavm.jso.core;
 
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
@@ -32,8 +33,9 @@ import org.teavm.jso.util.function.JSSupplier;
  *
  * @param <T> The type this promise returns when resolving successfully.
  */
-public abstract class JSPromise<T> implements JSObject {
-    private JSPromise() {
+@JSClass(name = "Promise")
+public class JSPromise<T> implements JSObject {
+    public JSPromise(Executor<T> executor) {
     }
 
     /** Interface for a function wrapped by a promise. */
@@ -49,63 +51,58 @@ public abstract class JSPromise<T> implements JSObject {
 
     @JSBody(params = "executor", script = "return new Promise(executor);")
     @NoSideEffects
+    @Deprecated
     public static native <T> JSPromise<T> create(Executor<T> executor);
 
-    @JSBody(params = "promises", script = "return Promise.any(promises);")
     @NoSideEffects
     public static native <V> JSPromise<V> any(JSArrayReader<JSPromise<V>> promises);
 
     // TODO: Allow passing differently typed promises via a JSTuple<T1, ...> interface
-    @JSBody(params = "promises", script = "return Promise.all(promises);")
     @NoSideEffects
     public static native <V> JSPromise<JSArrayReader<V>> all(JSArrayReader<JSPromise<V>> promises);
 
     // TODO: Allow passing differently typed promises via a JSTuple<T1, ...> interface
-    @JSBody(params = "promises", script = "return Promise.allSettled(promises);")
     @NoSideEffects
     public static native <V> JSPromise<JSArrayReader<FulfillmentValue<V>>>
         allSettled(JSArrayReader<JSPromise<V>> promises);
 
-    @JSBody(params = "promises", script = "return Promise.race(promises);")
     @NoSideEffects
     public static native <V> JSPromise<V> race(JSArrayReader<JSPromise<V>> promises);
 
-    @JSBody(params = "value", script = "return Promise.resolve(value);")
     @NoSideEffects
     public static native <V> JSPromise<V> resolve(V value);
 
-    @JSBody(params = "reason", script = "return Promise.reject(reason);")
     @NoSideEffects
     public static native <V> JSPromise<V> reject(Object reason);
 
     /** Call {@code onFulfilled} with the success value, resolving with its return value. */
-    public abstract <V> JSPromise<V> then(JSFunction<T, V> onFulfilled);
+    public native <V> JSPromise<V> then(JSFunction<T, V> onFulfilled);
 
     /** Call {@code onFulfilled} with the success value or {@code onRejected} with the reject reason,
      *  resolving with its return value. */
-    public abstract <V> JSPromise<V> then(JSFunction<T, V> onFulfilled, JSFunction<Object, V> onRejected);
+    public native <V> JSPromise<V> then(JSFunction<T, V> onFulfilled, JSFunction<Object, V> onRejected);
 
     /** Call {@code onFulfilled} with the success value, returning a new promise. */
     @JSMethod("then")
-    public abstract <V> JSPromise<V> flatThen(JSFunction<T, ? extends JSPromise<V>> onFulfilled);
+    public native <V> JSPromise<V> flatThen(JSFunction<T, ? extends JSPromise<V>> onFulfilled);
 
     /** Call {@code onFulfilled} with the success value or {@code onRejected} with the reject reason,
      *  returning a new promise. */
     @JSMethod("then")
-    public abstract <V> JSPromise<V> flatThen(JSFunction<T, ? extends JSPromise<V>> onFulfilled,
+    public native <V> JSPromise<V> flatThen(JSFunction<T, ? extends JSPromise<V>> onFulfilled,
                                               JSFunction<Object, ? extends JSPromise<V>> onRejected);
 
     /** Call {@code onRejected} with the reject reason, resolving with its return value. */
     @JSMethod("catch")
-    public abstract <V> JSPromise<V> catchError(JSFunction<Object, V> onRejected);
+    public native <V> JSPromise<V> catchError(JSFunction<Object, V> onRejected);
 
     /** Call {@code onRejected} with the reject reason, returning a new promise. */
     @JSMethod("catch")
-    public abstract <V> JSPromise<V> flatCatchError(JSFunction<Object, ? extends JSPromise<V>> onRejected);
+    public native <V> JSPromise<V> flatCatchError(JSFunction<Object, ? extends JSPromise<V>> onRejected);
 
     /** Call {@code onFinally} after settling, ignoring the return value. */
     @JSMethod("finally")
-    public abstract JSPromise<T> onSettled(JSSupplier<Object> onFinally);
+    public native JSPromise<T> onSettled(JSSupplier<Object> onFinally);
 
     /** Interface for the return values of {@ref #allSettled()}. */
     public interface FulfillmentValue<T> extends JSObject {

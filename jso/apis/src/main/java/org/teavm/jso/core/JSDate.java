@@ -17,164 +17,187 @@ package org.teavm.jso.core;
 
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 
-public abstract class JSDate implements JSObject {
+@JSClass(name = "Date")
+public class JSDate implements JSObject {
+    public JSDate() {
+    }
+
+    public JSDate(double millis) {
+    }
+
+    public JSDate(int year, int month) {
+    }
+
+    public JSDate(int year, int month, int day) {
+    }
+
+    public JSDate(int year, int month, int day, int hour) {
+    }
+
+    public JSDate(int year, int month, int day, int hour, int minute) {
+    }
+
+    public JSDate(int year, int month, int day, int hour, int minute, int second) {
+    }
+
+    public JSDate(int year, int month, int day, int hour, int minute, int second, int millisecond) {
+    }
+
     @JSBody(script = "return new Date();")
     @NoSideEffects
+    @Deprecated
     public static native JSDate create();
 
     @JSBody(params = "millis", script = "return new Date(millis);")
     @NoSideEffects
+    @Deprecated
     public static native JSDate create(double millis);
 
     @JSBody(params = { "year", "month" }, script = "return new Date(year, month);")
     @NoSideEffects
+    @Deprecated
     public static native JSDate create(int year, int month);
 
     @JSBody(params = { "year", "month", "day" }, script = "return new Date(year, month, day);")
     @NoSideEffects
+    @Deprecated
     public static native JSDate create(int year, int month, int day);
 
     @JSBody(params = { "year", "month", "day", "hour" }, script = "return new Date(year, month, day, hour);")
     @NoSideEffects
+    @Deprecated
     public static native JSDate create(int year, int month, int day, int hour);
 
     @JSBody(params = { "year", "month", "day", "hour", "minute" },
             script = "return new Date(year, month, day, hour, minute);")
     @NoSideEffects
+    @Deprecated
     public static native JSDate create(int year, int month, int day, int hour, int minute);
 
     @JSBody(params = { "year", "month", "day", "hour", "minute", "second" },
             script = "return new Date(year, month, day, hour, minute, second);")
     @NoSideEffects
+    @Deprecated
     public static native JSDate create(int year, int month, int day, int hour, int minute, int second);
 
     @JSBody(params = { "year", "month", "day", "hour", "minute", "second", "millisecond" },
             script = "return new Date(year, month, day, hour, minute, second, millisecond);")
     @NoSideEffects
+    @Deprecated
     public static native JSDate create(int year, int month, int day, int hour, int minute, int second, int millisecond);
 
-    @JSBody(params = {}, script = "return Date.now();")
     @NoSideEffects
     public static native double now();
 
-    @JSBody(params = "stringValue", script = "return Date.parse(stringValue);")
     @NoSideEffects
     public static native double parse(String stringValue);
 
-    @JSBody(params = { "year", "month" }, script = "return Date.UTC(year, month);")
     @NoSideEffects
     public static native double UTC(int year, int month);
 
-    @JSBody(params = { "year", "month", "day" }, script = "return Date.UTC(year, month, day);")
     @NoSideEffects
     public static native double UTC(int year, int month, int day);
 
-    @JSBody(params = { "year", "month", "day", "hour" }, script = "return Date.UTC(year, month, day, hour);")
     @NoSideEffects
     public static native double UTC(int year, int month, int day, int hour);
 
-    @JSBody(params = { "year", "month", "day", "hour", "minute" },
-            script = "return Date.UTC(year, month, day, hour, minute);")
     @NoSideEffects
     public static native double UTC(int year, int month, int day, int hour, int minute);
 
-    @JSBody(params = { "year", "month", "day", "hour", "minute", "second" },
-            script = "return Date.UTC(year, month, day, hour, minute, second);")
     @NoSideEffects
     public static native double UTC(int year, int month, int day, int hour, int minute, int second);
 
-    @JSBody(params = { "year", "month", "day", "hour", "minute", "second", "millisecond" },
-            script = "return Date.UTC(year, month, day, hour, minute, second, millisecond);")
     @NoSideEffects
     public static native double UTC(int year, int month, int day, int hour, int minute, int second, int millisecond);
 
-    public abstract int getDate();
+    public native int getDate();
 
-    public abstract int getDay();
+    public native int getDay();
 
-    public abstract int getFullYear();
+    public native int getFullYear();
 
-    public abstract int getHours();
+    public native int getHours();
 
-    public abstract int getMilliseconds();
+    public native int getMilliseconds();
 
-    public abstract int getMinutes();
+    public native int getMinutes();
 
-    public abstract int getMonth();
+    public native int getMonth();
 
-    public abstract int getSeconds();
+    public native int getSeconds();
 
-    public abstract double getTime();
+    public native double getTime();
 
-    public abstract int getTimezoneOffset();
+    public native int getTimezoneOffset();
 
-    public abstract int getUTCDate();
+    public native int getUTCDate();
 
-    public abstract int getUTCDay();
+    public native int getUTCDay();
 
-    public abstract int getUTCFullYear();
+    public native int getUTCFullYear();
 
-    public abstract int getUTCHours();
+    public native int getUTCHours();
 
-    public abstract int getUTCMilliseconds();
+    public native int getUTCMilliseconds();
 
-    public abstract int getUTCMinutes();
+    public native int getUTCMinutes();
 
-    public abstract int getUTCMonth();
+    public native int getUTCMonth();
 
-    public abstract int getUTCSeconds();
+    public native int getUTCSeconds();
 
-    public abstract void setDate(int date);
+    public native void setDate(int date);
 
-    public abstract void setFullYear(int fullYear);
+    public native void setFullYear(int fullYear);
 
-    public abstract void setHours(int hours);
+    public native void setHours(int hours);
 
-    public abstract void setMilliseconds(int milliseconds);
+    public native void setMilliseconds(int milliseconds);
 
-    public abstract void setMinutes(int minutes);
+    public native void setMinutes(int minutes);
 
-    public abstract void setMonth(int month);
+    public native void setMonth(int month);
 
-    public abstract void setSeconds(int seconds);
+    public native void setSeconds(int seconds);
 
-    public abstract void setTime(double time);
+    public native void setTime(double time);
 
-    public abstract void setUTCDate(int date);
+    public native void setUTCDate(int date);
 
-    public abstract void setUTCFullYear(int fullYear);
+    public native void setUTCFullYear(int fullYear);
 
-    public abstract void setUTCHours(int hours);
+    public native void setUTCHours(int hours);
 
-    public abstract void setUTCMilliseconds(int milliseconds);
+    public native void setUTCMilliseconds(int milliseconds);
 
-    public abstract void setUTCMinutes(int minutes);
+    public native void setUTCMinutes(int minutes);
 
-    public abstract void setUTCMonth(int month);
+    public native void setUTCMonth(int month);
 
-    public abstract void setUTCSeconds(int seconds);
+    public native void setUTCSeconds(int seconds);
 
-    public abstract String toDateString();
+    public native String toDateString();
 
-    public abstract String toISOString();
+    public native String toISOString();
 
-    public abstract String toJSON();
+    public native String toJSON();
 
-    public abstract String toLocaleDateString();
+    public native String toLocaleDateString();
 
-    public abstract String toLocaleString();
+    public native String toLocaleString();
 
-    public abstract String toLocaleTimeString();
+    public native String toLocaleTimeString();
 
     @JSMethod("toString")
-    public abstract String stringValue();
+    public native String stringValue();
 
-    public abstract String toTimeString();
+    public native String toTimeString();
 
-    public abstract String toUTCString();
+    public native String toUTCString();
 
-    public abstract String toLocaleFormat(String format);
+    public native String toLocaleFormat(String format);
 }

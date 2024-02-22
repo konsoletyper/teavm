@@ -71,21 +71,20 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
                 }
                 writer.append(')');
                 break;
-            case "instantiate":
+            case "construct":
                 if (context.getPrecedence().ordinal() >= Precedence.FUNCTION_CALL.ordinal()) {
                     writer.append("(");
                 }
                 writer.append("new ");
                 context.writeExpr(context.getArgument(0), Precedence.GROUPING);
-                renderProperty(context.getArgument(1), context);
-                writer.append("(");
-                for (int i = 2; i < context.argumentCount(); ++i) {
-                    if (i > 2) {
+                writer.append('(');
+                for (int i = 1; i < context.argumentCount(); ++i) {
+                    if (i > 1) {
                         writer.append(',').ws();
                     }
                     context.writeExpr(context.getArgument(i), Precedence.min());
                 }
-                writer.append(")");
+                writer.append(')');
                 if (context.getPrecedence().ordinal() >= Precedence.FUNCTION_CALL.ordinal()) {
                     writer.append(")");
                 }
@@ -152,6 +151,18 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
             case "dataToArray":
                 dataToArray(context, "$rt_objcls");
                 break;
+            case "global": {
+                var cst = (ConstantExpr) context.getArgument(0);
+                var name = (String) cst.getValue();
+                writer.appendGlobal(name);
+                break;
+            }
+            case "importModule": {
+                var cst = (ConstantExpr) context.getArgument(0);
+                var name = (String) cst.getValue();
+                writer.appendFunction(context.importModule(name));
+                break;
+            }
 
             default:
                 if (methodRef.getName().startsWith("unwrap")) {
@@ -172,7 +183,7 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
     public void methodReached(DependencyAgent agent, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "invoke":
-            case "instantiate":
+            case "construct":
             case "function":
                 if (reachedFunctorMethods.add(method.getReference()) && !method.isMissing()) {
                     for (int i = 0; i < method.getReference().parameterCount(); ++i) {

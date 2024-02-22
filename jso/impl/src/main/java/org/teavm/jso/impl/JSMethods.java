@@ -114,15 +114,24 @@ final class JSMethods {
     public static final MethodReference FUNCTION_AS_OBJECT = new MethodReference(JS.class, "functionAsObject",
             JSObject.class, JSObject.class, JSObject.class);
 
+    public static final MethodReference GLOBAL = new MethodReference(JS.class, "global", String.class, JSObject.class);
+    public static final MethodReference IMPORT_MODULE = new MethodReference(JS.class, "importModule",
+            String.class, JSObject.class);
+
     public static final ValueType JS_OBJECT = ValueType.object(JSObject.class.getName());
     public static final ValueType JS_ARRAY = ValueType.object(JSArray.class.getName());
     private static final MethodReference[] INVOKE_METHODS = new MethodReference[13];
+    private static final MethodReference[] CONSTRUCT_METHODS = new MethodReference[13];
 
     static {
         for (int i = 0; i < INVOKE_METHODS.length; ++i) {
-            ValueType[] signature = new ValueType[i + 3];
+            var signature = new ValueType[i + 3];
             Arrays.fill(signature, JS_OBJECT);
             INVOKE_METHODS[i] = new MethodReference(JS.class.getName(), "invoke", signature);
+
+            var constructSignature = new ValueType[i + 2];
+            Arrays.fill(constructSignature, JS_OBJECT);
+            CONSTRUCT_METHODS[i] = new MethodReference(JS.class.getName(), "construct", constructSignature);
         }
     }
 
@@ -131,5 +140,9 @@ final class JSMethods {
 
     public static MethodReference invoke(int parameterCount) {
         return INVOKE_METHODS[parameterCount];
+    }
+
+    public static MethodReference construct(int parameterCount) {
+        return CONSTRUCT_METHODS[parameterCount];
     }
 }
