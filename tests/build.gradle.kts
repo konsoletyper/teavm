@@ -16,6 +16,7 @@
 
 plugins {
     `java-library`
+    scala
 }
 
 description = "Tests"
@@ -43,6 +44,7 @@ dependencies {
     testImplementation(libs.rhino)
     testImplementation(libs.junit)
     testImplementation(libs.testng)
+    testImplementation(libs.scala.library)
 }
 
 tasks.test {

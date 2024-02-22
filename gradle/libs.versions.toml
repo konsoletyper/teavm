@@ -9,6 +9,7 @@ idea = "2020.1.4"
 idea-scala = "2020.1.43"
 maven = "3.5.4"
 maven-tools = "3.7.1"
+scala = "3.4.0"
 
 
 [libraries]
@@ -46,6 +47,8 @@ maven-artifact = { module = "org.apache.maven:maven-artifact", version.ref = "ma
 maven-core = { module = "org.apache.maven:maven-core", version.ref = "maven" }
 maven-embedder = { module = "org.apache.maven:maven-embedder", version.ref = "maven" }
 maven-compat = { module = "org.apache.maven:maven-compat", version.ref = "maven" }
+
+scala-library = { module = "org.scala-lang:scala3-library_3", version.ref = "scala" }
 
 [libraries.maven-plugin-tools-api]
 module = "org.apache.maven.plugin-tools:maven-plugin-tools-api"
