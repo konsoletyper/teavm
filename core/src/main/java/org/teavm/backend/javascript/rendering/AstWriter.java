@@ -15,10 +15,9 @@
  */
 package org.teavm.backend.javascript.rendering;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -97,9 +96,9 @@ public class AstWriter {
     protected boolean rootScope = true;
     private Set<String> aliases = new HashSet<>();
     private Function<String, NameEmitter> globalNameWriter;
-    public final Map<String, Scope> currentScopes = new HashMap<>();
-    protected final Set<Scope> topLevelScopes = new HashSet<>();
+    private Set<String> nonTopLevels = new HashSet<>();
     private boolean inFunction;
+    private int scopeLevel;
 
     public AstWriter(SourceWriter writer, Function<String, NameEmitter> globalNameWriter) {
         this.writer = writer;
@@ -115,13 +114,13 @@ public class AstWriter {
             return;
         }
         if (aliases.add(name)) {
-            nameMap.put(name, p -> writer.append(name));
+            nameMap.put(name, (w, p) -> w.append(name));
             return;
         }
         for (int i = 0;; ++i) {
             String alias = name + "_" + i;
             if (aliases.add(alias)) {
-                nameMap.put(name, p -> writer.append(alias));
+                nameMap.put(name, (w, p) -> w.append(alias));
                 return;
             }
         }
@@ -202,7 +201,7 @@ public class AstWriter {
                 break;
             case Token.THIS:
                 if (nameMap.containsKey("this")) {
-                    nameMap.get("this").emit(precedence);
+                    nameMap.get("this").emit(writer, precedence);
                 } else {
                     writer.append("this");
                 }
@@ -324,7 +323,7 @@ public class AstWriter {
     }
 
     private void print(Scope node) {
-        var scope = enterScope(node);
+        var scope = enterScope(node, false);
         writer.append('{').softNewLine().indent();
         for (Node child = node.getFirstChild(); child != null; child = child.getNext()) {
             if (!print((AstNode) child)) {
@@ -332,7 +331,7 @@ public class AstWriter {
             }
         }
         writer.outdent().append('}');
-        leaveScope(scope, node);
+        leaveScope(scope);
     }
 
     private void print(LabeledStatement node) {
@@ -374,17 +373,17 @@ public class AstWriter {
     }
 
     private void print(DoLoop node) {
-        var scope = enterScope(node);
+        var scope = enterScope(node, false);
         writer.append("do ").ws();
         print(node.getBody());
         writer.append("while").ws().append('(');
         print(node.getCondition());
         writer.append(");");
-        leaveScope(scope, node);
+        leaveScope(scope);
     }
 
     private void print(ForInLoop node) {
-        var scope = enterScope(node);
+        var scope = enterScope(node, false);
         writer.append("for");
         if (node.isForEach()) {
             writer.append(" each");
@@ -395,11 +394,11 @@ public class AstWriter {
         print(node.getIteratedObject());
         writer.append(')').ws();
         print(node.getBody());
-        leaveScope(scope, node);
+        leaveScope(scope);
     }
 
     private void print(ForLoop node) {
-        var scope = enterScope(node);
+        var scope = enterScope(node, false);
         writer.append("for").ws().append('(');
         print(node.getInitializer());
         writer.append(';');
@@ -408,16 +407,16 @@ public class AstWriter {
         print(node.getIncrement());
         writer.append(')').ws();
         print(node.getBody());
-        leaveScope(scope, node);
+        leaveScope(scope);
     }
 
     private void print(WhileLoop node) {
-        var scope = enterScope(node);
+        var scope = enterScope(node, false);
         writer.append("while").ws().append('(');
         print(node.getCondition());
         writer.append(')').ws();
         print(node.getBody());
-        leaveScope(scope, node);
+        leaveScope(scope);
     }
 
     private void print(IfStatement node) {
@@ -458,8 +457,10 @@ public class AstWriter {
     private void print(TryStatement node) {
         writer.append("try ");
         print(node.getTryBlock());
-        for (CatchClause cc : node.getCatchClauses()) {
+        for (var cc : node.getCatchClauses()) {
             writer.ws().append("catch").ws().append('(');
+            var scope = enterScope(false);
+            includeInScope(scope, cc.getVarName().getIdentifier());
             print(cc.getVarName());
             if (cc.getCatchCondition() != null) {
                 writer.append(" if ");
@@ -467,6 +468,7 @@ public class AstWriter {
             }
             writer.append(')');
             print(cc.getBody());
+            leaveScope(scope);
         }
         if (node.getFinallyBlock() != null) {
             writer.ws().append("finally ");
@@ -475,10 +477,9 @@ public class AstWriter {
     }
 
     private boolean print(VariableDeclaration node) {
-        if (isTopLevel() && node.getVariables().get(0).getTarget() instanceof Name) {
+        if (isTopLevelOutput() && node.getVariables().get(0).getTarget() instanceof Name) {
             var name = (Name) node.getVariables().get(0).getTarget();
-            var definingScope = scopeOfId(name.getIdentifier());
-            if (definingScope == null || topLevelScopes.contains(definingScope)) {
+            if (isTopLevelIdentifier(name.getIdentifier())) {
                 printTopLevel(node);
                 return true;
             }
@@ -647,7 +648,7 @@ public class AstWriter {
     }
 
     private void print(ArrayComprehension node) {
-        var scope = enterScope(node);
+        var scope = enterScope(node, false);
         writer.append("[");
         for (ArrayComprehensionLoop loop : node.getLoops()) {
             writer.append("for").ws().append("(");
@@ -663,11 +664,11 @@ public class AstWriter {
         }
         print(node.getResult());
         writer.append(']');
-        leaveScope(scope, node);
+        leaveScope(scope);
     }
 
     private void print(GeneratorExpression node) {
-        var scope = enterScope(node);
+        var scope = enterScope(node, false);
         writer.append("(");
         for (GeneratorExpressionLoop loop : node.getLoops()) {
             writer.append("for").ws().append("(");
@@ -683,7 +684,7 @@ public class AstWriter {
         }
         print(node.getResult());
         writer.append(')');
-        leaveScope(scope, node);
+        leaveScope(scope);
     }
 
     private void print(NumberLiteral node) {
@@ -697,17 +698,16 @@ public class AstWriter {
     }
 
     public void print(Name node, int precedence) {
-        var definingScope = scopeOfId(node.getIdentifier());
-        if (rootScope && definingScope == null) {
+        if (rootScope && isTopLevelIdentifier(node.getIdentifier())) {
             var alias = nameMap.get(node.getIdentifier());
             if (alias == null) {
                 if (globalNameWriter != null) {
                     alias = globalNameWriter.apply(node.getIdentifier());
                 } else {
-                    alias = prec -> writer.append(node.getIdentifier());
+                    alias = (w, prec) -> w.append(node.getIdentifier());
                 }
             }
-            alias.emit(precedence);
+            alias.emit(writer, precedence);
         } else {
             writer.append(node.getIdentifier());
         }
@@ -753,18 +753,16 @@ public class AstWriter {
 
     protected boolean print(FunctionNode node) {
         var isArrow = node.getFunctionType() == FunctionNode.ARROW_FUNCTION;
-        if (isTopLevel() && !isArrow && node.getFunctionName() != null) {
-            var definingScope = scopeOfId(node.getFunctionName().getIdentifier());
-            if (definingScope == null || topLevelScopes.contains(definingScope)) {
-                printTopLevel(node);
-                return true;
-            }
+        if (isTopLevelOutput() && !isArrow && node.getFunctionName() != null
+                && isTopLevelIdentifier(node.getFunctionName().getIdentifier())) {
+            printTopLevel(node);
+            return true;
         }
         var wasInFunction = inFunction;
         inFunction = true;
-        var scope = enterScope(node);
+        var scope = enterScope(node, true);
         if (!isArrow) {
-            currentScopes.put("arguments", node);
+            includeInScope(scope, "arguments");
         }
         if (!node.isMethod() && !isArrow) {
             writer.append("function");
@@ -797,7 +795,7 @@ public class AstWriter {
             print(node.getBody());
         }
 
-        leaveScope(scope, node);
+        leaveScope(scope);
         inFunction = wasInFunction;
         return false;
     }
@@ -805,25 +803,25 @@ public class AstWriter {
     private void printTopLevel(FunctionNode node) {
         var wasInFunction = inFunction;
         inFunction = true;
-        var scope = enterScope(node);
-        currentScopes.put("arguments", node);
+        var scope = enterScope(node, true);
+        includeInScope(scope, "arguments");
         writer.startFunctionDeclaration().appendFunction(node.getFunctionName().getIdentifier());
         writer.append('(');
         printList(node.getParams());
         writer.append(')').ws();
         print(node.getBody());
         writer.endDeclaration();
-        leaveScope(scope, node);
+        leaveScope(scope);
         inFunction = wasInFunction;
     }
 
     private void print(LetNode node) {
-        var scope = enterScope(node);
+        var scope = enterScope(node, false);
         writer.append("let").ws().append('(');
         printList(node.getVariables().getVariables());
         writer.append(')');
         print(node.getBody());
-        leaveScope(scope, node);
+        leaveScope(scope);
     }
 
     private void print(ParenthesizedExpression node, int precedence) {
@@ -1021,47 +1019,45 @@ public class AstWriter {
         }
     }
 
-    private Map<String, Scope> enterScope(Scope scope) {
-        if (scope.getSymbolTable() == null) {
-            return Collections.emptyMap();
-        }
-        var map = new LinkedHashMap<String, Scope>();
-        for (var name : scope.getSymbolTable().keySet()) {
-            map.put(name, currentScopes.get(name));
-            currentScopes.put(name, scope);
-        }
-        onEnterScope(scope);
-        return map;
-    }
-
-    protected void onEnterScope(Scope scope) {
-        if (isTopLevel() && !inFunction()) {
-            topLevelScopes.add(scope);
-        }
-    }
-
-    private void leaveScope(Map<String, Scope> backup, Scope scope) {
-        for (var entry : backup.entrySet()) {
-            if (entry.getValue() == null) {
-                currentScopes.remove(entry.getKey());
-            } else {
-                currentScopes.put(entry.getKey(), entry.getValue());
+    private Set<String> enterScope(Scope scope, boolean nesting) {
+        var set = enterScope(nesting);
+        if (scope.getSymbolTable() != null) {
+            for (var name : scope.getSymbolTable().keySet()) {
+                includeInScope(set, name);
             }
         }
-        onLeaveScope(scope);
+        return set;
     }
 
-    protected void onLeaveScope(Scope scope) {
-        if (isTopLevel() && !inFunction()) {
-            topLevelScopes.remove(scope);
+    public Set<String> enterScope(boolean nesting) {
+        if (scopeLevel > 0 || nesting) {
+            ++scopeLevel;
+        }
+        return new LinkedHashSet<>();
+    }
+
+    public final void includeInScope(Set<String> scope, String name) {
+        if (nonTopLevels.add(name)) {
+            scope.add(name);
         }
     }
 
-    protected Scope scopeOfId(String id) {
-        return currentScopes.get(id);
+    public void leaveScope(Set<String> backup) {
+        nonTopLevels.removeAll(backup);
+        if (scopeLevel > 0) {
+            --scopeLevel;
+        }
     }
 
-    protected boolean isTopLevel() {
+    protected boolean isTopLevelIdentifier(String id) {
+        return !nonTopLevels.contains(id);
+    }
+
+    protected boolean isInTopLevelScope() {
+        return scopeLevel == 0;
+    }
+
+    protected boolean isTopLevelOutput() {
         return false;
     }
 }

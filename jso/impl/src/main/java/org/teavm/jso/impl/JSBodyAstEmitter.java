@@ -44,21 +44,21 @@ class JSBodyAstEmitter implements JSBodyEmitter {
 
     @Override
     public void emit(InjectorContext context) {
-        var astWriter = new AstWriter(context.getWriter(), new DefaultGlobalNameWriter(context.getWriter()));
+        var astWriter = new AstWriter(context.getWriter(), new DefaultGlobalNameWriter());
         int paramIndex = 0;
         if (!isStatic) {
             int index = paramIndex++;
-            astWriter.declareNameEmitter("this", prec -> context.writeExpr(context.getArgument(index),
+            astWriter.declareNameEmitter("this", (w, prec) -> context.writeExpr(context.getArgument(index),
                     convert(prec)));
         }
         for (int i = 0; i < parameterNames.length; ++i) {
             int index = paramIndex++;
             astWriter.declareNameEmitter(parameterNames[i],
-                    prec -> context.writeExpr(context.getArgument(index), convert(prec)));
+                    (w, prec) -> context.writeExpr(context.getArgument(index), convert(prec)));
         }
         for (var importInfo : imports) {
             astWriter.declareNameEmitter(importInfo.alias,
-                    prec -> context.getWriter().appendFunction(context.importModule(importInfo.fromModule)));
+                    (w, prec) -> context.getWriter().appendFunction(context.importModule(importInfo.fromModule)));
         }
         astWriter.hoist(rootAst);
         astWriter.print(ast, convert(context.getPrecedence()));
@@ -148,19 +148,19 @@ class JSBodyAstEmitter implements JSBodyEmitter {
 
     @Override
     public void emit(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
-        var astWriter = new AstWriter(writer, new DefaultGlobalNameWriter(writer));
+        var astWriter = new AstWriter(writer, new DefaultGlobalNameWriter());
         int paramIndex = 1;
         if (!isStatic) {
             int index = paramIndex++;
-            astWriter.declareNameEmitter("this", prec -> writer.append(context.getParameterName(index)));
+            astWriter.declareNameEmitter("this", (w, prec) -> w.append(context.getParameterName(index)));
         }
         for (var parameterName : parameterNames) {
             int index = paramIndex++;
-            astWriter.declareNameEmitter(parameterName, prec -> writer.append(context.getParameterName(index)));
+            astWriter.declareNameEmitter(parameterName, (w, prec) -> w.append(context.getParameterName(index)));
         }
         for (var importInfo : imports) {
             astWriter.declareNameEmitter(importInfo.alias,
-                    prec -> writer.appendFunction(context.importModule(importInfo.fromModule)));
+                    (w, prec) -> w.appendFunction(context.importModule(importInfo.fromModule)));
         }
         astWriter.hoist(rootAst);
         if (ast instanceof Block) {

@@ -21,7 +21,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ast.AstRoot;
@@ -42,6 +44,7 @@ public class RuntimeRenderer {
     private final ClassReaderSource classSource;
     private final SourceWriter writer;
     private final ClassInitializerInfo classInitializerInfo;
+    private final Set<String> topLevelNames = new HashSet<>();
 
     public RuntimeRenderer(ClassReaderSource classSource, SourceWriter writer,
             ClassInitializerInfo classInitializerInfo) {
@@ -83,12 +86,15 @@ public class RuntimeRenderer {
         ast.visit(new StringConstantElimination());
         new TemplatingAstTransformer(classSource).visit(ast);
         removablePartsFinder.visit(ast);
+        topLevelNames.addAll(ast.getSymbolTable().keySet());
         return ast;
     }
 
     private void renderRuntimePart(AstRoot ast)  {
-        var astWriter = new TemplatingAstWriter(writer, null, null, classInitializerInfo);
-        astWriter.hoist(ast);
+        var astWriter = new TemplatingAstWriter(writer, classInitializerInfo, true);
+        for (var name : topLevelNames) {
+            astWriter.declareNameEmitter(name, (w, prec) -> w.appendFunction(name));
+        }
         astWriter.print(ast);
     }
 

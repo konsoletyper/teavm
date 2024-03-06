@@ -16,20 +16,13 @@
 package org.teavm.backend.javascript.rendering;
 
 import java.util.function.Function;
-import org.teavm.backend.javascript.codegen.SourceWriter;
 
 public class DefaultGlobalNameWriter implements Function<String, NameEmitter> {
-    private SourceWriter writer;
-
-    public DefaultGlobalNameWriter(SourceWriter writer) {
-        this.writer = writer;
-    }
-
     @Override
     public NameEmitter apply(String s) {
         if (s.startsWith("$rt_") || s.startsWith("Long_") || s.equals("Long")) {
-            return prec -> writer.appendFunction(s);
+            return (w, intprec) -> w.appendFunction(s);
         }
-        return prec -> writer.appendGlobal(s);
+        return (w, prec) -> w.appendGlobal(s);
     }
 }
