@@ -107,3 +107,5 @@ let $rt_setThread = t => {
         return teavm_javaMethod("java.lang.Thread", "setCurrentThread(Ljava/lang/Thread;)V")(t);
     }
 }
+
+let $rt_apply = (instance, method, args) => instance[method].apply(instance, args);

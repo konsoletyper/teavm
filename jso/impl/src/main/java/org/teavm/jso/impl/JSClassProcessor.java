@@ -769,23 +769,64 @@ class JSClassProcessor {
             return false;
         }
 
+        var vararg = method.hasModifier(ElementModifier.VARARGS);
         Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
         InvokeInstruction newInvoke = new InvokeInstruction();
-        newInvoke.setMethod(JSMethods.invoke(method.parameterCount()));
+        newInvoke.setMethod(vararg ? JSMethods.APPLY : JSMethods.invoke(method.parameterCount()));
         newInvoke.setType(InvocationType.SPECIAL);
         newInvoke.setReceiver(result);
+
         List<Variable> newArguments = new ArrayList<>();
         newArguments.add(getCallTarget(invoke));
         newArguments.add(marshaller.addStringWrap(marshaller.addString(name, invoke.getLocation()),
                 invoke.getLocation()));
         newInvoke.setLocation(invoke.getLocation());
+
+        var callArguments = new ArrayList<Variable>();
         for (int i = 0; i < invoke.getArguments().size(); ++i) {
             var arg = invoke.getArguments().get(i);
+            var byRef = byRefParams[i];
+            if (vararg && i == invoke.getArguments().size() - 1
+                    && typeHelper.isSupportedByRefType(method.parameterType(i))) {
+                byRef = true;
+            }
             arg = marshaller.wrapArgument(callLocation, arg,
-                    method.parameterType(i), types.typeOf(arg), byRefParams[i]);
-            newArguments.add(arg);
+                    method.parameterType(i), types.typeOf(arg), byRef);
+            callArguments.add(arg);
+        }
+
+        if (vararg) {
+            Variable prefixArg = null;
+            if (callArguments.size() > 1) {
+                var arrayOfInvocation = new InvokeInstruction();
+                arrayOfInvocation.setType(InvocationType.SPECIAL);
+                arrayOfInvocation.setArguments(callArguments.subList(0, callArguments.size() - 1)
+                        .toArray(new Variable[0]));
+                arrayOfInvocation.setMethod(JSMethods.arrayOf(callArguments.size() - 1));
+                arrayOfInvocation.setReceiver(program.createVariable());
+                arrayOfInvocation.setLocation(invoke.getLocation());
+                replacement.add(arrayOfInvocation);
+                prefixArg = arrayOfInvocation.getReceiver();
+            }
+
+            var arrayArg = callArguments.get(callArguments.size() - 1);
+
+            if (prefixArg != null) {
+                var concat = new InvokeInstruction();
+                concat.setType(InvocationType.SPECIAL);
+                concat.setArguments(prefixArg, arrayArg);
+                concat.setMethod(JSMethods.CONCAT_ARRAY);
+                concat.setReceiver(program.createVariable());
+                concat.setLocation(invoke.getLocation());
+                replacement.add(concat);
+                arrayArg = concat.getReceiver();
+            }
+            newArguments.add(arrayArg);
+        } else {
+            newArguments.addAll(callArguments);
         }
         newInvoke.setArguments(newArguments.toArray(new Variable[0]));
+
         replacement.add(newInvoke);
         if (result != null) {
             result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType(), false,

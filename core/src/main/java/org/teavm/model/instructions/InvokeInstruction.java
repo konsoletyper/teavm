@@ -85,7 +85,7 @@ public class InvokeInstruction extends Instruction {
     private List<? extends Variable> argumentList = new AbstractList<Variable>() {
         @Override
         public Variable get(int index) {
-            if (arguments == null) {
+            if (arguments == null || index >= arguments.length) {
                 throw new IndexOutOfBoundsException();
             }
             return arguments[index];

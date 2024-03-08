@@ -496,7 +496,7 @@ public class Parser {
             }
         }
         if ((access & Opcodes.ACC_VARARGS) != 0) {
-            if (type == DECL_FIELD) {
+            if (type == DECL_METHOD) {
                 member.getModifiers().add(ElementModifier.VARARGS);
             }
         }

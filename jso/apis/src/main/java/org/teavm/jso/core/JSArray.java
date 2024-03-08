@@ -23,9 +23,11 @@ import org.teavm.jso.JSProperty;
 
 @JSClass(name = "Array")
 public class JSArray<T> implements JSArrayReader<T> {
+    @NoSideEffects
     public JSArray(int size) {
     }
 
+    @NoSideEffects
     public JSArray() {
     }
 

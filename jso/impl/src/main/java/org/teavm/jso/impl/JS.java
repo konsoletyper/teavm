@@ -37,6 +37,10 @@ final class JS {
     public static native JSObject arrayData(Object array);
 
     @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject concatArray(JSObject a, JSObject b);
+
+    @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
     public static native byte[] dataToByteArray(JSObject obj);
@@ -249,6 +253,7 @@ final class JS {
         return JS::wrap;
     }
 
+    @NoSideEffects
     public static JSArray<JSString> wrap(String[] array) {
         if (array == null) {
             return null;
@@ -515,6 +520,80 @@ final class JS {
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k,
             JSObject l, JSObject m);
+
+    @InjectedBy(JSNativeInjector.class)
+    public static native JSObject apply(JSObject instance, JSObject method, JSArray<JSObject> v);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g, JSObject h);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g, JSObject h, JSObject i);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g, JSObject h, JSObject i, JSObject j);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g, JSObject h, JSObject i, JSObject j, JSObject k);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g, JSObject h, JSObject i, JSObject j, JSObject k, JSObject l);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g, JSObject h, JSObject i, JSObject j, JSObject k, JSObject l, JSObject m);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)

@@ -43,6 +43,7 @@ import org.teavm.ast.IdentifiedStatement;
 import org.teavm.ast.InitClassStatement;
 import org.teavm.ast.InstanceOfExpr;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.ast.InvocationType;
 import org.teavm.ast.MonitorEnterStatement;
 import org.teavm.ast.MonitorExitStatement;
 import org.teavm.ast.NewArrayExpr;
@@ -64,6 +65,9 @@ import org.teavm.ast.UnaryOperation;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
+import org.teavm.interop.NoSideEffects;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 
@@ -82,15 +86,17 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     private Deque<TextLocation> locationStack = new LinkedList<>();
     private Deque<TextLocation> notNullLocationStack = new ArrayDeque<>();
     private List<ArrayOptimization> pendingArrayOptimizations;
+    private ClassReaderSource classes;
 
     OptimizingVisitor(boolean[] preservedVars, int[] writeFrequencies, int[] readFrequencies, Object[] constants,
-            boolean friendlyToDebugger) {
+            boolean friendlyToDebugger, ClassReaderSource classes) {
         this.preservedVars = preservedVars;
         this.writeFrequencies = writeFrequencies;
         this.initialWriteFrequencies = writeFrequencies.clone();
         this.readFrequencies = readFrequencies;
         this.constants = constants;
         this.friendlyToDebugger = friendlyToDebugger;
+        this.classes = classes;
     }
 
     private static boolean isZero(Expr expr) {
@@ -385,6 +391,23 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         }
     }
 
+    private boolean isSideEffectFree(MethodReference method) {
+        var cls = classes.get(method.getClassName());
+        if (cls == null) {
+            return false;
+        }
+        var methodReader = cls.getMethod(method.getDescriptor());
+        if (methodReader == null) {
+            return false;
+        }
+        return methodReader.getAnnotations().get(NoSideEffects.class.getName()) != null;
+    }
+
+    private boolean isSideEffectFreeCall(InvocationExpr expr) {
+        return (expr.getType() == InvocationType.SPECIAL || expr.getType() == InvocationType.STATIC)
+                    && isSideEffectFree(expr.getMethod());
+    }
+
     @Override
     public void visit(InvocationExpr expr) {
         pushLocation(expr.getLocation());
@@ -392,9 +415,13 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             Expr[] args = expr.getArguments().toArray(new Expr[0]);
             int barrierPos;
 
-            for (barrierPos = 0; barrierPos < args.length; ++barrierPos) {
-                if (!isSideEffectFree(args[barrierPos])) {
-                    break;
+            if (isSideEffectFreeCall(expr)) {
+                barrierPos = args.length;
+            } else {
+                for (barrierPos = 0; barrierPos < args.length; ++barrierPos) {
+                    if (!isSideEffectFree(args[barrierPos])) {
+                        break;
+                    }
                 }
             }
 
@@ -639,8 +666,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         while (!pendingArrayOptimizations.isEmpty()) {
             statement = resultSequence.get(resultSequence.size() - 1);
             int i = pendingArrayOptimizations.size() - 1;
-            if (!tryArrayUnwrap(pendingArrayOptimizations.get(i), statement)
-                    || tryArraySet(pendingArrayOptimizations.get(i), statement)) {
+            var opt = pendingArrayOptimizations.get(i);
+            var result = opt.isSet ? tryArraySet(opt, statement) : tryArrayUnwrap(opt, statement);
+            if (!result) {
                 pendingArrayOptimizations.remove(i);
             } else {
                 break;
@@ -721,11 +749,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             return false;
         }
 
-        if (optimization.arraySize != readFrequencies[optimization.unwrappedArrayVariable]) {
-            return false;
-        }
-
         optimization.arrayElementIndex = 0;
+        optimization.remainingUseCount = readFrequencies[optimization.unwrappedArrayVariable];
+        optimization.isSet = true;
         return true;
     }
 
@@ -756,10 +782,22 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             return false;
         }
 
-        if (!(subscript.getIndex() instanceof ConstantExpr)) {
+        var index = subscript.getIndex();
+        if (index instanceof BoundCheckExpr) {
+            var boundCheck = (BoundCheckExpr) index;
+            if (!(boundCheck.getArray() instanceof VariableExpr)) {
+                return false;
+            }
+            if (((VariableExpr) boundCheck.getArray()).getIndex() != optimization.unwrappedArrayVariable) {
+                return false;
+            }
+            index = boundCheck.getIndex();
+            optimization.remainingUseCount--;
+        }
+        if (!(index instanceof ConstantExpr)) {
             return false;
         }
-        Object constantValue = ((ConstantExpr) subscript.getIndex()).getValue();
+        Object constantValue = ((ConstantExpr) index).getValue();
         if (!Integer.valueOf(optimization.arrayElementIndex).equals(constantValue)) {
             return false;
         }
@@ -772,11 +810,14 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         }
 
         optimization.elements.add(assign.getRightValue());
+        --optimization.remainingUseCount;
         if (++optimization.arrayElementIndex == optimization.arraySize) {
-            applyArrayOptimization(optimization);
-            return true;
+            if (optimization.remainingUseCount == 0) {
+                applyArrayOptimization(optimization);
+            }
+            pendingArrayOptimizations.remove(pendingArrayOptimizations.size() - 1);
         }
-        return false;
+        return true;
     }
 
     private void applyArrayOptimization(ArrayOptimization optimization) {
@@ -1303,6 +1344,29 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             return isSideEffectFree(((PrimitiveCastExpr) expr).getValue());
         }
 
+        if (expr instanceof ArrayFromDataExpr) {
+            var list = ((ArrayFromDataExpr) expr).getData();
+            for (var element : list) {
+                if (!isSideEffectFree(element)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        if (expr instanceof InvocationExpr) {
+            var invocation = (InvocationExpr) expr;
+            if (isSideEffectFreeCall(invocation)) {
+                for (var arg : invocation.getArguments()) {
+                    if (!isSideEffectFree(arg)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
         if (expr instanceof NewExpr) {
             return true;
         }
@@ -1326,6 +1390,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     static class ArrayOptimization {
+        boolean isSet;
         int index;
         NewArrayExpr array;
         int arrayVariable;
@@ -1333,6 +1398,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         int unwrappedArrayVariable;
         int arrayElementIndex;
         int arraySize;
+        int remainingUseCount;
         List<Expr> elements = new ArrayList<>();
     }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,14 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.interop;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+class TestClass {
+    static allVararg(...args) {
+        let result = "va";
+        for (const arg of args) {
+            result += ":" + arg;
+        }
+        return result;
+    }
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD, ElementType.TYPE, ElementType.CONSTRUCTOR })
-public @interface NoSideEffects {
+    static restVararg(a, b, ...args) {
+        let result = `a:${a},b:${b},va`;
+        for (const arg of args) {
+            result += ":" + arg;
+        }
+        return result;
+    }
 }

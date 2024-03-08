@@ -280,3 +280,19 @@ let $rt_createMultiArrayImpl = (cls, arrays, dimensions, start) => {
     }
     return arrays[0];
 }
+
+let $rt_concatArrays = (a, b) => {
+    if (a.length === 0) {
+        return b;
+    }
+    if (b.length === 0) {
+        return a;
+    }
+    if (!teavm_globals.Array.isArray(a)) {
+        a = teavm_globals.Array.from(a);
+    }
+    if (!teavm_globals.Array.isArray(b)) {
+        b = teavm_globals.Array.from(b);
+    }
+    return a.concat(b);
+}
