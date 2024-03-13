@@ -16,6 +16,7 @@
 package org.teavm.tooling.deobfuscate.js;
 
 import java.io.File;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.tooling.ConsoleTeaVMToolLog;
 import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMTargetType;
@@ -35,6 +36,7 @@ public final class Compiler {
         tool.setEntryPointName(args[1]);
         tool.setTargetDirectory(new File(args[2]));
         tool.setTargetFileName(args[3]);
+        tool.setJsModuleType(JSModuleType.valueOf(args[4].toUpperCase()));
         tool.setObfuscated(true);
         tool.setOptimizationLevel(TeaVMOptimizationLevel.ADVANCED);
 

@@ -18,9 +18,6 @@
 
 let logging = false;
 let deobfuscation = false;
-if (typeof deobfuscator !== 'undefined') {
-    deobfuscator();
-}
 
 function tryConnect() {
     let ws = new WebSocket("ws://localhost:{{PORT}}/ws");
@@ -82,7 +79,7 @@ function runSingleTest(test, callback) {
         console.log("Running test " + test.name);
     }
     if (deobfuscation) {
-        const fileName = test.file + ".teavmdbg";
+        const fileName = test.file.path + ".teavmdbg";
         if (lastDeobfuscatorFile === fileName) {
             if (lastDeobfuscatorPromise === null) {
                 runSingleTestWithDeobfuscator(test, lastDeobfuscator, callback);
@@ -100,7 +97,7 @@ function runSingleTest(test, callback) {
                 xhr.onreadystatechange = () => {
                     if (xhr.readyState === 4) {
                         const newDeobfuscator = xhr.status === 200
-                            ? deobfuscator.create(xhr.response, "http://localhost:{{PORT}}/" + test.file)
+                            ? createDeobfuscator(xhr.response, "http://localhost:{{PORT}}/" + test.file.path)
                             : null;
                         if (lastDeobfuscatorFile === fileName) {
                             lastDeobfuscator = newDeobfuscator;
@@ -139,7 +136,9 @@ function runSingleTestWithDeobfuscator(test, deobfuscator, callback) {
         };
         window.addEventListener("message", listener);
 
-        iframe.contentWindow.$rt_decodeStack = deobfuscator;
+        iframe.contentWindow.$rt_decodeStack = deobfuscator != null
+            ? deobfuscator.deobfuscate.bind(deobfuscator)
+            : null;
         iframe.contentWindow.postMessage(test, "*");
     };
     window.addEventListener("message", handshakeListener);

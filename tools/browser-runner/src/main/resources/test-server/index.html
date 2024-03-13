@@ -18,7 +18,10 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <script src="deobfuscator.js"></script>
+    <script type="module">
+      import { create } from './deobfuscator.js'
+      window.createDeobfuscator = create;
+    </script>
     <script src="client.js"></script>
   </head>
   <body>

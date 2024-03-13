@@ -15,19 +15,43 @@
  */
 package org.teavm.tooling.deobfuscate.js;
 
-import org.teavm.jso.JSObject;
+import org.teavm.jso.JSExport;
 import org.teavm.jso.JSProperty;
 
-public interface Frame extends JSObject {
-    @JSProperty
-    void setClassName(String className);
+public class Frame {
+    private String className;
+    private String fileName;
+    private String methodName;
+    private int lineNumber;
 
-    @JSProperty
-    void setFileName(String fileName);
+    public Frame(String className, String methodName, String fileName, int lineNumber) {
+        this.className = className;
+        this.methodName = methodName;
+        this.fileName = fileName;
+        this.lineNumber = lineNumber;
+    }
 
+    @JSExport
     @JSProperty
-    void setMethodName(String methodName);
+    public String getClassName() {
+        return className;
+    }
 
+    @JSExport
     @JSProperty
-    void setLineNumber(int lineNumber);
+    public String getFileName() {
+        return fileName;
+    }
+
+    @JSExport
+    @JSProperty
+    public String getMethodName() {
+        return methodName;
+    }
+
+    @JSExport
+    @JSProperty
+    public int getLineNumber() {
+        return lineNumber;
+    }
 }

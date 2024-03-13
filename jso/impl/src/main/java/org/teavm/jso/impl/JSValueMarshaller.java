@@ -205,8 +205,10 @@ class JSValueMarshaller {
         } else if (type instanceof ValueType.Object) {
             if (type.isObject(String.class)) {
                 return type;
-            } else {
+            } else if (typeHelper.isJavaScriptClass(((ValueType.Object) type).getClassName())) {
                 return JSMethods.JS_OBJECT;
+            } else {
+                return JSMethods.OBJECT;
             }
         } else {
             return type;

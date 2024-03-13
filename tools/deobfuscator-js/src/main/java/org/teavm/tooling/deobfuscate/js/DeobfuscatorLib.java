@@ -16,31 +16,20 @@
 package org.teavm.tooling.deobfuscate.js;
 
 import java.io.IOException;
-import org.teavm.jso.JSBody;
+import org.teavm.jso.JSExport;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 
-public final class DeobfuscatorLib implements DeobfuscatorJs {
+public final class DeobfuscatorLib {
     private DeobfuscatorLib() {
     }
 
-    @Override
-    public DeobfuscateFunction create(ArrayBuffer buffer, String classesFileName) {
+    @JSExport
+    public static Deobfuscator create(ArrayBuffer buffer, String classesFileName) {
         try {
-            return new Deobfuscator(buffer, classesFileName)::deobfuscate;
+            return new Deobfuscator(buffer, classesFileName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-
-    public static void main(String[] args) {
-        install(new DeobfuscatorLib());
-    }
-
-    @JSBody(params = "instance", script =
-            "deobfuscator.create = function(buffer, classesFileName) {"
-                + "return instance.create(buffer, classesFileName);"
-            + "}"
-    )
-    private static native void install(DeobfuscatorJs js);
 }
 

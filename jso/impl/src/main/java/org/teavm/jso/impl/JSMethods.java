@@ -126,6 +126,7 @@ final class JSMethods {
             String.class, JSObject.class);
 
     public static final ValueType JS_OBJECT = ValueType.object(JSObject.class.getName());
+    public static final ValueType OBJECT = ValueType.object("java.lang.Object");
     public static final ValueType JS_ARRAY = ValueType.object(JSArray.class.getName());
     private static final MethodReference[] INVOKE_METHODS = new MethodReference[13];
     private static final MethodReference[] CONSTRUCT_METHODS = new MethodReference[13];

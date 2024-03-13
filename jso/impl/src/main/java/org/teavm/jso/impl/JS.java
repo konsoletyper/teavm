@@ -151,6 +151,17 @@ final class JS {
         return result;
     }
 
+    public static <T> JSArray<T> wrap(T[] array) {
+        if (array == null) {
+            return null;
+        }
+        var result = new JSArray<T>(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            result.set(i, array[i]);
+        }
+        return result;
+    }
+
     public static <T extends JSObject> WrapFunction<T[], JSArray<T>> arrayWrapper() {
         return JS::wrap;
     }
