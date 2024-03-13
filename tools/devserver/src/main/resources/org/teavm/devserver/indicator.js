@@ -13,14 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-(function (window) {
-    var boot = BOOT_FLAG;
-    var reload = RELOAD_FLAG;
-    var indicatorVisible = INDICATOR_FLAG;
-    var debugPort = DEBUG_PORT;
-    var deobfuscate = DEOBFUSCATE_FLAG;
-    var fileName = FILE_NAME;
-    var pathToFile = PATH_TO_FILE;
+(function () {
+    let boot = BOOT_FLAG;
+    let reload = RELOAD_FLAG;
+    let indicatorVisible = INDICATOR_FLAG;
+    let debugPort = DEBUG_PORT;
+    let deobfuscate = DEOBFUSCATE_FLAG;
+    let fileName = FILE_NAME;
+    let pathToFile = PATH_TO_FILE;
 
     function createWebSocket() {
         return new WebSocket("ws://WS_PATH");
@@ -28,18 +28,18 @@
 
     function createIndicator() {
         function createMainElement() {
-            var element = document.createElement("div");
+            let element = document.createElement("div");
             element.style.position = "fixed";
             element.style.left = "0";
             element.style.bottom = "0";
             element.style.backgroundColor = "black";
             element.style.color = "white";
-            element.style.opacity = 0.4;
+            element.style.opacity = "0.4";
             element.style.padding = "5px";
             element.style.fontSize = "18px";
             element.style.fontWeight = "bold";
             element.style.pointerEvents = "none";
-            element.style.zIndex = 1000;
+            element.style.zIndex = "1000";
             element.style.display = "none";
             return element;
         }
@@ -49,7 +49,7 @@
         }
 
         function createProgressElements() {
-            var element = document.createElement("span");
+            const element = document.createElement("span");
             element.style.display = "none";
             element.style.marginLeft = "10px";
             element.style.width = "150px";
@@ -61,7 +61,7 @@
             element.style.backgroundColor = "white";
             element.style.position = "relative";
 
-            var progress = document.createElement("span");
+            const progress = document.createElement("span");
             progress.style.display = "block";
             progress.style.position = "absolute";
             progress.style.left = "0";
@@ -80,9 +80,9 @@
             };
         }
 
-        var container = createMainElement();
-        var label = createLabelElement();
-        var progress = createProgressElements();
+        const container = createMainElement();
+        const label = createLabelElement();
+        const progress = createProgressElements();
         container.appendChild(label);
         container.appendChild(progress.container);
 
@@ -92,7 +92,7 @@
             progress: progress,
             timer: void 0,
 
-            show: function(text, timeout) {
+            show(text, timeout) {
                 this.container.style.display = "block";
                 this.label.innerText = text;
                 if (this.timer) {
@@ -118,7 +118,7 @@
         };
     }
 
-    var indicator = createIndicator();
+    let indicator = createIndicator();
     function onLoad() {
         document.body.appendChild(indicator.container);
     }
@@ -137,15 +137,15 @@
         }
 
         if (typeof main === 'function') {
-            var oldMain = main;
+            let oldMain = main;
             main = function() {
-                var args = arguments;
-                window.$teavm_deobfuscator_callback = function() {
+                const args = arguments;
+                window.$teavm_deobfuscator_callback = () => {
                     oldMain.apply(window, args);
                 };
-                var elem = document.createElement("script");
+                const elem = document.createElement("script");
                 elem.src = pathToFile + fileName + ".deobfuscator.js";
-                elem.onload = function() {
+                elem.onload = () => {
                     $teavm_deobfuscator([pathToFile + fileName + ".teavmdbg", pathToFile + fileName]);
                 };
                 document.head.append(elem);
@@ -165,9 +165,9 @@
         main();
     }
 
-    var ws = createWebSocket();
+    let ws = createWebSocket();
     ws.onmessage = function(event) {
-        var message = JSON.parse(event.data);
+        const message = JSON.parse(event.data);
         switch (message.command) {
             case "compiling":
                 indicator.show("Compiling...");
@@ -177,9 +177,9 @@
                 if (message.success) {
                     indicator.show("Compilation complete", 10);
                     if (reload) {
-                        window.location.reload(true);
+                        window.location.reload();
                     } else if (boot) {
-                        var scriptElem = document.createElement("script");
+                        const scriptElem = document.createElement("script");
                         scriptElem.src = pathToFile + fileName;
                         scriptElem.onload = startMain;
                         document.head.appendChild(scriptElem);
@@ -197,12 +197,12 @@
     }
 
     if (debugPort > 0) {
-        var connected = false;
+        let connected = false;
         function connectDebugAgent(event) {
             if (event.source !== window) {
                 return;
             }
-            var data = event.data;
+            const data = event.data;
             if (typeof data.teavmDebuggerRequest !== "undefined" && !connected) {
                 connected = true;
                 window.postMessage({teavmDebugger: {port: debugPort}}, "*");
@@ -211,4 +211,4 @@
         window.addEventListener("message", connectDebugAgent);
         window.postMessage({teavmDebugger: {port: debugPort}}, "*");
     }
-})(this);
+})();

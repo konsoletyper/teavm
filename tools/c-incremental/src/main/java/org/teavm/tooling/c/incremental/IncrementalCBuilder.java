@@ -26,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -530,7 +529,7 @@ public class IncrementalCBuilder {
     }
 
     private void fireBuildComplete(TeaVM vm) {
-        SimpleBuildResult result = new SimpleBuildResult(vm, Collections.emptyList());
+        SimpleBuildResult result = new SimpleBuildResult(vm);
         for (BuilderListener listener : listeners) {
             listener.compilationComplete(result);
         }

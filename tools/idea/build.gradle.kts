@@ -32,7 +32,8 @@ intellij {
 }
 
 dependencies {
-    implementation(project(path = ":tools:ide-deps", configuration = "shadow").setTransitive(false))
+    compileOnly(project(":tools:ide-deps"))
+    runtimeOnly(project(path = ":tools:ide-deps", configuration = "shadow").setTransitive(false))
 }
 
 tasks {

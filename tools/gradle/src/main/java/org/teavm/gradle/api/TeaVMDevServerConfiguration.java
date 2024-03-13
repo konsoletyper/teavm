@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.common.json;
+package org.teavm.gradle.api;
 
-public abstract class JsonNumericValue extends JsonValue {
+import org.gradle.api.provider.Property;
+
+public interface TeaVMDevServerConfiguration {
+    Property<Boolean> getStackDeobfuscated();
+
+    Property<Boolean> getIndicator();
+
+    Property<Boolean> getAutoReload();
+
+    Property<Integer> getPort();
+
+    Property<String> getProxyUrl();
+
+    Property<String> getProxyPath();
+
+    Property<Integer> getProcessMemory();
 }

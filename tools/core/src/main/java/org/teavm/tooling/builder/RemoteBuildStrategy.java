@@ -17,7 +17,6 @@ package org.teavm.tooling.builder;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import org.teavm.backend.javascript.JSModuleType;
@@ -245,21 +244,6 @@ public class RemoteBuildStrategy implements BuildStrategy {
             @Override
             public ProblemProvider getProblems() {
                 return problems;
-            }
-
-            @Override
-            public Collection<String> getUsedResources() {
-                return response.usedResources;
-            }
-
-            @Override
-            public Collection<String> getClasses() {
-                return response.classes;
-            }
-
-            @Override
-            public Collection<String> getGeneratedFiles() {
-                return response.generatedFiles;
             }
         };
     }

@@ -27,6 +27,7 @@ dependencies {
     implementation(project(":tools:devserver"))
     implementation(project(":tools:c-incremental"))
     implementation(libs.commons.cli)
+    implementation(libs.jetty.server)
 
     runtimeOnly(project(":classlib"))
     runtimeOnly(project(":metaprogramming:impl"))

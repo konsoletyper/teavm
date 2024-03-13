@@ -186,11 +186,6 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
             response.callGraph = tool.getDependencyInfo().getCallGraph();
             response.problems.addAll(tool.getProblemProvider().getProblems());
             response.severeProblems.addAll(tool.getProblemProvider().getSevereProblems());
-            response.classes.addAll(tool.getClasses());
-            response.usedResources.addAll(tool.getUsedResources());
-            response.generatedFiles.addAll(tool.getGeneratedFiles().stream()
-                    .map(File::getAbsolutePath)
-                    .collect(Collectors.toSet()));
         }
 
         return response;

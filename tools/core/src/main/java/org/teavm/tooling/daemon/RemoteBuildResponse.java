@@ -17,9 +17,7 @@ package org.teavm.tooling.daemon;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.Problem;
 
@@ -27,8 +25,5 @@ public class RemoteBuildResponse implements Serializable {
     public CallGraph callGraph;
     public final List<Problem> problems = new ArrayList<>();
     public final List<Problem> severeProblems = new ArrayList<>();
-    public final Set<String> usedResources = new HashSet<>();
-    public final Set<String> classes = new HashSet<>();
-    public final Set<String> generatedFiles = new HashSet<>();
     public Throwable exception;
 }

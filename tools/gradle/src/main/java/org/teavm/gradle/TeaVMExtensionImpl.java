@@ -16,6 +16,7 @@
 package org.teavm.gradle;
 
 import groovy.lang.Closure;
+import javax.inject.Inject;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.model.ObjectFactory;
@@ -24,6 +25,7 @@ import org.teavm.gradle.api.OptimizationLevel;
 import org.teavm.gradle.api.SourceFilePolicy;
 import org.teavm.gradle.api.TeaVMCConfiguration;
 import org.teavm.gradle.api.TeaVMCommonConfiguration;
+import org.teavm.gradle.api.TeaVMDevServerConfiguration;
 import org.teavm.gradle.api.TeaVMExtension;
 import org.teavm.gradle.api.TeaVMJSConfiguration;
 import org.teavm.gradle.api.TeaVMWasiConfiguration;
@@ -38,7 +40,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
 
     TeaVMExtensionImpl(Project project, ObjectFactory objectFactory) {
         super(project, objectFactory);
-        js = objectFactory.newInstance(TeaVMJSConfiguration.class);
+        js = objectFactory.newInstance(JsConfigImpl.class);
         wasm = objectFactory.newInstance(TeaVMWasmConfiguration.class);
         wasi = objectFactory.newInstance(TeaVMWasiConfiguration.class);
         c = objectFactory.newInstance(TeaVMCConfiguration.class);
@@ -72,6 +74,14 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         js.getSourceFilePolicy().convention(property("js.sourceFilePolicy")
                 .map(SourceFilePolicy::valueOf)
                 .orElse(SourceFilePolicy.DO_NOTHING));
+        js.getDevServer().getStackDeobfuscated().convention(property("js.devServer.stackDeobfuscated")
+                .map(Boolean::parseBoolean));
+        js.getDevServer().getIndicator().convention(property("js.devServer.indicator").map(Boolean::parseBoolean));
+        js.getDevServer().getAutoReload().convention(property("js.devServer.autoReload").map(Boolean::parseBoolean));
+        js.getDevServer().getPort().convention(property("js.devServer.port").map(Integer::parseInt));
+        js.getDevServer().getProxyUrl().convention(property("js.devServer.proxy.url"));
+        js.getDevServer().getProxyPath().convention(property("js.devServer.proxy.path"));
+        js.getDevServer().getProcessMemory().convention(property("js.devServer.memory").map(Integer::parseInt));
     }
 
     private void setupWasmDefaults() {
@@ -198,5 +208,29 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
 
         target.getOutOfProcess().convention(source.getOutOfProcess());
         target.getProcessMemory().convention(source.getProcessMemory());
+    }
+
+    static abstract class JsConfigImpl implements TeaVMJSConfiguration {
+        private TeaVMDevServerConfiguration devServer;
+
+        @Inject
+        public JsConfigImpl(Project project) {
+            devServer = project.getObjects().newInstance(TeaVMDevServerConfiguration.class);
+        }
+
+        @Override
+        public void devServer(Action<TeaVMDevServerConfiguration> action) {
+            action.execute(devServer);
+        }
+
+        @Override
+        public TeaVMDevServerConfiguration getDevServer() {
+            return devServer;
+        }
+
+        @Override
+        public void devServer(Closure<?> action) {
+            action.rehydrate(getDevServer(), action.getOwner(), action.getThisObject()).call();
+        }
     }
 }

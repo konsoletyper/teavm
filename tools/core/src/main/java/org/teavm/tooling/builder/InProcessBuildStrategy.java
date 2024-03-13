@@ -22,10 +22,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.callgraph.CallGraph;
@@ -287,12 +285,8 @@ public class InProcessBuildStrategy implements BuildStrategy {
             throw new BuildException(e);
         }
 
-        var generatedFiles = tool.getGeneratedFiles().stream()
-                .map(File::getAbsolutePath)
-                .collect(Collectors.toSet());
-
         return new InProcessBuildResult(tool.getDependencyInfo().getCallGraph(),
-                tool.getProblemProvider(), tool.getClasses(), tool.getUsedResources(), generatedFiles);
+                tool.getProblemProvider());
     }
 
     private URLClassLoader buildClassLoader() {
@@ -310,17 +304,10 @@ public class InProcessBuildStrategy implements BuildStrategy {
     static class InProcessBuildResult implements BuildResult {
         private CallGraph callGraph;
         private ProblemProvider problemProvider;
-        private Collection<String> classes;
-        private Collection<String> usedResources;
-        private Collection<String> generatedFiles;
 
-        InProcessBuildResult(CallGraph callGraph, ProblemProvider problemProvider,
-                Collection<String> classes, Collection<String> usedResources, Collection<String> generatedFiles) {
+        InProcessBuildResult(CallGraph callGraph, ProblemProvider problemProvider) {
             this.callGraph = callGraph;
             this.problemProvider = problemProvider;
-            this.classes = classes;
-            this.usedResources = usedResources;
-            this.generatedFiles = generatedFiles;
         }
 
         @Override
@@ -331,21 +318,6 @@ public class InProcessBuildStrategy implements BuildStrategy {
         @Override
         public ProblemProvider getProblems() {
             return problemProvider;
-        }
-
-        @Override
-        public Collection<String> getClasses() {
-            return classes;
-        }
-
-        @Override
-        public Collection<String> getUsedResources() {
-            return usedResources;
-        }
-
-        @Override
-        public Collection<String> getGeneratedFiles() {
-            return generatedFiles;
         }
     }
 }

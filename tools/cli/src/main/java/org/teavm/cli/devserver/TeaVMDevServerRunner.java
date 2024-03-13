@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,9 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.cli;
+package org.teavm.cli.devserver;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -23,6 +29,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.eclipse.jetty.util.log.Log;
+import org.teavm.common.json.JsonParser;
 import org.teavm.devserver.DevServer;
 import org.teavm.tooling.ConsoleTeaVMToolLog;
 
@@ -30,6 +38,7 @@ public final class TeaVMDevServerRunner {
     private static Options options = new Options();
     private DevServer devServer;
     private CommandLine commandLine;
+    private JsonCommandWriter jsonWriter;
 
     static {
         setupOptions();
@@ -56,9 +65,20 @@ public final class TeaVMDevServerRunner {
                 .build());
         options.addOption(Option.builder("s")
                 .argName("sourcepath")
-                .hasArg()
+                .hasArgs()
                 .desc("source path (either directory or jar file which contains source code)")
                 .longOpt("sourcepath")
+                .build());
+        options.addOption(Option.builder()
+                .argName("classnames")
+                .hasArgs()
+                .desc("list of classes that should be preserved during the build (e.g. to use with reflection)")
+                .longOpt("preserved-classes")
+                .build());
+        options.addOption(Option.builder()
+                .valueSeparator()
+                .hasArgs()
+                .longOpt("property")
                 .build());
         options.addOption(Option.builder()
                 .argName("number")
@@ -94,6 +114,14 @@ public final class TeaVMDevServerRunner {
                 .desc("delegate requests from path")
                 .longOpt("proxy-path")
                 .build());
+        options.addOption(Option.builder()
+                .desc("don't watch file system changes")
+                .longOpt("no-watch")
+                .build());
+        options.addOption(Option.builder()
+                .desc("JSON interface over stdout")
+                .longOpt("json-interface")
+                .build());
     }
 
     private TeaVMDevServerRunner(CommandLine commandLine) {
@@ -117,7 +145,16 @@ public final class TeaVMDevServerRunner {
 
         TeaVMDevServerRunner runner = new TeaVMDevServerRunner(commandLine);
         runner.parseArguments();
-        runner.runAll();
+        runner.devServer.start();
+        if (runner.jsonWriter != null) {
+            runner.readStdinCommands();
+        } else {
+            try {
+                runner.devServer.awaitServer();
+            } catch (InterruptedException e) {
+                // do nothing
+            }
+        }
     }
 
     private void parseArguments() {
@@ -128,7 +165,6 @@ public final class TeaVMDevServerRunner {
         devServer.setIndicator(commandLine.hasOption("indicator"));
         devServer.setDeobfuscateStack(commandLine.hasOption("deobfuscate-stack"));
         devServer.setReloadedAutomatically(commandLine.hasOption("auto-reload"));
-        devServer.setLog(new ConsoleTeaVMToolLog(commandLine.hasOption('v')));
         if (commandLine.hasOption("port")) {
             try {
                 devServer.setPort(Integer.parseInt(commandLine.getOptionValue("port")));
@@ -138,11 +174,28 @@ public final class TeaVMDevServerRunner {
             }
         }
 
+        var properties = commandLine.getOptionProperties("property");
+        for (var property : properties.stringPropertyNames()) {
+            devServer.getProperties().put(property, properties.getProperty(property));
+        }
+
+        if (commandLine.hasOption("preserved-classes")) {
+            devServer.getPreservedClasses().addAll(List.of(commandLine.getOptionValues("preserved-classes")));
+        }
+
         if (commandLine.hasOption("proxy-url")) {
             devServer.setProxyUrl(commandLine.getOptionValue("proxy-url"));
         }
         if (commandLine.hasOption("proxy-path")) {
             devServer.setProxyPath(commandLine.getOptionValue("proxy-path"));
+        }
+        if (commandLine.hasOption("no-watch")) {
+            devServer.setFileSystemWatched(false);
+        }
+        if (commandLine.hasOption("json-interface")) {
+            setupJsonInterface(devServer);
+        } else {
+            devServer.setLog(new ConsoleTeaVMToolLog(commandLine.hasOption('v')));
         }
 
         String[] args = commandLine.getArgs();
@@ -175,8 +228,29 @@ public final class TeaVMDevServerRunner {
         }
     }
 
-    private void runAll() {
-        devServer.start();
+    private void setupJsonInterface(DevServer devServer) {
+        jsonWriter = new JsonCommandWriter();
+        devServer.setLog(jsonWriter);
+        devServer.addListener(jsonWriter);
+        devServer.setCompileOnStartup(false);
+        devServer.setLogBuildErrors(false);
+        Log.setLog(jsonWriter);
+    }
+
+    private void readStdinCommands() {
+        var commandReader = new JsonCommandReader(devServer);
+        var parser = JsonParser.ofValue(commandReader);
+        try (var reader = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8))) {
+            while (true) {
+                var command = reader.readLine();
+                if (command == null) {
+                    break;
+                }
+                parser.parse(new StringReader(command));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void printUsage() {

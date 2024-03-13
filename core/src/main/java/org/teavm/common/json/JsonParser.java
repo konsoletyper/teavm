@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class JsonParser {
     private JsonConsumer consumer;
@@ -32,6 +33,8 @@ public class JsonParser {
     }
 
     public void parse(Reader reader) throws IOException {
+        lineNumber = 0;
+        columnNumber = 0;
         lastChar = reader.read();
         skipWhitespaces(reader);
         if (lastChar == -1) {
@@ -411,5 +414,9 @@ public class JsonParser {
 
     private static boolean isDigit(int c) {
         return c >= '0' && c <= '9';
+    }
+
+    public static JsonParser ofValue(Consumer<JsonValue> consumer) {
+        return new JsonParser(new JsonVisitingConsumer(JsonValueParserVisitor.create(consumer)));
     }
 }

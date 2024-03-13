@@ -22,9 +22,17 @@ plugins {
     id("org.teavm")
 }
 
+configurations {
+    create("teavmCli")
+    create("teavmClasslib")
+}
+
 dependencies {
     teavm(teavm.libs.jsoApis)
     compileOnly("jakarta.servlet:jakarta.servlet-api:6.0.0")
+
+    "teavmCli"("org.teavm:teavm-cli:0.10.0-SNAPSHOT")
+    "teavmClasslib"("org.teavm:teavm-classlib:0.10.0-SNAPSHOT")
 }
 
 teavm.js {
@@ -32,4 +40,15 @@ teavm.js {
     mainClass = "org.teavm.samples.hello.Client"
     sourceMap = true
     sourceFilePolicy = SourceFilePolicy.LINK_LOCAL_FILES
+}
+
+tasks.register<JavaExec>("runCli") {
+    classpath(configurations["teavmCli"])
+    mainClass = "org.teavm.cli.devserver.TeaVMDevServerRunner"
+    args = listOf("--json-interface", "--no-watch", "-p",
+        layout.buildDirectory.dir("classes/java/teavm").get().asFile.absolutePath,
+    ) + configurations["teavmClasslib"].flatMap { listOf("-p", it.absolutePath) } + listOf(
+        "--", "org.teavm.samples.hello.Client"
+    )
+    println(args)
 }

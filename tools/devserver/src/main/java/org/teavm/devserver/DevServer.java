@@ -16,7 +16,9 @@
 package org.teavm.devserver;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -32,9 +34,14 @@ public class DevServer {
     private boolean indicator;
     private boolean deobfuscateStack;
     private boolean reloadedAutomatically;
+    private boolean fileSystemWatched = true;
     private TeaVMToolLog log;
     private CodeServlet servlet;
     private List<DevServerListener> listeners = new ArrayList<>();
+    private Map<String, String> properties = new LinkedHashMap<>();
+    private List<String> preservedClasses = new ArrayList<>();
+    private boolean compileOnStartup;
+    private boolean logBuildErrors = true;
 
     private Server server;
     private int port = 9090;
@@ -88,6 +95,10 @@ public class DevServer {
         this.reloadedAutomatically = reloadedAutomatically;
     }
 
+    public void setFileSystemWatched(boolean fileSystemWatched) {
+        this.fileSystemWatched = fileSystemWatched;
+    }
+
     public void setProxyUrl(String proxyUrl) {
         this.proxyUrl = proxyUrl;
     }
@@ -98,6 +109,18 @@ public class DevServer {
 
     public List<String> getSourcePath() {
         return sourcePath;
+    }
+
+    public void setCompileOnStartup(boolean compileOnStartup) {
+        this.compileOnStartup = compileOnStartup;
+    }
+
+    public List<String> getPreservedClasses() {
+        return preservedClasses;
+    }
+
+    public Map<String, String> getProperties() {
+        return properties;
     }
 
     public void invalidateCache() {
@@ -114,6 +137,10 @@ public class DevServer {
 
     public void addListener(DevServerListener listener) {
         listeners.add(listener);
+    }
+
+    public void setLogBuildErrors(boolean logBuildErrors) {
+        this.logBuildErrors = logBuildErrors;
     }
 
     public void start() {
@@ -138,6 +165,11 @@ public class DevServer {
         servlet.setDebugPort(debugPort);
         servlet.setProxyUrl(proxyUrl);
         servlet.setProxyPath(proxyPath);
+        servlet.setFileSystemWatched(fileSystemWatched);
+        servlet.setCompileOnStartup(compileOnStartup);
+        servlet.setLogBuildErrors(logBuildErrors);
+        servlet.getProperties().putAll(properties);
+        servlet.getPreservedClasses().addAll(preservedClasses);
         for (DevServerListener listener : listeners) {
             servlet.addListener(listener);
         }
@@ -147,10 +179,13 @@ public class DevServer {
 
         try {
             server.start();
-            server.join();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void awaitServer() throws InterruptedException {
+        server.join();
     }
 
     public void stop() {

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.common.json;
+package org.teavm.gradle.tasks;
 
-public abstract class JsonNumericValue extends JsonValue {
+import org.gradle.api.DefaultTask;
+import org.gradle.api.tasks.TaskAction;
+
+public abstract class StopJavaScriptDevServerTask extends DefaultTask {
+    @TaskAction
+    public void stopServer() {
+        var codeServerManager = DevServerManager.instance();
+        codeServerManager.cleanup(getProject().getGradle());
+        var pm = codeServerManager.getProjectManager(getProject().getPath());
+        pm.stop(getLogger());
+    }
 }
