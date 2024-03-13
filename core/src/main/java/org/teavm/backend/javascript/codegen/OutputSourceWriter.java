@@ -80,6 +80,9 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
             letSequenceSize = 0;
             try {
                 innerWriter.append(";\n");
+                column = 0;
+                line++;
+                lineStart = true;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
