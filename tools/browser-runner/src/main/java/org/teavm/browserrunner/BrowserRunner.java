@@ -107,6 +107,7 @@ public class BrowserRunner {
     private void runServer() {
         server = new Server();
         var connector = new ServerConnector(server);
+        connector.setIdleTimeout(0);
         server.addConnector(connector);
 
         var context = new ServletContextHandler(ServletContextHandler.SESSIONS);

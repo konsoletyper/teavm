@@ -120,6 +120,7 @@ public class DevServer {
         server = new Server();
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(port);
+        connector.setIdleTimeout(0);
         server.addConnector(connector);
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
