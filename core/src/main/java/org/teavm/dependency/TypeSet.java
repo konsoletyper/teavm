@@ -295,16 +295,27 @@ class TypeSet {
     }
 
     List<ConsumerWithNode> getConsumers() {
-        if (consumers == null) {
-            consumers = new ArrayList<>();
-            for (var node : domain()) {
-                if (node.followers != null) {
-                    consumers.add(new ConsumerWithNode(node.followers.toArray(new DependencyConsumer[0]), node));
-                }
+        if (domain == null) {
+            return List.of();
+        } else if (domain instanceof DependencyNode) {
+            var node = (DependencyNode) domain;
+            if (node.followers == null) {
+                return List.of();
+            } else {
+                return List.of(new ConsumerWithNode(node.followers.toArray(new DependencyConsumer[0]), node));
             }
-            consumers.trimToSize();
+        } else {
+            if (consumers == null) {
+                consumers = new ArrayList<>();
+                for (var node : domain()) {
+                    if (node.followers != null) {
+                        consumers.add(new ConsumerWithNode(node.followers.toArray(new DependencyConsumer[0]), node));
+                    }
+                }
+                consumers.trimToSize();
+            }
+            return consumers;
         }
-        return consumers;
     }
 
     int typeCount() {
