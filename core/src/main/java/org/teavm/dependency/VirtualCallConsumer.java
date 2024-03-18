@@ -22,7 +22,7 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.MethodDescriptor;
 
 class VirtualCallConsumer implements DependencyConsumer {
-    private static int SMALL_TYPES_THRESHOLD = 16;
+    private static final int SMALL_TYPES_THRESHOLD = 16;
     private final MethodDescriptor methodDesc;
     private final DependencyAnalyzer analyzer;
     private final DependencyNode[] parameters;

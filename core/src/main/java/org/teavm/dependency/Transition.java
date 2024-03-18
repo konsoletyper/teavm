@@ -17,7 +17,6 @@ package org.teavm.dependency;
 
 import com.carrotsearch.hppc.IntHashSet;
 import java.util.Arrays;
-import java.util.Collection;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ValueType;
 
@@ -26,7 +25,7 @@ class Transition {
     DependencyNode destination;
     DependencyTypeFilter filter;
     IntHashSet pendingTypes;
-    byte destSubsetOfSrc;
+    private byte destSubsetOfSrc;
 
     Transition(DependencyNode source, DependencyNode destination, DependencyTypeFilter filter) {
         this.source = source;
@@ -64,19 +63,19 @@ class Transition {
         }
     }
 
-    void mergeDomains(DependencyType[] types) {
+    private void mergeDomains(DependencyType[] types) {
         destination.moveToSeparateDomain();
         destination.scheduleMultipleTypes(types, () -> {
-            Collection<DependencyNode> domainToMerge = destination.typeSet.domain;
+            var domainToMerge = destination.typeSet.domain();
             for (DependencyNode node : domainToMerge) {
                 node.typeSet = source.typeSet;
-                source.typeSet.domain.add(node);
+                source.typeSet.addDomain(node);
             }
             source.typeSet.invalidate();
         });
     }
 
-    boolean shouldMergeDomains() {
+    private boolean shouldMergeDomains() {
         if (!source.dependencyAnalyzer.domainOptimizationEnabled() || filter != null || !isDestSubsetOfSrc()) {
             return false;
         }

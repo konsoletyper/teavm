@@ -20,7 +20,8 @@ import com.carrotsearch.hppc.cursors.ObjectCursor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.LinkedHashSet;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -34,14 +35,14 @@ class TypeSet {
     private BitSet types;
     private int typesCount;
 
-    Set<DependencyNode> domain = new LinkedHashSet<>();
+    private Object domain;
     ObjectArrayList<Transition> transitions;
     ArrayList<ConsumerWithNode> consumers;
 
     TypeSet(DependencyAnalyzer dependencyAnalyzer, DependencyNode origin) {
         this.dependencyAnalyzer = dependencyAnalyzer;
         this.origin = origin;
-        domain.add(origin);
+        domain = origin;
     }
 
     void addType(DependencyType type) {
@@ -210,10 +211,76 @@ class TypeSet {
         consumers = null;
     }
 
+    Set<? extends DependencyNode> domain() {
+        if (domain == null) {
+            return Set.of();
+        } else if (domain instanceof DependencyNode) {
+            return Set.of((DependencyNode) domain);
+        } else {
+            //noinspection unchecked
+            return (Set<? extends DependencyNode>) domain;
+        }
+    }
+
+    void addDomain(DependencyNode node) {
+        if (domain == null) {
+            domain = node;
+        } else if (domain instanceof DependencyNode) {
+            if (domain == node) {
+                return;
+            }
+            domain = new HashSet<>(Set.of((DependencyNode) domain));
+        }
+        @SuppressWarnings("unchecked")
+        var set = (Set<DependencyNode>) domain;
+        set.add(node);
+    }
+
+    void addDomain(Collection<? extends DependencyNode> nodes) {
+        if (nodes.isEmpty()) {
+            return;
+        }
+        if (domain == null) {
+            if (nodes.size() == 1) {
+                domain = nodes.iterator().next();
+            }
+            return;
+        } else if (domain instanceof DependencyNode) {
+            if (nodes.contains(domain) && nodes.size() == 1) {
+                return;
+            }
+            domain = new HashSet<>(Set.of((DependencyNode) domain));
+        }
+        @SuppressWarnings("unchecked")
+        var set = (Set<DependencyNode>) domain;
+        set.addAll(nodes);
+    }
+
+    void removeDomain(Collection<? extends DependencyNode> nodes) {
+        if (domain == null || nodes.isEmpty()) {
+            return;
+        }
+        if (domain instanceof DependencyNode) {
+            if (nodes.contains(domain)) {
+                domain = null;
+            }
+            return;
+        }
+
+        @SuppressWarnings("unchecked")
+        var set = (Set<DependencyNode>) domain;
+        set.removeAll(nodes);
+        if (set.isEmpty()) {
+            domain = null;
+        } else if (set.size() == 1) {
+            domain = set.iterator().next();
+        }
+    }
+
     ObjectArrayList<Transition> getTransitions() {
         if (transitions == null) {
-            transitions = new ObjectArrayList<>(domain.size() * 2);
-            for (DependencyNode node : domain) {
+            transitions = new ObjectArrayList<>();
+            for (DependencyNode node : domain()) {
                 if (node.transitions != null) {
                     for (ObjectCursor<Transition> cursor : node.transitionList) {
                         Transition transition = cursor.value;
@@ -230,7 +297,7 @@ class TypeSet {
     List<ConsumerWithNode> getConsumers() {
         if (consumers == null) {
             consumers = new ArrayList<>();
-            for (DependencyNode node : domain) {
+            for (var node : domain()) {
                 if (node.followers != null) {
                     consumers.add(new ConsumerWithNode(node.followers.toArray(new DependencyConsumer[0]), node));
                 }
