@@ -16,11 +16,12 @@
 package org.teavm.classlib.java.io;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 public class TFilterOutputStream extends TOutputStream {
-    protected TOutputStream out;
+    protected OutputStream out;
 
-    public TFilterOutputStream(TOutputStream out) {
+    public TFilterOutputStream(OutputStream out) {
         this.out = out;
     }
 

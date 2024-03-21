@@ -16,6 +16,8 @@
 package org.teavm.classlib.java.io;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Locale;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TStringBuilder;
@@ -27,6 +29,7 @@ import org.teavm.classlib.java.nio.charset.TCodingErrorAction;
 import org.teavm.classlib.java.nio.charset.TIllegalCharsetNameException;
 import org.teavm.classlib.java.nio.charset.TUnsupportedCharsetException;
 import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
+import org.teavm.classlib.java.util.TFormatter;
 
 public class TPrintStream extends TFilterOutputStream {
     private boolean autoFlush;
@@ -35,7 +38,7 @@ public class TPrintStream extends TFilterOutputStream {
     private char[] buffer = new char[32];
     private TCharset charset;
 
-    public TPrintStream(TOutputStream out, boolean autoFlush, String encoding) throws TUnsupportedEncodingException {
+    public TPrintStream(OutputStream out, boolean autoFlush, String encoding) throws TUnsupportedEncodingException {
         super(out);
         this.autoFlush = autoFlush;
         try {
@@ -45,13 +48,23 @@ public class TPrintStream extends TFilterOutputStream {
         }
     }
 
-    public TPrintStream(TOutputStream out, boolean autoFlush) {
+    public TPrintStream(OutputStream out, boolean autoFlush) {
         super(out);
         this.autoFlush = autoFlush;
         this.charset = TUTF8Charset.INSTANCE;
     }
 
-    public TPrintStream(TOutputStream out) {
+    public TPrintStream(OutputStream out, boolean autoFlush, TCharset charset) {
+        super(out);
+        this.autoFlush = autoFlush;
+        this.charset = charset;
+    }
+
+    public TPrintStream(OutputStream out, TCharset charset) {
+        this(out, false, charset);
+    }
+
+    public TPrintStream(OutputStream out) {
         this(out, false);
     }
 
@@ -157,6 +170,31 @@ public class TPrintStream extends TFilterOutputStream {
         }
     }
 
+    private void print(CharSequence s, int begin, int end) {
+        TCharBuffer src = TCharBuffer.wrap(s, begin, end - begin);
+        byte[] destBytes = new byte[TMath.max(16, TMath.min(end - begin, 1024))];
+        TByteBuffer dest = TByteBuffer.wrap(destBytes);
+        TCharsetEncoder encoder = charset.newEncoder()
+                .onMalformedInput(TCodingErrorAction.REPLACE)
+                .onUnmappableCharacter(TCodingErrorAction.REPLACE);
+        while (true) {
+            boolean overflow = encoder.encode(src, dest, true).isOverflow();
+            write(destBytes, 0, dest.position());
+            dest.clear();
+            if (!overflow) {
+                break;
+            }
+        }
+        while (true) {
+            boolean overflow = encoder.flush(dest).isOverflow();
+            write(destBytes, 0, dest.position());
+            dest.clear();
+            if (!overflow) {
+                break;
+            }
+        }
+    }
+
     public void print(char c) {
         buffer[0] = c;
         print(buffer, 0, 1);
@@ -231,10 +269,54 @@ public class TPrintStream extends TFilterOutputStream {
         print('\n');
     }
 
+    public TPrintStream format(String format, Object... args) {
+        return format(Locale.getDefault(), format, args);
+    }
+
+    public TPrintStream format(Locale locale, String format, Object... args) {
+        if (args == null) {
+            args = new Object[1];
+        }
+        try (var formatter = new TFormatter(getAppendable(), locale)) {
+            formatter.format(format, args);
+            if (formatter.ioException() != null) {
+                errorState = true;
+            }
+        }
+        return this;
+    }
+
     private void printSB() {
         char[] buffer = sb.length() > this.buffer.length ? new char[sb.length()] : this.buffer;
         sb.getChars(0, sb.length(), buffer, 0);
         print(buffer, 0, sb.length());
         sb.setLength(0);
+    }
+
+    private Appendable appendable;
+
+    private Appendable getAppendable() {
+        if (appendable == null) {
+            appendable = new Appendable() {
+                @Override
+                public Appendable append(CharSequence csq) {
+                    print(csq, 0, csq.length());
+                    return this;
+                }
+
+                @Override
+                public Appendable append(CharSequence csq, int start, int end) {
+                    print(csq, start, end);
+                    return this;
+                }
+
+                @Override
+                public Appendable append(char c) {
+                    print(c);
+                    return this;
+                }
+            };
+        }
+        return appendable;
     }
 }
