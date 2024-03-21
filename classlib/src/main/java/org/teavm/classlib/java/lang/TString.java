@@ -880,6 +880,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return new TFormatter(l).format(format, args).toString();
     }
 
+    public String formatted(Object... args) {
+        return format((String) (Object) this, args);
+    }
+
     public static TString join(CharSequence delimiter, CharSequence... elements) {
         if (elements.length == 0) {
             return EMPTY;
