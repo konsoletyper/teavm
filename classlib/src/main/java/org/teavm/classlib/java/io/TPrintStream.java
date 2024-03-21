@@ -269,6 +269,14 @@ public class TPrintStream extends TFilterOutputStream {
         print('\n');
     }
 
+    public TPrintStream printf(String format, Object... args) {
+        return format(format, args);
+    }
+
+    public TPrintStream printf(Locale locale, String format, Object... args) {
+        return format(locale, format, args);
+    }
+
     public TPrintStream format(String format, Object... args) {
         return format(Locale.getDefault(), format, args);
     }
