@@ -159,6 +159,12 @@ public final class ExceptionHandling {
     }
 
     @Unmanaged
+    @Export(name = "teavm_throwNegativeArraySizeException")
+    public static void throwNegativeArraySizeException() {
+        throwException(new NegativeArraySizeException());
+    }
+
+    @Unmanaged
     private static int callStackSize() {
         Address stackFrame = ShadowStack.getStackTop();
         int size = 0;
