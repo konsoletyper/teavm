@@ -41,4 +41,6 @@ public interface DOMTokenList extends JSObject {
     void remove(String... tokens);
 
     boolean toggle(String token);
+
+    boolean toggle(String token, boolean force);
 }
