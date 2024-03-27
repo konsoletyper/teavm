@@ -54,6 +54,8 @@ public class XMLHttpRequest implements JSObject, EventTarget {
 
     public native void send(JSBlob blob);
 
+    public native void send(FormData formData);
+
     public native void send(JSObject data);
 
     public native void setRequestHeader(String name, String value);
