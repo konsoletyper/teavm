@@ -20,7 +20,7 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSArray;
 
-@JSClass
+@JSClass(name = "File")
 public class JSFile extends JSBlob implements JSObject {
     public JSFile(JSArray<?> array, String fileName) {
         super(array);

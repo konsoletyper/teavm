@@ -23,7 +23,7 @@ import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.streams.ReadableStream;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 
-@JSClass
+@JSClass(name = "Blob")
 public class JSBlob implements JSObject {
     public JSBlob(JSArray<?> array) {
 
