@@ -16,6 +16,7 @@
 package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.file.FileList;
 
 public interface HTMLInputElement extends HTMLElement {
     @JSProperty
@@ -79,4 +80,7 @@ public interface HTMLInputElement extends HTMLElement {
 
     @JSProperty
     void setPlaceholder(String value);
+
+    @JSProperty
+    FileList getFiles();
 }
