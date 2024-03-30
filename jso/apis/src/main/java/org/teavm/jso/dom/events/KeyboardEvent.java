@@ -17,7 +17,7 @@ package org.teavm.jso.dom.events;
 
 import org.teavm.jso.JSProperty;
 
-public interface KeyboardEvent extends Event {
+public interface KeyboardEvent extends UIEvent {
     int DOM_KEY_LOCATION_STANDARD = 0x00;
 
     int DOM_KEY_LOCATION_LEFT = 0x01;
