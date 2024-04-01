@@ -15,26 +15,28 @@
  */
 package org.teavm.jso.streams;
 
-import org.teavm.jso.JSClass;
+import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSArray;
-import org.teavm.jso.core.JSPromise;
+import org.teavm.jso.dom.events.EventTarget;
 
-@JSClass
-public class ReadableStream implements JSObject {
+public abstract class AbortSignal implements EventTarget {
     @JSProperty
-    public native boolean isLocked();
+    public native boolean isAborted();
 
-    public native JSPromise<?> abort(String reason);
+    @JSProperty
+    public native JSObject getReason();
 
-    public native JSPromise<?> cancel();
+    @JSBody(script = "return AbortSignal.abort();")
+    public static native PipeOptions abort();
 
-    public native JSPromise<?> cancel(String reason);
+    @JSBody(params = "reason", script = "return AbortSignal.abort(reason);")
+    public static native PipeOptions abort(JSObject reason);
 
-    public native JSPromise<?> pipeTo(WritableStream stream);
+    @JSBody(params = "iterable", script = "return AbortSignal(iterable);")
+    public static native PipeOptions any(JSArray<?> iterable);
 
-    public native JSPromise<?> pipeTo(WritableStream stream, PipeOptions options);
-
-    public native JSArray<ReadableStream> tee();
+    @JSBody(params = "millis", script = "return AbortSignal.timeout(millis);")
+    public static native PipeOptions timeout(double millis);
 }
