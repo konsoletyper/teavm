@@ -19,37 +19,23 @@ import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSArray;
-import org.teavm.jso.core.JSPromise;
-import org.teavm.jso.streams.ReadableStream;
-import org.teavm.jso.typedarrays.ArrayBuffer;
 
-@JSClass(name = "Blob")
-public class JSBlob implements JSObject {
-    public JSBlob(JSArray<?> array) {
-
+@JSClass
+public class File extends Blob implements JSObject {
+    public File(JSArray<?> array, String fileName) {
+        super(array);
     }
 
-    public JSBlob(JSArray<?> array, JSObject options) {
-
+    public File(JSArray<?> array, String fileName, JSObject options) {
+        super(array, options);
     }
 
     @JSProperty
-    public native int getSize();
+    public native double getLastModified();
 
     @JSProperty
-    public native String getType();
+    public native String getName();
 
-    public native JSPromise<ArrayBuffer> arrayBuffer();
-
-    public native JSBlob slice();
-
-    public native JSBlob slice(int start);
-
-    public native JSBlob slice(int start, int end);
-
-    public native JSBlob slice(int start, int end, String contentType);
-
-    public native ReadableStream stream();
-
-    public native JSPromise<String> text();
+    @JSProperty
+    public native String getWebkitRelativePath();
 }

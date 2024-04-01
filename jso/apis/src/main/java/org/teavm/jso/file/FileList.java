@@ -24,5 +24,5 @@ public interface FileList extends JSObject {
     int getLength();
 
     @JSIndexer
-    JSFile item(int index);
+    File item(int index);
 }

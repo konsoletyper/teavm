@@ -23,7 +23,7 @@ import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.EventTarget;
 import org.teavm.jso.dom.xml.Document;
-import org.teavm.jso.file.JSBlob;
+import org.teavm.jso.file.Blob;
 
 @JSClass
 public class XMLHttpRequest implements JSObject, EventTarget {
@@ -52,7 +52,7 @@ public class XMLHttpRequest implements JSObject, EventTarget {
 
     public native void send(String data);
 
-    public native void send(JSBlob blob);
+    public native void send(Blob blob);
 
     public native void send(FormData formData);
 
