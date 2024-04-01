@@ -321,6 +321,15 @@ public class JSWrapperTest {
         assertTrue(JSObjects.isUndefined(field1));
     }
 
+    @Test
+    public void jsToString() {
+        var a = createWithToString("foo");
+        assertEquals("foo", a.toString());
+
+        Object b = createWithToString("bar");
+        assertEquals("bar", b.toString());
+    }
+
     private void callSetProperty(Object instance, Object o) {
         setProperty(instance, "foo", o);
     }
@@ -401,4 +410,7 @@ public class JSWrapperTest {
     interface JArraySupplier extends JSObject {
         J[] get();
     }
+
+    @JSBody(params = "s", script = "return { toString: () => s };")
+    private static native JSObject createWithToString(String s);
 }
