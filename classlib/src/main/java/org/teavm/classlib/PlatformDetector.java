@@ -22,6 +22,11 @@ public final class PlatformDetector {
     private PlatformDetector() {
     }
 
+    @PlatformMarker
+    public static boolean isTeaVM() {
+        return false;
+    }
+
     @PlatformMarker(Platforms.WEBASSEMBLY)
     public static boolean isWebAssembly() {
         return false;
