@@ -550,12 +550,16 @@ class JSValueMarshaller {
 
     Variable addString(String str, TextLocation location) {
         Variable var = program.createVariable();
-        StringConstantInstruction nameInsn = new StringConstantInstruction();
+        var nameInsn = new StringConstantInstruction();
         nameInsn.setReceiver(var);
         nameInsn.setConstant(str);
         nameInsn.setLocation(location);
         replacement.add(nameInsn);
         return var;
+    }
+
+    Variable addJsString(String str, TextLocation location) {
+        return addStringWrap(addString(str, location), location);
     }
 
     Variable classRef(String className, TextLocation location) {
@@ -586,16 +590,10 @@ class JSValueMarshaller {
     }
 
     Variable globalRef(String name, TextLocation location) {
-        var nameInsn = new StringConstantInstruction();
-        nameInsn.setReceiver(program.createVariable());
-        nameInsn.setConstant(name);
-        nameInsn.setLocation(location);
-        replacement.add(nameInsn);
-
         var invoke = new InvokeInstruction();
         invoke.setType(InvocationType.SPECIAL);
         invoke.setMethod(JSMethods.GLOBAL);
-        invoke.setArguments(nameInsn.getReceiver());
+        invoke.setArguments(addString(name, location));
         invoke.setReceiver(program.createVariable());
         invoke.setLocation(location);
         replacement.add(invoke);
@@ -618,26 +616,11 @@ class JSValueMarshaller {
         invoke.setLocation(location);
         replacement.add(invoke);
 
-        var nameInsn = new StringConstantInstruction();
-        nameInsn.setReceiver(program.createVariable());
-        nameInsn.setConstant(name);
-        nameInsn.setLocation(location);
-        replacement.add(nameInsn);
-
-        var wrapName = new InvokeInstruction();
-        wrapName.setType(InvocationType.SPECIAL);
-        wrapName.setMethod(referenceCache.getCached(new MethodReference(JS.class, "wrap",
-                String.class, JSObject.class)));
-        wrapName.setReceiver(program.createVariable());
-        wrapName.setArguments(nameInsn.getReceiver());
-        wrapName.setLocation(location);
-        replacement.add(wrapName);
-
         var get = new InvokeInstruction();
         get.setType(InvocationType.SPECIAL);
         get.setMethod(JSMethods.GET_PURE);
         get.setReceiver(program.createVariable());
-        get.setArguments(invoke.getReceiver(), wrapName.getReceiver());
+        get.setArguments(invoke.getReceiver(), addJsString(name, location));
         get.setLocation(location);
         replacement.add(get);
 

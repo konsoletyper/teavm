@@ -190,6 +190,41 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
                 writer.appendFunction(context.importModule(name));
                 break;
             }
+            case "instanceOf": {
+                if (context.getPrecedence().ordinal() >= Precedence.CONDITIONAL.ordinal()) {
+                    writer.append("(");
+                }
+                context.writeExpr(context.getArgument(0), Precedence.COMPARISON.next());
+                writer.append(" instanceof ");
+                context.writeExpr(context.getArgument(1), Precedence.COMPARISON.next());
+                writer.ws().append("?").ws().append("1").ws().append(":").ws().append("0");
+                if (context.getPrecedence().ordinal() >= Precedence.CONDITIONAL.ordinal()) {
+                    writer.append(")");
+                }
+                break;
+            }
+            case "isPrimitive": {
+                if (context.getPrecedence().ordinal() >= Precedence.CONDITIONAL.ordinal()) {
+                    writer.append("(");
+                }
+                writer.append("typeof ");
+                context.writeExpr(context.getArgument(0), Precedence.UNARY.next());
+                writer.ws().append("===").ws();
+                context.writeExpr(context.getArgument(1), Precedence.COMPARISON.next());
+                writer.ws().append("?").ws().append("1").ws().append(":").ws().append("0");
+                if (context.getPrecedence().ordinal() >= Precedence.CONDITIONAL.ordinal()) {
+                    writer.append(")");
+                }
+                break;
+            }
+            case "throwCCEIfFalse": {
+                writer.appendFunction("$rt_throwCCEIfFalse").append("(");
+                context.writeExpr(context.getArgument(0), Precedence.min());
+                writer.append(",").ws();
+                context.writeExpr(context.getArgument(1), Precedence.min());
+                writer.append(")");
+                break;
+            }
 
             default:
                 if (methodRef.getName().startsWith("unwrap")) {

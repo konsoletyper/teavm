@@ -43,13 +43,14 @@ public final class JSObjects {
     @NoSideEffects
     public static native <T extends JSObject> T createWithoutProto();
 
-    @JSBody(params = "object", script = "return typeof object === 'undefined';")
-    @NoSideEffects
-    public static native boolean isUndefined(Object object);
+    public static boolean isUndefined(Object object) {
+        return object instanceof JSUndefined;
+    }
 
-    @JSBody(script = "return void 0;")
-    @NoSideEffects
-    public static native JSObject undefined();
+    @Deprecated
+    public static JSObject undefined() {
+        return JSUndefined.instance();
+    }
 
     @JSBody(params = "object", script = "return typeof object;")
     @NoSideEffects

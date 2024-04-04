@@ -32,6 +32,7 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.core.JSString;
+import org.teavm.jso.core.JSUndefined;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
@@ -313,10 +314,10 @@ public class JSWrapperTest {
 
     @Test
     public void wrapUndefined() {
-        field1 = JSObjects.undefined();
+        field1 = JSUndefined.instance();
         assertEquals("undefined", field1.toString());
-        assertEquals(JSObjects.undefined(), field1);
-        assertSame(JSObjects.undefined(), field1);
+        assertEquals(JSUndefined.instance(), field1);
+        assertSame(JSUndefined.instance(), field1);
         assertTrue(field1 instanceof JSObject);
         assertTrue(JSObjects.isUndefined(field1));
     }

@@ -22,8 +22,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface JSClass {
-    String name() default "";
-
-    boolean transparent() default false;
+public @interface JSPrimitiveType {
+    String value();
 }

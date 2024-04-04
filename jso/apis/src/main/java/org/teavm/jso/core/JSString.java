@@ -18,8 +18,10 @@ package org.teavm.jso.core;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSPrimitiveType;
 import org.teavm.jso.JSProperty;
 
+@JSPrimitiveType("string")
 public abstract class JSString implements JSObject {
     private JSString() {
     }

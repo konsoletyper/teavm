@@ -704,4 +704,16 @@ final class JS {
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native JSObject importModule(String name);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native boolean instanceOf(JSObject obj, JSObject cls);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native boolean isPrimitive(JSObject obj, JSObject primitive);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject throwCCEIfFalse(boolean value, JSObject o);
 }
