@@ -33,6 +33,7 @@ public class ModuleWithExportedClasses {
     public static class B {
         private int bar;
 
+        @JSExport
         public B(int bar) {
             this.bar = bar;
         }

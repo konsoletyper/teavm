@@ -41,6 +41,7 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
     private ListableClassReaderSource classSource;
     private JSTypeHelper typeHelper;
     private RenderingManager context;
+    private int lastExportIndex;
 
     @Override
     public void begin(RenderingManager context, BuildTarget buildTarget) {
@@ -65,19 +66,28 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
                 .appendGlobal("Symbol").append("('jsoClass')").endDeclaration();
         writer.append("(()").ws().append("=>").ws().append("{").softNewLine().indent();
         writer.append("let c;").softNewLine();
+        var exportedNamesByClass = new HashMap<String, String>();
         for (var className : classSource.getClassNames()) {
             var classReader = classSource.get(className);
             var hasExportedMembers = false;
             hasExportedMembers |= exportClassInstanceMembers(classReader);
             if (!className.equals(context.getEntryPoint())) {
-                hasExportedMembers |= exportClassStaticMembers(classReader);
-                if (hasExportedMembers && !typeHelper.isJavaScriptClass(className)
-                        && !typeHelper.isJavaScriptImplementation(className)) {
-                    exportClassFromModule(classReader);
+                var name = "$rt_export_class_ " + getClassAliasName(classReader) + "_" + lastExportIndex++;
+                hasExportedMembers |= exportClassStaticMembers(classReader, name);
+                if (hasExportedMembers) {
+                    exportedNamesByClass.put(className, name);
                 }
             }
         }
         writer.outdent().append("})();").newLine();
+        for (var className : classSource.getClassNames()) {
+            var classReader = classSource.get(className);
+            var name = exportedNamesByClass.get(className);
+            if (name != null && !typeHelper.isJavaScriptClass(className)
+                    && !typeHelper.isJavaScriptImplementation(className)) {
+                exportClassFromModule(classReader, name);
+            }
+        }
     }
 
     private boolean exportClassInstanceMembers(ClassReader classReader) {
@@ -125,14 +135,14 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
         return true;
     }
 
-    private boolean exportClassStaticMembers(ClassReader classReader) {
+    private boolean exportClassStaticMembers(ClassReader classReader, String name) {
         var members = collectMembers(classReader, c -> c.hasModifier(ElementModifier.STATIC));
 
         if (members.methods.isEmpty() && members.properties.isEmpty()) {
             return false;
         }
 
-        writer.append("c").ws().append("=").ws().appendClass(classReader.getName()).append(";").softNewLine();
+        writer.append("c").ws().append("=").ws().appendFunction(name).append(";").softNewLine();
 
         for (var aliasEntry : members.methods.entrySet()) {
             appendMethodAlias(aliasEntry.getKey());
@@ -175,6 +185,7 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
     private Members collectMembers(ClassReader classReader, Predicate<MethodReader> filter) {
         var methods = new HashMap<String, MethodDescriptor>();
         var properties = new HashMap<String, PropertyInfo>();
+        MethodDescriptor constructor = null;
         for (var method : classReader.getMethods()) {
             if (!filter.test(method)) {
                 continue;
@@ -195,10 +206,13 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
                         propInfo.setter = method.getDescriptor();
                         break;
                     }
+                    case CONSTRUCTOR:
+                        constructor = method.getDescriptor();
+                        break;
                 }
             }
         }
-        return new Members(methods, properties);
+        return new Members(methods, properties, constructor);
     }
 
     private void exportModule() {
@@ -214,7 +228,40 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
         }
     }
 
-    private void exportClassFromModule(ClassReader cls) {
+    private void exportClassFromModule(ClassReader cls, String functionName) {
+        var name = getClassAliasName(cls);
+        var constructors = collectMembers(cls, method -> !method.hasModifier(ElementModifier.STATIC));
+
+        var method = constructors.constructor;
+        writer.append("function ").appendFunction(functionName).append("(");
+        if (method != null) {
+            for (var i = 0; i < method.parameterCount(); ++i) {
+                if (i > 0) {
+                    writer.append(",").ws();
+                }
+                writer.append("p" + i);
+            }
+        }
+        writer.append(")").ws().appendBlockStart();
+        if (method != null) {
+            writer.appendClass(cls.getName()).append(".call(this);").softNewLine();
+            writer.appendMethod(new MethodReference(cls.getName(), method)).append("(this");
+            for (var i = 0; i < method.parameterCount(); ++i) {
+                writer.append(",").ws().append("p" + i);
+            }
+            writer.append(");").softNewLine();
+        } else {
+            writer.append("throw new Error(\"Can't instantiate this class directly\");").softNewLine();
+        }
+
+        writer.outdent().append("}").append(";").softNewLine();
+
+        writer.appendFunction(functionName).append(".prototype").ws().append("=").ws()
+                .appendClass(cls.getName()).append(".prototype;").softNewLine();
+        context.exportFunction(functionName, name);
+    }
+
+    private String getClassAliasName(ClassReader cls) {
         var name = cls.getSimpleName();
         if (name == null) {
             name = cls.getName().substring(cls.getName().lastIndexOf('.') + 1);
@@ -229,7 +276,7 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
                 }
             }
         }
-        context.exportClass(cls.getName(), name);
+        return name;
     }
 
     private boolean hasClassesToExpose() {
@@ -261,6 +308,11 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
         annot = method.getAnnotations().get(JSSetterToExpose.class.getName());
         if (annot != null) {
             return new Alias(annot.getValue("name").getString(), AliasKind.SETTER);
+        }
+
+        annot = method.getAnnotations().get(JSConstructorToExpose.class.getName());
+        if (annot != null) {
+            return new Alias(null, AliasKind.CONSTRUCTOR);
         }
 
         return null;
@@ -354,10 +406,13 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
     private static class Members {
         final Map<String, MethodDescriptor> methods;
         final Map<String, PropertyInfo> properties;
+        final MethodDescriptor constructor;
 
-        Members(Map<String, MethodDescriptor> methods, Map<String, PropertyInfo> properties) {
+        Members(Map<String, MethodDescriptor> methods, Map<String, PropertyInfo> properties,
+                MethodDescriptor constructor) {
             this.methods = methods;
             this.properties = properties;
+            this.constructor = constructor;
         }
     }
 
@@ -379,6 +434,7 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
     private enum AliasKind {
         METHOD,
         GETTER,
-        SETTER
+        SETTER,
+        CONSTRUCTOR
     }
 }

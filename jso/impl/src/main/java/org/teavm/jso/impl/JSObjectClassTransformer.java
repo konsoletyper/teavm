@@ -241,12 +241,17 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             case SETTER:
                 annotationName = JSSetterToExpose.class.getName();
                 break;
+            case CONSTRUCTOR:
+                annotationName = JSConstructorToExpose.class.getName();
+                break;
             default:
                 annotationName = JSMethodToExpose.class.getName();
                 break;
         }
         var annot = new AnnotationHolder(annotationName);
-        annot.getValues().put("name", new AnnotationValue(export.alias));
+        if (export.kind != MethodKind.CONSTRUCTOR) {
+            annot.getValues().put("name", new AnnotationValue(export.alias));
+        }
         return annot;
     }
 
@@ -348,51 +353,55 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     private MethodExport createMethodExport(MethodReader method) {
         String name = null;
         MethodKind kind = MethodKind.METHOD;
-        var methodAnnot = method.getAnnotations().get(JSMethod.class.getName());
-        if (methodAnnot != null) {
-            name = method.getName();
-            var nameVal = methodAnnot.getValue("value");
-            if (nameVal != null) {
-                String nameStr = nameVal.getString();
-                if (!nameStr.isEmpty()) {
-                    name = nameStr;
-                }
-            }
+        if (method.getName().equals("<init>")) {
+            kind = MethodKind.CONSTRUCTOR;
         } else {
-            var propertyAnnot = method.getAnnotations().get(JSProperty.class.getName());
-            if (propertyAnnot != null) {
-                var nameVal = propertyAnnot.getValue("value");
+            var methodAnnot = method.getAnnotations().get(JSMethod.class.getName());
+            if (methodAnnot != null) {
+                name = method.getName();
+                var nameVal = methodAnnot.getValue("value");
                 if (nameVal != null) {
                     String nameStr = nameVal.getString();
                     if (!nameStr.isEmpty()) {
                         name = nameStr;
                     }
                 }
-                String expectedPrefix;
-                if (method.parameterCount() == 0) {
-                    if (method.getResultType() == ValueType.BOOLEAN) {
-                        expectedPrefix = "is";
-                    } else {
-                        expectedPrefix = "get";
+            } else {
+                var propertyAnnot = method.getAnnotations().get(JSProperty.class.getName());
+                if (propertyAnnot != null) {
+                    var nameVal = propertyAnnot.getValue("value");
+                    if (nameVal != null) {
+                        String nameStr = nameVal.getString();
+                        if (!nameStr.isEmpty()) {
+                            name = nameStr;
+                        }
                     }
-                    kind = MethodKind.GETTER;
-                } else {
-                    expectedPrefix = "set";
-                    kind = MethodKind.SETTER;
-                }
+                    String expectedPrefix;
+                    if (method.parameterCount() == 0) {
+                        if (method.getResultType() == ValueType.BOOLEAN) {
+                            expectedPrefix = "is";
+                        } else {
+                            expectedPrefix = "get";
+                        }
+                        kind = MethodKind.GETTER;
+                    } else {
+                        expectedPrefix = "set";
+                        kind = MethodKind.SETTER;
+                    }
 
-                if (name == null) {
-                    name = method.getName();
-                    if (name.startsWith(expectedPrefix) && name.length() > expectedPrefix.length()
-                            && Character.isUpperCase(name.charAt(expectedPrefix.length()))) {
-                        name = Character.toLowerCase(name.charAt(expectedPrefix.length()))
-                                + name.substring(expectedPrefix.length() + 1);
+                    if (name == null) {
+                        name = method.getName();
+                        if (name.startsWith(expectedPrefix) && name.length() > expectedPrefix.length()
+                                && Character.isUpperCase(name.charAt(expectedPrefix.length()))) {
+                            name = Character.toLowerCase(name.charAt(expectedPrefix.length()))
+                                    + name.substring(expectedPrefix.length() + 1);
+                        }
                     }
                 }
             }
-        }
-        if (name == null) {
-            name = method.getName();
+            if (name == null) {
+                name = method.getName();
+            }
         }
         return new MethodExport(name, kind);
     }
@@ -421,7 +430,8 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     enum MethodKind {
         METHOD,
         GETTER,
-        SETTER
+        SETTER,
+        CONSTRUCTOR
     }
 
     static class MethodExport {
