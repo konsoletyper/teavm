@@ -68,6 +68,14 @@ public class ImportModuleTest {
         assertEquals(23, o.getFoo());
     }
 
+    @Test
+    @JsModuleTest
+    @ServeJS(from = "org/teavm/jso/test/classWithConstructorInModule.js", as = "testModule.js")
+    public void topLevel() {
+        assertEquals("top level", ClassWithConstructorInModule.topLevelFunction());
+        assertEquals("top level prop", ClassWithConstructorInModule.getTopLevelProperty());
+    }
+
     @JSBody(
             script = "return testModule.foo();",
             imports = @JSBodyImport(alias = "testModule", fromModule = "./testModule.js")

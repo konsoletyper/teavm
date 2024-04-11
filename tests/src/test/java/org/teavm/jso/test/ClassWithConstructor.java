@@ -18,6 +18,7 @@ package org.teavm.jso.test;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.JSTopLevel;
 
 @JSClass
 public class ClassWithConstructor implements JSObject {
@@ -33,4 +34,15 @@ public class ClassWithConstructor implements JSObject {
     public native String bar();
 
     public static native String staticMethod();
+
+    @JSTopLevel
+    public static native String topLevelFunction();
+
+    @JSTopLevel
+    @JSProperty
+    public static native String getTopLevelProperty();
+
+    @JSTopLevel
+    @JSProperty
+    public static native void setTopLevelProperty(String value);
 }

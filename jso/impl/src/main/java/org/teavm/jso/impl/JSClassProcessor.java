@@ -39,6 +39,7 @@ import org.teavm.jso.JSClass;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSPrimitiveType;
+import org.teavm.jso.JSTopLevel;
 import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationReader;
@@ -991,9 +992,19 @@ class JSClassProcessor {
     }
 
     private Variable getCallTarget(InvokeInstruction invoke) {
-        return invoke.getInstance() != null
-                ? invoke.getInstance()
-                : marshaller.classRef(invoke.getMethod().getClassName(), invoke.getLocation());
+        if (invoke.getInstance() != null) {
+            return invoke.getInstance();
+        }
+        var cls = classSource.get(invoke.getMethod().getClassName());
+        var method = cls != null ? cls.getMethod(invoke.getMethod().getDescriptor()) : null;
+        var isTopLevel = (cls != null && cls.getAnnotations().get(JSTopLevel.class.getName()) != null)
+                || (method != null && method.getAnnotations().get(JSTopLevel.class.getName()) != null);
+        if (isTopLevel) {
+            var methodAnnotations = method != null ? method.getAnnotations() : null;
+            return marshaller.moduleRef(invoke.getMethod().getClassName(), methodAnnotations, invoke.getLocation());
+        } else {
+            return marshaller.classRef(invoke.getMethod().getClassName(), invoke.getLocation());
+        }
     }
 
     private boolean processConstructor(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {

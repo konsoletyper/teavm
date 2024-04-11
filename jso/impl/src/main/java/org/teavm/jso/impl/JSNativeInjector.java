@@ -63,19 +63,31 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
                 break;
             case "get":
             case "getPure":
-                context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
-                renderProperty(context.getArgument(1), context);
+                if (isNull(context.getArgument(0))) {
+                    writer.append(extractPropertyName(context.getArgument(1)));
+                } else {
+                    context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
+                    renderProperty(context.getArgument(1), context);
+                }
                 break;
             case "set":
             case "setPure":
-                context.writeExpr(context.getArgument(0), Precedence.ASSIGNMENT.next());
-                renderProperty(context.getArgument(1), context);
+                if (isNull(context.getArgument(0))) {
+                    writer.append(extractPropertyName(context.getArgument(1)));
+                } else {
+                    context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS.next());
+                    renderProperty(context.getArgument(1), context);
+                }
                 writer.ws().append('=').ws();
                 context.writeExpr(context.getArgument(2), Precedence.ASSIGNMENT.next());
                 break;
             case "invoke":
-                context.writeExpr(context.getArgument(0), Precedence.GROUPING);
-                renderProperty(context.getArgument(1), context);
+                if (isNull(context.getArgument(0))) {
+                    writer.append(extractPropertyName(context.getArgument(1)));
+                } else {
+                    context.writeExpr(context.getArgument(0), Precedence.GROUPING);
+                    renderProperty(context.getArgument(1), context);
+                }
                 writer.append('(');
                 for (int i = 2; i < context.argumentCount(); ++i) {
                     if (i > 2) {
@@ -234,15 +246,30 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
         }
     }
 
+    private static boolean isNull(Expr expr) {
+        if (expr instanceof ConstantExpr) {
+            var constantExpr = (ConstantExpr) expr;
+            if (constantExpr.getValue() == null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void applyFunction(InjectorContext context) {
         if (tryApplyFunctionOptimized(context)) {
             return;
         }
         var writer = context.getWriter();
-        writer.appendFunction("$rt_apply").append("(");
-        context.writeExpr(context.getArgument(0), Precedence.ASSIGNMENT);
-        writer.append(",").ws();
-        context.writeExpr(context.getArgument(1), Precedence.ASSIGNMENT);
+        if (isNull(context.getArgument(0))) {
+            writer.appendFunction("$rt_apply_topLevel").append("(");
+            writer.append(extractPropertyName(context.getArgument(1)));
+        } else {
+            writer.appendFunction("$rt_apply").append("(");
+            context.writeExpr(context.getArgument(0), Precedence.ASSIGNMENT);
+            writer.append(",").ws();
+            context.writeExpr(context.getArgument(1), Precedence.ASSIGNMENT);
+        }
         writer.append(",").ws();
         context.writeExpr(context.getArgument(2), Precedence.ASSIGNMENT);
         writer.append(")");
@@ -323,8 +350,12 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
 
     private void applyFunctionOptimized(InjectorContext context, List<Expr> paramList) {
         var writer = context.getWriter();
-        context.writeExpr(context.getArgument(0), Precedence.GROUPING);
-        renderProperty(context.getArgument(1), context);
+        if (isNull(context.getArgument(0))) {
+            writer.append(extractPropertyName(context.getArgument(1)));
+        } else {
+            context.writeExpr(context.getArgument(0), Precedence.GROUPING);
+            renderProperty(context.getArgument(1), context);
+        }
         writer.append('(');
         for (int i = 0; i < paramList.size(); ++i) {
             if (i > 0) {

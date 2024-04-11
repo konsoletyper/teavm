@@ -22,6 +22,7 @@ import org.teavm.jso.JSClass;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSModule;
 import org.teavm.jso.JSObject;
+import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -36,6 +37,7 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 
 class JSValueMarshaller {
@@ -563,6 +565,10 @@ class JSValueMarshaller {
     }
 
     Variable classRef(String className, TextLocation location) {
+        return classRef(className, null, location);
+    }
+
+    Variable classRef(String className, AnnotationContainerReader annotations, TextLocation location) {
         String name = null;
         String module = null;
         var cls = classSource.get(className);
@@ -578,15 +584,35 @@ class JSValueMarshaller {
                     }
                 }
             }
-            var jsModule = cls.getAnnotations().get(JSModule.class.getName());
-            if (jsModule != null) {
-                module = jsModule.getValue("value").getString();
-            }
+            module = moduleName(cls.getAnnotations());
         }
         if (name == null) {
             name = cls.getName().substring(cls.getName().lastIndexOf('.') + 1);
         }
+        if (module == null && annotations != null) {
+            module = moduleName(annotations);
+        }
         return module != null ? moduleRef(module, name, location) : globalRef(name, location);
+    }
+
+    Variable moduleRef(String className, AnnotationContainerReader annotations, TextLocation location) {
+        String module = null;
+        var cls = classSource.get(className);
+        if (cls != null) {
+            module = moduleName(cls.getAnnotations());
+        }
+        if (module == null && annotations != null) {
+            module = moduleName(annotations);
+        }
+        return module != null ? moduleRef(module, location) : nullInstance(location);
+    }
+
+    private String moduleName(AnnotationContainerReader annotations) {
+        var jsModule = annotations.get(JSModule.class.getName());
+        if (jsModule != null) {
+            return jsModule.getValue("value").getString();
+        }
+        return null;
     }
 
     Variable globalRef(String name, TextLocation location) {
@@ -602,6 +628,10 @@ class JSValueMarshaller {
     }
 
     Variable moduleRef(String module, String name, TextLocation location) {
+        return dot(moduleRef(module, location), name, location);
+    }
+
+    Variable moduleRef(String module, TextLocation location) {
         var moduleNameInsn = new StringConstantInstruction();
         moduleNameInsn.setReceiver(program.createVariable());
         moduleNameInsn.setConstant(module);
@@ -616,14 +646,26 @@ class JSValueMarshaller {
         invoke.setLocation(location);
         replacement.add(invoke);
 
+        return invoke.getReceiver();
+    }
+
+    Variable dot(Variable instance, String name, TextLocation location) {
         var get = new InvokeInstruction();
         get.setType(InvocationType.SPECIAL);
         get.setMethod(JSMethods.GET_PURE);
         get.setReceiver(program.createVariable());
-        get.setArguments(invoke.getReceiver(), addJsString(name, location));
+        get.setArguments(instance, addJsString(name, location));
         get.setLocation(location);
         replacement.add(get);
 
         return get.getReceiver();
+    }
+
+    Variable nullInstance(TextLocation location) {
+        var nullConstant = new NullConstantInstruction();
+        nullConstant.setReceiver(program.createVariable());
+        nullConstant.setLocation(location);
+        replacement.add(nullConstant);
+        return nullConstant.getReceiver();
     }
 }

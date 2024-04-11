@@ -19,6 +19,7 @@ import org.teavm.jso.JSClass;
 import org.teavm.jso.JSModule;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.JSTopLevel;
 
 @JSClass(name = "ClassWithConstructor")
 @JSModule("./testModule.js")
@@ -33,4 +34,11 @@ public class ClassWithConstructorInModule implements JSObject {
     public native int getFoo();
 
     public native String bar();
+
+    @JSTopLevel
+    public static native String topLevelFunction();
+
+    @JSTopLevel
+    @JSProperty
+    public static native String getTopLevelProperty();
 }

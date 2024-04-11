@@ -15,9 +15,9 @@
  */
 package org.teavm.jso.browser;
 
-import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.JSTopLevel;
 import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSArrayReader;
 import org.teavm.jso.dom.html.HTMLDocument;
@@ -81,47 +81,47 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
     @JSProperty
     public abstract Window getTop();
 
-    @JSBody(params = "message", script = "alert(message);")
+    @JSTopLevel
     public static native void alert(JSObject message);
 
-    @JSBody(params = "message", script = "alert(message);")
+    @JSTopLevel
     public static native void alert(String message);
 
-    @JSBody(params = "message", script = "return confirm(message);")
+    @JSTopLevel
     public static native boolean confirm(JSObject message);
 
-    @JSBody(params = "message", script = "return confirm(message);")
+    @JSTopLevel
     public static native boolean confirm(String message);
 
     public static String prompt(String message) {
         return prompt(message, "");
     }
 
-    @JSBody(params = { "message", "defaultValue" }, script = "return prompt(message, defaultValue);")
+    @JSTopLevel
     public static native String prompt(String message, String defaultValue);
 
-    @JSBody(params = { "handler", "delay" }, script = "return setTimeout(handler, delay);")
+    @JSTopLevel
     public static native int setTimeout(TimerHandler handler, int delay);
 
-    @JSBody(params = { "handler", "delay" }, script = "return setTimeout(handler, delay);")
+    @JSTopLevel
     public static native int setTimeout(TimerHandler handler, double delay);
 
-    @JSBody(params = "timeoutId", script = "clearTimeout(timeoutId);")
+    @JSTopLevel
     public static native void clearTimeout(int timeoutId);
 
-    @JSBody(params = { "handler", "delay" }, script = "return setInterval(handler, delay);")
+    @JSTopLevel
     public static native int setInterval(TimerHandler handler, int delay);
 
-    @JSBody(params = { "handler", "delay" }, script = "return setInterval(handler, delay);")
+    @JSTopLevel
     public static native int setInterval(TimerHandler handler, double delay);
 
-    @JSBody(params = "timeoutId", script = "clearInterval(timeoutId);")
+    @JSTopLevel
     public static native void clearInterval(int timeoutId);
 
-    @JSBody(params = "callback", script = "return requestAnimationFrame(callback);")
+    @JSTopLevel
     public static native int requestAnimationFrame(AnimationFrameCallback callback);
 
-    @JSBody(params = "requestId", script = "cancelAnimationFrame(requestId);")
+    @JSTopLevel
     public static native void cancelAnimationFrame(int requestId);
 
     public abstract void blur();
@@ -170,30 +170,32 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
         postMessage(message, JSArray.of(transfer));
     }
 
-    @JSBody(script = "return window;")
+    @JSTopLevel
+    @JSProperty("window")
     public static native Window current();
 
-    @JSBody(script = "return self;")
+    @JSTopLevel
+    @JSProperty("self")
     public static native Window worker();
 
-    @JSBody(params = "uri", script = "return encodeURI(uri);")
+    @JSTopLevel
     public static native String encodeURI(String uri);
 
-    @JSBody(params = "uri", script = "return encodeURIComponent(uri);")
+    @JSTopLevel
     public static native String encodeURIComponent(String uri);
 
-    @JSBody(params = "uri", script = "return decodeURI(uri);")
+    @JSTopLevel
     public static native String decodeURI(String uri);
 
-    @JSBody(params = "uri", script = "return decodeURIComponent(uri);")
+    @JSTopLevel
     public static native String decodeURIComponent(String uri);
 
     @JSProperty
     public abstract double getDevicePixelRatio();
 
-    @JSBody(params = "s", script = "return atob(s);")
+    @JSTopLevel
     public static native String atob(String s);
 
-    @JSBody(params = "s", script = "return btoa(s);")
+    @JSTopLevel
     public static native String btoa(String s);
 }

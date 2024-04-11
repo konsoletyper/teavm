@@ -13,29 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.jso.test;
 
-class TestClass {
-    static allVararg(...args) {
-        let result = "va";
-        for (const arg of args) {
-            result += ":" + arg;
-        }
-        return result;
+import org.teavm.jso.JSClass;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.JSTopLevel;
+
+@JSClass
+@JSTopLevel
+public class TopLevelDeclarations implements JSObject {
+    private TopLevelDeclarations() {
     }
 
-    static restVararg(a, b, ...args) {
-        let result = `a:${a},b:${b},va`;
-        for (const arg of args) {
-            result += ":" + arg;
-        }
-        return result;
-    }
-}
+    public static native String topLevelFunction();
 
-function topLevelVararg(...args) {
-    let result = "tva";
-    for (const arg of args) {
-        result += ":" + arg;
-    }
-    return result;
+    @JSProperty
+    public static native String getTopLevelProperty();
+
+    @JSProperty
+    public static native void setTopLevelProperty(String value);
 }

@@ -109,3 +109,5 @@ let $rt_setThread = t => {
 }
 
 let $rt_apply = (instance, method, args) => instance[method].apply(instance, args);
+
+let $rt_apply_topLevel = (method, args) => method.apply(null, args);

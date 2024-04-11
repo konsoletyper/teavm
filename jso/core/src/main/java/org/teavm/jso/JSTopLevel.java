@@ -13,29 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.jso;
 
-class TestClass {
-    static allVararg(...args) {
-        let result = "va";
-        for (const arg of args) {
-            result += ":" + arg;
-        }
-        return result;
-    }
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    static restVararg(a, b, ...args) {
-        let result = `a:${a},b:${b},va`;
-        for (const arg of args) {
-            result += ":" + arg;
-        }
-        return result;
-    }
-}
-
-function topLevelVararg(...args) {
-    let result = "tva";
-    for (const arg of args) {
-        result += ":" + arg;
-    }
-    return result;
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.METHOD, ElementType.TYPE })
+public @interface JSTopLevel {
 }
