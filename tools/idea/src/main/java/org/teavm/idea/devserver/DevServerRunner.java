@@ -149,6 +149,7 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
             }
         }
         server.setClassPath(classPath.toArray(new String[0]));
+        server.setCompileOnStartup(true);
 
         DevServerRunner daemon = new DevServerRunner(server);
         System.out.println(PORT_MESSAGE_PREFIX + daemon.port);
