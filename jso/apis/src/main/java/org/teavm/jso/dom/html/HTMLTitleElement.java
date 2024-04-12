@@ -17,10 +17,10 @@ package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
 
-public interface HTMLTitleElement extends HTMLElement {
+public abstract class HTMLTitleElement extends HTMLElement {
     @JSProperty
-    String getText();
+    public abstract String getText();
 
     @JSProperty
-    void setText(String text);
+    public abstract void setText(String text);
 }

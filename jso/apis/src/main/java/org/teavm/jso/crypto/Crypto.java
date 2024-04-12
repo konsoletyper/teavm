@@ -17,6 +17,8 @@ package org.teavm.jso.crypto;
 
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.JSTopLevel;
 import org.teavm.jso.typedarrays.Int16Array;
 import org.teavm.jso.typedarrays.Int32Array;
 import org.teavm.jso.typedarrays.Int8Array;
@@ -28,7 +30,8 @@ public abstract class Crypto implements JSObject {
     @JSBody(script = "return crypto != null;")
     public static native boolean isSupported();
 
-    @JSBody(script = "return crypto;")
+    @JSProperty("crypto")
+    @JSTopLevel
     public static native Crypto current();
 
     public abstract String randomUUID();

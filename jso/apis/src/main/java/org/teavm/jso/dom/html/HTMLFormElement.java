@@ -18,73 +18,73 @@ package org.teavm.jso.dom.html;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSProperty;
 
-public interface HTMLFormElement extends HTMLElement {
+public abstract class HTMLFormElement extends HTMLElement {
     @JSProperty
-    String getAcceptCharset();
+    public abstract String getAcceptCharset();
 
     @JSProperty
-    void setAcceptCharset(String value);
+    public abstract void setAcceptCharset(String value);
 
     @JSProperty
-    String getAction();
+    public abstract String getAction();
 
     @JSProperty
-    void setAction(String value);
+    public abstract void setAction(String value);
 
     @JSProperty
-    String getAutocomplete();
+    public abstract String getAutocomplete();
 
     @JSProperty
-    void setAutocomplete(String value);
+    public abstract void setAutocomplete(String value);
 
     @JSProperty
-    String getEnctype();
+    public abstract String getEnctype();
 
     @JSProperty
-    void setEnctype(String enctype);
+    public abstract void setEnctype(String enctype);
 
     @JSProperty
-    String getEncoding();
+    public abstract String getEncoding();
 
     @JSProperty
-    void setEncoding(String value);
+    public abstract void setEncoding(String value);
 
     @JSProperty
-    String getMethod();
+    public abstract String getMethod();
 
     @JSProperty
-    void setMethod(String value);
+    public abstract void setMethod(String value);
 
     @JSProperty
-    String getName();
+    public abstract String getName();
 
     @JSProperty
-    void setName(String name);
+    public abstract void setName(String name);
 
     @JSProperty
-    boolean isNoValidate();
+    public abstract boolean isNoValidate();
 
     @JSProperty
-    void setNoValidate(boolean value);
+    public abstract void setNoValidate(boolean value);
 
     @JSProperty
-    String getTarget();
+    public abstract String getTarget();
 
     @JSProperty
-    void setTarget(String value);
+    public abstract void setTarget(String value);
 
     @JSIndexer
-    HTMLElement get(String name);
+    public abstract HTMLElement get(String name);
 
     @JSIndexer
-    HTMLElement get(int index);
+    public abstract HTMLElement get(int index);
 
     @JSProperty
-    int getLength();
+    public abstract int getLength();
 
-    void submit();
+    public abstract void submit();
 
-    void reset();
+    public abstract void reset();
 
-    boolean checkValidity();
+    public abstract boolean checkValidity();
 }

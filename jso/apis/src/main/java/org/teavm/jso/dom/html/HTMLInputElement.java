@@ -17,66 +17,66 @@ package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
 
-public interface HTMLInputElement extends HTMLElement {
+public abstract class HTMLInputElement extends HTMLElement {
     @JSProperty
-    boolean isChecked();
+    public abstract boolean isChecked();
 
     @JSProperty
-    void setChecked(boolean checked);
+    public abstract void setChecked(boolean checked);
 
     @JSProperty
-    boolean isDisabled();
+    public abstract boolean isDisabled();
 
     @JSProperty
-    void setDisabled(boolean disabled);
+    public abstract void setDisabled(boolean disabled);
 
     @JSProperty
-    int getMaxLength();
+    public abstract int getMaxLength();
 
     @JSProperty
-    void setMaxLength(int maxLength);
+    public abstract void setMaxLength(int maxLength);
 
     @JSProperty
-    String getName();
+    public abstract String getName();
 
     @JSProperty
-    void setName(String name);
+    public abstract void setName(String name);
 
     @JSProperty
-    boolean isReadOnly();
+    public abstract boolean isReadOnly();
 
     @JSProperty
-    void setReadOnly(boolean readOnly);
+    public abstract void setReadOnly(boolean readOnly);
 
     @JSProperty
-    int getSize();
+    public abstract int getSize();
 
     @JSProperty
-    void setSize(int size);
+    public abstract void setSize(int size);
 
     @JSProperty
-    String getType();
+    public abstract String getType();
 
     @JSProperty
-    void setType(String type);
+    public abstract void setType(String type);
 
     @JSProperty
-    String getValue();
+    public abstract String getValue();
 
     @JSProperty
-    void setValue(String value);
+    public abstract void setValue(String value);
     
-    void setCustomValidity(String validationFailure);
+    public abstract void setCustomValidity(String validationFailure);
     
-    boolean checkValidity();
+    public abstract boolean checkValidity();
     
-    boolean reportValidity();
+    public abstract boolean reportValidity();
 
-    void select();
+    public abstract void select();
 
     @JSProperty
-    String getPlaceholder();
+    public abstract String getPlaceholder();
 
     @JSProperty
-    void setPlaceholder(String value);
+    public abstract void setPlaceholder(String value);
 }

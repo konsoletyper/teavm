@@ -17,40 +17,40 @@ package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
 
-public interface HTMLLinkElement extends HTMLElement {
+public abstract class HTMLLinkElement extends HTMLElement {
     @JSProperty
-    String getHref();
+    public abstract String getHref();
 
     @JSProperty
-    void setHref(String href);
+    public abstract void setHref(String href);
 
     @JSProperty
-    String getCrossOrigin();
+    public abstract String getCrossOrigin();
 
     @JSProperty
-    void setCrossOrigin(String crossOrigin);
+    public abstract void setCrossOrigin(String crossOrigin);
 
     @JSProperty
-    String getRel();
+    public abstract String getRel();
 
     @JSProperty
-    void setRel(String rel);
+    public abstract void setRel(String rel);
 
     @JSProperty
-    String getMedia();
+    public abstract String getMedia();
 
     @JSProperty
-    void setMedia(String media);
+    public abstract void setMedia(String media);
 
     @JSProperty
-    String getHreflang();
+    public abstract String getHreflang();
 
     @JSProperty
-    void setHreflang(String hreflang);
+    public abstract void setHreflang(String hreflang);
 
     @JSProperty
-    String getType();
+    public abstract String getType();
 
     @JSProperty
-    void setType(String property);
+    public abstract void setType(String property);
 }

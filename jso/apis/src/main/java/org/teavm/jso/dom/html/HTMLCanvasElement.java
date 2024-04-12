@@ -19,26 +19,26 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.canvas.CanvasImageSource;
 
-public interface HTMLCanvasElement extends HTMLElement, CanvasImageSource {
+public abstract class HTMLCanvasElement extends HTMLElement implements CanvasImageSource {
     @JSProperty
-    int getWidth();
-
-    @JSProperty
-    void setWidth(int width);
+    public abstract int getWidth();
 
     @JSProperty
-    int getHeight();
+    public abstract void setWidth(int width);
 
     @JSProperty
-    void setHeight(int height);
+    public abstract int getHeight();
 
-    JSObject getContext(String contextId);
+    @JSProperty
+    public abstract void setHeight(int height);
 
-    JSObject getContext(String contextId, JSObject attributes);
+    public abstract JSObject getContext(String contextId);
 
-    String toDataURL(String type, double quality);
+    public abstract JSObject getContext(String contextId, JSObject attributes);
 
-    String toDataURL(String type);
+    public abstract String toDataURL(String type, double quality);
 
-    String toDataURL();
+    public abstract String toDataURL(String type);
+
+    public abstract String toDataURL();
 }

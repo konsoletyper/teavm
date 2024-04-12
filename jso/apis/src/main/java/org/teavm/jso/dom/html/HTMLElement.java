@@ -29,158 +29,158 @@ import org.teavm.jso.dom.xml.Element;
 import org.teavm.jso.dom.xml.Node;
 import org.teavm.jso.dom.xml.NodeList;
 
-public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget, FocusEventTarget, MouseEventTarget,
-        WheelEventTarget, KeyboardEventTarget, LoadEventTarget {
+public abstract class HTMLElement implements Element, ElementCSSInlineStyle, EventTarget, FocusEventTarget,
+        MouseEventTarget, WheelEventTarget, KeyboardEventTarget, LoadEventTarget {
     @Override
-    NodeList<? extends HTMLElement> getElementsByTagName(String name);
+    public abstract NodeList<? extends HTMLElement> getElementsByTagName(String name);
 
     @JSProperty
-    String getTitle();
+    public abstract String getTitle();
 
     @JSProperty
-    void setTitle(String title);
+    public abstract void setTitle(String title);
 
     @JSProperty
-    String getLang();
+    public abstract String getLang();
 
     @JSProperty
-    void setLang(String lang);
+    public abstract void setLang(String lang);
 
     @JSProperty
-    boolean isTranslate();
+    public abstract boolean isTranslate();
 
     @JSProperty
-    void setTranslate(boolean translate);
+    public abstract void setTranslate(boolean translate);
 
     @JSProperty
-    String getDir();
+    public abstract String getDir();
 
     @JSProperty
-    void setDir(String dir);
+    public abstract void setDir(String dir);
 
     @JSProperty
-    boolean isHidden();
+    public abstract boolean isHidden();
 
     @JSProperty
-    void setHidden(boolean hidden);
+    public abstract void setHidden(boolean hidden);
 
-    void click();
-
-    @JSProperty
-    int getTabIndex();
+    public abstract void click();
 
     @JSProperty
-    void setTabIndex(int tabIndex);
-
-    void focus();
-
-    void blur();
+    public abstract int getTabIndex();
 
     @JSProperty
-    String getAccessKey();
+    public abstract void setTabIndex(int tabIndex);
+
+    public abstract void focus();
+
+    public abstract void blur();
 
     @JSProperty
-    void setAccessKey(String accessKey);
+    public abstract String getAccessKey();
 
     @JSProperty
-    String getAccessKeyLabel();
+    public abstract void setAccessKey(String accessKey);
 
     @JSProperty
-    int getClientWidth();
+    public abstract String getAccessKeyLabel();
 
     @JSProperty
-    int getClientHeight();
+    public abstract int getClientWidth();
 
     @JSProperty
-    int getAbsoluteLeft();
+    public abstract int getClientHeight();
 
     @JSProperty
-    int getAbsoluteTop();
+    public abstract int getAbsoluteLeft();
 
     @JSProperty
-    int getScrollLeft();
+    public abstract int getAbsoluteTop();
 
     @JSProperty
-    void setScrollLeft(int scrollLeft);
+    public abstract int getScrollLeft();
 
     @JSProperty
-    int getScrollTop();
+    public abstract void setScrollLeft(int scrollLeft);
 
     @JSProperty
-    void setScrollTop(int scrollTop);
+    public abstract int getScrollTop();
 
     @JSProperty
-    int getScrollWidth();
+    public abstract void setScrollTop(int scrollTop);
 
     @JSProperty
-    int getScrollHeight();
+    public abstract int getScrollWidth();
 
     @JSProperty
-    int getOffsetWidth();
+    public abstract int getScrollHeight();
 
     @JSProperty
-    int getOffsetHeight();
+    public abstract int getOffsetWidth();
 
     @JSProperty
-    int getOffsetTop();
+    public abstract int getOffsetHeight();
 
     @JSProperty
-    int getOffsetLeft();
+    public abstract int getOffsetTop();
+
+    @JSProperty
+    public abstract int getOffsetLeft();
 
     @JSProperty
     @Override
-    HTMLDocument getOwnerDocument();
+    public abstract HTMLDocument getOwnerDocument();
 
     @JSProperty
-    HTMLCollection getChildren();
+    public abstract HTMLCollection getChildren();
 
     @JSProperty
-    String getInnerHTML();
+    public abstract String getInnerHTML();
 
     @JSProperty
-    void setInnerHTML(String content);
+    public abstract void setInnerHTML(String content);
 
     @JSProperty
-    String getInnerText();
+    public abstract String getInnerText();
 
     @JSProperty
-    void setInnerText(String content);
+    public abstract void setInnerText(String content);
 
-    TextRectangle getBoundingClientRect();
-
-    @JSProperty
-    String getClassName();
+    public abstract TextRectangle getBoundingClientRect();
 
     @JSProperty
-    void setClassName(String className);
+    public abstract String getClassName();
 
     @JSProperty
-    DOMTokenList getClassList();
+    public abstract void setClassName(String className);
 
-    default HTMLElement withAttr(String name, String value) {
+    @JSProperty
+    public abstract DOMTokenList getClassList();
+
+    public final HTMLElement withAttr(String name, String value) {
         setAttribute(name, value);
         return this;
     }
 
-    default HTMLElement withChild(String tagName) {
+    public final HTMLElement withChild(String tagName) {
         HTMLElement result = getOwnerDocument().createElement(tagName);
         appendChild(result);
         return this;
     }
 
-    default HTMLElement withChild(Node node) {
+    public final HTMLElement withChild(Node node) {
         appendChild(node);
         return this;
     }
 
-    default HTMLElement withChild(String tagName, Consumer<HTMLElement> consumer) {
+    public final HTMLElement withChild(String tagName, Consumer<HTMLElement> consumer) {
         HTMLElement result = getOwnerDocument().createElement(tagName);
         appendChild(result);
         consumer.accept(result);
         return this;
     }
 
-    default HTMLElement clear() {
+    public final HTMLElement clear() {
         Node node = getLastChild();
         while (node != null) {
             Node prev = node.getPreviousSibling();
@@ -192,16 +192,16 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
         return this;
     }
 
-    default HTMLElement withText(String content) {
+    public final HTMLElement withText(String content) {
         clear().appendChild(getOwnerDocument().createTextNode(content));
         return this;
     }
 
     @Override
-    HTMLElement querySelector(String selectors);
+    public abstract HTMLElement querySelector(String selectors);
 
     @Override
-    NodeList<? extends HTMLElement> querySelectorAll(String selectors);
+    public abstract NodeList<? extends HTMLElement> querySelectorAll(String selectors);
 
-    void requestPointerLock();
+    public abstract void requestPointerLock();
 }

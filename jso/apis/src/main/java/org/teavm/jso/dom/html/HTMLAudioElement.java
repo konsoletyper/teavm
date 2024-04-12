@@ -15,10 +15,5 @@
  */
 package org.teavm.jso.dom.html;
 
-/**
- *
- * @author Junji Takakura
- */
-public interface HTMLAudioElement extends HTMLMediaElement {
-
+public abstract class HTMLAudioElement extends HTMLMediaElement {
 }
