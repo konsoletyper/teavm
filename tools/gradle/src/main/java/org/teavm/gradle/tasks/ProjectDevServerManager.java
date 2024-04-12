@@ -43,6 +43,7 @@ import org.teavm.common.json.JsonArrayValue;
 import org.teavm.common.json.JsonObjectValue;
 import org.teavm.common.json.JsonParser;
 import org.teavm.common.json.JsonValue;
+import org.teavm.gradle.api.JSModuleType;
 
 public class ProjectDevServerManager {
     private Set<File> serverClasspath = new LinkedHashSet<>();
@@ -51,6 +52,7 @@ public class ProjectDevServerManager {
     private String targetFilePath;
     private Map<String, String> properties = new LinkedHashMap<>();
     private Set<String> preservedClasses = new LinkedHashSet<>();
+    private JSModuleType jsModuleType;
     private String mainClass;
     private boolean stackDeobfuscated;
     private boolean indicator;
@@ -79,6 +81,7 @@ public class ProjectDevServerManager {
     private String runningTargetFilePath;
     private Map<String, String> runningProperties = new HashMap<>();
     private Set<String> runningPreservedClasses = new HashSet<>();
+    private JSModuleType runningJsModuleType;
     private String runningMainClass;
     private boolean runningStackDeobfuscated;
     private boolean runningIndicator;
@@ -112,6 +115,10 @@ public class ProjectDevServerManager {
     public void setPreservedClasses(Collection<String> preservedClasses) {
         this.preservedClasses.clear();
         this.preservedClasses.addAll(preservedClasses);
+    }
+
+    public void setJsModuleType(JSModuleType jsModuleType) {
+        this.jsModuleType = jsModuleType;
     }
 
     public void setTargetFileName(String targetFileName) {
@@ -561,6 +568,12 @@ public class ProjectDevServerManager {
         runningPreservedClasses.clear();
         runningPreservedClasses.addAll(preservedClasses);
 
+        if (jsModuleType != null) {
+            command.add("--js-module-type");
+            command.add(jsModuleType.name().toLowerCase().replace('_', '-'));
+        }
+        runningJsModuleType = jsModuleType;
+
         command.add("--");
         command.add(mainClass);
         runningMainClass = mainClass;
@@ -575,6 +588,7 @@ public class ProjectDevServerManager {
                 && Objects.equals(targetFilePath, runningTargetFilePath)
                 && Objects.equals(properties, runningProperties)
                 && Objects.equals(preservedClasses, runningPreservedClasses)
+                && Objects.equals(jsModuleType, runningJsModuleType)
                 && Objects.equals(mainClass, runningMainClass)
                 && stackDeobfuscated == runningStackDeobfuscated
                 && indicator == runningIndicator

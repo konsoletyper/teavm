@@ -147,6 +147,7 @@ public class TeaVMPlugin implements Plugin<Project> {
             task.getMainClass().convention(js.getMainClass());
             task.getClasspath().from(task.getProject().getConfigurations().getByName(CLASSPATH_CONFIGURATION_NAME));
             task.getPreservedClasses().addAll(js.getPreservedClasses());
+            task.getJsModuleType().convention(js.getModuleType());
             task.getProcessMemory().convention(js.getDevServer().getProcessMemory());
             task.getProperties().putAll(js.getProperties());
             task.getServerClasspath().from(configuration);
