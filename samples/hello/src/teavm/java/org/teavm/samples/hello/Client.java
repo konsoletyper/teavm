@@ -31,7 +31,7 @@ public final class Client {
     }
 
     public static void main(String[] args) {
-        helloButton.listenClick(evt -> sayHello());
+        helloButton.onClick(evt -> sayHello());
     }
 
     private static void sayHello() {

@@ -18,6 +18,7 @@ package org.teavm.jso.webaudio;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
+import org.teavm.jso.dom.events.Registration;
 
 @JSClass
 public class OfflineAudioContext extends AudioContext {
@@ -26,6 +27,10 @@ public class OfflineAudioContext extends AudioContext {
 
     @JSProperty("oncomplete")
     public native EventListener<OfflineAudioCompletionEvent> getOnComplete();
+
+    public final Registration onComplete(EventListener<OfflineAudioCompletionEvent> listener) {
+        return onEvent("complete", listener);
+    }
 
     public native AudioBuffer startRendering();
 

@@ -16,19 +16,31 @@
 package org.teavm.jso.dom.events;
 
 public interface FocusEventTarget extends EventTarget {
+    @Deprecated
     default void listenFocus(EventListener<Event> listener) {
         addEventListener("focus", listener);
     }
 
+    @Deprecated
     default void neglectFocus(EventListener<Event> listener) {
         removeEventListener("focus", listener);
     }
 
+    @Deprecated
     default void listenBlur(EventListener<Event> listener) {
         addEventListener("blur", listener);
     }
 
+    @Deprecated
     default void neglectBlur(EventListener<Event> listener) {
         removeEventListener("blur", listener);
+    }
+
+    default Registration onFocus(EventListener<? super Event> listener) {
+        return onEvent("focus", listener);
+    }
+
+    default Registration onBlur(EventListener<? super Event> listener) {
+        return onEvent("blur", listener);
     }
 }

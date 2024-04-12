@@ -27,4 +27,14 @@ public interface EventTarget extends JSObject {
     void removeEventListener(String type, EventListener<?> listener);
 
     boolean dispatchEvent(Event evt);
+
+    default Registration onEvent(String type, boolean useCapture, EventListener<?> listener) {
+        addEventListener(type, listener, useCapture);
+        return new Registration(this, type, listener, useCapture);
+    }
+
+    default Registration onEvent(String type, EventListener<?> listener) {
+        addEventListener(type, listener);
+        return new Registration(this, type, listener, null);
+    }
 }

@@ -17,6 +17,7 @@ package org.teavm.jso.webaudio;
 
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
+import org.teavm.jso.dom.events.Registration;
 
 public interface ScriptProcessorNode extends AudioNode {
     @JSProperty("onaudioprocess")
@@ -24,6 +25,10 @@ public interface ScriptProcessorNode extends AudioNode {
 
     @JSProperty("onaudioprocess")
     void setOnAudioProcess(EventListener<AudioProcessingEvent> event);
+
+    default Registration onAudioProcess(EventListener<AudioProcessingEvent> listener) {
+        return onEvent("audioprocess", listener);
+    }
 
     @JSProperty
     int getBufferSize();

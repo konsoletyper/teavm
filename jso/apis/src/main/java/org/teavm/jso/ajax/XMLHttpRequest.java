@@ -22,6 +22,7 @@ import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.EventTarget;
+import org.teavm.jso.dom.events.Registration;
 import org.teavm.jso.dom.xml.Document;
 
 @JSClass
@@ -65,29 +66,40 @@ public class XMLHttpRequest implements JSObject, EventTarget {
     @JSProperty("onreadystatechange")
     public native void setOnReadyStateChange(EventListener<Event> handler);
 
-    @JSProperty("onabort")
-    public native void onAbort(EventListener<ProgressEvent> eventListener);
+    public final Registration onReadyStateChange(EventListener<Event> handler) {
+        return onEvent("readystatechange", handler);
+    }
 
-    @JSProperty("onerror")
-    public native void onError(EventListener<ProgressEvent> eventListener);
+    public final Registration onAbort(EventListener<ProgressEvent> eventListener) {
+        return onEvent("abort", eventListener);
+    }
 
-    @JSProperty("onload")
-    public native void onLoad(EventListener<ProgressEvent> eventListener);
+    public final Registration onError(EventListener<ProgressEvent> eventListener) {
+        return onEvent("error", eventListener);
+    }
 
-    @JSProperty("onloadstart")
-    public native void onLoadStart(EventListener<ProgressEvent> eventListener);
+    public final Registration onLoad(EventListener<ProgressEvent> eventListener) {
+        return onEvent("load", eventListener);
+    }
 
-    @JSProperty("onloadend")
-    public native void onLoadEnd(EventListener<ProgressEvent> eventListener);
+    public final Registration onLoadStart(EventListener<ProgressEvent> eventListener) {
+        return onEvent("loadstart", eventListener);
+    }
 
-    @JSProperty("onprogress")
-    public native void onProgress(EventListener<ProgressEvent> eventListener);
+    public final Registration onLoadEnd(EventListener<ProgressEvent> eventListener) {
+        return onEvent("loadend", eventListener);
+    }
 
-    @JSProperty("ontimeout")
-    public native void onTimeout(EventListener<ProgressEvent> eventListener);
+    public final Registration onProgress(EventListener<ProgressEvent> eventListener) {
+        return onEvent("progress", eventListener);
+    }
 
-    public final void onComplete(Runnable runnable) {
-        setOnReadyStateChange(() -> {
+    public final Registration onTimeout(EventListener<ProgressEvent> eventListener) {
+        return onEvent("timeout", eventListener);
+    }
+
+    public final Registration onComplete(Runnable runnable) {
+        return onReadyStateChange(event -> {
             if (getReadyState() == DONE) {
                 runnable.run();
             }

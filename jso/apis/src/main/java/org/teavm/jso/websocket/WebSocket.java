@@ -21,12 +21,14 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
+import org.teavm.jso.dom.events.EventTarget;
 import org.teavm.jso.dom.events.MessageEvent;
+import org.teavm.jso.dom.events.Registration;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.ArrayBufferView;
 
 @JSClass
-public class WebSocket implements JSObject {
+public class WebSocket implements JSObject, EventTarget {
   public WebSocket(String url) {
   }
 
@@ -36,17 +38,21 @@ public class WebSocket implements JSObject {
   public WebSocket(String url, String[] protocols) {
   }
 
-  @JSProperty("onclose")
-  public native void onClose(EventListener<CloseEvent> eventListener);
+  public final Registration onClose(EventListener<CloseEvent> eventListener) {
+    return onEvent("close", eventListener);
+  }
 
-  @JSProperty("onerror")
-  public native void onError(EventListener<Event> eventListener);
+  public final Registration onError(EventListener<Event> eventListener) {
+    return onEvent("error", eventListener);
+  }
 
-  @JSProperty("onmessage")
-  public native void onMessage(EventListener<MessageEvent> eventListener);
+  public final Registration onMessage(EventListener<MessageEvent> eventListener) {
+    return onEvent("message", eventListener);
+  }
 
-  @JSProperty("onopen")
-  public native void onOpen(EventListener<Event> eventListener);
+  public final Registration onOpen(EventListener<Event> eventListener) {
+    return onEvent("open", eventListener);
+  }
 
   @JSBody(params = "url", script = "return new WebSocket(url);")
   @Deprecated
@@ -95,4 +101,19 @@ public class WebSocket implements JSObject {
 
   @JSBody(script = "return typeof WebSocket !== 'undefined';")
   public static native boolean isSupported();
+
+  @Override
+  public native void addEventListener(String type, EventListener<?> listener, boolean useCapture);
+
+  @Override
+  public native void addEventListener(String type, EventListener<?> listener);
+
+  @Override
+  public native void removeEventListener(String type, EventListener<?> listener, boolean useCapture);
+
+  @Override
+  public native void removeEventListener(String type, EventListener<?> listener);
+
+  @Override
+  public native boolean dispatchEvent(Event evt);
 }

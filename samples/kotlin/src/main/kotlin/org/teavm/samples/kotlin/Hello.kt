@@ -20,5 +20,5 @@ import org.teavm.jso.browser.*
 fun main() {
     val document = Window.current().document
 
-    document.getElementById("hello-kotlin").addEventListener("click") { Window.alert("Hello, developer!") }
+    document.getElementById("hello-kotlin").onClick { Window.alert("Hello, developer!") }
 }

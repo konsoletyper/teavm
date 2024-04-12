@@ -19,8 +19,10 @@ import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
+import org.teavm.jso.dom.events.EventTarget;
+import org.teavm.jso.dom.events.Registration;
 
-public interface AudioWorker extends JSObject {
+public interface AudioWorker extends EventTarget {
     @JSProperty
     AudioWorkerParamDescriptor[] getParameters();
 
@@ -30,11 +32,19 @@ public interface AudioWorker extends JSObject {
     @JSProperty(value = "onmessage")
     EventListener<MediaEvent> getOnMessage();
 
+    default Registration onMessage(EventListener<MediaEvent> listener) {
+        return onEvent("message", listener);
+    }
+
     @JSProperty(value = "onloaded")
     void setOnLoaded(EventListener<MediaEvent> event);
 
     @JSProperty(value = "onloaded")
     EventListener<MediaEvent> getOnLoaded();
+
+    default Registration onLoaded(EventListener<MediaEvent> listener) {
+        return onEvent("loaded", listener);
+    }
 
     void terminate();
 

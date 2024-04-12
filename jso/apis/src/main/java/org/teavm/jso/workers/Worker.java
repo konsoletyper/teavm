@@ -22,6 +22,7 @@ import org.teavm.jso.dom.events.ErrorEvent;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MessageEvent;
+import org.teavm.jso.dom.events.Registration;
 
 @JSClass
 public class Worker implements AbstractWorker {
@@ -32,15 +33,13 @@ public class Worker implements AbstractWorker {
     @Deprecated
     public static native Worker create(String url);
 
-    @JSProperty("onmessage")
-    public native void onMessage(EventListener<MessageEvent> listener);
+    public Registration onMessage(EventListener<MessageEvent> listener) {
+        return onEvent("message", listener);
+    }
 
     public native void postMessage(Object message);
 
     public native void terminate();
-
-    @Override
-    public native void onError(EventListener<ErrorEvent> listener);
 
     @Override
     public native void addEventListener(String type, EventListener<?> listener, boolean useCapture);

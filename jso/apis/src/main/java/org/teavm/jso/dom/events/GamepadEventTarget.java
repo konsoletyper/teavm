@@ -18,20 +18,31 @@ package org.teavm.jso.dom.events;
 import org.teavm.jso.gamepad.GamepadEvent;
 
 public interface GamepadEventTarget extends EventTarget {
+    @Deprecated
     default void listenGamepadConnected(EventListener<GamepadEvent> listener) {
         addEventListener("gamepadconnected", listener);
     }
 
+    @Deprecated
     default void neglectGamepadConnected(EventListener<GamepadEvent> listener) {
         removeEventListener("gamepadconnected", listener);
     }
 
+    @Deprecated
     default void listenGamepadDisconnected(EventListener<GamepadEvent> listener) {
         addEventListener("gamepaddisconnected", listener);
     }
 
+    @Deprecated
     default void neglectGamepadDisconnected(EventListener<GamepadEvent> listener) {
         removeEventListener("gamepaddisconnected", listener);
     }
 
+    default Registration onGamepadConnected(EventListener<? super Event> listener) {
+        return onEvent("gamepadconnected", listener);
+    }
+
+    default Registration onGamepadDisconnected(EventListener<? super Event> listener) {
+        return onEvent("gamepaddisconnected", listener);
+    }
 }

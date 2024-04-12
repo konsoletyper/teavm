@@ -17,8 +17,9 @@ package org.teavm.jso.webaudio;
 
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.events.EventTarget;
 
-public interface AudioNode extends JSObject {
+public interface AudioNode extends JSObject, EventTarget {
     String CHANNEL_COUNT_MODE_MAX = "max";
     String CHANNEL_COUNT_MODE_CLAMPED_MAX = "clamped-max";
     String CHANNEL_COUNT_MODE_EXPLICIT = "explicit";
