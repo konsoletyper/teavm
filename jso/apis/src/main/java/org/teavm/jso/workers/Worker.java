@@ -17,8 +17,6 @@ package org.teavm.jso.workers;
 
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSClass;
-import org.teavm.jso.JSProperty;
-import org.teavm.jso.dom.events.ErrorEvent;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MessageEvent;
