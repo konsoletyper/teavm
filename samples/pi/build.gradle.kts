@@ -50,7 +50,7 @@ tasks.war {
 }
 
 tasks.assemble {
-    dependsOn(tasks.generateWasi,)
+    dependsOn(tasks.generateWasi)
 }
 
 val buildNativeLinux by tasks.register<Exec>("buildNativeLinux") {
