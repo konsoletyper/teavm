@@ -93,12 +93,16 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
     }
 
     public void renderParameters(MethodReference reference, Set<ElementModifier> modifiers) {
+        renderParameters(reference, modifiers, false);
+    }
+
+    public void renderParameters(MethodReference reference, Set<ElementModifier> modifiers, boolean forceParentheses) {
         int startParam = 0;
         if (modifiers.contains(ElementModifier.STATIC)) {
             startParam = 1;
         }
         var count = reference.parameterCount() - startParam + 1;
-        if (count != 1) {
+        if (count != 1 || forceParentheses) {
             writer.append("(");
         }
         for (int i = startParam; i <= reference.parameterCount(); ++i) {
@@ -107,7 +111,7 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
             }
             writer.append(statementRenderer.variableName(i));
         }
-        if (count != 1) {
+        if (count != 1 || forceParentheses) {
             writer.append(")");
         }
     }

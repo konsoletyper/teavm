@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,21 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
+package org.teavm.jso.impl;
 
 import org.teavm.backend.javascript.spi.MethodContributor;
 import org.teavm.backend.javascript.spi.MethodContributorContext;
-import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReference;
-import org.teavm.platform.PlatformAnnotationProvider;
 
-public class AnnotationVirtualMethods implements MethodContributor {
+public class JSExportedMethodAsFunction implements MethodContributor {
     @Override
     public boolean isContributing(MethodContributorContext context, MethodReference methodRef) {
-        ClassReader cls = context.getClassSource().get(methodRef.getClassName());
-        if (cls == null || !cls.getInterfaces().contains(PlatformAnnotationProvider.class.getName())) {
-            return false;
+        var method = context.getClassSource().getMethod(methodRef);
+        if (method != null) {
+            if (method.getAnnotations().get(JSVararg.class.getName()) != null) {
+                return true;
+            }
         }
-        return methodRef.getName().equals("getAnnotations");
+
+        return false;
     }
 }

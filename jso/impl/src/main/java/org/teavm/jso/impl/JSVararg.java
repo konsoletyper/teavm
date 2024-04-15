@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,10 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.javascript.spi;
+package org.teavm.jso.impl;
 
-import org.teavm.model.MethodReference;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface VirtualMethodContributor {
-    boolean isVirtual(VirtualMethodContributorContext context, MethodReference methodRef);
+@Retention(RetentionPolicy.CLASS)
+@Target(ElementType.METHOD)
+@interface JSVararg {
 }

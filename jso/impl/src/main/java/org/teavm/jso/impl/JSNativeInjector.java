@@ -237,6 +237,12 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
                 writer.append(")");
                 break;
             }
+            case "argumentsBeginningAt": {
+                writer.appendFunction("$rt_skip").append("(arguments,").ws();
+                context.writeExpr(context.getArgument(0), Precedence.min());
+                writer.append(")");
+                break;
+            }
 
             default:
                 if (methodRef.getName().startsWith("unwrap")) {

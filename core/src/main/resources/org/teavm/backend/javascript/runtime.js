@@ -40,6 +40,12 @@ let $rt_wrapFunction3 = f => function(p1, p2, p3) {
 let $rt_wrapFunction4 = f => function(p1, p2, p3, p4) {
     return f(this, p1, p2, p3, p4);
 }
+let $rt_wrapFunctionVararg = f => function() {
+    let array = new teavm_globals.Array();
+    array.push(this);
+    Array.prototype.push.apply(array, arguments);
+    return f.apply(null, array);
+}
 let $rt_threadStarter = f => function() {
     let args = teavm_globals.Array.prototype.slice.apply(arguments);
     $rt_startThread(function() {
@@ -111,3 +117,5 @@ let $rt_setThread = t => {
 let $rt_apply = (instance, method, args) => instance[method].apply(instance, args);
 
 let $rt_apply_topLevel = (method, args) => method.apply(null, args);
+
+let $rt_skip = (array, count) => count === 0 ? array : Array.prototype.slice.call(array, count);

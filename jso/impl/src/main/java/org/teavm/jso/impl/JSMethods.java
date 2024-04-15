@@ -131,6 +131,8 @@ final class JSMethods {
             JSObject.class, boolean.class);
     public static final MethodReference THROW_CCE_IF_FALSE = new MethodReference(JS.class, "throwCCEIfFalse",
             boolean.class, JSObject.class, JSObject.class);
+    public static final MethodReference ARGUMENTS_BEGINNING_AT = new MethodReference(JS.class,
+            "argumentsBeginningAt", int.class, JSObject.class);
 
     public static final ValueType JS_OBJECT = ValueType.object(JSObject.class.getName());
     public static final ValueType OBJECT = ValueType.object("java.lang.Object");

@@ -372,15 +372,19 @@ public class Renderer implements RenderingManager {
             if (!filterMethod(method)) {
                 continue;
             }
-            writer.startVariableDeclaration();
-            renderBody(method, decompiler);
+            var isFunction = context.isForcedFunction(method.getReference());
+            if (isFunction) {
+                writer.startFunctionDeclaration();
+            } else {
+                writer.startVariableDeclaration();
+            }
+            renderBody(method, decompiler, isFunction);
             writer.endDeclaration();
             if (needsInitializers && !method.hasModifier(ElementModifier.STATIC)
                     && method.getName().equals("<init>")) {
                 renderInitializer(method);
             }
         }
-
 
         writer.emitClass(null);
     }
@@ -781,7 +785,12 @@ public class Renderer implements RenderingManager {
     }
 
     private void emitVirtualFunctionWrapper(MethodReference method) {
-        if (method.parameterCount() <= 4) {
+        var forced = context.isForcedFunction(method);
+        if (forced) {
+            writer.appendFunction("$rt_wrapFunctionVararg").append("(").appendMethod(method).append(")");
+            return;
+        }
+        if (method.parameterCount() <= 4 && !forced) {
             writer.appendFunction("$rt_wrapFunction" + method.parameterCount());
             writer.append("(").appendMethod(method).append(")");
             return;
@@ -810,22 +819,22 @@ public class Renderer implements RenderingManager {
         writer.append(");").ws().append("}");
     }
 
-    private void renderBody(MethodHolder method, Decompiler decompiler) {
+    private void renderBody(MethodHolder method, Decompiler decompiler, boolean isFunction) {
         MethodReference ref = method.getReference();
         writer.emitMethod(ref.getDescriptor());
 
         writer.appendMethod(ref);
         if (method.hasModifier(ElementModifier.NATIVE)) {
-            renderNativeBody(method, classSource);
+            renderNativeBody(method, classSource, isFunction);
         } else {
-            renderRegularBody(method, decompiler);
+            renderRegularBody(method, decompiler, isFunction);
         }
 
         writer.outdent().append("}");
         writer.emitMethod(null);
     }
 
-    private void renderNativeBody(MethodHolder method, ClassReaderSource classes) {
+    private void renderNativeBody(MethodHolder method, ClassReaderSource classes, boolean isFunction) {
         var reference = method.getReference();
         var generator = generators.get(reference);
         if (generator == null) {
@@ -841,7 +850,7 @@ public class Renderer implements RenderingManager {
         }
 
         var async = asyncMethods.contains(reference);
-        renderMethodPrologue(reference, method.getModifiers());
+        renderMethodPrologue(reference, method.getModifiers(), isFunction);
         methodBodyRenderer.renderNative(generator, async, reference);
         threadLibraryUsed |= methodBodyRenderer.isThreadLibraryUsed();
     }
@@ -895,7 +904,7 @@ public class Renderer implements RenderingManager {
         }
     }
 
-    private void renderRegularBody(MethodHolder method, Decompiler decompiler) {
+    private void renderRegularBody(MethodHolder method, Decompiler decompiler, boolean isFunction) {
         MethodReference reference = method.getReference();
         MethodNode node;
         var async = asyncMethods.contains(reference);
@@ -907,14 +916,17 @@ public class Renderer implements RenderingManager {
         }
 
         methodBodyRenderer.setCurrentMethod(node);
-        renderMethodPrologue(method.getReference(), method.getModifiers());
+        renderMethodPrologue(method.getReference(), method.getModifiers(), isFunction);
         methodBodyRenderer.render(node, async);
         threadLibraryUsed |= methodBodyRenderer.isThreadLibraryUsed();
     }
 
-    private void renderMethodPrologue(MethodReference reference, Set<ElementModifier> modifier) {
-        methodBodyRenderer.renderParameters(reference, modifier);
-        writer.sameLineWs().append("=>").ws().append("{").indent().softNewLine();
+    private void renderMethodPrologue(MethodReference reference, Set<ElementModifier> modifier, boolean isFunction) {
+        methodBodyRenderer.renderParameters(reference, modifier, isFunction);
+        if (!isFunction) {
+            writer.sameLineWs().append("=>");
+        }
+        writer.ws().append("{").indent().softNewLine();
     }
 
     private AstCacheEntry decompileRegular(Decompiler decompiler, MethodHolder method) {

@@ -51,6 +51,7 @@ public abstract class RenderingContext {
     private NamingStrategy naming;
     private DependencyInfo dependencyInfo;
     private Predicate<MethodReference> virtualPredicate;
+    private Predicate<MethodReference> forcedFunctionPredicate;
     private final Map<String, Integer> stringPoolMap = new HashMap<>();
     private final List<String> stringPool = new ArrayList<>();
     private final List<String> readonlyStringPool = Collections.unmodifiableList(stringPool);
@@ -63,7 +64,9 @@ public abstract class RenderingContext {
             ClassReaderSource initialClassSource, ListableClassReaderSource classSource,
             ClassLoader classLoader, ServiceRepository services, Properties properties,
             NamingStrategy naming, DependencyInfo dependencyInfo,
-            Predicate<MethodReference> virtualPredicate, ClassInitializerInfo classInitializerInfo,
+            Predicate<MethodReference> virtualPredicate,
+            Predicate<MethodReference> forcedFunctionPredicate,
+            ClassInitializerInfo classInitializerInfo,
             boolean strict) {
         this.debugEmitter = debugEmitter;
         this.initialClassSource = initialClassSource;
@@ -74,6 +77,7 @@ public abstract class RenderingContext {
         this.naming = naming;
         this.dependencyInfo = dependencyInfo;
         this.virtualPredicate = virtualPredicate;
+        this.forcedFunctionPredicate = forcedFunctionPredicate;
         this.classInitializerInfo = classInitializerInfo;
         this.strict = strict;
     }
@@ -116,6 +120,10 @@ public abstract class RenderingContext {
 
     public boolean isVirtual(MethodReference method) {
         return virtualPredicate.test(method);
+    }
+
+    public boolean isForcedFunction(MethodReference method) {
+        return forcedFunctionPredicate.test(method);
     }
 
     public boolean isDynamicInitializer(String className) {

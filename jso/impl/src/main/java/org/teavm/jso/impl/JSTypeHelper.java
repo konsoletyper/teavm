@@ -121,8 +121,6 @@ class JSTypeHelper {
                 default:
                     return false;
             }
-        } else if (itemType instanceof ValueType.Object) {
-            return isJavaScriptClass(((ValueType.Object) itemType).getClassName());
         } else {
             return false;
         }

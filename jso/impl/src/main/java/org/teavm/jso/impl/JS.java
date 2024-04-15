@@ -716,4 +716,8 @@ final class JS {
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native JSObject throwCCEIfFalse(boolean value, JSObject o);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject argumentsBeginningAt(int index);
 }

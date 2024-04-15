@@ -60,8 +60,8 @@ import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
-import org.teavm.backend.javascript.spi.VirtualMethodContributor;
-import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
+import org.teavm.backend.javascript.spi.MethodContributor;
+import org.teavm.backend.javascript.spi.MethodContributorContext;
 import org.teavm.backend.javascript.templating.JavaScriptTemplateFactory;
 import org.teavm.cache.EmptyMethodNodeCache;
 import org.teavm.cache.MethodNodeCache;
@@ -122,7 +122,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private DebugInformationEmitter debugEmitter;
     private MethodNodeCache astCache = EmptyMethodNodeCache.INSTANCE;
     private final Set<MethodReference> asyncMethods = new HashSet<>();
-    private List<VirtualMethodContributor> customVirtualMethods = new ArrayList<>();
+    private List<MethodContributor> customVirtualMethods = new ArrayList<>();
+    private List<MethodContributor> forcedFunctionMethods = new ArrayList<>();
     private boolean strict;
     private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
     private NullCheckInsertion nullCheckInsertion = new NullCheckInsertion(NullCheckFilter.EMPTY);
@@ -366,11 +367,13 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             debugEmitterToUse = new DummyDebugInformationEmitter();
         }
 
-        var virtualMethodContributorContext = new VirtualMethodContributorContextImpl(classes);
+        var methodContributorContext = new MethodContributorContextImpl(classes);
         RenderingContext renderingContext = new RenderingContext(debugEmitterToUse,
                 controller.getUnprocessedClassSource(), classes,
                 controller.getClassLoader(), controller.getServices(), controller.getProperties(), naming,
-                controller.getDependencyInfo(), m -> isVirtual(virtualMethodContributorContext, m),
+                controller.getDependencyInfo(),
+                m -> isVirtual(methodContributorContext, m),
+                m -> isForcedFunction(methodContributorContext, m),
                 controller.getClassInitializerInfo(), strict
         ) {
             @Override
@@ -804,8 +807,13 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     @Override
-    public void addVirtualMethods(VirtualMethodContributor virtualMethods) {
+    public void addVirtualMethods(MethodContributor virtualMethods) {
         customVirtualMethods.add(virtualMethods);
+    }
+
+    @Override
+    public void addForcedFunctionMethods(MethodContributor forcedFunctionMethods) {
+        this.forcedFunctionMethods.add(forcedFunctionMethods);
     }
 
     @Override
@@ -813,22 +821,31 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         return true;
     }
 
-    private boolean isVirtual(VirtualMethodContributorContext context, MethodReference method) {
+    private boolean isVirtual(MethodContributorContext context, MethodReference method) {
         if (controller.isVirtual(method)) {
             return true;
         }
-        for (VirtualMethodContributor predicate : customVirtualMethods) {
-            if (predicate.isVirtual(context, method)) {
+        for (MethodContributor predicate : customVirtualMethods) {
+            if (predicate.isContributing(context, method)) {
                 return true;
             }
         }
         return false;
     }
 
-    static class VirtualMethodContributorContextImpl implements VirtualMethodContributorContext {
+    private boolean isForcedFunction(MethodContributorContext context, MethodReference method) {
+        for (var predicate : forcedFunctionMethods) {
+            if (predicate.isContributing(context, method)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static class MethodContributorContextImpl implements MethodContributorContext {
         private ClassReaderSource classSource;
 
-        VirtualMethodContributorContextImpl(ClassReaderSource classSource) {
+        MethodContributorContextImpl(ClassReaderSource classSource) {
             this.classSource = classSource;
         }
 

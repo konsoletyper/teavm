@@ -119,4 +119,12 @@ public interface ClassReaderSource {
     default Optional<Boolean> isSuperType(String superType, String subType) {
         return ClassReaderSourceHelper.isSuperType(this, superType, subType);
     }
+
+    default MethodReader getMethod(MethodReference ref) {
+        var cls = get(ref.getClassName());
+        if (cls == null) {
+            return null;
+        }
+        return cls.getMethod(ref.getDescriptor());
+    }
 }

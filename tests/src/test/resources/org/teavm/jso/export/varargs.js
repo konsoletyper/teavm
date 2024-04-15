@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,10 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.javascript.spi;
 
-import org.teavm.model.ClassReaderSource;
+import * as varargs from '/tests/varargs/test.js';
 
-public interface VirtualMethodContributorContext {
-    ClassReaderSource getClassSource();
+export async function test() {
+    assertEquals("strings: a, b", varargs.strings("a", "b"));
+    assertEquals("strings(23): a, b", varargs.prefixStrings(23, "a", "b"));
+    assertEquals("ints: 23, 42", varargs.ints(23, 42));
+    assertEquals("ints(*): 23, 42", varargs.prefixInts("*", 23, 42));
+    assertEquals("objects: a, b", varargs.objects({ stringValue: "a" }, { stringValue: "b" }));
+
+    let obj = new varargs.A();
+    assertEquals("A.strings: a, b", obj.strings("a", "b"));
 }

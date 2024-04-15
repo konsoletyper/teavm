@@ -20,8 +20,8 @@ import java.util.Map;
 import java.util.function.Predicate;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.RenderingManager;
-import org.teavm.backend.javascript.spi.VirtualMethodContributor;
-import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
+import org.teavm.backend.javascript.spi.MethodContributor;
+import org.teavm.backend.javascript.spi.MethodContributorContext;
 import org.teavm.jso.JSClass;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReader;
@@ -35,7 +35,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.spi.RendererListener;
 
-class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
+class JSAliasRenderer implements RendererListener, MethodContributor {
     private static String variableChars = "abcdefghijklmnopqrstuvwxyz";
     private SourceWriter writer;
     private ListableClassReaderSource classSource;
@@ -389,7 +389,7 @@ class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
     }
 
     @Override
-    public boolean isVirtual(VirtualMethodContributorContext context, MethodReference methodRef) {
+    public boolean isContributing(MethodContributorContext context, MethodReference methodRef) {
         ClassReader classReader = context.getClassSource().get(methodRef.getClassName());
         if (classReader == null) {
             return false;
