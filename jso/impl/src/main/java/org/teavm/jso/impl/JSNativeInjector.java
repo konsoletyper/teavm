@@ -215,6 +215,14 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
                 }
                 break;
             }
+            case "instanceOfOrNull": {
+                writer.appendFunction("$rt_instanceOfOrNull").append("(");
+                context.writeExpr(context.getArgument(0), Precedence.min());
+                writer.append(",").ws();
+                context.writeExpr(context.getArgument(1), Precedence.min());
+                writer.append(")");
+                break;
+            }
             case "isPrimitive": {
                 if (context.getPrecedence().ordinal() >= Precedence.CONDITIONAL.ordinal()) {
                     writer.append("(");

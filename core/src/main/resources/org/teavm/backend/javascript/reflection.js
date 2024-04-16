@@ -44,3 +44,4 @@ let $rt_castToClass = (obj, cls) => {
     }
     return obj;
 }
+let $rt_instanceOfOrNull = (obj, cls) => obj === null || obj instanceof cls;

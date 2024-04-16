@@ -127,6 +127,8 @@ final class JSMethods {
 
     public static final MethodReference INSTANCE_OF = new MethodReference(JS.class, "instanceOf", JSObject.class,
             JSObject.class, boolean.class);
+    public static final MethodReference INSTANCE_OF_OR_NULL = new MethodReference(JS.class, "instanceOfOrNull",
+            JSObject.class, JSObject.class, boolean.class);
     public static final MethodReference IS_PRIMITIVE = new MethodReference(JS.class, "isPrimitive", JSObject.class,
             JSObject.class, boolean.class);
     public static final MethodReference THROW_CCE_IF_FALSE = new MethodReference(JS.class, "throwCCEIfFalse",

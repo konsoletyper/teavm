@@ -17,6 +17,7 @@ package org.teavm.jso.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
@@ -89,6 +90,9 @@ public class InstanceOfTest {
         } catch (ClassCastException e) {
             // expected
         }
+
+        var d = (ClassWithConstructor) returnNull();
+        assertNull(d);
     }
 
     private Object callCreateClassWithConstructor() {
@@ -97,6 +101,9 @@ public class InstanceOfTest {
 
     @JSBody(script = "return new ClassWithConstructor();")
     private static native JSObject createClassWithConstructor();
+
+    @JSBody(script = "return null;")
+    private static native JSObject returnNull();
 
     private Object callCreateNumber() {
         return createNumber();
@@ -111,7 +118,7 @@ public class InstanceOfTest {
     }
 
     @JSClass(transparent = true)
-    abstract class C implements JSObject {
+    static abstract class C implements JSObject {
         @JSProperty
         public abstract int getFoo();
     }

@@ -578,7 +578,7 @@ class JSClassProcessor {
         var primitiveType = getPrimitiveType(targetClassName);
         var invoke = new InvokeInstruction();
         invoke.setType(InvocationType.SPECIAL);
-        invoke.setMethod(primitiveType != null ? JSMethods.IS_PRIMITIVE : JSMethods.INSTANCE_OF);
+        invoke.setMethod(primitiveType != null ? JSMethods.IS_PRIMITIVE : JSMethods.INSTANCE_OF_OR_NULL);
         var secondArg = primitiveType != null
                 ? marshaller.addJsString(primitiveType, location)
                 : marshaller.classRef(targetClassName, location);

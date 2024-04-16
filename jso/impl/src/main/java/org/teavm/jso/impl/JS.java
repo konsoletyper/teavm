@@ -711,6 +711,10 @@ final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    public static native boolean instanceOfOrNull(JSObject obj, JSObject cls);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
     public static native boolean isPrimitive(JSObject obj, JSObject primitive);
 
     @InjectedBy(JSNativeInjector.class)
