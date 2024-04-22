@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Bernd Busse.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.util.function;
+package org.teavm.jso.function;
 
 import java.util.Objects;
 import org.teavm.jso.JSFunctor;

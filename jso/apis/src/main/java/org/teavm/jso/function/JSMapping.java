@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Bernd Busse.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.util.function;
+package org.teavm.jso.function;
 
 import java.util.Objects;
 import org.teavm.jso.JSFunctor;
@@ -21,10 +21,10 @@ import org.teavm.jso.JSObject;
 
 @FunctionalInterface
 @JSFunctor
-public interface JSFunction<T, R> extends JSObject {
+public interface JSMapping<T, R> extends JSObject {
     R apply(T t);
 
-    default <V> JSFunction<T, V> andThen(JSFunction<? super R, ? extends V> after) {
+    default <V> JSMapping<T, V> andThen(JSMapping<? super R, ? extends V> after) {
         Objects.requireNonNull(after);
 
         return (T t) -> {
@@ -33,7 +33,7 @@ public interface JSFunction<T, R> extends JSObject {
         };
     }
 
-    default <V> JSFunction<V, R> compose(JSFunction<? super V, ? extends T> before) {
+    default <V> JSMapping<V, R> compose(JSMapping<? super V, ? extends T> before) {
         Objects.requireNonNull(before);
 
         return (V v) -> {
@@ -42,7 +42,7 @@ public interface JSFunction<T, R> extends JSObject {
         };
     }
 
-    static <T> JSFunction<T, T> identity() {
+    static <T> JSMapping<T, T> identity() {
         return (T t) -> {
             return t;
         };

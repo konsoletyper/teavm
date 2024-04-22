@@ -21,9 +21,9 @@ import org.teavm.jso.browser.Window;
 import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.core.JSString;
-import org.teavm.jso.util.function.JSConsumer;
-import org.teavm.jso.util.function.JSFunction;
-import org.teavm.jso.util.function.JSSupplier;
+import org.teavm.jso.function.JSConsumer;
+import org.teavm.jso.function.JSMapping;
+import org.teavm.jso.function.JSSupplier;
 
 public final class PromiseExample {
     private static long start = System.currentTimeMillis();
@@ -67,15 +67,15 @@ public final class PromiseExample {
     private static void checkFunctionalInterface() {
         JSSupplier<Integer> supplier = () -> 23;
 
-        JSFunction<Integer, Integer> addTwenty = value -> value + 20;
-        JSFunction<Integer, Integer> subTwenty = value -> value - 20;
-        JSFunction<Integer, Boolean> isPositive = value -> value >= 0;
+        JSMapping<Integer, Integer> addTwenty = value -> value + 20;
+        JSMapping<Integer, Integer> subTwenty = value -> value - 20;
+        JSMapping<Integer, Boolean> isPositive = value -> value >= 0;
 
         JSConsumer<Integer> print = value -> report("My value: " + value.toString());
         JSConsumer<Integer> print2 = value -> report("My value plus 10: " + Integer.valueOf(value + 10).toString());
 
         var value = supplier.get();
-        report("Supplied value: " + value.toString());
+        report("Supplied value: " + value);
 
         value = addTwenty.apply(value);
         report("Value plus 20: " + value.toString());
@@ -176,7 +176,7 @@ public final class PromiseExample {
     }
 
     private static void runLongRunningPromise(Object lock) {
-        var promise = new JSPromise<>((resolve, reject) -> {
+        new JSPromise<>((resolve, reject) -> {
             report("Long promise exection");
             report("Wait for a while...");
             Window.setTimeout(() -> {
@@ -250,7 +250,7 @@ public final class PromiseExample {
                 var item = value.get(i);
                 var msg = "-- Promise " + i + " " + item.getStatus() + " with: ";
                 if (item.getStatus().stringValue().equals("fulfilled")) {
-                    msg += item.getValue().toString();
+                    msg += item.getValue();
                 } else if (item.getStatus().stringValue().equals("rejected")) {
                     msg += item.getReason().toString();
                 }
