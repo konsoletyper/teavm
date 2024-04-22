@@ -104,18 +104,20 @@ class JSClassProcessor {
     private final JSTypeHelper typeHelper;
     private final Diagnostics diagnostics;
     private final Map<MethodReference, MethodReader> overriddenMethodCache = new HashMap<>();
+    private final boolean strict;
     private JSValueMarshaller marshaller;
     private IncrementalDependencyRegistration incrementalCache;
     private JSImportAnnotationCache annotationCache;
     private ClassReader objectClass;
 
     JSClassProcessor(ClassReaderSource classSource, JSTypeHelper typeHelper, JSBodyRepository repository,
-            Diagnostics diagnostics, IncrementalDependencyRegistration incrementalCache) {
+            Diagnostics diagnostics, IncrementalDependencyRegistration incrementalCache, boolean strict) {
         this.classSource = classSource;
         this.typeHelper = typeHelper;
         this.repository = repository;
         this.diagnostics = diagnostics;
         this.incrementalCache = incrementalCache;
+        this.strict = strict;
         javaInvocationProcessor = new JavaInvocationProcessor(typeHelper, repository, classSource, diagnostics);
 
         annotationCache = new JSImportAnnotationCache(classSource, diagnostics);
@@ -477,7 +479,7 @@ class JSClassProcessor {
 
         ClassReader targetClass = classSource.get(targetClassName);
         if (targetClass.getAnnotations().get(JSFunctor.class.getName()) == null) {
-            if (isTransparent(targetClassName)) {
+            if (!strict || isTransparent(targetClassName)) {
                 var assign = new AssignInstruction();
                 assign.setLocation(location.getSourceLocation());
                 assign.setAssignee(cast.getValue());

@@ -85,6 +85,7 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
                     .setClassSource(classSource)
                     .setReferenceCache(referenceCache)
                     .setDependencyAnalyzerFactory(dependencyAnalyzerFactory)
+                    .setStrict(true)
                     .build();
 
             configuration.apply(vm);

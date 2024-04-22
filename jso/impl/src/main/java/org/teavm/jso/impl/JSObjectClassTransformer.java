@@ -70,7 +70,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         if (processor == null || processor.getClassSource() != hierarchy.getClassSource()) {
             typeHelper = new JSTypeHelper(hierarchy.getClassSource());
             processor = new JSClassProcessor(hierarchy.getClassSource(), typeHelper, repository,
-                    context.getDiagnostics(), context.getIncrementalCache());
+                    context.getDiagnostics(), context.getIncrementalCache(), context.isStrict());
         }
         processor.processClass(cls);
         if (typeHelper.isJavaScriptClass(cls.getName())) {
