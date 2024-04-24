@@ -35,7 +35,7 @@ public class PrintStreamTest {
         assertEquals("n=23; s=null", bytes.toString(StandardCharsets.UTF_8));
     }
 
-    @org.junit.Test
+    @Test
     public void append() {
         var bytes = new ByteArrayOutputStream();
         var stream = new PrintStream(bytes, false, StandardCharsets.UTF_8);
@@ -47,7 +47,7 @@ public class PrintStreamTest {
         assertEquals("Hello", bytes.toString(StandardCharsets.UTF_8));
     }
 
-    @org.junit.Test
+    @Test
     public void append_null() {
         var bytes = new ByteArrayOutputStream();
         var stream = new PrintStream(bytes, false, StandardCharsets.UTF_8);
