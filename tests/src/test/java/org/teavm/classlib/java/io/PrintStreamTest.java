@@ -34,4 +34,28 @@ public class PrintStreamTest {
         stream.flush();
         assertEquals("n=23; s=null", bytes.toString(StandardCharsets.UTF_8));
     }
+
+    @org.junit.Test
+    public void append() {
+        var bytes = new ByteArrayOutputStream();
+        var stream = new PrintStream(bytes, false, StandardCharsets.UTF_8);
+
+        stream.append('H');
+        stream.append("el");
+        stream.append("Hello", 3, 5);
+        stream.flush();
+        assertEquals("Hello", bytes.toString(StandardCharsets.UTF_8));
+    }
+
+    @org.junit.Test
+    public void append_null() {
+        var bytes = new ByteArrayOutputStream();
+        var stream = new PrintStream(bytes, false, StandardCharsets.UTF_8);
+
+        stream.append(null);
+        stream.append(null, 1, 2);
+        stream.flush();
+        assertEquals("nullu", bytes.toString(StandardCharsets.UTF_8));
+    }
+
 }
