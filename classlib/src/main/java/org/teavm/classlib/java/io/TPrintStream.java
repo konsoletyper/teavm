@@ -18,6 +18,8 @@ package org.teavm.classlib.java.io;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Locale;
+import org.teavm.classlib.java.lang.TAppendable;
+import org.teavm.classlib.java.lang.TCharSequence;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TStringBuilder;
@@ -31,7 +33,7 @@ import org.teavm.classlib.java.nio.charset.TUnsupportedCharsetException;
 import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 import org.teavm.classlib.java.util.TFormatter;
 
-public class TPrintStream extends TFilterOutputStream {
+public class TPrintStream extends TFilterOutputStream implements TAppendable {
     private boolean autoFlush;
     private boolean errorState;
     private TStringBuilder sb = new TStringBuilder();
@@ -267,6 +269,34 @@ public class TPrintStream extends TFilterOutputStream {
 
     public void println() {
         print('\n');
+    }
+
+    @Override
+    public TPrintStream append(char c) {
+        print(c);
+        return this;
+    }
+
+    @Override
+    public TPrintStream append(TCharSequence csq) {
+        if (null == csq) {
+            sb.append("null");
+            printSB();
+        } else {
+            append(csq, 0, csq.length());
+        }
+        return this;
+    }
+
+    @Override
+    public TPrintStream append(TCharSequence csq, int start, int end) {
+        if (null == csq) {
+            sb.append("null");
+        } else {
+            sb.append(csq, start, end);
+        }
+        printSB();
+        return this;
     }
 
     public TPrintStream printf(String format, Object... args) {
