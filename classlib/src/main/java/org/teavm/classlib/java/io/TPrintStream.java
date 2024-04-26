@@ -145,33 +145,15 @@ public class TPrintStream extends TFilterOutputStream implements Appendable {
         print(s, 0, s.length);
     }
 
-    private void print(char[] s, int begin, int end) {
-        TCharBuffer src = TCharBuffer.wrap(s, begin, end - begin);
-        byte[] destBytes = new byte[TMath.max(16, TMath.min(end - begin, 1024))];
-        TByteBuffer dest = TByteBuffer.wrap(destBytes);
-        TCharsetEncoder encoder = charset.newEncoder()
-                .onMalformedInput(TCodingErrorAction.REPLACE)
-                .onUnmappableCharacter(TCodingErrorAction.REPLACE);
-        while (true) {
-            boolean overflow = encoder.encode(src, dest, true).isOverflow();
-            write(destBytes, 0, dest.position());
-            dest.clear();
-            if (!overflow) {
-                break;
-            }
-        }
-        while (true) {
-            boolean overflow = encoder.flush(dest).isOverflow();
-            write(destBytes, 0, dest.position());
-            dest.clear();
-            if (!overflow) {
-                break;
-            }
-        }
+    private void print(CharSequence s, int begin, int end) {
+        printCharBuffer(TCharBuffer.wrap(s, begin, end), begin, end);
     }
 
-    private void print(CharSequence s, int begin, int end) {
-        TCharBuffer src = TCharBuffer.wrap(s, begin, end - begin);
+    private void print(char[] s, int begin, int end) {
+        printCharBuffer(TCharBuffer.wrap(s, begin, end - begin), begin, end);
+    }
+
+    private void printCharBuffer(TCharBuffer src, int begin, int end) {
         byte[] destBytes = new byte[TMath.max(16, TMath.min(end - begin, 1024))];
         TByteBuffer dest = TByteBuffer.wrap(destBytes);
         TCharsetEncoder encoder = charset.newEncoder()
@@ -302,7 +284,7 @@ public class TPrintStream extends TFilterOutputStream implements Appendable {
     }
 
     @Override
-    public Appendable append(CharSequence csq) {
+    public TPrintStream append(CharSequence csq) {
         if (csq != null) {
             print(csq, 0, csq.length());
         } else {
@@ -312,13 +294,13 @@ public class TPrintStream extends TFilterOutputStream implements Appendable {
     }
 
     @Override
-    public Appendable append(CharSequence csq, int start, int end) {
+    public TPrintStream append(CharSequence csq, int start, int end) {
         print(csq == null ? "null" : csq, start, end);
         return this;
     }
 
     @Override
-    public Appendable append(char c) {
+    public TPrintStream append(char c) {
         print(c);
         return this;
     }
