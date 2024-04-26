@@ -17,30 +17,33 @@ package org.teavm.classlib.java.util.stream.longimpl;
 
 import java.util.function.LongPredicate;
 
-public class TTakeWhileLongStream extends TWrappingLongStreamImpl {
+public class TTakeWhileLongStream extends TSimpleLongStreamImpl {
+    private TSimpleLongStreamImpl sourceStream;
     private LongPredicate predicate;
 
     /* set to `true` as soon as we see a value `v` in the source stream for which `predicate.test(v)` is false */
     private boolean isStopped;
 
     TTakeWhileLongStream(TSimpleLongStreamImpl innerStream, LongPredicate predicate) {
-        super(innerStream);
+        this.sourceStream = innerStream;
         this.predicate = predicate;
     }
 
     @Override
-    protected LongPredicate wrap(LongPredicate consumer) {
-        return t -> {
-            if (isStopped) {
-                return false;
-            }
-
-            if (predicate.test(t)) {
-                return consumer.test(t);
-            } else {
+    public boolean next(LongPredicate consumer) {
+        if (isStopped) {
+            return false;
+        }
+        var result = sourceStream.next(e -> {
+            if (!predicate.test(e)) {
                 isStopped = true;
                 return false;
             }
-        };
+            return consumer.test(e);
+        });
+        if (!result) {
+            isStopped = true;
+        }
+        return result;
     }
 }

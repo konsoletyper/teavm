@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -394,6 +395,23 @@ public class StreamTest {
         var sb = new StringBuilder();
         Stream.of(1, 2, 3, 4, 0, 5, 6).takeWhile(n -> n < 4).forEach(sb::append);
         assertEquals("123", sb.toString());
+
+        class ForeverIncreasingSupplier implements Supplier<Integer> {
+            int value = 1;
+
+            @Override
+            public Integer get() {
+                return value++;
+            }
+        }
+
+        testIntegerStream(
+                () -> Stream.concat(
+                        Stream.generate(new ForeverIncreasingSupplier()).takeWhile(n -> n < 4),
+                        Stream.generate(new ForeverIncreasingSupplier()).takeWhile(n -> n < 3)
+                ),
+                1, 2, 3, 1, 2
+        );
     }
 
     @Test
@@ -488,4 +506,5 @@ public class StreamTest {
         List<String> repetitions = Stream.iterate("", s -> s.length() < 5, s -> s + "a").toList();
         assertEquals(List.of("", "a", "aa", "aaa", "aaaa"), repetitions);
     }
+
 }

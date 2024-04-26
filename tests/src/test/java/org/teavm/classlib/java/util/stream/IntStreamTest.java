@@ -27,6 +27,7 @@ import static org.teavm.classlib.java.util.stream.Helper.testLongStream;
 import java.util.IntSummaryStatistics;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
+import java.util.function.IntSupplier;
 import java.util.stream.IntStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -112,6 +113,23 @@ public class IntStreamTest {
     public void takeWhileWorks() {
         assertArrayEquals(new int[] { 1, 2, 3 },
                 IntStream.of(1, 2, 3, 4, 0, 5, 6).takeWhile(n -> n < 4).toArray());
+
+        class ForeverIncreasingSupplier implements IntSupplier {
+            int value = 1;
+
+            @Override
+            public int getAsInt() {
+                return value++;
+            }
+        }
+
+        testIntStream(
+                () -> IntStream.concat(
+                        IntStream.generate(new ForeverIncreasingSupplier()).takeWhile(n -> n < 4),
+                        IntStream.generate(new ForeverIncreasingSupplier()).takeWhile(n -> n < 3)
+                ),
+                1, 2, 3, 1, 2
+        );
     }
 
     @Test
