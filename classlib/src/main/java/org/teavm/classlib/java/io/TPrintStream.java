@@ -303,13 +303,17 @@ public class TPrintStream extends TFilterOutputStream implements Appendable {
 
     @Override
     public Appendable append(CharSequence csq) {
-        print(csq, 0, csq.length());
+        if (csq != null) {
+            print(csq, 0, csq.length());
+        } else {
+            print("null");
+        }
         return this;
     }
 
     @Override
     public Appendable append(CharSequence csq, int start, int end) {
-        print(csq, start, end);
+        print(csq == null ? "null" : csq, start, end);
         return this;
     }
 
