@@ -119,6 +119,14 @@ public abstract class JsConsolePrintStream extends PrintStream {
         ensureByteEncoder().write(b, off, len);
     }
 
+    protected void print(char[] s, int begin, int end) {
+        print(new String(s, begin, end));
+    }
+
+    protected void print(CharSequence s, int begin, int end) {
+        print(s.subSequence(begin, end).toString());
+    }
+
     @Override
     public void flush() {
         if (flushAction != null) {

@@ -145,11 +145,11 @@ public class TPrintStream extends TFilterOutputStream implements Appendable {
         print(s, 0, s.length);
     }
 
-    private void print(CharSequence s, int begin, int end) {
+    protected void print(CharSequence s, int begin, int end) {
         printCharBuffer(TCharBuffer.wrap(s, begin, end), begin, end);
     }
 
-    private void print(char[] s, int begin, int end) {
+    protected void print(char[] s, int begin, int end) {
         printCharBuffer(TCharBuffer.wrap(s, begin, end - begin), begin, end);
     }
 
@@ -267,11 +267,10 @@ public class TPrintStream extends TFilterOutputStream implements Appendable {
         if (args == null) {
             args = new Object[1];
         }
-        try (var formatter = new TFormatter(this, locale)) {
-            formatter.format(format, args);
-            if (formatter.ioException() != null) {
-                errorState = true;
-            }
+        var formatter = new TFormatter(this, locale);
+        formatter.format(format, args);
+        if (formatter.ioException() != null) {
+            errorState = true;
         }
         return this;
     }
