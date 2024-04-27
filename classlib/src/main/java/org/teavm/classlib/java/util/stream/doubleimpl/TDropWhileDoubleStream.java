@@ -17,28 +17,42 @@ package org.teavm.classlib.java.util.stream.doubleimpl;
 
 import java.util.function.DoublePredicate;
 
-public class TDropWhileDoubleStream extends TWrappingDoubleStreamImpl {
+public class TDropWhileDoubleStream extends TSimpleDoubleStreamImpl {
+    private TSimpleDoubleStreamImpl sourceStream;
     private DoublePredicate predicate;
 
     /* set to `true` as soon as we see a value `v` in the source stream for which `predicate.test(v)` is true */
     private boolean isStarted;
 
-    TDropWhileDoubleStream(TSimpleDoubleStreamImpl innerStream, DoublePredicate predicate) {
-        super(innerStream);
+    TDropWhileDoubleStream(TSimpleDoubleStreamImpl sourceStream, DoublePredicate predicate) {
+        this.sourceStream = sourceStream;
         this.predicate = predicate;
     }
 
     @Override
-    protected DoublePredicate wrap(DoublePredicate consumer) {
-        return t -> {
-            if (!isStarted) {
-                if (predicate.test(t)) {
-                    return true;
-                } else {
+    public boolean next(DoublePredicate consumer) {
+        if (!isStarted) {
+            var skippingPredicate = new DoublePredicate() {
+                boolean consumerCanTakeMore;
+
+                @Override
+                public boolean test(double t) {
+                    if (predicate.test(t)) {
+                        return true;
+                    }
                     isStarted = true;
+                    consumerCanTakeMore = consumer.test(t);
+                    return false;
                 }
+            };
+            var result = sourceStream.next(skippingPredicate);
+            if (!result) {
+                return false;
             }
-            return consumer.test(t);
-        };
+            if (!skippingPredicate.consumerCanTakeMore) {
+                return true;
+            }
+        }
+        return sourceStream.next(consumer);
     }
 }
