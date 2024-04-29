@@ -16,33 +16,33 @@
 package org.teavm.classlib.java.util.stream.intimpl;
 
 import java.util.function.IntPredicate;
-import org.teavm.classlib.java.lang.TString;
+import org.teavm.classlib.java.lang.TCharSequence;
 
-public class TStringCharsStream extends TSimpleIntStreamImpl {
-    private final TString string;
+public class TCharSequenceCharsStream extends TSimpleIntStreamImpl {
+    private final TCharSequence csq;
     private int index;
 
-    public TStringCharsStream(TString string) {
-        this.string = string;
+    public TCharSequenceCharsStream(TCharSequence csq) {
+        this.csq = csq;
     }
 
     @Override
     public boolean next(IntPredicate consumer) {
-        while (index < string.length()) {
-            if (!consumer.test(string.charAt(index++))) {
+        while (index < csq.length()) {
+            if (!consumer.test(csq.charAt(index++))) {
                 break;
             }
         }
-        return index < string.length();
+        return index < csq.length();
     }
 
     @Override
     protected int estimateSize() {
-        return string.length();
+        return csq.length();
     }
 
     @Override
     public long count() {
-        return string.length();
+        return csq.length();
     }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 JFronny.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,20 +16,32 @@
 package org.teavm.classlib.java.util.stream.intimpl;
 
 import java.util.function.IntPredicate;
+import org.teavm.classlib.java.lang.TCharacter;
 import org.teavm.classlib.java.lang.TString;
 
-public class TStringCharsStream extends TSimpleIntStreamImpl {
+public class TStringCodePointsStream extends TSimpleIntStreamImpl {
     private final TString string;
     private int index;
 
-    public TStringCharsStream(TString string) {
+    public TStringCodePointsStream(TString string) {
         this.string = string;
     }
 
     @Override
     public boolean next(IntPredicate consumer) {
         while (index < string.length()) {
-            if (!consumer.test(string.charAt(index++))) {
+            var hi = string.charAt(index++);
+            if (TCharacter.isHighSurrogate(hi) && index < string.length()) {
+                var lo = string.charAt(index);
+                if (TCharacter.isLowSurrogate(lo)) {
+                    ++index;
+                    if (!consumer.test(TCharacter.toCodePoint(hi, lo))) {
+                        break;
+                    }
+                    continue;
+                }
+            }
+            if (!consumer.test(hi)) {
                 break;
             }
         }
