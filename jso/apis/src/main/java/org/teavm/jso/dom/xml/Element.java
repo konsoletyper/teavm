@@ -16,6 +16,9 @@
 package org.teavm.jso.dom.xml;
 
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.html.HTMLCollection;
+import org.teavm.jso.dom.html.TextRectangle;
+import org.teavm.jso.dom.types.DOMTokenList;
 
 public interface Element extends Node {
     String getAttribute(String name);
@@ -62,10 +65,48 @@ public interface Element extends Node {
     String getTagName();
 
     @JSProperty
+    String getClassName();
+
+    @JSProperty
+    void setClassName(String className);
+
+    @JSProperty
+    DOMTokenList getClassList();
+
+    @JSProperty
+    HTMLCollection getChildren();
+
+    @JSProperty
     String getInnerHTML();
 
     @JSProperty
     void setInnerHTML(String content);
 
+    @JSProperty
+    int getClientWidth();
+
+    @JSProperty
+    int getClientHeight();
+
+    @JSProperty
+    int getScrollLeft();
+
+    @JSProperty
+    void setScrollLeft(int scrollLeft);
+
+    @JSProperty
+    int getScrollTop();
+
+    @JSProperty
+    void setScrollTop(int scrollTop);
+
+    @JSProperty
+    int getScrollWidth();
+
+    @JSProperty
+    int getScrollHeight();
+
     void scrollIntoView();
+
+    TextRectangle getBoundingClientRect();
 }

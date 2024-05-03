@@ -24,7 +24,6 @@ import org.teavm.jso.dom.events.KeyboardEventTarget;
 import org.teavm.jso.dom.events.LoadEventTarget;
 import org.teavm.jso.dom.events.MouseEventTarget;
 import org.teavm.jso.dom.events.WheelEventTarget;
-import org.teavm.jso.dom.types.DOMTokenList;
 import org.teavm.jso.dom.xml.Element;
 import org.teavm.jso.dom.xml.Node;
 import org.teavm.jso.dom.xml.NodeList;
@@ -86,34 +85,10 @@ public abstract class HTMLElement implements Element, ElementCSSInlineStyle, Eve
     public abstract String getAccessKeyLabel();
 
     @JSProperty
-    public abstract int getClientWidth();
-
-    @JSProperty
-    public abstract int getClientHeight();
-
-    @JSProperty
     public abstract int getAbsoluteLeft();
 
     @JSProperty
     public abstract int getAbsoluteTop();
-
-    @JSProperty
-    public abstract int getScrollLeft();
-
-    @JSProperty
-    public abstract void setScrollLeft(int scrollLeft);
-
-    @JSProperty
-    public abstract int getScrollTop();
-
-    @JSProperty
-    public abstract void setScrollTop(int scrollTop);
-
-    @JSProperty
-    public abstract int getScrollWidth();
-
-    @JSProperty
-    public abstract int getScrollHeight();
 
     @JSProperty
     public abstract int getOffsetWidth();
@@ -132,24 +107,10 @@ public abstract class HTMLElement implements Element, ElementCSSInlineStyle, Eve
     public abstract HTMLDocument getOwnerDocument();
 
     @JSProperty
-    public abstract HTMLCollection getChildren();
-
-    @JSProperty
     public abstract String getInnerText();
 
     @JSProperty
     public abstract void setInnerText(String content);
-
-    public abstract TextRectangle getBoundingClientRect();
-
-    @JSProperty
-    public abstract String getClassName();
-
-    @JSProperty
-    public abstract void setClassName(String className);
-
-    @JSProperty
-    public abstract DOMTokenList getClassList();
 
     public final HTMLElement withAttr(String name, String value) {
         setAttribute(name, value);
