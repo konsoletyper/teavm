@@ -61,5 +61,11 @@ public interface Element extends Node {
     @JSProperty
     String getTagName();
 
+    @JSProperty
+    String getInnerHTML();
+
+    @JSProperty
+    void setInnerHTML(String content);
+
     void scrollIntoView();
 }

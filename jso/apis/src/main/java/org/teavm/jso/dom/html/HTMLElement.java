@@ -135,12 +135,6 @@ public abstract class HTMLElement implements Element, ElementCSSInlineStyle, Eve
     public abstract HTMLCollection getChildren();
 
     @JSProperty
-    public abstract String getInnerHTML();
-
-    @JSProperty
-    public abstract void setInnerHTML(String content);
-
-    @JSProperty
     public abstract String getInnerText();
 
     @JSProperty
