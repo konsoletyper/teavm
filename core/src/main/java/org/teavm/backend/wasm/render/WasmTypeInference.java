@@ -52,6 +52,8 @@ import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
+import org.teavm.backend.wasm.model.expression.WasmThrow;
+import org.teavm.backend.wasm.model.expression.WasmTry;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 
 public class WasmTypeInference implements WasmExpressionVisitor {
@@ -224,6 +226,16 @@ public class WasmTypeInference implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmCopy expression) {
+        result = null;
+    }
+
+    @Override
+    public void visit(WasmTry expression) {
+        result = expression.getType();
+    }
+
+    @Override
+    public void visit(WasmThrow expression) {
         result = null;
     }
 

@@ -61,6 +61,8 @@ import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
+import org.teavm.backend.wasm.model.expression.WasmThrow;
+import org.teavm.backend.wasm.model.expression.WasmTry;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.TextLocation;
 
@@ -1108,6 +1110,16 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         result.addLine("memcpy(wasm_heap + " + dest.getText() + ", wasm_heap + " + src.getText() + ", "
                 + num.getText() + ");");
         value = result;
+    }
+
+    @Override
+    public void visit(WasmTry expression) {
+        value = new CExpression("/* TRY */");
+    }
+
+    @Override
+    public void visit(WasmThrow expression) {
+        value = new CExpression("/* THROW */");
     }
 
     private CExpression checkAddress(CExpression index) {

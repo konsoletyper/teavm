@@ -79,4 +79,8 @@ public interface WasmExpressionVisitor {
     void visit(WasmFill expression);
 
     void visit(WasmCopy expression);
+
+    void visit(WasmTry expression);
+
+    void visit(WasmThrow expression);
 }

@@ -31,6 +31,8 @@ public class WasmModule {
     private WasmFunction startFunction;
     private Map<String, WasmCustomSection> customSections = new LinkedHashMap<>();
     private Map<String, WasmCustomSection> readonlyCustomSections = Collections.unmodifiableMap(customSections);
+    private List<WasmTag> tags = new ArrayList<>();
+    private List<? extends WasmTag> readonlyTags = Collections.unmodifiableList(tags);
 
     public void add(WasmFunction function) {
         if (functions.containsKey(function.getName())) {
@@ -109,5 +111,18 @@ public class WasmModule {
 
     public void setStartFunction(WasmFunction startFunction) {
         this.startFunction = startFunction;
+    }
+
+    public void addTag(WasmTag tag) {
+        if (tag.module != null) {
+            throw new IllegalArgumentException("Given tag already belongs to some module");
+        }
+        tags.add(tag);
+        tag.module = this;
+        tag.index = tags.size() - 1;
+    }
+
+    public List<? extends WasmTag> getTags() {
+        return tags;
     }
 }

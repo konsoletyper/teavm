@@ -87,6 +87,7 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
@@ -118,6 +119,7 @@ import org.teavm.backend.wasm.transformation.IndirectCallTraceTransformation;
 import org.teavm.backend.wasm.transformation.MemoryAccessTraceTransformation;
 import org.teavm.backend.wasm.transformation.WasiFileSystemProviderTransformer;
 import org.teavm.backend.wasm.transformation.WasiSupportClassTransformer;
+import org.teavm.backend.wasm.transformation.WasmExceptionHandlingTransform;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
@@ -164,7 +166,6 @@ import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.model.util.AsyncMethodFinder;
-import org.teavm.model.util.TransitionExtractor;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.EventQueue;
 import org.teavm.runtime.ExceptionHandling;
@@ -209,6 +210,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     private WasmRuntimeType runtimeType = WasmRuntimeType.TEAVM;
     private ReportingWasmBinaryStatsCollector statsCollector;
     private SourceFileResolver sourceFileResolver;
+    private boolean exceptionsUsed;
 
     @Override
     public void setController(TeaVMTargetController controller) {
@@ -246,6 +248,9 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         if (runtimeType == WasmRuntimeType.WASI) {
             transformers.add(new WasiSupportClassTransformer());
             transformers.add(new WasiFileSystemProviderTransformer());
+        }
+        if (exceptionsUsed) {
+            transformers.add(new WasmExceptionHandlingTransform());
         }
         return transformers;
     }
@@ -311,6 +316,10 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     public void setSourceFileResolver(SourceFileResolver sourceFileResolver) {
         this.sourceFileResolver = sourceFileResolver;
+    }
+
+    public void setExceptionsUsed(boolean exceptionsUsed) {
+        this.exceptionsUsed = exceptionsUsed;
     }
 
     @Override
@@ -388,6 +397,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "catchException",
                 Throwable.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "peekException",
+                Throwable.class)).use();
 
         dependencyAnalyzer.linkField(new FieldReference("java.lang.Object", "monitor"));
 
@@ -454,23 +465,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         new CoroutineTransformation(controller.getUnprocessedClassSource(), asyncMethods, hasThreads)
                 .apply(program, method.getReference());
         shadowStackTransformer.apply(program, method);
-        //checkPhis(program, method);
         writeBarrierInsertion.apply(program);
-    }
-
-    private void checkPhis(Program program, MethodReader method) {
-        var transitionExtractor = new TransitionExtractor();
-        for (var block : program.getBasicBlocks()) {
-            for (var phi : block.getPhis()) {
-                for (var incoming : phi.getIncomings()) {
-                    incoming.getSource().getLastInstruction().acceptVisitor(transitionExtractor);
-                    if (!Arrays.asList(transitionExtractor.getTargets()).contains(block)) {
-                        throw new RuntimeException("Method " + method.getReference() + ", block "
-                                + block.getIndex() + ", from " + incoming.getSource().getIndex());
-                    }
-                }
-            }
-        }
     }
 
     @Override
@@ -502,8 +497,13 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
         Decompiler decompiler = new Decompiler(classes, new HashSet<>(), false);
         var stringPool = classGenerator.getStringPool();
+        WasmTag exceptionTag = null;
+        if (exceptionsUsed) {
+            exceptionTag = new WasmTag();
+            module.addTag(exceptionTag);
+        }
         var context = new WasmGenerationContext(classes, module, controller.getDiagnostics(),
-                vtableProvider, tagRegistry, stringPool, names, characteristics);
+                vtableProvider, tagRegistry, stringPool, names, characteristics, exceptionTag);
 
         context.addIntrinsic(new AddressIntrinsic(classGenerator));
         context.addIntrinsic(new StructureIntrinsic(classes, classGenerator));

@@ -74,11 +74,13 @@ import org.teavm.backend.wasm.binary.DataPrimitives;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmCatch;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
@@ -111,6 +113,8 @@ import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
+import org.teavm.backend.wasm.model.expression.WasmThrow;
+import org.teavm.backend.wasm.model.expression.WasmTry;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.backend.wasm.render.WasmTypeInference;
 import org.teavm.diagnostics.Diagnostics;
@@ -143,6 +147,8 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             "monitorExit", Object.class, void.class);
     private static final MethodReference CATCH_METHOD = new MethodReference(ExceptionHandling.class,
             "catchException", Throwable.class);
+    private static final MethodReference PEEK_EXCEPTION_METHOD = new MethodReference(ExceptionHandling.class,
+            "peekException", Throwable.class);
     private static final MethodReference THROW_METHOD = new MethodReference(ExceptionHandling.class,
             "throwException", Throwable.class, void.class);
     private static final MethodReference THROW_CCE_METHOD = new MethodReference(ExceptionHandling.class,
@@ -194,6 +200,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         this.async = async;
         this.managed = context.characteristics.isManaged(currentMethod);
     }
+
 
     void generate(Statement statement, List<WasmExpression> target) {
         var lastTargetSize = target.size();
@@ -512,7 +519,6 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         block.setType(WasmType.INT32);
         block.setLocation(location);
 
-
         accept(value);
         var cachedValue = exprCache.create(result, WasmType.INT32, location, block.getBody());
 
@@ -526,13 +532,17 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         var call = new WasmCall(context.names.forMethod(THROW_NPE_METHOD));
         block.getBody().add(call);
 
-        var target = throwJumpTarget();
-        var breakExpr = new WasmBreak(target);
-        if (target != rethrowBlock) {
-            breakExpr.setResult(generateGetHandlerId(callSiteId, location));
-            block.getBody().add(new WasmDrop(breakExpr));
+        if (context.getExceptionTag() == null) {
+            var target = throwJumpTarget();
+            var breakExpr = new WasmBreak(target);
+            if (target != rethrowBlock) {
+                breakExpr.setResult(generateGetHandlerId(callSiteId, location));
+                block.getBody().add(new WasmDrop(breakExpr));
+            } else {
+                block.getBody().add(breakExpr);
+            }
         } else {
-            block.getBody().add(breakExpr);
+            block.getBody().add(new WasmUnreachable());
         }
 
         cachedValue.release();
@@ -1072,7 +1082,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 targetList.add(drop);
             }
 
-            checkHandlerId(targetList, callSiteId, expr.getLocation());
+            if (context.getExceptionTag() == null) {
+                checkHandlerId(targetList, callSiteId, expr.getLocation());
+            }
             if (resultVar != null) {
                 var getLocal = new WasmGetLocal(resultVar);
                 getLocal.setLocation(expr.getLocation());
@@ -1653,15 +1665,20 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         ifNull.setResult(new WasmInt32Constant(0));
         block.getBody().add(new WasmDrop(ifNull));
 
-        WasmCall supertypeCall = new WasmCall(context.names.forSupertypeFunction(expr.getType()));
-        WasmExpression classRef = new WasmLoadInt32(4, cachedObject.expr(), WasmInt32Subtype.INT32);
-        classRef = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, classRef, new WasmInt32Constant(3));
-        supertypeCall.getArguments().add(classRef);
-        block.getBody().add(supertypeCall);
+        block.getBody().add(instanceOfImpl(cachedObject.expr(), type));
 
         cachedObject.release();
 
         result = block;
+    }
+
+    private WasmExpression instanceOfImpl(WasmExpression expression, ValueType type) {
+        WasmCall supertypeCall = new WasmCall(context.names.forSupertypeFunction(type));
+        WasmExpression classRef = new WasmLoadInt32(4, expression, WasmInt32Subtype.INT32);
+        classRef = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, classRef,
+                new WasmInt32Constant(3));
+        supertypeCall.getArguments().add(classRef);
+        return supertypeCall;
     }
 
     @Override
@@ -1674,13 +1691,17 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         call.setLocation(statement.getLocation());
         resultConsumer.add(call);
 
-        var target = throwJumpTarget();
-        var breakExpr = new WasmBreak(target);
-        breakExpr.setLocation(statement.getLocation());
-        if (target != rethrowBlock) {
-            breakExpr.setResult(generateGetHandlerId(callSiteId, statement.getLocation()));
+        if (context.getExceptionTag() == null) {
+            var target = throwJumpTarget();
+            var breakExpr = new WasmBreak(target);
+            breakExpr.setLocation(statement.getLocation());
+            if (target != rethrowBlock) {
+                breakExpr.setResult(generateGetHandlerId(callSiteId, statement.getLocation()));
+            }
+            resultConsumer.add(breakExpr);
+        } else {
+            resultConsumer.add(new WasmUnreachable());
         }
-        resultConsumer.add(breakExpr);
     }
 
     @Override
@@ -1723,12 +1744,16 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         var call = new WasmCall(context.names.forMethod(THROW_CCE_METHOD));
         block.getBody().add(call);
 
-        var target = throwJumpTarget();
-        var breakExpr = new WasmBreak(target);
-        if (target != rethrowBlock) {
-            breakExpr.setResult(generateGetHandlerId(callSiteId, expr.getLocation()));
+        if (context.getExceptionTag() == null) {
+            var target = throwJumpTarget();
+            var breakExpr = new WasmBreak(target);
+            if (target != rethrowBlock) {
+                breakExpr.setResult(generateGetHandlerId(callSiteId, expr.getLocation()));
+            }
+            block.getBody().add(breakExpr);
+        } else {
+            block.getBody().add(new WasmUnreachable());
         }
-        block.getBody().add(breakExpr);
 
         valueToCast.release();
         result = block;
@@ -1743,7 +1768,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             var callSiteId = generateCallSiteId(statement.getLocation());
             resultConsumer.add(generateRegisterCallSite(callSiteId, statement.getLocation()));
             resultConsumer.add(call);
-            checkHandlerId(resultConsumer, callSiteId, statement.getLocation());
+            if (context.getExceptionTag() == null) {
+                checkHandlerId(resultConsumer, callSiteId, statement.getLocation());
+            }
         }
     }
 
@@ -1771,6 +1798,14 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
         tryCatchStatements.add(statement);
 
+        if (context.getExceptionTag() == null) {
+            emulatedTry(tryCatchStatements, statement.getProtectedBody());
+        } else {
+            builtInTry(tryCatchStatements, statement.getProtectedBody());
+        }
+    }
+
+    private void emulatedTry(List<TryCatchStatement> tryCatchStatements, List<Statement> protectedBody) {
         int firstId = handlers.size();
 
         var innerCatchBlock = new WasmBlock(false);
@@ -1794,7 +1829,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
         var lastTryBlockBackup = lastTryBlock;
         lastTryBlock = bodyBlock;
-        visitMany(statement.getProtectedBody(), bodyBlock.getBody());
+        visitMany(protectedBody, bodyBlock.getBody());
         lastTryBlock = lastTryBlockBackup;
         handlers.subList(firstId, handlers.size()).clear();
 
@@ -1818,6 +1853,69 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             var tryCatch = tryCatchStatements.get(i);
             var catchBlock = catchBlocks.get(i);
             catchBlock.getBody().add(currentBlock);
+            var catchMethodName = context.names.forMethod(CATCH_METHOD);
+            var catchCall = new WasmCall(catchMethodName);
+            var catchWrapper = tryCatch.getExceptionVariable() != null
+                    ? new WasmSetLocal(localVar(tryCatch.getExceptionVariable()), catchCall)
+                    : new WasmDrop(catchCall);
+            catchBlock.getBody().add(catchWrapper);
+            visitMany(tryCatch.getHandler(), catchBlock.getBody());
+            if (!catchBlock.isTerminating() && catchBlock != outerCatchBlock) {
+                catchBlock.getBody().add(new WasmBreak(outerCatchBlock));
+            }
+            currentBlock = catchBlock;
+        }
+
+        resultConsumer.add(outerCatchBlock);
+    }
+
+    private void builtInTry(List<TryCatchStatement> tryCatchStatements, List<Statement> protectedBody) {
+        var innerCatchBlock = new WasmBlock(false);
+
+        var catchBlocks = new ArrayList<WasmBlock>();
+        for (int i = 0; i < tryCatchStatements.size(); ++i) {
+            catchBlocks.add(new WasmBlock(false));
+        }
+        var outerCatchBlock = catchBlocks.get(0);
+
+        var tryBlock = new WasmTry();
+        visitMany(protectedBody, tryBlock.getBody());
+        if (!tryBlock.isTerminating()) {
+            tryBlock.getBody().add(new WasmBreak(outerCatchBlock));
+        }
+        var catchClause = new WasmCatch(context.getExceptionTag());
+        tryBlock.getCatches().add(catchClause);
+        innerCatchBlock.getBody().add(tryBlock);
+
+        var obj = exprCache.create(new WasmCall(context.names.forMethod(PEEK_EXCEPTION_METHOD)), WasmType.INT32,
+                null, innerCatchBlock.getBody());
+        var currentBlock = innerCatchBlock;
+        boolean catchesAll = false;
+        for (int i = tryCatchStatements.size() - 1; i >= 0; --i) {
+            var tryCatch = tryCatchStatements.get(i);
+            var catchBlock = catchBlocks.get(i);
+            if (tryCatch.getExceptionType() != null && !tryCatch.getExceptionType().equals(Throwable.class.getName())) {
+                var exceptionType = ValueType.object(tryCatch.getExceptionType());
+                classGenerator.getClassPointer(exceptionType);
+                var isMatched = instanceOfImpl(obj.expr(), exceptionType);
+                innerCatchBlock.getBody().add(new WasmBranch(isMatched, currentBlock));
+            } else {
+                innerCatchBlock.getBody().add(new WasmBreak(currentBlock));
+                catchesAll = true;
+            }
+            currentBlock = catchBlock;
+        }
+        if (!catchesAll) {
+            innerCatchBlock.getBody().add(new WasmThrow(context.getExceptionTag()));
+        }
+        obj.release();
+
+        currentBlock = innerCatchBlock;
+        for (int i = tryCatchStatements.size() - 1; i >= 0; --i) {
+            var tryCatch = tryCatchStatements.get(i);
+            var catchBlock = catchBlocks.get(i);
+            catchBlock.getBody().add(currentBlock);
+
             var catchMethodName = context.names.forMethod(CATCH_METHOD);
             var catchCall = new WasmCall(catchMethodName);
             var catchWrapper = tryCatch.getExceptionVariable() != null
@@ -1924,11 +2022,15 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         var callSiteId = generateCallSiteId(expr.getLocation());
         block.getBody().add(generateRegisterCallSite(callSiteId, expr.getLocation()));
         block.getBody().add(new WasmCall(context.names.forMethod(THROW_AIOOBE_METHOD)));
-        var br = new WasmBreak(throwJumpTarget());
-        if (br.getTarget() != rethrowBlock) {
-            br.setResult(generateGetHandlerId(callSiteId, expr.getLocation()));
+        if (context.getExceptionTag() == null) {
+            var br = new WasmBreak(throwJumpTarget());
+            if (br.getTarget() != rethrowBlock) {
+                br.setResult(generateGetHandlerId(callSiteId, expr.getLocation()));
+            }
+            block.getBody().add(br);
+        } else {
+            block.getBody().add(new WasmUnreachable());
         }
-        block.getBody().add(br);
 
         result = block;
     }
@@ -2153,6 +2255,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         @Override
         public WasmExpression generateRegisterCallSite(int callSite, TextLocation location) {
             return WasmGenerationVisitor.this.generateRegisterCallSite(callSite, location);
+        }
+
+        @Override
+        public WasmTag getExceptionTag() {
+            return context.getExceptionTag();
         }
     };
 

@@ -24,6 +24,7 @@ import org.teavm.backend.wasm.generators.WasmMethodGenerator;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Import;
 import org.teavm.model.AnnotationReader;
@@ -54,11 +55,12 @@ public class WasmGenerationContext {
     private List<WasmMethodGenerator> generators = new ArrayList<>();
     private Map<MethodReference, IntrinsicHolder> intrinsicCache = new HashMap<>();
     private Map<MethodReference, GeneratorHolder> generatorCache = new HashMap<>();
+    private WasmTag exceptionTag;
     public final List<CallSiteDescriptor> callSites = new ArrayList<>();
 
     public WasmGenerationContext(ClassReaderSource classSource, WasmModule module, Diagnostics diagnostics,
             VirtualTableProvider vtableProvider, TagRegistry tagRegistry, WasmStringPool stringPool,
-            NameProvider names, Characteristics characteristics) {
+            NameProvider names, Characteristics characteristics, WasmTag exceptionTag) {
         this.classSource = classSource;
         this.module = module;
         this.diagnostics = diagnostics;
@@ -67,6 +69,7 @@ public class WasmGenerationContext {
         this.stringPool = stringPool;
         this.names = names;
         this.characteristics = characteristics;
+        this.exceptionTag = exceptionTag;
     }
 
     public void addIntrinsic(WasmIntrinsic intrinsic) {
@@ -160,6 +163,10 @@ public class WasmGenerationContext {
 
     public Diagnostics getDiagnostics() {
         return diagnostics;
+    }
+
+    public WasmTag getExceptionTag() {
+        return exceptionTag;
     }
 
     public static class ImportedMethod {

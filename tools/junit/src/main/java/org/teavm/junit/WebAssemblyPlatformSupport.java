@@ -42,6 +42,11 @@ class WebAssemblyPlatformSupport extends BaseWebAssemblyPlatformSupport {
     }
 
     @Override
+    protected boolean exceptionsUsed() {
+        return true;
+    }
+
+    @Override
     TestPlatform getPlatform() {
         return TestPlatform.WEBASSEMBLY;
     }

@@ -57,6 +57,8 @@ import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
+import org.teavm.backend.wasm.model.expression.WasmThrow;
+import org.teavm.backend.wasm.model.expression.WasmTry;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
@@ -931,6 +933,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         writer.writeByte(0xFC);
         writer.writeLEB(11);
         writer.writeByte(0);
+        popLocation();
     }
 
     @Override
@@ -943,6 +946,38 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         writer.writeLEB(10);
         writer.writeByte(0);
         writer.writeByte(0);
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmTry expression) {
+        pushLocation(expression);
+        writer.writeByte(0x06);
+        writeBlockType(expression.getType());
+        ++depth;
+        for (var part : expression.getBody()) {
+            part.acceptVisitor(this);
+        }
+        --depth;
+        for (var catchClause : expression.getCatches()) {
+            writer.writeByte(0x07);
+            writer.writeLEB(catchClause.getTag().getIndex());
+            for (var part : catchClause.getBody()) {
+                part.acceptVisitor(this);
+            }
+        }
+        writer.writeByte(0xB);
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmThrow expression) {
+        for (var arg : expression.getArguments()) {
+            arg.acceptVisitor(this);
+        }
+        pushLocation(expression);
+        writer.writeByte(0x8);
+        writer.writeLEB(expression.getTag().getIndex());
     }
 
     private int alignment(int value) {

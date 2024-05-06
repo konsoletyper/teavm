@@ -24,6 +24,7 @@ import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.debug.info.VariableType;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.interop.Export;
 import org.teavm.model.AnnotationReader;
@@ -42,6 +43,7 @@ public class WasmGenerator {
     private BinaryWriter binaryWriter;
     private NameProvider names;
     private Predicate<MethodReference> asyncMethods;
+    private WasmTag exceptionTag;
 
     public WasmGenerator(Decompiler decompiler, ClassHolderSource classSource,
             WasmGenerationContext context, WasmClassGenerator classGenerator, BinaryWriter binaryWriter,

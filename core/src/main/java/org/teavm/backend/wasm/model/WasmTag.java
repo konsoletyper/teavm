@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,12 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.gradle.api;
+package org.teavm.backend.wasm.model;
 
-import org.gradle.api.provider.Property;
+import java.util.ArrayList;
+import java.util.List;
 
-public interface TeaVMWasmBaseConfiguration extends TeaVMCommonConfiguration, TeaVMNativeBaseConfiguration {
-    Property<Boolean> getExceptionsUsed();
+public class WasmTag {
+    private List<WasmType> values = new ArrayList<>();
+    WasmModule module;
+    int index;
 
-    Property<String> getTargetFileName();
+    public List<WasmType> getValues() {
+        return values;
+    }
+
+    public int getIndex() {
+        return index;
+    }
 }

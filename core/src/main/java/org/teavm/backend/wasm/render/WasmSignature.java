@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.render;
 
 import java.util.Arrays;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 
 final class WasmSignature {
@@ -43,11 +44,19 @@ final class WasmSignature {
         return Arrays.hashCode(types);
     }
 
-    public static WasmSignature fromFunction(WasmFunction function) {
+    static WasmSignature fromFunction(WasmFunction function) {
         WasmType[] types = new WasmType[function.getParameters().size() + 1];
         types[0] = function.getResult();
         for (int i = 0; i < function.getParameters().size(); ++i) {
             types[i + 1] = function.getParameters().get(i);
+        }
+        return new WasmSignature(types);
+    }
+
+    static WasmSignature fromTag(WasmTag tag) {
+        var types = new WasmType[tag.getValues().size() + 1];
+        for (var i = 0; i < tag.getValues().size(); i++) {
+            types[i + 1] = tag.getValues().get(i);
         }
         return new WasmSignature(types);
     }

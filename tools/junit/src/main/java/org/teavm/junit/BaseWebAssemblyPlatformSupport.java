@@ -41,12 +41,17 @@ abstract class BaseWebAssemblyPlatformSupport extends TestPlatformSupport<WasmTa
 
     protected abstract WasmRuntimeType getRuntimeType();
 
+    protected boolean exceptionsUsed() {
+        return false;
+    }
+
     @Override
     CompileResult compile(Consumer<TeaVM> additionalProcessing, String baseName,
             TeaVMTestConfiguration<WasmTarget> configuration, File path, AnnotatedElement element) {
         Supplier<WasmTarget> targetSupplier = () -> {
             WasmTarget target = new WasmTarget();
             target.setRuntimeType(getRuntimeType());
+            target.setExceptionsUsed(exceptionsUsed());
             var sourceDirs = System.getProperty(SOURCE_DIRS);
             if (sourceDirs != null) {
                 var dirs = new ArrayList<File>();

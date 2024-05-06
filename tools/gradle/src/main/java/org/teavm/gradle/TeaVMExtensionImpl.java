@@ -92,6 +92,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
                 .orElse(OptimizationLevel.AGGRESSIVE));
         wasm.getTargetFileName().convention(project.provider(() -> project.getName() + ".wasm"));
         wasm.getAddedToWebApp().convention(property("wasm.addedToWebApp").map(Boolean::parseBoolean).orElse(false));
+        wasm.getExceptionsUsed().convention(property("wasm.exceptionsUsed").map(Boolean::parseBoolean).orElse(true));
     }
 
     private void setupWasiDefaults() {
@@ -101,6 +102,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         wasi.getOptimization().convention(property("wasi.optimization").map(OptimizationLevel::valueOf)
                 .orElse(OptimizationLevel.AGGRESSIVE));
         wasi.getTargetFileName().convention(project.provider(() -> project.getName() + ".wasm"));
+        wasi.getExceptionsUsed().convention(property("wasi.exceptionsUsed").map(Boolean::parseBoolean).orElse(false));
     }
 
     private void setupCDefaults() {

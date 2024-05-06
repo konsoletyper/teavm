@@ -46,6 +46,7 @@ public class WasmBinaryRenderer {
     private static final int SECTION_ELEMENT = 9;
     private static final int SECTION_CODE = 10;
     private static final int SECTION_DATA = 11;
+    private static final int SECTION_TAGS = 13;
 
     private static final int EXTERNAL_KIND_FUNCTION = 0;
     private static final int EXTERNAL_KIND_MEMORY = 2;
@@ -92,6 +93,7 @@ public class WasmBinaryRenderer {
         renderFunctions(module);
         renderTable(module);
         renderMemory(module);
+        renderTags(module);
         renderExport(module);
         renderStart(module);
         renderElement(module);
@@ -112,6 +114,9 @@ public class WasmBinaryRenderer {
             for (WasmExpression part : function.getBody()) {
                 part.acceptVisitor(signatureCollector);
             }
+        }
+        for (var tag : module.getTags()) {
+            registerSignature(WasmSignature.fromTag(tag));
         }
 
         section.writeLEB(signatures.size());
@@ -392,6 +397,21 @@ public class WasmBinaryRenderer {
         }
 
         writeSection(SECTION_DATA, "data", section.getData());
+    }
+
+    private void renderTags(WasmModule module) {
+        if (module.getTags().isEmpty()) {
+            return;
+        }
+
+        var section = new WasmBinaryWriter();
+        section.writeLEB(module.getTags().size());
+        for (var tag : module.getTags()) {
+            section.writeByte(0);
+            section.writeLEB(signatureIndexes.get(WasmSignature.fromTag(tag)));
+        }
+
+        writeSection(SECTION_TAGS, "tags", section.getData());
     }
 
     private void renderNames(WasmModule module) {

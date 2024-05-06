@@ -61,6 +61,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private String[] transformers = new String[0];
     private String[] classesToPreserve = new String[0];
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
+    private boolean wasmExceptionsUsed;
     private int minHeapSize = 4 * 1024 * 1024;
     private int maxHeapSize = 128 * 1024 * 1024;
     private final List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
@@ -214,6 +215,11 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setWasmExceptionsUsed(boolean wasmExceptionsUsed) {
+        this.wasmExceptionsUsed = wasmExceptionsUsed;
+    }
+
+    @Override
     public void setMinHeapSize(int minHeapSize) {
         this.minHeapSize = minHeapSize;
     }
@@ -266,6 +272,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.getClassesToPreserve().addAll(Arrays.asList(classesToPreserve));
         tool.setCacheDirectory(cacheDirectory != null ? new File(cacheDirectory) : null);
         tool.setWasmVersion(wasmVersion);
+        tool.setWasmExceptionsUsed(wasmExceptionsUsed);
         tool.setMinHeapSize(minHeapSize);
         tool.setMaxHeapSize(maxHeapSize);
         tool.setHeapDump(heapDump);

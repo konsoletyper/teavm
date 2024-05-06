@@ -199,4 +199,23 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
         expression.getSourceIndex().acceptVisitor(this);
         expression.getCount().acceptVisitor(this);
     }
+
+    @Override
+    public void visit(WasmTry expression) {
+        for (var part : expression.getBody()) {
+            part.acceptVisitor(this);
+        }
+        for (var catchClause : expression.getCatches()) {
+            for (var part : catchClause.getBody()) {
+                part.acceptVisitor(this);
+            }
+        }
+    }
+
+    @Override
+    public void visit(WasmThrow expression) {
+        for (var arg : expression.getArguments()) {
+            arg.acceptVisitor(this);
+        }
+    }
 }

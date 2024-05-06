@@ -81,6 +81,8 @@ public interface BuildStrategy {
 
     void setWasmVersion(WasmBinaryVersion wasmVersion);
 
+    void setWasmExceptionsUsed(boolean wasmExceptionsUsed);
+
     void setMinHeapSize(int minHeapSize);
 
     void setMaxHeapSize(int maxHeapSize);

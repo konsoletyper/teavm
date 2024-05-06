@@ -251,4 +251,17 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
         expression.getCount().acceptVisitor(this);
         expression.setCount(mapper.apply(expression.getCount()));
     }
+
+    @Override
+    public void visit(WasmTry expression) {
+        replaceExpressions(expression.getBody());
+        for (var catchClause : expression.getCatches()) {
+            replaceExpressions(catchClause.getBody());
+        }
+    }
+
+    @Override
+    public void visit(WasmThrow expression) {
+        replaceExpressions(expression.getArguments());
+    }
 }

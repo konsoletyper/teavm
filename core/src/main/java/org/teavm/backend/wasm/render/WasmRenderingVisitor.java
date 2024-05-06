@@ -61,6 +61,8 @@ import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
+import org.teavm.backend.wasm.model.expression.WasmThrow;
+import org.teavm.backend.wasm.model.expression.WasmTry;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 
 class WasmRenderingVisitor implements WasmExpressionVisitor {
@@ -617,6 +619,37 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         line(expression.getIndex());
         line(expression.getValue());
         line(expression.getCount());
+        close();
+    }
+
+    @Override
+    public void visit(WasmTry expression) {
+        open().append("try");
+        if (expression.getType() != null) {
+            append(" " + type(expression.getType()));
+        }
+        for (var part : expression.getBody()) {
+            line(part);
+        }
+        for (var catchClause : expression.getCatches()) {
+            lf().append("(catch ").append(String.valueOf(catchClause.getTag().getIndex()))
+                    .append(" ").indent();
+            for (var part : catchClause.getBody()) {
+                line(part);
+            }
+            lf().outdent().append(")");
+        }
+
+        close();
+    }
+
+    @Override
+    public void visit(WasmThrow expression) {
+        open().append("throw");
+        append(" ").append(String.valueOf(expression.getTag().getIndex()));
+        for (var arg : expression.getArguments()) {
+            line(arg);
+        }
         close();
     }
 

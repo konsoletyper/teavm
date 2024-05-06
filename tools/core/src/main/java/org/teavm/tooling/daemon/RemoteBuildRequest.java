@@ -49,6 +49,7 @@ public class RemoteBuildRequest implements Serializable {
     public TeaVMOptimizationLevel optimizationLevel;
     public boolean fastDependencyAnalysis;
     public WasmBinaryVersion wasmVersion;
+    public boolean wasmExceptionsUsed;
     public int minHeapSize;
     public int maxHeapSize;
     public boolean heapDump;

@@ -127,6 +127,10 @@ public final class TeaVMRunner {
                 .hasArg()
                 .desc("WebAssembly binary version (currently, only 1 is supported)")
                 .build());
+        options.addOption(Option.builder()
+                .longOpt("wasm-use-exceptions")
+                .desc("Specifies that WebAssembly exception handling instructions can be used")
+                .build());
         options.addOption(Option.builder("e")
                 .longOpt("entry-point")
                 .argName("name")
@@ -351,6 +355,9 @@ public final class TeaVMRunner {
                 System.err.print("Wrong version value");
                 printUsage();
             }
+        }
+        if (commandLine.hasOption("wasm-use-exceptions")) {
+            tool.setWasmExceptionsUsed(true);
         }
     }
 

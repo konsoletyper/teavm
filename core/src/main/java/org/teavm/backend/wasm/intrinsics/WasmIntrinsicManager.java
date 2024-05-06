@@ -20,6 +20,7 @@ import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.generate.WasmStringPool;
 import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.diagnostics.Diagnostics;
@@ -55,5 +56,5 @@ public interface WasmIntrinsicManager {
 
     WasmExpression generateRegisterCallSite(int callSite, TextLocation location);
 
-
+    WasmTag getExceptionTag();
 }

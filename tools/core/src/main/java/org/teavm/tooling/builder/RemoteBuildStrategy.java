@@ -188,6 +188,11 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setWasmExceptionsUsed(boolean wasmExceptionsUsed) {
+        request.wasmExceptionsUsed = wasmExceptionsUsed;
+    }
+
+    @Override
     public void setMinHeapSize(int minHeapSize) {
         request.minHeapSize = minHeapSize;
     }
