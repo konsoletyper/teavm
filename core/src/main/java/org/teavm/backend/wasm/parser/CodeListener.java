@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.parser;
 
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
@@ -97,7 +98,7 @@ public interface CodeListener {
     default void storeFloat64(int align, int offset) {
     }
 
-    default void convert(WasmType sourceType, WasmType targetType, boolean signed, boolean reinterpret) {
+    default void convert(WasmNumType sourceType, WasmNumType targetType, boolean signed, boolean reinterpret) {
     }
 
     default void memoryGrow() {

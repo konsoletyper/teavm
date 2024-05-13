@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.generate;
 
 import org.teavm.ast.OperationType;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.model.ValueType;
 import org.teavm.model.util.VariableType;
@@ -24,16 +25,16 @@ public final class WasmGeneratorUtil {
     private WasmGeneratorUtil() {
     }
 
-    public static WasmType mapType(OperationType type) {
+    public static WasmNumType mapType(OperationType type) {
         switch (type) {
             case INT:
-                return WasmType.INT32;
+                return WasmNumType.INT32;
             case LONG:
-                return WasmType.INT64;
+                return WasmNumType.INT64;
             case FLOAT:
-                return WasmType.FLOAT32;
+                return WasmNumType.FLOAT32;
             case DOUBLE:
-                return WasmType.FLOAT64;
+                return WasmNumType.FLOAT64;
         }
         throw new IllegalArgumentException(type.toString());
     }

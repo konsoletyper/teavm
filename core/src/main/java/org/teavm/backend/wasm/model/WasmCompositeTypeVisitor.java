@@ -15,20 +15,10 @@
  */
 package org.teavm.backend.wasm.model;
 
-public class WasmTag extends WasmEntity {
-    private WasmFunctionType type;
-    WasmModule module;
-    int index;
+public interface WasmCompositeTypeVisitor {
+    void visit(WasmStructure type);
 
-    public WasmTag(WasmFunctionType type) {
-        this.type = type;
-    }
+    void visit(WasmArray type);
 
-    public WasmFunctionType getType() {
-        return type;
-    }
-
-    public int getIndex() {
-        return index;
-    }
+    void visit(WasmFunctionType type);
 }

@@ -25,37 +25,14 @@ public class WasmModule {
     private int minMemorySize;
     private int maxMemorySize;
     private List<WasmMemorySegment> segments = new ArrayList<>();
-    private Map<String, WasmFunction> functions = new LinkedHashMap<>();
-    private Map<String, WasmFunction> readonlyFunctions = Collections.unmodifiableMap(functions);
     private List<WasmFunction> functionTable = new ArrayList<>();
     private WasmFunction startFunction;
     private Map<String, WasmCustomSection> customSections = new LinkedHashMap<>();
     private Map<String, WasmCustomSection> readonlyCustomSections = Collections.unmodifiableMap(customSections);
-    private List<WasmTag> tags = new ArrayList<>();
-    private List<? extends WasmTag> readonlyTags = Collections.unmodifiableList(tags);
 
-    public void add(WasmFunction function) {
-        if (functions.containsKey(function.getName())) {
-            throw new IllegalArgumentException("Function " + function.getName() + " already defined in this module");
-        }
-        if (function.module != null) {
-            throw new IllegalArgumentException("Given function is already registered in another module");
-        }
-        functions.put(function.getName(), function);
-        function.module = this;
-    }
-
-    public void remove(WasmFunction function) {
-        if (function.getModule() != this) {
-            return;
-        }
-        function.module = null;
-        functions.remove(function.getName());
-    }
-
-    public Map<String, WasmFunction> getFunctions() {
-        return readonlyFunctions;
-    }
+    public final WasmCollection<WasmFunction> functions = new WasmCollection<>();
+    public final WasmCollection<WasmCompositeType> types = new WasmCollection<>();
+    public final WasmCollection<WasmTag> tags = new WasmCollection<>();
 
     public void add(WasmCustomSection customSection) {
         if (customSections.containsKey(customSection.getName())) {
@@ -111,18 +88,5 @@ public class WasmModule {
 
     public void setStartFunction(WasmFunction startFunction) {
         this.startFunction = startFunction;
-    }
-
-    public void addTag(WasmTag tag) {
-        if (tag.module != null) {
-            throw new IllegalArgumentException("Given tag already belongs to some module");
-        }
-        tags.add(tag);
-        tag.module = this;
-        tag.index = tags.size() - 1;
-    }
-
-    public List<? extends WasmTag> getTags() {
-        return tags;
     }
 }

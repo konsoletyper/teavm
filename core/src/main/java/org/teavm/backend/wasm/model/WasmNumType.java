@@ -15,20 +15,9 @@
  */
 package org.teavm.backend.wasm.model;
 
-public class WasmTag extends WasmEntity {
-    private WasmFunctionType type;
-    WasmModule module;
-    int index;
-
-    public WasmTag(WasmFunctionType type) {
-        this.type = type;
-    }
-
-    public WasmFunctionType getType() {
-        return type;
-    }
-
-    public int getIndex() {
-        return index;
-    }
+public enum WasmNumType {
+    INT32,
+    INT64,
+    FLOAT32,
+    FLOAT64
 }

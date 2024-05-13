@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.function.Consumer;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
@@ -103,17 +104,21 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
 
     private String typeToString(WasmType type) {
         if (type != null) {
-            switch (type) {
-                case INT32:
-                    return "i32";
-                case INT64:
-                    return "i64";
-                case FLOAT32:
-                    return "f32";
-                case FLOAT64:
-                    return "f64";
-                default:
-                    break;
+            if (type instanceof WasmType.Number) {
+                switch (((WasmType.Number) type).number) {
+                    case INT32:
+                        return "i32";
+                    case INT64:
+                        return "i64";
+                    case FLOAT32:
+                        return "f32";
+                    case FLOAT64:
+                        return "f64";
+                    default:
+                        break;
+                }
+            } else if (type instanceof WasmType.Reference) {
+                return "ref";
             }
         }
         return "unknown";
@@ -615,7 +620,7 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     }
 
     @Override
-    public void convert(WasmType sourceType, WasmType targetType, boolean signed, boolean reinterpret) {
+    public void convert(WasmNumType sourceType, WasmNumType targetType, boolean signed, boolean reinterpret) {
         switch (targetType) {
             case INT32:
                 writer.write("i32.");

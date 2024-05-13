@@ -20,9 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.backend.lowlevel.generate.NameProvider;
+import org.teavm.backend.wasm.WasmFunctionRepository;
+import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generators.WasmMethodGenerator;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
-import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.diagnostics.Diagnostics;
@@ -43,7 +44,9 @@ import org.teavm.model.lowlevel.Characteristics;
 
 public class WasmGenerationContext {
     private ClassReaderSource classSource;
-    private WasmModule module;
+    public final WasmModule module;
+    public final WasmFunctionTypes functionTypes;
+    public final WasmFunctionRepository functions;
     private Diagnostics diagnostics;
     private VirtualTableProvider vtableProvider;
     private TagRegistry tagRegistry;
@@ -58,11 +61,14 @@ public class WasmGenerationContext {
     private WasmTag exceptionTag;
     public final List<CallSiteDescriptor> callSites = new ArrayList<>();
 
-    public WasmGenerationContext(ClassReaderSource classSource, WasmModule module, Diagnostics diagnostics,
-            VirtualTableProvider vtableProvider, TagRegistry tagRegistry, WasmStringPool stringPool,
-            NameProvider names, Characteristics characteristics, WasmTag exceptionTag) {
+    public WasmGenerationContext(ClassReaderSource classSource, WasmModule module, WasmFunctionTypes functionTypes,
+            WasmFunctionRepository functions, Diagnostics diagnostics, VirtualTableProvider vtableProvider,
+            TagRegistry tagRegistry, WasmStringPool stringPool, NameProvider names, Characteristics characteristics,
+            WasmTag exceptionTag) {
         this.classSource = classSource;
         this.module = module;
+        this.functionTypes = functionTypes;
+        this.functions = functions;
         this.diagnostics = diagnostics;
         this.vtableProvider = vtableProvider;
         this.tagRegistry = tagRegistry;
@@ -133,10 +139,6 @@ public class WasmGenerationContext {
             }
             return new ImportedMethod(name, module);
         });
-    }
-
-    public WasmFunction getFunction(String name) {
-        return module.getFunctions().get(name);
     }
 
     public ClassReaderSource getClassSource() {

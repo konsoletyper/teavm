@@ -22,9 +22,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
@@ -54,6 +54,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
+import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -331,6 +332,11 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         } else {
             value = CExpression.relocatable(Double.toHexString(expression.getValue()));
         }
+    }
+
+    @Override
+    public void visit(WasmNullConstant expression) {
+        value = CExpression.relocatable("/* can't produce ref.null */");
     }
 
     @Override
@@ -647,7 +653,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         if (type != null && expression.getSourceType() != expression.getTargetType()) {
             switch (expression.getTargetType()) {
                 case INT32:
-                    if (expression.getSourceType() == WasmType.FLOAT32 && expression.isReinterpret()) {
+                    if (expression.getSourceType() == WasmNumType.FLOAT32 && expression.isReinterpret()) {
                         result.setText("reinterpret_float32(" + operand.getText() + ")");
                     } else if (expression.isSigned()) {
                         result.setText("(int32_t) " + operand.getText());
@@ -656,7 +662,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
                     }
                     break;
                 case INT64:
-                    if (expression.getSourceType() == WasmType.FLOAT64 && expression.isReinterpret()) {
+                    if (expression.getSourceType() == WasmNumType.FLOAT64 && expression.isReinterpret()) {
                         result.setText("reinterpret_float64(" + operand.getText() + ")");
                     } else if (expression.isSigned()) {
                         result.setText("(int64_t) " + operand.getText());
@@ -665,9 +671,9 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
                     }
                     break;
                 case FLOAT32:
-                    if (expression.getSourceType() == WasmType.INT32 && expression.isReinterpret()) {
+                    if (expression.getSourceType() == WasmNumType.INT32 && expression.isReinterpret()) {
                         result.setText("reinterpret_int32(" + operand.getText() + ")");
-                    } else if (expression.getSourceType() == WasmType.FLOAT64) {
+                    } else if (expression.getSourceType() == WasmNumType.FLOAT64) {
                         result.setText("(float) " + operand.getText());
                     } else if (expression.isSigned()) {
                         result.setText("(float) (int64_t) " + operand.getText());
@@ -676,9 +682,9 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
                     }
                     break;
                 case FLOAT64:
-                    if (expression.getSourceType() == WasmType.INT64 && expression.isReinterpret()) {
+                    if (expression.getSourceType() == WasmNumType.INT64 && expression.isReinterpret()) {
                         result.setText("reinterpret_int64(" + operand.getText() + ")");
-                    } else if (expression.getSourceType() == WasmType.FLOAT32) {
+                    } else if (expression.getSourceType() == WasmNumType.FLOAT32) {
                         result.setText("(double) " + operand.getText());
                     } else if (expression.isSigned()) {
                         result.setText("(double) (int64_t) " + operand.getText());
@@ -694,25 +700,18 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmCall expression) {
-        WasmFunction function = module.getFunctions().get(expression.getFunctionName());
-        if (function == null) {
-            value = new CExpression("0");
-            return;
-        }
+        var function = expression.getFunction();
 
         CExpression result = new CExpression();
         WasmType type = requiredType;
 
         StringBuilder sb = new StringBuilder();
-        if (expression.isImported()) {
-            sb.append(function.getImportModule() != null && !function.getImportModule().isEmpty()
-                    ? function.getImportModule() + "_" + function.getImportName()
-                    : function.getImportName());
-        } else {
-            sb.append(expression.getFunctionName());
-        }
+        sb.append(function.getImportModule() != null && !function.getImportModule().isEmpty()
+                ? function.getImportModule() + "_" + function.getImportName()
+                : function.getImportName());
+
         sb.append('(');
-        translateArguments(expression.getArguments(), function.getParameters(), result, sb);
+        translateArguments(expression.getArguments(), function.getType().getParameterTypes(), result, sb);
         sb.append(')');
         result.setText(sb.toString());
 
@@ -729,12 +728,12 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         WasmType type = requiredType;
         StringBuilder sb = new StringBuilder();
 
-        sb.append("(*(" + mapType(expression.getReturnType()) + " (*)(");
-        for (int i = 0; i < expression.getParameterTypes().size(); ++i) {
+        sb.append("(*(" + mapType(expression.getType().getReturnType()) + " (*)(");
+        for (int i = 0; i < expression.getType().getParameterTypes().size(); ++i) {
             if (i > 0) {
                 sb.append(", ");
             }
-            sb.append(mapType(expression.getParameterTypes().get(i)));
+            sb.append(mapType(expression.getType().getParameterTypes().get(i)));
         }
         sb.append(")) ");
 
@@ -743,7 +742,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         result.getLines().addAll(value.getLines());
         value = cacheIfNeeded(WasmType.INT32, value, result);
         sb.append("wasm_table[" + value.getText() + "])(");
-        translateArguments(expression.getArguments(), expression.getParameterTypes(), result, sb);
+        translateArguments(expression.getArguments(), expression.getType().getParameterTypes(), result, sb);
         sb.append(")");
         result.setText(sb.toString());
 
@@ -754,7 +753,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         value = result;
     }
 
-    private void translateArguments(List<WasmExpression> wasmArguments, List<WasmType> signature,
+    private void translateArguments(List<? extends WasmExpression> wasmArguments, List<? extends WasmType> signature,
             CExpression result, StringBuilder sb) {
         if (wasmArguments.isEmpty()) {
             return;
@@ -1148,9 +1147,18 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     }
 
     static String mapType(WasmType type) {
-        if (type == null) {
+        if (type instanceof WasmType.Number) {
+            return mapType(((WasmType.Number) type).number);
+        } else if (type instanceof WasmType.Reference) {
+            return "/* unknown type */";
+        } else if (type == null) {
             return "void";
+        } else {
+            throw new IllegalArgumentException();
         }
+    }
+
+    static String mapType(WasmNumType type) {
         switch (type) {
             case INT32:
                 return "int32_t";

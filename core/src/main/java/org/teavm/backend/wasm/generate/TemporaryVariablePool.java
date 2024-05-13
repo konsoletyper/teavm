@@ -16,27 +16,23 @@
 package org.teavm.backend.wasm.generate;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 
 class TemporaryVariablePool {
     private WasmFunction function;
-    private List<Deque<WasmLocal>> temporaryVariablesByType = new ArrayList<>();
+    private Map<WasmType, Deque<WasmLocal>> temporaryVariablesByType = new HashMap<>();
 
     TemporaryVariablePool(WasmFunction function) {
         this.function = function;
-        int typeCount = WasmType.values().length;
-        for (int i = 0; i < typeCount; ++i) {
-            temporaryVariablesByType.add(new ArrayDeque<>());
-        }
     }
 
     WasmLocal acquire(WasmType type) {
-        var stack = temporaryVariablesByType.get(type.ordinal());
+        var stack = temporaryVariablesByType.computeIfAbsent(type, k -> new ArrayDeque<>());
         WasmLocal variable = stack.pollFirst();
         if (variable == null) {
             variable = new WasmLocal(type);
@@ -46,7 +42,7 @@ class TemporaryVariablePool {
     }
 
     void release(WasmLocal variable) {
-        var stack = temporaryVariablesByType.get(variable.getType().ordinal());
+        var stack = temporaryVariablesByType.get(variable.getType());
         stack.push(variable);
     }
 }

@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
@@ -67,13 +68,13 @@ public class FloatIntrinsic implements WasmIntrinsic {
             case "isFinite":
                 return testIsFinite(manager.generate(invocation.getArguments().get(0)));
             case "floatToRawIntBits": {
-                WasmConversion conversion = new WasmConversion(WasmType.FLOAT32, WasmType.INT32, false,
+                WasmConversion conversion = new WasmConversion(WasmNumType.FLOAT32, WasmNumType.INT32, false,
                         manager.generate(invocation.getArguments().get(0)));
                 conversion.setReinterpret(true);
                 return conversion;
             }
             case "intBitsToFloat": {
-                WasmConversion conversion = new WasmConversion(WasmType.INT32, WasmType.FLOAT32, false,
+                WasmConversion conversion = new WasmConversion(WasmNumType.INT32, WasmNumType.FLOAT32, false,
                         manager.generate(invocation.getArguments().get(0)));
                 conversion.setReinterpret(true);
                 return conversion;
@@ -88,7 +89,7 @@ public class FloatIntrinsic implements WasmIntrinsic {
         WasmBlock block = new WasmBlock(false);
         block.setType(WasmType.INT32);
 
-        WasmConversion conversion = new WasmConversion(WasmType.FLOAT32, WasmType.INT32, false, expression);
+        WasmConversion conversion = new WasmConversion(WasmNumType.FLOAT32, WasmNumType.INT32, false, expression);
         conversion.setReinterpret(true);
         block.getBody().add(new WasmSetLocal(bitsVar, conversion));
 
@@ -112,7 +113,7 @@ public class FloatIntrinsic implements WasmIntrinsic {
     }
 
     private WasmExpression testIsInfinite(WasmExpression expression) {
-        var conversion = new WasmConversion(WasmType.FLOAT32, WasmType.INT32, false, expression);
+        var conversion = new WasmConversion(WasmNumType.FLOAT32, WasmNumType.INT32, false, expression);
         conversion.setReinterpret(true);
 
         var result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.AND,
@@ -122,7 +123,7 @@ public class FloatIntrinsic implements WasmIntrinsic {
     }
 
     private WasmExpression testIsFinite(WasmExpression expression) {
-        var conversion = new WasmConversion(WasmType.FLOAT32, WasmType.INT32, false, expression);
+        var conversion = new WasmConversion(WasmNumType.FLOAT32, WasmNumType.INT32, false, expression);
         conversion.setReinterpret(true);
 
         var result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.AND,

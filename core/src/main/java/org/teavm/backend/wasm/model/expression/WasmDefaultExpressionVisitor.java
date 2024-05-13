@@ -82,6 +82,10 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmNullConstant expression) {
+    }
+
+    @Override
     public void visit(WasmGetLocal expression) {
     }
 

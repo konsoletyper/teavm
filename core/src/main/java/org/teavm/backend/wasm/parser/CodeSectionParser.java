@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
@@ -544,76 +545,76 @@ public class CodeSectionParser {
                 break;
 
             case 0xA7:
-                codeListener.convert(WasmType.INT64, WasmType.INT32, false, false);
+                codeListener.convert(WasmNumType.INT64, WasmNumType.INT32, false, false);
                 break;
             case 0xA8:
-                codeListener.convert(WasmType.FLOAT32, WasmType.INT32, false, false);
+                codeListener.convert(WasmNumType.FLOAT32, WasmNumType.INT32, false, false);
                 break;
             case 0xA9:
-                codeListener.convert(WasmType.FLOAT32, WasmType.INT32, true, false);
+                codeListener.convert(WasmNumType.FLOAT32, WasmNumType.INT32, true, false);
                 break;
             case 0xAA:
-                codeListener.convert(WasmType.FLOAT64, WasmType.INT32, false, false);
+                codeListener.convert(WasmNumType.FLOAT64, WasmNumType.INT32, false, false);
                 break;
             case 0xAB:
-                codeListener.convert(WasmType.FLOAT64, WasmType.INT32, true, false);
+                codeListener.convert(WasmNumType.FLOAT64, WasmNumType.INT32, true, false);
                 break;
             case 0xAC:
-                codeListener.convert(WasmType.INT32, WasmType.INT64, false, false);
+                codeListener.convert(WasmNumType.INT32, WasmNumType.INT64, false, false);
                 break;
             case 0xAD:
-                codeListener.convert(WasmType.INT32, WasmType.INT64, true, false);
+                codeListener.convert(WasmNumType.INT32, WasmNumType.INT64, true, false);
                 break;
             case 0xAE:
-                codeListener.convert(WasmType.FLOAT32, WasmType.INT64, false, false);
+                codeListener.convert(WasmNumType.FLOAT32, WasmNumType.INT64, false, false);
                 break;
             case 0xAF:
-                codeListener.convert(WasmType.FLOAT32, WasmType.INT64, true, false);
+                codeListener.convert(WasmNumType.FLOAT32, WasmNumType.INT64, true, false);
                 break;
             case 0xB0:
-                codeListener.convert(WasmType.FLOAT64, WasmType.INT64, false, false);
+                codeListener.convert(WasmNumType.FLOAT64, WasmNumType.INT64, false, false);
                 break;
             case 0xB1:
-                codeListener.convert(WasmType.FLOAT64, WasmType.INT64, true, false);
+                codeListener.convert(WasmNumType.FLOAT64, WasmNumType.INT64, true, false);
                 break;
             case 0xB2:
-                codeListener.convert(WasmType.INT32, WasmType.FLOAT32, false, false);
+                codeListener.convert(WasmNumType.INT32, WasmNumType.FLOAT32, false, false);
                 break;
             case 0xB3:
-                codeListener.convert(WasmType.INT32, WasmType.FLOAT32, true, false);
+                codeListener.convert(WasmNumType.INT32, WasmNumType.FLOAT32, true, false);
                 break;
             case 0xB4:
-                codeListener.convert(WasmType.INT64, WasmType.FLOAT32, false, false);
+                codeListener.convert(WasmNumType.INT64, WasmNumType.FLOAT32, false, false);
                 break;
             case 0xB5:
-                codeListener.convert(WasmType.INT64, WasmType.FLOAT32, true, false);
+                codeListener.convert(WasmNumType.INT64, WasmNumType.FLOAT32, true, false);
                 break;
             case 0xB6:
-                codeListener.convert(WasmType.FLOAT64, WasmType.FLOAT32, true, false);
+                codeListener.convert(WasmNumType.FLOAT64, WasmNumType.FLOAT32, true, false);
                 break;
             case 0xB7:
-                codeListener.convert(WasmType.INT32, WasmType.FLOAT64, false, false);
+                codeListener.convert(WasmNumType.INT32, WasmNumType.FLOAT64, false, false);
                 break;
             case 0xB8:
-                codeListener.convert(WasmType.INT32, WasmType.FLOAT64, true, false);
+                codeListener.convert(WasmNumType.INT32, WasmNumType.FLOAT64, true, false);
                 break;
             case 0xB9:
-                codeListener.convert(WasmType.INT64, WasmType.FLOAT64, false, false);
+                codeListener.convert(WasmNumType.INT64, WasmNumType.FLOAT64, false, false);
                 break;
             case 0xBA:
-                codeListener.convert(WasmType.INT64, WasmType.FLOAT64, true, false);
+                codeListener.convert(WasmNumType.INT64, WasmNumType.FLOAT64, true, false);
                 break;
             case 0xBC:
-                codeListener.convert(WasmType.FLOAT32, WasmType.INT32, false, true);
+                codeListener.convert(WasmNumType.FLOAT32, WasmNumType.INT32, false, true);
                 break;
             case 0xBD:
-                codeListener.convert(WasmType.FLOAT64, WasmType.INT64, false, true);
+                codeListener.convert(WasmNumType.FLOAT64, WasmNumType.INT64, false, true);
                 break;
             case 0xBE:
-                codeListener.convert(WasmType.INT32, WasmType.FLOAT32, false, true);
+                codeListener.convert(WasmNumType.INT32, WasmNumType.FLOAT32, false, true);
                 break;
             case 0xBF:
-                codeListener.convert(WasmType.INT64, WasmType.FLOAT64, false, true);
+                codeListener.convert(WasmNumType.INT64, WasmNumType.FLOAT64, false, true);
                 break;
 
             case 0xFC:

@@ -13,22 +13,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.model;
+package org.teavm.backend.wasm.model.expression;
 
-public class WasmTag extends WasmEntity {
-    private WasmFunctionType type;
-    WasmModule module;
-    int index;
+import org.teavm.backend.wasm.model.WasmCompositeType;
 
-    public WasmTag(WasmFunctionType type) {
+public class WasmNullConstant extends WasmExpression {
+    public WasmCompositeType type;
+
+    public WasmNullConstant(WasmCompositeType type) {
         this.type = type;
     }
 
-    public WasmFunctionType getType() {
+    public WasmCompositeType getType() {
         return type;
     }
 
-    public int getIndex() {
-        return index;
+    public void setType(WasmCompositeType type) {
+        this.type = type;
+    }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
     }
 }

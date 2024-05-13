@@ -18,9 +18,7 @@ package org.teavm.backend.wasm.render;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.teavm.backend.wasm.debug.DebugLines;
@@ -32,7 +30,6 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
 
 public class WasmBinaryRenderer {
     private static final int SECTION_UNKNOWN = 0;
@@ -53,9 +50,6 @@ public class WasmBinaryRenderer {
 
     private WasmBinaryWriter output;
     private WasmBinaryVersion version;
-    private List<WasmSignature> signatures = new ArrayList<>();
-    private Map<WasmSignature, Integer> signatureIndexes = new HashMap<>();
-    private Map<String, Integer> functionIndexes = new HashMap<>();
     private boolean obfuscated;
     private DwarfGenerator dwarfGenerator;
     private DwarfClassGenerator dwarfClassGen;
@@ -88,7 +82,7 @@ public class WasmBinaryRenderer {
                 break;
         }
 
-        renderSignatures(module);
+        renderTypes(module);
         renderImports(module);
         renderFunctions(module);
         renderTable(module);
@@ -105,33 +99,13 @@ public class WasmBinaryRenderer {
         renderCustomSections(module, customSectionSupplier);
     }
 
-    private void renderSignatures(WasmModule module) {
-        WasmBinaryWriter section = new WasmBinaryWriter();
-        WasmSignatureCollector signatureCollector = new WasmSignatureCollector(this::registerSignature);
+    private void renderTypes(WasmModule module) {
+        var section = new WasmBinaryWriter();
 
-        for (WasmFunction function : module.getFunctions().values()) {
-            registerSignature(WasmSignature.fromFunction(function));
-            for (WasmExpression part : function.getBody()) {
-                part.acceptVisitor(signatureCollector);
-            }
-        }
-        for (var tag : module.getTags()) {
-            registerSignature(WasmSignature.fromTag(tag));
-        }
-
-        section.writeLEB(signatures.size());
-        for (WasmSignature signature : signatures) {
-            section.writeByte(0x60);
-            section.writeLEB(signature.types.length - 1);
-            for (int i = 1; i < signature.types.length; ++i) {
-                section.writeType(signature.types[i], version);
-            }
-            if (signature.types[0] != null) {
-                section.writeByte(1);
-                section.writeType(signature.types[0], version);
-            } else {
-                section.writeByte(0);
-            }
+        var typeRenderer = new WasmCompositeTypeBinaryRenderer(module, section);
+        section.writeLEB(module.types.size());
+        for (var type : module.types) {
+            type.acceptVisitor(typeRenderer);
         }
 
         writeSection(SECTION_TYPE, "type", section.getData());
@@ -139,11 +113,10 @@ public class WasmBinaryRenderer {
 
     private void renderImports(WasmModule module) {
         List<WasmFunction> functions = new ArrayList<>();
-        for (WasmFunction function : module.getFunctions().values()) {
+        for (var function : module.functions) {
             if (function.getImportName() == null) {
                 continue;
             }
-            functionIndexes.put(function.getName(), functions.size());
             functions.add(function);
         }
         if (functions.isEmpty()) {
@@ -154,9 +127,7 @@ public class WasmBinaryRenderer {
 
         section.writeLEB(functions.size());
         for (WasmFunction function : functions) {
-            WasmSignature signature = WasmSignature.fromFunction(function);
-            int signatureIndex = signatureIndexes.get(signature);
-
+            int signatureIndex = module.types.indexOf(function.getType());
             String moduleName = function.getImportModule();
             if (moduleName == null) {
                 moduleName = "";
@@ -175,17 +146,13 @@ public class WasmBinaryRenderer {
     private void renderFunctions(WasmModule module) {
         WasmBinaryWriter section = new WasmBinaryWriter();
 
-        List<WasmFunction> functions = module.getFunctions().values().stream()
+        List<WasmFunction> functions = module.functions.stream()
                 .filter(function -> function.getImportName() == null)
                 .collect(Collectors.toList());
-        for (WasmFunction function : functions) {
-            functionIndexes.put(function.getName(), functionIndexes.size());
-        }
 
         section.writeLEB(functions.size());
-        for (WasmFunction function : functions) {
-            WasmSignature signature = WasmSignature.fromFunction(function);
-            section.writeLEB(signatureIndexes.get(signature));
+        for (var function : functions) {
+            section.writeLEB(module.types.indexOf(function.getType()));
         }
 
         writeSection(SECTION_FUNCTION, "function", section.getData());
@@ -201,7 +168,7 @@ public class WasmBinaryRenderer {
         section.writeByte(1);
         section.writeByte(0x70);
         section.writeByte(0);
-        section.writeLEB(functionIndexes.size());
+        section.writeLEB(module.functions.size());
 
         writeSection(SECTION_TABLE, "table", section.getData());
     }
@@ -223,13 +190,13 @@ public class WasmBinaryRenderer {
 
         WasmBinaryWriter section = new WasmBinaryWriter();
 
-        List<WasmFunction> functions = module.getFunctions().values().stream()
+        List<WasmFunction> functions = module.functions.stream()
                 .filter(function -> function.getExportName() != null)
                 .collect(Collectors.toList());
 
         section.writeLEB(functions.size() + 1);
-        for (WasmFunction function : functions) {
-            int functionIndex = functionIndexes.get(function.getName());
+        for (var function : functions) {
+            int functionIndex = module.functions.indexOf(function);
 
             section.writeAsciiString(function.getExportName());
 
@@ -251,7 +218,7 @@ public class WasmBinaryRenderer {
         }
 
         WasmBinaryWriter section = new WasmBinaryWriter();
-        section.writeLEB(functionIndexes.get(module.getStartFunction().getName()));
+        section.writeLEB(module.functions.indexOf(module.getStartFunction()));
 
         writeSection(SECTION_START, "start", section.getData());
     }
@@ -268,8 +235,8 @@ public class WasmBinaryRenderer {
         renderInitializer(section, 0);
 
         section.writeLEB(module.getFunctionTable().size());
-        for (WasmFunction function : module.getFunctionTable()) {
-            section.writeLEB(functionIndexes.get(function.getName()));
+        for (var function : module.getFunctionTable()) {
+            section.writeLEB(module.functions.indexOf(function));
         }
 
         writeSection(SECTION_ELEMENT, "element", section.getData());
@@ -278,13 +245,13 @@ public class WasmBinaryRenderer {
     private void renderCode(WasmModule module) {
         var section = new WasmBinaryWriter();
 
-        var functions = module.getFunctions().values().stream()
+        var functions = module.functions.stream()
                 .filter(function -> function.getImportName() == null)
                 .collect(Collectors.toList());
 
         section.writeLEB(functions.size());
         for (var function : functions) {
-            var body = renderFunction(function, section.getPosition() + 4);
+            var body = renderFunction(module, function, section.getPosition() + 4);
             var startPos = section.getPosition();
             section.writeLEB4(body.length);
             section.writeBytes(body);
@@ -301,7 +268,7 @@ public class WasmBinaryRenderer {
         writeSection(SECTION_CODE, "code", section.getData());
     }
 
-    private byte[] renderFunction(WasmFunction function, int offset) {
+    private byte[] renderFunction(WasmModule module, WasmFunction function, int offset) {
         var code = new WasmBinaryWriter();
 
         var dwarfSubprogram = dwarfClassGen != null ? dwarfClassGen.getSubprogram(function.getName()) : null;
@@ -314,7 +281,7 @@ public class WasmBinaryRenderer {
         }
 
         var localVariables = function.getLocalVariables();
-        int parameterCount = Math.min(function.getParameters().size(), localVariables.size());
+        int parameterCount = Math.min(function.getType().getParameterTypes().size(), localVariables.size());
         localVariables = localVariables.subList(parameterCount, localVariables.size());
         if (localVariables.isEmpty()) {
             code.writeLEB(0);
@@ -335,13 +302,12 @@ public class WasmBinaryRenderer {
             code.writeLEB(localEntries.size());
             for (var entry : localEntries) {
                 code.writeLEB(entry.count);
-                code.writeType(entry.type, version);
+                code.writeType(entry.type, module);
             }
         }
 
-        var importIndexes = this.functionIndexes;
-        var visitor = new WasmBinaryRenderingVisitor(code, version, functionIndexes, importIndexes,
-                signatureIndexes, dwarfGenerator, function.getJavaMethod() != null ? debugLines : null, offset);
+        var visitor = new WasmBinaryRenderingVisitor(code, module, dwarfGenerator,
+                function.getJavaMethod() != null ? debugLines : null, offset);
         for (var part : function.getBody()) {
             part.acceptVisitor(visitor);
         }
@@ -400,15 +366,15 @@ public class WasmBinaryRenderer {
     }
 
     private void renderTags(WasmModule module) {
-        if (module.getTags().isEmpty()) {
+        if (module.tags.isEmpty()) {
             return;
         }
 
         var section = new WasmBinaryWriter();
-        section.writeLEB(module.getTags().size());
-        for (var tag : module.getTags()) {
+        section.writeLEB(module.tags.size());
+        for (var tag : module.tags) {
             section.writeByte(0);
-            section.writeLEB(signatureIndexes.get(WasmSignature.fromTag(tag)));
+            section.writeLEB(module.types.indexOf(tag.getType()));
         }
 
         writeSection(SECTION_TAGS, "tags", section.getData());
@@ -418,12 +384,13 @@ public class WasmBinaryRenderer {
         WasmBinaryWriter section = new WasmBinaryWriter();
 
         WasmBinaryWriter functionsSubsection = new WasmBinaryWriter();
-        Collection<WasmFunction> functions = module.getFunctions().values();
-        functions = functions.stream().filter(f -> f.getImportName() == null).collect(Collectors.toList());
+        var functions = module.functions.stream()
+                .filter(f -> f.getName() != null && f.getImportName() == null)
+                .collect(Collectors.toList());
         functionsSubsection.writeLEB(functions.size());
 
         for (WasmFunction function : functions) {
-            functionsSubsection.writeLEB(functionIndexes.get(function.getName()));
+            functionsSubsection.writeLEB(module.functions.indexOf(function));
             functionsSubsection.writeAsciiString(function.getName());
         }
 
@@ -458,14 +425,6 @@ public class WasmBinaryRenderer {
         LocalEntry(WasmType type) {
             this.type = type;
         }
-    }
-
-    private void registerSignature(WasmSignature signature) {
-        signatureIndexes.computeIfAbsent(signature, key -> {
-            int result = signatures.size();
-            signatures.add(key);
-            return result;
-        });
     }
 
     private void writeSection(int id, String name, byte[] data) {

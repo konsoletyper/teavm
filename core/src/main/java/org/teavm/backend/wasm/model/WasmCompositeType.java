@@ -15,20 +15,18 @@
  */
 package org.teavm.backend.wasm.model;
 
-public class WasmTag extends WasmEntity {
-    private WasmFunctionType type;
-    WasmModule module;
-    int index;
+public abstract class WasmCompositeType extends WasmEntity {
+    private WasmType.Reference reference;
 
-    public WasmTag(WasmFunctionType type) {
-        this.type = type;
+    WasmCompositeType() {
     }
 
-    public WasmFunctionType getType() {
-        return type;
+    public WasmType.Reference getReference() {
+        if (reference == null) {
+            reference = new WasmType.Reference(this);
+        }
+        return reference;
     }
 
-    public int getIndex() {
-        return index;
-    }
+    public abstract void acceptVisitor(WasmCompositeTypeVisitor visitor);
 }

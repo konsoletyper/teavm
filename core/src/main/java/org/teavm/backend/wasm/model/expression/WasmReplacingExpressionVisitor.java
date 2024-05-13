@@ -106,6 +106,10 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmNullConstant expression) {
+    }
+
+    @Override
     public void visit(WasmGetLocal expression) {
     }
 

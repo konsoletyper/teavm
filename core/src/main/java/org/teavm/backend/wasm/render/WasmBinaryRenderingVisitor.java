@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import org.teavm.backend.wasm.debug.DebugLines;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
+import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
@@ -50,6 +51,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
+import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -65,10 +67,7 @@ import org.teavm.model.TextLocation;
 
 class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     private WasmBinaryWriter writer;
-    private WasmBinaryVersion version;
-    private Map<String, Integer> functionIndexes;
-    private Map<String, Integer> importedIndexes;
-    private Map<WasmSignature, Integer> signatureIndexes;
+    private WasmModule module;
     private DwarfGenerator dwarfGenerator;
     private DebugLines debugLines;
     private int addressOffset;
@@ -82,14 +81,10 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     private int positionToEmit;
     private List<TextLocation> locationStack = new ArrayList<>();
 
-    WasmBinaryRenderingVisitor(WasmBinaryWriter writer, WasmBinaryVersion version, Map<String, Integer> functionIndexes,
-            Map<String, Integer> importedIndexes, Map<WasmSignature, Integer> signatureIndexes,
+    WasmBinaryRenderingVisitor(WasmBinaryWriter writer, WasmModule module,
             DwarfGenerator dwarfGenerator, DebugLines debugLines, int addressOffset) {
         this.writer = writer;
-        this.version = version;
-        this.functionIndexes = functionIndexes;
-        this.importedIndexes = importedIndexes;
-        this.signatureIndexes = signatureIndexes;
+        this.module = module;
         this.dwarfGenerator = dwarfGenerator;
         this.addressOffset = addressOffset;
         this.debugLines = debugLines;
@@ -115,7 +110,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     }
 
     private void writeBlockType(WasmType type) {
-        writer.writeType(type, version);
+        writer.writeType(type, module);
     }
 
     @Override
@@ -237,6 +232,14 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         pushLocation(expression);
         writer.writeByte(0x44);
         writer.writeFixed(Double.doubleToRawLongBits(expression.getValue()));
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmNullConstant expression) {
+        pushLocation(expression);
+        writer.writeByte(0xD0);
+        writer.writeSignedLEB(module.types.indexOf(expression.getType()));
         popLocation();
     }
 
@@ -724,13 +727,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         for (WasmExpression argument : expression.getArguments()) {
             argument.acceptVisitor(this);
         }
-        Integer functionIndex = !expression.isImported()
-                ? functionIndexes.get(expression.getFunctionName())
-                : importedIndexes.get(expression.getFunctionName());
-        if (functionIndex == null) {
-            writer.writeByte(0x00);
-            return;
-        }
+        var functionIndex = module.functions.indexOf(expression.getFunction());
 
         writer.writeByte(0x10);
         writer.writeLEB(functionIndex);
@@ -745,13 +742,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         }
         expression.getSelector().acceptVisitor(this);
         writer.writeByte(0x11);
-
-        WasmType[] signatureTypes = new WasmType[expression.getParameterTypes().size() + 1];
-        signatureTypes[0] = expression.getReturnType();
-        for (int i = 0; i < expression.getParameterTypes().size(); ++i) {
-            signatureTypes[i + 1] = expression.getParameterTypes().get(i);
-        }
-        writer.writeLEB(signatureIndexes.get(new WasmSignature(signatureTypes)));
+        writer.writeLEB(module.types.indexOf(expression.getType()));
 
         writer.writeByte(0);
         popLocation();

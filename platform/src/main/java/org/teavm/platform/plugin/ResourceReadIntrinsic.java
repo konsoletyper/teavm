@@ -132,14 +132,14 @@ public class ResourceReadIntrinsic implements WasmIntrinsic {
         switch (invocation.getMethod().getName()) {
             case "keys": {
                 WasmExpression map = manager.generate(invocation.getArguments().get(0));
-                WasmCall call = new WasmCall(manager.getNames().forMethod(KEYS_METHOD));
+                var call = new WasmCall(manager.getFunctions().forStaticMethod(KEYS_METHOD));
                 call.getArguments().add(map);
                 return call;
             }
             case "has": {
                 WasmExpression map = manager.generate(invocation.getArguments().get(0));
                 WasmExpression key = manager.generate(invocation.getArguments().get(1));
-                WasmCall call = new WasmCall(manager.getNames().forMethod(LOOKUP_METHOD));
+                WasmCall call = new WasmCall(manager.getFunctions().forStaticMethod(LOOKUP_METHOD));
                 call.getArguments().add(map);
                 call.getArguments().add(key);
                 return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.NE, call,
@@ -151,7 +151,7 @@ public class ResourceReadIntrinsic implements WasmIntrinsic {
 
                 WasmExpression map = manager.generate(invocation.getArguments().get(0));
                 WasmExpression key = manager.generate(invocation.getArguments().get(1));
-                WasmCall call = new WasmCall(manager.getNames().forMethod(LOOKUP_METHOD));
+                WasmCall call = new WasmCall(manager.getFunctions().forStaticMethod(LOOKUP_METHOD));
                 call.getArguments().add(map);
                 call.getArguments().add(key);
                 WasmLocal entryVar = manager.getTemporary(WasmType.INT32);

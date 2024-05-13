@@ -72,8 +72,8 @@ public class WasmRuntimeIntrinsic implements WasmIntrinsic {
                 return comparison(WasmIntBinaryOperation.GT_SIGNED, WasmFloatBinaryOperation.MAX,
                         invocation, manager);
             case "callFunctionFromTable": {
-                var call = new WasmIndirectCall(manager.generate(invocation.getArguments().get(0)));
-                call.getParameterTypes().add(WasmType.INT32);
+                var functionType = manager.getFunctionTypes().of(null, WasmType.INT32);
+                var call = new WasmIndirectCall(manager.generate(invocation.getArguments().get(0)), functionType);
                 call.getArguments().add(manager.generate(invocation.getArguments().get(1)));
                 return call;
             }
@@ -84,12 +84,12 @@ public class WasmRuntimeIntrinsic implements WasmIntrinsic {
 
     private static WasmExpression comparison(WasmIntBinaryOperation intOp, WasmFloatBinaryOperation floatOp,
             InvocationExpr invocation, WasmIntrinsicManager manager) {
-        WasmType type = WasmGeneratorUtil.mapType(invocation.getMethod().parameterType(0));
+        var type = (WasmType.Number) WasmGeneratorUtil.mapType(invocation.getMethod().parameterType(0));
 
         WasmExpression first = manager.generate(invocation.getArguments().get(0));
         WasmExpression second = manager.generate(invocation.getArguments().get(1));
 
-        switch (type) {
+        switch (type.number) {
             case INT32:
                 return new WasmIntBinary(WasmIntType.INT32, intOp, first, second);
             case INT64:

@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
@@ -68,13 +69,13 @@ public class DoubleIntrinsic implements WasmIntrinsic {
             case "isFinite":
                 return testIsFinite(manager.generate(invocation.getArguments().get(0)));
             case "doubleToRawLongBits": {
-                WasmConversion conversion = new WasmConversion(WasmType.FLOAT64, WasmType.INT64, false,
+                WasmConversion conversion = new WasmConversion(WasmNumType.FLOAT64, WasmNumType.INT64, false,
                         manager.generate(invocation.getArguments().get(0)));
                 conversion.setReinterpret(true);
                 return conversion;
             }
             case "longBitsToDouble": {
-                WasmConversion conversion = new WasmConversion(WasmType.INT64, WasmType.FLOAT64, false,
+                WasmConversion conversion = new WasmConversion(WasmNumType.INT64, WasmNumType.FLOAT64, false,
                         manager.generate(invocation.getArguments().get(0)));
                 conversion.setReinterpret(true);
                 return conversion;
@@ -89,7 +90,7 @@ public class DoubleIntrinsic implements WasmIntrinsic {
         WasmBlock block = new WasmBlock(false);
         block.setType(WasmType.INT32);
 
-        WasmConversion conversion = new WasmConversion(WasmType.FLOAT64, WasmType.INT64, false, expression);
+        WasmConversion conversion = new WasmConversion(WasmNumType.FLOAT64, WasmNumType.INT64, false, expression);
         conversion.setReinterpret(true);
         block.getBody().add(new WasmSetLocal(bitsVar, conversion));
 
@@ -113,7 +114,7 @@ public class DoubleIntrinsic implements WasmIntrinsic {
     }
 
     private WasmExpression testIsInfinite(WasmExpression expression) {
-        var conversion = new WasmConversion(WasmType.FLOAT64, WasmType.INT64, false, expression);
+        var conversion = new WasmConversion(WasmNumType.FLOAT64, WasmNumType.INT64, false, expression);
         conversion.setReinterpret(true);
 
         var result = new WasmIntBinary(WasmIntType.INT64, WasmIntBinaryOperation.AND,
@@ -123,7 +124,7 @@ public class DoubleIntrinsic implements WasmIntrinsic {
     }
 
     private WasmExpression testIsFinite(WasmExpression expression) {
-        var conversion = new WasmConversion(WasmType.FLOAT64, WasmType.INT64, false, expression);
+        var conversion = new WasmConversion(WasmNumType.FLOAT64, WasmNumType.INT64, false, expression);
         conversion.setReinterpret(true);
 
         var result = new WasmIntBinary(WasmIntType.INT64, WasmIntBinaryOperation.AND,

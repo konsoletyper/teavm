@@ -38,6 +38,8 @@ public interface WasmExpressionVisitor {
 
     void visit(WasmFloat64Constant expression);
 
+    void visit(WasmNullConstant expression);
+
     void visit(WasmGetLocal expression);
 
     void visit(WasmSetLocal expression);

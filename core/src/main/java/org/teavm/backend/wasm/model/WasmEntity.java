@@ -15,20 +15,11 @@
  */
 package org.teavm.backend.wasm.model;
 
-public class WasmTag extends WasmEntity {
-    private WasmFunctionType type;
-    WasmModule module;
+public abstract class WasmEntity {
     int index;
+    WasmCollection<?> collection;
 
-    public WasmTag(WasmFunctionType type) {
-        this.type = type;
-    }
-
-    public WasmFunctionType getType() {
-        return type;
-    }
-
-    public int getIndex() {
-        return index;
+    boolean isImported() {
+        return false;
     }
 }

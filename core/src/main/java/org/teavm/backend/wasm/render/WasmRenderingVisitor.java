@@ -15,11 +15,11 @@
  */
 package org.teavm.backend.wasm.render;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
@@ -54,6 +54,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
+import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -71,8 +72,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     private int indentLevel;
     private boolean lfDeferred;
     boolean lineNumbersEmitted;
-    List<WasmSignature> signatureList = new ArrayList<>();
-    private Map<WasmSignature, Integer> signatureMap = new HashMap<>();
+    WasmModule module;
+
+    WasmRenderingVisitor(WasmModule module) {
+        this.module = module;
+    }
 
     void preprocess(WasmExpression expression) {
         expression.acceptVisitor(new WasmDefaultExpressionVisitor() {
@@ -270,6 +274,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmNullConstant expression) {
+        open().append("ref.null " + module.types.indexOf(expression.getType())).close();
+    }
+
+    @Override
     public void visit(WasmGetLocal expression) {
         open().append("get_local " + asString(expression.getLocal())).close();
     }
@@ -398,7 +407,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmCall expression) {
-        open().append("call").append(" $" + expression.getFunctionName());
+        open().append("call").append(" $" + module.functions.indexOf(expression.getFunction()));
         for (WasmExpression argument : expression.getArguments()) {
             line(argument);
         }
@@ -407,25 +416,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmIndirectCall expression) {
-        WasmType[] types = new WasmType[expression.getParameterTypes().size() + 1];
-        types[0] = expression.getReturnType();
-        for (int i = 0; i < expression.getParameterTypes().size(); ++i) {
-            types[i + 1] = expression.getParameterTypes().get(i);
-        }
 
-        open().append("call_indirect").append(" $type" + getSignatureIndex(new WasmSignature(types)));
-        line(expression.getSelector());
-        for (WasmExpression argument : expression.getArguments()) {
-            line(argument);
-        }
-        close();
-    }
-
-    int getSignatureIndex(WasmSignature signature) {
-        return signatureMap.computeIfAbsent(signature, key -> {
-            signatureList.add(key);
-            return signatureMap.size();
-        });
     }
 
     @Override
@@ -654,6 +645,16 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     }
 
     private String type(WasmType type) {
+        if (type instanceof WasmType.Number) {
+            return type(((WasmType.Number) type).number);
+        } else if (type instanceof WasmType.Reference) {
+            return "(ref " + module.types.indexOf(((WasmType.Reference) type).composite) + ")";
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private String type(WasmNumType type) {
         switch (type) {
             case INT32:
                 return "i32";

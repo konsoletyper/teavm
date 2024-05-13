@@ -15,8 +15,6 @@
  */
 package org.teavm.backend.wasm.render;
 
-import org.teavm.backend.wasm.generate.WasmGenerationContext;
-import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
@@ -45,6 +43,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
+import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -57,12 +56,7 @@ import org.teavm.backend.wasm.model.expression.WasmTry;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 
 public class WasmTypeInference implements WasmExpressionVisitor {
-    private WasmGenerationContext context;
     private WasmType result;
-
-    public WasmTypeInference(WasmGenerationContext context) {
-        this.context = context;
-    }
 
     public WasmType getResult() {
         return result;
@@ -155,18 +149,23 @@ public class WasmTypeInference implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmConversion expression) {
-        result = expression.getTargetType();
+        result = WasmType.num(expression.getTargetType());
+    }
+
+    @Override
+    public void visit(WasmNullConstant expression) {
+        result = expression.type.getReference();
     }
 
     @Override
     public void visit(WasmCall expression) {
-        WasmFunction function = context.getFunction(expression.getFunctionName());
-        result = function == null ? null : function.getResult();
+        var function = expression.getFunction();
+        result = function == null ? null : function.getType().getReturnType();
     }
 
     @Override
     public void visit(WasmIndirectCall expression) {
-        result = expression.getReturnType();
+        result = expression.getType().getReturnType();
     }
 
     @Override

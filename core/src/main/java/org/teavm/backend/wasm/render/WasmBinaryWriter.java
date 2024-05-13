@@ -16,6 +16,8 @@
 package org.teavm.backend.wasm.render;
 
 import java.util.Arrays;
+import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
 
 public class WasmBinaryWriter {
@@ -27,11 +29,19 @@ public class WasmBinaryWriter {
         data[pointer++] = (byte) v;
     }
 
-    public void writeType(WasmType type, WasmBinaryVersion version) {
+    public void writeType(WasmType type, WasmModule module) {
         if (type == null) {
             writeByte(0x40);
             return;
         }
+        if (type instanceof WasmType.Number) {
+            writeType(((WasmType.Number) type).number);
+        } else if (type instanceof WasmType.Reference) {
+            writeSignedLEB(module.types.indexOf(((WasmType.Reference) type).composite));
+        }
+    }
+
+    public void writeType(WasmNumType type) {
         switch (type) {
             case INT32:
                 writeByte(0x7F);

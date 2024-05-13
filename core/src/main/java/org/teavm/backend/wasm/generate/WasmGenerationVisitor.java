@@ -66,7 +66,8 @@ import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
-import org.teavm.backend.lowlevel.generate.NameProvider;
+import org.teavm.backend.wasm.WasmFunctionRepository;
+import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.WasmHeap;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.binary.BinaryWriter;
@@ -74,6 +75,7 @@ import org.teavm.backend.wasm.binary.DataPrimitives;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
@@ -196,11 +198,10 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         this.firstVariable = firstVariable;
         tempVars = new TemporaryVariablePool(function);
         exprCache = new ExpressionCache(tempVars);
-        typeInference = new WasmTypeInference(context);
+        typeInference = new WasmTypeInference();
         this.async = async;
         this.managed = context.characteristics.isManaged(currentMethod);
     }
-
 
     void generate(Statement statement, List<WasmExpression> target) {
         var lastTargetSize = target.size();
@@ -212,7 +213,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             rethrowBlock.getBody().addAll(body);
             body.clear();
             target.add(rethrowBlock);
-            var valueToReturn = WasmExpression.defaultValueOfType(function.getResult());
+            var valueToReturn = WasmExpression.defaultValueOfType(function.getType().getReturnType());
             if (valueToReturn != null) {
                 target.add(new WasmReturn(valueToReturn));
             }
@@ -254,7 +255,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                     default:
                         Class<?> type = convertType(expr.getType());
                         MethodReference method = new MethodReference(WasmRuntime.class, "remainder", type, type, type);
-                        WasmCall call = new WasmCall(context.names.forMethod(method), false);
+                        WasmCall call = new WasmCall(context.functions.forStaticMethod(method));
 
                         accept(expr.getFirstOperand());
                         call.getArguments().add(result);
@@ -308,7 +309,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             case COMPARE: {
                 Class<?> type = convertType(expr.getType());
                 MethodReference method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
-                WasmCall call = new WasmCall(context.names.forMethod(method), false);
+                var call = new WasmCall(context.functions.forStaticMethod(method));
 
                 accept(expr.getFirstOperand());
                 call.getArguments().add(result);
@@ -367,7 +368,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 case LEFT_SHIFT:
                 case RIGHT_SHIFT:
                 case UNSIGNED_RIGHT_SHIFT:
-                    second = new WasmConversion(WasmType.INT32, WasmType.INT64, false, second);
+                    second = new WasmConversion(WasmNumType.INT32, WasmNumType.INT64, false, second);
                     break;
                 default:
                     break;
@@ -529,7 +530,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         var callSiteId = generateCallSiteId(location);
         block.getBody().add(generateRegisterCallSite(callSiteId, location));
 
-        var call = new WasmCall(context.names.forMethod(THROW_NPE_METHOD));
+        var call = new WasmCall(context.functions.forStaticMethod(THROW_NPE_METHOD));
         block.getBody().add(call);
 
         if (context.getExceptionTag() == null) {
@@ -1155,12 +1156,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         if (expr.getType() == InvocationType.STATIC || expr.getType() == InvocationType.SPECIAL) {
             MethodReader method = context.getClassSource().resolve(expr.getMethod());
             MethodReference reference = method != null ? method.getReference() : expr.getMethod();
-            String methodName = context.names.forMethod(reference);
+            var function = context.functions.forMethod(reference, expr.getType() == InvocationType.STATIC);
 
-            WasmCall call = new WasmCall(methodName);
-            if (context.getImportedMethod(reference) != null) {
-                call.setImported(true);
-            }
+            var call = new WasmCall(function);
             for (Expr argument : expr.getArguments()) {
                 accept(argument);
                 call.getArguments().add(result);
@@ -1179,8 +1177,8 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             block.getBody().add(new WasmSetLocal(tmp, allocateObject(expr.getMethod().getClassName(),
                     expr.getLocation())));
 
-            String methodName = context.names.forMethod(expr.getMethod());
-            WasmCall call = new WasmCall(methodName);
+            var function = context.functions.forInstanceMethod(expr.getMethod());
+            var call = new WasmCall(function);
             call.getArguments().add(new WasmGetLocal(tmp));
             for (Expr argument : expr.getArguments()) {
                 accept(argument);
@@ -1220,14 +1218,14 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             var methodIndex = new WasmLoadInt32(4, classRef, WasmInt32Subtype.INT32);
             methodIndex.setOffset(vtableIndex * 4 + vtableOffset);
 
-            WasmIndirectCall call = new WasmIndirectCall(methodIndex);
-            call.getParameterTypes().add(WasmType.INT32);
-            for (int i = 0; i < expr.getMethod().parameterCount(); ++i) {
-                call.getParameterTypes().add(WasmGeneratorUtil.mapType(expr.getMethod().parameterType(i)));
+            var parameterTypes = new WasmType[expr.getMethod().parameterCount() + 1];
+            parameterTypes[0] = WasmType.INT32;
+            for (var i = 0; i < expr.getMethod().parameterCount(); ++i) {
+                parameterTypes[i + 1] = WasmGeneratorUtil.mapType(expr.getMethod().parameterType(i));
             }
-            if (expr.getMethod().getReturnType() != ValueType.VOID) {
-                call.setReturnType(WasmGeneratorUtil.mapType(expr.getMethod().getReturnType()));
-            }
+            var functionType = context.functionTypes.of(WasmGeneratorUtil.mapType(expr.getMethod().getReturnType()),
+                    parameterTypes);
+            var call = new WasmIndirectCall(methodIndex, functionType);
 
             call.getArguments().add(instance);
             for (int i = 1; i < expr.getArguments().size(); ++i) {
@@ -1267,7 +1265,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         stackVariable = tempVars.acquire(WasmType.INT32);
         stackVariable.setName("__stack__");
         InvocationExpr expr = new InvocationExpr();
-        expr.setType(InvocationType.SPECIAL);
+        expr.setType(InvocationType.STATIC);
         expr.setMethod(new MethodReference(WasmRuntime.class, "allocStack", int.class, Address.class));
         expr.getArguments().add(sizeExpr);
         expr.acceptVisitor(this);
@@ -1506,9 +1504,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private WasmExpression allocateObject(String className, TextLocation location) {
         int tag = classGenerator.getClassPointer(ValueType.object(className));
-        String allocName = context.names.forMethod(new MethodReference(Allocator.class, "allocate",
+        var allocFunction = context.functions.forStaticMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class));
-        WasmCall call = new WasmCall(allocName);
+        WasmCall call = new WasmCall(allocFunction);
         call.getArguments().add(new WasmInt32Constant(tag));
         call.setLocation(location);
         return call;
@@ -1525,9 +1523,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         ValueType type = expr.getType();
 
         int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(type));
-        String allocName = context.names.forMethod(new MethodReference(Allocator.class, "allocateArray",
+        var allocFunction = context.functions.forStaticMethod(new MethodReference(Allocator.class, "allocateArray",
                 RuntimeClass.class, int.class, Address.class));
-        WasmCall call = new WasmCall(allocName);
+        var call = new WasmCall(allocFunction);
         call.getArguments().add(new WasmInt32Constant(classPointer));
         accept(expr.getLength());
         call.getArguments().add(result);
@@ -1576,9 +1574,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
         WasmLocal array = tempVars.acquire(WasmType.INT32);
         int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(type));
-        String allocName = context.names.forMethod(new MethodReference(Allocator.class, "allocateArray",
+        var allocFunction = context.functions.forStaticMethod(new MethodReference(Allocator.class, "allocateArray",
                 RuntimeClass.class, int.class, Address.class));
-        WasmCall call = new WasmCall(allocName);
+        WasmCall call = new WasmCall(allocFunction);
         call.getArguments().add(new WasmInt32Constant(classPointer));
         call.getArguments().add(new WasmInt32Constant(expr.getData().size()));
         call.setLocation(expr.getLocation());
@@ -1616,9 +1614,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
 
         int classPointer = classGenerator.getClassPointer(type);
-        String allocName = context.names.forMethod(new MethodReference(Allocator.class, "allocateMultiArray",
+        var allocFunction = context.functions.forStaticMethod(new MethodReference(Allocator.class, "allocateMultiArray",
                 RuntimeClass.class, Address.class, int.class, RuntimeArray.class));
-        WasmCall call = new WasmCall(allocName);
+        var call = new WasmCall(allocFunction);
         call.getArguments().add(new WasmInt32Constant(classPointer));
         call.getArguments().add(new WasmInt32Constant(dimensionList));
         call.getArguments().add(new WasmInt32Constant(expr.getDimensions().size()));
@@ -1673,7 +1671,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private WasmExpression instanceOfImpl(WasmExpression expression, ValueType type) {
-        WasmCall supertypeCall = new WasmCall(context.names.forSupertypeFunction(type));
+        var supertypeCall = new WasmCall(context.functions.forSupertype(type));
         WasmExpression classRef = new WasmLoadInt32(4, expression, WasmInt32Subtype.INT32);
         classRef = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, classRef,
                 new WasmInt32Constant(3));
@@ -1687,7 +1685,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         resultConsumer.add(generateRegisterCallSite(callSiteId, statement.getLocation()));
 
         accept(statement.getException());
-        var call = new WasmCall(context.names.forMethod(THROW_METHOD), result);
+        var call = new WasmCall(context.functions.forStaticMethod(THROW_METHOD), result);
         call.setLocation(statement.getLocation());
         resultConsumer.add(call);
 
@@ -1728,7 +1726,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         nullCheck.setResult(valueToCast.expr());
         block.getBody().add(new WasmDrop(nullCheck));
 
-        var supertypeCall = new WasmCall(context.names.forSupertypeFunction(expr.getTarget()));
+        var supertypeCall = new WasmCall(context.functions.forSupertype(expr.getTarget()));
         WasmExpression classRef = new WasmLoadInt32(4, valueToCast.expr(), WasmInt32Subtype.INT32);
         classRef = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, classRef,
                 new WasmInt32Constant(3));
@@ -1741,7 +1739,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         var callSiteId = generateCallSiteId(expr.getLocation());
         block.getBody().add(generateRegisterCallSite(callSiteId, expr.getLocation()));
 
-        var call = new WasmCall(context.names.forMethod(THROW_CCE_METHOD));
+        var call = new WasmCall(context.functions.forStaticMethod(THROW_CCE_METHOD));
         block.getBody().add(call);
 
         if (context.getExceptionTag() == null) {
@@ -1762,7 +1760,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(InitClassStatement statement) {
         if (classGenerator.hasClinit(statement.getClassName())) {
-            var call = new WasmCall(context.names.forClassInitializer(statement.getClassName()));
+            var call = new WasmCall(context.functions.forClassInitializer(statement.getClassName()));
             call.setLocation(statement.getLocation());
 
             var callSiteId = generateCallSiteId(statement.getLocation());
@@ -1853,8 +1851,8 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             var tryCatch = tryCatchStatements.get(i);
             var catchBlock = catchBlocks.get(i);
             catchBlock.getBody().add(currentBlock);
-            var catchMethodName = context.names.forMethod(CATCH_METHOD);
-            var catchCall = new WasmCall(catchMethodName);
+            var catchFunction = context.functions.forStaticMethod(CATCH_METHOD);
+            var catchCall = new WasmCall(catchFunction);
             var catchWrapper = tryCatch.getExceptionVariable() != null
                     ? new WasmSetLocal(localVar(tryCatch.getExceptionVariable()), catchCall)
                     : new WasmDrop(catchCall);
@@ -1887,8 +1885,8 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         tryBlock.getCatches().add(catchClause);
         innerCatchBlock.getBody().add(tryBlock);
 
-        var obj = exprCache.create(new WasmCall(context.names.forMethod(PEEK_EXCEPTION_METHOD)), WasmType.INT32,
-                null, innerCatchBlock.getBody());
+        var obj = exprCache.create(new WasmCall(context.functions.forStaticMethod(PEEK_EXCEPTION_METHOD)),
+                WasmType.INT32, null, innerCatchBlock.getBody());
         var currentBlock = innerCatchBlock;
         boolean catchesAll = false;
         for (int i = tryCatchStatements.size() - 1; i >= 0; --i) {
@@ -1916,8 +1914,8 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             var catchBlock = catchBlocks.get(i);
             catchBlock.getBody().add(currentBlock);
 
-            var catchMethodName = context.names.forMethod(CATCH_METHOD);
-            var catchCall = new WasmCall(catchMethodName);
+            var catchFunction = context.functions.forStaticMethod(CATCH_METHOD);
+            var catchCall = new WasmCall(catchFunction);
             var catchWrapper = tryCatch.getExceptionVariable() != null
                     ? new WasmSetLocal(localVar(tryCatch.getExceptionVariable()), catchCall)
                     : new WasmDrop(catchCall);
@@ -1954,7 +1952,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(MonitorEnterStatement statement) {
-        WasmCall call = new WasmCall(context.names.forMethod(async ? MONITOR_ENTER : MONITOR_ENTER_SYNC));
+        var call = new WasmCall(context.functions.forStaticMethod(async ? MONITOR_ENTER : MONITOR_ENTER_SYNC));
         call.setLocation(statement.getLocation());
         statement.getObjectRef().acceptVisitor(this);
         call.getArguments().add(result);
@@ -1967,7 +1965,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(MonitorExitStatement statement) {
-        var call = new WasmCall(context.names.forMethod(async ? MONITOR_EXIT : MONITOR_EXIT_SYNC));
+        var call = new WasmCall(context.functions.forStaticMethod(async ? MONITOR_EXIT : MONITOR_EXIT_SYNC));
         call.setLocation(statement.getLocation());
         statement.getObjectRef().acceptVisitor(this);
         call.getArguments().add(result);
@@ -2021,7 +2019,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
         var callSiteId = generateCallSiteId(expr.getLocation());
         block.getBody().add(generateRegisterCallSite(callSiteId, expr.getLocation()));
-        block.getBody().add(new WasmCall(context.names.forMethod(THROW_AIOOBE_METHOD)));
+        block.getBody().add(new WasmCall(context.functions.forStaticMethod(THROW_AIOOBE_METHOD)));
         if (context.getExceptionTag() == null) {
             var br = new WasmBreak(throwJumpTarget());
             if (br.getTarget() != rethrowBlock) {
@@ -2213,8 +2211,13 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
 
         @Override
-        public NameProvider getNames() {
-            return context.names;
+        public WasmFunctionRepository getFunctions() {
+            return context.functions;
+        }
+
+        @Override
+        public WasmFunctionTypes getFunctionTypes() {
+            return context.functionTypes;
         }
 
         @Override
@@ -2238,8 +2241,8 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
 
         @Override
-        public int getFunctionPointer(String name) {
-            return classGenerator.getFunctionPointer(name);
+        public int getFunctionPointer(WasmFunction function) {
+            return classGenerator.getFunctionPointer(function);
         }
 
         @Override

@@ -29,6 +29,7 @@ import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.model.TextLocation;
 
 public class WasmCRenderer {
+    private WasmModule module;
     private StringBuilder out = new StringBuilder();
     private int indentLevel;
     String currentFile = "";
@@ -36,6 +37,10 @@ public class WasmCRenderer {
     boolean lineNumbersEmitted;
     boolean memoryAccessChecked;
     TextLocation lastReportedLocation;
+
+    public WasmCRenderer(WasmModule module) {
+        this.module = module;
+    }
 
     public boolean isLineNumbersEmitted() {
         return lineNumbersEmitted;
@@ -75,7 +80,7 @@ public class WasmCRenderer {
         renderFunctionDeclarations(module);
         renderFunctionTable(module);
 
-        for (WasmFunction function : module.getFunctions().values()) {
+        for (var function : module.functions) {
             if (function.getImportName() == null) {
                 renderFunction(function);
             }
@@ -91,13 +96,13 @@ public class WasmCRenderer {
             line(module.getStartFunction().getName() + "();");
         }
 
-        for (WasmFunction function : module.getFunctions().values()) {
+        for (var function : module.functions) {
             if (function.getExportName() != null && function.getExportName().equals("main")) {
                 line(function.getName() + "(1);");
             }
         }
 
-        for (WasmFunction function : module.getFunctions().values()) {
+        for (var function : module.functions) {
             if (Objects.equals(function.getExportName(), "_start")) {
                 line(function.getName() + "();");
             }
@@ -171,26 +176,26 @@ public class WasmCRenderer {
     }
 
     private void renderFunctionDeclarations(WasmModule module) {
-        for (WasmFunction function : module.getFunctions().values()) {
+        for (var function : module.functions) {
             line(functionDeclaration(function) + ";");
         }
     }
 
     private void renderFunction(WasmFunction function) {
-        WasmCRenderingVisitor visitor = new WasmCRenderingVisitor(function.getResult(),
-                function.getLocalVariables().size(), function.getModule());
+        var visitor = new WasmCRenderingVisitor(function.getType().getReturnType(),
+                function.getLocalVariables().size(), module);
         visitor.setMemoryAccessChecked(memoryAccessChecked);
 
         StringBuilder declaration = new StringBuilder();
         renderFunctionModifiers(declaration, function);
-        declaration.append(WasmCRenderingVisitor.mapType(function.getResult())).append(' ');
+        declaration.append(WasmCRenderingVisitor.mapType(function.getType().getReturnType())).append(' ');
         declaration.append(function.getName()).append('(');
-        int sz = Math.min(function.getParameters().size(), function.getLocalVariables().size());
+        int sz = Math.min(function.getType().getParameterTypes().size(), function.getLocalVariables().size());
         for (int i = 0; i < sz; ++i) {
             if (i > 0) {
                 declaration.append(", ");
             }
-            declaration.append(WasmCRenderingVisitor.mapType(function.getParameters().get(i)));
+            declaration.append(WasmCRenderingVisitor.mapType(function.getType().getParameterTypes().get(i)));
             WasmLocal var = function.getLocalVariables().get(i);
             declaration.append(' ').append(visitor.getVariableName(var));
         }
@@ -212,7 +217,7 @@ public class WasmCRenderer {
                 lines.addAll(visitor.getValue().getLines());
             }
 
-            visitor.setRequiredType(function.getResult());
+            visitor.setRequiredType(function.getType().getReturnType());
             body.get(body.size() - 1).acceptVisitor(visitor);
             lines.addAll(visitor.getValue().getLines());
             if (visitor.getValue().getText() != null) {
@@ -232,7 +237,7 @@ public class WasmCRenderer {
     private String functionDeclaration(WasmFunction function) {
         StringBuilder sb = new StringBuilder();
         renderFunctionModifiers(sb, function);
-        sb.append(WasmCRenderingVisitor.mapType(function.getResult())).append(' ');
+        sb.append(WasmCRenderingVisitor.mapType(function.getType().getReturnType())).append(' ');
         if (function.getImportName() != null) {
             sb.append(function.getImportModule() != null && !function.getImportModule().isEmpty()
                     ? function.getImportModule() + "_" + function.getImportName()
@@ -241,11 +246,11 @@ public class WasmCRenderer {
             sb.append(function.getName());
         }
         sb.append("(");
-        for (int i = 0; i < function.getParameters().size(); ++i) {
+        for (int i = 0; i < function.getType().getParameterTypes().size(); ++i) {
             if (i > 0) {
                 sb.append(", ");
             }
-            sb.append(WasmCRenderingVisitor.mapType(function.getParameters().get(i)));
+            sb.append(WasmCRenderingVisitor.mapType(function.getType().getParameterTypes().get(i)));
         }
         sb.append(")");
 

@@ -23,7 +23,13 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 
 public class WasmRenderer {
-    private WasmRenderingVisitor visitor = new WasmRenderingVisitor();
+    private WasmRenderingVisitor visitor;
+    private WasmModule module;
+
+    public WasmRenderer(WasmModule module) {
+        visitor = new WasmRenderingVisitor(module);
+        this.module = module;
+    }
 
     public WasmRenderer append(String text) {
         visitor.append(text);
@@ -58,12 +64,12 @@ public class WasmRenderer {
         renderTypes(module);
 
         int functionIndex = 0;
-        for (WasmFunction function : module.getFunctions().values()) {
+        for (WasmFunction function : module.functions) {
             if (function.getImportName() != null) {
                 lf().append(";; function #" + functionIndex++).lf().render(function);
             }
         }
-        for (WasmFunction function : module.getFunctions().values()) {
+        for (WasmFunction function : module.functions) {
             if (function.getImportName() == null) {
                 lf().append(";; function #" + functionIndex++).lf().render(function);
             }
@@ -127,7 +133,7 @@ public class WasmRenderer {
 
         renderSignature(function);
 
-        int firstLocalVariable = function.getParameters().size();
+        int firstLocalVariable = function.getType().getParameterTypes().size();
         if (firstLocalVariable < function.getLocalVariables().size()) {
             visitor.lf().open().append("local");
             List<WasmLocal> locals = function.getLocalVariables().subList(firstLocalVariable,
@@ -148,44 +154,10 @@ public class WasmRenderer {
     }
 
     private void renderSignature(WasmFunction function) {
-        WasmSignature signature = WasmSignature.fromFunction(function);
-        visitor.append(" ").open().append("type $type" + visitor.getSignatureIndex(signature)).close();
+        visitor.append(" ").open().append("type $type" + module.types.indexOf(function.getType())).close();
     }
 
     private void renderTypes(WasmModule module) {
-        WasmSignatureCollector signatureCollector = new WasmSignatureCollector(visitor::getSignatureIndex);
-        for (WasmFunction function : module.getFunctions().values()) {
-            visitor.getSignatureIndex(WasmSignature.fromFunction(function));
-            for (WasmExpression part : function.getBody()) {
-                part.acceptVisitor(signatureCollector);
-            }
-        }
-
-        if (visitor.signatureList.isEmpty()) {
-            return;
-        }
-
-        visitor.lf();
-        int index = 0;
-        for (WasmSignature signature : visitor.signatureList) {
-            visitor.open().append("type $type" + index++ + " ");
-            visitor.open().append("func");
-            if (signature.types.length > 1) {
-                visitor.append(" ").open().append("param");
-                for (int i = 1; i < signature.types.length; ++i) {
-                    visitor.append(" ").append(signature.types[i]);
-                }
-                visitor.close();
-            }
-            if (signature.types[0] != null) {
-                visitor.append(" ").open().append("result ");
-                visitor.append(signature.types[0]);
-                visitor.close();
-            }
-            visitor.close();
-            visitor.close();
-            visitor.lf();
-        }
     }
 
     private void renderTable(WasmModule module) {

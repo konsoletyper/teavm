@@ -16,9 +16,11 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.Expr;
-import org.teavm.backend.lowlevel.generate.NameProvider;
+import org.teavm.backend.wasm.WasmFunctionRepository;
+import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.generate.WasmStringPool;
+import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
@@ -38,7 +40,9 @@ public interface WasmIntrinsicManager {
 
     Diagnostics getDiagnostics();
 
-    NameProvider getNames();
+    WasmFunctionRepository getFunctions();
+
+    WasmFunctionTypes getFunctionTypes();
 
     WasmLocal getTemporary(WasmType type);
 
@@ -46,7 +50,7 @@ public interface WasmIntrinsicManager {
 
     int getClassPointer(ValueType type);
 
-    int getFunctionPointer(String name);
+    int getFunctionPointer(WasmFunction function);
 
     void releaseTemporary(WasmLocal local);
 
