@@ -742,7 +742,7 @@ public class WasmClassGenerator {
                     debug.instanceField("parent", 56, FieldType.OBJECT);
                     debug.endClass();
                 } else if (isManagedClass(className)) {
-                    var parent = data.cls.getParent() != null
+                    var parent = data.cls != null && data.cls.getParent() != null
                             ? indexes.get(ValueType.object(data.cls.getParent()))
                             : -1;
                     if (data.isInferface) {
