@@ -20,6 +20,7 @@ import com.intellij.execution.ui.ExecutionConsole;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.util.Key;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSession;
@@ -44,6 +45,8 @@ import org.teavm.debugging.information.URLDebugInformationProvider;
 
 public class TeaVMDebugProcess extends XDebugProcess {
     public static final Key<Breakpoint> INNER_BREAKPOINT_KEY = new Key<>("TeaVM breakpoint");
+    private static final ExtensionPointName<TeaVMBreakpointProvider<?>> BREAKPOINT_EXT_NAME =
+            new ExtensionPointName<>("org.teavm.extensions.breakpointProvider");
     private TeaVMDebuggerEditorsProvider editorsProvider;
     private final Debugger innerDebugger;
     private final List<TeaVMLineBreakpointHandler<?>> breakpointHandlers = new ArrayList<>();
@@ -91,13 +94,9 @@ public class TeaVMDebugProcess extends XDebugProcess {
         breakpointHandlers.add(new TeaVMLineBreakpointHandler<>(JavaLineBreakpointType.class, session.getProject(),
                 innerDebugger, this));
 
-        var breakpointProvider = session.getProject().getExtensionArea()
-                .<TeaVMBreakpointProvider<?>>getExtensionPoint("org.teavm.extensions.breakpointProvider");
-        if (breakpointProvider != null) {
-            for (TeaVMBreakpointProvider<?> provider : breakpointProvider.getExtensions()) {
-                breakpointHandlers.add(new TeaVMLineBreakpointHandler<>(provider.getBreakpointType(),
-                        session.getProject(), innerDebugger, this));
-            }
+        for (var provider : BREAKPOINT_EXT_NAME.getExtensionList()) {
+            breakpointHandlers.add(new TeaVMLineBreakpointHandler<>(provider.getBreakpointType(),
+                    session.getProject(), innerDebugger, this));
         }
     }
 
