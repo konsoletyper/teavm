@@ -39,16 +39,6 @@ teavm.js {
     addedToWebApp = true
     mainClass = "org.teavm.samples.hello.Client"
     sourceMap = true
+    debugInformation = true
     sourceFilePolicy = SourceFilePolicy.LINK_LOCAL_FILES
-}
-
-tasks.register<JavaExec>("runCli") {
-    classpath(configurations["teavmCli"])
-    mainClass = "org.teavm.cli.devserver.TeaVMDevServerRunner"
-    args = listOf("--json-interface", "--no-watch", "-p",
-        layout.buildDirectory.dir("classes/java/teavm").get().asFile.absolutePath,
-    ) + configurations["teavmClasslib"].flatMap { listOf("-p", it.absolutePath) } + listOf(
-        "--", "org.teavm.samples.hello.Client"
-    )
-    println(args)
 }
