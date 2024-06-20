@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.Objects;
 import java.util.RandomAccess;
@@ -26,6 +27,7 @@ import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TStringBuilder;
+import org.teavm.classlib.java.lang.TSystem;
 import org.teavm.classlib.java.util.stream.TDoubleStream;
 import org.teavm.classlib.java.util.stream.TIntStream;
 import org.teavm.classlib.java.util.stream.TLongStream;
@@ -37,84 +39,90 @@ import org.teavm.classlib.java.util.stream.longimpl.TArrayLongStreamImpl;
 
 public class TArrays extends TObject {
     public static char[] copyOf(char[] array, int length) {
-        char[] result = new char[length];
         int sz = TMath.min(length, array.length);
-        for (int i = 0; i < sz; ++i) {
-            result[i] = array[i];
+        if (length < 0) {
+            throw new NegativeArraySizeException();
         }
+        char[] result = new char[length];
+        System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static byte[] copyOf(byte[] array, int length) {
-        byte[] result = new byte[length];
         int sz = TMath.min(length, array.length);
-        for (int i = 0; i < sz; ++i) {
-            result[i] = array[i];
+        if (length < 0) {
+            throw new NegativeArraySizeException();
         }
+        byte[] result = new byte[length];
+        System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static short[] copyOf(short[] array, int length) {
-        short[] result = new short[length];
         int sz = TMath.min(length, array.length);
-        for (int i = 0; i < sz; ++i) {
-            result[i] = array[i];
+        if (length < 0) {
+            throw new NegativeArraySizeException();
         }
+        short[] result = new short[length];
+        System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static int[] copyOf(int[] array, int length) {
-        int[] result = new int[length];
         int sz = TMath.min(length, array.length);
-        for (int i = 0; i < sz; ++i) {
-            result[i] = array[i];
+        if (length < 0) {
+            throw new NegativeArraySizeException();
         }
+        int[] result = new int[length];
+        System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static long[] copyOf(long[] array, int length) {
-        long[] result = new long[length];
         int sz = TMath.min(length, array.length);
-        for (int i = 0; i < sz; ++i) {
-            result[i] = array[i];
+        if (length < 0) {
+            throw new NegativeArraySizeException();
         }
+        long[] result = new long[length];
+        System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static float[] copyOf(float[] array, int length) {
-        float[] result = new float[length];
         int sz = TMath.min(length, array.length);
-        for (int i = 0; i < sz; ++i) {
-            result[i] = array[i];
+        if (length < 0) {
+            throw new NegativeArraySizeException();
         }
+        float[] result = new float[length];
+        System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static double[] copyOf(double[] array, int length) {
-        double[] result = new double[length];
         int sz = TMath.min(length, array.length);
-        for (int i = 0; i < sz; ++i) {
-            result[i] = array[i];
+        if (length < 0) {
+            throw new NegativeArraySizeException();
         }
+        double[] result = new double[length];
+        System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static boolean[] copyOf(boolean[] array, int length) {
-        boolean[] result = new boolean[length];
         int sz = TMath.min(length, array.length);
-        for (int i = 0; i < sz; ++i) {
-            result[i] = array[i];
+        if (length < 0) {
+            throw new NegativeArraySizeException();
         }
+        boolean[] result = new boolean[length];
+        System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static <T> T[] copyOf(T[] original, int newLength) {
+        int sz = TMath.min(newLength, original.length);
         @SuppressWarnings("unchecked")
         T[] result = (T[]) Array.newInstance(original.getClass().getComponentType(), newLength);
-        int sz = TMath.min(newLength, original.length);
-        for (int i = 0; i < sz; ++i) {
-            result[i] = original[i];
-        }
+        System.arraycopy(original, 0, result, 0, sz);
         return result;
     }
 
@@ -123,92 +131,111 @@ public class TArrays extends TObject {
         Class<?> componentType = cls.getComponentType();
         T[] result = (T[]) Array.newInstance(componentType, newLength);
         int sz = TMath.min(newLength, original.length);
-        for (int i = 0; i < sz; ++i) {
-            result[i] = (T) componentType.cast(original[i]);
-        }
+        TSystem.arraycopy((TObject) (Object) original, 0, (TObject) (Object) result, 0, sz);
         return result;
     }
 
     public static boolean[] copyOfRange(boolean[] array, int from, int to) {
-        boolean[] result = new boolean[to - from];
-        for (int i = from; i < to; ++i) {
-            result[i - from] = array[i];
+        int sz = to - from;
+        if (sz < 0) {
+            throw new IllegalArgumentException();
         }
+        boolean[] result = new boolean[sz];
+        System.arraycopy(array, from, result, 0, Math.min(to, array.length) - from);
         return result;
     }
 
     public static byte[] copyOfRange(byte[] array, int from, int to) {
-        byte[] result = new byte[to - from];
-        for (int i = from; i < to; ++i) {
-            result[i - from] = array[i];
+        int sz = to - from;
+        if (sz < 0) {
+            throw new IllegalArgumentException();
         }
+        byte[] result = new byte[sz];
+        System.arraycopy(array, from, result, 0, Math.min(to, array.length) - from);
         return result;
     }
 
     public static char[] copyOfRange(char[] array, int from, int to) {
-        char[] result = new char[to - from];
-        for (int i = from; i < to; ++i) {
-            result[i - from] = array[i];
+        int sz = to - from;
+        if (sz < 0) {
+            throw new IllegalArgumentException();
         }
+        char[] result = new char[sz];
+        System.arraycopy(array, from, result, 0, Math.min(to, array.length) - from);
         return result;
     }
 
     public static short[] copyOfRange(short[] array, int from, int to) {
-        short[] result = new short[to - from];
-        for (int i = from; i < to; ++i) {
-            result[i - from] = array[i];
+        int sz = to - from;
+        if (sz < 0) {
+            throw new IllegalArgumentException();
         }
+        short[] result = new short[sz];
+        System.arraycopy(array, from, result, 0, Math.min(to, array.length) - from);
         return result;
     }
 
     public static int[] copyOfRange(int[] array, int from, int to) {
-        int[] result = new int[to - from];
-        for (int i = from; i < to; ++i) {
-            result[i - from] = array[i];
+        int sz = to - from;
+        if (sz < 0) {
+            throw new IllegalArgumentException();
         }
+        int[] result = new int[sz];
+        System.arraycopy(array, from, result, 0, Math.min(to, array.length) - from);
         return result;
     }
 
     public static long[] copyOfRange(long[] array, int from, int to) {
-        long[] result = new long[to - from];
-        for (int i = from; i < to; ++i) {
-            result[i - from] = array[i];
+        int sz = to - from;
+        if (sz < 0) {
+            throw new IllegalArgumentException();
         }
+        long[] result = new long[sz];
+        System.arraycopy(array, from, result, 0, Math.min(to, array.length) - from);
         return result;
     }
 
     public static float[] copyOfRange(float[] array, int from, int to) {
-        float[] result = new float[to - from];
-        for (int i = from; i < to; ++i) {
-            result[i - from] = array[i];
+        int sz = to - from;
+        if (sz < 0) {
+            throw new IllegalArgumentException();
         }
+        float[] result = new float[sz];
+        System.arraycopy(array, from, result, 0, Math.min(to, array.length) - from);
         return result;
     }
 
     public static double[] copyOfRange(double[] array, int from, int to) {
-        double[] result = new double[to - from];
-        for (int i = from; i < to; ++i) {
-            result[i - from] = array[i];
+        int sz = to - from;
+        if (sz < 0) {
+            throw new IllegalArgumentException();
         }
+        double[] result = new double[sz];
+        System.arraycopy(array, from, result, 0, Math.min(to, array.length) - from);
         return result;
     }
 
     public static <T> T[] copyOfRange(T[] original, int from, int to) {
-        @SuppressWarnings("unchecked")
-        T[] result = (T[]) Array.newInstance(original.getClass().getComponentType(), to - from);
-        for (int i = from; i < to; ++i) {
-            result[i - from] = original[i];
+        int sz = to - from;
+        if (sz < 0) {
+            throw new IllegalArgumentException();
         }
+        @SuppressWarnings("unchecked")
+        T[] result = (T[]) Array.newInstance(original.getClass().getComponentType(), sz);
+        System.arraycopy(original, from, result, 0, Math.min(to, original.length) - from);
         return result;
     }
 
     @SuppressWarnings("unchecked")
     public static <T, U> T[] copyOfRange(U[] original, int from, int to, Class<? extends T[]> newType) {
-        Class<?> componentType = newType.getComponentType();
-        T[] result = (T[]) (Object) Array.newInstance(componentType, to - from);
-        for (int i = from; i < to; ++i) {
-            result[i - from] = (T) newType.getComponentType().cast(original[i]);
+        int sz = to - from;
+        if (sz < 0) {
+            throw new IllegalArgumentException();
         }
+        Class<?> componentType = newType.getComponentType();
+        T[] result = (T[]) Array.newInstance(componentType, sz);
+        TSystem.arraycopy((TObject) (Object) original, from,
+                (TObject) (Object)  result, 0, Math.min(to, original.length) - from);
         return result;
     }
 
@@ -1009,14 +1036,28 @@ public class TArrays extends TObject {
         }
     }
 
+    private static void checkRange(int fromIndex, int toIndex, int length) {
+        if (fromIndex > toIndex) {
+            throw new IllegalArgumentException();
+        }
+        if (fromIndex < 0) {
+            throw new ArrayIndexOutOfBoundsException(fromIndex);
+        }
+        if (toIndex > length) {
+            throw new ArrayIndexOutOfBoundsException(toIndex);
+        }
+    }
+
     public static int binarySearch(int[] a, int key) {
-        return binarySearch(a, 0, a.length, key);
+        return binarySearchImpl(a, 0, a.length, key);
     }
 
     public static int binarySearch(int[] a, int fromIndex, int toIndex, int key) {
-        if (fromIndex > toIndex) {
-            throw new TIllegalArgumentException();
-        }
+        checkRange(fromIndex, toIndex, a.length);
+        return binarySearchImpl(a, fromIndex, toIndex, key);
+    }
+
+    private static int binarySearchImpl(int[] a, int fromIndex, int toIndex, int key) {
         int l = fromIndex;
         int u = toIndex - 1;
         while (l <= u) {
@@ -1034,13 +1075,15 @@ public class TArrays extends TObject {
     }
 
     public static int binarySearch(long[] a, long key) {
-        return binarySearch(a, 0, a.length, key);
+        return binarySearchImpl(a, 0, a.length, key);
     }
 
     public static int binarySearch(long[] a, int fromIndex, int toIndex, long key) {
-        if (fromIndex > toIndex) {
-            throw new TIllegalArgumentException();
-        }
+        checkRange(fromIndex, toIndex, a.length);
+        return binarySearchImpl(a, fromIndex, toIndex, key);
+    }
+
+    private static int binarySearchImpl(long[] a, int fromIndex, int toIndex, long key) {
         int l = fromIndex;
         int u = toIndex - 1;
         while (l <= u) {
@@ -1058,13 +1101,15 @@ public class TArrays extends TObject {
     }
 
     public static int binarySearch(short[] a, short key) {
-        return binarySearch(a, 0, a.length, key);
+        return binarySearchImpl(a, 0, a.length, key);
     }
 
     public static int binarySearch(short[] a, int fromIndex, int toIndex, short key) {
-        if (fromIndex > toIndex) {
-            throw new TIllegalArgumentException();
-        }
+        checkRange(fromIndex, toIndex, a.length);
+        return binarySearchImpl(a, fromIndex, toIndex, key);
+    }
+
+    private static int binarySearchImpl(short[] a, int fromIndex, int toIndex, short key) {
         int l = fromIndex;
         int u = toIndex - 1;
         while (l <= u) {
@@ -1082,13 +1127,15 @@ public class TArrays extends TObject {
     }
 
     public static int binarySearch(char[] a, char key) {
-        return binarySearch(a, 0, a.length, key);
+        return binarySearchImpl(a, 0, a.length, key);
     }
 
     public static int binarySearch(char[] a, int fromIndex, int toIndex, char key) {
-        if (fromIndex > toIndex) {
-            throw new TIllegalArgumentException();
-        }
+        checkRange(fromIndex, toIndex, a.length);
+        return binarySearchImpl(a, fromIndex, toIndex, key);
+    }
+
+    private static int binarySearchImpl(char[] a, int fromIndex, int toIndex, char key) {
         int l = fromIndex;
         int u = toIndex - 1;
         while (l <= u) {
@@ -1106,13 +1153,15 @@ public class TArrays extends TObject {
     }
 
     public static int binarySearch(byte[] a, byte key) {
-        return binarySearch(a, 0, a.length, key);
+        return binarySearchImpl(a, 0, a.length, key);
     }
 
     public static int binarySearch(byte[] a, int fromIndex, int toIndex, byte key) {
-        if (fromIndex > toIndex) {
-            throw new TIllegalArgumentException();
-        }
+        checkRange(fromIndex, toIndex, a.length);
+        return binarySearchImpl(a, fromIndex, toIndex, key);
+    }
+
+    private static int binarySearchImpl(byte[] a, int fromIndex, int toIndex, byte key) {
         int l = fromIndex;
         int u = toIndex - 1;
         while (l <= u) {
@@ -1130,13 +1179,15 @@ public class TArrays extends TObject {
     }
 
     public static int binarySearch(double[] a, double key) {
-        return binarySearch(a, 0, a.length, key);
+        return binarySearchImpl(a, 0, a.length, key);
     }
 
     public static int binarySearch(double[] a, int fromIndex, int toIndex, double key) {
-        if (fromIndex > toIndex) {
-            throw new TIllegalArgumentException();
-        }
+        checkRange(fromIndex, toIndex, a.length);
+        return binarySearchImpl(a, fromIndex, toIndex, key);
+    }
+
+    private static int binarySearchImpl(double[] a, int fromIndex, int toIndex, double key) {
         int l = fromIndex;
         int u = toIndex - 1;
         while (l <= u) {
@@ -1155,13 +1206,15 @@ public class TArrays extends TObject {
     }
 
     public static int binarySearch(float[] a, float key) {
-        return binarySearch(a, 0, a.length, key);
+        return binarySearchImpl(a, 0, a.length, key);
     }
 
     public static int binarySearch(float[] a, int fromIndex, int toIndex, float key) {
-        if (fromIndex > toIndex) {
-            throw new TIllegalArgumentException();
-        }
+        checkRange(fromIndex, toIndex, a.length);
+        return binarySearchImpl(a, fromIndex, toIndex, key);
+    }
+
+    private static int binarySearchImpl(float[] a, int fromIndex, int toIndex, float key) {
         int l = fromIndex;
         int u = toIndex - 1;
         while (l <= u) {
@@ -1180,33 +1233,33 @@ public class TArrays extends TObject {
     }
 
     public static int binarySearch(Object[] a, Object key) {
-        return binarySearch(a, 0, a.length, key);
+        return binarySearchImpl(a, 0, a.length, key, TComparator.NaturalOrder.instance());
     }
 
     public static int binarySearch(Object[] a, int fromIndex, int toIndex, Object key) {
-        return binarySearch(a, fromIndex, toIndex, key, TComparator.NaturalOrder.instance());
+        checkRange(fromIndex, toIndex, a.length);
+        return binarySearchImpl(a, fromIndex, toIndex, key, TComparator.NaturalOrder.instance());
     }
 
     public static <T> int binarySearch(T[] a, T key, TComparator<? super T> c) {
-        return binarySearch(a, 0, a.length, key, c);
+        return binarySearchImpl(a, 0, a.length, key, c == null ? TComparator.NaturalOrder.instance() : c);
     }
 
     public static <T> int binarySearch(T[] a, int fromIndex, int toIndex, T key, TComparator<? super T> c) {
-        if (c == null) {
-            c = TComparator.NaturalOrder.instance();
-        }
-        if (fromIndex > toIndex) {
-            throw new TIllegalArgumentException();
-        }
+        checkRange(fromIndex, toIndex, a.length);
+        return binarySearchImpl(a, fromIndex, toIndex, key, c == null ? TComparator.NaturalOrder.instance() : c);
+    }
+
+    private static <T> int binarySearchImpl(T[] a, int fromIndex, int toIndex, T key, TComparator<? super T> c) {
         int l = fromIndex;
         int u = toIndex - 1;
         while (l <= u) {
             int i = (l + u) / 2;
             T e = a[i];
-            int cmp = c.compare(key, e);
+            int cmp = c.compare(e, key);
             if (cmp == 0) {
                 return i;
-            } else if (cmp < 0) {
+            } else if (cmp > 0) {
                 u = i - 1;
             } else {
                 l = i + 1;
@@ -1821,7 +1874,7 @@ public class TArrays extends TObject {
         return new ArrayAsList<>(a);
     }
 
-    static class ArrayAsList<T> extends TAbstractList<T> implements RandomAccess {
+    static class ArrayAsList<T> extends TAbstractList<T> implements RandomAccess, Serializable {
         private T[] array;
 
         public ArrayAsList(T[] array) {
@@ -1871,6 +1924,22 @@ public class TArrays extends TObject {
     private static void deepToString(Object a, StringBuilder out, TList<Object[]> visited) {
         if (a instanceof Object[]) {
             deepToString((Object[]) a, out, visited);
+        } else if (a instanceof boolean[]) {
+            out.append(toString((boolean[]) a));
+        } else if (a instanceof byte[]) {
+            out.append(toString((byte[]) a));
+        } else if (a instanceof short[]) {
+            out.append(toString((short[]) a));
+        } else if (a instanceof char[]) {
+            out.append(toString((char[]) a));
+        } else if (a instanceof int[]) {
+            out.append(toString((int[]) a));
+        } else if (a instanceof long[]) {
+            out.append(toString((long[]) a));
+        } else if (a instanceof float[]) {
+            out.append(toString((float[]) a));
+        } else if (a instanceof double[]) {
+            out.append(toString((double[]) a));
         } else {
             out.append(a);
         }
