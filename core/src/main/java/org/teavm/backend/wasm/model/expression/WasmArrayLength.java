@@ -13,26 +13,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.model;
+package org.teavm.backend.wasm.model.expression;
 
-public abstract class WasmCompositeType extends WasmEntity {
-    private String name;
-    private WasmType.Reference reference;
+import java.util.Objects;
 
-    WasmCompositeType(String name) {
-        this.name = name;
+public class WasmArrayLength extends WasmExpression {
+    private WasmExpression instance;
+
+    public WasmArrayLength(WasmExpression instance) {
+        this.instance = Objects.requireNonNull(instance);
     }
 
-    public String getName() {
-        return name;
+    public WasmExpression getInstance() {
+        return instance;
     }
 
-    public WasmType.Reference getReference() {
-        if (reference == null) {
-            reference = new WasmType.Reference(this);
-        }
-        return reference;
+    public void setInstance(WasmExpression instance) {
+        this.instance = Objects.requireNonNull(instance);
     }
 
-    public abstract void acceptVisitor(WasmCompositeTypeVisitor visitor);
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

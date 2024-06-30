@@ -85,4 +85,22 @@ public interface WasmExpressionVisitor {
     void visit(WasmTry expression);
 
     void visit(WasmThrow expression);
+
+    void visit(WasmReferencesEqual expression);
+
+    void visit(WasmCast expression);
+
+    void visit(WasmStructNew expression);
+
+    void visit(WasmStructGet expression);
+
+    void visit(WasmStructSet expression);
+
+    void visit(WasmArrayNewDefault expression);
+
+    void visit(WasmArrayGet expression);
+
+    void visit(WasmArraySet expression);
+
+    void visit(WasmArrayLength expression);
 }

@@ -22,11 +22,13 @@ public class WasmArray extends WasmCompositeType {
     private WasmStorageType elementType;
     private Supplier<WasmStorageType> elementTypeSupplier;
 
-    public WasmArray(WasmStorageType elementType) {
+    public WasmArray(String name, WasmStorageType elementType) {
+        super(name);
         this.elementType = Objects.requireNonNull(elementType);
     }
 
-    public WasmArray(Supplier<WasmStorageType> elementTypeSupplier) {
+    public WasmArray(String name, Supplier<WasmStorageType> elementTypeSupplier) {
+        super(name);
         this.elementTypeSupplier = elementTypeSupplier;
     }
 

@@ -32,7 +32,7 @@ public class WasmFunctionTypes {
 
     public WasmFunctionType get(WasmSignature signature) {
         return types.computeIfAbsent(signature, k -> {
-            var type = new WasmFunctionType(signature.getReturnType(), signature.getParameterTypes());
+            var type = new WasmFunctionType(null, signature.getReturnType(), signature.getParameterTypes());
             module.types.add(type);
             return type;
         });

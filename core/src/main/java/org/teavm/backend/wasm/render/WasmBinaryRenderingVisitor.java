@@ -25,10 +25,15 @@ import org.teavm.backend.wasm.debug.DebugLines;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmArrayGet;
+import org.teavm.backend.wasm.model.expression.WasmArrayLength;
+import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
+import org.teavm.backend.wasm.model.expression.WasmArraySet;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmCopy;
@@ -52,12 +57,16 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
+import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.expression.WasmStructNew;
+import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmTry;
@@ -969,6 +978,125 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         pushLocation(expression);
         writer.writeByte(0x8);
         writer.writeLEB(expression.getTag().getIndex());
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmReferencesEqual expression) {
+        pushLocation(expression);
+        expression.getFirst().acceptVisitor(this);
+        expression.getSecond().acceptVisitor(this);
+        writer.writeByte(0xd3);
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmCast expression) {
+        pushLocation(expression);
+        expression.getValue().acceptVisitor(this);
+        writer.writeByte(0xfb);
+        writer.writeByte(23);
+        writer.writeType(expression.getTargetType(), module);
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmStructNew expression) {
+        pushLocation(expression);
+        for (var initializer : expression.getInitializers()) {
+            initializer.acceptVisitor(this);
+        }
+        writer.writeByte(0xfb);
+        writer.writeByte(0);
+        writer.writeInt32(module.types.indexOf(expression.getType()));
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmStructGet expression) {
+        pushLocation(expression);
+        expression.getInstance().acceptVisitor(this);
+        writer.writeByte(0xfb);
+        if (expression.getSignedType() == null) {
+            writer.writeByte(2);
+        } else {
+            switch (expression.getSignedType()) {
+                case SIGNED:
+                    writer.writeByte(3);
+                    break;
+                case UNSIGNED:
+                    writer.writeByte(4);
+                    break;
+            }
+        }
+        writer.writeInt32(module.types.indexOf(expression.getType()));
+        writer.writeInt32(expression.getFieldIndex());
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmStructSet expression) {
+        pushLocation(expression);
+        expression.getInstance().acceptVisitor(this);
+        expression.getValue().acceptVisitor(this);
+        writer.writeByte(0xfb);
+        writer.writeByte(5);
+        writer.writeInt32(module.types.indexOf(expression.getType()));
+        writer.writeInt32(expression.getFieldIndex());
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmArrayNewDefault expression) {
+        pushLocation(expression);
+        expression.getLength().acceptVisitor(this);
+        writer.writeByte(0xfb);
+        writer.writeByte(7);
+        writer.writeInt32(module.types.indexOf(expression.getType()));
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmArrayGet expression) {
+        pushLocation(expression);
+        expression.getInstance().acceptVisitor(this);
+        expression.getIndex().acceptVisitor(this);
+        writer.writeByte(0xfb);
+        if (expression.getSignedType() == null) {
+            writer.writeByte(11);
+        } else {
+            switch (expression.getSignedType()) {
+                case SIGNED:
+                    writer.writeByte(12);
+                    break;
+                case UNSIGNED:
+                    writer.writeByte(13);
+                    break;
+            }
+        }
+        writer.writeInt32(module.types.indexOf(expression.getType()));
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmArraySet expression) {
+        pushLocation(expression);
+        expression.getInstance().acceptVisitor(this);
+        expression.getIndex().acceptVisitor(this);
+        expression.getValue().acceptVisitor(this);
+        writer.writeByte(0xfb);
+        writer.writeByte(14);
+        writer.writeInt32(module.types.indexOf(expression.getType()));
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmArrayLength expression) {
+        pushLocation(expression);
+        expression.getInstance().acceptVisitor(this);
+        writer.writeByte(0xfb);
+        writer.writeByte(15);
+        popLocation();
     }
 
     private int alignment(int value) {

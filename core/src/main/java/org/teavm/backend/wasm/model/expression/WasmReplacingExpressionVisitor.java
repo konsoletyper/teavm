@@ -268,4 +268,71 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
     public void visit(WasmThrow expression) {
         replaceExpressions(expression.getArguments());
     }
+
+    @Override
+    public void visit(WasmReferencesEqual expression) {
+        expression.getFirst().acceptVisitor(this);
+        expression.setFirst(mapper.apply(expression.getFirst()));
+
+        expression.getSecond().acceptVisitor(this);
+        expression.setSecond(mapper.apply(expression.getSecond()));
+    }
+
+    @Override
+    public void visit(WasmCast expression) {
+        expression.getValue().acceptVisitor(this);
+        expression.setValue(mapper.apply(expression.getValue()));
+    }
+
+    @Override
+    public void visit(WasmStructNew expression) {
+    }
+
+    @Override
+    public void visit(WasmStructGet expression) {
+        expression.getInstance().acceptVisitor(this);
+        expression.setInstance(mapper.apply(expression.getInstance()));
+    }
+
+    @Override
+    public void visit(WasmStructSet expression) {
+        expression.getInstance().acceptVisitor(this);
+        expression.setInstance(mapper.apply(expression.getInstance()));
+
+        expression.getValue().acceptVisitor(this);
+        expression.setValue(mapper.apply(expression.getValue()));
+    }
+
+    @Override
+    public void visit(WasmArrayNewDefault expression) {
+        expression.getLength().acceptVisitor(this);
+        expression.setLength(mapper.apply(expression.getLength()));
+    }
+
+    @Override
+    public void visit(WasmArrayGet expression) {
+        expression.getInstance().acceptVisitor(this);
+        expression.setInstance(mapper.apply(expression.getInstance()));
+
+        expression.getIndex().acceptVisitor(this);
+        expression.setIndex(mapper.apply(expression.getIndex()));
+    }
+
+    @Override
+    public void visit(WasmArraySet expression) {
+        expression.getInstance().acceptVisitor(this);
+        expression.setInstance(mapper.apply(expression.getInstance()));
+
+        expression.getIndex().acceptVisitor(this);
+        expression.setIndex(mapper.apply(expression.getIndex()));
+
+        expression.getValue().acceptVisitor(this);
+        expression.setValue(mapper.apply(expression.getIndex()));
+    }
+
+    @Override
+    public void visit(WasmArrayLength expression) {
+        expression.getInstance().acceptVisitor(this);
+        expression.setInstance(mapper.apply(expression.getInstance()));
+    }
 }

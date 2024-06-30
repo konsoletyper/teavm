@@ -22,11 +22,13 @@ public class WasmStructure extends WasmCompositeType {
     private List<? extends WasmStorageType> fields;
     private Supplier<List<? extends WasmStorageType>> fieldsSupplier;
 
-    public WasmStructure(List<? extends WasmStorageType> fields) {
+    public WasmStructure(String name, List<? extends WasmStorageType> fields) {
+        super(name);
         this.fields = List.copyOf(fields);
     }
 
-    public WasmStructure(Supplier<List<? extends WasmStorageType>> fieldsSupplier) {
+    public WasmStructure(String name, Supplier<List<? extends WasmStorageType>> fieldsSupplier) {
+        super(name);
         this.fieldsSupplier = fieldsSupplier;
     }
 

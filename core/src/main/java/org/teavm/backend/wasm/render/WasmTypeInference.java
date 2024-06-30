@@ -16,10 +16,15 @@
 package org.teavm.backend.wasm.render;
 
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmArrayGet;
+import org.teavm.backend.wasm.model.expression.WasmArrayLength;
+import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
+import org.teavm.backend.wasm.model.expression.WasmArraySet;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmCopy;
@@ -44,12 +49,16 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
+import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.expression.WasmStructNew;
+import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmTry;
@@ -236,6 +245,51 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     @Override
     public void visit(WasmThrow expression) {
         result = null;
+    }
+
+    @Override
+    public void visit(WasmReferencesEqual expression) {
+        result = WasmType.INT32;
+    }
+
+    @Override
+    public void visit(WasmCast expression) {
+        result = expression.getTargetType();
+    }
+
+    @Override
+    public void visit(WasmStructNew expression) {
+        result = expression.getType().getReference();
+    }
+
+    @Override
+    public void visit(WasmStructGet expression) {
+        result = expression.getType().getFields().get(expression.getFieldIndex()).asUnpackedType();
+    }
+
+    @Override
+    public void visit(WasmStructSet expression) {
+        result = null;
+    }
+
+    @Override
+    public void visit(WasmArrayNewDefault expression) {
+        result = expression.getType().getReference();
+    }
+
+    @Override
+    public void visit(WasmArrayGet expression) {
+        result = expression.getType().getElementType().asUnpackedType();
+    }
+
+    @Override
+    public void visit(WasmArraySet expression) {
+        result = null;
+    }
+
+    @Override
+    public void visit(WasmArrayLength expression) {
+        result = WasmType.INT32;
     }
 
     private static WasmType map(WasmIntType type) {

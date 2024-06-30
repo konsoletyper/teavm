@@ -13,26 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.model;
+package org.teavm.backend.wasm.model.expression;
 
-public abstract class WasmCompositeType extends WasmEntity {
-    private String name;
-    private WasmType.Reference reference;
-
-    WasmCompositeType(String name) {
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public WasmType.Reference getReference() {
-        if (reference == null) {
-            reference = new WasmType.Reference(this);
-        }
-        return reference;
-    }
-
-    public abstract void acceptVisitor(WasmCompositeTypeVisitor visitor);
+public enum WasmSignedType {
+    SIGNED,
+    UNSIGNED
 }

@@ -17,14 +17,20 @@ package org.teavm.backend.wasm.render;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.teavm.backend.wasm.model.WasmCompositeType;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmArrayGet;
+import org.teavm.backend.wasm.model.expression.WasmArrayLength;
+import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
+import org.teavm.backend.wasm.model.expression.WasmArraySet;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmCopy;
@@ -55,12 +61,16 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
+import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.expression.WasmStructNew;
+import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmTry;
@@ -644,14 +654,120 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         close();
     }
 
+    @Override
+    public void visit(WasmReferencesEqual expression) {
+        open().append("ref.eq ");
+        line(expression.getFirst());
+        line(expression.getSecond());
+        close();
+    }
+
+    @Override
+    public void visit(WasmCast expression) {
+        open().append("ref.cast ").append(type(expression.getTargetType()));
+        line(expression.getValue());
+        close();
+    }
+
+    @Override
+    public void visit(WasmStructNew expression) {
+        open().append("struct.new ");
+        append(expression.getType().getReference());
+        for (var initializer : expression.getInitializers()) {
+            line(initializer);
+        }
+        close();
+    }
+
+    @Override
+    public void visit(WasmStructGet expression) {
+        open();
+        if (expression.getSignedType() == null) {
+            append("struct.get");
+        } else {
+            switch (expression.getSignedType()) {
+                case SIGNED:
+                    append("struct.get_s");
+                    break;
+                case UNSIGNED:
+                    append("struct.get_u");
+                    break;
+            }
+        }
+        append(" ").append(typeName(expression.getType()));
+        append(" ").append(String.valueOf(expression.getFieldIndex()));
+        line(expression.getInstance());
+        close();
+    }
+
+    @Override
+    public void visit(WasmStructSet expression) {
+        open().append("struct.set");
+        append(" ").append(typeName(expression.getType()));
+        append(" ").append(String.valueOf(expression.getFieldIndex()));
+        line(expression.getInstance());
+        line(expression.getValue());
+        close();
+    }
+
+    @Override
+    public void visit(WasmArrayNewDefault expression) {
+        open().append("array.new_default");
+        append(" ").append(typeName(expression.getType()));
+        line(expression.getLength());
+        close();
+    }
+
+    @Override
+    public void visit(WasmArrayGet expression) {
+        open();
+        if (expression.getSignedType() == null) {
+            append("array.get");
+        } else {
+            switch (expression.getSignedType()) {
+                case SIGNED:
+                    append("array.get_s");
+                    break;
+                case UNSIGNED:
+                    append("array.get_u");
+                    break;
+            }
+        }
+        append(" ").append(typeName(expression.getType()));
+        line(expression.getInstance());
+        line(expression.getIndex());
+        close();
+    }
+
+    @Override
+    public void visit(WasmArraySet expression) {
+        open().append("array.set");
+        append(" ").append(typeName(expression.getType()));
+        line(expression.getInstance());
+        line(expression.getIndex());
+        line(expression.getValue());
+        close();
+    }
+
+    @Override
+    public void visit(WasmArrayLength expression) {
+        open().append("array.length");
+        line(expression.getInstance());
+        close();
+    }
+
     private String type(WasmType type) {
         if (type instanceof WasmType.Number) {
             return type(((WasmType.Number) type).number);
         } else if (type instanceof WasmType.Reference) {
-            return "(ref " + module.types.indexOf(((WasmType.Reference) type).composite) + ")";
+            return "(ref " + typeName(((WasmType.Reference) type).composite) + ")";
         } else {
             throw new IllegalArgumentException();
         }
+    }
+
+    private String typeName(WasmCompositeType type) {
+        return type.getName() != null ? "$" + type.getName() : String.valueOf(module.types.indexOf(type));
     }
 
     private String type(WasmNumType type) {

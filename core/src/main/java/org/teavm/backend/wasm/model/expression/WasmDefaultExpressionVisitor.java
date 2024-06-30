@@ -222,4 +222,56 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
             arg.acceptVisitor(this);
         }
     }
+
+    @Override
+    public void visit(WasmReferencesEqual expression) {
+        expression.getFirst().acceptVisitor(this);
+        expression.getSecond().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(WasmCast expression) {
+        expression.getValue().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(WasmStructNew expression) {
+        for (var initializer : expression.getInitializers()) {
+            initializer.acceptVisitor(this);
+        }
+    }
+
+    @Override
+    public void visit(WasmStructGet expression) {
+        expression.getInstance().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(WasmStructSet expression) {
+        expression.getInstance().acceptVisitor(this);
+        expression.getValue().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(WasmArrayNewDefault expression) {
+        expression.getLength().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(WasmArrayGet expression) {
+        expression.getInstance().acceptVisitor(this);
+        expression.getIndex().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(WasmArraySet expression) {
+        expression.getInstance().acceptVisitor(this);
+        expression.getIndex().acceptVisitor(this);
+        expression.getValue().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(WasmArrayLength expression) {
+        expression.getInstance().acceptVisitor(this);
+    }
 }

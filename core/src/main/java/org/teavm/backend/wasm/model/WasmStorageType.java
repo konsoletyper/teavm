@@ -22,6 +22,8 @@ public abstract class WasmStorageType {
     private WasmStorageType() {
     }
 
+    public abstract WasmType asUnpackedType();
+
     public static WasmStorageType.Packed packed(WasmPackedType type) {
         switch (type) {
             case INT8:
@@ -39,6 +41,11 @@ public abstract class WasmStorageType {
         Regular(WasmType type) {
             this.type = type;
         }
+
+        @Override
+        public WasmType asUnpackedType() {
+            return type;
+        }
     }
 
     public static final class Packed extends WasmStorageType {
@@ -46,6 +53,11 @@ public abstract class WasmStorageType {
 
         private Packed(WasmPackedType type) {
             this.type = type;
+        }
+
+        @Override
+        public WasmType asUnpackedType() {
+            return WasmType.INT32;
         }
     }
 }
