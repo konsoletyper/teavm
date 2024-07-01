@@ -62,6 +62,8 @@ public interface WasmExpressionVisitor {
 
     void visit(WasmIndirectCall expression);
 
+    void visit(WasmCallReference expression);
+
     void visit(WasmDrop expression);
 
     void visit(WasmLoadInt32 expression);
@@ -96,6 +98,8 @@ public interface WasmExpressionVisitor {
 
     void visit(WasmStructNew expression);
 
+    void visit(WasmStructNewDefault expression);
+
     void visit(WasmStructGet expression);
 
     void visit(WasmStructSet expression);
@@ -107,4 +111,6 @@ public interface WasmExpressionVisitor {
     void visit(WasmArraySet expression);
 
     void visit(WasmArrayLength expression);
+
+    void visit(WasmFunctionReference expression);
 }

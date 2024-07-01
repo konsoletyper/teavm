@@ -17,7 +17,7 @@ package org.teavm.backend.wasm.model;
 
 public abstract class WasmCompositeType extends WasmEntity {
     private String name;
-    private WasmType.Reference reference;
+    private WasmType.CompositeReference reference;
 
     WasmCompositeType(String name) {
         this.name = name;
@@ -27,9 +27,9 @@ public abstract class WasmCompositeType extends WasmEntity {
         return name;
     }
 
-    public WasmType.Reference getReference() {
+    public WasmType.CompositeReference getReference() {
         if (reference == null) {
-            reference = new WasmType.Reference(this);
+            reference = new WasmType.CompositeReference(this);
         }
         return reference;
     }

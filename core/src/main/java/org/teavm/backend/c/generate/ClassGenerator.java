@@ -73,6 +73,7 @@ import org.teavm.model.instructions.IsInstanceInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.model.lowlevel.Characteristics;
+import org.teavm.model.util.ReflectionUtil;
 import org.teavm.runtime.CallSite;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
@@ -1295,26 +1296,7 @@ public class ClassGenerator {
 
     public String nameOfType(ValueType type) {
         if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                    return "boolean";
-                case BYTE:
-                    return "byte";
-                case SHORT:
-                    return "short";
-                case CHARACTER:
-                    return "char";
-                case INTEGER:
-                    return "int";
-                case LONG:
-                    return "long";
-                case FLOAT:
-                    return "float";
-                case DOUBLE:
-                    return "double";
-                default:
-                    throw new AssertionError();
-            }
+            return ReflectionUtil.typeName(((ValueType.Primitive) type).getKind());
         } else if (type instanceof ValueType.Array) {
             if (isArrayOfPrimitives(type)) {
                 return type.toString().replace('/', '.');

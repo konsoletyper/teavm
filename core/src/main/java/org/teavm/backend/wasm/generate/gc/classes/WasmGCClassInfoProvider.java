@@ -13,27 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.model.expression;
+package org.teavm.backend.wasm.generate.gc.classes;
 
-import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.model.ValueType;
 
-public class WasmNullConstant extends WasmExpression {
-    public WasmType.Reference type;
+public interface WasmGCClassInfoProvider {
+    WasmGCClassInfo getClassInfo(ValueType type);
 
-    public WasmNullConstant(WasmType.Reference type) {
-        this.type = type;
-    }
-
-    public WasmType.Reference getType() {
-        return type;
-    }
-
-    public void setType(WasmType.Reference type) {
-        this.type = type;
-    }
-
-    @Override
-    public void acceptVisitor(WasmExpressionVisitor visitor) {
-        visitor.visit(this);
+    default WasmGCClassInfo getClassInfo(String name) {
+        return getClassInfo(ValueType.object(name));
     }
 }

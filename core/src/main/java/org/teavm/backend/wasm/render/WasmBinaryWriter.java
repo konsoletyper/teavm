@@ -36,8 +36,26 @@ public class WasmBinaryWriter {
         }
         if (type instanceof WasmType.Number) {
             writeType(((WasmType.Number) type).number);
-        } else if (type instanceof WasmType.Reference) {
-            writeSignedLEB(module.types.indexOf(((WasmType.Reference) type).composite));
+        } else if (type instanceof WasmType.SpecialReference) {
+            switch (((WasmType.SpecialReference) type).kind) {
+                case ANY:
+                    writeByte(0x6e);
+                    break;
+                case EXTERN:
+                    writeByte(0x6f);
+                    break;
+                case FUNC:
+                    writeByte(0x70);
+                    break;
+                case STRUCT:
+                    writeByte(0x6b);
+                    break;
+                case ARRAY:
+                    writeByte(0x6a);
+                    break;
+            }
+        } else if (type instanceof WasmType.CompositeReference) {
+            writeSignedLEB(module.types.indexOf(((WasmType.CompositeReference) type).composite));
         }
     }
 

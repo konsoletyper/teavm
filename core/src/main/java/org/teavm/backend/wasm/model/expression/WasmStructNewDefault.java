@@ -15,21 +15,25 @@
  */
 package org.teavm.backend.wasm.model.expression;
 
-import org.teavm.backend.wasm.model.WasmType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import org.teavm.backend.wasm.model.WasmStructure;
 
-public class WasmNullConstant extends WasmExpression {
-    public WasmType.Reference type;
+public class WasmStructNewDefault extends WasmExpression {
+    private WasmStructure type;
+    private List<WasmExpression> initializers = new ArrayList<>();
 
-    public WasmNullConstant(WasmType.Reference type) {
-        this.type = type;
+    public WasmStructNewDefault(WasmStructure type) {
+        this.type = Objects.requireNonNull(type);
     }
 
-    public WasmType.Reference getType() {
+    public WasmStructure getType() {
         return type;
     }
 
-    public void setType(WasmType.Reference type) {
-        this.type = type;
+    public void setType(WasmStructure type) {
+        this.type = Objects.requireNonNull(type);
     }
 
     @Override

@@ -174,6 +174,13 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmCallReference expression) {
+        expression.getFunctionReference().acceptVisitor(this);
+        expression.setFunctionReference(mapper.apply(expression.getFunctionReference()));
+        replaceExpressions(expression.getArguments());
+    }
+
+    @Override
     public void visit(WasmDrop expression) {
         expression.getOperand().acceptVisitor(this);
         expression.setOperand(mapper.apply(expression.getOperand()));
@@ -295,6 +302,11 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmStructNew expression) {
+        replaceExpressions(expression.getInitializers());
+    }
+
+    @Override
+    public void visit(WasmStructNewDefault expression) {
     }
 
     @Override
@@ -343,5 +355,9 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
     public void visit(WasmArrayLength expression) {
         expression.getInstance().acceptVisitor(this);
         expression.setInstance(mapper.apply(expression.getInstance()));
+    }
+
+    @Override
+    public void visit(WasmFunctionReference expression) {
     }
 }

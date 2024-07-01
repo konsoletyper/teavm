@@ -56,7 +56,7 @@ public abstract class WasmExpression {
                     throw new IllegalArgumentException();
             }
         } else if (type instanceof WasmType.Reference) {
-            return new WasmNullConstant(((WasmType.Reference) type).composite);
+            return new WasmNullConstant((WasmType.Reference) type);
         } else {
             throw new IllegalArgumentException();
         }

@@ -55,6 +55,7 @@ import org.teavm.model.classes.VirtualTable;
 import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.lowlevel.Characteristics;
+import org.teavm.model.util.ReflectionUtil;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
@@ -250,34 +251,7 @@ public class WasmClassGenerator {
         if (type == ValueType.VOID) {
             name = "void";
         } else {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                    name = "boolean";
-                    break;
-                case BYTE:
-                    name = "byte";
-                    break;
-                case SHORT:
-                    name = "short";
-                    break;
-                case CHARACTER:
-                    name = "char";
-                    break;
-                case INTEGER:
-                    name = "int";
-                    break;
-                case LONG:
-                    name = "long";
-                    break;
-                case FLOAT:
-                    name = "float";
-                    break;
-                case DOUBLE:
-                    name = "double";
-                    break;
-                default:
-                    name = "";
-            }
+            name = ReflectionUtil.typeName(((ValueType.Primitive) type).getKind());
         }
 
         value.setAddress(CLASS_NAME, stringPool.getStringPointer(name));

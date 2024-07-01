@@ -31,6 +31,7 @@ import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
@@ -47,6 +48,7 @@ import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
 import org.teavm.backend.wasm.model.expression.WasmFloatUnary;
 import org.teavm.backend.wasm.model.expression.WasmFloatUnaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
@@ -73,6 +75,7 @@ import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNew;
+import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
@@ -288,7 +291,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmNullConstant expression) {
-        open().append("ref.null " + module.types.indexOf(expression.getType())).close();
+        open().append("ref.null " + type(expression.getType())).close();
     }
 
     @Override
@@ -444,6 +447,16 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmIndirectCall expression) {
 
+    }
+
+    @Override
+    public void visit(WasmCallReference expression) {
+        open().append("call_ref ").append(type(expression.getType().getReference()));
+        line(expression.getFunctionReference());
+        for (var argument : expression.getArguments()) {
+            line(argument);
+        }
+        close();
     }
 
     @Override
@@ -697,6 +710,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmStructNewDefault expression) {
+        open().append("struct.new_default ").append(expression.getType().getReference()).close();
+    }
+
+    @Override
     public void visit(WasmStructGet expression) {
         open();
         if (expression.getSignedType() == null) {
@@ -773,11 +791,32 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         close();
     }
 
+    @Override
+    public void visit(WasmFunctionReference expression) {
+        open().append("ref.func ").append(" $" + module.functions.indexOf(expression.getFunction()));
+        close();
+    }
+
     private String type(WasmType type) {
         if (type instanceof WasmType.Number) {
             return type(((WasmType.Number) type).number);
-        } else if (type instanceof WasmType.Reference) {
-            return "(ref " + typeName(((WasmType.Reference) type).composite) + ")";
+        } else if (type instanceof WasmType.SpecialReference) {
+            switch (((WasmType.SpecialReference) type).kind) {
+                case ANY:
+                    return "anyref";
+                case EXTERN:
+                    return "externref";
+                case STRUCT:
+                    return "structref";
+                case FUNC:
+                    return "funcref";
+                case ARRAY:
+                    return "arrayref";
+                default:
+                    throw new IllegalArgumentException();
+            }
+        } else if (type instanceof WasmType.CompositeReference) {
+            return "(ref " + typeName(((WasmType.CompositeReference) type).composite) + ")";
         } else {
             throw new IllegalArgumentException();
         }

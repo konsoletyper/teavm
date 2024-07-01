@@ -13,27 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.model.expression;
+package org.teavm.backend.wasm.generate.gc.strings;
 
-import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.WasmGlobal;
 
-public class WasmNullConstant extends WasmExpression {
-    public WasmType.Reference type;
+public class WasmGCStringConstant {
+    public final int index;
+    public final WasmGlobal global;
 
-    public WasmNullConstant(WasmType.Reference type) {
-        this.type = type;
-    }
-
-    public WasmType.Reference getType() {
-        return type;
-    }
-
-    public void setType(WasmType.Reference type) {
-        this.type = type;
-    }
-
-    @Override
-    public void acceptVisitor(WasmExpressionVisitor visitor) {
-        visitor.visit(this);
+    public WasmGCStringConstant(int index, WasmGlobal global) {
+        this.index = index;
+        this.global = global;
     }
 }

@@ -56,11 +56,44 @@ public abstract class WasmType {
         }
     }
 
-    public static final class Reference extends WasmType {
+    public static abstract class Reference extends WasmType {
+        public static final SpecialReference FUNC = SpecialReferenceKind.FUNC.asType();
+        public static final SpecialReference ANY = SpecialReferenceKind.ANY.asType();
+        public static final SpecialReference EXTERN = SpecialReferenceKind.EXTERN.asType();
+        public static final SpecialReference STRUCT = SpecialReferenceKind.STRUCT.asType();
+        public static final SpecialReference ARRAY = SpecialReferenceKind.ARRAY.asType();
+    }
+
+    public static final class CompositeReference extends Reference {
         public final WasmCompositeType composite;
 
-        Reference(WasmCompositeType composite) {
+        CompositeReference(WasmCompositeType composite) {
             this.composite = composite;
+        }
+    }
+
+    public static final class SpecialReference extends WasmType {
+        public final SpecialReferenceKind kind;
+
+        private SpecialReference(SpecialReferenceKind kind) {
+            this.kind = kind;
+        }
+    }
+
+    public enum SpecialReferenceKind {
+        FUNC,
+        ANY,
+        EXTERN,
+        STRUCT,
+        ARRAY;
+
+        private SpecialReference type;
+
+        final SpecialReference asType() {
+            if (type == null) {
+                type = new SpecialReference(this);
+            }
+            return type;
         }
     }
 }

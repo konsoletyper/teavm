@@ -27,9 +27,19 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmArrayGet;
+import org.teavm.backend.wasm.model.expression.WasmArraySet;
+import org.teavm.backend.wasm.model.expression.WasmCallReference;
+import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmDefaultExpressionVisitor;
 import org.teavm.backend.wasm.model.expression.WasmExpressionVisitor;
+import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
+import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.expression.WasmStructNew;
+import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
+import org.teavm.backend.wasm.model.expression.WasmStructSet;
 
 public class UnusedTypeElimination {
     private WasmModule module;
@@ -51,12 +61,24 @@ public class UnusedTypeElimination {
         for (var tag : module.tags) {
             use(tag.getType());
         }
+        for (var global : module.globals) {
+            use(global.getType());
+        }
     }
 
     private void useFrom(WasmFunction function) {
         use(function.getType());
+        for (var local : function.getLocalVariables()) {
+            use(local.getType());
+        }
         for (var part : function.getBody()) {
             part.acceptVisitor(exprVisitor);
+        }
+    }
+
+    private void use(WasmType type) {
+        if (type instanceof WasmType.CompositeReference) {
+            use(((WasmType.CompositeReference) type).composite);
         }
     }
 
@@ -70,6 +92,67 @@ public class UnusedTypeElimination {
     private WasmExpressionVisitor exprVisitor = new WasmDefaultExpressionVisitor() {
         @Override
         public void visit(WasmIndirectCall expression) {
+            super.visit(expression);
+            use(expression.getType());
+        }
+
+        @Override
+        public void visit(WasmCast expression) {
+            super.visit(expression);
+            use(expression.getTargetType());
+        }
+
+
+        @Override
+        public void visit(WasmArrayGet expression) {
+            super.visit(expression);
+            use(expression.getType());
+        }
+
+        @Override
+        public void visit(WasmArraySet expression) {
+            super.visit(expression);
+            use(expression.getType());
+        }
+
+        @Override
+        public void visit(WasmStructNew expression) {
+            super.visit(expression);
+            use(expression.getType());
+        }
+
+        @Override
+        public void visit(WasmStructNewDefault expression) {
+            super.visit(expression);
+            use(expression.getType());
+        }
+
+        @Override
+        public void visit(WasmStructGet expression) {
+            super.visit(expression);
+            use(expression.getType());
+        }
+
+        @Override
+        public void visit(WasmStructSet expression) {
+            super.visit(expression);
+            use(expression.getType());
+        }
+
+        @Override
+        public void visit(WasmNullConstant expression) {
+            super.visit(expression);
+            use(expression.getType());
+        }
+
+        @Override
+        public void visit(WasmFunctionReference expression) {
+            super.visit(expression);
+            useFrom(expression.getFunction());
+        }
+
+        @Override
+        public void visit(WasmCallReference expression) {
             super.visit(expression);
             use(expression.getType());
         }
@@ -105,8 +188,8 @@ public class UnusedTypeElimination {
         }
 
         private void visit(WasmType type) {
-            if (type instanceof WasmType.Reference) {
-                use(((WasmType.Reference) type).composite);
+            if (type instanceof WasmType.CompositeReference) {
+                use(((WasmType.CompositeReference) type).composite);
             }
         }
     };

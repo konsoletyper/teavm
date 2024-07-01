@@ -35,6 +35,7 @@ import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
@@ -48,6 +49,7 @@ import org.teavm.backend.wasm.model.expression.WasmFloat64Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinary;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
 import org.teavm.backend.wasm.model.expression.WasmFloatUnary;
+import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
@@ -72,6 +74,7 @@ import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNew;
+import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
@@ -783,6 +786,11 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         value = result;
     }
 
+    @Override
+    public void visit(WasmCallReference expression) {
+        unsupported();
+    }
+
     private void translateArguments(List<? extends WasmExpression> wasmArguments, List<? extends WasmType> signature,
             CExpression result, StringBuilder sb) {
         if (wasmArguments.isEmpty()) {
@@ -1167,6 +1175,11 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmStructNewDefault expression) {
+        unsupported();
+    }
+
+    @Override
     public void visit(WasmStructGet expression) {
         unsupported();
     }
@@ -1193,6 +1206,11 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmArrayLength expression) {
+        unsupported();
+    }
+
+    @Override
+    public void visit(WasmFunctionReference expression) {
         unsupported();
     }
 

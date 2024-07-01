@@ -25,6 +25,7 @@ import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmDefaultExpressionVisitor;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmExpressionVisitor;
+import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 
 public class UnusedFunctionElimination {
     private WasmModule module;
@@ -64,10 +65,13 @@ public class UnusedFunctionElimination {
         @Override
         public void visit(WasmCall expression) {
             super.visit(expression);
-            var function = expression.getFunction();
-            if (function != null) {
-                use(function);
-            }
+            use(expression.getFunction());
+        }
+
+        @Override
+        public void visit(WasmFunctionReference expression) {
+            super.visit(expression);
+            use(expression.getFunction());
         }
     };
 }

@@ -16,27 +16,15 @@
 package org.teavm.backend.wasm.model;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 public class WasmStructure extends WasmCompositeType {
-    private List<? extends WasmStorageType> fields;
-    private Supplier<List<? extends WasmStorageType>> fieldsSupplier;
+    private List<WasmStorageType> fields;
 
-    public WasmStructure(String name, List<? extends WasmStorageType> fields) {
+    public WasmStructure(String name) {
         super(name);
-        this.fields = List.copyOf(fields);
     }
 
-    public WasmStructure(String name, Supplier<List<? extends WasmStorageType>> fieldsSupplier) {
-        super(name);
-        this.fieldsSupplier = fieldsSupplier;
-    }
-
-    public List<? extends WasmStorageType> getFields() {
-        if (fields == null) {
-            fields = List.copyOf(fieldsSupplier.get());
-            fieldsSupplier = null;
-        }
+    public List<WasmStorageType> getFields() {
         return fields;
     }
 

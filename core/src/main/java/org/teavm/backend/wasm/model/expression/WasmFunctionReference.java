@@ -15,21 +15,22 @@
  */
 package org.teavm.backend.wasm.model.expression;
 
-import org.teavm.backend.wasm.model.WasmType;
+import java.util.Objects;
+import org.teavm.backend.wasm.model.WasmFunction;
 
-public class WasmNullConstant extends WasmExpression {
-    public WasmType.Reference type;
+public class WasmFunctionReference extends WasmExpression {
+    private WasmFunction function;
 
-    public WasmNullConstant(WasmType.Reference type) {
-        this.type = type;
+    public WasmFunctionReference(WasmFunction function) {
+        this.function = Objects.requireNonNull(function);
     }
 
-    public WasmType.Reference getType() {
-        return type;
+    public WasmFunction getFunction() {
+        return function;
     }
 
-    public void setType(WasmType.Reference type) {
-        this.type = type;
+    public void setFunction(WasmFunction function) {
+        this.function = Objects.requireNonNull(function);
     }
 
     @Override
