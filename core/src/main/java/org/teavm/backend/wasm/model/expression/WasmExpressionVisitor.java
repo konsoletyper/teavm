@@ -44,6 +44,10 @@ public interface WasmExpressionVisitor {
 
     void visit(WasmSetLocal expression);
 
+    void visit(WasmGetGlobal expression);
+
+    void visit(WasmSetGlobal expression);
+
     void visit(WasmIntBinary expression);
 
     void visit(WasmFloatBinary expression);

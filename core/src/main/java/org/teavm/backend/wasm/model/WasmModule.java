@@ -31,6 +31,7 @@ public class WasmModule {
     private Map<String, WasmCustomSection> readonlyCustomSections = Collections.unmodifiableMap(customSections);
 
     public final WasmCollection<WasmFunction> functions = new WasmCollection<>();
+    public final WasmCollection<WasmGlobal> globals = new WasmCollection<>();
     public final WasmCollection<WasmCompositeType> types = new WasmCollection<>();
     public final WasmCollection<WasmTag> tags = new WasmCollection<>();
 

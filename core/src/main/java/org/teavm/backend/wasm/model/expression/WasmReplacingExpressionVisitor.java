@@ -119,6 +119,15 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmGetGlobal expression) {
+    }
+
+    @Override
+    public void visit(WasmSetGlobal expression) {
+        expression.getValue().acceptVisitor(this);
+    }
+
+    @Override
     public void visit(WasmIntBinary expression) {
         expression.getFirst().acceptVisitor(this);
         expression.setFirst(mapper.apply(expression.getFirst()));

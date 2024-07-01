@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmNumType;
@@ -47,6 +48,7 @@ import org.teavm.backend.wasm.model.expression.WasmFloat64Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinary;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
 import org.teavm.backend.wasm.model.expression.WasmFloatUnary;
+import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
@@ -62,6 +64,7 @@ import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
+import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
@@ -361,6 +364,24 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         result.getLines().addAll(value.getLines());
 
         result.addLine(getVariableName(expression.getLocal()) + " = " + value.getText() + ";",
+                expression.getLocation());
+
+        value = result;
+    }
+
+    @Override
+    public void visit(WasmGetGlobal expression) {
+        value = new CExpression(getVariableName(expression.getGlobal()));
+    }
+
+    @Override
+    public void visit(WasmSetGlobal expression) {
+        CExpression result = new CExpression();
+        requiredType = expression.getGlobal().getType();
+        expression.getValue().acceptVisitor(this);
+        result.getLines().addAll(value.getLines());
+
+        result.addLine(getVariableName(expression.getGlobal()) + " = " + value.getText() + ";",
                 expression.getLocation());
 
         value = result;
@@ -1276,5 +1297,9 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
             localVariableNames[local.getIndex()] = result;
         }
         return result;
+    }
+
+    String getVariableName(WasmGlobal global) {
+        return "wasm_global_" + module.globals.indexOf(global);
     }
 }

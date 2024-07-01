@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.render;
 import java.util.HashMap;
 import java.util.Map;
 import org.teavm.backend.wasm.model.WasmCompositeType;
+import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmNumType;
@@ -46,6 +47,7 @@ import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
 import org.teavm.backend.wasm.model.expression.WasmFloatUnary;
 import org.teavm.backend.wasm.model.expression.WasmFloatUnaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
@@ -63,6 +65,7 @@ import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
+import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
@@ -290,16 +293,30 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmGetLocal expression) {
-        open().append("get_local " + asString(expression.getLocal())).close();
+        open().append("local.get " + asString(expression.getLocal())).close();
     }
 
     @Override
     public void visit(WasmSetLocal expression) {
-        open().append("set_local " + asString(expression.getLocal())).line(expression.getValue()).close();
+        open().append("local.set " + asString(expression.getLocal())).line(expression.getValue()).close();
+    }
+
+    @Override
+    public void visit(WasmGetGlobal expression) {
+        open().append("global.get " + asString(expression.getGlobal())).close();
+    }
+
+    @Override
+    public void visit(WasmSetGlobal expression) {
+        open().append("global.set " + asString(expression.getGlobal())).line(expression.getValue()).close();
     }
 
     private String asString(WasmLocal local) {
         return String.valueOf(local.getIndex());
+    }
+
+    private String asString(WasmGlobal global) {
+        return global.getName() != null ? "$" + global.getName() : String.valueOf(module.globals.indexOf(global));
     }
 
     @Override

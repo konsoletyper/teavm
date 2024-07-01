@@ -45,6 +45,7 @@ import org.teavm.backend.wasm.model.expression.WasmFloat32Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloat64Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinary;
 import org.teavm.backend.wasm.model.expression.WasmFloatUnary;
+import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
@@ -59,6 +60,7 @@ import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
+import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
@@ -266,6 +268,23 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.getValue().acceptVisitor(this);
         writer.writeByte(0x21);
         writer.writeLEB(expression.getLocal().getIndex());
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmGetGlobal expression) {
+        pushLocation(expression);
+        writer.writeByte(0x23);
+        writer.writeLEB(module.globals.indexOf(expression.getGlobal()));
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmSetGlobal expression) {
+        pushLocation(expression);
+        expression.getValue().acceptVisitor(this);
+        writer.writeByte(0x24);
+        writer.writeLEB(module.globals.indexOf(expression.getGlobal()));
         popLocation();
     }
 
