@@ -27,9 +27,10 @@ import org.teavm.jso.dom.events.MessageEvent;
 import org.teavm.jso.dom.events.MouseEventTarget;
 import org.teavm.jso.dom.events.Registration;
 import org.teavm.jso.dom.events.StorageEvent;
+import org.teavm.jso.dom.events.TouchEventTarget;
 
 public interface WindowEventTarget extends EventTarget, FocusEventTarget, MouseEventTarget, KeyboardEventTarget,
-        LoadEventTarget, GamepadEventTarget {
+        LoadEventTarget, GamepadEventTarget, TouchEventTarget {
     @Deprecated
     default void listenBeforeOnload(EventListener<Event> listener) {
         addEventListener("beforeunload", listener);
