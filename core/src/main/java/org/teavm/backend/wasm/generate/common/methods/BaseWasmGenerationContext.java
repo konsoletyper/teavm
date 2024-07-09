@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,13 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generate;
+package org.teavm.backend.wasm.generate.common.methods;
 
-import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.WasmFunctionRepository;
+import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.model.WasmTag;
+import org.teavm.model.ClassReaderSource;
 
-public abstract class CachedExpression {
-    public abstract WasmExpression expr();
+public interface BaseWasmGenerationContext {
+    WasmFunctionRepository functions();
 
-    public void release() {
-    }
+    WasmFunctionTypes functionTypes();
+
+    WasmTag getExceptionTag();
+
+    ClassReaderSource classSource();
 }

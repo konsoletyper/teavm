@@ -23,7 +23,7 @@ import java.util.Map;
 import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.gc.initialization.WasmGCInitializerContributor;
-import org.teavm.backend.wasm.generate.gc.method.WasmGCFunctionProvider;
+import org.teavm.backend.wasm.generate.gc.methods.WasmGCFunctionProvider;
 import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringPool;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;

@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
+import java.util.List;
 import org.teavm.ast.Expr;
 import org.teavm.backend.wasm.WasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
@@ -56,9 +57,11 @@ public interface WasmIntrinsicManager {
 
     boolean isManagedMethodCall(MethodReference method);
 
-    int generateCallSiteId(TextLocation location);
-
-    WasmExpression generateRegisterCallSite(int callSite, TextLocation location);
+    CallSiteIdentifier generateCallSiteId(TextLocation location);
 
     WasmTag getExceptionTag();
+
+    interface CallSiteIdentifier {
+        void generateRegister(List<WasmExpression> target, TextLocation location);
+    }
 }

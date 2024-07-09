@@ -20,7 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
 import org.teavm.backend.wasm.generate.gc.initialization.WasmGCInitializerContributor;
-import org.teavm.backend.wasm.generate.gc.method.WasmGCFunctionProvider;
+import org.teavm.backend.wasm.generate.gc.methods.WasmGCFunctionProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmModule;

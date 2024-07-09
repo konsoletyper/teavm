@@ -554,7 +554,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
         generateMethods(classes, context, generator, classGenerator, binaryWriter, module, dwarfClassGen);
         new WasmInteropFunctionGenerator(classGenerator, functionTypes).generateFunctions(module);
-        exceptionHandlingIntrinsic.postProcess(context.callSites);
+        exceptionHandlingIntrinsic.postProcess(context.callSites());
         generateIsSupertypeFunctions(tagRegistry, classGenerator, functions);
         classGenerator.postProcess();
         new WasmSpecialFunctionGenerator(classGenerator, functionTypes, gcIntrinsic.regionSizeExpressions)
@@ -821,7 +821,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
 
         var methodGeneratorContext = new MethodGeneratorContextImpl(binaryWriter,
-                context.getStringPool(), context.getDiagnostics(), context.functions, classGenerator, classes);
+                context.getStringPool(), context.getDiagnostics(), context.functions(), classGenerator, classes);
 
         for (MethodHolder method : methods) {
             ClassHolder cls = classes.get(method.getOwnerName());
@@ -848,7 +848,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             if (implementor.hasModifier(ElementModifier.NATIVE)) {
                 var methodGenerator = context.getGenerator(method.getReference());
                 if (methodGenerator != null) {
-                    var function = context.functions.forMethod(method);
+                    var function = context.functions().forMethod(method);
                     methodGenerator.apply(method.getReference(), function, methodGeneratorContext);
                 } else if (!isShadowStackMethod(method.getReference())) {
                     if (context.getImportedMethod(method.getReference()) == null) {
@@ -866,7 +866,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             if (method == implementor) {
                 generator.generate(method.getReference(), implementor);
             } else {
-                generateStub(context.functions, method, implementor);
+                generateStub(context.functions(), method, implementor);
             }
             if (dwarfClassGen != null) {
                 var dwarfClass = dwarfClassGen.getClass(method.getOwnerName());
@@ -1203,8 +1203,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                         var block = new WasmBlock(false);
                         block.setType(WasmType.INT32);
                         var callSiteId = manager.generateCallSiteId(invocation.getLocation());
-                        block.getBody().add(manager.generateRegisterCallSite(callSiteId,
-                                invocation.getLocation()));
+                        callSiteId.generateRegister(block.getBody(), invocation.getLocation());
                         block.getBody().add(arg);
                         arg = block;
                     }

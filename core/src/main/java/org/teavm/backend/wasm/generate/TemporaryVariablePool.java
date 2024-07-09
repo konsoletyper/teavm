@@ -23,15 +23,15 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 
-class TemporaryVariablePool {
+public class TemporaryVariablePool {
     private WasmFunction function;
     private Map<WasmType, Deque<WasmLocal>> temporaryVariablesByType = new HashMap<>();
 
-    TemporaryVariablePool(WasmFunction function) {
+    public TemporaryVariablePool(WasmFunction function) {
         this.function = function;
     }
 
-    WasmLocal acquire(WasmType type) {
+    public WasmLocal acquire(WasmType type) {
         var stack = temporaryVariablesByType.computeIfAbsent(type, k -> new ArrayDeque<>());
         WasmLocal variable = stack.pollFirst();
         if (variable == null) {
@@ -41,7 +41,7 @@ class TemporaryVariablePool {
         return variable;
     }
 
-    void release(WasmLocal variable) {
+    public void release(WasmLocal variable) {
         var stack = temporaryVariablesByType.get(variable.getType());
         stack.push(variable);
     }

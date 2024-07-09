@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generate.gc.method;
+package org.teavm.backend.wasm.generate.gc.methods;
 
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.model.MethodReference;

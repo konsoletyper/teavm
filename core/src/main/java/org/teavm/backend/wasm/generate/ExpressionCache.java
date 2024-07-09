@@ -24,10 +24,10 @@ import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.model.TextLocation;
 
-class ExpressionCache {
+public class ExpressionCache {
     private TemporaryVariablePool tmpVars;
 
-    ExpressionCache(TemporaryVariablePool tmpVars) {
+    public ExpressionCache(TemporaryVariablePool tmpVars) {
         this.tmpVars = tmpVars;
     }
 
@@ -56,7 +56,7 @@ class ExpressionCache {
         }
 
         @Override
-        WasmExpression expr() {
+        public WasmExpression expr() {
             return new WasmGetLocal(localVar);
         }
     }
@@ -69,12 +69,12 @@ class ExpressionCache {
         }
 
         @Override
-        WasmExpression expr() {
+        public WasmExpression expr() {
             return new WasmGetLocal(tmpVar);
         }
 
         @Override
-        void release() {
+        public void release() {
             tmpVars.release(tmpVar);
         }
     }
@@ -87,7 +87,7 @@ class ExpressionCache {
         }
 
         @Override
-        WasmExpression expr() {
+        public WasmExpression expr() {
             return new WasmInt32Constant(value);
         }
     }

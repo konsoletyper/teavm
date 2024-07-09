@@ -22,6 +22,7 @@ import java.util.Map;
 import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.WasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationContext;
 import org.teavm.backend.wasm.generators.WasmMethodGenerator;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.backend.wasm.model.WasmModule;
@@ -42,11 +43,11 @@ import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.model.lowlevel.Characteristics;
 
-public class WasmGenerationContext {
+public class WasmGenerationContext implements BaseWasmGenerationContext {
     private ClassReaderSource classSource;
     public final WasmModule module;
-    public final WasmFunctionTypes functionTypes;
-    public final WasmFunctionRepository functions;
+    private final WasmFunctionTypes functionTypes;
+    private final WasmFunctionRepository functions;
     private Diagnostics diagnostics;
     private VirtualTableProvider vtableProvider;
     private TagRegistry tagRegistry;
@@ -59,7 +60,7 @@ public class WasmGenerationContext {
     private Map<MethodReference, IntrinsicHolder> intrinsicCache = new HashMap<>();
     private Map<MethodReference, GeneratorHolder> generatorCache = new HashMap<>();
     private WasmTag exceptionTag;
-    public final List<CallSiteDescriptor> callSites = new ArrayList<>();
+    private final List<CallSiteDescriptor> callSites = new ArrayList<>();
 
     public WasmGenerationContext(ClassReaderSource classSource, WasmModule module, WasmFunctionTypes functionTypes,
             WasmFunctionRepository functions, Diagnostics diagnostics, VirtualTableProvider vtableProvider,
@@ -76,6 +77,25 @@ public class WasmGenerationContext {
         this.names = names;
         this.characteristics = characteristics;
         this.exceptionTag = exceptionTag;
+    }
+
+    @Override
+    public WasmFunctionRepository functions() {
+        return functions;
+    }
+
+    @Override
+    public WasmFunctionTypes functionTypes() {
+        return functionTypes;
+    }
+
+    @Override
+    public ClassReaderSource classSource() {
+        return classSource;
+    }
+
+    public List<CallSiteDescriptor> callSites() {
+        return callSites;
     }
 
     public void addIntrinsic(WasmIntrinsic intrinsic) {
@@ -167,6 +187,7 @@ public class WasmGenerationContext {
         return diagnostics;
     }
 
+    @Override
     public WasmTag getExceptionTag() {
         return exceptionTag;
     }

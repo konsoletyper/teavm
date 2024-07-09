@@ -57,7 +57,7 @@ public class WasmGenerator {
         MethodHolder method = cls.getMethod(methodReference.getDescriptor());
 
         RegularMethodNode methodAst = decompiler.decompileRegular(bodyMethod);
-        WasmFunction function = context.functions.forMethod(method);
+        WasmFunction function = context.functions().forMethod(method);
         int firstVariable = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;
         for (int i = firstVariable; i < methodAst.getVariables().size(); ++i) {
             VariableNode variable = methodAst.getVariables().get(i);
@@ -97,7 +97,7 @@ public class WasmGenerator {
     }
 
     public WasmFunction generateNative(MethodReader method) {
-        var function = context.functions.forMethod(method);
+        var function = context.functions().forMethod(method);
 
         var importedMethod = context.getImportedMethod(method.getReference());
         if (importedMethod != null) {
