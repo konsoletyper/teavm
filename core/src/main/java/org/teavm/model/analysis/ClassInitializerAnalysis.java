@@ -43,6 +43,7 @@ import org.teavm.model.optimization.Devirtualization;
 
 public class ClassInitializerAnalysis implements ClassInitializerInfo {
     private static final MethodDescriptor CLINIT = new MethodDescriptor("<clinit>", void.class);
+    private static final int METHOD_ANALYSIS_DEPTH_THRESHOLD = 250;
     private static final byte BEING_ANALYZED = 1;
     private static final byte DYNAMIC = 2;
     private static final byte STATIC = 3;
@@ -55,6 +56,7 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
     private List<? extends String> readonlyOrder = Collections.unmodifiableList(order);
     private String currentAnalyzedClass;
     private DependencyInfo dependencyInfo;
+    private int methodAnalysisDepth;
 
     public ClassInitializerAnalysis(ListableClassReaderSource classes, ClassHierarchy hierarchy,
             String entryPoint) {
@@ -121,9 +123,13 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
         var initializer = cls.getMethod(CLINIT);
         var isStatic = true;
         if (initializer != null) {
-            var initializerInfo = analyzeMethod(initializer);
-            if (isDynamicInitializer(initializerInfo, className)) {
+            if (methodAnalysisDepth >= METHOD_ANALYSIS_DEPTH_THRESHOLD) {
                 isStatic = false;
+            } else {
+                var initializerInfo = analyzeMethod(initializer);
+                if (isDynamicInitializer(initializerInfo, className)) {
+                    isStatic = false;
+                }
             }
         }
 
@@ -151,6 +157,7 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
     }
 
     private MethodInfo analyzeMethod(MethodReader method) {
+        methodAnalysisDepth++;
         var methodInfo = methodInfoMap.get(method.getReference());
         if (methodInfo == null) {
             methodInfo = new MethodInfo(method.getReference());
@@ -174,6 +181,7 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
             methodInfo.complete = true;
         }
 
+        --methodAnalysisDepth;
         return methodInfo;
     }
 
@@ -264,9 +272,14 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
         private void invokeMethod(MethodReference method) {
             var cls = classes.get(method.getClassName());
             if (cls != null) {
-                var methodReader = cls.getMethod(method.getDescriptor());
-                if (methodReader != null) {
-                    analyzeCalledMethod(analyzeMethod(methodReader));
+                if (methodAnalysisDepth >= METHOD_ANALYSIS_DEPTH_THRESHOLD) {
+                    methodInfo.anyFieldModified = true;
+                    methodInfo.classesWithModifiedFields = null;
+                } else {
+                    var methodReader = cls.getMethod(method.getDescriptor());
+                    if (methodReader != null) {
+                        analyzeCalledMethod(analyzeMethod(methodReader));
+                    }
                 }
             }
         }
