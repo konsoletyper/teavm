@@ -89,6 +89,11 @@ public class FormatterTest {
         assertEquals("0:2:-1", new Formatter().format("%2s", new A()).toString());
         assertEquals("0:2:3", new Formatter().format("%2.3s", new A()).toString());
         assertEquals("1:3:-1", new Formatter().format("%-3s", new A()).toString());
+
+        assertEquals("abcde", new Formatter().format("%-3.5s", "abcdefg").toString());
+        assertEquals("abcd", new Formatter().format("%-3.5s", "abcd").toString());
+        assertEquals("ab ", new Formatter().format("%-3.5s", "ab").toString());
+        assertEquals(" ab", new Formatter().format("%3.5s", " ab").toString());
     }
 
     static class A implements Formattable {
