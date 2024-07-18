@@ -197,6 +197,9 @@ public class StringTest {
     @Test
     public void sequenceReplaced() {
         assertEquals("ba", "aaa".replace("aa", "b"));
+        assertEquals("xaxaxax", "aaa".replace("", "x"));
+        assertEquals("axc", "abc".replace("b", "x"));
+        assertEquals("abc", "abc".replace("bc", "bc"));
     }
 
     @Test
