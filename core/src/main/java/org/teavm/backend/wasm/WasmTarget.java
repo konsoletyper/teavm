@@ -166,6 +166,8 @@ import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.model.util.AsyncMethodFinder;
+import org.teavm.model.util.DefaultVariableCategoryProvider;
+import org.teavm.model.util.VariableCategoryProvider;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.EventQueue;
 import org.teavm.runtime.ExceptionHandling;
@@ -236,8 +238,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     }
 
     @Override
-    public boolean requiresRegisterAllocation() {
-        return true;
+    public VariableCategoryProvider variableCategoryProvider() {
+        return new DefaultVariableCategoryProvider();
     }
 
     @Override

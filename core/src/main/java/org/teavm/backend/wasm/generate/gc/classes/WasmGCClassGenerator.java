@@ -54,6 +54,7 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTable;
@@ -61,7 +62,7 @@ import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.util.ReflectionUtil;
 
 public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInitializerContributor {
-    public static final int CLASS_FIELD_OFFSET = 0;
+    private static final MethodDescriptor CLINIT_METHOD_DESC = new MethodDescriptor("<clinit>", ValueType.VOID);
 
     private final WasmModule module;
     private ClassReaderSource classSource;
@@ -73,6 +74,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private Map<ValueType, WasmGCClassInfo> classInfoMap = new LinkedHashMap<>();
     private ObjectIntMap<FieldReference> fieldIndexes = new ObjectIntHashMap<>();
     private ObjectIntMap<MethodReference> methodIndexes = new ObjectIntHashMap<>();
+    private ClassInitializerInfo classInitializerInfo;
 
     public final WasmGCStringPool strings;
     public final WasmGCStandardClasses standardClasses;
@@ -95,7 +97,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     public WasmGCClassGenerator(WasmModule module, ClassReaderSource classSource,
             WasmFunctionTypes functionTypes, TagRegistry tagRegistry,
             ClassMetadataRequirements metadataRequirements, VirtualTableProvider virtualTables,
-            WasmGCFunctionProvider functionProvider, NameProvider names) {
+            WasmGCFunctionProvider functionProvider, NameProvider names,
+            ClassInitializerInfo classInitializerInfo) {
         this.module = module;
         this.classSource = classSource;
         this.functionTypes = functionTypes;
@@ -104,6 +107,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         this.virtualTables = virtualTables;
         this.functionProvider = functionProvider;
         this.names = names;
+        this.classInitializerInfo = classInitializerInfo;
         standardClasses = new WasmGCStandardClasses(this);
         strings = new WasmGCStringPool(standardClasses, module, functionProvider);
         supertypeGenerator = new WasmGCSupertypeFunctionGenerator(module, this, names, tagRegistry, functionTypes);
@@ -128,6 +132,13 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     new WasmFunctionReference(supertypeFunction)));
             function.getBody().add(setClassField(classInfo, CLASS_FIELD_OFFSET,
                     new WasmGetGlobal(classClass.pointer)));
+            if (classInfo.initializerPointer != null) {
+                var className = ((ValueType.Object) classInfo.getValueType()).getClassName();
+                var initFunction = functionProvider.getStaticFunction(new MethodReference(className,
+                        CLINIT_METHOD_DESC));
+                function.getBody().add(new WasmSetGlobal(classInfo.initializerPointer,
+                        new WasmFunctionReference(initFunction)));
+            }
         }
     }
 
@@ -224,6 +235,14 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     private void initRegularClass(WasmGCClassInfo classInfo, WasmStructure classStructure, String name) {
+        var cls = classSource.get(name);
+        if (classInitializerInfo.isDynamicInitializer(name)) {
+            if (cls != null && cls.getMethod(CLINIT_METHOD_DESC) != null) {
+                var clinitType = functionTypes.of(null);
+                classInfo.initializerPointer = new WasmGlobal(null, clinitType.getReference(),
+                        new WasmNullConstant(clinitType.getReference()));
+            }
+        }
         classInfo.initializer = target -> {
             var ranges = tagRegistry.getRanges(name);
             int tag = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
@@ -233,7 +252,6 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 var namePtr = strings.getStringConstant(name).global;
                 target.add(setClassField(classInfo, classNameOffset, new WasmGetGlobal(namePtr)));
             }
-            var cls = classSource.get(name);
             if (cls != null) {
                 if (metadataReg.simpleName() && cls.getSimpleName() != null) {
                     var namePtr = strings.getStringConstant(cls.getSimpleName()).global;
@@ -334,6 +352,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         );
     }
 
+    @Override
     public int getFieldIndex(FieldReference fieldRef) {
         var result = fieldIndexes.getOrDefault(fieldRef, -1);
         if (result < 0) {
@@ -342,6 +361,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         return result;
     }
 
+    @Override
     public int getVirtualMethodIndex(MethodReference methodRef) {
         var result = methodIndexes.getOrDefault(methodRef, -1);
         if (result < 0) {

@@ -146,8 +146,10 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression generateThrowNPE() {
-        return new WasmCall(context.functions().forStaticMethod(THROW_NPE_METHOD));
+    protected void generateThrowNPE(TextLocation location, List<WasmExpression> target) {
+        var call = new WasmCall(context.functions().forStaticMethod(THROW_NPE_METHOD));
+        call.setLocation(location);
+        target.add(call);
     }
 
     @Override
@@ -174,8 +176,17 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression catchException() {
-        return new WasmCall(context.functions().forStaticMethod(CATCH_METHOD));
+    protected void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local) {
+        var call = new WasmCall(context.functions().forStaticMethod(CATCH_METHOD));
+        if (local != null) {
+            var save = new WasmSetLocal(local, call);
+            save.setLocation(location);
+            target.add(save);
+        } else {
+            var drop = new WasmDrop(call);
+            drop.setLocation(location);
+            target.add(drop);
+        }
     }
 
     @Override
@@ -494,8 +505,10 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression generateThrow(WasmExpression expression) {
-        return new WasmCall(context.functions().forStaticMethod(THROW_METHOD), result);
+    protected void generateThrow(WasmExpression expression, TextLocation location, List<WasmExpression> target) {
+        var call = new WasmCall(context.functions().forStaticMethod(THROW_METHOD), result);
+        call.setLocation(location);
+        target.add(call);
     }
 
     private class CallSiteIdentifierImpl extends CallSiteIdentifier
@@ -745,18 +758,24 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression allocateObject(String className, TextLocation location) {
+    protected void allocateObject(String className, TextLocation location, WasmLocal local,
+            List<WasmExpression> target) {
         int tag = classGenerator.getClassPointer(ValueType.object(className));
         var allocFunction = context.functions().forStaticMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class));
         WasmCall call = new WasmCall(allocFunction);
         call.getArguments().add(new WasmInt32Constant(tag));
         call.setLocation(location);
-        return call;
+        if (local != null) {
+            target.add(new WasmSetLocal(local, call));
+        } else {
+            target.add(call);
+        }
     }
 
     @Override
-    protected WasmExpression allocateArray(ValueType itemType, WasmExpression length, TextLocation location) {
+    protected void allocateArray(ValueType itemType, WasmExpression length, TextLocation location, WasmLocal local,
+            List<WasmExpression> target) {
         int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(itemType));
         var allocFunction = context.functions().forStaticMethod(new MethodReference(Allocator.class, "allocateArray",
                 RuntimeClass.class, int.class, Address.class));
@@ -764,7 +783,11 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
         call.getArguments().add(new WasmInt32Constant(classPointer));
         call.getArguments().add(length);
         call.setLocation(location);
-        return call;
+        if (local != null) {
+            target.add(new WasmSetLocal(local, call));
+        } else {
+            target.add(call);
+        }
     }
 
     @Override
@@ -822,8 +845,10 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression generateThrowCCE() {
-        return new WasmCall(context.functions().forStaticMethod(THROW_CCE_METHOD));
+    protected void generateThrowCCE(TextLocation location, List<WasmExpression> target) {
+        var call = new WasmCall(context.functions().forStaticMethod(THROW_CCE_METHOD));
+        call.setLocation(location);
+        target.add(call);
     }
 
     @Override
@@ -834,8 +859,8 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected boolean needsClassInitializer(String clasName) {
-        return classGenerator.hasClinit(clasName);
+    protected boolean needsClassInitializer(String className) {
+        return classGenerator.hasClinit(className);
     }
 
     @Override
@@ -928,8 +953,10 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression generateThrowAIOOBE() {
-        return new WasmCall(context.functions().forStaticMethod(THROW_AIOOBE_METHOD));
+    protected void generateThrowAIOOBE(TextLocation location, List<WasmExpression> target) {
+        var call = new WasmCall(context.functions().forStaticMethod(THROW_AIOOBE_METHOD));
+        call.setLocation(location);
+        target.add(call);
     }
 
     private WasmIntrinsicManager intrinsicManager = new WasmIntrinsicManager() {

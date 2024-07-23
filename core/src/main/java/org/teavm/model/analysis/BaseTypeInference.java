@@ -82,6 +82,15 @@ public abstract class BaseTypeInference<T> {
                     visitor.graphBuilder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
                 }
             }
+            for (var tryCatch : block.getTryCatchBlocks()) {
+                var exceptionVar = tryCatch.getHandler().getExceptionVariable();
+                if (exceptionVar != null) {
+                    var exceptionType = tryCatch.getExceptionType() != null
+                            ? ValueType.object(tryCatch.getExceptionType())
+                            : ValueType.object("java.lang.Throwable");
+                    visitor.type(exceptionVar, exceptionType);
+                }
+            }
         }
         graph = visitor.graphBuilder.build();
         arrayGraph = visitor.arrayGraphBuilder.build();

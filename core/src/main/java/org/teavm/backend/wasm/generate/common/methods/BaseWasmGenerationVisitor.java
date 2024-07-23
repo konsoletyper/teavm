@@ -125,7 +125,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     private Map<IdentifiedStatement, WasmBlock> continueTargets = new HashMap<>();
     private Set<WasmBlock> usedBlocks = new HashSet<>();
     protected final TemporaryVariablePool tempVars;
-    private ExpressionCache exprCache;
+    protected final ExpressionCache exprCache;
 
     private boolean async;
     protected WasmExpression result;
@@ -459,14 +459,14 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
         var callSiteId = generateCallSiteId(location);
         callSiteId.generateRegister(block.getBody(), location);
-        block.getBody().add(generateThrowNPE());
+        generateThrowNPE(location, block.getBody());
         callSiteId.generateThrow(block.getBody(), location);
 
         cachedValue.release();
         return block;
     }
 
-    protected abstract WasmExpression generateThrowNPE();
+    protected abstract void generateThrowNPE(TextLocation location, List<WasmExpression> target);
 
     protected abstract WasmExpression generateArrayLength(WasmExpression array);
 
@@ -852,8 +852,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             block.setType(resultType);
 
             var tmp = tempVars.acquire(resultType);
-            block.getBody().add(new WasmSetLocal(tmp, allocateObject(expr.getMethod().getClassName(),
-                    expr.getLocation())));
+            allocateObject(expr.getMethod().getClassName(), expr.getLocation(), tmp, block.getBody());
 
             var function = context.functions().forInstanceMethod(expr.getMethod());
             var call = new WasmCall(function);
@@ -876,7 +875,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             accept(expr.getArguments().get(0));
             var instance = result;
             var block = new WasmBlock(false);
-            block.setType(WasmGeneratorUtil.mapType(reference.getReturnType()));
+            block.setType(mapType(reference.getReturnType()));
 
             var instanceVar = tempVars.acquire(WasmType.INT32);
             block.getBody().add(new WasmSetLocal(instanceVar, instance));
@@ -961,7 +960,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         block.setType(mapType(ValueType.object(expr.getConstructedClass())));
         var callSiteId = generateCallSiteId(expr.getLocation());
         callSiteId.generateRegister(block.getBody(), expr.getLocation());
-        block.getBody().add(allocateObject(expr.getConstructedClass(), expr.getLocation()));
+        allocateObject(expr.getConstructedClass(), expr.getLocation(), null, block.getBody());
         if (block.getBody().size() == 1) {
             result = block.getBody().get(0);
         } else {
@@ -969,7 +968,8 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         }
     }
 
-    protected abstract WasmExpression allocateObject(String className, TextLocation location);
+    protected abstract void allocateObject(String className, TextLocation location, WasmLocal local,
+            List<WasmExpression> target);
 
     @Override
     public void visit(NewArrayExpr expr) {
@@ -981,8 +981,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
         accept(expr.getLength());
         var length = result;
-        var call = allocateArray(expr.getType(), length, expr.getLocation());
-        block.getBody().add(call);
+        allocateArray(expr.getType(), length, expr.getLocation(), null, block.getBody());
 
         if (block.getBody().size() == 1) {
             result = block.getBody().get(0);
@@ -991,7 +990,8 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         }
     }
 
-    protected abstract WasmExpression allocateArray(ValueType itemType, WasmExpression length, TextLocation location);
+    protected abstract void allocateArray(ValueType itemType, WasmExpression length, TextLocation location,
+            WasmLocal local, List<WasmExpression> target);
 
     protected abstract WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType itemType,
             List<WasmExpression> dimensions, TextLocation location);
@@ -1035,9 +1035,8 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         callSiteId.generateRegister(block.getBody(), expr.getLocation());
 
         var array = tempVars.acquire(wasmArrayType);
-        var allocation = allocateArray(expr.getType(), new WasmInt32Constant(expr.getData().size()),
-                expr.getLocation());
-        block.getBody().add(new WasmSetLocal(array, allocation));
+        allocateArray(expr.getType(), new WasmInt32Constant(expr.getData().size()), expr.getLocation(), array,
+                block.getBody());
 
         for (int i = 0; i < expr.getData().size(); ++i) {
             expr.getData().get(i).acceptVisitor(this);
@@ -1117,13 +1116,12 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         callSiteId.generateRegister(resultConsumer, statement.getLocation());
 
         accept(statement.getException());
-        var call = generateThrow(result);
-        call.setLocation(statement.getLocation());
-        resultConsumer.add(call);
+        generateThrow(result, statement.getLocation(), resultConsumer);
         callSiteId.generateThrow(resultConsumer, statement.getLocation());
     }
 
-    protected abstract WasmExpression generateThrow(WasmExpression expression);
+    protected abstract void generateThrow(WasmExpression expression, TextLocation location,
+            List<WasmExpression> target);
 
     @Override
     public void visit(CastExpr expr) {
@@ -1149,7 +1147,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
         var callSiteId = generateCallSiteId(expr.getLocation());
         callSiteId.generateRegister(block.getBody(), expr.getLocation());
-        block.getBody().add(generateThrowCCE());
+        generateThrowCCE(expr.getLocation(), block.getBody());
         callSiteId.generateThrow(block.getBody(), expr.getLocation());
 
         valueToCast.release();
@@ -1168,7 +1166,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         }
     }
 
-    protected abstract boolean needsClassInitializer(String clasName);
+    protected abstract boolean needsClassInitializer(String className);
 
     protected abstract WasmExpression generateClassInitializer(String className, TextLocation location);
 
@@ -1245,11 +1243,10 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             var catchBlock = catchBlocks.get(i);
             catchBlock.getBody().add(currentBlock);
 
-            var catchCall = catchException();
-            var catchWrapper = tryCatch.getExceptionVariable() != null
-                    ? new WasmSetLocal(localVar(tryCatch.getExceptionVariable()), catchCall)
-                    : new WasmDrop(catchCall);
-            catchBlock.getBody().add(catchWrapper);
+            var catchLocal = tryCatch.getExceptionVariable() != null
+                    ? localVar(tryCatch.getExceptionVariable())
+                    : null;
+            catchException(null, catchBlock.getBody(), catchLocal);
             visitMany(tryCatch.getHandler(), catchBlock.getBody());
             if (!catchBlock.isTerminating() && catchBlock != outerCatchBlock) {
                 catchBlock.getBody().add(new WasmBreak(outerCatchBlock));
@@ -1262,7 +1259,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
     protected abstract WasmExpression peekException();
 
-    protected abstract WasmExpression catchException();
+    protected abstract void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local);
 
     private void visitMany(List<Statement> statements, List<WasmExpression> target) {
         var oldTarget = resultConsumer;
@@ -1346,15 +1343,15 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
         var callSiteId = generateCallSiteId(expr.getLocation());
         callSiteId.generateRegister(block.getBody(), expr.getLocation());
-        block.getBody().add(generateThrowAIOOBE());
+        generateThrowAIOOBE(expr.getLocation(), block.getBody());
         callSiteId.generateThrow(block.getBody(), expr.getLocation());
 
         result = block;
     }
 
-    protected abstract WasmExpression generateThrowAIOOBE();
+    protected abstract void generateThrowAIOOBE(TextLocation location, List<WasmExpression> target);
 
-    protected abstract WasmExpression generateThrowCCE();
+    protected abstract void generateThrowCCE(TextLocation location, List<WasmExpression> target);
 
     private static WasmExpression negate(WasmExpression expr) {
         if (expr instanceof WasmIntBinary) {

@@ -13,24 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generate.gc.classes;
+package org.teavm.backend.wasm.runtime;
 
-import org.teavm.model.FieldReference;
-import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
+public class WasmGCSupport {
+    private WasmGCSupport() {
+    }
 
-public interface WasmGCClassInfoProvider {
-    int CLASS_FIELD_OFFSET = 0;
-    int MONITOR_FIELD_OFFSET = 1;
-    int ARRAY_DATA_FIELD_OFFSET = 2;
+    public static NullPointerException npe() {
+        return new NullPointerException();
+    }
 
-    WasmGCClassInfo getClassInfo(ValueType type);
+    public static ArrayIndexOutOfBoundsException aiiobe() {
+        return new ArrayIndexOutOfBoundsException();
+    }
 
-    int getFieldIndex(FieldReference fieldRef);
-
-    int getVirtualMethodIndex(MethodReference methodRef);
-
-    default WasmGCClassInfo getClassInfo(String name) {
-        return getClassInfo(ValueType.object(name));
+    public static ClassCastException cce() {
+        return new ClassCastException();
     }
 }

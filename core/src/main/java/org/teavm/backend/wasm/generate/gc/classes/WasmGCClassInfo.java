@@ -28,6 +28,7 @@ public class WasmGCClassInfo {
     WasmStructure structure;
     WasmStructure virtualTableStructure;
     WasmGlobal pointer;
+    WasmGlobal initializerPointer;
     Consumer<List<WasmExpression>> initializer;
 
     WasmGCClassInfo(ValueType valueType) {
@@ -52,5 +53,9 @@ public class WasmGCClassInfo {
 
     public WasmGlobal getPointer() {
         return pointer;
+    }
+
+    public WasmGlobal getInitializerPointer() {
+        return initializerPointer;
     }
 }

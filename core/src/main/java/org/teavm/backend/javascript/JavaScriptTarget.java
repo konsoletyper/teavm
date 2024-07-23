@@ -98,6 +98,8 @@ import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.NullCheckFilter;
 import org.teavm.model.transformation.NullCheckInsertion;
+import org.teavm.model.util.DefaultVariableCategoryProvider;
+import org.teavm.model.util.VariableCategoryProvider;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.RenderingException;
 import org.teavm.vm.TeaVMTarget;
@@ -223,8 +225,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     @Override
-    public boolean requiresRegisterAllocation() {
-        return true;
+    public VariableCategoryProvider variableCategoryProvider() {
+        return new DefaultVariableCategoryProvider();
     }
 
     public void setStackTraceIncluded(boolean stackTraceIncluded) {

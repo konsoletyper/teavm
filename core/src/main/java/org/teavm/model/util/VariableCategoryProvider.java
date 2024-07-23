@@ -13,24 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generate.gc.classes;
+package org.teavm.model.util;
 
-import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
+import org.teavm.model.ProgramReader;
 
-public interface WasmGCClassInfoProvider {
-    int CLASS_FIELD_OFFSET = 0;
-    int MONITOR_FIELD_OFFSET = 1;
-    int ARRAY_DATA_FIELD_OFFSET = 2;
-
-    WasmGCClassInfo getClassInfo(ValueType type);
-
-    int getFieldIndex(FieldReference fieldRef);
-
-    int getVirtualMethodIndex(MethodReference methodRef);
-
-    default WasmGCClassInfo getClassInfo(String name) {
-        return getClassInfo(ValueType.object(name));
-    }
+public interface VariableCategoryProvider {
+    Object[] getCategories(ProgramReader program, MethodReference method);
 }
