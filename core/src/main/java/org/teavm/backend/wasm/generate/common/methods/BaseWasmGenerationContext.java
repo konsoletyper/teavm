@@ -15,17 +15,17 @@
  */
 package org.teavm.backend.wasm.generate.common.methods;
 
-import org.teavm.backend.wasm.WasmFunctionRepository;
+import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.model.ClassReaderSource;
 
 public interface BaseWasmGenerationContext {
-    WasmFunctionRepository functions();
+    BaseWasmFunctionRepository functions();
 
     WasmFunctionTypes functionTypes();
 
     WasmTag getExceptionTag();
 
-    ClassReaderSource classSource();
+    ClassReaderSource classes();
 }

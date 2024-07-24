@@ -13,13 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generate.gc.methods;
+package org.teavm.backend.wasm;
 
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.model.MethodReference;
 
-public interface WasmGCFunctionProvider {
-    WasmFunction getMemberFunction(MethodReference methodRef);
+public interface BaseWasmFunctionRepository {
+    WasmFunction forStaticMethod(MethodReference methodReference);
 
-    WasmFunction getStaticFunction(MethodReference methodRef);
+    WasmFunction forInstanceMethod(MethodReference methodReference);
 }

@@ -19,6 +19,7 @@ import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmCompositeTypeVisitor;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmStructure;
 
 public class WasmCompositeTypeBinaryRenderer implements WasmCompositeTypeVisitor {
@@ -26,17 +27,24 @@ public class WasmCompositeTypeBinaryRenderer implements WasmCompositeTypeVisitor
     private WasmBinaryWriter section;
 
     public WasmCompositeTypeBinaryRenderer(WasmModule module, WasmBinaryWriter section) {
+        this.module = module;
         this.section = section;
     }
 
     @Override
     public void visit(WasmStructure type) {
-
+        section.writeByte(0x5F);
+        section.writeLEB(type.getFields().size());
+        for (var fieldType : type.getFields()) {
+            writeStorageType(fieldType);
+            section.writeLEB(0x01); // mutable
+        }
     }
 
     @Override
     public void visit(WasmArray type) {
-
+        writeStorageType(type.getElementType());
+        section.writeLEB(0x01); // mutable
     }
 
     @Override
@@ -51,6 +59,21 @@ public class WasmCompositeTypeBinaryRenderer implements WasmCompositeTypeVisitor
             section.writeType(type.getReturnType(), module);
         } else {
             section.writeByte(0);
+        }
+    }
+
+    private void writeStorageType(WasmStorageType storageType) {
+        if (storageType instanceof WasmStorageType.Packed) {
+            switch (((WasmStorageType.Packed) storageType).type) {
+                case INT8:
+                    section.writeByte(0x78);
+                    break;
+                case INT16:
+                    section.writeByte(0x77);
+                    break;
+            }
+        } else {
+            section.writeType(storageType.asUnpackedType(), module);
         }
     }
 }

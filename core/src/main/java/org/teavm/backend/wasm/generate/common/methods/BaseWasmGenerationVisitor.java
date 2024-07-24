@@ -832,9 +832,11 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
     protected WasmExpression generateInvocation(InvocationExpr expr, CallSiteIdentifier callSiteId) {
         if (expr.getType() == InvocationType.STATIC || expr.getType() == InvocationType.SPECIAL) {
-            var method = context.classSource().resolve(expr.getMethod());
+            var method = context.classes().resolve(expr.getMethod());
             var reference = method != null ? method.getReference() : expr.getMethod();
-            var function = context.functions().forMethod(reference, expr.getType() == InvocationType.STATIC);
+            var function = expr.getType() == InvocationType.STATIC
+                    ? context.functions().forStaticMethod(reference)
+                    : context.functions().forInstanceMethod(reference);
 
             var call = new WasmCall(function);
             for (var argument : expr.getArguments()) {

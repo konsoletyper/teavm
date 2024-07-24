@@ -15,8 +15,6 @@
  */
 package org.teavm.backend.wasm.generate.gc.classes;
 
-import com.carrotsearch.hppc.ObjectIntHashMap;
-import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -45,8 +43,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
 
-public class WasmGCSupertypeFunctionGenerator {
-    private ObjectIntMap<ValueType> tableIndexes = new ObjectIntHashMap<>();
+public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunctionProvider {
     private Map<ValueType, WasmFunction> functions = new HashMap<>();
     private WasmModule module;
     private WasmGCClassGenerator classGenerator;
@@ -69,6 +66,7 @@ public class WasmGCSupertypeFunctionGenerator {
         this.functionTypes = functionTypes;
     }
 
+    @Override
     public WasmFunction getIsSupertypeFunction(ValueType type) {
         var result = functions.get(type);
         if (result == null) {

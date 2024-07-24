@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generate.gc.classes;
 
+import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -22,11 +23,14 @@ import org.teavm.model.ValueType;
 public interface WasmGCClassInfoProvider {
     int CLASS_FIELD_OFFSET = 0;
     int MONITOR_FIELD_OFFSET = 1;
+    int CUSTOM_FIELD_OFFSETS = 2;
     int ARRAY_DATA_FIELD_OFFSET = 2;
 
     WasmGCClassInfo getClassInfo(ValueType type);
 
     int getFieldIndex(FieldReference fieldRef);
+
+    WasmGlobal getStaticFieldLocation(FieldReference fieldRef);
 
     int getVirtualMethodIndex(MethodReference methodRef);
 

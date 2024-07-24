@@ -18,15 +18,20 @@ package org.teavm.backend.wasm.generate.gc.strings;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.teavm.backend.wasm.BaseWasmFunctionRepository;
+import org.teavm.backend.wasm.generate.gc.WasmGCInitializerContributor;
+import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
-import org.teavm.backend.wasm.generate.gc.initialization.WasmGCInitializerContributor;
-import org.teavm.backend.wasm.generate.gc.methods.WasmGCFunctionProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
+import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
+import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
 import org.teavm.model.MethodReference;
 
@@ -35,10 +40,10 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
     private WasmModule module;
     private WasmBinaryWriter binaryWriter = new WasmBinaryWriter();
     private Map<String, WasmGCStringConstant> stringMap = new LinkedHashMap<>();
-    private WasmGCFunctionProvider functionProvider;
+    private BaseWasmFunctionRepository functionProvider;
 
     public WasmGCStringPool(WasmGCStandardClasses standardClasses, WasmModule module,
-            WasmGCFunctionProvider functionProvider) {
+            BaseWasmFunctionRepository functionProvider) {
         this.standardClasses = standardClasses;
         this.module = module;
         this.functionProvider = functionProvider;
@@ -46,6 +51,9 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
 
     @Override
     public void contributeToInitializerDefinitions(WasmFunction function) {
+        var segment = new WasmMemorySegment();
+        module.getSegments().add(segment);
+        segment.setData(binaryWriter.getData());
         for (var str : stringMap.values()) {
             var newStruct = new WasmStructNewDefault(standardClasses.stringClass().getStructure());
             function.getBody().add(new WasmSetGlobal(str.global, newStruct));
@@ -54,8 +62,14 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
 
     @Override
     public void contributeToInitializer(WasmFunction function) {
-        var nextCharArrayFunction = functionProvider.getStaticFunction(new MethodReference(WasmGCStringPool.class,
+        var nextCharArrayFunction = functionProvider.forStaticMethod(new MethodReference(WasmGCStringPool.class,
                 "nextCharArray", char[].class));
+        var stringStruct = standardClasses.stringClass().getStructure();
+        for (var str : stringMap.values()) {
+            var value = new WasmCall(nextCharArrayFunction);
+            function.getBody().add(new WasmStructSet(stringStruct, new WasmGetGlobal(str.global),
+                    WasmGCClassInfoProvider.CUSTOM_FIELD_OFFSETS, value));
+        }
     }
 
     @Override

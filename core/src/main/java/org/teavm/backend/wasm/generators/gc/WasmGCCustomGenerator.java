@@ -13,12 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generate.gc.initialization;
+package org.teavm.backend.wasm.generators.gc;
 
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.model.MethodReference;
 
-public interface WasmGCInitializerContributor {
-    void contributeToInitializerDefinitions(WasmFunction function);
-
-    void contributeToInitializer(WasmFunction function);
+public interface WasmGCCustomGenerator {
+    void apply(MethodReference method, WasmFunction function, WasmGCCustomGeneratorContext context);
 }

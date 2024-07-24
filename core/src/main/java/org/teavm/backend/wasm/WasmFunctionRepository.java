@@ -27,7 +27,7 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-public class WasmFunctionRepository {
+public class WasmFunctionRepository implements BaseWasmFunctionRepository {
     private WasmModule module;
     private WasmFunctionTypes functionTypes;
     private NameProvider nameProvider;
@@ -50,6 +50,7 @@ public class WasmFunctionRepository {
         return isStatic ? forStaticMethod(reference) : forInstanceMethod(reference);
     }
 
+    @Override
     public WasmFunction forStaticMethod(MethodReference reference) {
         return staticMethods.computeIfAbsent(reference, key -> {
             var wasmParams = new WasmType[key.parameterCount()];
@@ -65,6 +66,7 @@ public class WasmFunctionRepository {
         });
     }
 
+    @Override
     public WasmFunction forInstanceMethod(MethodReference reference) {
         return instanceMethods.computeIfAbsent(reference, key -> {
             var wasmParams = new WasmType[key.parameterCount() + 1];

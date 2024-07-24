@@ -13,13 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generate.gc;
+package org.teavm.backend.wasm.generate.gc.methods;
 
-import org.teavm.backend.wasm.WasmFunctionRepository;
+import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationContext;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
+import org.teavm.backend.wasm.generate.gc.classes.WasmGCSupertypeFunctionProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -39,20 +40,33 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmGCStringProvider strings;
     private VirtualTableProvider virtualTables;
     private WasmGCTypeMapper typeMapper;
+    private WasmFunctionTypes functionTypes;
+    private ClassReaderSource classes;
+    private BaseWasmFunctionRepository functions;
+    private WasmGCSupertypeFunctionProvider supertypeFunctions;
+    private WasmGCCustomGeneratorProvider customGenerators;
     private WasmFunction npeMethod;
     private WasmFunction aaiobeMethod;
     private WasmFunction cceMethod;
     private WasmGlobal exceptionGlobal;
+    private WasmTag exceptionTag;
 
-    public WasmGCGenerationContext(WasmModule module, WasmGCClassInfoProvider classInfoProvider,
-            WasmGCStandardClasses standardClasses, WasmGCStringProvider strings, VirtualTableProvider virtualTables,
-            WasmGCTypeMapper typeMapper) {
+    public WasmGCGenerationContext(WasmModule module, VirtualTableProvider virtualTables,
+            WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes, ClassReaderSource classes,
+            BaseWasmFunctionRepository functions, WasmGCSupertypeFunctionProvider supertypeFunctions,
+            WasmGCClassInfoProvider classInfoProvider, WasmGCStandardClasses standardClasses,
+            WasmGCStringProvider strings, WasmGCCustomGeneratorProvider customGenerators) {
         this.module = module;
+        this.virtualTables = virtualTables;
+        this.typeMapper = typeMapper;
+        this.functionTypes = functionTypes;
+        this.classes = classes;
+        this.functions = functions;
+        this.supertypeFunctions = supertypeFunctions;
         this.classInfoProvider = classInfoProvider;
         this.standardClasses = standardClasses;
         this.strings = strings;
-        this.virtualTables = virtualTables;
-        this.typeMapper = typeMapper;
+        this.customGenerators = customGenerators;
     }
 
     public WasmGCClassInfoProvider classInfoProvider() {
@@ -76,23 +90,31 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     }
 
     @Override
-    public WasmFunctionRepository functions() {
-        return null;
+    public BaseWasmFunctionRepository functions() {
+        return functions;
+    }
+
+    public WasmGCSupertypeFunctionProvider supertypeFunctions() {
+        return supertypeFunctions;
     }
 
     @Override
     public WasmFunctionTypes functionTypes() {
-        return null;
+        return functionTypes;
     }
 
     @Override
     public WasmTag getExceptionTag() {
-        return null;
+        if (exceptionTag == null) {
+            exceptionTag = new WasmTag(functionTypes.of(null));
+            module.tags.add(exceptionTag);
+        }
+        return exceptionTag;
     }
 
     @Override
-    public ClassReaderSource classSource() {
-        return null;
+    public ClassReaderSource classes() {
+        return classes;
     }
 
     public WasmFunction npeMethod() {
@@ -126,5 +148,9 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
             module.globals.add(exceptionGlobal);
         }
         return exceptionGlobal;
+    }
+
+    public WasmGCCustomGeneratorProvider customGenerators() {
+        return customGenerators;
     }
 }

@@ -56,7 +56,7 @@ public final class TSystem extends TObject {
 
     public static TPrintStream out() {
         if (outCache == null) {
-            if (PlatformDetector.isJavaScript()) {
+            if (PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) {
                 outCache = (TPrintStream) (Object) new JSStdoutPrintStream();
             } else {
                 outCache = new TPrintStream(StdoutOutputStream.INSTANCE, false);
@@ -67,7 +67,7 @@ public final class TSystem extends TObject {
 
     public static TPrintStream err() {
         if (errCache == null) {
-            if (PlatformDetector.isJavaScript()) {
+            if (PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) {
                 errCache = (TPrintStream) (Object) new JSStderrPrintStream();
             } else {
                 errCache = new TPrintStream(StderrOutputStream.INSTANCE, false);

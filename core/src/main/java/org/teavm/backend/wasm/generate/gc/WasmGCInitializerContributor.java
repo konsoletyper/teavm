@@ -13,24 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.model;
+package org.teavm.backend.wasm.generate.gc;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.teavm.backend.wasm.model.WasmFunction;
 
-public class WasmStructure extends WasmCompositeType {
-    private List<WasmStorageType> fields = new ArrayList<>();
+public interface WasmGCInitializerContributor {
+    void contributeToInitializerDefinitions(WasmFunction function);
 
-    public WasmStructure(String name) {
-        super(name);
-    }
-
-    public List<WasmStorageType> getFields() {
-        return fields;
-    }
-
-    @Override
-    public void acceptVisitor(WasmCompositeTypeVisitor visitor) {
-        visitor.visit(this);
-    }
+    void contributeToInitializer(WasmFunction function);
 }

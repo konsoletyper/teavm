@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.wasm.runtime;
 
+import org.teavm.interop.Import;
+
 public class WasmGCSupport {
     private WasmGCSupport() {
     }
@@ -30,4 +32,10 @@ public class WasmGCSupport {
     public static ClassCastException cce() {
         return new ClassCastException();
     }
+
+    @Import(name = "putcharStdout")
+    public static native void putCharStdout(char c);
+
+    @Import(name = "putcharStderr")
+    public static native void putCharStderr(char c);
 }

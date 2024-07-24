@@ -16,8 +16,8 @@
 package org.teavm.model.util;
 
 import org.teavm.model.MethodReference;
-import org.teavm.model.ProgramReader;
+import org.teavm.model.Program;
 
 public interface VariableCategoryProvider {
-    Object[] getCategories(ProgramReader program, MethodReference method);
+    Object[] getCategories(Program program, MethodReference method);
 }

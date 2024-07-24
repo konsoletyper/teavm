@@ -90,7 +90,7 @@ public class WasmGenerationContext implements BaseWasmGenerationContext {
     }
 
     @Override
-    public ClassReaderSource classSource() {
+    public ClassReaderSource classes() {
         return classSource;
     }
 

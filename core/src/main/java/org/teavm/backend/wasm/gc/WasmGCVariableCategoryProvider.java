@@ -13,40 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.util;
+package org.teavm.backend.wasm.gc;
 
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.util.VariableCategoryProvider;
 
-public class DefaultVariableCategoryProvider implements VariableCategoryProvider {
-    @Override
-    public Object[] getCategories(Program program, MethodReference method) {
-        TypeInferer inferer = new TypeInferer();
-        inferer.inferTypes(program, method);
-        var categories = new Object[program.variableCount()];
-        for (int i = 0; i < program.variableCount(); ++i) {
-            categories[i] = getCategory(inferer.typeOf(i));
-        }
-        return categories;
+public class WasmGCVariableCategoryProvider implements VariableCategoryProvider {
+    private ClassHierarchy hierarchy;
+    private PreciseTypeInference inference;
+
+    public WasmGCVariableCategoryProvider(ClassHierarchy hierarchy) {
+        this.hierarchy = hierarchy;
     }
 
-    private int getCategory(VariableType type) {
-        if (type == null) {
-            return 255;
+    public PreciseTypeInference getTypeInference() {
+        return inference;
+    }
+
+    @Override
+    public Object[] getCategories(Program program, MethodReference method) {
+        inference = new PreciseTypeInference(program, method, hierarchy);
+        var result = new Object[program.variableCount()];
+        for (int i = 0; i < program.variableCount(); ++i) {
+            var type = inference.typeOf(program.variableAt(i));
+            result[i] = type != null ? type : PreciseTypeInference.OBJECT_TYPE;
         }
-        switch (type) {
-            case INT:
-                return 0;
-            case LONG:
-                return 1;
-            case FLOAT:
-                return 2;
-            case DOUBLE:
-                return 3;
-            case OBJECT:
-                return 4;
-            default:
-                return 5;
-        }
+        return result;
     }
 }

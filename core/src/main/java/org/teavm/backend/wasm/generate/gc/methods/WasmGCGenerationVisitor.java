@@ -23,7 +23,6 @@ import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.SubscriptExpr;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationVisitor;
-import org.teavm.backend.wasm.generate.gc.WasmGCGenerationContext;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -33,7 +32,6 @@ import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
-import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmArraySet;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmCall;
@@ -57,11 +55,13 @@ import org.teavm.model.ValueType;
 
 public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     private WasmGCGenerationContext context;
+    private WasmGCGenerationUtil generationUtil;
 
     public WasmGCGenerationVisitor(WasmGCGenerationContext context, WasmFunction function,
             int firstVariable, boolean async) {
         super(context, function, firstVariable, async);
         this.context = context;
+        generationUtil = new WasmGCGenerationUtil(context.classInfoProvider(), tempVars);
     }
 
     @Override
@@ -130,20 +130,29 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected void storeField(Expr qualified, FieldReference field, Expr value, TextLocation location) {
-        accept(qualified);
-        var target = result;
-        accept(value);
-        var wasmValue = result;
+        if (qualified == null) {
+            accept(value);
+            var wasmValue = result;
+            var global = context.classInfoProvider().getStaticFieldLocation(field);
+            var result = new WasmSetGlobal(global, wasmValue);
+            result.setLocation(location);
+            resultConsumer.add(result);
+        } else {
+            accept(qualified);
+            var target = result;
+            accept(value);
+            var wasmValue = result;
 
-        target.acceptVisitor(typeInference);
-        var type = (WasmType.CompositeReference) typeInference.getResult();
-        var struct = (WasmStructure) type.composite;
+            target.acceptVisitor(typeInference);
+            var type = (WasmType.CompositeReference) typeInference.getResult();
+            var struct = (WasmStructure) type.composite;
 
-        var fieldIndex = context.classInfoProvider().getFieldIndex(field);
+            var fieldIndex = context.classInfoProvider().getFieldIndex(field);
 
-        var expr = new WasmStructSet(struct, target, fieldIndex, wasmValue);
-        expr.setLocation(location);
-        resultConsumer.add(expr);
+            var expr = new WasmStructSet(struct, target, fieldIndex, wasmValue);
+            expr.setLocation(location);
+            resultConsumer.add(expr);
+        }
     }
 
     @Override
@@ -230,42 +239,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected void allocateArray(ValueType itemType, WasmExpression length, TextLocation location, WasmLocal local,
             List<WasmExpression> target) {
-        var classInfo = context.classInfoProvider().getClassInfo(ValueType.arrayOf(itemType));
-        var block = new WasmBlock(false);
-        block.setType(classInfo.getType());
-        var targetVar = local;
-        if (targetVar == null) {
-            targetVar = tempVars.acquire(classInfo.getType());
-        }
-
-        var structNew = new WasmSetLocal(targetVar, new WasmStructNewDefault(classInfo.getStructure()));
-        structNew.setLocation(location);
-        target.add(structNew);
-
-        var initClassField = new WasmStructSet(classInfo.getStructure(), new WasmGetLocal(targetVar),
-                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET, new WasmGetGlobal(classInfo.getPointer()));
-        initClassField.setLocation(location);
-        target.add(initClassField);
-
-        var wasmArrayType = (WasmType.CompositeReference) classInfo.getStructure().getFields()
-                .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET)
-                .asUnpackedType();
-        var wasmArray = (WasmArray) wasmArrayType.composite;
-        var initArrayField = new WasmStructSet(
-                classInfo.getStructure(),
-                new WasmGetLocal(targetVar),
-                WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET,
-                new WasmArrayNewDefault(wasmArray, length)
-        );
-        initArrayField.setLocation(location);
-        target.add(initArrayField);
-
-        if (local == null) {
-            var getLocal = new WasmGetLocal(targetVar);
-            getLocal.setLocation(location);
-            target.add(getLocal);
-            tempVars.release(targetVar);
-        }
+        generationUtil.allocateArray(itemType, length, location, local, target);
     }
 
     @Override
@@ -277,7 +251,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected WasmExpression generateInstanceOf(WasmExpression expression, ValueType type) {
         context.classInfoProvider().getClassInfo(type);
-        var supertypeCall = new WasmCall(context.functions().forSupertype(type));
+        var supertypeCall = new WasmCall(context.supertypeFunctions().getIsSupertypeFunction(type));
         var classRef = new WasmStructGet(
                 context.standardClasses().objectClass().getStructure(),
                 expression,
@@ -352,17 +326,23 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     public void visit(QualificationExpr expr) {
-        accept(expr.getQualified());
-        var target = result;
+        if (expr.getQualified() == null) {
+            var global = context.classInfoProvider().getStaticFieldLocation(expr.getField());
+            result = new WasmGetGlobal(global);
+            result.setLocation(expr.getLocation());
+        } else {
+            accept(expr.getQualified());
+            var target = result;
 
-        target.acceptVisitor(typeInference);
-        var type = (WasmType.CompositeReference) typeInference.getResult();
-        var struct = (WasmStructure) type.composite;
+            target.acceptVisitor(typeInference);
+            var type = (WasmType.CompositeReference) typeInference.getResult();
+            var struct = (WasmStructure) type.composite;
 
-        var fieldIndex = context.classInfoProvider().getFieldIndex(expr.getField());
+            var fieldIndex = context.classInfoProvider().getFieldIndex(expr.getField());
 
-        result = new WasmStructGet(struct, target, fieldIndex);
-        result.setLocation(expr.getLocation());
+            result = new WasmStructGet(struct, target, fieldIndex);
+            result.setLocation(expr.getLocation());
+        }
     }
 
     private class SimpleCallSite extends CallSiteIdentifier {

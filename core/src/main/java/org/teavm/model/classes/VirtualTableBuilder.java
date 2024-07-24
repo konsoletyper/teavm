@@ -36,10 +36,14 @@ import org.teavm.common.LCATree;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.instructions.CloneArrayInstruction;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.util.GraphColorer;
 
 public class VirtualTableBuilder {
@@ -517,5 +521,34 @@ public class VirtualTableBuilder {
         int[] indexes;
         IntArrayList colors = new IntArrayList();
         List<MethodDescriptor> methods = new ArrayList<>();
+    }
+
+    public static Set<MethodReference> getMethodsUsedOnCallSites(ListableClassHolderSource classes) {
+        var virtualMethods = new HashSet<MethodReference>();
+
+        for (var className : classes.getClassNames()) {
+            var cls = classes.get(className);
+            for (var method : cls.getMethods()) {
+                var program = method.getProgram();
+                if (program == null) {
+                    continue;
+                }
+                for (int i = 0; i < program.basicBlockCount(); ++i) {
+                    var block = program.basicBlockAt(i);
+                    for (var insn : block) {
+                        if (insn instanceof InvokeInstruction) {
+                            var invoke = (InvokeInstruction) insn;
+                            if (invoke.getType() == InvocationType.VIRTUAL) {
+                                virtualMethods.add(invoke.getMethod());
+                            }
+                        } else if (insn instanceof CloneArrayInstruction) {
+                            virtualMethods.add(new MethodReference(Object.class, "clone", Object.class));
+                        }
+                    }
+                }
+            }
+        }
+
+        return virtualMethods;
     }
 }
