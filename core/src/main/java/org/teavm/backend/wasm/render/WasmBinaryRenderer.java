@@ -103,9 +103,30 @@ public class WasmBinaryRenderer {
         var section = new WasmBinaryWriter();
 
         var typeRenderer = new WasmCompositeTypeBinaryRenderer(module, section);
-        section.writeLEB(module.types.size());
-        for (var type : module.types) {
-            type.acceptVisitor(typeRenderer);
+        var recTypeCount = 0;
+        for (var i = 0; i < module.types.size();) {
+            var type = module.types.get(i);
+            if (type.getRecursiveTypeCount() > 0) {
+                i += type.getRecursiveTypeCount();
+            } else {
+                ++i;
+            }
+            recTypeCount++;
+        }
+        section.writeLEB(recTypeCount);
+        for (var i = 0; i < module.types.size();) {
+            var type = module.types.get(i);
+            if (type.getRecursiveTypeCount() > 0) {
+                section.writeByte(0x4E);
+                section.writeLEB(type.getRecursiveTypeCount());
+                for (var j = 0; j < type.getRecursiveTypeCount(); ++j) {
+                    var subtype = module.types.get(i++);
+                    subtype.acceptVisitor(typeRenderer);
+                }
+            } else {
+                type.acceptVisitor(typeRenderer);
+                ++i;
+            }
         }
 
         writeSection(SECTION_TYPE, "type", section.getData());

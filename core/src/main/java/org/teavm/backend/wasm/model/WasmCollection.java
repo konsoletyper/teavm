@@ -30,6 +30,10 @@ public class WasmCollection<T extends WasmEntity> implements Iterable<T> {
     WasmCollection() {
     }
 
+    public T get(int index) {
+        return items.get(index);
+    }
+
     public int size() {
         return items.size();
     }
@@ -55,6 +59,13 @@ public class WasmCollection<T extends WasmEntity> implements Iterable<T> {
         if (items.removeIf(predicate)) {
             invalidateIndexes();
         }
+    }
+
+    public void clear() {
+        for (var item : items) {
+            item.collection = null;
+        }
+        items.clear();
     }
 
     void invalidateIndexes() {

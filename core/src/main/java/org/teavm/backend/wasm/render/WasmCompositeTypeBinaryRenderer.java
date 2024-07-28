@@ -25,6 +25,7 @@ import org.teavm.backend.wasm.model.WasmStructure;
 public class WasmCompositeTypeBinaryRenderer implements WasmCompositeTypeVisitor {
     private WasmModule module;
     private WasmBinaryWriter section;
+    private boolean reference;
 
     public WasmCompositeTypeBinaryRenderer(WasmModule module, WasmBinaryWriter section) {
         this.module = module;
@@ -43,6 +44,7 @@ public class WasmCompositeTypeBinaryRenderer implements WasmCompositeTypeVisitor
 
     @Override
     public void visit(WasmArray type) {
+        section.writeByte(0x5E);
         writeStorageType(type.getElementType());
         section.writeLEB(0x01); // mutable
     }

@@ -131,6 +131,7 @@ public class WasmGCTarget implements TeaVMTarget {
         var binaryWriter = new WasmBinaryWriter();
         var binaryRenderer = new WasmBinaryRenderer(binaryWriter, WasmBinaryVersion.V_0x1, obfuscated,
                 null, null, null, null, WasmBinaryStatsCollector.EMPTY);
+        module.prepareForRendering();
         binaryRenderer.render(module);
         var data = binaryWriter.getData();
         if (!outputName.endsWith(".wasm")) {

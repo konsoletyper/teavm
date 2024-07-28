@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.teavm.common.GraphUtils;
 
 public class WasmModule {
     private int minMemorySize;
@@ -89,5 +90,35 @@ public class WasmModule {
 
     public void setStartFunction(WasmFunction startFunction) {
         this.startFunction = startFunction;
+    }
+
+    public void prepareForRendering() {
+        prepareRecursiveTypes();
+    }
+
+    private void prepareRecursiveTypes() {
+        var typeGraph = WasmTypeGraphBuilder.buildTypeGraph(types, types.size());
+        var newList = new ArrayList<WasmCompositeType>();
+        var typesInScc = new boolean[types.size()];
+        for (var scc : GraphUtils.findStronglyConnectedComponents(typeGraph)) {
+            var firstType = types.get(scc[0]);
+            firstType.recursiveTypeCount = scc.length;
+            for (var i = 0; i < scc.length; i++) {
+                var index = scc[i];
+                var type = types.get(index);
+                newList.add(type);
+                type.indexInRecursiveType = i;
+                typesInScc[index] = true;
+            }
+        }
+        for (var type : types) {
+            if (!typesInScc[type.index]) {
+                newList.add(type);
+            }
+        }
+        types.clear();
+        for (var type : newList) {
+            types.add(type);
+        }
     }
 }

@@ -30,6 +30,10 @@ public class WasmBinaryWriter {
     }
 
     public void writeType(WasmType type, WasmModule module) {
+        writeType(type, module, false);
+    }
+
+    public void writeType(WasmType type, WasmModule module, boolean isRecursiveMember) {
         if (type == null) {
             writeByte(0x40);
             return;
@@ -55,7 +59,12 @@ public class WasmBinaryWriter {
                     break;
             }
         } else if (type instanceof WasmType.CompositeReference) {
-            writeSignedLEB(module.types.indexOf(((WasmType.CompositeReference) type).composite));
+            writeByte(0x63);
+            var composite = ((WasmType.CompositeReference) type).composite;
+            var index = isRecursiveMember
+                    ? composite.getIndexInRecursiveType()
+                    : module.types.indexOf(composite);
+            writeSignedLEB(index);
         }
     }
 
