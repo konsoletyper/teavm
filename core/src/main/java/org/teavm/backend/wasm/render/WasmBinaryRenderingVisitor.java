@@ -253,7 +253,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmNullConstant expression) {
         pushLocation(expression);
         writer.writeByte(0xD0);
-        writeBlockType(expression.getType());
+        writer.writeHeapType(expression.getType(), module);
         popLocation();
     }
 
@@ -1146,7 +1146,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmFunctionReference expression) {
         pushLocation(expression);
         writer.writeByte(0xd2);
-        writer.writeInt32(module.functions.indexOf(expression.getFunction()));
+        writer.writeLEB(module.functions.indexOf(expression.getFunction()));
         popLocation();
     }
 

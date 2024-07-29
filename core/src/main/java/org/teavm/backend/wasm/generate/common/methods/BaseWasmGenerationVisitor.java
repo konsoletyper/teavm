@@ -553,7 +553,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     @Override
     public void visit(ConstantExpr expr) {
         if (expr.getValue() == null) {
-            result = new WasmInt32Constant(0);
+            result = nullLiteral();
         } else if (expr.getValue() instanceof Integer) {
             result = new WasmInt32Constant((Integer) expr.getValue());
         } else if (expr.getValue() instanceof Long) {
@@ -569,7 +569,10 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         } else {
             throw new IllegalArgumentException("Constant unsupported: " + expr.getValue());
         }
+        result.setLocation(expr.getLocation());
     }
+
+    protected abstract WasmExpression nullLiteral();
 
     protected abstract WasmExpression stringLiteral(String s);
 

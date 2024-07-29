@@ -335,8 +335,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         var virtualTable = virtualTables.lookup(className);
         var structure = new WasmStructure(names.forClassClass(className));
         module.types.add(structure);
-        addVirtualTableFields(structure, virtualTable);
         fillClassFields(structure.getFields(), "java.lang.Class");
+        addVirtualTableFields(structure, virtualTable);
         return structure;
     }
 

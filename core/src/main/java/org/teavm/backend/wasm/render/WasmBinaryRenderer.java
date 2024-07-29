@@ -38,6 +38,7 @@ public class WasmBinaryRenderer {
     private static final int SECTION_FUNCTION = 3;
     private static final int SECTION_TABLE = 4;
     private static final int SECTION_MEMORY = 5;
+    private static final int SECTION_GLOBAL = 6;
     private static final int SECTION_EXPORT = 7;
     private static final int SECTION_START = 8;
     private static final int SECTION_ELEMENT = 9;
@@ -88,6 +89,7 @@ public class WasmBinaryRenderer {
         renderTable(module);
         renderMemory(module);
         renderTags(module);
+        renderGlobals(module);
         renderExport(module);
         renderStart(module);
         renderElement(module);
@@ -203,6 +205,24 @@ public class WasmBinaryRenderer {
         section.writeLEB(module.getMaxMemorySize());
 
         writeSection(SECTION_MEMORY, "memory", section.getData());
+    }
+
+    private void renderGlobals(WasmModule module) {
+        if (module.globals.isEmpty()) {
+            return;
+        }
+
+        var section = new WasmBinaryWriter();
+        var visitor = new WasmBinaryRenderingVisitor(section, module, null, null, 0);
+        section.writeLEB(module.globals.size());
+        for (var global : module.globals) {
+            section.writeType(global.getType(), module);
+            section.writeByte(1); // mutable
+            global.getInitialValue().acceptVisitor(visitor);
+            section.writeByte(0x0b);
+        }
+
+        writeSection(SECTION_GLOBAL, "global", section.getData());
     }
 
     private void renderExport(WasmModule module) {

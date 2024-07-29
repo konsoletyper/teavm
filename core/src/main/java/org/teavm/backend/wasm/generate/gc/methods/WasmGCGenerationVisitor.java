@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.generate.gc.methods;
 
 import java.util.List;
 import org.teavm.ast.ArrayType;
+import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.Expr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.QualificationExpr;
@@ -40,7 +41,11 @@ import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
+import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.expression.WasmIntUnary;
+import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
@@ -168,8 +173,42 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
+    protected WasmExpression nullLiteral() {
+        return new WasmNullConstant(WasmType.Reference.STRUCT);
+    }
+
+    @Override
     protected CallSiteIdentifier generateCallSiteId(TextLocation location) {
         return new SimpleCallSite();
+    }
+
+    @Override
+    public void visit(BinaryExpr expr) {
+        if (expr.getType() == null) {
+            switch (expr.getOperation()) {
+                case EQUALS: {
+                    accept(expr.getFirstOperand());
+                    var first = result;
+                    accept(expr.getSecondOperand());
+                    var second = result;
+                    result = new WasmReferencesEqual(first, second);
+                    result.setLocation(expr.getLocation());
+                    return;
+                }
+                case NOT_EQUALS:
+                    accept(expr.getFirstOperand());
+                    var first = result;
+                    accept(expr.getSecondOperand());
+                    var second = result;
+                    result = new WasmReferencesEqual(first, second);
+                    result = new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ, result);
+                    result.setLocation(expr.getLocation());
+                    return;
+                default:
+                    break;
+            }
+        }
+        super.visit(expr);
     }
 
     @Override

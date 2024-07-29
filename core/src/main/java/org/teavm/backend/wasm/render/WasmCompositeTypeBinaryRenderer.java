@@ -75,7 +75,7 @@ public class WasmCompositeTypeBinaryRenderer implements WasmCompositeTypeVisitor
                     break;
             }
         } else {
-            section.writeType(storageType.asUnpackedType(), module);
+            section.writeType(storageType.asUnpackedType(), module, true);
         }
     }
 }

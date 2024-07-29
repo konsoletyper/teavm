@@ -301,6 +301,11 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
+    protected WasmExpression nullLiteral() {
+        return new WasmInt32Constant(0);
+    }
+
+    @Override
     public void visit(SubscriptExpr expr) {
         WasmExpression ptr = getArrayElementPointer(expr);
         switch (expr.getType()) {

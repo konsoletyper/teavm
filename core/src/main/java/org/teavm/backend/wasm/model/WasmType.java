@@ -72,7 +72,7 @@ public abstract class WasmType {
         }
     }
 
-    public static final class SpecialReference extends WasmType {
+    public static final class SpecialReference extends Reference {
         public final SpecialReferenceKind kind;
 
         private SpecialReference(SpecialReferenceKind kind) {

@@ -41,30 +41,42 @@ public class WasmBinaryWriter {
         if (type instanceof WasmType.Number) {
             writeType(((WasmType.Number) type).number);
         } else if (type instanceof WasmType.SpecialReference) {
-            switch (((WasmType.SpecialReference) type).kind) {
-                case ANY:
-                    writeByte(0x6e);
-                    break;
-                case EXTERN:
-                    writeByte(0x6f);
-                    break;
-                case FUNC:
-                    writeByte(0x70);
-                    break;
-                case STRUCT:
-                    writeByte(0x6b);
-                    break;
-                case ARRAY:
-                    writeByte(0x6a);
-                    break;
-            }
+            writeSpecialHeapType(((WasmType.SpecialReference) type).kind);
         } else if (type instanceof WasmType.CompositeReference) {
             writeByte(0x63);
             var composite = ((WasmType.CompositeReference) type).composite;
-            var index = isRecursiveMember
-                    ? composite.getIndexInRecursiveType()
-                    : module.types.indexOf(composite);
+            var index = module.types.indexOf(composite);
             writeSignedLEB(index);
+        }
+    }
+
+    public void writeHeapType(WasmType.Reference type, WasmModule module) {
+        if (type instanceof WasmType.CompositeReference) {
+            var composite = ((WasmType.CompositeReference) type).composite;
+            var index = module.types.indexOf(composite);
+            writeSignedLEB(index);
+        } else {
+            writeSpecialHeapType(((WasmType.SpecialReference) type).kind);
+        }
+    }
+
+    private void writeSpecialHeapType(WasmType.SpecialReferenceKind type) {
+        switch (type) {
+            case ANY:
+                writeByte(0x6e);
+                break;
+            case EXTERN:
+                writeByte(0x6f);
+                break;
+            case FUNC:
+                writeByte(0x70);
+                break;
+            case STRUCT:
+                writeByte(0x6b);
+                break;
+            case ARRAY:
+                writeByte(0x6a);
+                break;
         }
     }
 
