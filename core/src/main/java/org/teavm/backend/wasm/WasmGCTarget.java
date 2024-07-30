@@ -118,7 +118,7 @@ public class WasmGCTarget implements TeaVMTarget {
                 customGenerators
         );
         declarationsGenerator.setFriendlyToDebugger(controller.isFriendlyToDebugger());
-        var moduleGenerator = new WasmGCModuleGenerator(this, declarationsGenerator);
+        var moduleGenerator = new WasmGCModuleGenerator(declarationsGenerator);
         var mainFunction = moduleGenerator.generateMainFunction(controller.getEntryPoint());
         mainFunction.setExportName(controller.getEntryPointName());
         mainFunction.setName(controller.getEntryPointName());

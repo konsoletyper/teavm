@@ -761,7 +761,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         var callSiteId = generateCallSiteId(expr.getLocation());
         if (needsCallSiteId() && isManagedCall(expr.getMethod())) {
             var invocation = generateInvocation(expr, callSiteId);
-            var type = WasmGeneratorUtil.mapType(expr.getMethod().getReturnType());
+            var type = mapType(expr.getMethod().getReturnType());
 
             List<WasmExpression> targetList;
             WasmBlock block;

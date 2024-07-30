@@ -42,6 +42,9 @@ final class WasmTypeGraphBuilder {
 
         @Override
         public void visit(WasmStructure type) {
+            if (type.getSupertype() != null) {
+                addEdge(type.getSupertype().getReference());
+            }
             for (var field : type.getFields()) {
                 addEdge(field.asUnpackedType());
             }

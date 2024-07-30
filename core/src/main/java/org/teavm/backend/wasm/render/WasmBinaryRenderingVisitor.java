@@ -1042,7 +1042,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         }
         writer.writeByte(0xfb);
         writer.writeByte(0);
-        writer.writeInt32(module.types.indexOf(expression.getType()));
+        writer.writeLEB(module.types.indexOf(expression.getType()));
         popLocation();
     }
 
@@ -1051,7 +1051,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         pushLocation(expression);
         writer.writeByte(0xfb);
         writer.writeByte(1);
-        writer.writeInt32(module.types.indexOf(expression.getType()));
+        writer.writeLEB(module.types.indexOf(expression.getType()));
         popLocation();
     }
 
@@ -1072,8 +1072,8 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                     break;
             }
         }
-        writer.writeInt32(module.types.indexOf(expression.getType()));
-        writer.writeInt32(expression.getFieldIndex());
+        writer.writeLEB(module.types.indexOf(expression.getType()));
+        writer.writeLEB(expression.getFieldIndex());
         popLocation();
     }
 
@@ -1084,8 +1084,8 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.getValue().acceptVisitor(this);
         writer.writeByte(0xfb);
         writer.writeByte(5);
-        writer.writeInt32(module.types.indexOf(expression.getType()));
-        writer.writeInt32(expression.getFieldIndex());
+        writer.writeLEB(module.types.indexOf(expression.getType()));
+        writer.writeLEB(expression.getFieldIndex());
         popLocation();
     }
 
@@ -1095,7 +1095,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.getLength().acceptVisitor(this);
         writer.writeByte(0xfb);
         writer.writeByte(7);
-        writer.writeInt32(module.types.indexOf(expression.getType()));
+        writer.writeLEB(module.types.indexOf(expression.getType()));
         popLocation();
     }
 
@@ -1117,7 +1117,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                     break;
             }
         }
-        writer.writeInt32(module.types.indexOf(expression.getType()));
+        writer.writeLEB(module.types.indexOf(expression.getType()));
         popLocation();
     }
 
@@ -1129,7 +1129,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.getValue().acceptVisitor(this);
         writer.writeByte(0xfb);
         writer.writeByte(14);
-        writer.writeInt32(module.types.indexOf(expression.getType()));
+        writer.writeLEB(module.types.indexOf(expression.getType()));
         popLocation();
     }
 

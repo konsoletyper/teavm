@@ -30,10 +30,6 @@ public class WasmBinaryWriter {
     }
 
     public void writeType(WasmType type, WasmModule module) {
-        writeType(type, module, false);
-    }
-
-    public void writeType(WasmType type, WasmModule module, boolean isRecursiveMember) {
         if (type == null) {
             writeByte(0x40);
             return;

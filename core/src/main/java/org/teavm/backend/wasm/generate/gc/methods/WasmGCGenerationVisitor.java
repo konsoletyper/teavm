@@ -334,7 +334,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected WasmType mapType(ValueType type) {
-        return context.typeMapper().mapType(type).asUnpackedType();
+        return context.typeMapper().mapType(type);
     }
 
     @Override

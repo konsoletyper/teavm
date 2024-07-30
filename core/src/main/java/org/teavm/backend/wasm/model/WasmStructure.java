@@ -20,6 +20,7 @@ import java.util.List;
 
 public class WasmStructure extends WasmCompositeType {
     private List<WasmStorageType> fields = new ArrayList<>();
+    private WasmStructure supertype;
 
     public WasmStructure(String name) {
         super(name);
@@ -27,6 +28,14 @@ public class WasmStructure extends WasmCompositeType {
 
     public List<WasmStorageType> getFields() {
         return fields;
+    }
+
+    public WasmStructure getSupertype() {
+        return supertype;
+    }
+
+    public void setSupertype(WasmStructure supertype) {
+        this.supertype = supertype;
     }
 
     @Override

@@ -182,6 +182,14 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                         ? ((ValueType.Object) type).getClassName()
                         : null;
                 classInfo.structure = new WasmStructure(name != null ? names.forClass(name) : null);
+                if (name != null) {
+                    var classReader = classSource.get(name);
+                    if (classReader != null && classReader.getParent() != null) {
+                        classInfo.structure.setSupertype(getClassInfo(classReader.getParent()).structure);
+                    }
+                } else {
+                    classInfo.structure.setSupertype(standardClasses.objectClass().structure);
+                }
                 module.types.add(classInfo.structure);
                 fillFields(classInfo.structure.getFields(), type);
             }
@@ -318,7 +326,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     call.getArguments().add(new WasmCast(new WasmGetLocal(instanceParam), castTarget));
                     var params = new WasmLocal[method.parameterCount()];
                     for (var i = 0; i < method.parameterCount(); ++i) {
-                        params[i] = new WasmLocal(typeMapper.mapType(method.parameterType(i)).asUnpackedType());
+                        params[i] = new WasmLocal(typeMapper.mapType(method.parameterType(i)));
                         call.getArguments().add(new WasmGetLocal(params[i]));
                     }
                     wrapperFunction.getLocalVariables().addAll(List.of(params));
@@ -333,6 +341,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private WasmStructure initRegularClassStructure(String className) {
         var virtualTable = virtualTables.lookup(className);
         var structure = new WasmStructure(names.forClassClass(className));
+        structure.setSupertype(standardClasses.classClass().getStructure());
         module.types.add(structure);
         structure.getFields().add(standardClasses.classClass().getType().asStorage());
         structure.getFields().add(WasmType.Reference.ANY.asStorage());
@@ -354,12 +363,12 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     private WasmFunctionType getFunctionType(String className, MethodDescriptor methodDesc) {
-        var returnType = typeMapper.mapType(methodDesc.getResultType()).asUnpackedType();
+        var returnType = typeMapper.mapType(methodDesc.getResultType());
         var javaParamTypes = methodDesc.getParameterTypes();
         var paramTypes = new WasmType[javaParamTypes.length + 1];
         paramTypes[0] = getClassInfo(className).getType();
         for (var i = 0; i < javaParamTypes.length; ++i) {
-            paramTypes[i + 1] = typeMapper.mapType(javaParamTypes[i]).asUnpackedType();
+            paramTypes[i + 1] = typeMapper.mapType(javaParamTypes[i]);
         }
         return functionTypes.of(returnType, paramTypes);
     }
@@ -414,7 +423,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             javaType = ValueType.object("java.lang.Object");
         }
         
-        var type = typeMapper.mapType(javaType).asUnpackedType();
+        var type = typeMapper.mapType(javaType);
         var global = new WasmGlobal(names.forStaticField(fieldRef), type, WasmExpression.defaultValueOfType(type));
         module.globals.add(global);
         
@@ -462,7 +471,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 continue;
             }
             fieldIndexes.putIfAbsent(field.getReference(), fields.size());
-            fields.add(typeMapper.mapType(field.getType()));
+            fields.add(typeMapper.mapStorageType(field.getType()));
         }
         if (className.equals("java.lang.Class")) {
             classFlagsOffset = fields.size();
@@ -483,7 +492,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     private void fillArrayField(List<WasmStorageType> fields, ValueType elementType) {
-        var wasmArray = new WasmArray(null, () -> typeMapper.mapType(elementType));
+        var wasmArray = new WasmArray(null, () -> typeMapper.mapStorageType(elementType));
         module.types.add(wasmArray);
         fields.add(wasmArray.getReference().asStorage());
     }

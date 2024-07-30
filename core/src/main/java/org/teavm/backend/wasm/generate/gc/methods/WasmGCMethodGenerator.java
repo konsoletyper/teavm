@@ -139,10 +139,10 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     }
 
     private WasmFunction createStaticFunction(MethodReference methodReference) {
-        var returnType = typeMapper.mapType(methodReference.getReturnType()).asUnpackedType();
+        var returnType = typeMapper.mapType(methodReference.getReturnType());
         var parameterTypes = new WasmType[methodReference.parameterCount()];
         for (var i = 0; i < parameterTypes.length; ++i) {
-            parameterTypes[i] = typeMapper.mapType(methodReference.parameterType(i)).asUnpackedType();
+            parameterTypes[i] = typeMapper.mapType(methodReference.parameterType(i));
         }
         var function = new WasmFunction(functionTypes.of(returnType, parameterTypes));
         function.setName(names.forMethod(methodReference));
@@ -166,11 +166,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     }
 
     private WasmFunction createInstanceFunction(MethodReference methodReference) {
-        var returnType = typeMapper.mapType(methodReference.getReturnType()).asUnpackedType();
+        var returnType = typeMapper.mapType(methodReference.getReturnType());
         var parameterTypes = new WasmType[methodReference.parameterCount() + 1];
-        parameterTypes[0] = typeMapper.mapType(ValueType.object(methodReference.getClassName())).asUnpackedType();
+        parameterTypes[0] = typeMapper.mapType(ValueType.object(methodReference.getClassName()));
         for (var i = 0; i < methodReference.parameterCount(); ++i) {
-            parameterTypes[i + 1] = typeMapper.mapType(methodReference.parameterType(i)).asUnpackedType();
+            parameterTypes[i + 1] = typeMapper.mapType(methodReference.parameterType(i));
         }
         var function = new WasmFunction(functionTypes.of(returnType, parameterTypes));
         function.setName(names.forMethod(methodReference));
@@ -236,7 +236,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         for (var i = firstVar; i < ast.getVariables().size(); ++i) {
             var localVar = ast.getVariables().get(i);
             var representative = method.getProgram().variableAt(variableRepresentatives[i]);
-            var type = typeMapper.mapType(typeInference.typeOf(representative)).asUnpackedType();
+            var type = typeMapper.mapType(typeInference.typeOf(representative));
             var wasmLocal = new WasmLocal(type, localVar.getName());
             function.add(wasmLocal);
         }

@@ -33,13 +33,11 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 public class WasmGCModuleGenerator {
-    private final WasmGCTarget wasmGCTarget;
     private WasmGCDeclarationsGenerator declarationsGenerator;
     private WasmFunction initializer;
     private WasmGlobal initializerRef;
 
-    public WasmGCModuleGenerator(WasmGCTarget wasmGCTarget, WasmGCDeclarationsGenerator declarationsGenerator) {
-        this.wasmGCTarget = wasmGCTarget;
+    public WasmGCModuleGenerator(WasmGCDeclarationsGenerator declarationsGenerator) {
         this.declarationsGenerator = declarationsGenerator;
     }
 
@@ -64,8 +62,7 @@ public class WasmGCModuleGenerator {
         var tempVars = new TemporaryVariablePool(mainFunctionCaller);
         var genUtil = new WasmGCGenerationUtil(declarationsGenerator.classInfoProvider(), tempVars);
         var stringArrayType = declarationsGenerator.typeMapper()
-                .mapType(ValueType.parse(String[].class))
-                .asUnpackedType();
+                .mapType(ValueType.parse(String[].class));
         var arrayVar = tempVars.acquire(stringArrayType);
         genUtil.allocateArray(ValueType.parse(String.class), new WasmInt32Constant(0), null,
                 arrayVar, mainFunctionCaller.getBody());

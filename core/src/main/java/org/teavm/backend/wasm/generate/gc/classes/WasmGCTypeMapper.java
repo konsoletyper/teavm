@@ -27,7 +27,7 @@ public class WasmGCTypeMapper {
         this.classInfoProvider = classInfoProvider;
     }
 
-    public WasmStorageType mapType(ValueType type) {
+    public WasmStorageType mapStorageType(ValueType type) {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BYTE:
@@ -49,6 +49,31 @@ public class WasmGCTypeMapper {
             }
         } else {
             return classInfoProvider.getClassInfo(type).getType().asStorage();
+        }
+    }
+
+    public WasmType mapType(ValueType type) {
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BYTE:
+                case BOOLEAN:
+                case SHORT:
+                case CHARACTER:
+                case INTEGER:
+                    return WasmType.INT32;
+                case LONG:
+                    return WasmType.INT64;
+                case FLOAT:
+                    return WasmType.FLOAT32;
+                case DOUBLE:
+                    return WasmType.FLOAT64;
+                default:
+                    throw new IllegalArgumentException();
+            }
+        } else if (type instanceof ValueType.Void) {
+            return null;
+        } else {
+            return classInfoProvider.getClassInfo(type).getType();
         }
     }
 }

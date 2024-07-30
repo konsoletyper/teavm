@@ -25,7 +25,6 @@ import org.teavm.backend.wasm.model.WasmStructure;
 public class WasmCompositeTypeBinaryRenderer implements WasmCompositeTypeVisitor {
     private WasmModule module;
     private WasmBinaryWriter section;
-    private boolean reference;
 
     public WasmCompositeTypeBinaryRenderer(WasmModule module, WasmBinaryWriter section) {
         this.module = module;
@@ -34,6 +33,13 @@ public class WasmCompositeTypeBinaryRenderer implements WasmCompositeTypeVisitor
 
     @Override
     public void visit(WasmStructure type) {
+        section.writeByte(0x50);
+        if (type.getSupertype() != null) {
+            section.writeLEB(1); // number of supertypes
+            section.writeLEB(module.types.indexOf(type.getSupertype()));
+        } else {
+            section.writeLEB(0);
+        }
         section.writeByte(0x5F);
         section.writeLEB(type.getFields().size());
         for (var fieldType : type.getFields()) {
@@ -75,7 +81,7 @@ public class WasmCompositeTypeBinaryRenderer implements WasmCompositeTypeVisitor
                     break;
             }
         } else {
-            section.writeType(storageType.asUnpackedType(), module, true);
+            section.writeType(storageType.asUnpackedType(), module);
         }
     }
 }
