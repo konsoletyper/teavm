@@ -16,8 +16,9 @@
 package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.popover.PopoverInvokerElement;
 
-public abstract class HTMLButtonElement extends HTMLElement {
+public abstract class HTMLButtonElement extends HTMLElement implements PopoverInvokerElement {
     public static final String TYPE_BUTTON = "button";
 
     public static final String TYPE_RESET = "reset";

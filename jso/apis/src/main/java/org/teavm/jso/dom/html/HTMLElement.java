@@ -29,9 +29,10 @@ import org.teavm.jso.dom.types.DOMTokenList;
 import org.teavm.jso.dom.xml.Element;
 import org.teavm.jso.dom.xml.Node;
 import org.teavm.jso.dom.xml.NodeList;
+import org.teavm.jso.popover.ToggleEventTarget;
 
 public abstract class HTMLElement implements Element, ElementCSSInlineStyle, EventTarget, FocusEventTarget,
-        MouseEventTarget, WheelEventTarget, KeyboardEventTarget, LoadEventTarget, TouchEventTarget {
+        MouseEventTarget, WheelEventTarget, KeyboardEventTarget, LoadEventTarget, TouchEventTarget, ToggleEventTarget {
     @Override
     public abstract NodeList<? extends HTMLElement> getElementsByTagName(String name);
 
@@ -157,6 +158,20 @@ public abstract class HTMLElement implements Element, ElementCSSInlineStyle, Eve
 
     @JSProperty
     public abstract DOMTokenList getClassList();
+
+    @JSProperty
+    public abstract String getPopover();
+
+    @JSProperty
+    public abstract void setPopover(String popover);
+
+    public abstract void hidePopover();
+
+    public abstract void showPopover();
+
+    public abstract boolean togglePopover();
+
+    public abstract boolean togglePopover(boolean force);
 
     public final HTMLElement withAttr(String name, String value) {
         setAttribute(name, value);
