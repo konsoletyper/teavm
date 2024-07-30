@@ -230,18 +230,12 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         WasmExpression classRef = new WasmStructGet(instanceStruct, new WasmGetLocal(instance),
                 WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
         var index = context.classInfoProvider().getVirtualMethodIndex(method);
-        var vtableType = (WasmType.CompositeReference) instanceStruct.getFields()
-                .get(WasmGCClassInfoProvider.CLASS_FIELD_OFFSET).asUnpackedType();
-        var vtableStruct = (WasmStructure) vtableType.composite;
-        var expectedVtableStruct = context.classInfoProvider().getClassInfo(vtable.getClassName())
+        var vtableStruct = context.classInfoProvider().getClassInfo(vtable.getClassName())
                 .getVirtualTableStructure();
-        if (expectedVtableStruct != vtableStruct) {
-            classRef = new WasmCast(classRef, expectedVtableStruct.getReference());
-        }
+        classRef = new WasmCast(classRef, vtableStruct.getReference());
 
-        var functionRef = new WasmStructGet(expectedVtableStruct, classRef, index);
-        var functionTypeRef = (WasmType.CompositeReference) expectedVtableStruct.getFields()
-                .get(index).asUnpackedType();
+        var functionRef = new WasmStructGet(vtableStruct, classRef, index);
+        var functionTypeRef = (WasmType.CompositeReference) vtableStruct.getFields().get(index).asUnpackedType();
         var invoke = new WasmCallReference(functionRef, (WasmFunctionType) functionTypeRef.composite);
         invoke.getArguments().addAll(arguments);
         return invoke;

@@ -440,6 +440,23 @@ public class WasmBinaryRenderer {
         section.writeLEB(payload.length);
         section.writeBytes(payload);
 
+        var types = module.types.stream()
+                .filter(t -> t.getName() != null)
+                .collect(Collectors.toList());
+        if (!types.isEmpty()) {
+            var typesSubsection = new WasmBinaryWriter();
+            typesSubsection.writeLEB(types.size());
+            for (var type : types) {
+                typesSubsection.writeLEB(module.types.indexOf(type));
+                typesSubsection.writeAsciiString(type.getName());
+            }
+
+            payload = typesSubsection.getData();
+            section.writeLEB(4);
+            section.writeLEB(payload.length);
+            section.writeBytes(payload);
+        }
+
         writeSection(SECTION_UNKNOWN, "name", section.getData());
     }
 

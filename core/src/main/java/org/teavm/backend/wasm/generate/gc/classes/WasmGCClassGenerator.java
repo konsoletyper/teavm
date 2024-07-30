@@ -181,8 +181,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 var name = type instanceof ValueType.Object
                         ? ((ValueType.Object) type).getClassName()
                         : null;
-                classInfo.structure = new WasmStructure(name);
-                classInfo.structure.getFields().add(standardClasses.classClass().getType().asStorage());
+                classInfo.structure = new WasmStructure(name != null ? names.forClass(name) : null);
                 module.types.add(classInfo.structure);
                 fillFields(classInfo.structure.getFields(), type);
             }
@@ -335,7 +334,9 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         var virtualTable = virtualTables.lookup(className);
         var structure = new WasmStructure(names.forClassClass(className));
         module.types.add(structure);
-        fillClassFields(structure.getFields(), "java.lang.Class");
+        structure.getFields().add(standardClasses.classClass().getType().asStorage());
+        structure.getFields().add(WasmType.Reference.ANY.asStorage());
+        fillSimpleClassFields(structure.getFields(), "java.lang.Class");
         addVirtualTableFields(structure, virtualTable);
         return structure;
     }
@@ -385,6 +386,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     @Override
     public int getFieldIndex(FieldReference fieldRef) {
+        getClassInfo(fieldRef.getClassName());
         var result = fieldIndexes.getOrDefault(fieldRef, -1);
         if (result < 0) {
             throw new IllegalStateException("Can't get offset of field " + fieldRef);
@@ -430,6 +432,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     private void fillFields(List<WasmStorageType> fields, ValueType type) {
         fields.add(standardClasses.classClass().getType().asStorage());
+        fields.add(WasmType.Reference.ANY.asStorage());
         if (type instanceof ValueType.Object) {
             fillClassFields(fields, ((ValueType.Object) type).getClassName());
         } else if (type instanceof ValueType.Array) {
@@ -450,10 +453,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         var classReader = classSource.get(className);
         if (classReader.getParent() != null) {
             fillClassFields(fields, classReader.getParent());
-        } else {
-            fields.add(standardClasses.classClass().getType().asStorage());
         }
         for (var field : classReader.getFields()) {
+            if (className.equals("java.lang.Object") && field.getName().equals("monitor")) {
+                continue;
+            }
             if (field.hasModifier(ElementModifier.STATIC)) {
                 continue;
             }
