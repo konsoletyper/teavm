@@ -34,7 +34,7 @@ public class WasmGCStandardClasses {
 
     public WasmGCClassInfo stringClass() {
         if (stringClassInfo == null) {
-            stringClassInfo = classGenerator.getClassInfo("java.lang.Class");
+            stringClassInfo = classGenerator.getClassInfo("java.lang.String");
         }
         return stringClassInfo;
     }

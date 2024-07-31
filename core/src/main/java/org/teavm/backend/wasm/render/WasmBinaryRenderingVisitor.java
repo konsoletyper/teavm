@@ -1030,7 +1030,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.getValue().acceptVisitor(this);
         writer.writeByte(0xfb);
         writer.writeByte(23);
-        writer.writeType(expression.getTargetType(), module);
+        writer.writeHeapType(expression.getTargetType(), module);
         popLocation();
     }
 

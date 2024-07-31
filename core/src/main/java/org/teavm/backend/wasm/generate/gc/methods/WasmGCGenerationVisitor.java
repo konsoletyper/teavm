@@ -358,6 +358,31 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
+    protected WasmExpression mapFirstArgumentForCall(WasmExpression argument, WasmFunction function,
+            MethodReference method) {
+        argument.acceptVisitor(typeInference);
+        var actualType = typeInference.getResult();
+        var expectedType = function.getType().getParameterTypes().get(0);
+        if (actualType == expectedType || !(actualType instanceof WasmType.CompositeReference)
+                || !(expectedType instanceof WasmType.CompositeReference)) {
+            return argument;
+        }
+        var actualComposite = ((WasmType.CompositeReference) actualType).composite;
+        var expectedComposite = ((WasmType.CompositeReference) expectedType).composite;
+        if (!(actualComposite instanceof WasmStructure) || !(expectedComposite instanceof WasmStructure)) {
+            return argument;
+        }
+
+        var actualStruct = (WasmStructure) actualComposite;
+        var expectedStruct = (WasmStructure) expectedComposite;
+        if (!actualStruct.isSupertypeOf(expectedStruct)) {
+            return argument;
+        }
+
+        return new WasmCast(argument, expectedComposite.getReference());
+    }
+
+    @Override
     public void visit(QualificationExpr expr) {
         if (expr.getQualified() == null) {
             var global = context.classInfoProvider().getStaticFieldLocation(expr.getField());

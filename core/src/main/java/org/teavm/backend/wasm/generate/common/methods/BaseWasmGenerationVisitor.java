@@ -846,6 +846,10 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
                 accept(argument);
                 call.getArguments().add(result);
             }
+            if (expr.getType() == InvocationType.SPECIAL) {
+                var firstArg = call.getArguments().get(0);
+                call.getArguments().set(0, mapFirstArgumentForCall(firstArg, function, expr.getMethod()));
+            }
             if (callSiteId != null) {
                 callSiteId.addToLastArg(call.getArguments());
             }
@@ -903,12 +907,16 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         }
     }
 
+    protected WasmExpression mapFirstArgumentForCall(WasmExpression argument, WasmFunction function,
+            MethodReference method) {
+        return argument;
+    }
+
     protected abstract WasmExpression generateVirtualCall(
             WasmLocal instance,
             MethodReference method,
             List<WasmExpression> arguments
     );
-
 
     private boolean needsCallSiteId() {
         return isManaged();

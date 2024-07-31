@@ -23,9 +23,11 @@ import org.teavm.model.util.VariableCategoryProvider;
 public class WasmGCVariableCategoryProvider implements VariableCategoryProvider {
     private ClassHierarchy hierarchy;
     private PreciseTypeInference inference;
+    private WasmGCMethodReturnTypes returnTypes;
 
-    public WasmGCVariableCategoryProvider(ClassHierarchy hierarchy) {
+    public WasmGCVariableCategoryProvider(ClassHierarchy hierarchy, WasmGCMethodReturnTypes returnTypes) {
         this.hierarchy = hierarchy;
+        this.returnTypes = returnTypes;
     }
 
     public PreciseTypeInference getTypeInference() {
@@ -34,7 +36,7 @@ public class WasmGCVariableCategoryProvider implements VariableCategoryProvider 
 
     @Override
     public Object[] getCategories(Program program, MethodReference method) {
-        inference = new PreciseTypeInference(program, method, hierarchy);
+        inference = new PreciseTypeInference(program, method, hierarchy, returnTypes);
         var result = new Object[program.variableCount()];
         for (int i = 0; i < program.variableCount(); ++i) {
             var type = inference.typeOf(program.variableAt(i));

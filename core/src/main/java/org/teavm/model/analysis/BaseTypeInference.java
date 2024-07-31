@@ -43,6 +43,7 @@ import org.teavm.model.instructions.FloatConstantInstruction;
 import org.teavm.model.instructions.GetElementInstruction;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.IsInstanceInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
@@ -169,7 +170,7 @@ public abstract class BaseTypeInference<T> {
 
     protected abstract T elementType(T t);
 
-    protected T methodReturnType(MethodReference methodRef) {
+    protected T methodReturnType(InvocationType invocationType, MethodReference methodRef) {
         return mapType(methodRef.getReturnType());
     }
 
@@ -293,7 +294,7 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(InvokeInstruction insn) {
-            type(insn.getReceiver(), methodReturnType(insn.getMethod()));
+            type(insn.getReceiver(), methodReturnType(insn.getType(), insn.getMethod()));
         }
 
         @Override

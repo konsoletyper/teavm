@@ -15,23 +15,23 @@
  */
 package org.teavm.backend.wasm.gc;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import org.teavm.model.ClassHierarchy;
-import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.BaseTypeInference;
+import org.teavm.model.instructions.InvocationType;
 
 public class PreciseTypeInference extends BaseTypeInference<ValueType> {
     public static final ValueType OBJECT_TYPE = ValueType.object("java.lang.Object");
     private ClassHierarchy hierarchy;
+    private WasmGCMethodReturnTypes returnTypes;
 
-    public PreciseTypeInference(Program program, MethodReference reference, ClassHierarchy hierarchy) {
+    public PreciseTypeInference(Program program, MethodReference reference, ClassHierarchy hierarchy,
+            WasmGCMethodReturnTypes returnTypes) {
         super(program, reference);
         this.hierarchy = hierarchy;
+        this.returnTypes = returnTypes;
     }
 
     @Override
@@ -87,7 +87,7 @@ public class PreciseTypeInference extends BaseTypeInference<ValueType> {
                     } else if (hierarchy.isSuperType(q, p, false)) {
                         return b;
                     }
-                    return ValueType.object(findCommonSuperclass(first, second));
+                    return ValueType.object(WasmGCUtil.findCommonSuperclass(hierarchy, first, second));
                 } else {
                     return OBJECT_TYPE;
                 }
@@ -96,34 +96,16 @@ public class PreciseTypeInference extends BaseTypeInference<ValueType> {
             }
         }
     }
-
-    private String findCommonSuperclass(ClassReader a, ClassReader b) {
-        var firstPath = findPathToRoot(a);
-        Collections.reverse(firstPath);
-        var secondPath = findPathToRoot(b);
-        Collections.reverse(secondPath);
-        if (firstPath.get(0) != secondPath.get(0)) {
-            return "java.lang.Object";
-        }
-        var max = Math.max(firstPath.size(), secondPath.size());
-        var index = 1;
-        while (index < max && firstPath.get(index) == secondPath.get(index)) {
-            ++index;
-        }
-        return firstPath.get(index).getName();
-    }
-
-    private List<ClassReader> findPathToRoot(ClassReader cls) {
-        var path = new ArrayList<ClassReader>();
-        while (cls != null) {
-            path.add(cls);
-            cls = cls.getParent() != null ? hierarchy.getClassSource().get(cls.getParent()) : null;
-        }
-        return path;
-    }
-
     @Override
     protected ValueType elementType(ValueType valueType) {
         return ((ValueType.Array) valueType).getItemType();
+    }
+
+    @Override
+    protected ValueType methodReturnType(InvocationType invocationType, MethodReference methodRef) {
+        if (invocationType == InvocationType.SPECIAL) {
+            return returnTypes.returnTypeOf(methodRef);
+        }
+        return super.methodReturnType(invocationType, methodRef);
     }
 }

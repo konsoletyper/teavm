@@ -38,6 +38,16 @@ public class WasmStructure extends WasmCompositeType {
         this.supertype = supertype;
     }
 
+    public boolean isSupertypeOf(WasmStructure subtype) {
+        while (subtype != null) {
+            if (subtype == this) {
+                return true;
+            }
+            subtype = subtype.getSupertype();
+        }
+        return false;
+    }
+
     @Override
     public void acceptVisitor(WasmCompositeTypeVisitor visitor) {
         visitor.visit(this);
