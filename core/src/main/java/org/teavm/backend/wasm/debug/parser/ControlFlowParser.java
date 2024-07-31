@@ -21,12 +21,12 @@ import java.util.List;
 import org.teavm.backend.wasm.debug.info.ControlFlowInfo;
 import org.teavm.backend.wasm.debug.info.FunctionControlFlow;
 import org.teavm.backend.wasm.debug.info.FunctionControlFlowBuilder;
-import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.parser.AddressListener;
 import org.teavm.backend.wasm.parser.BranchOpcode;
 import org.teavm.backend.wasm.parser.CodeListener;
 import org.teavm.backend.wasm.parser.CodeSectionListener;
 import org.teavm.backend.wasm.parser.Opcode;
+import org.teavm.backend.wasm.parser.WasmHollowType;
 
 public class ControlFlowParser implements CodeSectionListener, CodeListener, AddressListener {
     private int previousAddress;
@@ -60,12 +60,12 @@ public class ControlFlowParser implements CodeSectionListener, CodeListener, Add
     }
 
     @Override
-    public int startBlock(boolean loop, WasmType type) {
+    public int startBlock(boolean loop, WasmHollowType type) {
         return startBlock(loop);
     }
 
     @Override
-    public int startConditionalBlock(WasmType type) {
+    public int startConditionalBlock(WasmHollowType type) {
         return startBlock(false);
     }
 

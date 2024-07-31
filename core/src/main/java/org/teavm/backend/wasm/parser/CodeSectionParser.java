@@ -18,7 +18,6 @@ package org.teavm.backend.wasm.parser;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.backend.wasm.model.WasmNumType;
-import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
 import org.teavm.backend.wasm.model.expression.WasmFloatUnaryOperation;
@@ -27,6 +26,7 @@ import org.teavm.backend.wasm.model.expression.WasmInt64Subtype;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmSignedType;
 
 public class CodeSectionParser {
     private AddressListener addressListener;
@@ -125,6 +125,11 @@ public class CodeSectionParser {
                 return parseBlock(true);
             case 0x04:
                 return parseConditional();
+            case 0x06:
+                return parseTryCatch();
+            case 0x8:
+                codeListener.throwInstruction(readLEB());
+                break;
             case 0x0C:
                 parseBranch(BranchOpcode.BR);
                 break;
@@ -143,6 +148,9 @@ public class CodeSectionParser {
             case 0x11:
                 codeListener.indirectCall(readLEB(), readLEB());
                 break;
+            case 0x14:
+                codeListener.callReference(readLEB());
+                break;
 
             case 0x1A:
                 codeListener.opcode(Opcode.DROP);
@@ -153,6 +161,13 @@ public class CodeSectionParser {
                 break;
             case 0x21:
                 codeListener.local(LocalOpcode.SET, readLEB());
+                break;
+
+            case 0x23:
+                codeListener.getGlobal(readLEB());
+                break;
+            case 0x24:
+                codeListener.setGlobal(readLEB());
                 break;
 
             case 0x28:
@@ -617,6 +632,20 @@ public class CodeSectionParser {
                 codeListener.convert(WasmNumType.INT64, WasmNumType.FLOAT64, false, true);
                 break;
 
+            case 0xD0:
+                codeListener.nullConstant(readHeapType());
+                break;
+
+            case 0xD2:
+                codeListener.functionReference(readLEB());
+                break;
+
+            case 0xD3:
+                codeListener.opcode(Opcode.REF_EQ);
+                break;
+
+            case 0xFB:
+                return parseExtExpr2();
             case 0xFC:
                 return parseExtExpr();
 
@@ -642,6 +671,61 @@ public class CodeSectionParser {
                 codeListener.memoryFill();
                 return true;
             }
+
+            default:
+                return false;
+        }
+    }
+
+    private boolean parseExtExpr2() {
+        switch (readLEB()) {
+            case 0:
+                codeListener.structNew(readLEB());
+                return true;
+
+            case 1:
+                codeListener.structNewDefault(readLEB());
+                return true;
+
+            case 2:
+                codeListener.structGet(null, readLEB(), readLEB());
+                return true;
+            case 3:
+                codeListener.structGet(WasmSignedType.SIGNED, readLEB(), readLEB());
+                return true;
+            case 4:
+                codeListener.structGet(WasmSignedType.UNSIGNED, readLEB(), readLEB());
+                return true;
+
+            case 5:
+                codeListener.structSet(readLEB(), readLEB());
+                return true;
+
+            case 7:
+                codeListener.arrayNewDefault(readLEB());
+                return true;
+
+            case 11:
+                codeListener.arrayGet(null, readLEB());
+                return true;
+            case 12:
+                codeListener.arrayGet(WasmSignedType.SIGNED, readLEB());
+                return true;
+            case 13:
+                codeListener.arrayGet(WasmSignedType.UNSIGNED, readLEB());
+                return true;
+
+            case 14:
+                codeListener.arraySet(readLEB());
+                return true;
+
+            case 15:
+                codeListener.opcode(Opcode.ARRAY_LENGTH);
+                return true;
+
+            case 23:
+                codeListener.cast(readHeapType());
+                return true;
 
             default:
                 return false;
@@ -693,6 +777,35 @@ public class CodeSectionParser {
         return true;
     }
 
+    private boolean parseTryCatch() {
+        var type = readType();
+        var token = codeListener.startTry(type);
+        blockStack.add(new Block(token));
+        loop: while (true) {
+            switch (data[ptr]) {
+                case 0x0B:
+                    break loop;
+                case 0x07: {
+                    reportAddress();
+                    var tagIndex = readLEB();
+                    ++ptr;
+                    codeListener.startCatch(tagIndex);
+                    break;
+                }
+                default:
+                    if (!parseExpr()) {
+                        return false;
+                    }
+                    break;
+            }
+        }
+        blockStack.remove(blockStack.size() - 1);
+        reportAddress();
+        codeListener.endBlock(token, false);
+        ++ptr;
+        return true;
+    }
+
     private void parseBranch(BranchOpcode opcode) {
         var depth = readLEB();
         var target = blockStack.get(blockStack.size() - depth - 1);
@@ -713,19 +826,50 @@ public class CodeSectionParser {
         codeListener.tableBranch(depths, targets, defaultDepth, defaultTarget);
     }
 
-    private WasmType readType() {
+    private WasmHollowType readType() {
         var typeId = data[ptr++];
         switch (typeId) {
             case 0x7F:
-                return WasmType.INT32;
+                return WasmHollowType.INT32;
             case 0x7E:
-                return WasmType.INT64;
+                return WasmHollowType.INT64;
             case 0x7D:
-                return WasmType.FLOAT32;
+                return WasmHollowType.FLOAT32;
             case 0x7C:
-                return WasmType.FLOAT64;
-            default:
+                return WasmHollowType.FLOAT64;
+            case 0x63:
+                return readHeapType();
+            case 0x40:
                 return null;
+            default:
+                return readAbsHeapType(typeId);
+        }
+    }
+
+    private WasmHollowType.Reference readHeapType() {
+        var typeId = data[ptr];
+        if ((typeId & 0xC0) == 0x40) {
+            var result = readAbsHeapType(typeId);
+            ++ptr;
+            return result;
+        }
+        return new WasmHollowType.CompositeReference(readLEB());
+    }
+
+    private WasmHollowType.SpecialReference readAbsHeapType(int typeId) {
+        switch (typeId) {
+            case 0x70:
+                return WasmHollowType.Reference.FUNC;
+            case 0x6F:
+                return WasmHollowType.Reference.EXTERN;
+            case 0x6E:
+                return WasmHollowType.Reference.ANY;
+            case 0x6B:
+                return WasmHollowType.Reference.STRUCT;
+            case 0x6A:
+                return WasmHollowType.Reference.ARRAY;
+            default:
+                throw new ParseException("Unknown type", ptr);
         }
     }
 
