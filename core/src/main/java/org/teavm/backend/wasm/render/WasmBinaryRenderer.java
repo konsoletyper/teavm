@@ -477,6 +477,23 @@ public class WasmBinaryRenderer {
             section.writeBytes(payload);
         }
 
+        var globals = module.globals.stream()
+                .filter(g -> g.getName() != null)
+                .collect(Collectors.toList());
+        if (!globals.isEmpty()) {
+            var globalsSubsection = new WasmBinaryWriter();
+            globalsSubsection.writeLEB(globals.size());
+            for (var global : globals) {
+                globalsSubsection.writeLEB(module.globals.indexOf(global));
+                globalsSubsection.writeAsciiString(global.getName());
+            }
+
+            payload = globalsSubsection.getData();
+            section.writeLEB(7);
+            section.writeLEB(payload.length);
+            section.writeBytes(payload);
+        }
+
         writeSection(SECTION_UNKNOWN, "name", section.getData());
     }
 

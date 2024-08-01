@@ -20,11 +20,15 @@ import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
+import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
+import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
+import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.model.MethodReference;
 
@@ -38,9 +42,11 @@ public class WasmGCStringPoolGenerator implements WasmGCCustomGenerator {
         var resultLocal = new WasmLocal(WasmType.INT32);
         function.add(resultLocal);
 
+        function.getBody().add(new WasmSetLocal(resultLocal, new WasmLoadInt32(1, new WasmGetGlobal(pointer),
+                WasmInt32Subtype.UINT8)));
         var increment = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
                 new WasmGetGlobal(pointer), new WasmInt32Constant(1));
-        function.getBody().add(new WasmSetLocal(resultLocal, increment));
-        function.getBody().add(new WasmReturn(new WasmGetGlobal(pointer)));
+        function.getBody().add(new WasmSetGlobal(pointer, increment));
+        function.getBody().add(new WasmReturn(new WasmGetLocal(resultLocal)));
     }
 }

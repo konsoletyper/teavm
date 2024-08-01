@@ -81,7 +81,7 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
             if (nextCharArrayFunction == null) {
                 initNextCharArrayFunction();
             }
-            binaryWriter.writeInt32(string.length());
+            binaryWriter.writeLEB(string.length());
             binaryWriter.writeBytes(string.getBytes(StandardCharsets.UTF_8));
             var globalName = "teavm_java_string_" + stringMap.size();
             var globalType = standardClasses.stringClass().getType();

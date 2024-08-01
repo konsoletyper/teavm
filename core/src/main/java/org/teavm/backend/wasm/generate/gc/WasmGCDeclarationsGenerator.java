@@ -125,10 +125,11 @@ public class WasmGCDeclarationsGenerator {
     }
 
     public void contributeToInitializer(WasmFunction function) {
-        classGenerator.contributeToInitializer(function);
         var contributors = List.of(classGenerator, classGenerator.strings);
         for (var contributor : contributors) {
             contributor.contributeToInitializerDefinitions(function);
+        }
+        for (var contributor : contributors) {
             contributor.contributeToInitializer(function);
         }
     }

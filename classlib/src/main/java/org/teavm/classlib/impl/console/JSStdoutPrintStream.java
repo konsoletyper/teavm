@@ -24,7 +24,7 @@ public class JSStdoutPrintStream extends JsConsolePrintStream {
     public void print(String s) {
         if (PlatformDetector.isWebAssemblyGC()) {
             for (int i = 0; i < s.length(); ++i) {
-                WasmGCSupport.putCharStderr(s.charAt(i));
+                WasmGCSupport.putCharStdout(s.charAt(i));
             }
         } else {
             writeJs(s);
