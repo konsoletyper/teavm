@@ -22,8 +22,9 @@ import org.teavm.model.ValueType;
 import org.teavm.model.analysis.BaseTypeInference;
 import org.teavm.model.instructions.InvocationType;
 
-public class PreciseTypeInference extends BaseTypeInference<ValueType> {
-    public static final ValueType OBJECT_TYPE = ValueType.object("java.lang.Object");
+public class PreciseTypeInference extends BaseTypeInference<PreciseValueType> {
+    public static final PreciseValueType OBJECT_TYPE = new PreciseValueType(ValueType.object("java.lang.Object"),
+            false);
     private ClassHierarchy hierarchy;
     private WasmGCMethodReturnTypes returnTypes;
 
@@ -35,42 +36,42 @@ public class PreciseTypeInference extends BaseTypeInference<ValueType> {
     }
 
     @Override
-    protected ValueType mapType(ValueType type) {
-        return type;
+    protected PreciseValueType mapType(ValueType type) {
+        return new PreciseValueType(type, false);
     }
 
     @Override
-    protected ValueType nullType() {
+    protected PreciseValueType nullType() {
         return null;
     }
 
     @Override
-    protected ValueType merge(ValueType a, ValueType b) {
+    protected PreciseValueType merge(PreciseValueType a, PreciseValueType b) {
         if (a == null) {
             return b;
         } else if (b == null) {
             return a;
         } else {
-            if (a instanceof ValueType.Primitive && b instanceof ValueType.Primitive) {
-                if (a != b) {
+            if (a.valueType instanceof ValueType.Primitive && b.valueType instanceof ValueType.Primitive) {
+                if (a.valueType != b.valueType) {
                     return OBJECT_TYPE;
                 } else {
                     return a;
                 }
-            } else if (a instanceof ValueType.Array) {
-                if (b instanceof ValueType.Array) {
-                    var p = ((ValueType.Array) a).getItemType();
-                    var q = ((ValueType.Array) b).getItemType();
-                    return ValueType.arrayOf(merge(p, q));
+            } else if (a.valueType instanceof ValueType.Array) {
+                if (b.valueType instanceof ValueType.Array) {
+                    var p = new PreciseValueType(((ValueType.Array) a.valueType).getItemType(), false);
+                    var q = new PreciseValueType(((ValueType.Array) b.valueType).getItemType(), false);
+                    return new PreciseValueType(ValueType.arrayOf(merge(p, q).valueType), a.isArrayUnwrap);
                 } else {
                     return OBJECT_TYPE;
                 }
-            } else if (b instanceof ValueType.Array) {
+            } else if (b.valueType instanceof ValueType.Array) {
                 return OBJECT_TYPE;
-            } else if (a instanceof ValueType.Object) {
-                if (b instanceof ValueType.Object) {
-                    var p = ((ValueType.Object) a).getClassName();
-                    var q = ((ValueType.Object) b).getClassName();
+            } else if (a.valueType instanceof ValueType.Object) {
+                if (b.valueType instanceof ValueType.Object) {
+                    var p = ((ValueType.Object) a.valueType).getClassName();
+                    var q = ((ValueType.Object) b.valueType).getClassName();
                     if (p.equals(q)) {
                         return a;
                     }
@@ -87,7 +88,8 @@ public class PreciseTypeInference extends BaseTypeInference<ValueType> {
                     } else if (hierarchy.isSuperType(q, p, false)) {
                         return b;
                     }
-                    return ValueType.object(WasmGCUtil.findCommonSuperclass(hierarchy, first, second));
+                    var result = ValueType.object(WasmGCUtil.findCommonSuperclass(hierarchy, first, second));
+                    return new PreciseValueType(result, false);
                 } else {
                     return OBJECT_TYPE;
                 }
@@ -97,15 +99,20 @@ public class PreciseTypeInference extends BaseTypeInference<ValueType> {
         }
     }
     @Override
-    protected ValueType elementType(ValueType valueType) {
-        return ((ValueType.Array) valueType).getItemType();
+    protected PreciseValueType elementType(PreciseValueType valueType) {
+        return new PreciseValueType(((ValueType.Array) valueType.valueType).getItemType(), false);
     }
 
     @Override
-    protected ValueType methodReturnType(InvocationType invocationType, MethodReference methodRef) {
+    protected PreciseValueType methodReturnType(InvocationType invocationType, MethodReference methodRef) {
         if (invocationType == InvocationType.SPECIAL) {
-            return returnTypes.returnTypeOf(methodRef);
+            return new PreciseValueType(returnTypes.returnTypeOf(methodRef), false);
         }
         return super.methodReturnType(invocationType, methodRef);
+    }
+
+    @Override
+    protected PreciseValueType arrayUnwrapType(PreciseValueType type) {
+        return new PreciseValueType(type.valueType, true);
     }
 }

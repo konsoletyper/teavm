@@ -27,6 +27,7 @@ public class WasmFunction extends WasmEntity {
     private String exportName;
     private String importName;
     private String importModule;
+    private boolean referenced;
     private WasmFunctionType type;
     private List<WasmLocal> localVariables = new ArrayList<>();
     private List<WasmLocal> readonlyLocalVariables = Collections.unmodifiableList(localVariables);
@@ -68,6 +69,14 @@ public class WasmFunction extends WasmEntity {
 
     public void setImportModule(String importModule) {
         this.importModule = importModule;
+    }
+
+    public boolean isReferenced() {
+        return referenced;
+    }
+
+    public void setReferenced(boolean referenced) {
+        this.referenced = referenced;
     }
 
     @Override

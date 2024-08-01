@@ -33,6 +33,7 @@ import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
+import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.model.MethodReference;
 
 public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializerContributor {
@@ -41,6 +42,7 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
     private WasmBinaryWriter binaryWriter = new WasmBinaryWriter();
     private Map<String, WasmGCStringConstant> stringMap = new LinkedHashMap<>();
     private BaseWasmFunctionRepository functionProvider;
+    private WasmFunction nextCharArrayFunction;
 
     public WasmGCStringPool(WasmGCStandardClasses standardClasses, WasmModule module,
             BaseWasmFunctionRepository functionProvider) {
@@ -62,8 +64,9 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
 
     @Override
     public void contributeToInitializer(WasmFunction function) {
-        var nextCharArrayFunction = functionProvider.forStaticMethod(new MethodReference(WasmGCStringPool.class,
-                "nextCharArray", char[].class));
+        if (nextCharArrayFunction == null) {
+            return;
+        }
         var stringStruct = standardClasses.stringClass().getStructure();
         for (var str : stringMap.values()) {
             var value = new WasmCall(nextCharArrayFunction);
@@ -75,9 +78,12 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
     @Override
     public WasmGCStringConstant getStringConstant(String string) {
         return stringMap.computeIfAbsent(string, s -> {
+            if (nextCharArrayFunction == null) {
+                initNextCharArrayFunction();
+            }
             binaryWriter.writeInt32(string.length());
             binaryWriter.writeBytes(string.getBytes(StandardCharsets.UTF_8));
-            var globalName = "_teavm_java_string_" + stringMap.size();
+            var globalName = "teavm_java_string_" + stringMap.size();
             var globalType = standardClasses.stringClass().getType();
             var global = new WasmGlobal(globalName, globalType, WasmExpression.defaultValueOfType(globalType));
             module.globals.add(global);
@@ -85,50 +91,8 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
         });
     }
 
-    static char[] nextCharArray() {
-        var length = nextLEB();
-        var result = new char[length];
-        var pos = 0;
-        while (pos < length) {
-            var b = nextByte();
-            if ((b & 0x80) == 0) {
-                result[pos++] = (char) b;
-            } else if ((b & 0xE0) == 0xC0) {
-                var b2 = nextByte();
-                result[pos++] = (char) (((b & 0x1F) << 6) | (b2 & 0x3F));
-            } else if ((b & 0xF0) == 0xE0) {
-                var b2 = nextByte();
-                var b3 = nextByte();
-                var c = (char) (((b & 0x0F) << 12) | ((b2 & 0x3f) << 6) | (b3 & 0x3F));
-                result[pos++] = c;
-            } else if ((b & 0xF8) == 0xF0) {
-                var b2 = nextByte();
-                var b3 = nextByte();
-                var b4 = nextByte();
-                var code = ((b & 0x07) << 18) | ((b2 & 0x3f) << 12) | ((b3 & 0x3F) << 6) | (b4 & 0x3F);
-                result[pos++] = Character.highSurrogate(code);
-                result[pos++] = Character.lowSurrogate(code);
-            }
-        }
-        return result;
+    private void initNextCharArrayFunction() {
+        nextCharArrayFunction = functionProvider.forStaticMethod(new MethodReference(WasmGCSupport.class,
+                "nextCharArray", char[].class));
     }
-
-    private static int nextLEB() {
-        var shift = 0;
-        var result = 0;
-        while (true) {
-            var b = nextByte();
-            var digit = b & 0x7F;
-            result |= digit << shift;
-            if ((b & 0x80) == 0) {
-                break;
-            }
-            shift += 7;
-        }
-        return result;
-    }
-
-    private static native byte nextByte();
-
-    private static native void error();
 }

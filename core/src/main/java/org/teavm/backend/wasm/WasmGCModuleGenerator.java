@@ -57,6 +57,7 @@ public class WasmGCModuleGenerator {
         var mainFunction = declarationsGenerator.functions().forStaticMethod(new MethodReference(entryPoint,
                 "main", ValueType.parse(String[].class), ValueType.VOID));
         var mainFunctionCaller = new WasmFunction(declarationsGenerator.functionTypes.of(null));
+        declarationsGenerator.module.functions.add(mainFunctionCaller);
         mainFunctionCaller.getBody().add(callInitializer());
 
         var tempVars = new TemporaryVariablePool(mainFunctionCaller);
@@ -80,6 +81,7 @@ public class WasmGCModuleGenerator {
         }
         var functionType = declarationsGenerator.functionTypes.of(null);
         initializer = new WasmFunction(functionType);
+        initializer.setReferenced(true);
         declarationsGenerator.module.functions.add(initializer);
         initializerRef = new WasmGlobal("teavm_initializer", functionType.getReference(),
                 new WasmFunctionReference(initializer));

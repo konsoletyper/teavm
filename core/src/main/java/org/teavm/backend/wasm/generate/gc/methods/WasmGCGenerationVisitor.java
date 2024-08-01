@@ -48,6 +48,7 @@ import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
+import org.teavm.backend.wasm.model.expression.WasmSignedType;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
@@ -340,7 +341,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     public void visit(SubscriptExpr expr) {
         accept(expr.getArray());
-        var arrayData = unwrapArray(result);
+        var arrayData = result;
         arrayData.acceptVisitor(typeInference);
         var arrayTypeRef = (WasmType.CompositeReference) typeInference.getResult();
         var arrayType = (WasmArray) arrayTypeRef.composite;
@@ -348,8 +349,22 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         accept(expr.getIndex());
         var index = result;
 
-        result = new WasmArrayGet(arrayType, arrayData, index);
-        result.setLocation(expr.getLocation());
+        var arrayGet = new WasmArrayGet(arrayType, arrayData, index);
+        switch (expr.getType()) {
+            case BYTE:
+                arrayGet.setSignedType(WasmSignedType.SIGNED);
+                break;
+            case SHORT:
+                arrayGet.setSignedType(WasmSignedType.SIGNED);
+                break;
+            case CHAR:
+                arrayGet.setSignedType(WasmSignedType.UNSIGNED);
+                break;
+            default:
+                break;
+        }
+        arrayGet.setLocation(expr.getLocation());
+        result = arrayGet;
     }
 
     @Override
@@ -395,11 +410,32 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             target.acceptVisitor(typeInference);
             var type = (WasmType.CompositeReference) typeInference.getResult();
             var struct = (WasmStructure) type.composite;
-
             var fieldIndex = context.classInfoProvider().getFieldIndex(expr.getField());
-
-            result = new WasmStructGet(struct, target, fieldIndex);
-            result.setLocation(expr.getLocation());
+            var structGet = new WasmStructGet(struct, target, fieldIndex);
+            var cls = context.classes().get(expr.getField().getClassName());
+            if (cls != null) {
+                var field = cls.getField(expr.getField().getFieldName());
+                if (field != null) {
+                    var fieldType = field.getType();
+                    if (fieldType instanceof ValueType.Primitive) {
+                        switch (((ValueType.Primitive) fieldType).getKind()) {
+                            case BYTE:
+                                structGet.setSignedType(WasmSignedType.SIGNED);
+                                break;
+                            case SHORT:
+                                structGet.setSignedType(WasmSignedType.SIGNED);
+                                break;
+                            case CHARACTER:
+                                structGet.setSignedType(WasmSignedType.UNSIGNED);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
+            structGet.setLocation(expr.getLocation());
+            result = structGet;
         }
     }
 

@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.generate.gc.classes;
 
 import java.util.List;
 import java.util.function.Consumer;
+import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
@@ -26,6 +27,7 @@ import org.teavm.model.ValueType;
 public class WasmGCClassInfo {
     private ValueType valueType;
     WasmStructure structure;
+    WasmArray array;
     WasmStructure virtualTableStructure;
     WasmGlobal pointer;
     WasmGlobal initializerPointer;
@@ -41,6 +43,10 @@ public class WasmGCClassInfo {
 
     public WasmStructure getStructure() {
         return structure;
+    }
+
+    public WasmArray getArray() {
+        return array;
     }
 
     public WasmStructure getVirtualTableStructure() {

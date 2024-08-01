@@ -265,19 +265,39 @@ public class WasmBinaryRenderer {
     }
 
     private void renderElement(WasmModule module) {
-        if (module.getFunctionTable().isEmpty()) {
+        var count = 0;
+        if (!module.getFunctionTable().isEmpty()) {
+            ++count;
+        }
+        if (module.functions.stream().anyMatch(WasmFunction::isReferenced)) {
+            ++count;
+        }
+        if (count == 0) {
             return;
         }
 
         WasmBinaryWriter section = new WasmBinaryWriter();
-        section.writeLEB(1);
-        section.writeLEB(0);
+        section.writeLEB(count);
 
-        renderInitializer(section, 0);
+        if (!module.getFunctionTable().isEmpty()) {
+            section.writeLEB(0);
+            renderInitializer(section, 0);
+            section.writeLEB(module.getFunctionTable().size());
+            for (var function : module.getFunctionTable()) {
+                section.writeLEB(module.functions.indexOf(function));
+            }
+        }
 
-        section.writeLEB(module.getFunctionTable().size());
-        for (var function : module.getFunctionTable()) {
-            section.writeLEB(module.functions.indexOf(function));
+        var referencedFunctions = module.functions.stream()
+                .filter(WasmFunction::isReferenced)
+                .collect(Collectors.toList());
+        if (!referencedFunctions.isEmpty()) {
+            section.writeLEB(3);
+            section.writeByte(0);
+            section.writeLEB(referencedFunctions.size());
+            for (var function : referencedFunctions) {
+                section.writeLEB(module.functions.indexOf(function));
+            }
         }
 
         writeSection(SECTION_ELEMENT, "element", section.getData());

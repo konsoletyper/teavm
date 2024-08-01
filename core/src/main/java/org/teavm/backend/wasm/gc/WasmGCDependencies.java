@@ -17,7 +17,6 @@ package org.teavm.backend.wasm.gc;
 
 import java.util.Arrays;
 import org.teavm.backend.wasm.WasmRuntime;
-import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringPool;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.model.MethodReference;
@@ -52,12 +51,14 @@ public class WasmGCDependencies {
     }
 
     private void contributeExceptionUtils() {
-        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "npe", NullPointerException.class));
-        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "aiiobe", ArrayIndexOutOfBoundsException.class));
-        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "cce", ClassCastException.class));
+        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "npe", NullPointerException.class))
+                .use();
+        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "aiiobe", ArrayIndexOutOfBoundsException.class))
+                .use();
+        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "cce", ClassCastException.class)).use();
     }
 
     private void contributeInitializerUtils() {
-        analyzer.linkMethod(new MethodReference(WasmGCStringPool.class, "nextCharArray", char[].class));
+        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "nextCharArray", char[].class)).use();
     }
 }

@@ -123,8 +123,23 @@ public class WasmGCTarget implements TeaVMTarget {
         mainFunction.setExportName(controller.getEntryPointName());
         mainFunction.setName(controller.getEntryPointName());
         moduleGenerator.generate();
+        adjustModuleMemory(module);
 
         emitWasmFile(module, buildTarget, outputName);
+    }
+
+    private void adjustModuleMemory(WasmModule module) {
+        var memorySize = 0;
+        for (var segment : module.getSegments()) {
+            memorySize = Math.max(memorySize, segment.getOffset() + segment.getLength());
+        }
+        if (memorySize == 0) {
+            return;
+        }
+
+        var pages = (memorySize - 1) / WasmHeap.PAGE_SIZE + 1;
+        module.setMinMemorySize(pages);
+        module.setMaxMemorySize(pages);
     }
 
     private void emitWasmFile(WasmModule module, BuildTarget buildTarget, String outputName) throws IOException {

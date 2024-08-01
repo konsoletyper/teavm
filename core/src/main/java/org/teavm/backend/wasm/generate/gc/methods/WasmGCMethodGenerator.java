@@ -240,7 +240,10 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         for (var i = firstVar; i < ast.getVariables().size(); ++i) {
             var localVar = ast.getVariables().get(i);
             var representative = method.getProgram().variableAt(variableRepresentatives[i]);
-            var type = typeMapper.mapType(typeInference.typeOf(representative));
+            var inferredType = typeInference.typeOf(representative);
+            var type = !inferredType.isArrayUnwrap
+                    ? typeMapper.mapType(inferredType.valueType)
+                    : classInfoProvider.getClassInfo(inferredType.valueType).getArray().getReference();
             var wasmLocal = new WasmLocal(type, localVar.getName());
             function.add(wasmLocal);
         }
@@ -304,6 +307,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             dummyInitializer = new WasmFunction(functionTypes.of(null));
             dummyInitializer.getBody().add(new WasmReturn());
             dummyInitializer.setName("teavm_dummy_initializer");
+            dummyInitializer.setReferenced(true);
             module.functions.add(dummyInitializer);
         }
         return dummyInitializer;

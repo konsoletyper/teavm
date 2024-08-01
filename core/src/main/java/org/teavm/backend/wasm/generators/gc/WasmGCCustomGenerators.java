@@ -18,7 +18,7 @@ package org.teavm.backend.wasm.generators.gc;
 import java.util.HashMap;
 import java.util.Map;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCCustomGeneratorProvider;
-import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringPool;
+import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.model.MethodReference;
 
 public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
@@ -30,7 +30,7 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
 
     private void fillStringPool() {
         generators.put(
-                new MethodReference(WasmGCStringPool.class, "nextByte", byte.class),
+                new MethodReference(WasmGCSupport.class, "nextByte", byte.class),
                 new WasmGCStringPoolGenerator()
         );
     }

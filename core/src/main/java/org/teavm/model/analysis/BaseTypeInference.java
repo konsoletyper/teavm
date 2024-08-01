@@ -60,10 +60,16 @@ public abstract class BaseTypeInference<T> {
     private Object[] types;
     private Graph graph;
     private Graph arrayGraph;
+    private Graph arrayUnwrapGraph;
+    private boolean phisSkipped;
 
     public BaseTypeInference(Program program, MethodReference reference) {
         this.program = program;
         this.reference = reference;
+    }
+
+    public void setPhisSkipped(boolean phisSkipped) {
+        this.phisSkipped = phisSkipped;
     }
 
     private void prepare() {
@@ -78,9 +84,11 @@ public abstract class BaseTypeInference<T> {
             for (var insn : block) {
                 insn.acceptVisitor(visitor);
             }
-            for (var phi : block.getPhis()) {
-                for (var incoming : phi.getIncomings()) {
-                    visitor.graphBuilder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
+            if (!phisSkipped) {
+                for (var phi : block.getPhis()) {
+                    for (var incoming : phi.getIncomings()) {
+                        visitor.graphBuilder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
+                    }
                 }
             }
             for (var tryCatch : block.getTryCatchBlocks()) {
@@ -95,6 +103,7 @@ public abstract class BaseTypeInference<T> {
         }
         graph = visitor.graphBuilder.build();
         arrayGraph = visitor.arrayGraphBuilder.build();
+        arrayUnwrapGraph = visitor.arrayUnwrapGraphBuilder.build();
     }
 
     @SuppressWarnings("unchecked")
@@ -124,6 +133,12 @@ public abstract class BaseTypeInference<T> {
                 if (!Objects.equals(types[succ], type)) {
                     stack.push(succ);
                     typeStack.push(type);
+                }
+            }
+            for (var succ : arrayUnwrapGraph.outgoingEdges(variable)) {
+                if (!Objects.equals(types[succ], type)) {
+                    stack.push(succ);
+                    typeStack.push(arrayUnwrapType(type));
                 }
             }
             if (arrayGraph.outgoingEdgesCount(variable) > 0) {
@@ -174,13 +189,19 @@ public abstract class BaseTypeInference<T> {
         return mapType(methodRef.getReturnType());
     }
 
+    protected T arrayUnwrapType(T type) {
+        return type;
+    }
+
     private class InitialTypeVisitor extends AbstractInstructionVisitor {
         private GraphBuilder graphBuilder;
         private GraphBuilder arrayGraphBuilder;
+        private GraphBuilder arrayUnwrapGraphBuilder;
 
         InitialTypeVisitor(int size) {
             graphBuilder = new GraphBuilder(size);
             arrayGraphBuilder = new GraphBuilder(size);
+            arrayUnwrapGraphBuilder = new GraphBuilder(size);
         }
 
         @Override
@@ -309,7 +330,7 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(UnwrapArrayInstruction insn) {
-            graphBuilder.addEdge(insn.getArray().getIndex(), insn.getReceiver().getIndex());
+            arrayUnwrapGraphBuilder.addEdge(insn.getArray().getIndex(), insn.getReceiver().getIndex());
         }
 
         @Override

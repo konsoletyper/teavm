@@ -38,4 +38,51 @@ public class WasmGCSupport {
 
     @Import(name = "putcharStderr")
     public static native void putCharStderr(char c);
+
+    public static char[] nextCharArray() {
+        var length = nextLEB();
+        var result = new char[length];
+        var pos = 0;
+        while (pos < length) {
+            var b = nextByte();
+            if ((b & 0x80) == 0) {
+                result[pos++] = (char) b;
+            } else if ((b & 0xE0) == 0xC0) {
+                var b2 = nextByte();
+                result[pos++] = (char) (((b & 0x1F) << 6) | (b2 & 0x3F));
+            } else if ((b & 0xF0) == 0xE0) {
+                var b2 = nextByte();
+                var b3 = nextByte();
+                var c = (char) (((b & 0x0F) << 12) | ((b2 & 0x3f) << 6) | (b3 & 0x3F));
+                result[pos++] = c;
+            } else if ((b & 0xF8) == 0xF0) {
+                var b2 = nextByte();
+                var b3 = nextByte();
+                var b4 = nextByte();
+                var code = ((b & 0x07) << 18) | ((b2 & 0x3f) << 12) | ((b3 & 0x3F) << 6) | (b4 & 0x3F);
+                result[pos++] = Character.highSurrogate(code);
+                result[pos++] = Character.lowSurrogate(code);
+            }
+        }
+        return result;
+    }
+
+    private static int nextLEB() {
+        var shift = 0;
+        var result = 0;
+        while (true) {
+            var b = nextByte();
+            var digit = b & 0x7F;
+            result |= digit << shift;
+            if ((b & 0x80) == 0) {
+                break;
+            }
+            shift += 7;
+        }
+        return result;
+    }
+
+    private static native byte nextByte();
+
+    private static native void error();
 }
