@@ -878,9 +878,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             var call = new WasmCall(function);
             call.getArguments().add(new WasmGetLocal(tmp));
             var arguments = expr.getArguments();
-            acceptWithType(arguments.get(0), ValueType.object(expr.getMethod().getClassName()));
-            call.getArguments().add(result);
-            for (int i = 1; i < arguments.size(); i++) {
+            for (int i = 0; i < arguments.size(); i++) {
                 var argument = arguments.get(i);
                 acceptWithType(argument, expr.getMethod().parameterType(i));
                 call.getArguments().add(result);
