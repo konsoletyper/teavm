@@ -64,7 +64,7 @@ public class ClassMetadataRequirements {
 
         var isAssignableMethod = dependencyInfo.getMethod(IS_ASSIGNABLE_METHOD);
         if (isAssignableMethod != null) {
-            var classNames = getSuperclassMethod.getVariable(0).getClassValueNode().getTypes();
+            var classNames = isAssignableMethod.getVariable(0).getClassValueNode().getTypes();
             for (var className : classNames) {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).isAssignable = true;
             }
