@@ -157,10 +157,13 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         function.getBody().addAll(initializerFunctionStatements);
         initializerFunctionStatements.clear();
         for (var classInfo : classInfoMap.values()) {
-            var supertypeFunction = supertypeGenerator.getIsSupertypeFunction(classInfo.getValueType());
-            supertypeFunction.setReferenced(true);
-            function.getBody().add(setClassField(classInfo, classSupertypeFunctionOffset,
-                    new WasmFunctionReference(supertypeFunction)));
+            var req = metadataRequirements.getInfo(classInfo.getValueType());
+            if (req != null && req.isAssignable()) {
+                var supertypeFunction = supertypeGenerator.getIsSupertypeFunction(classInfo.getValueType());
+                supertypeFunction.setReferenced(true);
+                function.getBody().add(setClassField(classInfo, classSupertypeFunctionOffset,
+                        new WasmFunctionReference(supertypeFunction)));
+            }
             function.getBody().add(setClassField(classInfo, CLASS_FIELD_OFFSET,
                     new WasmGetGlobal(classClass.pointer)));
             if (classInfo.initializerPointer != null) {
@@ -265,9 +268,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 default:
                     throw new IllegalArgumentException();
             }
+            var req = metadataRequirements.getInfo(type);
+            var name = req != null && req.name() ? ReflectionUtil.typeName(type.getKind()) : null;
             target.add(fillPrimitiveClass(
                     classInfo.pointer,
-                    ReflectionUtil.typeName(type.getKind()),
+                    name,
                     kind
             ));
         };
@@ -401,10 +406,13 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     private WasmExpression fillPrimitiveClass(WasmGlobal global, String name, int kind) {
+        var str = name != null
+                ? new WasmGetGlobal(strings.getStringConstant(name).global)
+                : new WasmNullConstant(standardClasses.stringClass().getType());
         return new WasmCall(
                 getCreatePrimitiveClassFunction(),
                 new WasmGetGlobal(global),
-                new WasmGetGlobal(strings.getStringConstant(name).global),
+                str,
                 new WasmInt32Constant(kind)
         );
     }
