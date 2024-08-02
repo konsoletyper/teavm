@@ -107,6 +107,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     public WasmTag getExceptionTag() {
         if (exceptionTag == null) {
             exceptionTag = new WasmTag(functionTypes.of(null));
+            exceptionTag.setExportName("javaException");
             module.tags.add(exceptionTag);
         }
         return exceptionTag;

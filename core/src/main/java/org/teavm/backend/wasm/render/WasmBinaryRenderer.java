@@ -48,6 +48,7 @@ public class WasmBinaryRenderer {
 
     private static final int EXTERNAL_KIND_FUNCTION = 0;
     private static final int EXTERNAL_KIND_MEMORY = 2;
+    private static final int EXTERNAL_KIND_TAG = 4;
 
     private WasmBinaryWriter output;
     private WasmBinaryVersion version;
@@ -235,7 +236,11 @@ public class WasmBinaryRenderer {
                 .filter(function -> function.getExportName() != null)
                 .collect(Collectors.toList());
 
-        section.writeLEB(functions.size() + 1);
+        var tags = module.tags.stream()
+                .filter(tag -> tag.getExportName() != null)
+                .collect(Collectors.toList());
+
+        section.writeLEB(functions.size() + tags.size() + 1);
         for (var function : functions) {
             int functionIndex = module.functions.indexOf(function);
 
@@ -243,6 +248,13 @@ public class WasmBinaryRenderer {
 
             section.writeByte(EXTERNAL_KIND_FUNCTION);
             section.writeLEB(functionIndex);
+        }
+        for (var tag : tags) {
+            var tagIndex = module.tags.indexOf(tag);
+            section.writeAsciiString(tag.getExportName());
+
+            section.writeByte(EXTERNAL_KIND_TAG);
+            section.writeLEB(tagIndex);
         }
 
         // We also need to export the memory to make it accessible

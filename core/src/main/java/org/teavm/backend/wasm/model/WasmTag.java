@@ -17,8 +17,7 @@ package org.teavm.backend.wasm.model;
 
 public class WasmTag extends WasmEntity {
     private WasmFunctionType type;
-    WasmModule module;
-    int index;
+    private String exportName;
 
     public WasmTag(WasmFunctionType type) {
         this.type = type;
@@ -26,6 +25,14 @@ public class WasmTag extends WasmEntity {
 
     public WasmFunctionType getType() {
         return type;
+    }
+
+    public String getExportName() {
+        return exportName;
+    }
+
+    public void setExportName(String exportName) {
+        this.exportName = exportName;
     }
 
     public int getIndex() {
