@@ -104,7 +104,6 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
 
     private WasmGenerationContext context;
     private WasmClassGenerator classGenerator;
-    private MethodReference currentMethod;
 
     private List<ExceptionHandlerDescriptor> handlers = new ArrayList<>();
     private WasmBlock lastTryBlock;
@@ -118,11 +117,10 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     public WasmGenerationVisitor(WasmGenerationContext context, WasmClassGenerator classGenerator,
             BinaryWriter binaryWriter, WasmFunction function, MethodReference currentMethod,
             int firstVariable, boolean async) {
-        super(context, function, firstVariable, async);
+        super(context, currentMethod, function, firstVariable, async);
         this.context = context;
         this.classGenerator = classGenerator;
         this.binaryWriter = binaryWriter;
-        this.currentMethod = currentMethod;
         this.managed = context.characteristics.isManaged(currentMethod);
     }
 

@@ -26,6 +26,8 @@ public class VirtualTable {
     private List<? extends MethodDescriptor> methods;
     private Set<MethodDescriptor> methodSet;
     private Map<MethodDescriptor, VirtualTableEntry> entryMap;
+    private boolean hasValidEntries;
+    private boolean hasValidEntriesComputed;
 
     VirtualTable(String className, VirtualTable parent, List<? extends MethodDescriptor> methods,
             Set<MethodDescriptor> methodSet, Map<MethodDescriptor, VirtualTableEntry> entryMap) {
@@ -69,5 +71,24 @@ public class VirtualTable {
 
     public int size() {
         return methods.size() + (parent != null ? parent.size() : 0);
+    }
+
+    public boolean hasValidEntries() {
+        if (!hasValidEntriesComputed) {
+            hasValidEntriesComputed = true;
+            hasValidEntries = false;
+            if (entryMap != null) {
+                for (var entry : entryMap.values()) {
+                    if (entry.getImplementor() != null) {
+                        hasValidEntries = true;
+                        break;
+                    }
+                }
+            }
+            if (parent != null && parent.hasValidEntries()) {
+                hasValidEntries = true;
+            }
+        }
+        return hasValidEntries;
     }
 }

@@ -38,6 +38,7 @@ public class WasmGCVariableCategoryProvider implements VariableCategoryProvider 
     public Object[] getCategories(Program program, MethodReference method) {
         inference = new PreciseTypeInference(program, method, hierarchy, returnTypes);
         inference.setPhisSkipped(true);
+        inference.setBackPropagation(true);
         var result = new Object[program.variableCount()];
         for (int i = 0; i < program.variableCount(); ++i) {
             var type = inference.typeOf(program.variableAt(i));

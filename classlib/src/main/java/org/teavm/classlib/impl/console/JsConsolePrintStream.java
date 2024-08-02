@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.impl.console;
 
-import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -30,7 +30,7 @@ public abstract class JsConsolePrintStream extends PrintStream {
     private Runnable flushAction;
 
     public JsConsolePrintStream() {
-        super(new ByteArrayOutputStream());
+        super((OutputStream) null);
     }
 
     @Override

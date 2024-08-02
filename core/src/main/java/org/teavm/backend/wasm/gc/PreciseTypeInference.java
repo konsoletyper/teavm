@@ -104,6 +104,11 @@ public class PreciseTypeInference extends BaseTypeInference<PreciseValueType> {
     }
 
     @Override
+    protected PreciseValueType arrayType(PreciseValueType preciseValueType) {
+        return new PreciseValueType(ValueType.arrayOf(preciseValueType.valueType), false);
+    }
+
+    @Override
     protected PreciseValueType methodReturnType(InvocationType invocationType, MethodReference methodRef) {
         if (invocationType == InvocationType.SPECIAL) {
             return new PreciseValueType(returnTypes.returnTypeOf(methodRef), false);

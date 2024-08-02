@@ -25,6 +25,8 @@ public class ClassMetadataRequirements {
     private static final MethodReference GET_NAME_METHOD = new MethodReference(Class.class, "getName", String.class);
     private static final MethodReference GET_SIMPLE_NAME_METHOD = new MethodReference(Class.class,
             "getSimpleName", String.class);
+    private static final MethodReference GET_SUPERCLASS_METHOD = new MethodReference(Class.class, "getSuperclass",
+            Class.class);
     private static final MethodReference GET_DECLARING_CLASS_METHOD = new MethodReference(Class.class,
             "getDeclaringClass", Class.class);
     private static final MethodReference GET_ENCLOSING_CLASS_METHOD = new MethodReference(Class.class,
@@ -46,6 +48,14 @@ public class ClassMetadataRequirements {
                 ClassInfo classInfo = requirements.computeIfAbsent(className, k -> new ClassInfo());
                 classInfo.simpleName = true;
                 classInfo.enclosingClass = true;
+            }
+        }
+
+        var getSuperclassMethod = dependencyInfo.getMethod(GET_SUPERCLASS_METHOD);
+        if (getSuperclassMethod != null) {
+            String[] classNames = getSuperclassMethod.getVariable(0).getClassValueNode().getTypes();
+            for (String className : classNames) {
+                requirements.computeIfAbsent(className, k -> new ClassInfo()).declaringClass = true;
             }
         }
 
@@ -95,6 +105,7 @@ public class ClassMetadataRequirements {
         boolean simpleName;
         boolean declaringClass;
         boolean enclosingClass;
+        boolean superclass;
 
         @Override
         public boolean name() {
@@ -115,6 +126,11 @@ public class ClassMetadataRequirements {
         public boolean enclosingClass() {
             return enclosingClass;
         }
+
+        @Override
+        public boolean superclass() {
+            return superclass;
+        }
     }
 
     public interface Info {
@@ -125,5 +141,7 @@ public class ClassMetadataRequirements {
         boolean declaringClass();
 
         boolean enclosingClass();
+
+        boolean superclass();
     }
 }

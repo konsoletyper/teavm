@@ -62,12 +62,30 @@ import org.teavm.model.ValueType;
 public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     private WasmGCGenerationContext context;
     private WasmGCGenerationUtil generationUtil;
+    private WasmType expectedType;
 
-    public WasmGCGenerationVisitor(WasmGCGenerationContext context, WasmFunction function,
-            int firstVariable, boolean async) {
-        super(context, function, firstVariable, async);
+    public WasmGCGenerationVisitor(WasmGCGenerationContext context, MethodReference currentMethod,
+            WasmFunction function, int firstVariable, boolean async) {
+        super(context, currentMethod, function, firstVariable, async);
         this.context = context;
         generationUtil = new WasmGCGenerationUtil(context.classInfoProvider(), tempVars);
+    }
+
+    @Override
+    protected void accept(Expr expr) {
+        accept(expr, null);
+    }
+
+    protected void accept(Expr expr, WasmType type) {
+        var previousExpectedType = expectedType;
+        expectedType = type;
+        super.accept(expr);
+        expectedType = previousExpectedType;
+    }
+
+    @Override
+    protected void acceptWithType(Expr expr, ValueType type) {
+        accept(expr, mapType(type));
     }
 
     @Override
@@ -137,23 +155,22 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected void storeField(Expr qualified, FieldReference field, Expr value, TextLocation location) {
         if (qualified == null) {
-            accept(value);
-            var wasmValue = result;
             var global = context.classInfoProvider().getStaticFieldLocation(field);
+            accept(value, global.getType());
+            var wasmValue = result;
             var result = new WasmSetGlobal(global, wasmValue);
             result.setLocation(location);
             resultConsumer.add(result);
         } else {
-            accept(qualified);
+            acceptWithType(qualified, ValueType.object(field.getClassName()));
             var target = result;
-            accept(value);
-            var wasmValue = result;
-
             target.acceptVisitor(typeInference);
             var type = (WasmType.CompositeReference) typeInference.getResult();
             var struct = (WasmStructure) type.composite;
-
             var fieldIndex = context.classInfoProvider().getFieldIndex(field);
+
+            accept(value, struct.getFields().get(fieldIndex).asUnpackedType());
+            var wasmValue = result;
 
             var expr = new WasmStructSet(struct, target, fieldIndex, wasmValue);
             expr.setLocation(location);
@@ -175,7 +192,9 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected WasmExpression nullLiteral() {
-        return new WasmNullConstant(WasmType.Reference.STRUCT);
+        return new WasmNullConstant(expectedType instanceof WasmType.Reference
+                ? (WasmType.Reference) expectedType
+                : WasmType.Reference.STRUCT);
     }
 
     @Override
@@ -404,7 +423,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             result = new WasmGetGlobal(global);
             result.setLocation(expr.getLocation());
         } else {
-            accept(expr.getQualified());
+            acceptWithType(expr.getQualified(), ValueType.object(expr.getField().getClassName()));
             var target = result;
 
             target.acceptVisitor(typeInference);

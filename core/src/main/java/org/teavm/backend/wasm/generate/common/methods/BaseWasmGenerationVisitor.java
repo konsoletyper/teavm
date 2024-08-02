@@ -116,6 +116,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
     private static final int SWITCH_TABLE_THRESHOLD = 256;
     private BaseWasmGenerationContext context;
+    protected final MethodReference currentMethod;
     protected final WasmTypeInference typeInference;
     protected final WasmFunction function;
     private int firstVariable;
@@ -131,9 +132,10 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     protected WasmExpression result;
     protected List<WasmExpression> resultConsumer;
 
-    public BaseWasmGenerationVisitor(BaseWasmGenerationContext context, WasmFunction function,
-            int firstVariable, boolean async) {
+    public BaseWasmGenerationVisitor(BaseWasmGenerationContext context, MethodReference currentMethod,
+            WasmFunction function, int firstVariable, boolean async) {
         this.context = context;
+        this.currentMethod = currentMethod;
         this.function = function;
         this.firstVariable = firstVariable;
         tempVars = new TemporaryVariablePool(function);
@@ -833,6 +835,10 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
     protected abstract CallSiteIdentifier generateCallSiteId(TextLocation location);
 
+    protected void acceptWithType(Expr expr, ValueType type) {
+        accept(expr);
+    }
+
     protected WasmExpression generateInvocation(InvocationExpr expr, CallSiteIdentifier callSiteId) {
         if (expr.getType() == InvocationType.STATIC || expr.getType() == InvocationType.SPECIAL) {
             var method = context.classes().resolve(expr.getMethod());
@@ -842,8 +848,13 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
                     : context.functions().forInstanceMethod(reference);
 
             var call = new WasmCall(function);
-            for (var argument : expr.getArguments()) {
-                accept(argument);
+            var arguments = expr.getArguments();
+            for (int i = 0, argumentsSize = arguments.size(); i < argumentsSize; i++) {
+                var argument = arguments.get(i);
+                var type = expr.getType() == InvocationType.STATIC
+                        ? reference.parameterType(i)
+                        : i == 0 ? ValueType.object(reference.getClassName()) : reference.parameterType(i - 1);
+                acceptWithType(argument, type);
                 call.getArguments().add(result);
             }
             if (expr.getType() == InvocationType.SPECIAL) {
@@ -866,8 +877,12 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             var function = context.functions().forInstanceMethod(expr.getMethod());
             var call = new WasmCall(function);
             call.getArguments().add(new WasmGetLocal(tmp));
-            for (var argument : expr.getArguments()) {
-                accept(argument);
+            var arguments = expr.getArguments();
+            acceptWithType(arguments.get(0), ValueType.object(expr.getMethod().getClassName()));
+            call.getArguments().add(result);
+            for (int i = 1; i < arguments.size(); i++) {
+                var argument = arguments.get(i);
+                acceptWithType(argument, expr.getMethod().parameterType(i));
                 call.getArguments().add(result);
             }
             if (callSiteId != null) {
@@ -881,7 +896,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             return block;
         } else {
             var reference = expr.getMethod();
-            accept(expr.getArguments().get(0));
+            acceptWithType(expr.getArguments().get(0), ValueType.object(expr.getMethod().getClassName()));
             var instance = result;
             var block = new WasmBlock(false);
             block.setType(mapType(reference.getReturnType()));
@@ -893,7 +908,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             var arguments = new ArrayList<WasmExpression>();
             arguments.add(instance);
             for (int i = 1; i < expr.getArguments().size(); ++i) {
-                accept(expr.getArguments().get(i));
+                acceptWithType(expr.getArguments().get(i), expr.getMethod().parameterType(i - 1));
                 arguments.add(result);
             }
             if (callSiteId != null) {
@@ -1091,7 +1106,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     @Override
     public void visit(ReturnStatement statement) {
         if (statement.getResult() != null) {
-            accept(statement.getResult());
+            acceptWithType(statement.getResult(), currentMethod.getReturnType());
         } else {
             result = null;
         }
@@ -1102,7 +1117,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
     @Override
     public void visit(InstanceOfExpr expr) {
-        accept(expr.getExpr());
+        acceptWithType(expr.getExpr(), expr.getType());
 
         var block = new WasmBlock(false);
         block.setType(WasmType.INT32);
@@ -1143,7 +1158,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         block.setType(wasmTargetType);
         block.setLocation(expr.getLocation());
 
-        accept(expr.getValue());
+        acceptWithType(expr.getValue(), expr.getTarget());
         result.acceptVisitor(typeInference);
         var wasmSourceType = typeInference.getResult();
         var valueToCast = exprCache.create(result, wasmSourceType, expr.getLocation(), block.getBody());
