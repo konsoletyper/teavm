@@ -17,6 +17,7 @@ package org.teavm.junit;
 
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.javascript.JavaScriptTarget;
+import org.teavm.backend.wasm.WasmGCTarget;
 import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMOptimizationLevel;
@@ -112,6 +113,38 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
 
         @Override
         public void apply(WasmTarget target) {
+        }
+    };
+
+    TeaVMTestConfiguration<WasmGCTarget> WASM_GC_DEFAULT = new TeaVMTestConfiguration<>() {
+        @Override
+        public String getSuffix() {
+            return "";
+        }
+
+        @Override
+        public void apply(TeaVM vm) {
+            vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
+        }
+
+        @Override
+        public void apply(WasmGCTarget target) {
+        }
+    };
+
+    TeaVMTestConfiguration<WasmGCTarget> WASM_GC_OPTIMIZED = new TeaVMTestConfiguration<>() {
+        @Override
+        public String getSuffix() {
+            return "optimized";
+        }
+
+        @Override
+        public void apply(TeaVM vm) {
+            vm.setOptimizationLevel(TeaVMOptimizationLevel.FULL);
+        }
+
+        @Override
+        public void apply(WasmGCTarget target) {
         }
     };
 

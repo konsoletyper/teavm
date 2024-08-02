@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Alexey Andreev.
+ *  Copyright 2021 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,10 +15,11 @@
  */
 package org.teavm.junit;
 
-public enum TestPlatform {
-    JAVASCRIPT,
-    WEBASSEMBLY,
-    WASI,
-    WEBASSEMBLY_GC,
-    C
+final class TestWasmGCEntryPoint {
+    private TestWasmGCEntryPoint() {
+    }
+
+    public static void main(String[] args) throws Throwable {
+        TestEntryPoint.run(args.length > 0 ? args[0] : null);
+    }
 }

@@ -123,7 +123,7 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
         }
     }
 
-    private File getOutputFile(File path, String baseName, String suffix, String extension) {
+    protected final File getOutputFile(File path, String baseName, String suffix, String extension) {
         StringBuilder simpleName = new StringBuilder();
         simpleName.append(baseName);
         if (!suffix.isEmpty()) {

@@ -106,6 +106,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
         platforms.add(new JSPlatformSupport(classSource, referenceCache));
         platforms.add(new WebAssemblyPlatformSupport(classSource, referenceCache));
+        platforms.add(new WebAssemblyGCPlatformSupport(classSource, referenceCache));
         platforms.add(new WasiPlatformSupport(classSource, referenceCache));
         platforms.add(new CPlatformSupport(classSource, referenceCache));
 
