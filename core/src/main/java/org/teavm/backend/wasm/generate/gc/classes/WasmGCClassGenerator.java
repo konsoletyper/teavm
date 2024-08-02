@@ -470,7 +470,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         if (type instanceof ValueType.Object) {
             fillClassFields(fields, ((ValueType.Object) type).getClassName());
         } else if (type instanceof ValueType.Array) {
-            fillArrayField(classInfo, ((ValueType.Array) type).getItemType());
+            fillArrayFields(classInfo, ((ValueType.Array) type).getItemType());
         }
     }
 
@@ -516,8 +516,37 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         }
     }
 
-    private void fillArrayField(WasmGCClassInfo classInfo, ValueType elementType) {
-        var wasmArray = new WasmArray(null, () -> typeMapper.mapStorageType(elementType));
+    private void fillArrayFields(WasmGCClassInfo classInfo, ValueType elementType) {
+        WasmStorageType wasmElementType;
+        if (elementType instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) elementType).getKind()) {
+                case BOOLEAN:
+                case BYTE:
+                    wasmElementType = WasmStorageType.INT8;
+                    break;
+                case SHORT:
+                case CHARACTER:
+                    wasmElementType = WasmStorageType.INT16;
+                    break;
+                case INTEGER:
+                    wasmElementType = WasmType.INT32.asStorage();
+                    break;
+                case LONG:
+                    wasmElementType = WasmType.INT64.asStorage();
+                    break;
+                case FLOAT:
+                    wasmElementType = WasmType.FLOAT32.asStorage();
+                    break;
+                case DOUBLE:
+                    wasmElementType = WasmType.FLOAT64.asStorage();
+                    break;
+                default:
+                    throw new IllegalArgumentException();
+            }
+        } else {
+            wasmElementType = WasmType.Reference.STRUCT.asStorage();
+        }
+        var wasmArray = new WasmArray(null, wasmElementType);
         module.types.add(wasmArray);
         classInfo.structure.getFields().add(wasmArray.getReference().asStorage());
         classInfo.array = wasmArray;

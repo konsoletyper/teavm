@@ -16,8 +16,8 @@
 package org.teavm.backend.wasm.model;
 
 public abstract class WasmStorageType {
-    private static final Packed INT16 = new Packed(WasmPackedType.INT16);
-    private static final Packed INT8 = new Packed(WasmPackedType.INT8);
+    public static final Packed INT16 = new Packed(WasmPackedType.INT16);
+    public static final Packed INT8 = new Packed(WasmPackedType.INT8);
 
     private WasmStorageType() {
     }

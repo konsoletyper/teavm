@@ -238,12 +238,15 @@ public abstract class BaseTypeInference<T> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public T typeOf(Variable variable) {
-        ensure();
-        return (T) types[variable.getIndex()];
+        return typeOf(variable.getIndex());
     }
 
+    @SuppressWarnings("unchecked")
+    public T typeOf(int index) {
+        ensure();
+        return (T) types[index];
+    }
 
     protected abstract T mapType(ValueType type);
 

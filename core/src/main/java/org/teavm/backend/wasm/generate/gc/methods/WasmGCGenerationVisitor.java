@@ -23,6 +23,7 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.SubscriptExpr;
 import org.teavm.ast.UnwrapArrayExpr;
+import org.teavm.backend.wasm.gc.PreciseTypeInference;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationVisitor;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmArray;
@@ -63,12 +64,14 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     private WasmGCGenerationContext context;
     private WasmGCGenerationUtil generationUtil;
     private WasmType expectedType;
+    private PreciseTypeInference types;
 
     public WasmGCGenerationVisitor(WasmGCGenerationContext context, MethodReference currentMethod,
-            WasmFunction function, int firstVariable, boolean async) {
+            WasmFunction function, int firstVariable, boolean async, PreciseTypeInference types) {
         super(context, currentMethod, function, firstVariable, async);
         this.context = context;
         generationUtil = new WasmGCGenerationUtil(context.classInfoProvider(), tempVars);
+        this.types = types;
     }
 
     @Override
@@ -384,6 +387,12 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         }
         arrayGet.setLocation(expr.getLocation());
         result = arrayGet;
+        if (expr.getType() == ArrayType.OBJECT && expr.getVariableIndex() >= 0) {
+            var targetType = types.typeOf(expr.getVariableIndex());
+            if (targetType != null) {
+                result = new WasmCast(result, (WasmType.Reference) mapType(targetType.valueType));
+            }
+        }
     }
 
     @Override

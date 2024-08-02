@@ -190,6 +190,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                         Expr result = BinaryExpr.binary(expr.getOperation(), comparison.getType(),
                                 comparison.getFirstOperand(), comparison.getSecondOperand());
                         result.setLocation(comparison.getLocation());
+                        result.setVariableIndex(comparison.getVariableIndex());
                         if (invert) {
                             result = ExprOptimizer.invert(result);
                         }
@@ -294,6 +295,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                 ConstantExpr constantExpr = new ConstantExpr();
                 constantExpr.setValue(constants[index]);
                 constantExpr.setLocation(expr.getLocation());
+                constantExpr.setVariableIndex(expr.getVariableIndex());
                 resultExpr = constantExpr;
                 return;
             }
@@ -483,6 +485,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         args = Arrays.copyOfRange(args, 1, args.length);
         InvocationExpr constructrExpr = Expr.constructObject(expr.getMethod(), args);
         constructrExpr.setLocation(expr.getLocation());
+        constructrExpr.setVariableIndex(constructed.getVariableIndex());
         assignment.setRightValue(constructrExpr);
         readFrequencies[var.getIndex()]--;
         return true;
@@ -823,6 +826,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     private void applyArrayOptimization(ArrayOptimization optimization) {
         AssignmentStatement assign = (AssignmentStatement) resultSequence.get(optimization.index);
         ArrayFromDataExpr arrayFromData = new ArrayFromDataExpr();
+        arrayFromData.setVariableIndex(optimization.array.getVariableIndex());
         arrayFromData.setLocation(optimization.array.getLocation());
         arrayFromData.setType(optimization.array.getType());
         arrayFromData.getData().addAll(optimization.elements);
@@ -1096,6 +1100,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             AssignmentStatement assignment = new AssignmentStatement();
             assignment.setLocation(conditionalExpr.getLocation());
             VariableExpr lhs = new VariableExpr();
+            lhs.setVariableIndex(firstLhs.getIndex());
             lhs.setIndex(firstLhs.getIndex());
             assignment.setLeftValue(lhs);
             assignment.setRightValue(conditionalExpr);
@@ -1166,6 +1171,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                         if (statement.getCondition() != null) {
                             Expr newCondition = Expr.binary(BinaryOperation.AND, null, statement.getCondition(),
                                     ExprOptimizer.invert(cond.getCondition()));
+                            newCondition.setVariableIndex(statement.getCondition().getVariableIndex());
                             newCondition.setLocation(statement.getCondition().getLocation());
                             statement.setCondition(newCondition);
                         } else {

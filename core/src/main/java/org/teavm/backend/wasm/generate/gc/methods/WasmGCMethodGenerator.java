@@ -250,7 +250,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
 
         addInitializerErase(method, function);
         var visitor = new WasmGCGenerationVisitor(getGenerationContext(), method.getReference(),
-                function, firstVar, false);
+                function, firstVar, false, typeInference);
         visitor.generate(ast.getBody(), function.getBody());
     }
 
