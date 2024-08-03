@@ -26,12 +26,21 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
 
     public WasmGCCustomGenerators() {
         fillStringPool();
+        fillSystem();
     }
 
     private void fillStringPool() {
         generators.put(
                 new MethodReference(WasmGCSupport.class, "nextByte", byte.class),
                 new WasmGCStringPoolGenerator()
+        );
+    }
+
+    private void fillSystem() {
+        generators.put(
+                new MethodReference(System.class, "doArrayCopy", Object.class, int.class, Object.class,
+                        int.class, int.class, void.class),
+                new SystemDoArrayCopyGenerator()
         );
     }
 

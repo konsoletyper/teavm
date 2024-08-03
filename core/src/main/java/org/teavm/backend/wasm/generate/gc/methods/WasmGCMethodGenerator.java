@@ -67,6 +67,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private Diagnostics diagnostics;
     private WasmGCTypeMapper typeMapper;
     private WasmGCCustomGeneratorProvider customGenerators;
+    private WasmGCIntrinsicProvider intrinsics;
     private Queue<Runnable> queue = new ArrayDeque<>();
     private Map<MethodReference, WasmFunction> staticMethods = new HashMap<>();
     private Map<MethodReference, WasmFunction> instanceMethods = new HashMap<>();
@@ -89,7 +90,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             NameProvider names,
             Diagnostics diagnostics,
             WasmGCMethodReturnTypes returnTypes,
-            WasmGCCustomGeneratorProvider customGenerators
+            WasmGCCustomGeneratorProvider customGenerators,
+            WasmGCIntrinsicProvider intrinsics
     ) {
         this.module = module;
         this.hierarchy = hierarchy;
@@ -101,6 +103,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         this.diagnostics = diagnostics;
         this.returnTypes = returnTypes;
         this.customGenerators = customGenerators;
+        this.intrinsics = intrinsics;
     }
 
     public void setTypeMapper(WasmGCTypeMapper typeMapper) {
@@ -292,12 +295,14 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                     typeMapper,
                     functionTypes,
                     classes,
+                    hierarchy,
                     this,
                     supertypeFunctions,
                     classInfoProvider,
                     standardClasses,
                     strings,
-                    customGenerators
+                    customGenerators,
+                    intrinsics
             );
         }
         return context;
@@ -323,6 +328,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         @Override
         public WasmFunctionTypes functionTypes() {
             return functionTypes;
+        }
+
+        @Override
+        public WasmGCTypeMapper typeMapper() {
+            return typeMapper;
         }
     };
 }

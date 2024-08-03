@@ -20,6 +20,7 @@ import java.util.List;
 import org.teavm.backend.wasm.gc.WasmGCDependencies;
 import org.teavm.backend.wasm.generate.gc.WasmGCDeclarationsGenerator;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerators;
+import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsics;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.render.WasmBinaryRenderer;
 import org.teavm.backend.wasm.render.WasmBinaryStatsCollector;
@@ -108,6 +109,7 @@ public class WasmGCTarget implements TeaVMTarget {
     public void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException {
         var module = new WasmModule();
         var customGenerators = new WasmGCCustomGenerators();
+        var intrinsics = new WasmGCIntrinsics();
         var declarationsGenerator = new WasmGCDeclarationsGenerator(
                 module,
                 classes,
@@ -115,7 +117,8 @@ public class WasmGCTarget implements TeaVMTarget {
                 controller.getClassInitializerInfo(),
                 controller.getDependencyInfo(),
                 controller.getDiagnostics(),
-                customGenerators
+                customGenerators,
+                intrinsics
         );
         declarationsGenerator.setFriendlyToDebugger(controller.isFriendlyToDebugger());
         var moduleGenerator = new WasmGCModuleGenerator(declarationsGenerator);
@@ -155,5 +158,10 @@ public class WasmGCTarget implements TeaVMTarget {
         try (var output = buildTarget.createResource(outputName)) {
             output.write(data);
         }
+    }
+
+    @Override
+    public boolean needsSystemArrayCopyOptimization() {
+        return false;
     }
 }

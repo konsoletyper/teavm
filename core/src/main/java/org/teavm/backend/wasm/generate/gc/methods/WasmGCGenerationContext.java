@@ -29,6 +29,7 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.classes.VirtualTableProvider;
@@ -42,9 +43,11 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmGCTypeMapper typeMapper;
     private WasmFunctionTypes functionTypes;
     private ClassReaderSource classes;
+    private ClassHierarchy hierarchy;
     private BaseWasmFunctionRepository functions;
     private WasmGCSupertypeFunctionProvider supertypeFunctions;
     private WasmGCCustomGeneratorProvider customGenerators;
+    private WasmGCIntrinsicProvider intrinsics;
     private WasmFunction npeMethod;
     private WasmFunction aaiobeMethod;
     private WasmFunction cceMethod;
@@ -53,20 +56,23 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
 
     public WasmGCGenerationContext(WasmModule module, VirtualTableProvider virtualTables,
             WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes, ClassReaderSource classes,
-            BaseWasmFunctionRepository functions, WasmGCSupertypeFunctionProvider supertypeFunctions,
-            WasmGCClassInfoProvider classInfoProvider, WasmGCStandardClasses standardClasses,
-            WasmGCStringProvider strings, WasmGCCustomGeneratorProvider customGenerators) {
+            ClassHierarchy hierarchy, BaseWasmFunctionRepository functions,
+            WasmGCSupertypeFunctionProvider supertypeFunctions, WasmGCClassInfoProvider classInfoProvider,
+            WasmGCStandardClasses standardClasses, WasmGCStringProvider strings,
+            WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics) {
         this.module = module;
         this.virtualTables = virtualTables;
         this.typeMapper = typeMapper;
         this.functionTypes = functionTypes;
         this.classes = classes;
+        this.hierarchy = hierarchy;
         this.functions = functions;
         this.supertypeFunctions = supertypeFunctions;
         this.classInfoProvider = classInfoProvider;
         this.standardClasses = standardClasses;
         this.strings = strings;
         this.customGenerators = customGenerators;
+        this.intrinsics = intrinsics;
     }
 
     public WasmGCClassInfoProvider classInfoProvider() {
@@ -118,6 +124,10 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         return classes;
     }
 
+    public ClassHierarchy hierarchy() {
+        return hierarchy;
+    }
+
     public WasmFunction npeMethod() {
         if (npeMethod == null) {
             npeMethod = functions().forStaticMethod(new MethodReference(WasmGCSupport.class, "npe",
@@ -151,7 +161,15 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         return exceptionGlobal;
     }
 
+    public WasmModule module() {
+        return module;
+    }
+
     public WasmGCCustomGeneratorProvider customGenerators() {
         return customGenerators;
+    }
+
+    public WasmGCIntrinsicProvider intrinsics() {
+        return intrinsics;
     }
 }

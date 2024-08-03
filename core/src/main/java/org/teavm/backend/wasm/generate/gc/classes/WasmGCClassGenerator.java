@@ -476,7 +476,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     private void fillClassFields(List<WasmStorageType> fields, String className) {
         var classReader = classSource.get(className);
-        if (classReader.hasModifier(ElementModifier.INTERFACE)) {
+        if (classReader == null || classReader.hasModifier(ElementModifier.INTERFACE)) {
             fillSimpleClassFields(fields, "java.lang.Object");
         } else {
             fillSimpleClassFields(fields, className);

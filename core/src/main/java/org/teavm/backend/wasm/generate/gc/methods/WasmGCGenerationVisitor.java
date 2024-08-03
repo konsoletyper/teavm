@@ -20,16 +20,22 @@ import org.teavm.ast.ArrayType;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.Expr;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.ast.InvocationType;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.SubscriptExpr;
 import org.teavm.ast.UnwrapArrayExpr;
+import org.teavm.backend.wasm.BaseWasmFunctionRepository;
+import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.PreciseTypeInference;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationVisitor;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
+import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
@@ -39,6 +45,7 @@ import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
+import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
@@ -55,6 +62,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
@@ -401,6 +409,30 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
+    protected WasmExpression invocation(InvocationExpr expr, List<WasmExpression> resultConsumer, boolean willDrop) {
+        if (expr.getType() == InvocationType.SPECIAL || expr.getType() == InvocationType.STATIC) {
+            var intrinsic = context.intrinsics().get(expr.getMethod());
+            if (intrinsic != null) {
+                var resultExpr = intrinsic.apply(expr, intrinsicContext);
+                if (resultConsumer != null) {
+                    if (willDrop) {
+                        var drop = new WasmDrop(resultExpr);
+                        drop.setLocation(expr.getLocation());
+                        resultConsumer.add(drop);
+                    } else {
+                        resultConsumer.add(resultExpr);
+                    }
+                    result = null;
+                    return null;
+                } else {
+                    return resultExpr;
+                }
+            }
+        }
+        return super.invocation(expr, resultConsumer, willDrop);
+    }
+
+    @Override
     protected WasmExpression mapFirstArgumentForCall(WasmExpression argument, WasmFunction function,
             MethodReference method) {
         argument.acceptVisitor(typeInference);
@@ -480,4 +512,42 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         public void generateThrow(List<WasmExpression> target, TextLocation location) {
         }
     }
+
+    private WasmGCIntrinsicContext intrinsicContext = new WasmGCIntrinsicContext() {
+        @Override
+        public WasmExpression generate(Expr expr) {
+            accept(expr);
+            return result;
+        }
+
+        @Override
+        public WasmModule module() {
+            return context.module();
+        }
+
+        @Override
+        public WasmFunctionTypes functionTypes() {
+            return context.functionTypes();
+        }
+
+        @Override
+        public PreciseTypeInference types() {
+            return types;
+        }
+
+        @Override
+        public BaseWasmFunctionRepository functions() {
+            return context.functions();
+        }
+
+        @Override
+        public ClassHierarchy hierarchy() {
+            return context.hierarchy();
+        }
+
+        @Override
+        public WasmGCTypeMapper typeMapper() {
+            return context.typeMapper();
+        }
+    };
 }

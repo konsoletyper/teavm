@@ -66,4 +66,8 @@ public interface TeaVMTarget {
     default Collection<? extends MethodReference> getInitializerMethods() {
         return null;
     }
+
+    default boolean needsSystemArrayCopyOptimization() {
+        return true;
+    }
 }

@@ -487,24 +487,24 @@ public abstract class BaseTypeInference<T> {
         @Override
         public void visit(InvokeInstruction insn) {
             if (insn.getInstance() != null) {
-                push(insn.getInstance(), ValueType.object(reference.getClassName()));
+                push(insn.getInstance(), ValueType.object(insn.getMethod().getClassName()));
             }
             for (var i = 0; i < insn.getArguments().size(); ++i) {
-                push(insn.getArguments().get(i), reference.parameterType(i));
+                push(insn.getArguments().get(i), insn.getMethod().parameterType(i));
             }
         }
 
         @Override
         public void visit(GetFieldInstruction insn) {
             if (insn.getInstance() != null) {
-                push(insn.getInstance(), ValueType.object(reference.getClassName()));
+                push(insn.getInstance(), ValueType.object(insn.getField().getClassName()));
             }
         }
 
         @Override
         public void visit(PutFieldInstruction insn) {
             if (insn.getInstance() != null) {
-                push(insn.getInstance(), ValueType.object(reference.getClassName()));
+                push(insn.getInstance(), ValueType.object(insn.getField().getClassName()));
             }
             push(insn.getValue(), insn.getFieldType());
         }

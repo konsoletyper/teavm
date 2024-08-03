@@ -26,6 +26,7 @@ import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCSupertypeFunctionProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCCustomGeneratorProvider;
+import org.teavm.backend.wasm.generate.gc.methods.WasmGCIntrinsicProvider;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCMethodGenerator;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
@@ -55,7 +56,8 @@ public class WasmGCDeclarationsGenerator {
             ClassInitializerInfo classInitializerInfo,
             DependencyInfo dependencyInfo,
             Diagnostics diagnostics,
-            WasmGCCustomGeneratorProvider customGenerators
+            WasmGCCustomGeneratorProvider customGenerators,
+            WasmGCIntrinsicProvider intrinsics
     ) {
         this.module = module;
         hierarchy = new ClassHierarchy(classes);
@@ -73,7 +75,8 @@ public class WasmGCDeclarationsGenerator {
                 names,
                 diagnostics,
                 returnTypes,
-                customGenerators
+                customGenerators,
+                intrinsics
         );
         var tags = new TagRegistry(classes, hierarchy);
         var metadataRequirements = new ClassMetadataRequirements(dependencyInfo);

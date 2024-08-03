@@ -13,16 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generators.gc;
+package org.teavm.backend.wasm.generate.gc.methods;
 
-import org.teavm.backend.wasm.WasmFunctionTypes;
-import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
-import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
+import org.teavm.model.MethodReference;
 
-public interface WasmGCCustomGeneratorContext {
-    WasmModule module();
-
-    WasmFunctionTypes functionTypes();
-
-    WasmGCTypeMapper typeMapper();
+public interface WasmGCIntrinsicProvider {
+    WasmGCIntrinsic get(MethodReference method);
 }
