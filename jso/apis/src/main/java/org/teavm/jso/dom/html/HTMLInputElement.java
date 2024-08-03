@@ -17,8 +17,9 @@ package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.file.FileList;
+import org.teavm.jso.popover.PopoverInvokerElement;
 
-public abstract class HTMLInputElement extends HTMLElement {
+public abstract class HTMLInputElement extends HTMLElement implements PopoverInvokerElement {
     @JSProperty
     public abstract boolean isChecked();
 
