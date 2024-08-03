@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.render;
 
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
@@ -315,6 +316,11 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     @Override
     public void visit(WasmArrayLength expression) {
         result = WasmType.INT32;
+    }
+
+    @Override
+    public void visit(WasmArrayCopy expression) {
+        result = null;
     }
 
     @Override

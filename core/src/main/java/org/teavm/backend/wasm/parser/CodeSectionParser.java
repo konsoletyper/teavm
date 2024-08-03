@@ -723,6 +723,10 @@ public class CodeSectionParser {
                 codeListener.opcode(Opcode.ARRAY_LENGTH);
                 return true;
 
+            case 17:
+                codeListener.arrayCopy(readLEB(), readLEB());
+                return true;
+
             case 23:
                 codeListener.cast(readHeapType());
                 return true;

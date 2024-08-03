@@ -25,6 +25,7 @@ import org.teavm.backend.wasm.debug.DebugLines;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
@@ -1139,6 +1140,21 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.getInstance().acceptVisitor(this);
         writer.writeByte(0xfb);
         writer.writeByte(15);
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmArrayCopy expression) {
+        pushLocation(expression);
+        expression.getTargetArray().acceptVisitor(this);
+        expression.getTargetIndex().acceptVisitor(this);
+        expression.getSourceArray().acceptVisitor(this);
+        expression.getSourceIndex().acceptVisitor(this);
+        expression.getSize().acceptVisitor(this);
+        writer.writeByte(0xfb);
+        writer.writeByte(17);
+        writer.writeLEB(module.types.indexOf(expression.getTargetArrayType()));
+        writer.writeLEB(module.types.indexOf(expression.getSourceArrayType()));
         popLocation();
     }
 

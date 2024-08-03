@@ -23,6 +23,7 @@ import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
@@ -788,6 +789,19 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmArrayLength expression) {
         open().append("array.length");
         line(expression.getInstance());
+        close();
+    }
+
+    @Override
+    public void visit(WasmArrayCopy expression) {
+        open().append("array.copy");
+        append(" ").append(typeName(expression.getTargetArrayType()));
+        append(" ").append(typeName(expression.getSourceArrayType()));
+        line(expression.getTargetArray());
+        line(expression.getTargetIndex());
+        line(expression.getSourceArray());
+        line(expression.getSourceIndex());
+        line(expression.getSize());
         close();
     }
 

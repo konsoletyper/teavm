@@ -27,6 +27,7 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArraySet;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
@@ -155,6 +156,13 @@ public class UnusedTypeElimination {
         public void visit(WasmCallReference expression) {
             super.visit(expression);
             use(expression.getType());
+        }
+
+        @Override
+        public void visit(WasmArrayCopy expression) {
+            super.visit(expression);
+            use(expression.getSourceArrayType());
+            use(expression.getTargetArrayType());
         }
     };
 

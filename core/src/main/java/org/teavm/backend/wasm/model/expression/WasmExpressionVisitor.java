@@ -112,5 +112,7 @@ public interface WasmExpressionVisitor {
 
     void visit(WasmArrayLength expression);
 
+    void visit(WasmArrayCopy expression);
+
     void visit(WasmFunctionReference expression);
 }

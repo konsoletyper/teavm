@@ -159,6 +159,9 @@ public interface CodeListener {
     default void arraySet(int typeIndex) {
     }
 
+    default void arrayCopy(int targetTypeIndex, int sourceTypeIndex) {
+    }
+
     default void getGlobal(int globalIndex) {
     }
 

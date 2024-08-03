@@ -297,6 +297,15 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmArrayCopy expression) {
+        expression.getTargetArray().acceptVisitor(this);
+        expression.getTargetIndex().acceptVisitor(this);
+        expression.getSourceArray().acceptVisitor(this);
+        expression.getSourceIndex().acceptVisitor(this);
+        expression.getSize().acceptVisitor(this);
+    }
+
+    @Override
     public void visit(WasmFunctionReference expression) {
     }
 }
