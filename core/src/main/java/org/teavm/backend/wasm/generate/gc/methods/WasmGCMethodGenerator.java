@@ -302,7 +302,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                     standardClasses,
                     strings,
                     customGenerators,
-                    intrinsics
+                    intrinsics,
+                    returnTypes
             );
         }
         return context;

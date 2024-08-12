@@ -85,4 +85,16 @@ public class WasmGCSupport {
     private static native byte nextByte();
 
     private static native void error();
+
+    public static StringBuilder createStringBuilder() {
+        return new StringBuilder();
+    }
+
+    public static String[] createStringArray(int size) {
+        return new String[size];
+    }
+
+    public static void setToStringArray(String[] array, int index, String value) {
+        array[index] = value;
+    }
 }

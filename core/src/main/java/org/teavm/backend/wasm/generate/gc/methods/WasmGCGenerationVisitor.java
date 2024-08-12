@@ -408,6 +408,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         result = invocation(expr, null, false);
     }
 
+
     @Override
     protected WasmExpression invocation(InvocationExpr expr, List<WasmExpression> resultConsumer, boolean willDrop) {
         if (expr.getType() == InvocationType.SPECIAL || expr.getType() == InvocationType.STATIC) {
@@ -435,26 +436,34 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected WasmExpression mapFirstArgumentForCall(WasmExpression argument, WasmFunction function,
             MethodReference method) {
-        argument.acceptVisitor(typeInference);
+        return forceType(argument, function.getType().getParameterTypes().get(0));
+    }
+
+    @Override
+    protected WasmExpression forceType(WasmExpression expression, ValueType type) {
+        return forceType(expression, mapType(context.returnTypes().returnTypeOf(currentMethod)));
+    }
+
+    private WasmExpression forceType(WasmExpression expression, WasmType expectedType) {
+        expression.acceptVisitor(typeInference);
         var actualType = typeInference.getResult();
-        var expectedType = function.getType().getParameterTypes().get(0);
         if (actualType == expectedType || !(actualType instanceof WasmType.CompositeReference)
                 || !(expectedType instanceof WasmType.CompositeReference)) {
-            return argument;
+            return expression;
         }
         var actualComposite = ((WasmType.CompositeReference) actualType).composite;
         var expectedComposite = ((WasmType.CompositeReference) expectedType).composite;
         if (!(actualComposite instanceof WasmStructure) || !(expectedComposite instanceof WasmStructure)) {
-            return argument;
+            return expression;
         }
 
         var actualStruct = (WasmStructure) actualComposite;
         var expectedStruct = (WasmStructure) expectedComposite;
         if (!actualStruct.isSupertypeOf(expectedStruct)) {
-            return argument;
+            return expression;
         }
 
-        return new WasmCast(argument, expectedComposite.getReference());
+        return new WasmCast(expression, expectedComposite.getReference());
     }
 
     @Override

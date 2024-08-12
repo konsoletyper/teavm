@@ -75,7 +75,9 @@ public class WasmGCTarget implements TeaVMTarget {
 
     @Override
     public void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
-        new WasmGCDependencies(dependencyAnalyzer).contribute();
+        var deps = new WasmGCDependencies(dependencyAnalyzer);
+        deps.contribute();
+        deps.contributeStandardExports();
     }
 
     @Override
@@ -122,9 +124,26 @@ public class WasmGCTarget implements TeaVMTarget {
         );
         declarationsGenerator.setFriendlyToDebugger(controller.isFriendlyToDebugger());
         var moduleGenerator = new WasmGCModuleGenerator(declarationsGenerator);
+
         var mainFunction = moduleGenerator.generateMainFunction(controller.getEntryPoint());
         mainFunction.setExportName(controller.getEntryPointName());
         mainFunction.setName(controller.getEntryPointName());
+
+        var stringBuilderFunction = moduleGenerator.generateCreateStringBuilderFunction();
+        stringBuilderFunction.setExportName("createStringBuilder");
+
+        var createStringArrayFunction = moduleGenerator.generateCreateStringArrayFunction();
+        createStringArrayFunction.setExportName("createStringArray");
+
+        var appendCharFunction = moduleGenerator.generateAppendCharFunction();
+        appendCharFunction.setExportName("appendChar");
+
+        var buildStringFunction = moduleGenerator.generateBuildStringFunction();
+        buildStringFunction.setExportName("buildString");
+
+        var setArrayFunction = moduleGenerator.generateSetToStringArrayFunction();
+        setArrayFunction.setExportName("setToStringArray");
+
         moduleGenerator.generate();
         adjustModuleMemory(module);
 

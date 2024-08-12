@@ -34,6 +34,24 @@ public class WasmGCDependencies {
         contributeInitializerUtils();
     }
 
+    public void contributeStandardExports() {
+        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "createStringArray", int.class, String[].class))
+                .use();
+        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "createStringBuilder", StringBuilder.class))
+                .use();
+        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "setToStringArray", String[].class,
+                        int.class, String.class, void.class))
+                .propagate(1, analyzer.getType("[java/lang/String;"))
+                .propagate(3, analyzer.getType("java.lang.String"))
+                .use();
+        analyzer.linkMethod(new MethodReference(StringBuilder.class, "append", char.class, StringBuilder.class))
+                .propagate(0, analyzer.getType("java.lang.StringBuilder"))
+                .use();
+        analyzer.linkMethod(new MethodReference(StringBuilder.class, "toString", String.class))
+                .propagate(0, analyzer.getType("java.lang.StringBuilder"))
+                .use();
+    }
+
     private void contributeMathUtils() {
         for (var type : Arrays.asList(int.class, long.class, float.class, double.class)) {
             var method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);

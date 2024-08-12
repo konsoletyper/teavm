@@ -1105,12 +1105,17 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     public void visit(ReturnStatement statement) {
         if (statement.getResult() != null) {
             acceptWithType(statement.getResult(), currentMethod.getReturnType());
+            result = forceType(result, currentMethod.getReturnType());
         } else {
             result = null;
         }
         var wasmStatement = new WasmReturn(result);
         wasmStatement.setLocation(statement.getLocation());
         resultConsumer.add(wasmStatement);
+    }
+
+    protected WasmExpression forceType(WasmExpression expression, ValueType type) {
+        return expression;
     }
 
     @Override
