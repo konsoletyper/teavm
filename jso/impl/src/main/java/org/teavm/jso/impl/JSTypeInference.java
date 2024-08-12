@@ -81,6 +81,9 @@ class JSTypeInference extends BaseTypeInference<JSType> {
 
     @Override
     protected JSType elementType(JSType jsType) {
+        if (jsType == JSType.NULL) {
+            return JSType.NULL;
+        }
         return jsType instanceof JSType.ArrayType ? ((JSType.ArrayType) jsType).elementType : JSType.MIXED;
     }
 
