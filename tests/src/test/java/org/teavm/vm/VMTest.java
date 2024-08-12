@@ -657,6 +657,20 @@ public class VMTest {
         assertEquals("ap", callA(new B()));
     }
 
+    @Test
+    public void typeInferenceForArrayMerge() {
+        int[][] a = falseBoolean() ? null : array();
+        assertEquals(23, a[0][0]);
+    }
+
+    private boolean falseBoolean() {
+        return false;
+    }
+
+    private int[][] array() {
+        return new int[][] { { 23 } };
+    }
+
     private static String callA(A a) {
         return a.a();
     }
