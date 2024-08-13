@@ -17,7 +17,6 @@ package org.teavm.backend.wasm.generate.gc.classes;
 
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.model.FieldReference;
-import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 public interface WasmGCClassInfoProvider {
@@ -32,7 +31,7 @@ public interface WasmGCClassInfoProvider {
 
     WasmGlobal getStaticFieldLocation(FieldReference fieldRef);
 
-    int getVirtualMethodIndex(MethodReference methodRef);
+    int getVirtualMethodsOffset();
 
     default WasmGCClassInfo getClassInfo(String name) {
         return getClassInfo(ValueType.object(name));

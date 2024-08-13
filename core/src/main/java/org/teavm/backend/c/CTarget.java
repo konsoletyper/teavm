@@ -617,7 +617,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {
         VirtualTableBuilder builder = new VirtualTableBuilder(classes);
-        builder.setMethodsUsedAtCallSites(VirtualTableBuilder.getMethodsUsedOnCallSites(classes));
+        builder.setMethodsUsedAtCallSites(VirtualTableBuilder.getMethodsUsedOnCallSites(classes, true));
         builder.setMethodCalledVirtually(controller::isVirtual);
         return builder.build();
     }

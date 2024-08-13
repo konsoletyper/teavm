@@ -23,7 +23,6 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.InvocationType;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.SubscriptExpr;
-import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.PreciseTypeInference;
@@ -63,10 +62,13 @@ import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
+import org.teavm.model.classes.VirtualTable;
 
 public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     private WasmGCGenerationContext context;
@@ -136,13 +138,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    public void visit(UnwrapArrayExpr expr) {
-        accept(expr.getArray());
-        result = unwrapArray(result);
-        result.setLocation(expr.getLocation());
-    }
-
-    private WasmExpression unwrapArray(WasmExpression array) {
+    protected WasmExpression unwrapArray(WasmExpression array) {
         array.acceptVisitor(typeInference);
         var arrayType = (WasmType.CompositeReference) typeInference.getResult();
         var arrayStruct = (WasmStructure) arrayType.composite;
@@ -202,9 +198,16 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression nullLiteral() {
-        return new WasmNullConstant(expectedType instanceof WasmType.Reference
-                ? (WasmType.Reference) expectedType
+    protected WasmExpression nullLiteral(Expr expr) {
+        var type = expectedType;
+        if (expr.getVariableIndex() >= 0) {
+            var javaType = types.typeOf(expr.getVariableIndex());
+            if (javaType != null) {
+                type = mapType(javaType.valueType);
+            }
+        }
+        return new WasmNullConstant(type instanceof WasmType.Reference
+                ? (WasmType.Reference) type
                 : WasmType.Reference.STRUCT);
     }
 
@@ -252,15 +255,22 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         if (vtable == null) {
             return new WasmUnreachable();
         }
-        method = new MethodReference(vtable.getClassName(), method.getDescriptor());
+        var cls = context.classes().get(method.getClassName());
+        assert cls != null : "Virtual table can't be generated for absent class";
 
-        arguments.get(0).acceptVisitor(typeInference);
-        var instanceType = (WasmType.CompositeReference) typeInference.getResult();
-        var instanceStruct = (WasmStructure) instanceType.composite;
+        if (cls.hasModifier(ElementModifier.INTERFACE)) {
+            vtable = pickVirtualTableForInterfaceCall(vtable, method.getDescriptor());
+        }
+
+        int vtableIndex = vtable.getMethods().indexOf(method.getDescriptor());
+        if (vtable.getParent() != null) {
+            vtableIndex += vtable.getParent().size();
+        }
+        var instanceStruct = context.classInfoProvider().getClassInfo(vtable.getClassName()).getStructure();
 
         WasmExpression classRef = new WasmStructGet(instanceStruct, new WasmGetLocal(instance),
                 WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-        var index = context.classInfoProvider().getVirtualMethodIndex(method);
+        var index = context.classInfoProvider().getVirtualMethodsOffset() + vtableIndex;
         var vtableStruct = context.classInfoProvider().getClassInfo(vtable.getClassName())
                 .getVirtualTableStructure();
         classRef = new WasmCast(classRef, vtableStruct.getReference());
@@ -270,6 +280,20 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         var invoke = new WasmCallReference(functionRef, (WasmFunctionType) functionTypeRef.composite);
         invoke.getArguments().addAll(arguments);
         return invoke;
+    }
+
+    private VirtualTable pickVirtualTableForInterfaceCall(VirtualTable virtualTable, MethodDescriptor descriptor) {
+        var implementors = context.getInterfaceImplementors(virtualTable.getClassName());
+        for (var implementor : implementors) {
+            var implementorVtable = context.virtualTables().lookup(implementor);
+            if (implementorVtable != null && implementorVtable.hasMethod(descriptor)) {
+                while (implementorVtable.getParent() != null && implementorVtable.getParent().hasMethod(descriptor)) {
+                    implementorVtable = implementorVtable.getParent();
+                }
+                return implementorVtable;
+            }
+        }
+        throw new IllegalStateException();
     }
 
     @Override

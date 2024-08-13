@@ -1070,7 +1070,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     private VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {
         var builder = new VirtualTableBuilder(classes);
-        builder.setMethodsUsedAtCallSites(VirtualTableBuilder.getMethodsUsedOnCallSites(classes));
+        builder.setMethodsUsedAtCallSites(VirtualTableBuilder.getMethodsUsedOnCallSites(classes, true));
         builder.setMethodCalledVirtually(controller::isVirtual);
         return builder.build();
     }

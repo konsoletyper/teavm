@@ -29,7 +29,6 @@ import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.Statement;
 import org.teavm.ast.SubscriptExpr;
 import org.teavm.ast.TryCatchStatement;
-import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.backend.wasm.WasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.WasmHeap;
@@ -299,7 +298,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression nullLiteral() {
+    protected WasmExpression nullLiteral(Expr expr) {
         return new WasmInt32Constant(0);
     }
 
@@ -369,11 +368,6 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
         }
 
         return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, array, index);
-    }
-
-    @Override
-    public void visit(UnwrapArrayExpr expr) {
-        accept(expr.getArray());
     }
 
     @Override

@@ -81,7 +81,6 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private Map<ValueType, WasmGCClassInfo> classInfoMap = new LinkedHashMap<>();
     private Queue<WasmGCClassInfo> classInfoQueue = new ArrayDeque<>();
     private ObjectIntMap<FieldReference> fieldIndexes = new ObjectIntHashMap<>();
-    private ObjectIntMap<MethodReference> methodIndexes = new ObjectIntHashMap<>();
     private Map<FieldReference, WasmGlobal> staticFieldLocations = new HashMap<>();
     private List<Consumer<WasmFunction>> staticFieldInitializers = new ArrayList<>();
     private ClassInitializerInfo classInitializerInfo;
@@ -195,8 +194,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 classInfo.structure = new WasmStructure(name != null ? names.forClass(name) : null);
                 if (name != null) {
                     var classReader = classSource.get(name);
-                    if (classReader == null || !classReader.hasModifier(ElementModifier.ABSTRACT)
-                            && !classReader.hasModifier(ElementModifier.INTERFACE)) {
+                    if (classReader == null || !classReader.hasModifier(ElementModifier.INTERFACE)) {
                         virtualTable = virtualTables.lookup(name);
                     }
                     if (classReader != null && classReader.getParent() != null) {
@@ -235,6 +233,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     public int getClassArrayItemOffset() {
         return classArrayItemOffset;
+    }
+
+    @Override
+    public int getVirtualMethodsOffset() {
+        return virtualTableFieldOffset;
     }
 
     private void initPrimitiveClass(WasmGCClassInfo classInfo, ValueType.Primitive type) {
@@ -327,6 +330,10 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     private int fillVirtualTableMethods(List<WasmExpression> target, WasmStructure structure, WasmGlobal global,
             VirtualTable virtualTable, int index, String origin, Set<MethodDescriptor> filled) {
+        if (virtualTable.getParent() != null) {
+            index = fillVirtualTableMethods(target, structure, global, virtualTable.getParent(), index, origin,
+                    filled);
+        }
         for (var method : virtualTable.getMethods()) {
             var entry = virtualTable.getEntry(method);
             if (entry != null && entry.getImplementor() != null && filled.add(method)) {
@@ -337,24 +344,21 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     module.functions.add(wrapperFunction);
                     var call = new WasmCall(function);
                     var instanceParam = new WasmLocal(getClassInfo(virtualTable.getClassName()).getType());
-                    wrapperFunction.getLocalVariables().add(instanceParam);
+                    wrapperFunction.add(instanceParam);
                     var castTarget = getClassInfo(entry.getImplementor().getClassName()).getType();
                     call.getArguments().add(new WasmCast(new WasmGetLocal(instanceParam), castTarget));
                     var params = new WasmLocal[method.parameterCount()];
                     for (var i = 0; i < method.parameterCount(); ++i) {
                         params[i] = new WasmLocal(typeMapper.mapType(method.parameterType(i)));
                         call.getArguments().add(new WasmGetLocal(params[i]));
+                        wrapperFunction.add(params[i]);
                     }
-                    wrapperFunction.getLocalVariables().addAll(List.of(params));
                 }
                 function.setReferenced(true);
                 var ref = new WasmFunctionReference(function);
                 target.add(new WasmStructSet(structure, new WasmGetGlobal(global), index, ref));
             }
-        }
-        if (virtualTable.getParent() != null) {
-            index = fillVirtualTableMethods(target, structure, global, virtualTable.getParent(), index, origin,
-                    filled);
+            ++index;
         }
         return index;
     }
@@ -376,10 +380,12 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             addVirtualTableFields(structure, virtualTable.getParent());
         }
         for (var methodDesc : virtualTable.getMethods()) {
-            var functionType = getFunctionType(virtualTable.getClassName(), methodDesc);
-            var methodRef = new MethodReference(virtualTable.getClassName(), methodDesc);
-            methodIndexes.put(methodRef, structure.getFields().size());
-            structure.getFields().add(functionType.getReference().asStorage());
+            if (methodDesc == null) {
+                structure.getFields().add(WasmType.Reference.FUNC.asStorage());
+            } else {
+                var functionType = getFunctionType(virtualTable.getClassName(), methodDesc);
+                structure.getFields().add(functionType.getReference().asStorage());
+            }
         }
     }
 
@@ -452,15 +458,6 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         module.globals.add(global);
         
         return global;
-    }
-
-    @Override
-    public int getVirtualMethodIndex(MethodReference methodRef) {
-        var result = methodIndexes.getOrDefault(methodRef, -1);
-        if (result < 0) {
-            throw new IllegalStateException("Can't get offset of method " + methodRef);
-        }
-        return result;
     }
 
     private void fillFields(WasmGCClassInfo classInfo, ValueType type) {

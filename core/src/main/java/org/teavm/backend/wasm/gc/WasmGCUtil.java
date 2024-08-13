@@ -34,12 +34,12 @@ public final class WasmGCUtil {
         if (firstPath.get(0) != secondPath.get(0)) {
             return "java.lang.Object";
         }
-        var max = Math.max(firstPath.size(), secondPath.size());
+        var min = Math.min(firstPath.size(), secondPath.size());
         var index = 1;
-        while (index < max && firstPath.get(index) == secondPath.get(index)) {
+        while (index < min && firstPath.get(index) == secondPath.get(index)) {
             ++index;
         }
-        return firstPath.get(index).getName();
+        return index < firstPath.size() ? firstPath.get(index).getName() : secondPath.get(index).getName();
     }
 
     private static List<ClassReader> findPathToRoot(ClassHierarchy hierarchy, ClassReader cls) {

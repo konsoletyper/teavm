@@ -60,6 +60,7 @@ import org.teavm.ast.SwitchStatement;
 import org.teavm.ast.ThrowStatement;
 import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.UnaryExpr;
+import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
 import org.teavm.backend.wasm.WasmRuntime;
@@ -453,7 +454,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         accept(value);
         result.acceptVisitor(typeInference);
         block.setType(typeInference.getResult());
-        var cachedValue = exprCache.create(result, WasmType.INT32, location, block.getBody());
+        var cachedValue = exprCache.create(result, typeInference.getResult(), location, block.getBody());
 
         var check = new WasmBranch(cachedValue.expr(), block);
         check.setResult(cachedValue.expr());
@@ -555,7 +556,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     @Override
     public void visit(ConstantExpr expr) {
         if (expr.getValue() == null) {
-            result = nullLiteral();
+            result = nullLiteral(expr);
         } else if (expr.getValue() instanceof Integer) {
             result = new WasmInt32Constant((Integer) expr.getValue());
         } else if (expr.getValue() instanceof Long) {
@@ -574,7 +575,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         result.setLocation(expr.getLocation());
     }
 
-    protected abstract WasmExpression nullLiteral();
+    protected abstract WasmExpression nullLiteral(Expr expr);
 
     protected abstract WasmExpression stringLiteral(String s);
 
@@ -894,12 +895,14 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             return block;
         } else {
             var reference = expr.getMethod();
-            acceptWithType(expr.getArguments().get(0), ValueType.object(expr.getMethod().getClassName()));
+            var instanceType = ValueType.object(expr.getMethod().getClassName());
+            acceptWithType(expr.getArguments().get(0), instanceType);
+            var instanceWasmType = mapType(instanceType);
             var instance = result;
             var block = new WasmBlock(false);
             block.setType(mapType(reference.getReturnType()));
 
-            var instanceVar = tempVars.acquire(WasmType.INT32);
+            var instanceVar = tempVars.acquire(instanceWasmType);
             block.getBody().add(new WasmSetLocal(instanceVar, instance));
             instance = new WasmGetLocal(instanceVar);
 
@@ -1066,7 +1069,8 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
         for (int i = 0; i < expr.getData().size(); ++i) {
             expr.getData().get(i).acceptVisitor(this);
-            block.getBody().add(storeArrayItem(new WasmGetLocal(array), new WasmInt32Constant(i), result, arrayType));
+            var arrayData = unwrapArray(new WasmGetLocal(array));
+            block.getBody().add(storeArrayItem(arrayData, new WasmInt32Constant(i), result, arrayType));
         }
 
         block.getBody().add(new WasmGetLocal(array));
@@ -1126,7 +1130,8 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         block.setType(WasmType.INT32);
         block.setLocation(expr.getLocation());
 
-        var cachedObject = exprCache.create(result, WasmType.INT32, expr.getLocation(), block.getBody());
+        result.acceptVisitor(typeInference);
+        var cachedObject = exprCache.create(result, typeInference.getResult(), expr.getLocation(), block.getBody());
 
         var ifNull = new WasmBranch(genIsZero(cachedObject.expr()), block);
         ifNull.setResult(new WasmInt32Constant(0));
@@ -1544,6 +1549,17 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     }
 
     protected abstract WasmType mapType(ValueType type);
+
+    protected WasmExpression unwrapArray(WasmExpression array) {
+        return array;
+    }
+
+    @Override
+    public void visit(UnwrapArrayExpr expr) {
+        accept(expr.getArray());
+        result = unwrapArray(result);
+        result.setLocation(expr.getLocation());
+    }
 
     protected abstract class CallSiteIdentifier {
         public abstract void generateRegister(List<WasmExpression> consumer, TextLocation location);

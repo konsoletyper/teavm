@@ -45,8 +45,8 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Import;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHierarchy;
-import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -58,7 +58,7 @@ import org.teavm.model.util.RegisterAllocator;
 public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private WasmModule module;
     private ClassHierarchy hierarchy;
-    private ClassHolderSource classes;
+    private ListableClassHolderSource classes;
     private VirtualTableProvider virtualTables;
     private ClassInitializerInfo classInitInfo;
     private WasmFunctionTypes functionTypes;
@@ -83,7 +83,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     public WasmGCMethodGenerator(
             WasmModule module,
             ClassHierarchy hierarchy,
-            ClassHolderSource classes,
+            ListableClassHolderSource classes,
             VirtualTableProvider virtualTables,
             ClassInitializerInfo classInitInfo,
             WasmFunctionTypes functionTypes,

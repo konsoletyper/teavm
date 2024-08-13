@@ -15,6 +15,12 @@
  */
 package org.teavm.backend.wasm.generate.gc.methods;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.WasmGCMethodReturnTypes;
@@ -32,6 +38,8 @@ import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.classes.VirtualTableProvider;
 
@@ -43,7 +51,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private VirtualTableProvider virtualTables;
     private WasmGCTypeMapper typeMapper;
     private WasmFunctionTypes functionTypes;
-    private ClassReaderSource classes;
+    private ListableClassReaderSource classes;
     private ClassHierarchy hierarchy;
     private BaseWasmFunctionRepository functions;
     private WasmGCSupertypeFunctionProvider supertypeFunctions;
@@ -55,9 +63,10 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmFunction cceMethod;
     private WasmGlobal exceptionGlobal;
     private WasmTag exceptionTag;
+    private Map<String, Set<String>> interfaceImplementors;
 
     public WasmGCGenerationContext(WasmModule module, VirtualTableProvider virtualTables,
-            WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes, ClassReaderSource classes,
+            WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes, ListableClassReaderSource classes,
             ClassHierarchy hierarchy, BaseWasmFunctionRepository functions,
             WasmGCSupertypeFunctionProvider supertypeFunctions, WasmGCClassInfoProvider classInfoProvider,
             WasmGCStandardClasses standardClasses, WasmGCStringProvider strings,
@@ -179,5 +188,37 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
 
     public WasmGCMethodReturnTypes returnTypes() {
         return returnTypes;
+    }
+
+    public Collection<String> getInterfaceImplementors(String className) {
+        if (interfaceImplementors == null) {
+            fillInterfaceImplementors();
+        }
+        var result = interfaceImplementors.get(className);
+        return result != null ? result : List.of();
+    }
+
+    private void fillInterfaceImplementors() {
+        interfaceImplementors = new HashMap<>();
+        for (var className : classes.getClassNames()) {
+            var cls = classes.get(className);
+            if (!cls.hasModifier(ElementModifier.INTERFACE)) {
+                for (var itf : cls.getInterfaces()) {
+                    addInterfaceImplementor(className, itf);
+                }
+            }
+        }
+    }
+
+    private void addInterfaceImplementor(String implementorName, String interfaceName) {
+        var implementorsByKey = interfaceImplementors.computeIfAbsent(interfaceName, k -> new LinkedHashSet<>());
+        if (implementorsByKey.add(implementorName)) {
+            var itf = classes.get(implementorName);
+            if (itf != null) {
+                for (var parentItf : itf.getInterfaces()) {
+                    addInterfaceImplementor(implementorName, parentItf);
+                }
+            }
+        }
     }
 }

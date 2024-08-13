@@ -140,7 +140,7 @@ public class WasmGCDeclarationsGenerator {
     private static VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes,
             Predicate<MethodReference> virtualMethods) {
         var builder = new VirtualTableBuilder(classes);
-        builder.setMethodsUsedAtCallSites(VirtualTableBuilder.getMethodsUsedOnCallSites(classes));
+        builder.setMethodsUsedAtCallSites(VirtualTableBuilder.getMethodsUsedOnCallSites(classes, false));
         builder.setMethodCalledVirtually(virtualMethods);
         return builder.build();
     }
