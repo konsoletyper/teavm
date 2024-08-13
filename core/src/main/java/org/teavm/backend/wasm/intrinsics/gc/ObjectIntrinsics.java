@@ -15,30 +15,18 @@
  */
 package org.teavm.backend.wasm.intrinsics.gc;
 
-import org.teavm.ast.Expr;
-import org.teavm.backend.wasm.BaseWasmFunctionRepository;
-import org.teavm.backend.wasm.WasmFunctionTypes;
-import org.teavm.backend.wasm.gc.PreciseTypeInference;
+import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
-import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
-import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.model.ClassHierarchy;
+import org.teavm.backend.wasm.model.expression.WasmStructGet;
 
-public interface WasmGCIntrinsicContext {
-    WasmExpression generate(Expr expr);
-
-    WasmModule module();
-
-    WasmFunctionTypes functionTypes();
-
-    PreciseTypeInference types();
-
-    BaseWasmFunctionRepository functions();
-
-    ClassHierarchy hierarchy();
-
-    WasmGCTypeMapper typeMapper();
-
-    WasmGCClassInfoProvider classInfoProvider();
+public class ObjectIntrinsics implements WasmGCIntrinsic {
+    @Override
+    public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var obj = context.generate(invocation.getArguments().get(0));
+        var objectStruct = context.classInfoProvider().getClassInfo("java.lang.Object").getStructure();
+        var result = new WasmStructGet(objectStruct, obj, WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
+        result.setLocation(invocation.getLocation());
+        return result;
+    }
 }

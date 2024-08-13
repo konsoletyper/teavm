@@ -335,5 +335,10 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         public WasmGCTypeMapper typeMapper() {
             return typeMapper;
         }
+
+        @Override
+        public WasmGCClassInfoProvider classInfoProvider() {
+            return classInfoProvider;
+        }
     };
 }

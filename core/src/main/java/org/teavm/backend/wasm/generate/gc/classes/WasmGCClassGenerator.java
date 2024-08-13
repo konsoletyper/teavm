@@ -70,6 +70,8 @@ import org.teavm.model.util.ReflectionUtil;
 
 public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInitializerContributor {
     private static final MethodDescriptor CLINIT_METHOD_DESC = new MethodDescriptor("<clinit>", ValueType.VOID);
+    private static final MethodDescriptor GET_CLASS_METHOD = new MethodDescriptor("getClass",
+            ValueType.parse(Class.class));
 
     private final WasmModule module;
     private ClassReaderSource classSource;
@@ -231,8 +233,14 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         return classTagOffset;
     }
 
+    @Override
     public int getClassArrayItemOffset() {
         return classArrayItemOffset;
+    }
+
+    @Override
+    public int getClassSupertypeFunctionOffset() {
+        return classSupertypeFunctionOffset;
     }
 
     @Override
@@ -330,13 +338,10 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     private int fillVirtualTableMethods(List<WasmExpression> target, WasmStructure structure, WasmGlobal global,
             VirtualTable virtualTable, int index, String origin, Set<MethodDescriptor> filled) {
-        if (virtualTable.getParent() != null) {
-            index = fillVirtualTableMethods(target, structure, global, virtualTable.getParent(), index, origin,
-                    filled);
-        }
         for (var method : virtualTable.getMethods()) {
             var entry = virtualTable.getEntry(method);
-            if (entry != null && entry.getImplementor() != null && filled.add(method)) {
+            if (entry != null && entry.getImplementor() != null && filled.add(method)
+                    && !method.equals(GET_CLASS_METHOD)) {
                 var function = functionProvider.forInstanceMethod(entry.getImplementor());
                 if (!origin.equals(entry.getImplementor().getClassName())) {
                     var functionType = getFunctionType(virtualTable.getClassName(), method);
@@ -356,9 +361,12 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 }
                 function.setReferenced(true);
                 var ref = new WasmFunctionReference(function);
-                target.add(new WasmStructSet(structure, new WasmGetGlobal(global), index, ref));
+                target.add(new WasmStructSet(structure, new WasmGetGlobal(global), index + entry.getIndex(), ref));
             }
-            ++index;
+        }
+        if (virtualTable.getParent() != null) {
+            index = fillVirtualTableMethods(target, structure, global, virtualTable.getParent(), index, origin,
+                    filled);
         }
         return index;
     }

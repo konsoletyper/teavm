@@ -53,7 +53,7 @@ import org.teavm.platform.PlatformSequence;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
-public class TClass<T> extends TObject implements TAnnotatedElement, TType {
+public final class TClass<T> extends TObject implements TAnnotatedElement, TType {
     String name;
     String simpleName;
     String canonicalName;

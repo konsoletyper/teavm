@@ -582,5 +582,10 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         public WasmGCTypeMapper typeMapper() {
             return context.typeMapper();
         }
+
+        @Override
+        public WasmGCClassInfoProvider classInfoProvider() {
+            return context.classInfoProvider();
+        }
     };
 }

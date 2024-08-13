@@ -26,6 +26,7 @@ import org.teavm.backend.wasm.render.WasmBinaryRenderer;
 import org.teavm.backend.wasm.render.WasmBinaryStatsCollector;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
+import org.teavm.backend.wasm.transformation.gc.BaseClassesTransformation;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.interop.Platforms;
@@ -70,7 +71,9 @@ public class WasmGCTarget implements TeaVMTarget {
 
     @Override
     public List<ClassHolderTransformer> getTransformers() {
-        return List.of();
+        return List.of(
+                new BaseClassesTransformation()
+        );
     }
 
     @Override

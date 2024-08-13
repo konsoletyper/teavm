@@ -24,7 +24,19 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
     private Map<MethodReference, WasmGCIntrinsic> intrinsics = new HashMap<>();
 
     public WasmGCIntrinsics() {
+        fillObject();
+        fillClass();
         fillSystem();
+    }
+
+    private void fillObject() {
+        var objectIntrinsics = new ObjectIntrinsics();
+        intrinsics.put(new MethodReference(Object.class, "getClass", Class.class), objectIntrinsics);
+    }
+
+    private void fillClass() {
+        var classIntrinsics = new ClassIntrinsics();
+        intrinsics.put(new MethodReference(Class.class, "getComponentType", Class.class), classIntrinsics);
     }
 
     private void fillSystem() {

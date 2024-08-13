@@ -33,6 +33,10 @@ public interface WasmGCClassInfoProvider {
 
     int getVirtualMethodsOffset();
 
+    int getClassArrayItemOffset();
+
+    int getClassSupertypeFunctionOffset();
+
     default WasmGCClassInfo getClassInfo(String name) {
         return getClassInfo(ValueType.object(name));
     }

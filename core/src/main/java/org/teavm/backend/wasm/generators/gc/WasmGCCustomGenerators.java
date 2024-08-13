@@ -25,8 +25,14 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
     private Map<MethodReference, WasmGCCustomGenerator> generators = new HashMap<>();
 
     public WasmGCCustomGenerators() {
+        fillClass();
         fillStringPool();
         fillSystem();
+    }
+
+    private void fillClass() {
+        var classGenerators = new ClassGenerators();
+        generators.put(new MethodReference(Class.class, "isInstance", Object.class, boolean.class), classGenerators);
     }
 
     private void fillStringPool() {
