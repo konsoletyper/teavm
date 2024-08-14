@@ -16,7 +16,7 @@
 package org.teavm.jso.dom.events;
 
 public interface InputEventTarget extends EventTarget {
-    default void onInput(EventListener<InputEvent> listener) {
-        onEvent("input", listener);
+    default Registration onInput(EventListener<InputEvent> listener) {
+        return onEvent("input", listener);
     }
 }
