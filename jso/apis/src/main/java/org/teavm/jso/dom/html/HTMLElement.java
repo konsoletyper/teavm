@@ -20,6 +20,7 @@ import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.css.ElementCSSInlineStyle;
 import org.teavm.jso.dom.events.EventTarget;
 import org.teavm.jso.dom.events.FocusEventTarget;
+import org.teavm.jso.dom.events.InputEventTarget;
 import org.teavm.jso.dom.events.KeyboardEventTarget;
 import org.teavm.jso.dom.events.LoadEventTarget;
 import org.teavm.jso.dom.events.MouseEventTarget;
@@ -30,7 +31,7 @@ import org.teavm.jso.dom.xml.Node;
 import org.teavm.jso.dom.xml.NodeList;
 
 public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget, FocusEventTarget, MouseEventTarget,
-        WheelEventTarget, KeyboardEventTarget, LoadEventTarget {
+        WheelEventTarget, KeyboardEventTarget, LoadEventTarget, InputEventTarget {
     @Override
     NodeList<? extends HTMLElement> getElementsByTagName(String name);
 
