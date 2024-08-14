@@ -15,11 +15,15 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
+import java.util.List;
 import org.teavm.ast.Expr;
-import org.teavm.backend.lowlevel.generate.NameProvider;
+import org.teavm.backend.wasm.WasmFunctionRepository;
+import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.generate.WasmStringPool;
+import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.diagnostics.Diagnostics;
@@ -37,7 +41,9 @@ public interface WasmIntrinsicManager {
 
     Diagnostics getDiagnostics();
 
-    NameProvider getNames();
+    WasmFunctionRepository getFunctions();
+
+    WasmFunctionTypes getFunctionTypes();
 
     WasmLocal getTemporary(WasmType type);
 
@@ -45,15 +51,17 @@ public interface WasmIntrinsicManager {
 
     int getClassPointer(ValueType type);
 
-    int getFunctionPointer(String name);
+    int getFunctionPointer(WasmFunction function);
 
     void releaseTemporary(WasmLocal local);
 
     boolean isManagedMethodCall(MethodReference method);
 
-    int generateCallSiteId(TextLocation location);
+    CallSiteIdentifier generateCallSiteId(TextLocation location);
 
-    WasmExpression generateRegisterCallSite(int callSite, TextLocation location);
+    WasmTag getExceptionTag();
 
-
+    interface CallSiteIdentifier {
+        void generateRegister(List<WasmExpression> target, TextLocation location);
+    }
 }

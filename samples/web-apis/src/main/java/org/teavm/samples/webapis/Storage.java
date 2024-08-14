@@ -37,7 +37,7 @@ public final class Storage {
         }
 
         HTMLButtonElement saveButton = document.getElementById("save-button").cast();
-        saveButton.listenClick(e -> {
+        saveButton.onClick(e -> {
             var key = document.getElementById("key").<HTMLInputElement>cast().getValue();
             var value = document.getElementById("value").<HTMLInputElement>cast().getValue();
 
@@ -47,7 +47,7 @@ public final class Storage {
             }
         });
         HTMLButtonElement deleteButton = document.getElementById("delete-button").cast();
-        deleteButton.listenClick(e -> {
+        deleteButton.onClick(e -> {
             String key = document.getElementById("key").<HTMLInputElement>cast().getValue();
             if (key != null && !key.isEmpty()) {
                 storage.removeItem(key);
@@ -55,7 +55,7 @@ public final class Storage {
             }
         });
         HTMLButtonElement deleteAllButton = document.getElementById("delete-all-button").cast();
-        deleteAllButton.listenClick(e -> {
+        deleteAllButton.onClick(e -> {
             storage.clear();
             draw();
         });

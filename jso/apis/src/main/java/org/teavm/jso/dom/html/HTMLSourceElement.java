@@ -17,28 +17,24 @@ package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Junji Takakura
- */
-public interface HTMLSourceElement extends HTMLElement {
+public abstract class HTMLSourceElement extends HTMLElement {
 
     @JSProperty
-    String getType();
+    public abstract String getType();
 
     @JSProperty
-    void setType(String type);
+    public abstract void setType(String type);
 
     @JSProperty
-    String getSrc();
+    public abstract String getSrc();
 
     @JSProperty
-    void setSrc(String src);
+    public abstract void setSrc(String src);
 
     @JSProperty
-    String getMedia();
+    public abstract String getMedia();
 
     @JSProperty
-    void setMedia(String media);
+    public abstract void setMedia(String media);
 
 }

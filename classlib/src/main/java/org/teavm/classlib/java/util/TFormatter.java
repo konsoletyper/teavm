@@ -516,7 +516,7 @@ public final class TFormatter implements Closeable, Flushable {
         }
 
         private void formatGivenString(boolean upperCase, String str) throws IOException {
-            if (precision > 0) {
+            if (precision > 0 && precision < str.length()) {
                 str = str.substring(0, precision);
             }
 

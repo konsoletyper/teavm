@@ -59,6 +59,22 @@ public class ImportClassTest {
         assertEquals("static method called", ClassWithConstructor.staticMethod());
     }
 
+    @Test
+    @AttachJavaScript("org/teavm/jso/test/classWithConstructor.js")
+    public void topLevel() {
+        assertEquals("top level", ClassWithConstructor.topLevelFunction());
+        assertEquals("top level prop", ClassWithConstructor.getTopLevelProperty());
+
+        ClassWithConstructor.setTopLevelProperty("update");
+        assertEquals("update", ClassWithConstructor.getTopLevelProperty());
+
+        assertEquals("top level", TopLevelDeclarations.topLevelFunction());
+        assertEquals("update", TopLevelDeclarations.getTopLevelProperty());
+
+        TopLevelDeclarations.setTopLevelProperty("update2");
+        assertEquals("update2", ClassWithConstructor.getTopLevelProperty());
+    }
+
     @JSBody(script = "return {};")
     private static native O create();
 

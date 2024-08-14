@@ -16,12 +16,13 @@
 package org.teavm.jso.workers;
 
 import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.ErrorEvent;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.EventTarget;
+import org.teavm.jso.dom.events.Registration;
 
 public interface AbstractWorker extends JSObject, EventTarget {
-    @JSProperty("onerror")
-    void onError(EventListener<ErrorEvent> listener);
+    default Registration onError(EventListener<ErrorEvent> listener) {
+        return onEvent("error", listener);
+    }
 }

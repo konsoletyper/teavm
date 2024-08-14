@@ -29,6 +29,7 @@ import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.internal.logging.progress.ProgressLoggerFactory;
+import org.teavm.gradle.api.JSModuleType;
 
 public abstract class JavaScriptDevServerTask extends DefaultTask {
     @Classpath
@@ -49,6 +50,10 @@ public abstract class JavaScriptDevServerTask extends DefaultTask {
     @Input
     @Optional
     public abstract ListProperty<String> getPreservedClasses();
+
+    @Input
+    @Optional
+    public abstract Property<JSModuleType> getJsModuleType();
 
     @Input
     public abstract Property<String> getMainClass();
@@ -111,6 +116,9 @@ public abstract class JavaScriptDevServerTask extends DefaultTask {
 
         pm.setProperties(getProperties().get());
         pm.setPreservedClasses(getPreservedClasses().get());
+        if (getJsModuleType().isPresent()) {
+            pm.setJsModuleType(getJsModuleType().get());
+        }
 
         pm.setServerClasspath(getServerClasspath().getFiles());
         pm.setMainClass(getMainClass().get());

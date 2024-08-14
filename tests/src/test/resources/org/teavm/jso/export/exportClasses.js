@@ -21,4 +21,9 @@ export async function test() {
     assertEquals(true, o instanceof BB);
     assertEquals(false, o instanceof A);
     assertEquals(42, o.bar);
+
+    let p = new BB(55);
+    assertEquals(true, p instanceof BB);
+    assertEquals(false, p instanceof A);
+    assertEquals(55, p.bar);
 }

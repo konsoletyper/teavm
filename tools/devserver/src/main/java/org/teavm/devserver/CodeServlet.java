@@ -67,6 +67,7 @@ import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 import org.eclipse.jetty.websocket.client.io.UpgradeListener;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.cache.InMemoryMethodNodeCache;
 import org.teavm.cache.InMemoryProgramCache;
@@ -122,6 +123,7 @@ public class CodeServlet extends HttpServlet {
     private String proxyBaseUrl;
     private Map<String, String> properties = new LinkedHashMap<>();
     private List<String> preservedClasses = new ArrayList<>();
+    private JSModuleType jsModuleType;
 
     private Map<String, Supplier<InputStream>> sourceFileCache = new HashMap<>();
 
@@ -221,6 +223,10 @@ public class CodeServlet extends HttpServlet {
 
     public Map<String, String> getProperties() {
         return properties;
+    }
+
+    public void setJsModuleType(JSModuleType jsModuleType) {
+        this.jsModuleType = jsModuleType;
     }
 
     public void setLogBuildErrors(boolean logBuildErrors) {
@@ -882,6 +888,9 @@ public class CodeServlet extends HttpServlet {
         jsTarget.setObfuscated(false);
         jsTarget.setAstCache(astCache);
         jsTarget.setDebugEmitter(debugInformationBuilder);
+        if (jsModuleType != null) {
+            jsTarget.setModuleType(jsModuleType);
+        }
         jsTarget.setStrict(true);
         vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
         vm.setCacheStatus(classSource);

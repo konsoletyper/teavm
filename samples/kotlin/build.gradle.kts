@@ -15,7 +15,7 @@
  */
 
 plugins {
-    kotlin("multiplatform") version "1.9.20"
+    kotlin("jvm") version "1.9.20"
     war
     id("org.teavm")
 }
@@ -29,6 +29,4 @@ teavm.js {
     mainClass = "org.teavm.samples.kotlin.HelloKt"
 }
 
-kotlin {
-    jvm()
-}
+kotlin.jvmToolchain(17)

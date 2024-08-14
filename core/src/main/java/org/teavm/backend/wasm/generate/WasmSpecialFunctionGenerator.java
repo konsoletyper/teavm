@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.generate;
 
 import java.util.List;
+import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.WasmHeap;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
@@ -28,25 +29,27 @@ import org.teavm.model.FieldReference;
 
 public class WasmSpecialFunctionGenerator {
     private WasmClassGenerator classGenerator;
+    private WasmFunctionTypes functionTypes;
     private List<WasmInt32Constant> regionSizeExpressions;
 
-    public WasmSpecialFunctionGenerator(WasmClassGenerator classGenerator,
+    public WasmSpecialFunctionGenerator(WasmClassGenerator classGenerator, WasmFunctionTypes functionTypes,
             List<WasmInt32Constant> regionSizeExpressions) {
         this.classGenerator = classGenerator;
+        this.functionTypes = functionTypes;
         this.regionSizeExpressions = regionSizeExpressions;
     }
 
     public void generateSpecialFunctions(WasmModule module) {
-        module.add(javaHeapAddress());
-        module.add(availableBytes());
-        module.add(regionsAddress());
-        module.add(regionSize());
+        module.functions.add(javaHeapAddress());
+        module.functions.add(availableBytes());
+        module.functions.add(regionsAddress());
+        module.functions.add(regionSize());
     }
 
     private WasmFunction javaHeapAddress() {
-        WasmFunction function = new WasmFunction("teavm_javaHeapAddress");
+        var function = new WasmFunction(functionTypes.of(WasmType.INT32));
+        function.setName("teavm_javaHeapAddress");
         function.setExportName("teavm_javaHeapAddress");
-        function.setResult(WasmType.INT32);
 
         int address = classGenerator.getFieldOffset(new FieldReference(WasmHeap.class.getName(), "heapAddress"));
         function.getBody().add(new WasmReturn(
@@ -55,9 +58,9 @@ public class WasmSpecialFunctionGenerator {
     }
 
     private WasmFunction availableBytes() {
-        WasmFunction function = new WasmFunction("teavm_availableBytes");
+        var function = new WasmFunction(functionTypes.of(WasmType.INT32));
+        function.setName("teavm_availableBytes");
         function.setExportName("teavm_availableBytes");
-        function.setResult(WasmType.INT32);
 
         int address = classGenerator.getFieldOffset(new FieldReference(WasmHeap.class.getName(), "heapSize"));
         function.getBody().add(new WasmReturn(
@@ -66,9 +69,9 @@ public class WasmSpecialFunctionGenerator {
     }
 
     private WasmFunction regionsAddress() {
-        WasmFunction function = new WasmFunction("teavm_regionsAddress");
+        var function = new WasmFunction(functionTypes.of(WasmType.INT32));
         function.setExportName("teavm_regionsAddress");
-        function.setResult(WasmType.INT32);
+        function.setName("teavm_regionsAddress");
 
         int address = classGenerator.getFieldOffset(new FieldReference(WasmHeap.class.getName(), "regionsAddress"));
         function.getBody().add(new WasmReturn(
@@ -77,9 +80,9 @@ public class WasmSpecialFunctionGenerator {
     }
 
     private WasmFunction regionSize() {
-        WasmFunction function = new WasmFunction("teavm_regionSize");
+        var function = new WasmFunction(functionTypes.of(WasmType.INT32));
         function.setExportName("teavm_regionSize");
-        function.setResult(WasmType.INT32);
+        function.setName("teavm_regionSize");
 
         WasmInt32Constant constant = new WasmInt32Constant(0);
         regionSizeExpressions.add(constant);

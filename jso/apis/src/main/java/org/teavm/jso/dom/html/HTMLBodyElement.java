@@ -19,26 +19,26 @@ import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 
-public interface HTMLBodyElement extends HTMLElement {
+public abstract class HTMLBodyElement extends HTMLElement {
     @JSProperty("onbeforeunload")
-    void setOnBeforeUnload(EventListener<Event> listener);
+    public abstract void setOnBeforeUnload(EventListener<Event> listener);
 
     @JSProperty("onerror")
-    void setOnError(EventListener<Event> listener);
+    public abstract void setOnError(EventListener<Event> listener);
 
     @JSProperty("onload")
-    void setOnLoad(EventListener<Event> listener);
+    public abstract void setOnLoad(EventListener<Event> listener);
 
     @JSProperty("onmessage")
-    void setOnMessage(EventListener<Event> listener);
+    public abstract void setOnMessage(EventListener<Event> listener);
 
     @JSProperty("onoffline")
-    void setOnOffline(EventListener<Event> listener);
+    public abstract void setOnOffline(EventListener<Event> listener);
 
     @JSProperty("ononline")
-    void setOnOnline(EventListener<Event> listener);
+    public abstract void setOnOnline(EventListener<Event> listener);
 
     @JSProperty("ononunload")
-    void setOnUnload(EventListener<Event> listener);
+    public abstract void setOnUnload(EventListener<Event> listener);
 }
 

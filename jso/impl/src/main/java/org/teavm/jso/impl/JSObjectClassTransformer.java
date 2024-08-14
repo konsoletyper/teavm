@@ -49,6 +49,7 @@ import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 
@@ -69,7 +70,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         if (processor == null || processor.getClassSource() != hierarchy.getClassSource()) {
             typeHelper = new JSTypeHelper(hierarchy.getClassSource());
             processor = new JSClassProcessor(hierarchy.getClassSource(), typeHelper, repository,
-                    context.getDiagnostics(), context.getIncrementalCache());
+                    context.getDiagnostics(), context.getIncrementalCache(), context.isStrict());
         }
         processor.processClass(cls);
         if (typeHelper.isJavaScriptClass(cls.getName())) {
@@ -111,13 +112,18 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     private void exposeMethods(ClassHolder classHolder, ExposedClass classToExpose, Diagnostics diagnostics,
             MethodReference functorMethod) {
         int index = 0;
-        for (MethodDescriptor method : classToExpose.methods.keySet()) {
+        for (var entry : classToExpose.methods.entrySet()) {
+            var method = entry.getKey();
+            var export = entry.getValue();
             MethodReference methodRef = new MethodReference(classHolder.getName(), method);
             CallLocation callLocation = new CallLocation(methodRef);
 
-            ValueType[] exportedMethodSignature = Arrays.stream(method.getSignature())
-                    .map(type -> ValueType.object(JSObject.class.getName()))
-                    .toArray(ValueType[]::new);
+            var paramCount = method.parameterCount();
+            if (export.vararg) {
+                --paramCount;
+            }
+            var exportedMethodSignature = new ValueType[paramCount + 1];
+            Arrays.fill(exportedMethodSignature, JSMethods.JS_OBJECT);
             MethodDescriptor exportedMethodDesc = new MethodDescriptor(method.getName() + "$exported$" + index++,
                     exportedMethodSignature);
             MethodHolder exportedMethod = new MethodHolder(exportedMethodDesc);
@@ -134,10 +140,15 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             for (int i = 0; i < method.parameterCount(); ++i) {
                 variablesToPass[i] = program.createVariable();
             }
+            if (export.vararg) {
+                transformVarargParam(variablesToPass, program, marshallInstructions, exportedMethod, 1);
+            }
 
             for (int i = 0; i < method.parameterCount(); ++i) {
+                var byRef = i == method.parameterCount() - 1 && export.vararg
+                        && typeHelper.isSupportedByRefType(method.parameterType(i));
                 variablesToPass[i] = marshaller.unwrapReturnValue(callLocation, variablesToPass[i],
-                        method.parameterType(i), false, true);
+                        method.parameterType(i), byRef, true);
             }
 
             basicBlock.addAll(marshallInstructions);
@@ -161,8 +172,6 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             basicBlock.add(exit);
 
             classHolder.addMethod(exportedMethod);
-
-            var export = classToExpose.methods.get(method);
             exportedMethod.getAnnotations().add(createExportAnnotation(export));
 
             if (methodRef.equals(functorMethod)) {
@@ -179,10 +188,14 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
                 continue;
             }
 
+            var paramCount = method.parameterCount();
+            var vararg = method.hasModifier(ElementModifier.VARARGS);
+            if (vararg) {
+                --paramCount;
+            }
             var callLocation = new CallLocation(method.getReference());
-            var exportedMethodSignature = Arrays.stream(method.getSignature())
-                    .map(type -> ValueType.object(JSObject.class.getName()))
-                    .toArray(ValueType[]::new);
+            var exportedMethodSignature = new ValueType[paramCount + 1];
+            Arrays.fill(exportedMethodSignature, JSMethods.JS_OBJECT);
             var exportedMethodDesc = new MethodDescriptor(method.getName() + "$exported$" + index++,
                     exportedMethodSignature);
             var exportedMethod = new MethodHolder(exportedMethodDesc);
@@ -200,10 +213,15 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             for (int i = 0; i < method.parameterCount(); ++i) {
                 variablesToPass[i] = program.createVariable();
             }
+            if (vararg) {
+                transformVarargParam(variablesToPass, program, marshallInstructions, exportedMethod, 0);
+            }
 
             for (int i = 0; i < method.parameterCount(); ++i) {
+                var byRef = i == method.parameterCount() - 1 && vararg
+                        && typeHelper.isSupportedByRefType(method.parameterType(i));
                 variablesToPass[i] = marshaller.unwrapReturnValue(callLocation, variablesToPass[i],
-                        method.parameterType(i), false, true);
+                        method.parameterType(i), byRef, true);
             }
 
             basicBlock.addAll(marshallInstructions);
@@ -232,6 +250,25 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         }
     }
 
+    private void transformVarargParam(Variable[] variablesToPass, Program program,
+            List<Instruction> instructions, MethodHolder method, int additionalSkip) {
+        var last = variablesToPass.length - 1;
+
+        var lastConstant = new IntegerConstantInstruction();
+        lastConstant.setReceiver(program.createVariable());
+        lastConstant.setConstant(last + additionalSkip);
+        instructions.add(lastConstant);
+
+        var extractVarargs = new InvokeInstruction();
+        extractVarargs.setType(InvocationType.SPECIAL);
+        extractVarargs.setMethod(JSMethods.ARGUMENTS_BEGINNING_AT);
+        extractVarargs.setArguments(lastConstant.getReceiver());
+        extractVarargs.setReceiver(variablesToPass[last]);
+        instructions.add(extractVarargs);
+
+        method.getAnnotations().add(new AnnotationHolder(JSVararg.class.getName()));
+    }
+
     private AnnotationHolder createExportAnnotation(MethodExport export) {
         String annotationName;
         switch (export.kind) {
@@ -241,12 +278,17 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             case SETTER:
                 annotationName = JSSetterToExpose.class.getName();
                 break;
+            case CONSTRUCTOR:
+                annotationName = JSConstructorToExpose.class.getName();
+                break;
             default:
                 annotationName = JSMethodToExpose.class.getName();
                 break;
         }
         var annot = new AnnotationHolder(annotationName);
-        annot.getValues().put("name", new AnnotationValue(export.alias));
+        if (export.kind != MethodKind.CONSTRUCTOR) {
+            annot.getValues().put("name", new AnnotationValue(export.alias));
+        }
         return annot;
     }
 
@@ -348,53 +390,57 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     private MethodExport createMethodExport(MethodReader method) {
         String name = null;
         MethodKind kind = MethodKind.METHOD;
-        var methodAnnot = method.getAnnotations().get(JSMethod.class.getName());
-        if (methodAnnot != null) {
-            name = method.getName();
-            var nameVal = methodAnnot.getValue("value");
-            if (nameVal != null) {
-                String nameStr = nameVal.getString();
-                if (!nameStr.isEmpty()) {
-                    name = nameStr;
-                }
-            }
+        if (method.getName().equals("<init>")) {
+            kind = MethodKind.CONSTRUCTOR;
         } else {
-            var propertyAnnot = method.getAnnotations().get(JSProperty.class.getName());
-            if (propertyAnnot != null) {
-                var nameVal = propertyAnnot.getValue("value");
+            var methodAnnot = method.getAnnotations().get(JSMethod.class.getName());
+            if (methodAnnot != null) {
+                name = method.getName();
+                var nameVal = methodAnnot.getValue("value");
                 if (nameVal != null) {
                     String nameStr = nameVal.getString();
                     if (!nameStr.isEmpty()) {
                         name = nameStr;
                     }
                 }
-                String expectedPrefix;
-                if (method.parameterCount() == 0) {
-                    if (method.getResultType() == ValueType.BOOLEAN) {
-                        expectedPrefix = "is";
-                    } else {
-                        expectedPrefix = "get";
+            } else {
+                var propertyAnnot = method.getAnnotations().get(JSProperty.class.getName());
+                if (propertyAnnot != null) {
+                    var nameVal = propertyAnnot.getValue("value");
+                    if (nameVal != null) {
+                        String nameStr = nameVal.getString();
+                        if (!nameStr.isEmpty()) {
+                            name = nameStr;
+                        }
                     }
-                    kind = MethodKind.GETTER;
-                } else {
-                    expectedPrefix = "set";
-                    kind = MethodKind.SETTER;
-                }
+                    String expectedPrefix;
+                    if (method.parameterCount() == 0) {
+                        if (method.getResultType() == ValueType.BOOLEAN) {
+                            expectedPrefix = "is";
+                        } else {
+                            expectedPrefix = "get";
+                        }
+                        kind = MethodKind.GETTER;
+                    } else {
+                        expectedPrefix = "set";
+                        kind = MethodKind.SETTER;
+                    }
 
-                if (name == null) {
-                    name = method.getName();
-                    if (name.startsWith(expectedPrefix) && name.length() > expectedPrefix.length()
-                            && Character.isUpperCase(name.charAt(expectedPrefix.length()))) {
-                        name = Character.toLowerCase(name.charAt(expectedPrefix.length()))
-                                + name.substring(expectedPrefix.length() + 1);
+                    if (name == null) {
+                        name = method.getName();
+                        if (name.startsWith(expectedPrefix) && name.length() > expectedPrefix.length()
+                                && Character.isUpperCase(name.charAt(expectedPrefix.length()))) {
+                            name = Character.toLowerCase(name.charAt(expectedPrefix.length()))
+                                    + name.substring(expectedPrefix.length() + 1);
+                        }
                     }
                 }
             }
+            if (name == null) {
+                name = method.getName();
+            }
         }
-        if (name == null) {
-            name = method.getName();
-        }
-        return new MethodExport(name, kind);
+        return new MethodExport(name, kind, method.hasModifier(ElementModifier.VARARGS));
     }
 
     private void addFunctorField(ClassHolder cls, MethodReference method) {
@@ -421,16 +467,19 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     enum MethodKind {
         METHOD,
         GETTER,
-        SETTER
+        SETTER,
+        CONSTRUCTOR
     }
 
     static class MethodExport {
         final String alias;
         final MethodKind kind;
+        boolean vararg;
 
-        MethodExport(String alias, MethodKind kind) {
+        MethodExport(String alias, MethodKind kind, boolean vararg) {
             this.alias = alias;
             this.kind = kind;
+            this.vararg = vararg;
         }
     }
 }

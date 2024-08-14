@@ -82,6 +82,11 @@ public class ExportTest {
         testExport("exportClasses", ModuleWithExportedClasses.class);
     }
 
+    @Test
+    public void varargs() {
+        testExport("varargs", ModuleWithVararg.class);
+    }
+
     private void testExport(String name, Class<?> moduleClass) {
         if (!Boolean.parseBoolean(System.getProperty("teavm.junit.js", "true"))) {
             return;
@@ -89,6 +94,7 @@ public class ExportTest {
         try {
             var jsTarget = new JavaScriptTarget();
             jsTarget.setModuleType(JSModuleType.ES2015);
+            jsTarget.setObfuscated(false);
             var teavm = new TeaVMBuilder(jsTarget).build();
             var outputDir = new File(targetFile, name);
             teavm.installPlugins();

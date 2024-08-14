@@ -16,6 +16,7 @@
 package org.teavm.jso.dom.xml;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.dom.html.HTMLDocument;
 
@@ -23,9 +24,13 @@ import org.teavm.jso.dom.html.HTMLDocument;
  * The DOMParser interface provides the ability to parse XML or HTML source code from
  * a string into a DOM {@link Document}.
  */
-public abstract class DOMParser implements JSObject {
+@JSClass
+public class DOMParser implements JSObject {
+    public DOMParser() {
+    }
 
     @JSBody(script = "return new DOMParser();")
+    @Deprecated
     public static native DOMParser create();
     
     /**
@@ -51,6 +56,6 @@ public abstract class DOMParser implements JSObject {
      *        application/xml, application/xhtml+xml, image/svg+xml
      * @return Newly created {@link Document} or {@link HTMLDocument}
      */
-    public abstract Document parseFromString(String s, String mimeType);
+    public native Document parseFromString(String s, String mimeType);
     
 }

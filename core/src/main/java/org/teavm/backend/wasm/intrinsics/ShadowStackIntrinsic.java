@@ -49,7 +49,7 @@ public class ShadowStackIntrinsic implements WasmIntrinsic {
         MethodReference method = new MethodReference(WasmRuntime.class.getName(),
                 invocation.getMethod().getDescriptor());
         expr.setMethod(method);
-        expr.setType(InvocationType.SPECIAL);
+        expr.setType(InvocationType.STATIC);
         expr.getArguments().addAll(invocation.getArguments());
         return manager.generate(expr);
     }

@@ -17,28 +17,42 @@ package org.teavm.classlib.java.util.stream.impl;
 
 import java.util.function.Predicate;
 
-public class TDropWhileStream<T> extends TWrappingStreamImpl<T, T> {
+public class TDropWhileStream<T> extends TSimpleStreamImpl<T> {
+    private TSimpleStreamImpl<T> sourceStream;
     private Predicate<? super T> predicate;
 
     /* set to `true` as soon as we see a value `v` in the source stream for which `predicate.test(v)` is true */
     private boolean isStarted;
 
-    TDropWhileStream(TSimpleStreamImpl<T> innerStream, Predicate<? super T> predicate) {
-        super(innerStream);
+    TDropWhileStream(TSimpleStreamImpl<T> sourceStream, Predicate<? super T> predicate) {
+        this.sourceStream = sourceStream;
         this.predicate = predicate;
     }
 
     @Override
-    protected Predicate<T> wrap(Predicate<? super T> consumer) {
-        return t -> {
-            if (!isStarted) {
-                if (predicate.test(t)) {
-                    return true;
-                } else {
+    public boolean next(Predicate<? super T> consumer) {
+        if (!isStarted) {
+            var skippingPredicate = new Predicate<T>() {
+                boolean consumerCanTakeMore;
+
+                @Override
+                public boolean test(T t) {
+                    if (predicate.test(t)) {
+                        return true;
+                    }
                     isStarted = true;
+                    consumerCanTakeMore = consumer.test(t);
+                    return false;
                 }
+            };
+            var result = sourceStream.next(skippingPredicate);
+            if (!result) {
+                return false;
             }
-            return consumer.test(t);
-        };
+            if (!skippingPredicate.consumerCanTakeMore) {
+                return true;
+            }
+        }
+        return sourceStream.next(consumer);
     }
 }

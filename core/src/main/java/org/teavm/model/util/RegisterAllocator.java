@@ -38,6 +38,12 @@ import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 
 public class RegisterAllocator {
+    private VariableCategoryProvider variableCategoryProvider;
+
+    public RegisterAllocator(VariableCategoryProvider variableCategoryProvider) {
+        this.variableCategoryProvider = variableCategoryProvider;
+    }
+
     public void allocateRegisters(MethodReference method, Program program, boolean debuggerFriendly) {
         insertPhiArgumentsCopies(program);
         InterferenceGraphBuilder interferenceBuilder = new InterferenceGraphBuilder();
@@ -62,7 +68,7 @@ public class RegisterAllocator {
         for (int cls : classArray) {
             maxClass = Math.max(maxClass, cls + 1);
         }
-        int[] categories = getVariableCategories(program, method);
+        var categories = variableCategoryProvider.getCategories(program, method);
         String[] names = getVariableNames(program, debuggerFriendly);
         colorer.colorize(MutableGraphNode.toGraph(interferenceGraph), colors, categories, names);
 
@@ -88,36 +94,6 @@ public class RegisterAllocator {
 
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             program.basicBlockAt(i).getPhis().clear();
-        }
-    }
-
-    private int[] getVariableCategories(ProgramReader program, MethodReference method) {
-        TypeInferer inferer = new TypeInferer();
-        inferer.inferTypes(program, method);
-        int[] categories = new int[program.variableCount()];
-        for (int i = 0; i < program.variableCount(); ++i) {
-            categories[i] = getCategory(inferer.typeOf(i));
-        }
-        return categories;
-    }
-
-    private int getCategory(VariableType type) {
-        if (type == null) {
-            return 255;
-        }
-        switch (type) {
-            case INT:
-                return 0;
-            case LONG:
-                return 1;
-            case FLOAT:
-                return 2;
-            case DOUBLE:
-                return 3;
-            case OBJECT:
-                return 4;
-            default:
-                return 5;
         }
     }
 

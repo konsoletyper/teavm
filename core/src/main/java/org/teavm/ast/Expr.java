@@ -22,8 +22,17 @@ import org.teavm.model.*;
 
 public abstract class Expr implements Cloneable {
     private TextLocation location;
+    private int variableIndex = -1;
 
     public abstract void acceptVisitor(ExprVisitor visitor);
+
+    public int getVariableIndex() {
+        return variableIndex;
+    }
+
+    public void setVariableIndex(int variableIndex) {
+        this.variableIndex = variableIndex;
+    }
 
     @Override
     public Expr clone() {
@@ -41,6 +50,7 @@ public abstract class Expr implements Cloneable {
     public static Expr var(int index) {
         VariableExpr expr = new VariableExpr();
         expr.setIndex(index);
+        expr.setVariableIndex(index);
         return expr;
     }
 

@@ -16,6 +16,8 @@
 package org.teavm.backend.wasm.render;
 
 import java.util.Arrays;
+import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
 
 public class WasmBinaryWriter {
@@ -27,11 +29,54 @@ public class WasmBinaryWriter {
         data[pointer++] = (byte) v;
     }
 
-    public void writeType(WasmType type, WasmBinaryVersion version) {
+    public void writeType(WasmType type, WasmModule module) {
         if (type == null) {
             writeByte(0x40);
             return;
         }
+        if (type instanceof WasmType.Number) {
+            writeType(((WasmType.Number) type).number);
+        } else if (type instanceof WasmType.SpecialReference) {
+            writeSpecialHeapType(((WasmType.SpecialReference) type).kind);
+        } else if (type instanceof WasmType.CompositeReference) {
+            writeByte(0x63);
+            var composite = ((WasmType.CompositeReference) type).composite;
+            var index = module.types.indexOf(composite);
+            writeSignedLEB(index);
+        }
+    }
+
+    public void writeHeapType(WasmType.Reference type, WasmModule module) {
+        if (type instanceof WasmType.CompositeReference) {
+            var composite = ((WasmType.CompositeReference) type).composite;
+            var index = module.types.indexOf(composite);
+            writeSignedLEB(index);
+        } else {
+            writeSpecialHeapType(((WasmType.SpecialReference) type).kind);
+        }
+    }
+
+    private void writeSpecialHeapType(WasmType.SpecialReferenceKind type) {
+        switch (type) {
+            case ANY:
+                writeByte(0x6e);
+                break;
+            case EXTERN:
+                writeByte(0x6f);
+                break;
+            case FUNC:
+                writeByte(0x70);
+                break;
+            case STRUCT:
+                writeByte(0x6b);
+                break;
+            case ARRAY:
+                writeByte(0x6a);
+                break;
+        }
+    }
+
+    public void writeType(WasmNumType type) {
         switch (type) {
             case INT32:
                 writeByte(0x7F);

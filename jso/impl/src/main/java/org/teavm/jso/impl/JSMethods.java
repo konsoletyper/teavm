@@ -125,6 +125,17 @@ final class JSMethods {
     public static final MethodReference IMPORT_MODULE = new MethodReference(JS.class, "importModule",
             String.class, JSObject.class);
 
+    public static final MethodReference INSTANCE_OF = new MethodReference(JS.class, "instanceOf", JSObject.class,
+            JSObject.class, boolean.class);
+    public static final MethodReference INSTANCE_OF_OR_NULL = new MethodReference(JS.class, "instanceOfOrNull",
+            JSObject.class, JSObject.class, boolean.class);
+    public static final MethodReference IS_PRIMITIVE = new MethodReference(JS.class, "isPrimitive", JSObject.class,
+            JSObject.class, boolean.class);
+    public static final MethodReference THROW_CCE_IF_FALSE = new MethodReference(JS.class, "throwCCEIfFalse",
+            boolean.class, JSObject.class, JSObject.class);
+    public static final MethodReference ARGUMENTS_BEGINNING_AT = new MethodReference(JS.class,
+            "argumentsBeginningAt", int.class, JSObject.class);
+
     public static final ValueType JS_OBJECT = ValueType.object(JSObject.class.getName());
     public static final ValueType OBJECT = ValueType.object("java.lang.Object");
     public static final ValueType JS_ARRAY = ValueType.object(JSArray.class.getName());

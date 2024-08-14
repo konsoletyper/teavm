@@ -19,6 +19,7 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.EventTarget;
+import org.teavm.jso.dom.events.Registration;
 
 public interface AudioWorkerNodeProcessor extends EventTarget {
     @JSProperty("onmessage")
@@ -26,6 +27,10 @@ public interface AudioWorkerNodeProcessor extends EventTarget {
 
     @JSProperty("onmessage")
     EventListener<MediaEvent> getOnMessage();
+
+    default Registration onMessage(EventListener<MediaEvent> listener) {
+        return onEvent("message", listener);
+    }
 
     void postMessage(JSObject message, JSObject[] transfer);
 

@@ -24,4 +24,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface JSClass {
     String name() default "";
+
+    boolean transparent() default false;
 }

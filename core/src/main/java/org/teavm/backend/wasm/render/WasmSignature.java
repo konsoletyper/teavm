@@ -15,15 +15,25 @@
  */
 package org.teavm.backend.wasm.render;
 
-import java.util.Arrays;
-import org.teavm.backend.wasm.model.WasmFunction;
+import java.util.List;
+import java.util.Objects;
 import org.teavm.backend.wasm.model.WasmType;
 
-final class WasmSignature {
-    WasmType[] types;
+public final class WasmSignature {
+    private WasmType returnType;
+    private List<? extends WasmType> types;
 
-    WasmSignature(WasmType[] types) {
-        this.types = types;
+    public WasmSignature(WasmType returnType, WasmType... parameterTypes) {
+        this.returnType = returnType;
+        this.types = List.of(parameterTypes);
+    }
+
+    public WasmType getReturnType() {
+        return returnType;
+    }
+
+    public List<? extends WasmType> getParameterTypes() {
+        return types;
     }
 
     @Override
@@ -35,20 +45,11 @@ final class WasmSignature {
             return false;
         }
         WasmSignature that = (WasmSignature) o;
-        return Arrays.equals(types, that.types);
+        return Objects.equals(types, that.types) && Objects.equals(returnType, that.returnType);
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(types);
-    }
-
-    public static WasmSignature fromFunction(WasmFunction function) {
-        WasmType[] types = new WasmType[function.getParameters().size() + 1];
-        types[0] = function.getResult();
-        for (int i = 0; i < function.getParameters().size(); ++i) {
-            types[i + 1] = function.getParameters().get(i);
-        }
-        return new WasmSignature(types);
+        return Objects.hash(types, returnType);
     }
 }

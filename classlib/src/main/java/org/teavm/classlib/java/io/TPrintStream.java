@@ -31,7 +31,7 @@ import org.teavm.classlib.java.nio.charset.TUnsupportedCharsetException;
 import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 import org.teavm.classlib.java.util.TFormatter;
 
-public class TPrintStream extends TFilterOutputStream {
+public class TPrintStream extends TFilterOutputStream implements Appendable {
     private boolean autoFlush;
     private boolean errorState;
     private TStringBuilder sb = new TStringBuilder();
@@ -145,33 +145,15 @@ public class TPrintStream extends TFilterOutputStream {
         print(s, 0, s.length);
     }
 
-    private void print(char[] s, int begin, int end) {
-        TCharBuffer src = TCharBuffer.wrap(s, begin, end - begin);
-        byte[] destBytes = new byte[TMath.max(16, TMath.min(end - begin, 1024))];
-        TByteBuffer dest = TByteBuffer.wrap(destBytes);
-        TCharsetEncoder encoder = charset.newEncoder()
-                .onMalformedInput(TCodingErrorAction.REPLACE)
-                .onUnmappableCharacter(TCodingErrorAction.REPLACE);
-        while (true) {
-            boolean overflow = encoder.encode(src, dest, true).isOverflow();
-            write(destBytes, 0, dest.position());
-            dest.clear();
-            if (!overflow) {
-                break;
-            }
-        }
-        while (true) {
-            boolean overflow = encoder.flush(dest).isOverflow();
-            write(destBytes, 0, dest.position());
-            dest.clear();
-            if (!overflow) {
-                break;
-            }
-        }
+    protected void print(CharSequence s, int begin, int end) {
+        printCharBuffer(TCharBuffer.wrap(s, begin, end), begin, end);
     }
 
-    private void print(CharSequence s, int begin, int end) {
-        TCharBuffer src = TCharBuffer.wrap(s, begin, end - begin);
+    protected void print(char[] s, int begin, int end) {
+        printCharBuffer(TCharBuffer.wrap(s, begin, end - begin), begin, end);
+    }
+
+    private void printCharBuffer(TCharBuffer src, int begin, int end) {
         byte[] destBytes = new byte[TMath.max(16, TMath.min(end - begin, 1024))];
         TByteBuffer dest = TByteBuffer.wrap(destBytes);
         TCharsetEncoder encoder = charset.newEncoder()
@@ -285,11 +267,10 @@ public class TPrintStream extends TFilterOutputStream {
         if (args == null) {
             args = new Object[1];
         }
-        try (var formatter = new TFormatter(getAppendable(), locale)) {
-            formatter.format(format, args);
-            if (formatter.ioException() != null) {
-                errorState = true;
-            }
+        var formatter = new TFormatter(this, locale);
+        formatter.format(format, args);
+        if (formatter.ioException() != null) {
+            errorState = true;
         }
         return this;
     }
@@ -301,30 +282,25 @@ public class TPrintStream extends TFilterOutputStream {
         sb.setLength(0);
     }
 
-    private Appendable appendable;
-
-    private Appendable getAppendable() {
-        if (appendable == null) {
-            appendable = new Appendable() {
-                @Override
-                public Appendable append(CharSequence csq) {
-                    print(csq, 0, csq.length());
-                    return this;
-                }
-
-                @Override
-                public Appendable append(CharSequence csq, int start, int end) {
-                    print(csq, start, end);
-                    return this;
-                }
-
-                @Override
-                public Appendable append(char c) {
-                    print(c);
-                    return this;
-                }
-            };
+    @Override
+    public TPrintStream append(CharSequence csq) {
+        if (csq != null) {
+            print(csq, 0, csq.length());
+        } else {
+            print("null");
         }
-        return appendable;
+        return this;
+    }
+
+    @Override
+    public TPrintStream append(CharSequence csq, int start, int end) {
+        print(csq == null ? "null" : csq, start, end);
+        return this;
+    }
+
+    @Override
+    public TPrintStream append(char c) {
+        print(c);
+        return this;
     }
 }

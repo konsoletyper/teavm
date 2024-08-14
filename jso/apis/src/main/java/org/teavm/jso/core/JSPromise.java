@@ -22,9 +22,9 @@ import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
-import org.teavm.jso.util.function.JSConsumer;
-import org.teavm.jso.util.function.JSFunction;
-import org.teavm.jso.util.function.JSSupplier;
+import org.teavm.jso.function.JSConsumer;
+import org.teavm.jso.function.JSMapping;
+import org.teavm.jso.function.JSSupplier;
 
 /**
  * Interface for interacting with JavaScript
@@ -76,29 +76,29 @@ public class JSPromise<T> implements JSObject {
     public static native <V> JSPromise<V> reject(Object reason);
 
     /** Call {@code onFulfilled} with the success value, resolving with its return value. */
-    public native <V> JSPromise<V> then(JSFunction<T, V> onFulfilled);
+    public native <V> JSPromise<V> then(JSMapping<T, V> onFulfilled);
 
     /** Call {@code onFulfilled} with the success value or {@code onRejected} with the reject reason,
      *  resolving with its return value. */
-    public native <V> JSPromise<V> then(JSFunction<T, V> onFulfilled, JSFunction<Object, V> onRejected);
+    public native <V> JSPromise<V> then(JSMapping<T, V> onFulfilled, JSMapping<Object, V> onRejected);
 
     /** Call {@code onFulfilled} with the success value, returning a new promise. */
     @JSMethod("then")
-    public native <V> JSPromise<V> flatThen(JSFunction<T, ? extends JSPromise<V>> onFulfilled);
+    public native <V> JSPromise<V> flatThen(JSMapping<T, ? extends JSPromise<V>> onFulfilled);
 
     /** Call {@code onFulfilled} with the success value or {@code onRejected} with the reject reason,
      *  returning a new promise. */
     @JSMethod("then")
-    public native <V> JSPromise<V> flatThen(JSFunction<T, ? extends JSPromise<V>> onFulfilled,
-                                              JSFunction<Object, ? extends JSPromise<V>> onRejected);
+    public native <V> JSPromise<V> flatThen(JSMapping<T, ? extends JSPromise<V>> onFulfilled,
+                                              JSMapping<Object, ? extends JSPromise<V>> onRejected);
 
     /** Call {@code onRejected} with the reject reason, resolving with its return value. */
     @JSMethod("catch")
-    public native <V> JSPromise<V> catchError(JSFunction<Object, V> onRejected);
+    public native <V> JSPromise<V> catchError(JSMapping<Object, V> onRejected);
 
     /** Call {@code onRejected} with the reject reason, returning a new promise. */
     @JSMethod("catch")
-    public native <V> JSPromise<V> flatCatchError(JSFunction<Object, ? extends JSPromise<V>> onRejected);
+    public native <V> JSPromise<V> flatCatchError(JSMapping<Object, ? extends JSPromise<V>> onRejected);
 
     /** Call {@code onFinally} after settling, ignoring the return value. */
     @JSMethod("finally")

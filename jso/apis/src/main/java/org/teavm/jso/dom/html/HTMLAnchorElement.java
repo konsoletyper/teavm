@@ -18,55 +18,55 @@ package org.teavm.jso.dom.html;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.types.DOMTokenList;
 
-public interface HTMLAnchorElement extends HTMLElement {
+public abstract class HTMLAnchorElement extends HTMLElement {
     @JSProperty
-    String getHref();
+    public abstract String getHref();
 
     @JSProperty
-    void setHref(String value);
+    public abstract void setHref(String value);
 
     @JSProperty
-    String getTarget();
+    public abstract String getTarget();
 
     @JSProperty
-    void setTarget(String value);
+    public abstract void setTarget(String value);
 
     @JSProperty
-    String getRel();
+    public abstract String getRel();
 
     @JSProperty
-    void setRel(String value);
+    public abstract void setRel(String value);
 
     @JSProperty
-    DOMTokenList getTokenList();
+    public abstract DOMTokenList getTokenList();
 
     @JSProperty
-    String getMedia();
+    public abstract String getMedia();
 
     @JSProperty
-    void setMedia(String value);
+    public abstract void setMedia(String value);
 
     @JSProperty
-    String getHreflang();
+    public abstract String getHreflang();
 
     @JSProperty
-    void setHreflang(String value);
+    public abstract void setHreflang(String value);
 
     @JSProperty
-    String getType();
+    public abstract String getType();
 
     @JSProperty
-    void setType(String value);
+    public abstract void setType(String value);
 
     @JSProperty
-    String getText();
+    public abstract String getText();
 
     @JSProperty
-    void setText(String value);
+    public abstract void setText(String value);
 
     @JSProperty
-    String getDownload();
+    public abstract String getDownload();
 
     @JSProperty
-    void setDownload(String download);
+    public abstract void setDownload(String download);
 }

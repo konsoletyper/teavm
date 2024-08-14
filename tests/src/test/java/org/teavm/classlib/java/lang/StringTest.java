@@ -197,6 +197,9 @@ public class StringTest {
     @Test
     public void sequenceReplaced() {
         assertEquals("ba", "aaa".replace("aa", "b"));
+        assertEquals("xaxaxax", "aaa".replace("", "x"));
+        assertEquals("axc", "abc".replace("b", "x"));
+        assertEquals("abc", "abc".replace("bc", "bc"));
     }
 
     @Test
@@ -377,5 +380,17 @@ public class StringTest {
     public void testChars() {
         assertEquals(0, "".chars().toArray().length);
         assertArrayEquals(new int[] {'A', 'B', 'C', '1', '2', '3'}, "ABC123".chars().toArray());
+    }
+
+    @Test
+    public void codePointsStream() {
+        assertEquals(0, "".codePoints().toArray().length);
+        assertArrayEquals(new int[] {'A', 'B', 'C', '1', '2', '3'}, "ABC123".chars().toArray());
+
+        assertArrayEquals(new int[] { 969356 }, new String(new char[] { (char) 56178, (char) 56972 })
+                .codePoints().toArray());
+        assertArrayEquals(new int[] { 56972, 56178 }, new String(new char[] { (char) 56972, (char) 56178 })
+                .codePoints().toArray());
+        assertArrayEquals(new int[] { 56178 }, String.valueOf((char) 56178).codePoints().toArray());
     }
 }

@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.util.stream.intimpl;
 
-import java.util.Objects;
 import java.util.function.IntPredicate;
 import org.teavm.classlib.java.lang.TString;
 
@@ -24,7 +23,7 @@ public class TStringCharsStream extends TSimpleIntStreamImpl {
     private int index;
 
     public TStringCharsStream(TString string) {
-        this.string = Objects.requireNonNull(string);
+        this.string = string;
     }
 
     @Override

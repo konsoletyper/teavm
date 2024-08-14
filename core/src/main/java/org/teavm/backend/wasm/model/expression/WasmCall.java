@@ -19,46 +19,31 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import org.teavm.backend.wasm.model.WasmFunction;
 
 public class WasmCall extends WasmExpression {
-    private String functionName;
-    private boolean imported;
+    private WasmFunction function;
     private List<WasmExpression> arguments = new ArrayList<>();
 
-    public WasmCall(String functionName, boolean imported) {
-        Objects.requireNonNull(functionName);
-        this.functionName = functionName;
-        this.imported = imported;
+    public WasmCall(WasmFunction function) {
+        this.function = Objects.requireNonNull(function);
     }
 
-    public WasmCall(String functionName) {
-        this(functionName, false);
-    }
-
-    public WasmCall(String functionName, WasmExpression... arguments) {
+    public WasmCall(WasmFunction functionName, WasmExpression... arguments) {
         this(functionName);
         getArguments().addAll(Arrays.asList(arguments));
     }
 
-    public String getFunctionName() {
-        return functionName;
+    public WasmFunction getFunction() {
+        return function;
     }
 
-    public void setFunctionName(String functionName) {
-        Objects.requireNonNull(functionName);
-        this.functionName = functionName;
+    public void setFunction(WasmFunction function) {
+        this.function = Objects.requireNonNull(function);
     }
 
     public List<WasmExpression> getArguments() {
         return arguments;
-    }
-
-    public boolean isImported() {
-        return imported;
-    }
-
-    public void setImported(boolean imported) {
-        this.imported = imported;
     }
 
     @Override

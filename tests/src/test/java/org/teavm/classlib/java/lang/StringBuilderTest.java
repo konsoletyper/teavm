@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import org.junit.Test;
@@ -264,5 +265,23 @@ public class StringBuilderTest {
         assertEquals("agh", sb.toString());
         sb.replace(1, 1, "bc");
         assertEquals("abcgh", sb.toString());
+    }
+
+    @Test
+    public void charStream() {
+        assertEquals(0, new StringBuilder().chars().toArray().length);
+        assertArrayEquals(new int[] {'A', 'B', 'C', '1', '2', '3'}, new StringBuilder("ABC123").chars().toArray());
+    }
+
+    @Test
+    public void codePointsStream() {
+        assertEquals(0, "".codePoints().toArray().length);
+        assertArrayEquals(new int[] {'A', 'B', 'C', '1', '2', '3'}, new StringBuilder("ABC123").chars().toArray());
+
+        assertArrayEquals(new int[] { 969356 }, new StringBuilder().append(new char[] { (char) 56178, (char) 56972 })
+                .codePoints().toArray());
+        assertArrayEquals(new int[] { 56972, 56178 }, new StringBuilder().append(
+                new char[] { (char) 56972, (char) 56178 }).codePoints().toArray());
+        assertArrayEquals(new int[] { 56178 }, new StringBuilder().append((char) 56178).codePoints().toArray());
     }
 }

@@ -20,13 +20,16 @@ import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
+import org.teavm.jso.dom.events.EventTarget;
+import org.teavm.jso.dom.events.Registration;
 import org.teavm.jso.dom.html.HTMLMediaElement;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Float32Array;
 
 @JSClass
-public class AudioContext implements JSObject {
+public class AudioContext implements JSObject, EventTarget {
     public static final String STATE_SUSPENDED = "suspended";
     public static final String STATE_RUNNING = "running";
     public static final String STATE_CLOSE = "close";
@@ -51,6 +54,10 @@ public class AudioContext implements JSObject {
 
     @JSProperty("onstatechange")
     public native EventListener<MediaEvent> getOnStateChange();
+
+    public final Registration onStateChange(EventListener<MediaEvent> listener) {
+        return onEvent("statechange", listener);
+    }
 
     public native void suspend();
 
@@ -131,4 +138,19 @@ public class AudioContext implements JSObject {
     @JSBody(script = "return new Context();")
     @Deprecated
     public static native AudioContext create();
+
+    @Override
+    public native void addEventListener(String type, EventListener<?> listener, boolean useCapture);
+
+    @Override
+    public native void addEventListener(String type, EventListener<?> listener);
+
+    @Override
+    public native void removeEventListener(String type, EventListener<?> listener, boolean useCapture);
+
+    @Override
+    public native void removeEventListener(String type, EventListener<?> listener);
+
+    @Override
+    public native boolean dispatchEvent(Event evt);
 }

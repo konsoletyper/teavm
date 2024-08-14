@@ -107,6 +107,7 @@ public class TeaVMTool {
     private JavaScriptTarget javaScriptTarget;
     private WasmTarget webAssemblyTarget;
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
+    private boolean wasmExceptionsUsed;
     private CTarget cTarget;
     private Set<File> generatedFiles = new HashSet<>();
     private int minHeapSize = 4 * (1 << 20);
@@ -275,6 +276,10 @@ public class TeaVMTool {
         this.wasmVersion = wasmVersion;
     }
 
+    public void setWasmExceptionsUsed(boolean wasmExceptionsUsed) {
+        this.wasmExceptionsUsed = wasmExceptionsUsed;
+    }
+
     public void setHeapDump(boolean heapDump) {
         this.heapDump = heapDump;
     }
@@ -360,6 +365,7 @@ public class TeaVMTool {
         webAssemblyTarget.setMinHeapSize(minHeapSize);
         webAssemblyTarget.setMaxHeapSize(maxHeapSize);
         webAssemblyTarget.setObfuscated(obfuscated);
+        webAssemblyTarget.setExceptionsUsed(wasmExceptionsUsed);
         return webAssemblyTarget;
     }
 

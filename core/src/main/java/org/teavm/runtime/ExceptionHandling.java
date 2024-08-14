@@ -91,6 +91,20 @@ public final class ExceptionHandling {
     }
 
     @Unmanaged
+    public static Throwable peekException() {
+        return thrownException;
+    }
+
+    @Unmanaged
+    public static void throwExceptionPlatform(Throwable exception) {
+        thrownException = exception;
+        throwExceptionPlatformNative();
+    }
+
+    @Unmanaged
+    public static native void throwExceptionPlatformNative();
+
+    @Unmanaged
     public static void throwException(Throwable exception) {
         thrownException = exception;
 

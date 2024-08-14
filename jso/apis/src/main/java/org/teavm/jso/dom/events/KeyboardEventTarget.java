@@ -16,27 +16,45 @@
 package org.teavm.jso.dom.events;
 
 public interface KeyboardEventTarget extends EventTarget {
+    @Deprecated
     default void listenKeyDown(EventListener<KeyboardEvent> listener) {
         addEventListener("keydown", listener);
     }
 
+    @Deprecated
     default void neglectKeyDown(EventListener<KeyboardEvent> listener) {
         removeEventListener("keydown", listener);
     }
 
+    @Deprecated
     default void listenKeyUp(EventListener<KeyboardEvent> listener) {
         addEventListener("keyup", listener);
     }
 
+    @Deprecated
     default void neglectKeyUp(EventListener<KeyboardEvent> listener) {
         removeEventListener("keyup", listener);
     }
 
+    @Deprecated
     default void listenKeyPress(EventListener<KeyboardEvent> listener) {
         addEventListener("keypress", listener);
     }
 
+    @Deprecated
     default void neglectKeyPress(EventListener<KeyboardEvent> listener) {
         removeEventListener("keypress", listener);
+    }
+
+    default Registration onKeyDown(EventListener<KeyboardEvent> listener) {
+        return onEvent("keydown", listener);
+    }
+
+    default Registration onKeyUp(EventListener<KeyboardEvent> listener) {
+        return onEvent("keyup", listener);
+    }
+
+    default Registration onKeyPress(EventListener<KeyboardEvent> listener) {
+        return onEvent("keypress", listener);
     }
 }

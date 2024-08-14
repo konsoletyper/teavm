@@ -23,6 +23,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.tooling.TeaVMToolLog;
 
 public class DevServer {
@@ -40,6 +41,7 @@ public class DevServer {
     private List<DevServerListener> listeners = new ArrayList<>();
     private Map<String, String> properties = new LinkedHashMap<>();
     private List<String> preservedClasses = new ArrayList<>();
+    private JSModuleType jsModuleType;
     private boolean compileOnStartup;
     private boolean logBuildErrors = true;
 
@@ -123,6 +125,10 @@ public class DevServer {
         return properties;
     }
 
+    public void setJsModuleType(JSModuleType jsModuleType) {
+        this.jsModuleType = jsModuleType;
+    }
+
     public void invalidateCache() {
         servlet.invalidateCache();
     }
@@ -170,6 +176,7 @@ public class DevServer {
         servlet.setLogBuildErrors(logBuildErrors);
         servlet.getProperties().putAll(properties);
         servlet.getPreservedClasses().addAll(preservedClasses);
+        servlet.setJsModuleType(jsModuleType);
         for (DevServerListener listener : listeners) {
             servlet.addListener(listener);
         }

@@ -18,10 +18,6 @@ package org.teavm.jso.dom.events;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.browser.Storage;
 
-/**
- *
- * @author Junji Takakura
- */
 public interface StorageEvent extends Event {
 
     @JSProperty

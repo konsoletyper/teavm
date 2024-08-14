@@ -70,7 +70,7 @@ public class ServiceLoaderWasmSupport implements WasmIntrinsicFactory {
             var table = createServiceData(manager);
             var tableArg = new WasmInt32Constant(table);
             var serviceClassAddress = manager.generate(invocation.getArguments().get(0));
-            return new WasmCall(manager.getNames().forMethod(CREATE_SERVICES_METHOD), tableArg,
+            return new WasmCall(manager.getFunctions().forStaticMethod(CREATE_SERVICES_METHOD), tableArg,
                     serviceClassAddress);
         }
 
@@ -94,10 +94,10 @@ public class ServiceLoaderWasmSupport implements WasmIntrinsicFactory {
                             var implPointer = manager.getClassPointer(ValueType.object(implementation));
                             entry.setAddress(0, implPointer);
 
-                            var constructorName = manager.getNames().forMethod(new MethodReference(
+                            var constructorFn = manager.getFunctions().forInstanceMethod(new MethodReference(
                                     implementation, "<init>", ValueType.VOID
                             ));
-                            entry.setInt(1, manager.getFunctionPointer(constructorName));
+                            entry.setInt(1, manager.getFunctionPointer(constructorFn));
                         }
 
                         return result;

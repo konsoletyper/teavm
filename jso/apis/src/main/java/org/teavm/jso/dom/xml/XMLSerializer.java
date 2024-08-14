@@ -16,32 +16,21 @@
 package org.teavm.jso.dom.xml;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 
 /**
  * The XMLSerializer interface provides the ability to construct an XML string
  * representing a DOM tree.
  */
-public abstract class XMLSerializer implements JSObject {
+@JSClass
+public class XMLSerializer implements JSObject {
+    public XMLSerializer() {
+    }
 
     @JSBody(script = "return new XMLSerializer();")
+    @Deprecated
     public static native XMLSerializer create();
-    
-    /**
-     * Constructs a string representing the specified DOM tree in XML form.
-     *
-     * @param rootNode The Node to use as the root of the DOM tree or subtree for
-     *        which to construct an XML representation. The root node itself must be
-     *        either a {@link Node} or {@link Attr} object.
-     * @return A DOMString containing the XML representation of the specified DOM
-     *         tree.
-     * @throws TypeError The specified rootNode is not a compatible node type. The
-     *         root node must be either Node or Attr.
-     * @throws InvalidStateError The tree could not be successfully serialized,
-     *         probably due to issues with the content's compatibility with XML
-     *         serialization.
-     * @throws SyntaxError A serialization of HTML was requested but could not
-     *         succeed due to the content not being well-formed.
-     */
-    public abstract String serializeToString(Node rootNode);
+
+    public native String serializeToString(Node rootNode);
 }

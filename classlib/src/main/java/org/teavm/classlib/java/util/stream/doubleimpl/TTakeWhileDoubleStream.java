@@ -17,30 +17,33 @@ package org.teavm.classlib.java.util.stream.doubleimpl;
 
 import java.util.function.DoublePredicate;
 
-public class TTakeWhileDoubleStream extends TWrappingDoubleStreamImpl {
+public class TTakeWhileDoubleStream extends TSimpleDoubleStreamImpl {
+    private TSimpleDoubleStreamImpl sourceStream;
     private DoublePredicate predicate;
 
     /* set to `true` as soon as we see a value `v` in the source stream for which `predicate.test(v)` is false */
     private boolean isStopped;
 
-    TTakeWhileDoubleStream(TSimpleDoubleStreamImpl innerStream, DoublePredicate predicate) {
-        super(innerStream);
+    TTakeWhileDoubleStream(TSimpleDoubleStreamImpl sourceStream, DoublePredicate predicate) {
+        this.sourceStream = sourceStream;
         this.predicate = predicate;
     }
 
     @Override
-    protected DoublePredicate wrap(DoublePredicate consumer) {
-        return t -> {
-            if (isStopped) {
-                return false;
-            }
-
-            if (predicate.test(t)) {
-                return consumer.test(t);
-            } else {
+    public boolean next(DoublePredicate consumer) {
+        if (isStopped) {
+            return false;
+        }
+        var result = sourceStream.next(e -> {
+            if (!predicate.test(e)) {
                 isStopped = true;
                 return false;
             }
-        };
+            return consumer.test(e);
+        });
+        if (!result) {
+            isStopped = true;
+        }
+        return result;
     }
 }

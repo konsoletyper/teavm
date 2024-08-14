@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test module</title>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+  <script type="module" charset="utf-8">
+    import { foo, bar } from "./js/module-test.js"
+
+    document.body.onload = () => {
+        let fooButton = document.getElementById("foo");
+        fooButton.onclick = () => {
+            foo();
+        }
+        let barButton = document.getElementById("bar");
+        let barArgInput = document.getElementById("bar-arg");
+        barButton.onclick = () => {
+            alert(bar(parseInt(barArgInput.value)));
+        }
+    };
+  </script>
+</head>
+<body>
+<p><button id="foo">call foo (result in console)</button></p>
+<p><button id="bar">call bar: </button> <input id="bar-arg" type="text" value="23"></p>
+</body>
+</html>

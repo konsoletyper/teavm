@@ -420,6 +420,7 @@ public class BrowserRunner {
                     "--disable-gpu",
                     "--remote-debugging-port=9222",
                     "--no-first-run",
+                    "--js-flags=--expose-gc",
                     "--user-data-dir=" + profile
             ));
         });

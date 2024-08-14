@@ -17,8 +17,10 @@ package org.teavm.jso.core;
 
 import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSPrimitiveType;
 import org.teavm.jso.JSProperty;
 
+@JSPrimitiveType("function")
 public abstract class JSFunction implements JSObject {
     @JSProperty
     public abstract int getLength();

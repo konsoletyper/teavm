@@ -19,12 +19,18 @@ import org.teavm.model.util.VariableType;
 
 public class VariableNode {
     private int index;
+    private int originalIndex;
     private VariableType type;
     private String name;
 
     public VariableNode(int index, VariableType type) {
         this.index = index;
+        this.originalIndex = index;
         this.type = type;
+    }
+
+    public int getOriginalIndex() {
+        return originalIndex;
     }
 
     public int getIndex() {

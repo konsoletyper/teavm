@@ -15,7 +15,7 @@
  */
 package org.teavm.backend.wasm.generators;
 
-import org.teavm.backend.lowlevel.generate.NameProvider;
+import org.teavm.backend.wasm.WasmFunctionRepository;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.generate.WasmStringPool;
@@ -29,7 +29,7 @@ public interface WasmMethodGeneratorContext {
 
     Diagnostics getDiagnostics();
 
-    NameProvider getNames();
+    WasmFunctionRepository getFunctions();
 
     ClassReaderSource getClassSource();
 

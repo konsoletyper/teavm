@@ -31,3 +31,11 @@ class TestClass {
         return result;
     }
 }
+
+function topLevelVararg(...args) {
+    let result = "tva";
+    for (const arg of args) {
+        result += ":" + arg;
+    }
+    return result;
+}

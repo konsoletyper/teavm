@@ -133,7 +133,7 @@ public class ArrayGenerator implements WasmMethodGenerator {
                     new WasmGetLocal(arrayVar));
             int baseAddr = BinaryWriter.align(base, 1 << shift[i]);
 
-            WasmCall call = new WasmCall(context.getNames().forMethod(methodRef));
+            WasmCall call = new WasmCall(context.getFunctions().forStaticMethod(methodRef));
 
             switch (primitiveTypes[i].getKind()) {
                 case BOOLEAN:

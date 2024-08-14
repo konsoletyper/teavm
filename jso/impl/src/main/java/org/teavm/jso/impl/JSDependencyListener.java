@@ -56,6 +56,9 @@ class JSDependencyListener extends AbstractDependencyListener {
             if (exposeAnnot == null) {
                 exposeAnnot = method.getAnnotations().get(JSSetterToExpose.class.getName());
             }
+            if (exposeAnnot == null) {
+                exposeAnnot = method.getAnnotations().get(JSConstructorToExpose.class.getName());
+            }
             if (exposeAnnot != null) {
                 MethodDependency methodDep = agent.linkMethod(method.getReference());
                 if (methodDep.getMethod() != null) {

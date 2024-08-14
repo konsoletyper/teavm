@@ -38,6 +38,7 @@ public class TThread extends TObject implements TRunnable {
     private final Object finishedLock = new Object();
     private boolean interruptedFlag;
     public TThreadInterruptHandler interruptHandler;
+    public Object key;
 
     private String name;
     private boolean alive = true;
@@ -77,6 +78,7 @@ public class TThread extends TObject implements TRunnable {
         try {
             activeCount++;
             setCurrentThread(TThread.this);
+            key = new Object();
             TThread.this.run();
         } catch (Throwable t) {
             getUncaughtExceptionHandler().uncaughtException(this, t);
@@ -86,6 +88,7 @@ public class TThread extends TObject implements TRunnable {
             }
             alive = false;
             activeCount--;
+            key = null;
             setCurrentThread(mainThread);
         }
     }

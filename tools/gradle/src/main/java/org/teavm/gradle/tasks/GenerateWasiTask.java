@@ -29,6 +29,9 @@ public abstract class GenerateWasiTask extends TeaVMTask {
     }
 
     @Input
+    public abstract Property<Boolean> getExceptionsUsed();
+
+    @Input
     public abstract Property<Integer> getMinHeapSize();
 
     @Input
@@ -36,6 +39,7 @@ public abstract class GenerateWasiTask extends TeaVMTask {
 
     @Override
     protected void setupBuilder(BuildStrategy builder) {
+        builder.setWasmExceptionsUsed(getExceptionsUsed().get());
         builder.setTargetType(TeaVMTargetType.WEBASSEMBLY_WASI);
         builder.setMinHeapSize(getMinHeapSize().get() * MB);
         builder.setMaxHeapSize(getMaxHeapSize().get() * MB);

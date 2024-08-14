@@ -31,3 +31,9 @@ class ClassWithConstructor {
         return "static method called";
     }
 }
+
+function topLevelFunction() {
+    return "top level";
+}
+
+let topLevelProperty = "top level prop";

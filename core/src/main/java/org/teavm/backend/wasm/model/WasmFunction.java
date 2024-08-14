@@ -22,30 +22,28 @@ import java.util.Objects;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.model.MethodReference;
 
-public class WasmFunction {
-    WasmModule module;
+public class WasmFunction extends WasmEntity {
     private String name;
     private String exportName;
     private String importName;
     private String importModule;
-    private List<WasmType> parameters = new ArrayList<>();
-    private WasmType result;
+    private boolean referenced;
+    private WasmFunctionType type;
     private List<WasmLocal> localVariables = new ArrayList<>();
     private List<WasmLocal> readonlyLocalVariables = Collections.unmodifiableList(localVariables);
     private List<WasmExpression> body = new ArrayList<>();
     private MethodReference javaMethod;
 
-    public WasmFunction(String name) {
-        Objects.requireNonNull(name);
-        this.name = name;
-    }
-
-    public WasmModule getModule() {
-        return module;
+    public WasmFunction(WasmFunctionType type) {
+        this.type = Objects.requireNonNull(type);
     }
 
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getExportName() {
@@ -62,6 +60,7 @@ public class WasmFunction {
 
     public void setImportName(String importName) {
         this.importName = importName;
+        collection.invalidateIndexes();
     }
 
     public String getImportModule() {
@@ -72,16 +71,25 @@ public class WasmFunction {
         this.importModule = importModule;
     }
 
-    public WasmType getResult() {
-        return result;
+    public boolean isReferenced() {
+        return referenced;
     }
 
-    public void setResult(WasmType result) {
-        this.result = result;
+    public void setReferenced(boolean referenced) {
+        this.referenced = referenced;
     }
 
-    public List<WasmType> getParameters() {
-        return parameters;
+    @Override
+    boolean isImported() {
+        return importName != null;
+    }
+
+    public WasmFunctionType getType() {
+        return type;
+    }
+
+    public void setType(WasmFunctionType type) {
+        this.type = Objects.requireNonNull(type);
     }
 
     public List<WasmLocal> getLocalVariables() {

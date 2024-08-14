@@ -64,7 +64,7 @@ public class MethodDescriptor implements Serializable {
 
     public ValueType parameterType(int index) {
         if (index >= signature.length - 1) {
-            throw new IndexOutOfBoundsException(String.valueOf(index) + "/" + (signature.length - 1));
+            throw new IndexOutOfBoundsException(index + "/" + (signature.length - 1));
         }
         return signature[index];
     }

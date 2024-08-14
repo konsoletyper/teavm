@@ -147,6 +147,7 @@ public class TeaVMPlugin implements Plugin<Project> {
             task.getMainClass().convention(js.getMainClass());
             task.getClasspath().from(task.getProject().getConfigurations().getByName(CLASSPATH_CONFIGURATION_NAME));
             task.getPreservedClasses().addAll(js.getPreservedClasses());
+            task.getJsModuleType().convention(js.getModuleType());
             task.getProcessMemory().convention(js.getDevServer().getProcessMemory());
             task.getProperties().putAll(js.getProperties());
             task.getServerClasspath().from(configuration);
@@ -190,6 +191,7 @@ public class TeaVMPlugin implements Plugin<Project> {
         project.getTasks().create(WASM_TASK_NAME, GenerateWasmTask.class, task -> {
             var wasm = extension.getWasm();
             applyToTask(wasm, task, configuration);
+            task.getExceptionsUsed().convention(wasm.getExceptionsUsed());
             task.getTargetFileName().convention(wasm.getTargetFileName());
             task.getMinHeapSize().convention(wasm.getMinHeapSize());
             task.getMaxHeapSize().convention(wasm.getMaxHeapSize());
@@ -201,6 +203,7 @@ public class TeaVMPlugin implements Plugin<Project> {
         project.getTasks().create(WASI_TASK_NAME, GenerateWasiTask.class, task -> {
             var wasi = extension.getWasi();
             applyToTask(wasi, task, configuration);
+            task.getExceptionsUsed().convention(wasi.getExceptionsUsed());
             task.getTargetFileName().convention(wasi.getTargetFileName());
             task.getMinHeapSize().convention(wasi.getMinHeapSize());
             task.getMaxHeapSize().convention(wasi.getMaxHeapSize());

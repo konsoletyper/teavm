@@ -20,6 +20,7 @@ import org.junit.runner.RunWith;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSTopLevel;
 import org.teavm.junit.AttachJavaScript;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
@@ -77,6 +78,28 @@ public class CallTest {
         assertEquals("a:23,b:q,va:6:7:8", TestClass.restVararg(23, "q", intArray));
     }
 
+    @Test
+    @AttachJavaScript("org/teavm/jso/test/vararg.js")
+    public void topLevelVararg() {
+        assertEquals("tva:q:w", TestClass.topLevelVararg("q", "w"));
+        assertEquals("tva:23:42", TestClass.topLevelVarargInt(23, 42));
+
+        var array = new String[3];
+        for (var i = 0; i < array.length; ++i) {
+            array[i] = String.valueOf((char) ('A' + i));
+        }
+        assertEquals("tva:A:B:C", TestClass.topLevelVararg(array));
+
+        var intArray = new int[3];
+        for (var i = 0; i < array.length; ++i) {
+            intArray[i] = 6 + i;
+        }
+        assertEquals("tva:6:7:8", TestClass.topLevelVarargInt(intArray));
+
+        assertEquals("tva", TestClass.topLevelVararg());
+        assertEquals("tva", TestClass.topLevelVarargInt());
+    }
+
     @JSClass
     public static class TestClass implements JSObject {
         public static native String allVararg(String... args);
@@ -87,5 +110,12 @@ public class CallTest {
         public static native String restVararg(String a, int b, String... args);
 
         public static native String restVararg(int a, String b, int... args);
+
+        @JSTopLevel
+        public static native String topLevelVararg(String... args);
+
+        @JSTopLevel
+        @JSMethod("topLevelVararg")
+        public static native String topLevelVarargInt(int... args);
     }
 }

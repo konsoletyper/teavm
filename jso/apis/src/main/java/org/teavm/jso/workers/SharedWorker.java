@@ -16,11 +16,12 @@
 package org.teavm.jso.workers;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSProperty;
-import org.teavm.jso.dom.events.ErrorEvent;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 
+@JSClass
 public class SharedWorker implements AbstractWorker {
     public SharedWorker(String url) {
     }
@@ -31,9 +32,6 @@ public class SharedWorker implements AbstractWorker {
 
     @JSProperty
     public native MessagePort getPort();
-
-    @Override
-    public native void onError(EventListener<ErrorEvent> listener);
 
     @Override
     public native void addEventListener(String type, EventListener<?> listener, boolean useCapture);

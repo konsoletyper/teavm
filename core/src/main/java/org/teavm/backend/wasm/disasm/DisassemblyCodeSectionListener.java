@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.function.Consumer;
-import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
 import org.teavm.backend.wasm.model.expression.WasmFloatUnaryOperation;
@@ -29,6 +29,7 @@ import org.teavm.backend.wasm.model.expression.WasmInt64Subtype;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmSignedType;
 import org.teavm.backend.wasm.parser.AddressListener;
 import org.teavm.backend.wasm.parser.BranchOpcode;
 import org.teavm.backend.wasm.parser.CodeListener;
@@ -37,20 +38,26 @@ import org.teavm.backend.wasm.parser.CodeSectionParser;
 import org.teavm.backend.wasm.parser.LocalOpcode;
 import org.teavm.backend.wasm.parser.ModuleParser;
 import org.teavm.backend.wasm.parser.Opcode;
+import org.teavm.backend.wasm.parser.WasmHollowType;
 import org.teavm.common.ByteArrayAsyncInputStream;
 
 public class DisassemblyCodeSectionListener implements AddressListener, CodeSectionListener, CodeListener {
     private DisassemblyWriter writer;
     private int address;
+    private int addressOffset;
     private int blockIdGen;
 
     public DisassemblyCodeSectionListener(DisassemblyWriter writer) {
         this.writer = writer;
     }
 
+    public void setAddressOffset(int addressOffset) {
+        this.addressOffset = addressOffset;
+    }
+
     @Override
     public void address(int address) {
-        this.address = address;
+        this.address = address + addressOffset;
     }
 
     @Override
@@ -60,7 +67,7 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
 
     @Override
     public boolean functionStart(int index, int size) {
-        writer.address(address).write("(func $fun_" + index).indent().eol();
+        writer.address(address).write("(func (; " + index + " ;)").indent().eol();
         return true;
     }
 
@@ -70,10 +77,10 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     }
 
     @Override
-    public void local(int start, int count, WasmType type) {
+    public void local(int start, int count, WasmHollowType type) {
         writer.address(address);
         for (int i = 0; i < count; ++i) {
-            writer.write("(local $loc_" + (i + start) + " " + typeToString(type) + ")").eol();
+            writer.write("(local (; " + (i + start) + " ;) " + typeToString(type) + ")").eol();
         }
     }
 
@@ -93,7 +100,7 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
         writer.outdent().write(")").eol();
     }
 
-    private String blockTypeToString(WasmType type) {
+    private String blockTypeToString(WasmHollowType type) {
         if (type == null) {
             return "";
         } else {
@@ -101,19 +108,38 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
         }
     }
 
-    private String typeToString(WasmType type) {
+    private String typeToString(WasmHollowType type) {
         if (type != null) {
-            switch (type) {
-                case INT32:
-                    return "i32";
-                case INT64:
-                    return "i64";
-                case FLOAT32:
-                    return "f32";
-                case FLOAT64:
-                    return "f64";
-                default:
-                    break;
+            if (type instanceof WasmHollowType.Number) {
+                switch (((WasmHollowType.Number) type).number) {
+                    case INT32:
+                        return "i32";
+                    case INT64:
+                        return "i64";
+                    case FLOAT32:
+                        return "f32";
+                    case FLOAT64:
+                        return "f64";
+                    default:
+                        break;
+                }
+            } else if (type instanceof WasmHollowType.SpecialReference) {
+                switch (((WasmHollowType.SpecialReference) type).kind) {
+                    case ANY:
+                        return "any";
+                    case FUNC:
+                        return "func";
+                    case ARRAY:
+                        return "array";
+                    case EXTERN:
+                        return "extern";
+                    case STRUCT:
+                        return "struct";
+                    default:
+                        throw new IllegalArgumentException();
+                }
+            } else if (type instanceof WasmHollowType.CompositeReference) {
+                return String.valueOf(((WasmHollowType.CompositeReference) type).index);
             }
         }
         return "unknown";
@@ -129,7 +155,7 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     }
 
     @Override
-    public int startBlock(boolean loop, WasmType type) {
+    public int startBlock(boolean loop, WasmHollowType type) {
         writer.address(address);
         var label = blockIdGen++;
         writer.write(loop ? "loop" : "block").write(" $label_" + label).write(blockTypeToString(type))
@@ -138,7 +164,7 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     }
 
     @Override
-    public int startConditionalBlock(WasmType type) {
+    public int startConditionalBlock(WasmHollowType type) {
         writer.address(address);
         var label = blockIdGen++;
         writer.write("if ").write(" $label_" + label).write(blockTypeToString(type)).indent().eol();
@@ -149,6 +175,20 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     public void startElseSection(int token) {
         writer.address(address);
         writer.outdent().write("else  (; $label_" + token + " ;)").indent().eol();
+    }
+
+    @Override
+    public int startTry(WasmHollowType type) {
+        writer.address(address);
+        var label = blockIdGen++;
+        writer.write("try ").write(" $label_" + label).write(blockTypeToString(type)).indent().eol();
+        return label;
+    }
+
+    @Override
+    public void startCatch(int tagIndex) {
+        writer.outdent().address(address);
+        writer.write("catch ").write(String.valueOf(tagIndex)).indent().eol();
     }
 
     @Override
@@ -181,6 +221,12 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     }
 
     @Override
+    public void throwInstruction(int tagIndex) {
+        writer.address(address);
+        writer.write("throw ").write(String.valueOf(tagIndex)).eol();
+    }
+
+    @Override
     public void opcode(Opcode opcode) {
         writer.address(address);
         switch (opcode) {
@@ -195,6 +241,12 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
                 break;
             case DROP:
                 writer.write("drop");
+                break;
+            case REF_EQ:
+                writer.write("ref.eq");
+                break;
+            case ARRAY_LENGTH:
+                writer.write("array.length");
                 break;
         }
         writer.eol();
@@ -211,20 +263,35 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
                 writer.write("local.set");
                 break;
         }
-        writer.write(" $loc_" + index).eol();
+        writer.write(" " + index).eol();
+    }
+
+    @Override
+    public void getGlobal(int globalIndex) {
+        writer.address(address).write("global.get ").write(Integer.toString(globalIndex)).eol();
+    }
+
+    @Override
+    public void setGlobal(int globalIndex) {
+        writer.address(address).write("global.set ").write(Integer.toString(globalIndex)).eol();
     }
 
     @Override
     public void call(int functionIndex) {
         writer.address(address);
-        writer.write("call $fun_" + functionIndex).eol();
+        writer.write("call " + functionIndex).eol();
     }
 
     @Override
     public void indirectCall(int typeIndex, int tableIndex) {
         writer.address(address);
-        //TODO: type signature must be printed
-        writer.write("call_indirect $table_" + tableIndex + " $type_" + typeIndex).eol();
+        writer.write("call_indirect " + tableIndex + " " + typeIndex).eol();
+    }
+
+    @Override
+    public void callReference(int typeIndex) {
+        writer.address(address);
+        writer.write("call_ref " + typeIndex).eol();
     }
 
     @Override
@@ -424,6 +491,9 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
             case CTZ:
                 writer.write("ctz");
                 break;
+            case EQZ:
+                writer.write("eqz");
+                break;
             case POPCNT:
                 writer.write("popcnt");
                 break;
@@ -615,7 +685,7 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     }
 
     @Override
-    public void convert(WasmType sourceType, WasmType targetType, boolean signed, boolean reinterpret) {
+    public void convert(WasmNumType sourceType, WasmNumType targetType, boolean signed, boolean reinterpret) {
         switch (targetType) {
             case INT32:
                 writer.write("i32.");
@@ -753,6 +823,73 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
         writer.address(address).write("f64.const " + Double.toHexString(value)).eol();
     }
 
+    @Override
+    public void nullConstant(WasmHollowType.Reference type) {
+        writer.address(address).write("ref.null ").write(typeToString(type)).eol();
+    }
+
+    @Override
+    public void cast(WasmHollowType.Reference type) {
+        writer.address(address).write("ref.cast ").write(typeToString(type)).eol();
+    }
+
+    @Override
+    public void structNew(int typeIndex) {
+        writer.address(address).write("struct.new ").write(Integer.toString(typeIndex)).eol();
+    }
+
+    @Override
+    public void structNewDefault(int typeIndex) {
+        writer.address(address).write("struct.new_default ").write(Integer.toString(typeIndex)).eol();
+    }
+
+    @Override
+    public void structGet(WasmSignedType signedType, int typeIndex, int fieldIndex) {
+        writer.address(address);
+        if (signedType == null) {
+            writer.write("struct.get");
+        } else if (signedType == WasmSignedType.SIGNED) {
+            writer.write("struct.get_s");
+        } else {
+            writer.write("struct.get_u");
+        }
+        writer.write(" ").write(Integer.toString(typeIndex)).write(" ").write(Integer.toString(fieldIndex)).eol();
+    }
+
+    @Override
+    public void structSet(int typeIndex, int fieldIndex) {
+        writer.address(address).write("struct.set ").write(Integer.toString(typeIndex)).write(" ")
+                .write(Integer.toString(fieldIndex)).eol();
+    }
+
+    @Override
+    public void arrayNewDefault(int typeIndex) {
+        writer.address(address).write("array.new_default ").write(Integer.toString(typeIndex)).eol();
+    }
+
+    @Override
+    public void arrayGet(WasmSignedType signedType, int typeIndex) {
+        writer.address(address);
+        if (signedType == null) {
+            writer.write("array.get");
+        } else if (signedType == WasmSignedType.SIGNED) {
+            writer.write("array.get_s");
+        } else {
+            writer.write("array.get_u");
+        }
+        writer.write(" ").write(Integer.toString(typeIndex)).eol();
+    }
+
+    @Override
+    public void arraySet(int typeIndex) {
+        writer.address(address).write("array.set ").write(Integer.toString(typeIndex)).eol();
+    }
+
+    @Override
+    public void functionReference(int functionIndex) {
+        writer.address(address).write("ref.func ").write(Integer.toString(functionIndex)).eol();
+    }
+
     public static void main(String[] args) throws IOException {
         var file = new File(args[0]);
         var bytes = Files.readAllBytes(file.toPath());
@@ -765,6 +902,7 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
                         var out = new PrintWriter(System.out);
                         var writer = new DisassemblyWriter(out, true);
                         var disassembler = new DisassemblyCodeSectionListener(writer);
+                        disassembler.setAddressOffset(pos);
                         var sectionParser = new CodeSectionParser(disassembler, disassembler);
                         sectionParser.parse(bytes);
                         out.flush();

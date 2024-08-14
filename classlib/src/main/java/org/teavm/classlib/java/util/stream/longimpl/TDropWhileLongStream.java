@@ -17,28 +17,42 @@ package org.teavm.classlib.java.util.stream.longimpl;
 
 import java.util.function.LongPredicate;
 
-public class TDropWhileLongStream extends TWrappingLongStreamImpl {
+public class TDropWhileLongStream extends TSimpleLongStreamImpl {
+    private TSimpleLongStreamImpl sourceStream;
     private LongPredicate predicate;
 
     /* set to `true` as soon as we see a value `v` in the source stream for which `predicate.test(v)` is true */
     private boolean isStarted;
 
-    TDropWhileLongStream(TSimpleLongStreamImpl innerStream, LongPredicate predicate) {
-        super(innerStream);
+    TDropWhileLongStream(TSimpleLongStreamImpl sourceStream, LongPredicate predicate) {
+        this.sourceStream = sourceStream;
         this.predicate = predicate;
     }
 
     @Override
-    protected LongPredicate wrap(LongPredicate consumer) {
-        return t -> {
-            if (!isStarted) {
-                if (predicate.test(t)) {
-                    return true;
-                } else {
+    public boolean next(LongPredicate consumer) {
+        if (!isStarted) {
+            var skippingPredicate = new LongPredicate() {
+                boolean consumerCanTakeMore;
+
+                @Override
+                public boolean test(long t) {
+                    if (predicate.test(t)) {
+                        return true;
+                    }
                     isStarted = true;
+                    consumerCanTakeMore = consumer.test(t);
+                    return false;
                 }
+            };
+            var result = sourceStream.next(skippingPredicate);
+            if (!result) {
+                return false;
             }
-            return consumer.test(t);
-        };
+            if (!skippingPredicate.consumerCanTakeMore) {
+                return true;
+            }
+        }
+        return sourceStream.next(consumer);
     }
 }

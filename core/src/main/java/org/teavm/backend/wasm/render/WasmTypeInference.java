@@ -15,13 +15,18 @@
  */
 package org.teavm.backend.wasm.render;
 
-import org.teavm.backend.wasm.generate.WasmGenerationContext;
-import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
+import org.teavm.backend.wasm.model.expression.WasmArrayGet;
+import org.teavm.backend.wasm.model.expression.WasmArrayLength;
+import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
+import org.teavm.backend.wasm.model.expression.WasmArraySet;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmCallReference;
+import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmCopy;
@@ -33,6 +38,8 @@ import org.teavm.backend.wasm.model.expression.WasmFloat64Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinary;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
 import org.teavm.backend.wasm.model.expression.WasmFloatUnary;
+import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
+import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
@@ -45,22 +52,26 @@ import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
+import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
+import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
+import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.expression.WasmStructNew;
+import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
+import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
+import org.teavm.backend.wasm.model.expression.WasmThrow;
+import org.teavm.backend.wasm.model.expression.WasmTry;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 
 public class WasmTypeInference implements WasmExpressionVisitor {
-    private WasmGenerationContext context;
     private WasmType result;
-
-    public WasmTypeInference(WasmGenerationContext context) {
-        this.context = context;
-    }
 
     public WasmType getResult() {
         return result;
@@ -132,6 +143,16 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmGetGlobal expression) {
+        result = expression.getGlobal().getType();
+    }
+
+    @Override
+    public void visit(WasmSetGlobal expression) {
+        result = null;
+    }
+
+    @Override
     public void visit(WasmIntBinary expression) {
         result = map(expression.getType());
     }
@@ -153,18 +174,28 @@ public class WasmTypeInference implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmConversion expression) {
-        result = expression.getTargetType();
+        result = WasmType.num(expression.getTargetType());
+    }
+
+    @Override
+    public void visit(WasmNullConstant expression) {
+        result = expression.type;
     }
 
     @Override
     public void visit(WasmCall expression) {
-        WasmFunction function = context.getFunction(expression.getFunctionName());
-        result = function == null ? null : function.getResult();
+        var function = expression.getFunction();
+        result = function == null ? null : function.getType().getReturnType();
     }
 
     @Override
     public void visit(WasmIndirectCall expression) {
-        result = expression.getReturnType();
+        result = expression.getType().getReturnType();
+    }
+
+    @Override
+    public void visit(WasmCallReference expression) {
+        result = expression.getType().getReturnType();
     }
 
     @Override
@@ -225,6 +256,76 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     @Override
     public void visit(WasmCopy expression) {
         result = null;
+    }
+
+    @Override
+    public void visit(WasmTry expression) {
+        result = expression.getType();
+    }
+
+    @Override
+    public void visit(WasmThrow expression) {
+        result = null;
+    }
+
+    @Override
+    public void visit(WasmReferencesEqual expression) {
+        result = WasmType.INT32;
+    }
+
+    @Override
+    public void visit(WasmCast expression) {
+        result = expression.getTargetType();
+    }
+
+    @Override
+    public void visit(WasmStructNew expression) {
+        result = expression.getType().getReference();
+    }
+
+    @Override
+    public void visit(WasmStructNewDefault expression) {
+        result = expression.getType().getReference();
+    }
+
+    @Override
+    public void visit(WasmStructGet expression) {
+        result = expression.getType().getFields().get(expression.getFieldIndex()).asUnpackedType();
+    }
+
+    @Override
+    public void visit(WasmStructSet expression) {
+        result = null;
+    }
+
+    @Override
+    public void visit(WasmArrayNewDefault expression) {
+        result = expression.getType().getReference();
+    }
+
+    @Override
+    public void visit(WasmArrayGet expression) {
+        result = expression.getType().getElementType().asUnpackedType();
+    }
+
+    @Override
+    public void visit(WasmArraySet expression) {
+        result = null;
+    }
+
+    @Override
+    public void visit(WasmArrayLength expression) {
+        result = WasmType.INT32;
+    }
+
+    @Override
+    public void visit(WasmArrayCopy expression) {
+        result = null;
+    }
+
+    @Override
+    public void visit(WasmFunctionReference expression) {
+        result = expression.getFunction().getType().getReference();
     }
 
     private static WasmType map(WasmIntType type) {

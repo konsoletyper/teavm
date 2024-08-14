@@ -16,6 +16,7 @@
 package org.teavm.jso.dom.html;
 
 import java.util.Date;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.media.AudioTrackList;
 import org.teavm.jso.media.MediaController;
@@ -25,171 +26,168 @@ import org.teavm.jso.media.TextTrackList;
 import org.teavm.jso.media.TimeRanges;
 import org.teavm.jso.media.VideoTrackList;
 
-/**
- *
- * @author Junji Takakura
- */
-public interface HTMLMediaElement extends HTMLElement {
-    int HAVE_NOTHING = 0;
-    int HAVE_METADATA = 1;
-    int HAVE_CURRENT_DATA = 2;
-    int HAVE_FUTURE_DATA = 3;
-    int HAVE_ENOUGH_DATA = 4;
+@JSClass
+public abstract class HTMLMediaElement extends HTMLElement {
+    public static final int HAVE_NOTHING = 0;
+    public static final int HAVE_METADATA = 1;
+    public static final int HAVE_CURRENT_DATA = 2;
+    public static final int HAVE_FUTURE_DATA = 3;
+    public static final int HAVE_ENOUGH_DATA = 4;
 
-    int NETWORK_EMPTY = 0;
-    int NETWORK_IDLE = 1;
-    int NETWORK_LOADING = 2;
-    int NETWORK_NO_SOURCE = 3;
+    public static final int NETWORK_EMPTY = 0;
+    public static final int NETWORK_IDLE = 1;
+    public static final int NETWORK_LOADING = 2;
+    public static final int NETWORK_NO_SOURCE = 3;
 
     @JSProperty
-    MediaError getError();
+    public abstract MediaError getError();
 
     @JSProperty
-    String getSrc();
+    public abstract String getSrc();
 
     @JSProperty
-    void setSrc(String src);
+    public abstract void setSrc(String src);
 
     @JSProperty
-    String getCurrentSrc();
+    public abstract String getCurrentSrc();
 
     @JSProperty
-    String getCrossOrigin();
+    public abstract String getCrossOrigin();
 
     @JSProperty
-    void setCrossOrigin(String crossOrigin);
+    public abstract void setCrossOrigin(String crossOrigin);
 
     @JSProperty
-    int getNetworkState();
+    public abstract int getNetworkState();
 
     @JSProperty
-    String getPreload();
+    public abstract String getPreload();
 
     @JSProperty
-    void setPreload(String preload);
+    public abstract void setPreload(String preload);
 
     @JSProperty
-    TimeRanges getBuffered();
+    public abstract TimeRanges getBuffered();
 
     @JSProperty
-    int getReadyState();
+    public abstract int getReadyState();
 
     @JSProperty
-    boolean isSeeking();
+    public abstract boolean isSeeking();
 
     @JSProperty
-    double getCurrentTime();
+    public abstract double getCurrentTime();
 
     @JSProperty
-    void setCurrentTime(double currentTime);
+    public abstract void setCurrentTime(double currentTime);
 
-    default void addCurrentTime(double delta) {
+    public final void addCurrentTime(double delta) {
         setCurrentTime(getCurrentTime() + delta);
     }
 
     @JSProperty
-    double getDuration();
+    public abstract double getDuration();
 
     @JSProperty
-    Date getStartDate();
+    public abstract Date getStartDate();
 
     @JSProperty
-    boolean isPaused();
+    public abstract boolean isPaused();
 
     @JSProperty
-    double getDefaultPlaybackRate();
+    public abstract double getDefaultPlaybackRate();
 
     @JSProperty
-    void setDefaultPlaybackRate(double defaultPlaybackRate);
+    public abstract void setDefaultPlaybackRate(double defaultPlaybackRate);
 
     @JSProperty
-    double getPlaybackRate();
+    public abstract double getPlaybackRate();
 
     @JSProperty
-    void setPlaybackRate(double playbackRate);
+    public abstract void setPlaybackRate(double playbackRate);
 
-    default void addPlaybackRate(double delta) {
+    public final void addPlaybackRate(double delta) {
         setPlaybackRate(getPlaybackRate() + delta);
     }
 
     @JSProperty
-    TimeRanges getPlayed();
+    public abstract TimeRanges getPlayed();
 
     @JSProperty
-    TimeRanges getSeekable();
+    public abstract TimeRanges getSeekable();
 
     @JSProperty
-    boolean isEnded();
+    public abstract boolean isEnded();
 
     @JSProperty
-    boolean isAutoplay();
+    public abstract boolean isAutoplay();
 
     @JSProperty
-    void setAutoplay(boolean autoplay);
+    public abstract void setAutoplay(boolean autoplay);
 
     @JSProperty
-    boolean isLoop();
+    public abstract boolean isLoop();
 
     @JSProperty
-    void setLoop(boolean loop);
+    public abstract void setLoop(boolean loop);
 
     @JSProperty
-    String getMediaGroup();
+    public abstract String getMediaGroup();
 
     @JSProperty
-    void setMediaGroup(String mediaGroup);
+    public abstract void setMediaGroup(String mediaGroup);
 
     @JSProperty
-    MediaController getController();
+    public abstract MediaController getController();
 
     @JSProperty
-    void setController(MediaController controller);
+    public abstract void setController(MediaController controller);
 
     @JSProperty
-    boolean isControls();
+    public abstract boolean isControls();
 
     @JSProperty
-    void setControls(boolean controls);
+    public abstract void setControls(boolean controls);
 
     @JSProperty
-    float getVolume();
+    public abstract float getVolume();
 
     @JSProperty
-    void setVolume(float volume);
+    public abstract void setVolume(float volume);
 
-    default void addVolume(float delta) {
+    public final void addVolume(float delta) {
         setVolume(getVolume() + delta);
     }
 
     @JSProperty
-    boolean isMuted();
+    public abstract boolean isMuted();
 
     @JSProperty
-    void setMuted(boolean muted);
+    public abstract void setMuted(boolean muted);
 
     @JSProperty
-    boolean isDefaultMuted();
+    public abstract boolean isDefaultMuted();
 
     @JSProperty
-    void setDefaultMuted(boolean defaultMuted);
+    public abstract void setDefaultMuted(boolean defaultMuted);
 
-    AudioTrackList getAudioTracks();
+    public abstract AudioTrackList getAudioTracks();
 
-    VideoTrackList getVideoTracks();
+    public abstract VideoTrackList getVideoTracks();
 
-    TextTrackList getTextTracks();
+    public abstract TextTrackList getTextTracks();
 
-    TextTrack addTextTrack(String kind);
+    public abstract TextTrack addTextTrack(String kind);
 
-    TextTrack addTextTrack(String kind, String label);
+    public abstract TextTrack addTextTrack(String kind, String label);
 
-    TextTrack addTextTrack(String kind, String label, String language);
+    public abstract TextTrack addTextTrack(String kind, String label, String language);
 
-    void play();
+    public abstract void play();
 
-    void pause();
+    public abstract void pause();
 
-    void load();
+    public abstract void load();
 
-    String canPlayType(String type);
+    public abstract String canPlayType(String type);
 }

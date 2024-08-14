@@ -161,6 +161,7 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
         tool.setJsModuleType(request.jsModuleType);
         tool.setStrict(request.strict);
         tool.setWasmVersion(request.wasmVersion);
+        tool.setWasmExceptionsUsed(request.wasmExceptionsUsed);
         tool.setMinHeapSize(request.minHeapSize);
         tool.setMaxHeapSize(request.maxHeapSize);
         tool.setHeapDump(request.heapDump);

@@ -27,3 +27,9 @@ export class ClassWithConstructor {
         return "bar called";
     }
 }
+
+export function topLevelFunction() {
+    return "top level";
+}
+
+export let topLevelProperty = "top level prop";

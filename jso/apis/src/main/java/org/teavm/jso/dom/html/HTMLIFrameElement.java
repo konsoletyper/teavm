@@ -18,40 +18,40 @@ package org.teavm.jso.dom.html;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.browser.Window;
 
-public interface HTMLIFrameElement extends HTMLElement {
+public abstract class HTMLIFrameElement extends HTMLElement {
     @JSProperty
-    HTMLDocument getContentDocument();
+    public abstract HTMLDocument getContentDocument();
 
     @JSProperty
-    Window getContentWindow();
+    public abstract Window getContentWindow();
 
     @JSProperty
-    String getWidth();
+    public abstract String getWidth();
 
     @JSProperty
-    void setWidth(String width);
+    public abstract void setWidth(String width);
 
     @JSProperty
-    String getHeight();
+    public abstract String getHeight();
 
     @JSProperty
-    void setHeight(String height);
+    public abstract void setHeight(String height);
 
     @JSProperty
-    String getName();
+    public abstract String getName();
 
     @JSProperty
-    void setName(String name);
+    public abstract void setName(String name);
 
     @JSProperty("src")
-    String getSourceAddress();
+    public abstract String getSourceAddress();
 
     @JSProperty("src")
-    void setSourceAddress(String src);
+    public abstract void setSourceAddress(String src);
 
     @JSProperty("srcdoc")
-    String getSourceDocument();
+    public abstract String getSourceDocument();
 
     @JSProperty("srcdoc")
-    void setSourceDocument(String srcdoc);
+    public abstract void setSourceDocument(String srcdoc);
 }

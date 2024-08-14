@@ -33,6 +33,7 @@ import org.teavm.classlib.java.util.TLocale;
 import org.teavm.classlib.java.util.regex.TPattern;
 import org.teavm.classlib.java.util.stream.TIntStream;
 import org.teavm.classlib.java.util.stream.intimpl.TStringCharsStream;
+import org.teavm.classlib.java.util.stream.intimpl.TStringCodePointsStream;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.NoSideEffects;
 
@@ -500,22 +501,37 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public String replace(TCharSequence target, TCharSequence replacement) {
-        var sb = new StringBuilder();
-        int sz = length() - target.length();
-        int i = 0;
-        outer:
-        for (; i <= sz; ++i) {
-            for (int j = 0; j < target.length(); ++j) {
-                if (charAt(i + j) != target.charAt(j)) {
-                    sb.append(charAt(i));
-                    continue outer;
-                }
+        if (target == replacement) {
+            return (String) (Object) this;
+        } else if (target.isEmpty()) {
+            var sb = new StringBuilder();
+            for (var i = 0; i < length(); ++i) {
+                sb.append(replacement);
+                sb.append(charAt(i));
             }
             sb.append(replacement);
-            i += target.length() - 1;
+            return sb.toString();
+        } else if (target.length() == 1 && replacement.length() == 1) {
+            return (String) (Object) replace(target.charAt(0), replacement.charAt(0));
+        } else {
+            var sb = new StringBuilder();
+            int sz = length() - target.length();
+            int i = 0;
+            outer:
+            for (; i <= sz; ++i) {
+                for (int j = 0; j < target.length(); ++j) {
+                    if (charAt(i + j) != target.charAt(j)) {
+                        sb.append(charAt(i));
+                        continue outer;
+                    }
+                }
+                sb.append(replacement);
+                i += target.length() - 1;
+            }
+            sb.append(substring(i));
+
+            return sb.toString();
         }
-        sb.append(substring(i));
-        return sb.toString();
     }
 
     public TString trim() {
@@ -589,8 +605,14 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return array;
     }
 
+    @Override
     public TIntStream chars() {
         return new TStringCharsStream(this);
+    }
+
+    @Override
+    public TIntStream codePoints() {
+        return new TStringCodePointsStream(this);
     }
 
     public static String valueOf(Object obj) {

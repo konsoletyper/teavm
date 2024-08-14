@@ -18,17 +18,16 @@ package org.teavm.backend.wasm.model.expression;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.WasmFunctionType;
 
 public class WasmIndirectCall extends WasmExpression {
-    private List<WasmType> parameterTypes = new ArrayList<>();
-    private WasmType returnType;
+    private WasmFunctionType type;
     private WasmExpression selector;
     private List<WasmExpression> arguments = new ArrayList<>();
 
-    public WasmIndirectCall(WasmExpression selector) {
-        Objects.requireNonNull(selector);
-        this.selector = selector;
+    public WasmIndirectCall(WasmExpression selector, WasmFunctionType type) {
+        this.selector = Objects.requireNonNull(selector);
+        this.type = Objects.requireNonNull(type);
     }
 
     public WasmExpression getSelector() {
@@ -36,24 +35,19 @@ public class WasmIndirectCall extends WasmExpression {
     }
 
     public void setSelector(WasmExpression selector) {
-        Objects.requireNonNull(selector);
-        this.selector = selector;
-    }
-
-    public List<WasmType> getParameterTypes() {
-        return parameterTypes;
-    }
-
-    public WasmType getReturnType() {
-        return returnType;
-    }
-
-    public void setReturnType(WasmType returnType) {
-        this.returnType = returnType;
+        this.selector = Objects.requireNonNull(selector);
     }
 
     public List<WasmExpression> getArguments() {
         return arguments;
+    }
+
+    public WasmFunctionType getType() {
+        return type;
+    }
+
+    public void setType(WasmFunctionType type) {
+        this.type = Objects.requireNonNull(type);
     }
 
     @Override

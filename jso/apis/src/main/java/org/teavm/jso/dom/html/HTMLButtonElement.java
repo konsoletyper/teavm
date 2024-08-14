@@ -16,44 +16,45 @@
 package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.popover.PopoverInvokerElement;
 
-public interface HTMLButtonElement extends HTMLElement {
-    String TYPE_BUTTON = "button";
+public abstract class HTMLButtonElement extends HTMLElement implements PopoverInvokerElement {
+    public static final String TYPE_BUTTON = "button";
 
-    String TYPE_RESET = "reset";
+    public static final String TYPE_RESET = "reset";
 
-    String TYPE_SUBMIT = "submit";
-
-    @JSProperty
-    boolean isAutofocus();
+    public static final String TYPE_SUBMIT = "submit";
 
     @JSProperty
-    void setAutofocus(boolean autofocus);
+    public abstract boolean isAutofocus();
 
     @JSProperty
-    boolean isDisabled();
+    public abstract void setAutofocus(boolean autofocus);
 
     @JSProperty
-    void setDisabled(boolean disabled);
+    public abstract boolean isDisabled();
 
     @JSProperty
-    HTMLElement getForm();
+    public abstract void setDisabled(boolean disabled);
 
     @JSProperty
-    String getName();
+    public abstract HTMLElement getForm();
 
     @JSProperty
-    void setName(String name);
+    public abstract String getName();
 
     @JSProperty
-    String getValue();
+    public abstract void setName(String name);
 
     @JSProperty
-    void setValue(String value);
+    public abstract String getValue();
 
     @JSProperty
-    String getType();
+    public abstract void setValue(String value);
 
     @JSProperty
-    void setType(String type);
+    public abstract String getType();
+
+    @JSProperty
+    public abstract void setType(String type);
 }

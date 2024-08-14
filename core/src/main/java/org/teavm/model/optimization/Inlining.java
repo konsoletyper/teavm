@@ -175,6 +175,7 @@ public class Inlining {
         instructionsToSkip = null;
 
         new UnreachableBasicBlockEliminator().optimize(program);
+        strategy.methodChanged(method);
     }
 
     private boolean applyOnce(Program program, MethodReference method) {

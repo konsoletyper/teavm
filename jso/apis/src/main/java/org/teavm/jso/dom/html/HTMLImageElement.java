@@ -18,40 +18,40 @@ package org.teavm.jso.dom.html;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.canvas.CanvasImageSource;
 
-public interface HTMLImageElement extends HTMLElement, CanvasImageSource {
+public abstract class HTMLImageElement extends HTMLElement implements CanvasImageSource {
     @JSProperty
-    String getAlt();
+    public abstract String getAlt();
 
     @JSProperty
-    void setAlt(String alt);
+    public abstract void setAlt(String alt);
 
     @JSProperty
-    int getWidth();
+    public abstract int getWidth();
 
     @JSProperty
-    void setWidth(int width);
+    public abstract void setWidth(int width);
 
     @JSProperty
-    int getHeight();
+    public abstract int getHeight();
 
     @JSProperty
-    void setHeight(int height);
+    public abstract void setHeight(int height);
 
     @JSProperty
-    int getNaturalWidth();
+    public abstract int getNaturalWidth();
 
     @JSProperty
-    int getNaturalHeight();
+    public abstract int getNaturalHeight();
 
     @JSProperty
-    String getSrc();
+    public abstract String getSrc();
 
     @JSProperty
-    void setSrc(String src);
+    public abstract void setSrc(String src);
 
     @JSProperty
-    String getCrossOrigin();
+    public abstract String getCrossOrigin();
 
     @JSProperty
-    void setCrossOrigin(String crossOrigin);
+    public abstract void setCrossOrigin(String crossOrigin);
 }

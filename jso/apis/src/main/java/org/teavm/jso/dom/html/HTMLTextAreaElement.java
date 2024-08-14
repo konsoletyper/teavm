@@ -17,133 +17,133 @@ package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
 
-public interface HTMLTextAreaElement extends HTMLElement {
+public abstract class HTMLTextAreaElement extends HTMLElement {
     @JSProperty
-    String getAutocomplete();
+    public abstract String getAutocomplete();
 
     @JSProperty
-    void setAutocomplete(String value);
+    public abstract void setAutocomplete(String value);
 
     @JSProperty
-    boolean isAutofocus();
+    public abstract boolean isAutofocus();
 
     @JSProperty
-    void setAutofocus(boolean value);
+    public abstract void setAutofocus(boolean value);
 
     @JSProperty
-    int getCols();
+    public abstract int getCols();
 
     @JSProperty
-    void setCols(int cols);
+    public abstract void setCols(int cols);
 
     @JSProperty
-    String getDirName();
+    public abstract String getDirName();
 
     @JSProperty
-    void setDirName(String value);
+    public abstract void setDirName(String value);
 
     @JSProperty
-    boolean isDisabled();
+    public abstract boolean isDisabled();
 
     @JSProperty
-    void setDisabled(boolean value);
+    public abstract void setDisabled(boolean value);
 
     @JSProperty
-    HTMLFormElement getForm();
+    public abstract HTMLFormElement getForm();
 
     @JSProperty
-    int getMaxLength();
+    public abstract int getMaxLength();
 
     @JSProperty
-    void setMaxLength(int value);
+    public abstract void setMaxLength(int value);
 
     @JSProperty
-    int getMinLength();
+    public abstract int getMinLength();
 
     @JSProperty
-    void setMinLength(int value);
+    public abstract void setMinLength(int value);
 
     @JSProperty
-    String getName();
+    public abstract String getName();
 
     @JSProperty
-    void setName(String value);
+    public abstract void setName(String value);
 
     @JSProperty
-    String getPlaceholder();
+    public abstract String getPlaceholder();
 
     @JSProperty
-    void setPlaceholder(String value);
+    public abstract void setPlaceholder(String value);
 
     @JSProperty
-    boolean isReadOnly();
+    public abstract boolean isReadOnly();
 
     @JSProperty
-    void setReadOnly(boolean value);
+    public abstract void setReadOnly(boolean value);
 
     @JSProperty
-    int getRows();
+    public abstract int getRows();
 
     @JSProperty
-    void setRows(int rows);
+    public abstract void setRows(int rows);
 
     @JSProperty
-    String getWrap();
+    public abstract String getWrap();
 
     @JSProperty
-    void setWrap(String value);
+    public abstract void setWrap(String value);
 
     @JSProperty
-    String getType();
+    public abstract String getType();
 
     @JSProperty
-    String getDefaultValue();
+    public abstract String getDefaultValue();
 
     @JSProperty
-    void setDefaultValue(String value);
+    public abstract void setDefaultValue(String value);
 
     @JSProperty
-    String getValue();
+    public abstract String getValue();
 
     @JSProperty
-    void setValue(String value);
+    public abstract void setValue(String value);
 
     @JSProperty
-    int getTextLength();
+    public abstract int getTextLength();
 
-    void setCustomValidity(String validationFailure);
+    public abstract void setCustomValidity(String validationFailure);
     
-    boolean checkValidity();
+    public abstract boolean checkValidity();
     
-    boolean reportValidity();
+    public abstract boolean reportValidity();
 
-    void select();
-
-    @JSProperty
-    int getSelectionStart();
+    public abstract void select();
 
     @JSProperty
-    void setSelectionStart(int value);
+    public abstract int getSelectionStart();
 
     @JSProperty
-    int getSelectionEnd();
+    public abstract void setSelectionStart(int value);
 
     @JSProperty
-    void setSelectionEnd(int value);
+    public abstract int getSelectionEnd();
 
     @JSProperty
-    String getSelectionDirection();
+    public abstract void setSelectionEnd(int value);
 
     @JSProperty
-    void setSelectionDirection(String value);
+    public abstract String getSelectionDirection();
 
-    void setRangeText(String replacement);
+    @JSProperty
+    public abstract void setSelectionDirection(String value);
 
-    void setRangeText(String replacement, int start, int end, String selectionMode);
+    public abstract void setRangeText(String replacement);
 
-    void setRangeText(String replacement, int start, int end);
+    public abstract void setRangeText(String replacement, int start, int end, String selectionMode);
 
-    void setSelectionRange(int start, int end, String direction);
+    public abstract void setRangeText(String replacement, int start, int end);
 
-    void setSelectionRange(int start, int end);
+    public abstract void setSelectionRange(int start, int end, String direction);
+
+    public abstract void setSelectionRange(int start, int end);
 }

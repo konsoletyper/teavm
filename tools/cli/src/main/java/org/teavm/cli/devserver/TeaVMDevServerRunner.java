@@ -30,6 +30,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.eclipse.jetty.util.log.Log;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.common.json.JsonParser;
 import org.teavm.devserver.DevServer;
 import org.teavm.tooling.ConsoleTeaVMToolLog;
@@ -79,6 +80,12 @@ public final class TeaVMDevServerRunner {
                 .valueSeparator()
                 .hasArgs()
                 .longOpt("property")
+                .build());
+        options.addOption(Option.builder()
+                .argName("module_type")
+                .hasArg()
+                .longOpt("js-module-type")
+                .desc("JS module type (umd, common-js, es2015 or none)")
                 .build());
         options.addOption(Option.builder()
                 .argName("number")
@@ -181,6 +188,18 @@ public final class TeaVMDevServerRunner {
 
         if (commandLine.hasOption("preserved-classes")) {
             devServer.getPreservedClasses().addAll(List.of(commandLine.getOptionValues("preserved-classes")));
+        }
+        if (commandLine.hasOption("js-module-type")) {
+            var moduleTypeValue = commandLine.getOptionValue("js-module-type");
+            JSModuleType type;
+            try {
+                type = JSModuleType.valueOf(moduleTypeValue.toUpperCase().replace('-', '_'));
+            } catch (IllegalArgumentException e) {
+                System.err.println("Invalid value for --js-module-type: " + moduleTypeValue);
+                printUsage();
+                type = null;
+            }
+            devServer.setJsModuleType(type);
         }
 
         if (commandLine.hasOption("proxy-url")) {
