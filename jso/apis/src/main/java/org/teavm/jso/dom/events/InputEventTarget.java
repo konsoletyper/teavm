@@ -16,11 +16,7 @@
 package org.teavm.jso.dom.events;
 
 public interface InputEventTarget extends EventTarget {
-    default void listenInput(EventListener<InputEvent> listener) {
-        addEventListener("input", listener);
-    }
-
-    default void neglectInput(EventListener<InputEvent> listener) {
-        removeEventListener("input", listener);
+    default void onInput(EventListener<InputEvent> listener) {
+        onEvent("input", listener);
     }
 }
