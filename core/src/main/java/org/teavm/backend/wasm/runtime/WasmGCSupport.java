@@ -33,6 +33,10 @@ public class WasmGCSupport {
         return new ClassCastException();
     }
 
+    public static CloneNotSupportedException cnse() {
+        return new CloneNotSupportedException();
+    }
+
     @Import(name = "putcharStdout")
     public static native void putCharStdout(char c);
 

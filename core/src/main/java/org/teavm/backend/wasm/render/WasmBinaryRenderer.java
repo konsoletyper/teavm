@@ -382,6 +382,9 @@ public class WasmBinaryRenderer {
         var visitor = new WasmBinaryRenderingVisitor(code, module, dwarfGenerator,
                 function.getJavaMethod() != null ? debugLines : null, offset);
         for (var part : function.getBody()) {
+            visitor.preprocess(part);
+        }
+        for (var part : function.getBody()) {
             part.acceptVisitor(visitor);
         }
         visitor.endLocation();

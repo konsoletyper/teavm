@@ -18,9 +18,11 @@ package org.teavm.backend.wasm.render;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import org.teavm.backend.wasm.debug.DebugLines;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
 import org.teavm.backend.wasm.model.WasmModule;
@@ -39,6 +41,7 @@ import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmCopy;
+import org.teavm.backend.wasm.model.expression.WasmDefaultExpressionVisitor;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmExpressionVisitor;
@@ -95,6 +98,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     private TextLocation lastEmittedLocation;
     private int positionToEmit;
     private List<TextLocation> locationStack = new ArrayList<>();
+    private Set<WasmBlock> blocksToPreserve = new HashSet<>();
 
     WasmBinaryRenderingVisitor(WasmBinaryWriter writer, WasmModule module,
             DwarfGenerator dwarfGenerator, DebugLines debugLines, int addressOffset) {
@@ -105,23 +109,60 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         this.debugLines = debugLines;
     }
 
+    void preprocess(WasmExpression expression) {
+        expression.acceptVisitor(new WasmDefaultExpressionVisitor() {
+            @Override
+            public void visit(WasmBranch expression) {
+                super.visit(expression);
+                register(expression.getTarget());
+            }
+
+            @Override
+            public void visit(WasmBreak expression) {
+                super.visit(expression);
+                register(expression.getTarget());
+            }
+
+            @Override
+            public void visit(WasmSwitch expression) {
+                super.visit(expression);
+                for (WasmBlock target : expression.getTargets()) {
+                    register(target);
+                }
+                register(expression.getDefaultTarget());
+            }
+
+            private void register(WasmBlock block) {
+                blocksToPreserve.add(block);
+            }
+        });
+    }
+
     @Override
     public void visit(WasmBlock expression) {
-        pushLocation(expression);
-        pushLocation(expression);
-        int blockDepth = 1;
-        depth += blockDepth;
-        blockDepths.put(expression, depth);
-        writer.writeByte(expression.isLoop() ? 0x03 : 0x02);
-        writeBlockType(expression.getType());
-        for (WasmExpression part : expression.getBody()) {
-            part.acceptVisitor(this);
+        if (blocksToPreserve.contains(expression) || expression.isLoop()) {
+            pushLocation(expression);
+            pushLocation(expression);
+            int blockDepth = 1;
+            depth += blockDepth;
+            blockDepths.put(expression, depth);
+            writer.writeByte(expression.isLoop() ? 0x03 : 0x02);
+            writeBlockType(expression.getType());
+            for (WasmExpression part : expression.getBody()) {
+                part.acceptVisitor(this);
+            }
+            popLocation();
+            writer.writeByte(0x0B);
+            popLocation();
+            blockDepths.remove(expression);
+            depth -= blockDepth;
+        } else {
+            pushLocation(expression);
+            for (var part : expression.getBody()) {
+                part.acceptVisitor(this);
+            }
+            popLocation();
         }
-        popLocation();
-        writer.writeByte(0x0B);
-        popLocation();
-        blockDepths.remove(expression);
-        depth -= blockDepth;
     }
 
     private void writeBlockType(WasmType type) {

@@ -92,8 +92,6 @@ import org.teavm.backend.wasm.model.expression.WasmInt64Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmIntUnary;
-import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
@@ -902,9 +900,16 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             var block = new WasmBlock(false);
             block.setType(mapType(reference.getReturnType()));
 
-            var instanceVar = tempVars.acquire(instanceWasmType);
-            block.getBody().add(new WasmSetLocal(instanceVar, instance));
-            instance = new WasmGetLocal(instanceVar);
+            WasmLocal instanceVar;
+            var isTemporary = false;
+            if (instance instanceof WasmGetLocal) {
+                instanceVar = ((WasmGetLocal) instance).getLocal();
+            } else {
+                instanceVar = tempVars.acquire(instanceWasmType);
+                block.getBody().add(new WasmSetLocal(instanceVar, instance));
+                instance = new WasmGetLocal(instanceVar);
+                isTemporary = true;
+            }
 
             var arguments = new ArrayList<WasmExpression>();
             arguments.add(instance);
@@ -918,7 +923,9 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             var call = generateVirtualCall(instanceVar, reference, arguments);
 
             block.getBody().add(call);
-            tempVars.release(instanceVar);
+            if (isTemporary) {
+                tempVars.release(instanceVar);
+            }
             return block;
         }
     }
@@ -1133,7 +1140,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         result.acceptVisitor(typeInference);
         var cachedObject = exprCache.create(result, typeInference.getResult(), expr.getLocation(), block.getBody());
 
-        var ifNull = new WasmBranch(genIsZero(cachedObject.expr()), block);
+        var ifNull = new WasmBranch(genIsNull(cachedObject.expr()), block);
         ifNull.setResult(new WasmInt32Constant(0));
         block.getBody().add(new WasmDrop(ifNull));
 
@@ -1171,7 +1178,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         var wasmSourceType = typeInference.getResult();
         var valueToCast = exprCache.create(result, wasmSourceType, expr.getLocation(), block.getBody());
 
-        var nullCheck = new WasmBranch(genIsZero(valueToCast.expr()), block);
+        var nullCheck = new WasmBranch(genIsNull(valueToCast.expr()), block);
         nullCheck.setResult(valueToCast.expr());
         block.getBody().add(new WasmDrop(nullCheck));
 
@@ -1544,9 +1551,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         }
     }
 
-    private WasmExpression genIsZero(WasmExpression value) {
-        return new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ, value);
-    }
+    protected abstract WasmExpression genIsNull(WasmExpression value);
 
     protected abstract WasmType mapType(ValueType type);
 

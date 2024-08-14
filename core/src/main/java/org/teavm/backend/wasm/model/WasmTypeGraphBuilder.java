@@ -57,6 +57,9 @@ final class WasmTypeGraphBuilder {
 
         @Override
         public void visit(WasmFunctionType type) {
+            for (var supertype : type.getSupertypes()) {
+                addEdge(supertype.getReference());
+            }
             for (var parameter : type.getParameterTypes()) {
                 addEdge(parameter);
             }

@@ -56,6 +56,8 @@ import org.teavm.backend.wasm.model.expression.WasmInt64Subtype;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.expression.WasmIntUnary;
+import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
@@ -300,6 +302,11 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected WasmExpression nullLiteral(Expr expr) {
         return new WasmInt32Constant(0);
+    }
+
+    @Override
+    protected WasmExpression genIsNull(WasmExpression value) {
+        return new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ, value);
     }
 
     @Override
