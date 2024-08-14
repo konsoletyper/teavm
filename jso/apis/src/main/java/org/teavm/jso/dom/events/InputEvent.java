@@ -17,7 +17,7 @@ package org.teavm.jso.dom.events;
 
 import org.teavm.jso.JSProperty;
 
-public interface InputEvent extends UIEvent {
+public interface InputEvent extends Event {
     @JSProperty
     String getData();
 
