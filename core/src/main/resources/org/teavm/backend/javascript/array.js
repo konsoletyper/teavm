@@ -16,24 +16,24 @@
 "use strict";
 
 let $rt_createArray = (cls, sz) => {
-    let data = new teavm_globals.Array(sz);
+    let data = new teavm_globals.Array($rt_checkArraySize(sz));
     data.fill(null);
     return new ($rt_arraycls(cls))(data);
 }
 let $rt_wrapArray = (cls, data) => new ($rt_arraycls(cls))(data);
-let $rt_createUnfilledArray = (cls, sz) => new ($rt_arraycls(cls))(new teavm_globals.Array(sz));
+let $rt_createUnfilledArray = (cls, sz) => new ($rt_arraycls(cls))(new teavm_globals.Array($rt_checkArraySize(sz)));
 let $rt_createLongArray;
 let $rt_createLongArrayFromData;
 if (typeof teavm_globals.BigInt64Array !== 'function') {
     $rt_createLongArray = sz => {
-        let data = new teavm_globals.Array(sz);
+        let data = new teavm_globals.Array($rt_checkArraySize(sz));
         let arr = new $rt_longArrayCls(data);
         data.fill(Long_ZERO);
         return arr;
     }
     $rt_createLongArrayFromData = init => new $rt_longArrayCls(init);
 } else {
-    $rt_createLongArray = sz => new $rt_longArrayCls(new teavm_globals.BigInt64Array(sz));
+    $rt_createLongArray = sz => new $rt_longArrayCls(new teavm_globals.BigInt64Array($rt_checkArraySize(sz)));
     $rt_createLongArrayFromData = data => {
         let buffer = new teavm_globals.BigInt64Array(data.length);
         buffer.set(data);
@@ -41,44 +41,44 @@ if (typeof teavm_globals.BigInt64Array !== 'function') {
     }
 }
 
-let $rt_createCharArray = sz => new $rt_charArrayCls(new teavm_globals.Uint16Array(sz));
+let $rt_createCharArray = sz => new $rt_charArrayCls(new teavm_globals.Uint16Array($rt_checkArraySize(sz)));
 let $rt_createCharArrayFromData = data => {
     let buffer = new teavm_globals.Uint16Array(data.length);
     buffer.set(data);
     return new $rt_charArrayCls(buffer);
 }
-let $rt_createByteArray = sz => new $rt_byteArrayCls(new teavm_globals.Int8Array(sz));
+let $rt_createByteArray = sz => new $rt_byteArrayCls(new teavm_globals.Int8Array($rt_checkArraySize(sz)));
 let $rt_createByteArrayFromData = data => {
     let buffer = new teavm_globals.Int8Array(data.length);
     buffer.set(data);
     return new $rt_byteArrayCls(buffer);
 }
-let $rt_createShortArray = sz => new $rt_shortArrayCls(new teavm_globals.Int16Array(sz));
+let $rt_createShortArray = sz => new $rt_shortArrayCls(new teavm_globals.Int16Array($rt_checkArraySize(sz)));
 let $rt_createShortArrayFromData = data => {
     let buffer = new teavm_globals.Int16Array(data.length);
     buffer.set(data);
     return new $rt_shortArrayCls(buffer);
 }
-let $rt_createIntArray = sz => new $rt_intArrayCls(new teavm_globals.Int32Array(sz));
+let $rt_createIntArray = sz => new $rt_intArrayCls(new teavm_globals.Int32Array($rt_checkArraySize(sz)));
 let $rt_createIntArrayFromData = data => {
     let buffer = new teavm_globals.Int32Array(data.length);
     buffer.set(data);
     return new $rt_intArrayCls(buffer);
 }
-let $rt_createBooleanArray = sz => new $rt_booleanArrayCls(new teavm_globals.Int8Array(sz));
+let $rt_createBooleanArray = sz => new $rt_booleanArrayCls(new teavm_globals.Int8Array($rt_checkArraySize(sz)));
 let $rt_createBooleanArrayFromData = data => {
     let buffer = new teavm_globals.Int8Array(data.length);
     buffer.set(data);
     return new $rt_booleanArrayCls(buffer);
 }
 
-let $rt_createFloatArray = sz => new $rt_floatArrayCls(new teavm_globals.Float32Array(sz));
+let $rt_createFloatArray = sz => new $rt_floatArrayCls(new teavm_globals.Float32Array($rt_checkArraySize(sz)));
 let $rt_createFloatArrayFromData = data => {
     let buffer = new teavm_globals.Float32Array(data.length);
     buffer.set(data);
     return new $rt_floatArrayCls(buffer);
 }
-let $rt_createDoubleArray = sz => new $rt_doubleArrayCls(new teavm_globals.Float64Array(sz));
+let $rt_createDoubleArray = sz => new $rt_doubleArrayCls(new teavm_globals.Float64Array($rt_checkArraySize(sz)));
 let $rt_createDoubleArrayFromData = data => {
     let buffer = new teavm_globals.Float64Array(data.length);
     buffer.set(data);

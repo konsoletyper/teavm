@@ -40,9 +40,6 @@ import org.teavm.classlib.java.util.stream.longimpl.TArrayLongStreamImpl;
 public class TArrays extends TObject {
     public static char[] copyOf(char[] array, int length) {
         int sz = TMath.min(length, array.length);
-        if (length < 0) {
-            throw new NegativeArraySizeException();
-        }
         char[] result = new char[length];
         System.arraycopy(array, 0, result, 0, sz);
         return result;
@@ -50,9 +47,6 @@ public class TArrays extends TObject {
 
     public static byte[] copyOf(byte[] array, int length) {
         int sz = TMath.min(length, array.length);
-        if (length < 0) {
-            throw new NegativeArraySizeException();
-        }
         byte[] result = new byte[length];
         System.arraycopy(array, 0, result, 0, sz);
         return result;
@@ -60,9 +54,6 @@ public class TArrays extends TObject {
 
     public static short[] copyOf(short[] array, int length) {
         int sz = TMath.min(length, array.length);
-        if (length < 0) {
-            throw new NegativeArraySizeException();
-        }
         short[] result = new short[length];
         System.arraycopy(array, 0, result, 0, sz);
         return result;
@@ -70,9 +61,6 @@ public class TArrays extends TObject {
 
     public static int[] copyOf(int[] array, int length) {
         int sz = TMath.min(length, array.length);
-        if (length < 0) {
-            throw new NegativeArraySizeException();
-        }
         int[] result = new int[length];
         System.arraycopy(array, 0, result, 0, sz);
         return result;
@@ -80,9 +68,6 @@ public class TArrays extends TObject {
 
     public static long[] copyOf(long[] array, int length) {
         int sz = TMath.min(length, array.length);
-        if (length < 0) {
-            throw new NegativeArraySizeException();
-        }
         long[] result = new long[length];
         System.arraycopy(array, 0, result, 0, sz);
         return result;
@@ -90,9 +75,6 @@ public class TArrays extends TObject {
 
     public static float[] copyOf(float[] array, int length) {
         int sz = TMath.min(length, array.length);
-        if (length < 0) {
-            throw new NegativeArraySizeException();
-        }
         float[] result = new float[length];
         System.arraycopy(array, 0, result, 0, sz);
         return result;
@@ -100,9 +82,6 @@ public class TArrays extends TObject {
 
     public static double[] copyOf(double[] array, int length) {
         int sz = TMath.min(length, array.length);
-        if (length < 0) {
-            throw new NegativeArraySizeException();
-        }
         double[] result = new double[length];
         System.arraycopy(array, 0, result, 0, sz);
         return result;
@@ -110,9 +89,6 @@ public class TArrays extends TObject {
 
     public static boolean[] copyOf(boolean[] array, int length) {
         int sz = TMath.min(length, array.length);
-        if (length < 0) {
-            throw new NegativeArraySizeException();
-        }
         boolean[] result = new boolean[length];
         System.arraycopy(array, 0, result, 0, sz);
         return result;
