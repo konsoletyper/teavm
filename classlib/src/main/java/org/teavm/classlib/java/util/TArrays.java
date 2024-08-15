@@ -39,65 +39,65 @@ import org.teavm.classlib.java.util.stream.longimpl.TArrayLongStreamImpl;
 
 public class TArrays extends TObject {
     public static char[] copyOf(char[] array, int length) {
-        int sz = TMath.min(length, array.length);
         char[] result = new char[length];
+        int sz = TMath.min(length, array.length);
         System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static byte[] copyOf(byte[] array, int length) {
-        int sz = TMath.min(length, array.length);
         byte[] result = new byte[length];
+        int sz = TMath.min(length, array.length);
         System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static short[] copyOf(short[] array, int length) {
-        int sz = TMath.min(length, array.length);
         short[] result = new short[length];
+        int sz = TMath.min(length, array.length);
         System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static int[] copyOf(int[] array, int length) {
-        int sz = TMath.min(length, array.length);
         int[] result = new int[length];
+        int sz = TMath.min(length, array.length);
         System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static long[] copyOf(long[] array, int length) {
-        int sz = TMath.min(length, array.length);
         long[] result = new long[length];
+        int sz = TMath.min(length, array.length);
         System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static float[] copyOf(float[] array, int length) {
-        int sz = TMath.min(length, array.length);
         float[] result = new float[length];
+        int sz = TMath.min(length, array.length);
         System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static double[] copyOf(double[] array, int length) {
-        int sz = TMath.min(length, array.length);
         double[] result = new double[length];
+        int sz = TMath.min(length, array.length);
         System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static boolean[] copyOf(boolean[] array, int length) {
-        int sz = TMath.min(length, array.length);
         boolean[] result = new boolean[length];
+        int sz = TMath.min(length, array.length);
         System.arraycopy(array, 0, result, 0, sz);
         return result;
     }
 
     public static <T> T[] copyOf(T[] original, int newLength) {
-        int sz = TMath.min(newLength, original.length);
         @SuppressWarnings("unchecked")
         T[] result = (T[]) Array.newInstance(original.getClass().getComponentType(), newLength);
+        int sz = TMath.min(newLength, original.length);
         System.arraycopy(original, 0, result, 0, sz);
         return result;
     }
