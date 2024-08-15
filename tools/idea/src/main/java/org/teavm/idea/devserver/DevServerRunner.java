@@ -149,10 +149,12 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
             }
         }
         server.setClassPath(classPath.toArray(new String[0]));
+        server.setCompileOnStartup(true);
 
         DevServerRunner daemon = new DevServerRunner(server);
         System.out.println(PORT_MESSAGE_PREFIX + daemon.port);
         server.start();
+        server.awaitServer();
 
         try {
             daemon.registry.unbind(ID);
@@ -327,7 +329,9 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
         @Override
         public void compilationComplete(BuildResult buildResult) {
             DevServerBuildResult result = new DevServerBuildResult();
-            result.problems.addAll(buildResult.getProblems().getProblems());
+            if (buildResult != null) {
+                result.problems.addAll(buildResult.getProblems().getProblems());
+            }
             for (DevServerManagerListener listener : getListeners()) {
                 try {
                     listener.compilationComplete(result);

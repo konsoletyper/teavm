@@ -125,6 +125,13 @@ let $rt_throwCCE = () => teavm_javaConstructorExists("java.lang.ClassCastExcepti
     ? $rt_throw(teavm_javaConstructor("java.lang.ClassCastException", "()V")())
     : $rt_throw($rt_createException($rt_str("")));
 
+let $rt_throwCCEIfFalse = (value, o) => {
+    if (!value) {
+        $rt_throwCCE();
+    }
+    return o;
+}
+
 let $rt_createStackElement = (className, methodName, fileName, lineNumber) => {
     if (teavm_javaConstructorExists("java.lang.StackTraceElement",
         "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V")) {

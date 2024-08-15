@@ -17,80 +17,94 @@ package org.teavm.jso.core;
 
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSProperty;
 
-public abstract class JSArray<T> implements JSArrayReader<T> {
-    private JSArray() {
+@JSClass(name = "Array")
+public class JSArray<T> implements JSArrayReader<T> {
+    @NoSideEffects
+    public JSArray(int size) {
+    }
+
+    @NoSideEffects
+    public JSArray() {
     }
 
     @JSIndexer
-    public abstract void set(int index, T value);
+    public native void set(int index, T value);
 
-    public abstract int push(T a);
+    public native int push(T a);
 
-    public abstract int push(T a, T b);
+    public native int push(T a, T b);
 
-    public abstract int push(T a, T b, T c);
+    public native int push(T a, T b, T c);
 
-    public abstract int push(T a, T b, T c, T d);
+    public native int push(T a, T b, T c, T d);
 
-    public abstract T shift();
+    public native T shift();
 
-    public abstract String join(String separator);
+    public native String join(String separator);
 
-    public abstract String join();
+    public native String join();
 
-    public abstract JSArray<T> concat(JSArrayReader<T> a);
+    public native JSArray<T> concat(JSArrayReader<T> a);
 
-    public abstract JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b);
+    public native JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b);
 
-    public abstract JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b, JSArrayReader<T> c);
+    public native JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b, JSArrayReader<T> c);
 
-    public abstract JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b, JSArrayReader<T> c, JSArrayReader<T> d);
+    public native JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b, JSArrayReader<T> c, JSArrayReader<T> d);
 
-    public abstract T pop();
+    public native T pop();
 
-    public abstract int unshift(T a);
+    public native int unshift(T a);
 
-    public abstract int unshift(T a, T b);
+    public native int unshift(T a, T b);
 
-    public abstract int unshift(T a, T b, T c);
+    public native int unshift(T a, T b, T c);
 
-    public abstract int unshift(T a, T b, T c, T d);
+    public native int unshift(T a, T b, T c, T d);
 
-    public abstract JSArray<T> slice(int start);
+    public native JSArray<T> slice(int start);
 
-    public abstract JSArray<T> slice(int start, int end);
+    public native JSArray<T> slice(int start, int end);
 
-    public abstract JSArray<T> reverse();
+    public native JSArray<T> reverse();
 
-    public abstract JSArray<T> sort(JSSortFunction<T> function);
+    public native JSArray<T> sort(JSSortFunction<T> function);
 
-    public abstract JSArray<T> sort();
+    public native JSArray<T> sort();
 
-    public abstract JSArray<T> splice(int start, int count);
+    public native JSArray<T> splice(int start, int count);
 
-    public abstract JSArray<T> splice(int start, int count, T a);
+    public native JSArray<T> splice(int start, int count, T a);
 
-    public abstract JSArray<T> splice(int start, int count, T a, T b);
+    public native JSArray<T> splice(int start, int count, T a, T b);
 
-    public abstract JSArray<T> splice(int start, int count, T a, T b, T c);
+    public native JSArray<T> splice(int start, int count, T a, T b, T c);
 
-    public abstract JSArray<T> splice(int start, int count, T a, T b, T c, T d);
+    public native JSArray<T> splice(int start, int count, T a, T b, T c, T d);
     
     @JSProperty
-    public abstract void setLength(int len);
+    public native void setLength(int len);
+
+    @Override
+    public native int getLength();
+
+    @Override
+    public native T get(int index);
 
     @JSBody(script = "return new Array();")
     @NoSideEffects
+    @Deprecated
     public static native <T> JSArray<T> create();
 
     @JSBody(params = "size", script = "return new Array(size);")
     @NoSideEffects
+    @Deprecated
     public static native <T> JSArray<T> create(int size);
 
-    @JSBody(params = "object", script = "return Array.isArray(object);")
     @NoSideEffects
     public static native boolean isArray(Object object);
 

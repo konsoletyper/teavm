@@ -11,7 +11,7 @@ object Client {
     val exprElem = doc.getElementById("expr").asInstanceOf[HTMLInputElement]
     val calcElem = doc.getElementById("calculate")
     val resultList = doc.getElementById("result-list")
-    calcElem.listenClick((e: MouseEvent) => {
+    calcElem.onClick((e: MouseEvent) => {
       parse(exprElem.getValue.toSeq) match {
         case (None, _) => Window.alert("Error parsing expression");
         case (Some(x), Nil) =>

@@ -31,10 +31,14 @@ final class JSMethods {
             JSObject.class, void.class);
     public static final MethodReference SET_PURE = new MethodReference(JS.class, "setPure", JSObject.class,
             JSObject.class, JSObject.class, void.class);
+    public static final MethodReference APPLY = new MethodReference(JS.class, "apply", JSObject.class, JSObject.class,
+            JSArray.class, JSObject.class);
     public static final MethodReference FUNCTION = new MethodReference(JS.class, "function", JSObject.class,
             JSObject.class, JSObject.class);
     public static final MethodReference ARRAY_DATA = new MethodReference(JS.class, "arrayData",
             Object.class, JSObject.class);
+    public static final MethodReference CONCAT_ARRAY = new MethodReference(JS.class, "concatArray",
+            JSObject.class, JSObject.class, JSObject.class);
     public static final MethodReference ARRAY_MAPPER = new MethodReference(JS.class, "arrayMapper",
             JS.WrapFunction.class, JS.WrapFunction.class);
     public static final MethodReference BOOLEAN_ARRAY_WRAPPER = new MethodReference(JS.class, "booleanArrayWrapper",
@@ -111,18 +115,47 @@ final class JSMethods {
     public static final MethodReference DATA_TO_ARRAY = new MethodReference(JS.class,
             "dataToArray", JSObject.class, JSObject[].class);
 
+    public static final MethodReference WRAP_STRING = new MethodReference(JS.class, "wrap",
+            String.class, JSObject.class);
+
     public static final MethodReference FUNCTION_AS_OBJECT = new MethodReference(JS.class, "functionAsObject",
             JSObject.class, JSObject.class, JSObject.class);
 
+    public static final MethodReference GLOBAL = new MethodReference(JS.class, "global", String.class, JSObject.class);
+    public static final MethodReference IMPORT_MODULE = new MethodReference(JS.class, "importModule",
+            String.class, JSObject.class);
+
+    public static final MethodReference INSTANCE_OF = new MethodReference(JS.class, "instanceOf", JSObject.class,
+            JSObject.class, boolean.class);
+    public static final MethodReference INSTANCE_OF_OR_NULL = new MethodReference(JS.class, "instanceOfOrNull",
+            JSObject.class, JSObject.class, boolean.class);
+    public static final MethodReference IS_PRIMITIVE = new MethodReference(JS.class, "isPrimitive", JSObject.class,
+            JSObject.class, boolean.class);
+    public static final MethodReference THROW_CCE_IF_FALSE = new MethodReference(JS.class, "throwCCEIfFalse",
+            boolean.class, JSObject.class, JSObject.class);
+    public static final MethodReference ARGUMENTS_BEGINNING_AT = new MethodReference(JS.class,
+            "argumentsBeginningAt", int.class, JSObject.class);
+
     public static final ValueType JS_OBJECT = ValueType.object(JSObject.class.getName());
+    public static final ValueType OBJECT = ValueType.object("java.lang.Object");
     public static final ValueType JS_ARRAY = ValueType.object(JSArray.class.getName());
     private static final MethodReference[] INVOKE_METHODS = new MethodReference[13];
+    private static final MethodReference[] CONSTRUCT_METHODS = new MethodReference[13];
+    private static final MethodReference[] ARRAY_OF_METHODS = new MethodReference[13];
 
     static {
         for (int i = 0; i < INVOKE_METHODS.length; ++i) {
-            ValueType[] signature = new ValueType[i + 3];
+            var signature = new ValueType[i + 3];
             Arrays.fill(signature, JS_OBJECT);
             INVOKE_METHODS[i] = new MethodReference(JS.class.getName(), "invoke", signature);
+
+            var constructSignature = new ValueType[i + 2];
+            Arrays.fill(constructSignature, JS_OBJECT);
+            CONSTRUCT_METHODS[i] = new MethodReference(JS.class.getName(), "construct", constructSignature);
+
+            var arrayOfSignature = new ValueType[i + 1];
+            Arrays.fill(arrayOfSignature, JS_OBJECT);
+            ARRAY_OF_METHODS[i] = new MethodReference(JS.class.getName(), "arrayOf", arrayOfSignature);
         }
     }
 
@@ -131,5 +164,13 @@ final class JSMethods {
 
     public static MethodReference invoke(int parameterCount) {
         return INVOKE_METHODS[parameterCount];
+    }
+
+    public static MethodReference construct(int parameterCount) {
+        return CONSTRUCT_METHODS[parameterCount];
+    }
+
+    public static MethodReference arrayOf(int parameterCount) {
+        return ARRAY_OF_METHODS[parameterCount];
     }
 }

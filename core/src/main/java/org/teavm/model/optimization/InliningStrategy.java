@@ -20,4 +20,7 @@ import org.teavm.model.ProgramReader;
 
 public interface InliningStrategy {
     InliningStep start(MethodReference method, ProgramReader program);
+
+    default void methodChanged(MethodReference method) {
+    }
 }

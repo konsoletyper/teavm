@@ -27,6 +27,7 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.optimization.InliningFilterFactory;
+import org.teavm.model.util.VariableCategoryProvider;
 import org.teavm.vm.spi.TeaVMHostExtension;
 
 public interface TeaVMTarget {
@@ -38,7 +39,7 @@ public interface TeaVMTarget {
 
     List<TeaVMHostExtension> getHostExtensions();
 
-    boolean requiresRegisterAllocation();
+    VariableCategoryProvider variableCategoryProvider();
 
     void contributeDependencies(DependencyAnalyzer dependencyAnalyzer);
 
@@ -64,5 +65,9 @@ public interface TeaVMTarget {
 
     default Collection<? extends MethodReference> getInitializerMethods() {
         return null;
+    }
+
+    default boolean needsSystemArrayCopyOptimization() {
+        return true;
     }
 }

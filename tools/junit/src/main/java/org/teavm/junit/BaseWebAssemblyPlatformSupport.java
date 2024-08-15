@@ -17,6 +17,7 @@ package org.teavm.junit;
 
 import static org.teavm.junit.PropertyNames.SOURCE_DIRS;
 import java.io.File;
+import java.lang.reflect.AnnotatedElement;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.function.Consumer;
@@ -40,12 +41,17 @@ abstract class BaseWebAssemblyPlatformSupport extends TestPlatformSupport<WasmTa
 
     protected abstract WasmRuntimeType getRuntimeType();
 
+    protected boolean exceptionsUsed() {
+        return false;
+    }
+
     @Override
     CompileResult compile(Consumer<TeaVM> additionalProcessing, String baseName,
-            TeaVMTestConfiguration<WasmTarget> configuration, File path) {
+            TeaVMTestConfiguration<WasmTarget> configuration, File path, AnnotatedElement element) {
         Supplier<WasmTarget> targetSupplier = () -> {
             WasmTarget target = new WasmTarget();
             target.setRuntimeType(getRuntimeType());
+            target.setExceptionsUsed(exceptionsUsed());
             var sourceDirs = System.getProperty(SOURCE_DIRS);
             if (sourceDirs != null) {
                 var dirs = new ArrayList<File>();

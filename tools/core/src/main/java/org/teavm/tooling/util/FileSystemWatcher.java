@@ -98,16 +98,22 @@ public class FileSystemWatcher {
         return !changedFiles.isEmpty() || pollNow();
     }
 
+    public void pollChanges() throws IOException {
+        while (pollNow()) {
+            // continue polling
+        }
+    }
+
     public void waitForChange(int timeout) throws InterruptedException, IOException {
         if (!hasChanges()) {
             take();
         }
-        while (poll(timeout)) {
-            // continue polling
+        if (timeout > 0) {
+            while (poll(timeout)) {
+                // continue polling
+            }
         }
-        while (pollNow()) {
-            // continue polling
-        }
+        pollChanges();
     }
 
     public List<File> grabChangedFiles() {

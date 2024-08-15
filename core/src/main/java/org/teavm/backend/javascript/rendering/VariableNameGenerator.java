@@ -30,15 +30,26 @@ public class VariableNameGenerator {
 
     public VariableNameGenerator(boolean minifying) {
         this.minifying = minifying;
+
+    }
+
+    public void setCurrentMethod(MethodNode currentMethod) {
+        this.currentMethod = currentMethod;
+    }
+
+    public void clear() {
+        cachedVariableNames.clear();
+        usedVariableNames.clear();
+        cachedVariableNameLastIndex = 0;
+        init();
+    }
+
+    private void init() {
         if (!minifying) {
             usedVariableNames.add("$tmp");
             usedVariableNames.add("$ptr");
             usedVariableNames.add("$thread");
         }
-    }
-
-    public void setCurrentMethod(MethodNode currentMethod) {
-        this.currentMethod = currentMethod;
     }
 
     public String variableName(int index) {

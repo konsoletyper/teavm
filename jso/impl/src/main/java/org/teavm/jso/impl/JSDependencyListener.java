@@ -18,11 +18,14 @@ package org.teavm.jso.impl;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
+import org.teavm.jso.JSExportClasses;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 class JSDependencyListener extends AbstractDependencyListener {
     private JSBodyRepository repository;
@@ -53,10 +56,27 @@ class JSDependencyListener extends AbstractDependencyListener {
             if (exposeAnnot == null) {
                 exposeAnnot = method.getAnnotations().get(JSSetterToExpose.class.getName());
             }
+            if (exposeAnnot == null) {
+                exposeAnnot = method.getAnnotations().get(JSConstructorToExpose.class.getName());
+            }
             if (exposeAnnot != null) {
                 MethodDependency methodDep = agent.linkMethod(method.getReference());
-                methodDep.getVariable(0).propagate(agent.getType(className));
-                methodDep.use();
+                if (methodDep.getMethod() != null) {
+                    if (!methodDep.getMethod().hasModifier(ElementModifier.STATIC)) {
+                        methodDep.getVariable(0).propagate(agent.getType(className));
+                    }
+                    methodDep.use();
+                }
+            }
+        }
+
+        var exportClassesAnnot = cls.getAnnotations().get(JSExportClasses.class.getName());
+        if (exportClassesAnnot != null) {
+            for (var classRef : exportClassesAnnot.getValue("value").getList()) {
+                if (classRef.getJavaClass() instanceof ValueType.Object) {
+                    var classRefName = ((ValueType.Object) classRef.getJavaClass()).getClassName();
+                    agent.linkClass(classRefName);
+                }
             }
         }
     }

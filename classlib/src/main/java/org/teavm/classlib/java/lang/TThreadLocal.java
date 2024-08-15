@@ -15,7 +15,12 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.function.Supplier;
+
 public class TThreadLocal<T> extends TObject {
+    private Map<Object, Object> map;
     private boolean initialized;
     private T value;
 
@@ -27,21 +32,79 @@ public class TThreadLocal<T> extends TObject {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     public T get() {
-        if (!initialized) {
-            value = initialValue();
-            initialized = true;
+        if (isInMainThread()) {
+            if (!initialized) {
+                value = initialValue();
+                initialized = true;
+            }
+            cleanupMap();
+            return value;
+        } else {
+            var key = TThread.currentThread().key;
+            initMap();
+            var value = map.get(key);
+            if (value == null) {
+                value = initialValue();
+                map.put(key, value == null ? NULL : value);
+            } else if (value == NULL) {
+                value = null;
+            }
+            cleanupMap();
+            return (T) value;
         }
-        return value;
     }
 
     public void set(T value) {
-        initialized = true;
-        this.value = value;
+        if (isInMainThread()) {
+            initialized = true;
+            this.value = value;
+            cleanupMap();
+        } else {
+            initMap();
+            map.put(TThread.currentThread().key, value == null ? NULL : value);
+            cleanupMap();
+        }
     }
 
     public void remove() {
-        initialized = false;
-        value = null;
+        if (isInMainThread()) {
+            initialized = false;
+            value = null;
+            cleanupMap();
+        } else {
+            if (map != null) {
+                map.remove(TThread.currentThread().key);
+                cleanupMap();
+            }
+        }
     }
+
+    private void initMap() {
+        if (map == null) {
+            map = new WeakHashMap<>();
+        }
+    }
+
+    private void cleanupMap() {
+        if (map != null && map.isEmpty()) {
+            map = null;
+        }
+    }
+
+    public static <S> TThreadLocal<S> withInitial(Supplier<? extends S> supplier) {
+        return new TThreadLocal<>() {
+            @Override
+            protected S initialValue() {
+                return supplier.get();
+            }
+        };
+    }
+
+    private static boolean isInMainThread() {
+        return TThread.currentThread() == TThread.getMainThread();
+    }
+
+    private static final Object NULL = new Object();
 }

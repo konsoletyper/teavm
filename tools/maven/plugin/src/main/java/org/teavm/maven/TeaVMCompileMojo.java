@@ -37,8 +37,10 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.TeaVMProblemRenderer;
+import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.builder.BuildException;
 import org.teavm.tooling.builder.BuildResult;
@@ -81,6 +83,12 @@ public class TeaVMCompileMojo extends AbstractMojo {
 
     @Parameter(property = "teavm.strict", defaultValue = "false")
     private boolean strict;
+
+    @Parameter(property = "teavm.jsModuleType", defaultValue = "UMD")
+    private JSModuleType jsModuleType;
+
+    @Parameter(property = "teavm.maxTopLevelNames", defaultValue = "80000")
+    private int maxTopLevelNames = 80_000;
 
     @Parameter
     private Properties properties;
@@ -136,6 +144,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter(property = "teavm.wasmVersion", defaultValue = "V_0x1")
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
 
+    @Parameter(property = "teavm.wasmExceptionsUsed", defaultValue = "false")
+    private boolean wasmExceptionsUsed;
+
     @Parameter(property = "teavm.minHeapSize", defaultValue = "4")
     private int minHeapSize;
 
@@ -163,6 +174,8 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setClassPathEntries(prepareClassPath());
             builder.setObfuscated(minifying);
             builder.setStrict(strict);
+            builder.setJsModuleType(jsModuleType);
+            builder.setMaxTopLevelNames(maxTopLevelNames);
             builder.setTargetDirectory(targetDirectory.getAbsolutePath());
             if (transformers != null) {
                 builder.setTransformers(transformers);
@@ -177,7 +190,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setIncremental(incremental);
             builder.setDebugInformationGenerated(debugInformationGenerated);
             builder.setSourceMapsFileGenerated(sourceMapsGenerated);
-            builder.setSourceFilesCopied(sourceFilesCopied);
+            builder.setSourceFilePolicy(sourceFilesCopied
+                    ? TeaVMSourceFilePolicy.COPY
+                    : TeaVMSourceFilePolicy.DO_NOTHING);
             builder.setMinHeapSize(minHeapSize * 1024 * 1024);
             builder.setMaxHeapSize(maxHeapSize * 1024 * 1024);
             builder.setShortFileNames(shortFileNames);
@@ -291,6 +306,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setCacheDirectory(cacheDirectory.getAbsolutePath());
             builder.setTargetType(targetType);
             builder.setWasmVersion(wasmVersion);
+            builder.setWasmExceptionsUsed(wasmExceptionsUsed);
             builder.setHeapDump(heapDump);
             BuildResult result;
             result = builder.build();

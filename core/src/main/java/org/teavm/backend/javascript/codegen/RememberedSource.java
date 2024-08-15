@@ -88,14 +88,14 @@ public class RememberedSource implements SourceFragment {
 
                 case RememberingSourceWriter.METHOD:
                     if ((filter & FILTER_REF) != 0) {
-                        sink.appendMethod(methodDescriptors[intArgs[intArgIndex]]);
+                        sink.appendVirtualMethod(methodDescriptors[intArgs[intArgIndex]]);
                     }
                     intArgIndex++;
                     break;
 
                 case RememberingSourceWriter.METHOD_BODY:
                     if ((filter & FILTER_REF) != 0) {
-                        sink.appendMethodBody(methods[intArgs[intArgIndex]]);
+                        sink.appendMethod(methods[intArgs[intArgIndex]]);
                     }
                     intArgIndex++;
                     break;
@@ -167,6 +167,27 @@ public class RememberedSource implements SourceFragment {
                 case RememberingSourceWriter.OUTDENT:
                     if ((filter & FILTER_TEXT) != 0) {
                         sink.outdent();
+                    }
+                    break;
+
+                case RememberingSourceWriter.START_FUNCTION:
+                    if ((filter & FILTER_TEXT) != 0) {
+                        sink.startFunctionDeclaration();
+                    }
+                    break;
+                case RememberingSourceWriter.START_VARIABLE:
+                    if ((filter & FILTER_TEXT) != 0) {
+                        sink.startVariableDeclaration();
+                    }
+                    break;
+                case RememberingSourceWriter.END_DECLARATION:
+                    if ((filter & FILTER_TEXT) != 0) {
+                        sink.endDeclaration();
+                    }
+                    break;
+                case RememberingSourceWriter.DECLARE_VARIABLE:
+                    if ((filter & FILTER_TEXT) != 0) {
+                        sink.declareVariable();
                     }
                     break;
 

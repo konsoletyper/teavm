@@ -16,15 +16,24 @@
 package org.teavm.jso.typedarrays;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-public abstract class ArrayBuffer implements JSObject {
-    @JSProperty
-    public abstract int getByteLength();
+@JSClass
+public class ArrayBuffer implements JSObject {
+    public ArrayBuffer() {
+    }
 
-    public abstract ArrayBuffer slice(int begin, int end);
+    public ArrayBuffer(int length) {
+    }
+
+    @JSProperty
+    public native int getByteLength();
+
+    public native ArrayBuffer slice(int begin, int end);
 
     @JSBody(params = "length", script = "return new ArrayBuffer(length);")
+    @Deprecated
     public static native ArrayBuffer create(int length);
 }

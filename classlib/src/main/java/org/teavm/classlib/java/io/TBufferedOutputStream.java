@@ -17,17 +17,18 @@
 package org.teavm.classlib.java.io;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 public class TBufferedOutputStream extends TFilterOutputStream {
     protected byte[] buf;
     protected int count;
 
-    public TBufferedOutputStream(TOutputStream out) {
+    public TBufferedOutputStream(OutputStream out) {
         super(out);
         buf = new byte[8192];
     }
 
-    public TBufferedOutputStream(TOutputStream out, int size) {
+    public TBufferedOutputStream(OutputStream out, int size) {
         super(out);
         if (size <= 0) {
             throw new IllegalArgumentException("size must be > 0");

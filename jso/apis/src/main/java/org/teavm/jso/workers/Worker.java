@@ -16,18 +16,41 @@
 package org.teavm.jso.workers;
 
 import org.teavm.jso.JSBody;
-import org.teavm.jso.JSProperty;
+import org.teavm.jso.JSClass;
+import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MessageEvent;
+import org.teavm.jso.dom.events.Registration;
 
-public abstract class Worker implements AbstractWorker {
+@JSClass
+public class Worker implements AbstractWorker {
+    public Worker(String url) {
+    }
+
     @JSBody(params = "url", script = "return new Worker(url);")
+    @Deprecated
     public static native Worker create(String url);
 
-    @JSProperty("onmessage")
-    public abstract void onMessage(EventListener<MessageEvent> listener);
+    public Registration onMessage(EventListener<MessageEvent> listener) {
+        return onEvent("message", listener);
+    }
 
-    public abstract void postMessage(Object message);
+    public native void postMessage(Object message);
 
-    public abstract void terminate();
+    public native void terminate();
+
+    @Override
+    public native void addEventListener(String type, EventListener<?> listener, boolean useCapture);
+
+    @Override
+    public native void addEventListener(String type, EventListener<?> listener);
+
+    @Override
+    public native void removeEventListener(String type, EventListener<?> listener, boolean useCapture);
+
+    @Override
+    public native void removeEventListener(String type, EventListener<?> listener);
+
+    @Override
+    public native boolean dispatchEvent(Event evt);
 }

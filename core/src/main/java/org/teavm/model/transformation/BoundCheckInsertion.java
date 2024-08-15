@@ -37,6 +37,7 @@ import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.GetElementInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.NullCheckInstruction;
 import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
@@ -342,6 +343,11 @@ public class BoundCheckInsertion {
         @Override
         public void visit(UnwrapArrayInstruction insn) {
             assign(insn.getArray(), insn.getReceiver());
+        }
+
+        @Override
+        public void visit(NullCheckInstruction insn) {
+            isConstantSizedArray[index(insn.getReceiver())] = isConstantSizedArray[index(insn.getValue())];
         }
 
         private void assign(Variable from, Variable to) {

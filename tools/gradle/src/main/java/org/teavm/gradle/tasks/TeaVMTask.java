@@ -52,7 +52,6 @@ import org.teavm.vm.TeaVMProgressListener;
 
 public abstract class TeaVMTask extends DefaultTask {
     public TeaVMTask() {
-        setGroup("TeaVM");
         getDebugInformation().convention(false);
         getTargetFileName().convention("bundle");
         getOptimization().convention(OptimizationLevel.BALANCED);

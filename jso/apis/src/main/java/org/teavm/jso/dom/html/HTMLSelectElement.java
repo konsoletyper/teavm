@@ -17,47 +17,47 @@ package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
 
-public interface HTMLSelectElement extends HTMLElement {
+public abstract class HTMLSelectElement extends HTMLElement {
     @JSProperty
-    boolean isDisabled();
+    public abstract boolean isDisabled();
 
     @JSProperty
-    void setDisabled(boolean disabled);
+    public abstract void setDisabled(boolean disabled);
 
     @JSProperty
-    boolean isMultiple();
+    public abstract boolean isMultiple();
 
     @JSProperty
-    void setMultiple(boolean multiple);
+    public abstract void setMultiple(boolean multiple);
 
     @JSProperty
-    HTMLOptionsCollection getOptions();
+    public abstract HTMLOptionsCollection getOptions();
 
     @JSProperty
-    String getName();
+    public abstract String getName();
 
     @JSProperty
-    void setName(String name);
+    public abstract void setName(String name);
 
     @JSProperty
-    int getSize();
+    public abstract int getSize();
 
     @JSProperty
-    void setSize(int size);
+    public abstract void setSize(int size);
 
     @JSProperty
-    int getSelectedIndex();
+    public abstract int getSelectedIndex();
 
     @JSProperty
-    void setSelectedIndex(int selectedIndex);
+    public abstract void setSelectedIndex(int selectedIndex);
 
     @JSProperty
-    String getValue();
+    public abstract String getValue();
 
     @JSProperty
-    void setValue(String value);
+    public abstract void setValue(String value);
 
-    void setCustomValidity(String validationFailure);
+    public abstract void setCustomValidity(String validationFailure);
     
-    boolean reportValidity();
+    public abstract boolean reportValidity();
 }

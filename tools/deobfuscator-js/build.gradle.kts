@@ -44,7 +44,8 @@ val generateJs by tasks.register<JavaExec>("generateJs") {
         "org.teavm.tooling.deobfuscate.js.Deobfuscator",
         "\$teavm_deobfuscator",
         layout.buildDirectory.dir("teavm").get().asFile.absolutePath,
-        "deobfuscator.js"
+        "deobfuscator.js",
+        "none"
     )
 }
 
@@ -59,6 +60,7 @@ val generateLibJs by tasks.register<JavaExec>("generateLibJs") {
         "deobfuscator",
         layout.buildDirectory.dir("teavm-lib").get().asFile.absolutePath,
         "deobfuscator-lib.js",
+        "es2015"
     )
 }
 

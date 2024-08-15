@@ -16,11 +16,17 @@
 package org.teavm.jso.dom.events;
 
 public interface WheelEventTarget extends EventTarget {
+    @Deprecated
     default void listenWheel(EventListener<WheelEvent> listener) {
         addEventListener("wheel", listener);
     }
 
+    @Deprecated
     default void neglectWheel(EventListener<WheelEvent> listener) {
         removeEventListener("wheel", listener);
+    }
+
+    default Registration onWheel(EventListener<WheelEvent> listener) {
+        return onEvent("wheel", listener);
     }
 }

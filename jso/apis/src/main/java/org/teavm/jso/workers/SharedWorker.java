@@ -16,12 +16,35 @@
 package org.teavm.jso.workers;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.events.Event;
+import org.teavm.jso.dom.events.EventListener;
 
-public abstract class SharedWorker implements AbstractWorker {
+@JSClass
+public class SharedWorker implements AbstractWorker {
+    public SharedWorker(String url) {
+    }
+
     @JSBody(params = "url", script = "return new SharedWorker(url);")
+    @Deprecated
     public static native Worker create(String url);
 
     @JSProperty
-    public abstract MessagePort getPort();
+    public native MessagePort getPort();
+
+    @Override
+    public native void addEventListener(String type, EventListener<?> listener, boolean useCapture);
+
+    @Override
+    public native void addEventListener(String type, EventListener<?> listener);
+
+    @Override
+    public native void removeEventListener(String type, EventListener<?> listener, boolean useCapture);
+
+    @Override
+    public native void removeEventListener(String type, EventListener<?> listener);
+
+    @Override
+    public native boolean dispatchEvent(Event evt);
 }

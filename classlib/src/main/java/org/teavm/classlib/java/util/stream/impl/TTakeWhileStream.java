@@ -17,30 +17,33 @@ package org.teavm.classlib.java.util.stream.impl;
 
 import java.util.function.Predicate;
 
-public class TTakeWhileStream<T> extends TWrappingStreamImpl<T, T> {
+public class TTakeWhileStream<T> extends TSimpleStreamImpl<T> {
+    private TSimpleStreamImpl<T> sourceStream;
     private Predicate<? super T> predicate;
 
     /* set to `true` as soon as we see a value `v` in the source stream for which `predicate.test(v)` is false */
     private boolean isStopped;
 
-    TTakeWhileStream(TSimpleStreamImpl<T> innerStream, Predicate<? super T> predicate) {
-        super(innerStream);
+    TTakeWhileStream(TSimpleStreamImpl<T> sourceStream, Predicate<? super T> predicate) {
+        this.sourceStream = sourceStream;
         this.predicate = predicate;
     }
 
     @Override
-    protected Predicate<T> wrap(Predicate<? super T> consumer) {
-        return t -> {
-            if (isStopped) {
-                return false;
-            }
-
-            if (predicate.test(t)) {
-                return consumer.test(t);
-            } else {
+    public boolean next(Predicate<? super T> consumer) {
+        if (isStopped) {
+            return false;
+        }
+        var result = sourceStream.next(e -> {
+            if (!predicate.test(e)) {
                 isStopped = true;
                 return false;
             }
-        };
+            return consumer.test(e);
+        });
+        if (!result) {
+            isStopped = true;
+        }
+        return result;
     }
 }

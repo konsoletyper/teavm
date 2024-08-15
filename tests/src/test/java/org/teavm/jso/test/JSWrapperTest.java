@@ -32,6 +32,7 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.core.JSString;
+import org.teavm.jso.core.JSUndefined;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
@@ -292,6 +293,44 @@ public class JSWrapperTest {
         assertEquals(JSNumber.valueOf(23), getProperty(o, "foo"));
     }
 
+    @Test
+    public void createArray() {
+        var array = new J[] {
+                new JImpl(23),
+                new JImpl(42)
+        };
+        assertEquals(23, array[0].foo());
+        assertEquals(42, callFoo(array[1]));
+        assertEquals("23,42", concatFoo(array));
+    }
+
+    @Test
+    public void createArrayAndReturnToJS() {
+        assertEquals("23,42", concatFoo(() -> new J[] {
+                new JImpl(23),
+                new JImpl(42)
+        }));
+    }
+
+    @Test
+    public void wrapUndefined() {
+        field1 = JSUndefined.instance();
+        assertEquals("undefined", field1.toString());
+        assertEquals(JSUndefined.instance(), field1);
+        assertSame(JSUndefined.instance(), field1);
+        assertTrue(field1 instanceof JSObject);
+        assertTrue(JSObjects.isUndefined(field1));
+    }
+
+    @Test
+    public void jsToString() {
+        var a = createWithToString("foo");
+        assertEquals("foo", a.toString());
+
+        Object b = createWithToString("bar");
+        assertEquals("bar", b.toString());
+    }
+
     private void callSetProperty(Object instance, Object o) {
         setProperty(instance, "foo", o);
     }
@@ -341,4 +380,38 @@ public class JSWrapperTest {
     interface ReturningObject extends JSObject {
         Object get();
     }
+
+    @JSBody(params = "o", script = "return o.foo();")
+    private static native int callFoo(JSObject o);
+
+    @JSBody(params = "array", script = "return array[0].foo() + ',' + array[1].foo(); ")
+    private static native String concatFoo(J[] array);
+
+    @JSBody(params = "supplier", script = "let array = supplier.get(); "
+            + "return array[0].foo() + ',' + array[1].foo();")
+    private static native String concatFoo(JArraySupplier supplier);
+
+    interface J extends JSObject {
+        int foo();
+    }
+
+    class JImpl implements J {
+        private int value;
+
+        JImpl(int value) {
+            this.value = value;
+        }
+
+        @Override
+        public int foo() {
+            return value;
+        }
+    }
+
+    interface JArraySupplier extends JSObject {
+        J[] get();
+    }
+
+    @JSBody(params = "s", script = "return { toString: () => s };")
+    private static native JSObject createWithToString(String s);
 }

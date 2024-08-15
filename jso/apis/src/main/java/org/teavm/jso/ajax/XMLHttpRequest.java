@@ -16,14 +16,18 @@
 package org.teavm.jso.ajax;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.EventTarget;
+import org.teavm.jso.dom.events.Registration;
 import org.teavm.jso.dom.xml.Document;
+import org.teavm.jso.file.Blob;
 
-public abstract class XMLHttpRequest implements JSObject, EventTarget {
+@JSClass
+public class XMLHttpRequest implements JSObject, EventTarget {
     public static final int UNSET = 0;
 
     public static final int OPENED = 1;
@@ -34,92 +38,126 @@ public abstract class XMLHttpRequest implements JSObject, EventTarget {
 
     public static final int DONE = 4;
 
-    public abstract void open(String method, String url);
+    public XMLHttpRequest() {
+    }
 
-    public abstract void open(String method, String url, boolean async);
+    public native void open(String method, String url);
 
-    public abstract void open(String method, String url, boolean async, String user);
+    public native void open(String method, String url, boolean async);
 
-    public abstract void open(String method, String url, boolean async, String user, String password);
+    public native void open(String method, String url, boolean async, String user);
 
-    public abstract void send();
+    public native void open(String method, String url, boolean async, String user, String password);
 
-    public abstract void send(String data);
+    public native void send();
 
-    public abstract void send(JSObject data);
+    public native void send(String data);
 
-    public abstract void setRequestHeader(String name, String value);
+    public native void send(Blob blob);
 
-    public abstract String getAllResponseHeaders();
+    public native void send(FormData formData);
 
-    public abstract String getResponseHeader(String name);
+    public native void send(JSObject data);
+
+    public native void setRequestHeader(String name, String value);
+
+    public native String getAllResponseHeaders();
+
+    public native String getResponseHeader(String name);
 
     @JSProperty("onreadystatechange")
-    public abstract void setOnReadyStateChange(ReadyStateChangeHandler handler);
+    public native void setOnReadyStateChange(ReadyStateChangeHandler handler);
 
     @JSProperty("onreadystatechange")
-    public abstract void setOnReadyStateChange(EventListener<Event> handler);
+    public native void setOnReadyStateChange(EventListener<Event> handler);
 
-    @JSProperty("onabort")
-    public abstract void onAbort(EventListener<ProgressEvent> eventListener);
+    public final Registration onReadyStateChange(EventListener<Event> handler) {
+        return onEvent("readystatechange", handler);
+    }
 
-    @JSProperty("onerror")
-    public abstract void onError(EventListener<ProgressEvent> eventListener);
+    public final Registration onAbort(EventListener<ProgressEvent> eventListener) {
+        return onEvent("abort", eventListener);
+    }
 
-    @JSProperty("onload")
-    public abstract void onLoad(EventListener<ProgressEvent> eventListener);
+    public final Registration onError(EventListener<ProgressEvent> eventListener) {
+        return onEvent("error", eventListener);
+    }
 
-    @JSProperty("onloadstart")
-    public abstract void onLoadStart(EventListener<ProgressEvent> eventListener);
+    public final Registration onLoad(EventListener<ProgressEvent> eventListener) {
+        return onEvent("load", eventListener);
+    }
 
-    @JSProperty("onloadend")
-    public abstract void onLoadEnd(EventListener<ProgressEvent> eventListener);
+    public final Registration onLoadStart(EventListener<ProgressEvent> eventListener) {
+        return onEvent("loadstart", eventListener);
+    }
 
-    @JSProperty("onprogress")
-    public abstract void onProgress(EventListener<ProgressEvent> eventListener);
+    public final Registration onLoadEnd(EventListener<ProgressEvent> eventListener) {
+        return onEvent("loadend", eventListener);
+    }
 
-    @JSProperty("ontimeout")
-    public abstract void onTimeout(EventListener<ProgressEvent> eventListener);
+    public final Registration onProgress(EventListener<ProgressEvent> eventListener) {
+        return onEvent("progress", eventListener);
+    }
 
-    public final void onComplete(Runnable runnable) {
-        setOnReadyStateChange(() -> {
+    public final Registration onTimeout(EventListener<ProgressEvent> eventListener) {
+        return onEvent("timeout", eventListener);
+    }
+
+    public final Registration onComplete(Runnable runnable) {
+        return onReadyStateChange(event -> {
             if (getReadyState() == DONE) {
                 runnable.run();
             }
         });
     }
 
-    public abstract void overrideMimeType(String mimeType);
+    public native void overrideMimeType(String mimeType);
 
     @JSProperty
-    public abstract int getReadyState();
+    public native int getReadyState();
 
     @JSProperty
-    public abstract String getResponseText();
+    public native String getResponseText();
 
     @JSProperty
-    public abstract Document getResponseXML();
+    public native Document getResponseXML();
 
     @JSProperty
-    public abstract JSObject getResponse();
+    public native JSObject getResponse();
 
     @JSProperty
-    public abstract int getStatus();
+    public native int getStatus();
 
     @JSProperty
-    public abstract String getStatusText();
+    public native String getStatusText();
 
     @JSProperty
-    public abstract void setResponseType(String type);
+    public native void setResponseType(String type);
 
     @JSProperty
-    public abstract String getResponseType();
+    public native String getResponseType();
 
     @JSBody(script = "return new XMLHttpRequest();")
+    @Deprecated
     public static native XMLHttpRequest create();
 
-    public abstract void abort();
+    public native void abort();
 
     @JSProperty
-    public abstract String getResponseURL();
+    public native String getResponseURL();
+
+    @Override
+    public native void addEventListener(String type, EventListener<?> listener, boolean useCapture);
+
+    @Override
+    public native void addEventListener(String type, EventListener<?> listener);
+
+    @Override
+    public native void removeEventListener(String type, EventListener<?> listener, boolean useCapture);
+
+    @Override
+    public native void removeEventListener(String type, EventListener<?> listener);
+
+    @Override
+    public native boolean dispatchEvent(Event evt);
 }

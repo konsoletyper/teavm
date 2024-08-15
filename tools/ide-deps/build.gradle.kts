@@ -22,10 +22,10 @@ plugins {
 description = "All-in one JAR file that used by IDE plugins"
 
 dependencies {
-    implementation(project(path = ":tools:core"))
-    implementation(project(path = ":tools:devserver"))
-    implementation(project(path = ":classlib"))
-    implementation(project(path = ":tools:chrome-rdp"))
+    api(project(":tools:core"))
+    api(project(":tools:devserver"))
+    api(project(":classlib"))
+    api(project(":tools:chrome-rdp"))
 }
 
 tasks.shadowJar {

@@ -56,7 +56,7 @@ public class IntegerIntrinsic implements WasmIntrinsic {
                         manager.generate(invocation.getArguments().get(0)),
                         manager.generate(invocation.getArguments().get(1)));
             case "compareUnsigned":
-                return new WasmCall(manager.getNames().forMethod(COMPARE_UNSIGNED),
+                return new WasmCall(manager.getFunctions().forStaticMethod(COMPARE_UNSIGNED),
                         manager.generate(invocation.getArguments().get(0)),
                         manager.generate(invocation.getArguments().get(1)));
             default:

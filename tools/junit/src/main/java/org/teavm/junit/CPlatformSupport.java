@@ -22,6 +22,7 @@ import static org.teavm.junit.PropertyNames.OPTIMIZED;
 import static org.teavm.junit.TestUtil.resourceToFile;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.AnnotatedElement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -78,7 +79,7 @@ class CPlatformSupport extends TestPlatformSupport<CTarget> {
 
     @Override
     CompileResult compile(Consumer<TeaVM> additionalProcessing, String baseName,
-            TeaVMTestConfiguration<CTarget> configuration, File path) {
+            TeaVMTestConfiguration<CTarget> configuration, File path, AnnotatedElement element) {
         CompilePostProcessor postBuild = (vm, file) -> {
             try {
                 resourceToFile("teavm-CMakeLists.txt", new File(file.getParent(), "CMakeLists.txt"),

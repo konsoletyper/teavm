@@ -15,6 +15,9 @@
  */
 package org.teavm.gradle.api;
 
+import groovy.lang.Closure;
+import groovy.lang.DelegatesTo;
+import org.gradle.api.Action;
 import org.gradle.api.provider.Property;
 
 public interface TeaVMJSConfiguration extends TeaVMWebConfiguration {
@@ -22,9 +25,21 @@ public interface TeaVMJSConfiguration extends TeaVMWebConfiguration {
 
     Property<Boolean> getStrict();
 
+    Property<JSModuleType> getModuleType();
+
     Property<Boolean> getSourceMap();
 
     Property<String> getEntryPointName();
 
     Property<String> getTargetFileName();
+
+    Property<SourceFilePolicy> getSourceFilePolicy();
+
+    Property<Integer> getMaxTopLevelNames();
+
+    TeaVMDevServerConfiguration getDevServer();
+
+    void devServer(Action<TeaVMDevServerConfiguration> action);
+
+    void devServer(@DelegatesTo(TeaVMDevServerConfiguration.class) Closure<?> action);
 }

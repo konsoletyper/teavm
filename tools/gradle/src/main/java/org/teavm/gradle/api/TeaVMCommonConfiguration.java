@@ -15,7 +15,7 @@
  */
 package org.teavm.gradle.api;
 
-import java.io.File;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
@@ -37,5 +37,5 @@ public interface TeaVMCommonConfiguration {
 
     Property<Integer> getProcessMemory();
 
-    Property<File> getOutputDir();
+    DirectoryProperty getOutputDir();
 }

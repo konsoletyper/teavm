@@ -29,5 +29,7 @@ public interface ClassHolderTransformerContext {
 
     boolean isStrict();
 
+    String getEntryPoint();
+
     void submit(ClassHolder cls);
 }

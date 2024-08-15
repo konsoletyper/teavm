@@ -17,30 +17,33 @@ package org.teavm.classlib.java.util.stream.intimpl;
 
 import java.util.function.IntPredicate;
 
-public class TTakeWhileIntStream extends TWrappingIntStreamImpl {
+public class TTakeWhileIntStream extends TSimpleIntStreamImpl {
+    private TSimpleIntStreamImpl sourceStream;
     private IntPredicate predicate;
 
     /* set to `true` as soon as we see a value `v` in the source stream for which `predicate.test(v)` is false */
     private boolean isStopped;
 
-    TTakeWhileIntStream(TSimpleIntStreamImpl innerStream, IntPredicate predicate) {
-        super(innerStream);
+    TTakeWhileIntStream(TSimpleIntStreamImpl sourceStream, IntPredicate predicate) {
+        this.sourceStream = sourceStream;
         this.predicate = predicate;
     }
 
     @Override
-    protected IntPredicate wrap(IntPredicate consumer) {
-        return t -> {
-            if (isStopped) {
-                return false;
-            }
-
-            if (predicate.test(t)) {
-                return consumer.test(t);
-            } else {
+    public boolean next(IntPredicate consumer) {
+        if (isStopped) {
+            return false;
+        }
+        var result = sourceStream.next(e -> {
+            if (!predicate.test(e)) {
                 isStopped = true;
                 return false;
             }
-        };
+            return consumer.test(e);
+        });
+        if (!result) {
+            isStopped = true;
+        }
+        return result;
     }
 }

@@ -28,6 +28,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.ConsoleTeaVMToolLog;
 import org.teavm.tooling.TeaVMProblemRenderer;
@@ -126,6 +127,10 @@ public final class TeaVMRunner {
                 .hasArg()
                 .desc("WebAssembly binary version (currently, only 1 is supported)")
                 .build());
+        options.addOption(Option.builder()
+                .longOpt("wasm-use-exceptions")
+                .desc("Specifies that WebAssembly exception handling instructions can be used")
+                .build());
         options.addOption(Option.builder("e")
                 .longOpt("entry-point")
                 .argName("name")
@@ -145,11 +150,10 @@ public final class TeaVMRunner {
                 .desc("Maximum heap size in megabytes (for C and WebAssembly)")
                 .build());
         options.addOption(Option.builder()
-                .longOpt("max-toplevel-names")
-                .argName("number")
+                .longOpt("js-module-type")
+                .argName("module-type")
                 .hasArg()
-                .desc("Maximum number of names kept in top-level scope ("
-                        + "other will be put in a separate object. 10000 by default.")
+                .desc("JavaScript module type (umd, common-js, none, es2015).")
                 .build());
     }
 
@@ -240,6 +244,39 @@ public final class TeaVMRunner {
     private void parseGenerationOptions() {
         tool.setObfuscated(commandLine.hasOption("m"));
         tool.setStrict(commandLine.hasOption("strict"));
+        parseJsModuleOption();
+
+        if (commandLine.hasOption("max-toplevel-names")) {
+            try {
+                tool.setMaxTopLevelNames(Integer.parseInt(commandLine.getOptionValue("max-toplevel-names")));
+            } catch (NumberFormatException e) {
+                System.err.println("'--max-toplevel-names' must be integer number");
+                printUsage();
+            }
+        }
+    }
+
+    private void parseJsModuleOption() {
+        if (!commandLine.hasOption("js-module-type")) {
+            return;
+        }
+        switch (commandLine.getOptionValue("js-module-type")) {
+            case "umd":
+                tool.setJsModuleType(JSModuleType.UMD);
+                break;
+            case "common-js":
+                tool.setJsModuleType(JSModuleType.COMMON_JS);
+                break;
+            case "none":
+                tool.setJsModuleType(JSModuleType.NONE);
+                break;
+            case "es2015":
+                tool.setJsModuleType(JSModuleType.ES2015);
+                break;
+            default:
+                System.err.print("Wrong JS module type level");
+                printUsage();
+        }
     }
 
     private void parseDebugOptions() {
@@ -318,6 +355,9 @@ public final class TeaVMRunner {
                 System.err.print("Wrong version value");
                 printUsage();
             }
+        }
+        if (commandLine.hasOption("wasm-use-exceptions")) {
+            tool.setWasmExceptionsUsed(true);
         }
     }
 

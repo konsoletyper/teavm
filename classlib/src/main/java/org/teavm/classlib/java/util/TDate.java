@@ -64,7 +64,7 @@ public class TDate implements TComparable<TDate> {
     public TDate(int year, int month, int date, int hrs, int min, int sec) {
         this(PlatformDetector.isLowLevel()
                 ? initDateLowLevel(year, month, date, hrs, min, sec)
-                : (long) JSDate.create(year, month, date, hrs, min, sec).getTime());
+                : (long) new JSDate(year, month, date, hrs, min, sec).getTime());
         if (!PlatformDetector.isLowLevel()) {
             setYear(year);
         }
@@ -127,7 +127,7 @@ public class TDate implements TComparable<TDate> {
         if (PlatformDetector.isLowLevel()) {
             return getYearLowLevel(value);
         }
-        return JSDate.create(value).getFullYear() - 1900;
+        return new JSDate(value).getFullYear() - 1900;
     }
 
     @Import(name = "teavm_date_getYear")
@@ -143,7 +143,7 @@ public class TDate implements TComparable<TDate> {
             value = setYearLowLevel(value, year);
             return;
         }
-        JSDate date = JSDate.create(value);
+        var date = new JSDate(value);
         date.setFullYear(year + 1900);
         value = (long) date.getTime();
     }
@@ -160,7 +160,7 @@ public class TDate implements TComparable<TDate> {
         if (PlatformDetector.isLowLevel()) {
             return getMonthLowLevel(value);
         }
-        return JSDate.create(value).getMonth();
+        return new JSDate(value).getMonth();
     }
 
     @Import(name = "teavm_date_getMonth")
@@ -176,7 +176,7 @@ public class TDate implements TComparable<TDate> {
             value = setMonthLowLevel(value, month);
             return;
         }
-        JSDate date = JSDate.create(value);
+        var date = new JSDate(value);
         date.setMonth(month);
         value = (long) date.getTime();
     }
@@ -193,7 +193,7 @@ public class TDate implements TComparable<TDate> {
         if (PlatformDetector.isLowLevel()) {
             return getDateLowLevel(value);
         }
-        return JSDate.create(value).getDate();
+        return new JSDate(value).getDate();
     }
 
     @Import(name = "teavm_date_getDate")
@@ -209,7 +209,7 @@ public class TDate implements TComparable<TDate> {
             value = setDateLowLevel(value, date);
             return;
         }
-        JSDate d = JSDate.create(value);
+        var d = new JSDate(value);
         d.setDate(date);
         this.value = (long) d.getTime();
     }
@@ -226,7 +226,7 @@ public class TDate implements TComparable<TDate> {
         if (PlatformDetector.isLowLevel()) {
             return getDayLowLevel(value);
         }
-        return JSDate.create(value).getDay();
+        return new JSDate(value).getDay();
     }
 
     @Import(name = "teavm_date_getDay")
@@ -239,7 +239,7 @@ public class TDate implements TComparable<TDate> {
         if (PlatformDetector.isLowLevel()) {
             return getHoursLowLevel(value);
         }
-        return JSDate.create(value).getHours();
+        return new JSDate(value).getHours();
     }
 
     @Import(name = "teavm_date_getHours")
@@ -389,12 +389,12 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public String toLocaleString() {
-        return JSDate.create(value).toLocaleFormat("%c");
+        return new JSDate(value).toLocaleFormat("%c");
     }
 
     @Deprecated
     public String toGMTString() {
-        return JSDate.create(value).toUTCString();
+        return new JSDate(value).toUTCString();
     }
 
     @Deprecated

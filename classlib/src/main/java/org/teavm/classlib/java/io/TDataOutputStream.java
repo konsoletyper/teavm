@@ -14,8 +14,14 @@
  *  limitations under the License.
  */
 package org.teavm.classlib.java.io;
+
 import java.io.IOException;
-import org.teavm.classlib.java.lang.*;
+import java.io.OutputStream;
+import org.teavm.classlib.java.lang.TDouble;
+import org.teavm.classlib.java.lang.TFloat;
+import org.teavm.classlib.java.lang.TInteger;
+import org.teavm.classlib.java.lang.TNullPointerException;
+import org.teavm.classlib.java.lang.TString;
 
 public class TDataOutputStream extends TFilterOutputStream implements TDataOutput {
     /**
@@ -24,7 +30,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
     protected int written;
     byte[] buff;
 
-    public TDataOutputStream(TOutputStream out) {
+    public TDataOutputStream(OutputStream out) {
         super(out);
         buff = new byte[8];
     }

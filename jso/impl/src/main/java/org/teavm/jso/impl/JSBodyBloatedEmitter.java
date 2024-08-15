@@ -69,8 +69,8 @@ class JSBodyBloatedEmitter implements JSBodyEmitter {
     private void emit(SourceWriter writer, EmissionStrategy strategy) {
         int bodyParamCount = isStatic ? method.parameterCount() : method.parameterCount() - 1;
 
-        writer.append("if (!").appendMethodBody(method).append(".$native)").ws().append('{').indent().newLine();
-        writer.appendMethodBody(method).append(".$native").ws().append('=').ws().append("function(");
+        writer.append("if (!").appendMethod(method).append(".$native)").ws().append('{').indent().newLine();
+        writer.appendMethod(method).append(".$native").ws().append('=').ws().append("function(");
         int count = method.parameterCount();
 
         var first = true;
@@ -135,11 +135,11 @@ class JSBodyBloatedEmitter implements JSBodyEmitter {
 
         writer.append(");").softNewLine();
         writer.outdent().append("};").softNewLine();
-        writer.appendMethodBody(method).ws().append('=').ws().appendMethodBody(method).append(".$native;")
+        writer.appendMethod(method).ws().append('=').ws().appendMethod(method).append(".$native;")
                 .softNewLine();
         writer.outdent().append("}").softNewLine();
 
-        writer.append("return ").appendMethodBody(method).append('(');
+        writer.append("return ").appendMethod(method).append('(');
         for (int i = 0; i < count; ++i) {
             if (i > 0) {
                 writer.append(',').ws();

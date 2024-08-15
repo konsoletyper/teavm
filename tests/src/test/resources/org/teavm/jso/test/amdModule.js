@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-define("testModule.js", [], () => {
+define("./testModule.js", [], () => {
     return {
         foo() {
             return 23;

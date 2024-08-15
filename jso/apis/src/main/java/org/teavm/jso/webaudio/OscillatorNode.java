@@ -17,6 +17,7 @@ package org.teavm.jso.webaudio;
 
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
+import org.teavm.jso.dom.events.Registration;
 
 public interface OscillatorNode extends AudioNode {
     String TYPE_SINE = "sine";
@@ -42,6 +43,10 @@ public interface OscillatorNode extends AudioNode {
 
     @JSProperty("onended")
     EventListener<MediaEvent> getOnEnded();
+
+    default Registration onEnded(EventListener<MediaEvent> listener) {
+        return onEvent("ended", listener);
+    }
 
     void start(double when);
 

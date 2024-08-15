@@ -21,6 +21,7 @@ import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.common.Graph;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
@@ -32,6 +33,12 @@ import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.UsageExtractor;
 
 public class Optimizer {
+    private ClassReaderSource classes;
+
+    public Optimizer(ClassReaderSource classes) {
+        this.classes = classes;
+    }
+
     public void optimize(RegularMethodNode method, Program program, boolean friendlyToDebugger) {
         ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
         stats.analyze(program);
@@ -48,7 +55,7 @@ public class Optimizer {
             }
         }
         OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.writes, stats.reads,
-                stats.constants, friendlyToDebugger);
+                stats.constants, friendlyToDebugger, classes);
         method.getBody().acceptVisitor(optimizer);
         method.setBody(optimizer.resultStmt);
         int paramCount = method.getReference().parameterCount();
@@ -85,7 +92,7 @@ public class Optimizer {
             BreakEliminator breakEliminator = new BreakEliminator();
             breakEliminator.eliminate(part.getStatement());
             OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.writes, stats.reads,
-                    stats.constants, friendlyToDebugger);
+                    stats.constants, friendlyToDebugger, classes);
             part.getStatement().acceptVisitor(optimizer);
             part.setStatement(optimizer.resultStmt);
         }

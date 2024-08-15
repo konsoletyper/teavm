@@ -16,10 +16,17 @@
 package org.teavm.gradle;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
+import org.gradle.api.artifacts.result.ResolvedDependencyResult;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlugin;
@@ -34,17 +41,22 @@ import org.teavm.gradle.tasks.GenerateCTask;
 import org.teavm.gradle.tasks.GenerateJavaScriptTask;
 import org.teavm.gradle.tasks.GenerateWasiTask;
 import org.teavm.gradle.tasks.GenerateWasmTask;
+import org.teavm.gradle.tasks.JavaScriptDevServerTask;
+import org.teavm.gradle.tasks.StopJavaScriptDevServerTask;
 import org.teavm.gradle.tasks.TeaVMTask;
 
 public class TeaVMPlugin implements Plugin<Project> {
     public static final String EXTENSION_NAME = "teavm";
     public static final String SOURCE_SET_NAME = "teavm";
     public static final String JS_TASK_NAME = "generateJavaScript";
+    public static final String JS_DEV_SERVER_TASK_NAME = "javaScriptDevServer";
+    public static final String STOP_JS_DEV_SERVER_TASK_NAME = "stopJavaScriptDevServer";
     public static final String WASM_TASK_NAME = "generateWasm";
     public static final String WASI_TASK_NAME = "generateWasi";
     public static final String C_TASK_NAME = "generateC";
     public static final String CONFIGURATION_NAME = "teavm";
     public static final String CLASSPATH_CONFIGURATION_NAME = "teavmClasspath";
+    public static final String TASK_GROUP = "TeaVM";
     private ObjectFactory objectFactory;
 
     @Inject
@@ -83,21 +95,27 @@ public class TeaVMPlugin implements Plugin<Project> {
     }
 
     private void registerSourceSet(Project project) {
-        var sourceSets = project.getExtensions().getByType(SourceSetContainer.class);
-        var sourceSet = sourceSets.create(SOURCE_SET_NAME);
-        var main = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getOutput();
-        sourceSet.setRuntimeClasspath(sourceSet.getRuntimeClasspath().plus(main)
-                .plus(project.getConfigurations().getByName(CLASSPATH_CONFIGURATION_NAME)));
-        sourceSet.setCompileClasspath(sourceSet.getCompileClasspath().plus(main)
-                .plus(project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)));
-        sourceSet.java(java -> { });
-        project.getDependencies().add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, sourceSet.getOutput());
+        var sourceSets = project.getExtensions().findByType(SourceSetContainer.class);
+        if (sourceSets != null) {
+            var sourceSet = sourceSets.create(SOURCE_SET_NAME);
+            var main = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getOutput();
+            sourceSet.setRuntimeClasspath(sourceSet.getRuntimeClasspath().plus(main)
+                    .plus(project.getConfigurations().getByName(CLASSPATH_CONFIGURATION_NAME)));
+            sourceSet.setCompileClasspath(sourceSet.getCompileClasspath().plus(main)
+                    .plus(project.getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)));
+            sourceSet.java(java -> { });
+            project.getDependencies().add(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME, sourceSet.getOutput());
+        }
     }
 
     private void registerTasks(Project project) {
         var compilerConfig = project.getConfigurations().detachedConfiguration(
                 project.getDependencies().create(ArtifactCoordinates.TOOLS));
+        var cliConfig = project.getConfigurations().detachedConfiguration(
+                project.getDependencies().create(ArtifactCoordinates.CLI));
         registerJsTask(project, compilerConfig);
+        registerJsDevServerTask(project, cliConfig);
+        registerStopJsDevServerTask(project);
         registerWasmTask(project, compilerConfig);
         registerWasiTask(project, compilerConfig);
         registerCTask(project, compilerConfig);
@@ -109,11 +127,63 @@ public class TeaVMPlugin implements Plugin<Project> {
             var js = extension.getJs();
             applyToTask(js, task, configuration);
             task.getObfuscated().convention(js.getObfuscated());
+            task.getModuleType().convention(js.getModuleType());
             task.getSourceMap().convention(js.getSourceMap());
             task.getTargetFileName().convention(js.getTargetFileName());
             task.getStrict().convention(js.getStrict());
             task.getEntryPointName().convention(js.getEntryPointName());
+            task.getSourceFilePolicy().convention(js.getSourceFilePolicy());
+            task.getMaxTopLevelNames().convention(js.getMaxTopLevelNames());
+
+            setupSources(task.getSourceFiles(), project);
         });
+    }
+
+    private void registerJsDevServerTask(Project project, Configuration configuration) {
+        var extension = project.getExtensions().getByType(TeaVMExtension.class);
+        project.getTasks().create(JS_DEV_SERVER_TASK_NAME, JavaScriptDevServerTask.class, task -> {
+            var js = extension.getJs();
+            task.setGroup(TASK_GROUP);
+            task.getMainClass().convention(js.getMainClass());
+            task.getClasspath().from(task.getProject().getConfigurations().getByName(CLASSPATH_CONFIGURATION_NAME));
+            task.getPreservedClasses().addAll(js.getPreservedClasses());
+            task.getJsModuleType().convention(js.getModuleType());
+            task.getProcessMemory().convention(js.getDevServer().getProcessMemory());
+            task.getProperties().putAll(js.getProperties());
+            task.getServerClasspath().from(configuration);
+            task.getTargetFilePath().convention(js.getRelativePathInOutputDir());
+            task.getTargetFileName().convention(js.getTargetFileName());
+            task.getStackDeobfuscated().convention(js.getDevServer().getStackDeobfuscated());
+            task.getIndicator().convention(js.getDevServer().getIndicator());
+            task.getAutoReload().convention(js.getDevServer().getAutoReload());
+            task.getPort().convention(js.getDevServer().getPort());
+            task.getProxyUrl().convention(js.getDevServer().getProxyUrl());
+            task.getProxyPath().convention(js.getDevServer().getProxyPath());
+            task.getProcessMemory().convention(js.getDevServer().getProcessMemory());
+
+            var sourceSets = project.getExtensions().findByType(SourceSetContainer.class);
+            if (sourceSets != null) {
+                task.getClasspath().from(sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getOutput());
+                task.getClasspath().from(sourceSets.getByName(SOURCE_SET_NAME).getOutput());
+            }
+
+            setupSources(task.getSourceFiles(), project);
+        });
+    }
+
+    private void registerStopJsDevServerTask(Project project) {
+        project.getTasks().create(STOP_JS_DEV_SERVER_TASK_NAME, StopJavaScriptDevServerTask.class, task -> {
+            task.setGroup(TASK_GROUP);
+        });
+    }
+
+    private void addSourceDirs(Project project, List<File> result) {
+        var sourceSets = project.getExtensions().findByType(SourceSetContainer.class);
+        if (sourceSets != null) {
+            for (var sourceSet : sourceSets) {
+                result.addAll(sourceSet.getAllJava().getSourceDirectories().getFiles());
+            }
+        }
     }
 
     private void registerWasmTask(Project project, Configuration configuration) {
@@ -121,6 +191,7 @@ public class TeaVMPlugin implements Plugin<Project> {
         project.getTasks().create(WASM_TASK_NAME, GenerateWasmTask.class, task -> {
             var wasm = extension.getWasm();
             applyToTask(wasm, task, configuration);
+            task.getExceptionsUsed().convention(wasm.getExceptionsUsed());
             task.getTargetFileName().convention(wasm.getTargetFileName());
             task.getMinHeapSize().convention(wasm.getMinHeapSize());
             task.getMaxHeapSize().convention(wasm.getMaxHeapSize());
@@ -132,6 +203,7 @@ public class TeaVMPlugin implements Plugin<Project> {
         project.getTasks().create(WASI_TASK_NAME, GenerateWasiTask.class, task -> {
             var wasi = extension.getWasi();
             applyToTask(wasi, task, configuration);
+            task.getExceptionsUsed().convention(wasi.getExceptionsUsed());
             task.getTargetFileName().convention(wasi.getTargetFileName());
             task.getMinHeapSize().convention(wasi.getMinHeapSize());
             task.getMaxHeapSize().convention(wasi.getMaxHeapSize());
@@ -170,7 +242,7 @@ public class TeaVMPlugin implements Plugin<Project> {
                     var relPath = extension.getJs().getRelativePathInOutputDir();
                     task.with(project.copySpec(spec -> {
                         spec.into(relPath);
-                        spec.from(project.files(outDir.map(dir -> new File(dir, relPath.get()))));
+                        spec.from(project.files(outDir.map(dir -> new File(dir.getAsFile(), relPath.get()))));
                         spec.setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE);
                     }));
                 }
@@ -180,7 +252,7 @@ public class TeaVMPlugin implements Plugin<Project> {
                     var relPath = extension.getWasm().getRelativePathInOutputDir();
                     task.with(project.copySpec(spec -> {
                         spec.into(relPath);
-                        spec.from(project.files(outDir.map(dir -> new File(dir, relPath.get()))));
+                        spec.from(project.files(outDir.map(dir -> new File(dir.getAsFile(), relPath.get()))));
                     }));
                 }
             }
@@ -193,17 +265,66 @@ public class TeaVMPlugin implements Plugin<Project> {
         task.getPreservedClasses().addAll(configuration.getPreservedClasses());
         task.getDebugInformation().convention(configuration.getDebugInformation());
         task.getFastGlobalAnalysis().convention(configuration.getFastGlobalAnalysis());
+        task.getOptimization().convention(configuration.getOptimization());
         task.getOutOfProcess().convention(configuration.getOutOfProcess());
         task.getProcessMemory().convention(configuration.getProcessMemory());
         task.getProperties().putAll(configuration.getProperties());
         task.getDaemonClasspath().from(toolsConfiguration);
         task.getOutputDir().convention(configuration.getOutputDir().map(
-                d -> new File(d, configuration.getRelativePathInOutputDir().get())));
+                d -> new File(d.getAsFile(), configuration.getRelativePathInOutputDir().get())));
 
         var project = task.getProject();
 
-        var sourceSets = project.getExtensions().getByType(SourceSetContainer.class);
-        task.getClasspath().from(sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getOutput());
-        task.getClasspath().from(sourceSets.getByName(SOURCE_SET_NAME).getOutput());
+        var sourceSets = project.getExtensions().findByType(SourceSetContainer.class);
+        if (sourceSets != null) {
+            task.getClasspath().from(sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getOutput());
+            task.getClasspath().from(sourceSets.getByName(SOURCE_SET_NAME).getOutput());
+        }
+
+        task.setGroup(TASK_GROUP);
+    }
+
+    private void setupSources(ConfigurableFileCollection sources, Project project) {
+        sources.from(project.provider(() -> {
+            var result = new ArrayList<File>();
+            addSourceDirs(project, result);
+            return result;
+        }));
+        sources.from(project.provider(() -> {
+            var dependencies = project.getConfigurations()
+                    .getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME)
+                    .getIncoming()
+                    .getResolutionResult()
+                    .getAllDependencies();
+
+            var result = new ArrayList<File>();
+            for (var dependencyResult : dependencies) {
+                if (!(dependencyResult instanceof ResolvedDependencyResult)) {
+                    continue;
+                }
+                var id = ((ResolvedDependencyResult) dependencyResult).getSelected().getId();
+                if (id instanceof ProjectComponentIdentifier) {
+                    var path = ((ProjectComponentIdentifier) id).getProjectPath();
+                    var refProject = project.getRootProject().findProject(path);
+                    if (refProject != null) {
+                        addSourceDirs(refProject, result);
+                    }
+                } else if (id instanceof ModuleComponentIdentifier) {
+                    var moduleId = (ModuleComponentIdentifier) id;
+                    var sourcesDep = project.getDependencies().create(Map.of(
+                            "group", moduleId.getGroup(),
+                            "name", moduleId.getModuleIdentifier().getName(),
+                            "version", moduleId.getVersion(),
+                            "classifier", "sources"
+                    ));
+                    var tmpConfig = project.getConfigurations().detachedConfiguration(sourcesDep);
+                    tmpConfig.setTransitive(false);
+                    if (!tmpConfig.getResolvedConfiguration().hasError()) {
+                        result.addAll(tmpConfig.getResolvedConfiguration().getLenientConfiguration().getFiles());
+                    }
+                }
+            }
+            return result;
+        }));
     }
 }

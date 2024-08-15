@@ -17,6 +17,7 @@ package org.teavm.jso.impl;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -43,14 +44,19 @@ class JSTypeHelper {
     }
 
     public boolean isJavaScriptImplementation(String className) {
-        return knownJavaScriptImplementations
-                .computeIfAbsent(className, k -> examineIfJavaScriptImplementation(className));
+        return knownJavaScriptImplementations.computeIfAbsent(className, k ->
+                examineIfJavaScriptImplementation(className));
     }
 
     private boolean examineIfJavaScriptClass(String className) {
         ClassReader cls = classSource.get(className);
-        if (cls == null || !(cls.hasModifier(ElementModifier.INTERFACE) || cls.hasModifier(ElementModifier.ABSTRACT))) {
+        if (cls == null) {
             return false;
+        }
+        if (!(cls.hasModifier(ElementModifier.INTERFACE) || cls.hasModifier(ElementModifier.ABSTRACT))) {
+            if (cls.getAnnotations().get(JSClass.class.getName()) == null) {
+                return false;
+            }
         }
         if (cls.getParent() != null) {
             if (isJavaScriptClass(cls.getParent())) {
@@ -65,7 +71,7 @@ class JSTypeHelper {
             return false;
         }
         ClassReader cls = classSource.get(className);
-        if (cls == null) {
+        if (cls == null || cls.getAnnotations().get(JSClass.class.getName()) != null) {
             return false;
         }
         if (cls.getParent() != null) {
@@ -115,8 +121,6 @@ class JSTypeHelper {
                 default:
                     return false;
             }
-        } else if (itemType instanceof ValueType.Object) {
-            return isJavaScriptClass(((ValueType.Object) itemType).getClassName());
         } else {
             return false;
         }

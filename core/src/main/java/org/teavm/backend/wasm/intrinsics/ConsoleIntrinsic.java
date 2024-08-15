@@ -48,14 +48,14 @@ public class ConsoleIntrinsic implements WasmIntrinsic {
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
         switch (invocation.getMethod().getName()) {
             case "printString": {
-                String name = manager.getNames().forMethod(PRINT_STRING);
-                WasmCall call = new WasmCall(name);
+                var function = manager.getFunctions().forStaticMethod(PRINT_STRING);
+                var call = new WasmCall(function);
                 call.getArguments().add(manager.generate(invocation.getArguments().get(0)));
                 return call;
             }
             case "printInt": {
-                String name = manager.getNames().forMethod(PRINT_INT);
-                WasmCall call = new WasmCall(name);
+                var function = manager.getFunctions().forStaticMethod(PRINT_INT);
+                var call = new WasmCall(function);
                 call.getArguments().add(manager.generate(invocation.getArguments().get(0)));
                 return call;
             }

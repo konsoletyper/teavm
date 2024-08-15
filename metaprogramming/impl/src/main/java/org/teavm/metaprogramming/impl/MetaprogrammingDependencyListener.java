@@ -94,10 +94,11 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
             if (model.getUsages().size() == 1) {
                 emitSingleUsage(model, pe, paramVars);
             } else if (model.getUsages().isEmpty()) {
-                if (model.getMethod().getReturnType() == ValueType.VOID) {
+                var returnType = model.getMethod().getReturnType();
+                if (returnType == ValueType.VOID) {
                     pe.exit();
                 } else {
-                    pe.constantNull(Object.class).returnValue();
+                    pe.defaultValue(returnType).returnValue();
                 }
             } else {
                 emitMultipleUsage(model, pe, agent, paramVars);
@@ -147,10 +148,11 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
         }
 
         choice.otherwise(() -> {
-            if (methodDep.getReference().getReturnType() == ValueType.VOID) {
+            var returnType = methodDep.getReference().getReturnType();
+            if (returnType == ValueType.VOID) {
                 pe.exit();
             } else {
-                pe.constantNull(Object.class).returnValue();
+                pe.defaultValue(returnType).returnValue();
             }
         });
     }

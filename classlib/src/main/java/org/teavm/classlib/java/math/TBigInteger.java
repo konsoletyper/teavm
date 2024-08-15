@@ -68,6 +68,11 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
     public static final TBigInteger ONE = new TBigInteger(1, 1);
 
     /**
+     * The {@code BigInteger} constant 2.
+     */
+    public static final TBigInteger TWO = new TBigInteger(1, 2);
+
+    /**
      * The {@code BigInteger} constant 10.
      */
     public static final TBigInteger TEN = new TBigInteger(1, 10);
@@ -85,7 +90,7 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
     static final int LESS = -1;
 
     /** All the {@code BigInteger} numbers in the range [0,10] are cached. */
-    static final TBigInteger[] SMALL_VALUES = { ZERO, ONE, new TBigInteger(1, 2), new TBigInteger(1, 3),
+    static final TBigInteger[] SMALL_VALUES = { ZERO, ONE, TWO, new TBigInteger(1, 3),
             new TBigInteger(1, 4), new TBigInteger(1, 5), new TBigInteger(1, 6), new TBigInteger(1, 7),
             new TBigInteger(1, 8), new TBigInteger(1, 9), TEN };
 
@@ -112,7 +117,7 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
      * @param rnd
      *            is an optional random generator to be used.
      * @throws IllegalArgumentException
-     *             if {@code numBits} < 0.
+     *             if {@code numBits < 0}.
      */
     public TBigInteger(int numBits, Random rnd) {
         if (numBits < 0) {
@@ -147,7 +152,7 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
      * @param rnd
      *            is an optional random generator to be used.
      * @throws ArithmeticException
-     *             if {@code bitLength} < 2.
+     *             if {@code bitLength < 2}.
      */
     public TBigInteger(int bitLength, int certainty, Random rnd) {
         if (bitLength < 2) {
@@ -570,9 +575,9 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
 
     /**
      * Returns a new {@code BigInteger} whose value is {@code this << n}. The
-     * result is equivalent to {@code this * 2^n} if n >= 0. The shift distance
-     * may be negative which means that {@code this} is shifted right. The
-     * result then corresponds to {@code floor(this / 2^(-n))}.
+     * result is equivalent to {@code this * 2^n} if {@code n >= 0}. The shift
+     * distance may be negative which means that {@code this} is shifted right.
+     * The result then corresponds to {@code floor(this / 2^(-n))}.
      * <p>
      * <b>Implementation Note:</b> Usage of this method on negative values is
      * not recommended as the current implementation is not efficient.
@@ -831,6 +836,20 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
         return TLogical.andNot(this, val);
     }
 
+    public byte byteValueExact() {
+        if (numberLength > 1 || bitLength() > 7) {
+            throw new ArithmeticException("BigInteger out of byte range");
+        }
+        return byteValue();
+    }
+
+    public short shortValueExact() {
+        if (numberLength > 1 || bitLength() > 15) {
+            throw new ArithmeticException("BigInteger out of short range");
+        }
+        return shortValue();
+    }
+
     /**
      * Returns this {@code BigInteger} as an int value. If {@code this} is too
      * big to be represented as an int, then {@code this} % 2^32 is returned.
@@ -840,6 +859,21 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
     @Override
     public int intValue() {
         return sign * digits[0];
+    }
+
+    /**
+     * Returns this {@code BigInter} as an int value.
+     *
+     * @return this {@code BigInteger} as an int value.
+     * @see #intValue
+     * @throws ArithmeticException
+     *             if {@code this} is too big to be represented as an int.
+     */
+    public int intValueExact() {
+        if (numberLength > 1 || bitLength() > 31) {
+            throw new ArithmeticException("BigInteger out of int range");
+        }
+        return intValue();
     }
 
     /**
@@ -853,6 +887,21 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
         long value = (numberLength > 1) ? (((long) digits[1]) << 32) | (digits[0] & 0xFFFFFFFFL)
                 : (digits[0] & 0xFFFFFFFFL);
         return sign * value;
+    }
+
+    /**
+     * Returns this {@code BigInter} as an long value.
+     *
+     * @return this {@code BigInteger} as a long value.
+     * @throws ArithmeticException
+     *             if {@code this} is too big to be represented as a long.
+     * @see #longValue
+     */
+    public long longValueExact() {
+        if (numberLength > 2 || bitLength() > 63) {
+            throw new ArithmeticException("BigInteger out of long range");
+        }
+        return longValue();
     }
 
     /**
@@ -1098,6 +1147,76 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
     }
 
     /**
+     * Returns a new {@code BigInteger} whose value is the biggest integer
+     * {@code n} such that {@code n * n <= this}.
+     *
+     * @implNote This implementation follows the ideas in Henry S. Warren, Jr.,
+     * Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 279-282.
+     *
+     * @return {@code floor(sqrt(this))}
+     * @throws ArithmeticException if {@code this} is negative.
+     */
+    public TBigInteger sqrt() {
+        if (sign < 0) {
+            throw new ArithmeticException("Negative BigInteger");
+        }
+
+        // Trivial cases
+        if (equals(ZERO)) {
+            return ZERO;
+        } else if (compareTo(valueOf(4)) < 0) {
+            return ONE;
+        }
+
+        // BigInteger fits into long, so do calculation directly
+        if (bitLength() < 64) {
+            // Estimate using existing sqrt implementation for double
+            long val = longValueExact();
+            long candidate = (long) Math.floor(Math.sqrt(val));
+
+            // Improve estimate using Newton's method
+            do {
+                long next = (candidate + val / candidate) >> 1;
+                if (next >= candidate) {
+                    // found convergence candidate if stopped to decrease
+                    return valueOf(candidate);
+                }
+
+                candidate = next;
+            } while (true);
+        }
+
+        // Shift BigInteger into long range to use existing sqrt implementation
+        // and then shift back into the initial range for a rough estimate
+
+        long shiftCount = bitLength() - 63;
+        if (shiftCount % 2 == 1) {
+            shiftCount += 1;
+        }
+
+        if ((shiftCount & 0xFFFFFFFF00000000L) > 0) {
+            throw new ArithmeticException("integer overflow");
+        }
+
+        double shiftedVal = shiftRight((int) shiftCount).doubleValue();
+        TBigInteger candidate = valueOf((long) Math.ceil(Math.sqrt(shiftedVal)));
+
+        candidate = candidate.shiftLeft((int) shiftCount >> 1);
+
+        // Improve estimate using Newton's method
+        do {
+            // next = (candidate + this/candidate) >> 1;
+            TBigInteger next = candidate.add(this.divide(candidate)).shiftRight(1);
+            if (next.compareTo(candidate) >= 0) {
+                // found convergence candidate if stopped to decrease
+                return candidate;
+            }
+
+            candidate = next;
+        } while (true);
+    }
+
+    /**
      * Returns a {@code BigInteger} array which contains {@code this / divisor}
      * at index 0 and {@code this % divisor} at index 1.
      *
@@ -1340,7 +1459,7 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
      * Tests whether this {@code BigInteger} is probably prime. If {@code true}
      * is returned, then this is prime with a probability beyond
      * (1-1/2^certainty). If {@code false} is returned, then this is definitely
-     * composite. If the argument {@code certainty} <= 0, then this method
+     * composite. If the argument {@code certainty <= 0}, then this method
      * returns true.
      *
      * @param certainty
@@ -1353,11 +1472,11 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
     }
 
     /**
-     * Returns the smallest integer x > {@code this} which is probably prime as
+     * Returns the smallest integer {@code x > this} which is probably prime as
      * a {@code BigInteger} instance. The probability that the returned
      * {@code BigInteger} is prime is beyond (1-1/2^80).
      *
-     * @return smallest integer > {@code this} which is robably prime.
+     * @return smallest integer &gt; {@code this} which is robably prime.
      * @throws ArithmeticException
      *             if {@code this < 0}.
      */

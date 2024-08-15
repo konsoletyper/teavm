@@ -15,13 +15,16 @@
  */
 package org.teavm.dependency;
 
+import com.carrotsearch.hppc.IntIntHashMap;
 import java.util.BitSet;
 import org.teavm.common.OptionalPredicate;
 
 class SuperClassFilter implements DependencyTypeFilter {
+    private static final int SMALL_CACHE_THRESHOLD = 16;
     private OptionalPredicate<String> predicate;
-    private BitSet knownTypes = new BitSet();
-    private BitSet cache = new BitSet();
+    private IntIntHashMap smallCache;
+    private BitSet knownTypes;
+    private BitSet cache;
 
     SuperClassFilter(DependencyAnalyzer dependencyAnalyzer, DependencyType superType) {
         predicate = dependencyAnalyzer.getClassHierarchy().getSuperclassPredicate(superType.getName());
@@ -29,12 +32,38 @@ class SuperClassFilter implements DependencyTypeFilter {
 
     @Override
     public boolean match(DependencyType type) {
-        if (knownTypes.get(type.index)) {
-            return cache.get(type.index);
+        if (knownTypes != null) {
+            if (knownTypes.get(type.index)) {
+                return cache.get(type.index);
+            }
+            boolean result = predicate.test(type.getName(), false);
+            knownTypes.set(type.index);
+            cache.set(type.index, result);
+            return result;
         }
-        boolean result = predicate.test(type.getName(), false);
-        knownTypes.set(type.index);
-        cache.set(type.index, result);
-        return result;
+
+        if (smallCache == null) {
+            smallCache = new IntIntHashMap();
+        }
+
+        var result = smallCache.getOrDefault(type.index, -1);
+        if (result != -1) {
+            return result != 0;
+        }
+
+        var value = predicate.test(type.getName(), false);
+        smallCache.put(type.index, value ? 1 : 0);
+        if (smallCache.size() > SMALL_CACHE_THRESHOLD) {
+            knownTypes = new BitSet();
+            cache = new BitSet();
+            for (var entry : smallCache) {
+                knownTypes.set(entry.key);
+                if (entry.value != 0) {
+                    cache.set(entry.key);
+                }
+            }
+            smallCache = null;
+        }
+        return value;
     }
 }

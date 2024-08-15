@@ -37,6 +37,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
 import org.teavm.tooling.sources.DirectorySourceFileProvider;
@@ -147,7 +148,9 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
 
         tool.setSourceMapsFileGenerated(request.sourceMapsFileGenerated);
         tool.setDebugInformationGenerated(request.debugInformationGenerated);
-        tool.setSourceFilesCopied(request.sourceFilesCopied);
+        if (request.sourceFilePolicy != null) {
+            tool.setSourceFilePolicy(TeaVMSourceFilePolicy.valueOf(request.sourceFilePolicy));
+        }
         if (request.properties != null) {
             tool.getProperties().putAll(request.properties);
         }
@@ -155,8 +158,10 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
         tool.setOptimizationLevel(request.optimizationLevel);
         tool.setFastDependencyAnalysis(request.fastDependencyAnalysis);
         tool.setObfuscated(request.obfuscated);
+        tool.setJsModuleType(request.jsModuleType);
         tool.setStrict(request.strict);
         tool.setWasmVersion(request.wasmVersion);
+        tool.setWasmExceptionsUsed(request.wasmExceptionsUsed);
         tool.setMinHeapSize(request.minHeapSize);
         tool.setMaxHeapSize(request.maxHeapSize);
         tool.setHeapDump(request.heapDump);
@@ -182,11 +187,6 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
             response.callGraph = tool.getDependencyInfo().getCallGraph();
             response.problems.addAll(tool.getProblemProvider().getProblems());
             response.severeProblems.addAll(tool.getProblemProvider().getSevereProblems());
-            response.classes.addAll(tool.getClasses());
-            response.usedResources.addAll(tool.getUsedResources());
-            response.generatedFiles.addAll(tool.getGeneratedFiles().stream()
-                    .map(File::getAbsolutePath)
-                    .collect(Collectors.toSet()));
         }
 
         return response;

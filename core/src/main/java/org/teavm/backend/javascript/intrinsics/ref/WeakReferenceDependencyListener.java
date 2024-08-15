@@ -58,9 +58,13 @@ public class WeakReferenceDependencyListener extends AbstractDependencyListener 
 
     private void queueMethodReached(DependencyAgent agent, MethodDependency method) {
         switch (method.getMethod().getName()) {
-            case "poll":
+            case "poll": {
+                var reportMethod = agent.linkMethod(new MethodReference(ReferenceQueue.class,
+                        "reportNext", Reference.class, boolean.class));
                 initRef.connect(method.getResult());
+                reportMethod.use();
                 break;
+            }
             case "<init>":
                 agent.linkField(new FieldReference(ReferenceQueue.class.getName(), "inner"));
                 agent.linkField(new FieldReference(ReferenceQueue.class.getName(), "registry"));

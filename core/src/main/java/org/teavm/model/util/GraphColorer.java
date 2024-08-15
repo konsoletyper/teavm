@@ -16,18 +16,20 @@
 package org.teavm.model.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import org.teavm.common.Graph;
-import org.teavm.common.IntegerArray;
 
 public class GraphColorer {
     public void colorize(Graph graph, int[] colors) {
-        colorize(graph, colors, new int[graph.size()], new String[graph.size()]);
+        var categories = new Object[graph.size()];
+        Arrays.fill(categories, new Object());
+        colorize(graph, colors, categories, new String[graph.size()]);
     }
 
-    public void colorize(Graph graph, int[] colors, int[] categories, String[] names) {
-        IntegerArray colorCategories = new IntegerArray(graph.size());
+    public void colorize(Graph graph, int[] colors, Object[] categories, String[] names) {
+        var colorCategories = new ArrayList<>(graph.size());
         List<String> colorNames = new ArrayList<>();
         for (int i = 0; i < colors.length; ++i) {
             int color = colors[i];
@@ -59,12 +61,12 @@ public class GraphColorer {
             while (true) {
                 color = usedColors.nextClearBit(color);
                 while (colorCategories.size() <= color) {
-                    colorCategories.add(-1);
+                    colorCategories.add(null);
                     colorNames.add(null);
                 }
-                int category = colorCategories.get(color);
+                var category = colorCategories.get(color);
                 String name = colorNames.get(color);
-                if ((category < 0 || category == categories[v])
+                if ((category == null || category.equals(categories[v]))
                         && (name == null || names[v] == null || name.equals(names[v]))) {
                     colors[v] = color;
                     colorCategories.set(color, categories[v]);

@@ -16,7 +16,7 @@
 
 function require(name) {
     switch (name) {
-        case "testModule.js": {
+        case "./testModule.js": {
             return {
                 foo() {
                     return 23;

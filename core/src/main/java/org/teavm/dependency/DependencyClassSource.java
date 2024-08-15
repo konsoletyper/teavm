@@ -47,6 +47,7 @@ class DependencyClassSource implements ClassHolderSource {
     Map<String, Optional<ClassHolder>> cache = new LinkedHashMap<>(1000, 0.5f);
     private ReferenceResolver referenceResolver;
     private ClassInitInsertion classInitInsertion;
+    private String entryPoint;
 
     DependencyClassSource(ClassReaderSource innerSource, Diagnostics diagnostics,
             IncrementalDependencyRegistration dependencyRegistration, String[] platformTags) {
@@ -117,16 +118,16 @@ class DependencyClassSource implements ClassHolderSource {
         return generatedClasses.keySet();
     }
 
-    public Collection<ClassHolder> getGeneratedClasses() {
-        return generatedClasses.values();
-    }
-
     public boolean isGeneratedClass(String className) {
         return generatedClasses.containsKey(className);
     }
 
     public void addTransformer(ClassHolderTransformer transformer) {
         transformers.add(transformer);
+    }
+
+    void setEntryPoint(String entryPoint) {
+        this.entryPoint = entryPoint;
     }
 
     public void dispose() {
@@ -162,6 +163,11 @@ class DependencyClassSource implements ClassHolderSource {
         @Override
         public void submit(ClassHolder cls) {
             DependencyClassSource.this.submit(cls);
+        }
+
+        @Override
+        public String getEntryPoint() {
+            return entryPoint;
         }
     };
 }

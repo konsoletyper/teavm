@@ -56,6 +56,10 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         statementRenderer = new StatementRenderer(context, writer);
     }
 
+    public void setCurrentMethod(MethodNode node) {
+        statementRenderer.setCurrentMethod(node);
+    }
+
     public boolean isThreadLibraryUsed() {
         return threadLibraryUsed;
     }
@@ -76,9 +80,9 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         threadLibraryUsed = false;
         this.async = async;
         statementRenderer.setAsync(async);
-        statementRenderer.setCurrentMethod(node);
         prepareVariables(node);
         node.acceptVisitor(this);
+        statementRenderer.clear();
     }
 
     private void prepareVariables(MethodNode method) {
@@ -89,12 +93,16 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
     }
 
     public void renderParameters(MethodReference reference, Set<ElementModifier> modifiers) {
+        renderParameters(reference, modifiers, false);
+    }
+
+    public void renderParameters(MethodReference reference, Set<ElementModifier> modifiers, boolean forceParentheses) {
         int startParam = 0;
         if (modifiers.contains(ElementModifier.STATIC)) {
             startParam = 1;
         }
         var count = reference.parameterCount() - startParam + 1;
-        if (count != 1) {
+        if (count != 1 || forceParentheses) {
             writer.append("(");
         }
         for (int i = startParam; i <= reference.parameterCount(); ++i) {
@@ -103,7 +111,7 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
             }
             writer.append(statementRenderer.variableName(i));
         }
-        if (count != 1) {
+        if (count != 1 || forceParentheses) {
             writer.append(")");
         }
     }
@@ -151,7 +159,7 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         statementRenderer.setCurrentPart(0);
 
         if (method.getModifiers().contains(ElementModifier.SYNCHRONIZED)) {
-            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_SYNC_METHOD);
+            writer.appendMethod(NameFrequencyEstimator.MONITOR_ENTER_SYNC_METHOD);
             writer.append("(");
             appendMonitor(statementRenderer, method);
             writer.append(");").softNewLine();
@@ -164,7 +172,7 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         if (method.getModifiers().contains(ElementModifier.SYNCHRONIZED)) {
             writer.outdent().append("}").ws().append("finally").ws().append("{").indent().softNewLine();
 
-            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_SYNC_METHOD);
+            writer.appendMethod(NameFrequencyEstimator.MONITOR_EXIT_SYNC_METHOD);
             writer.append("(");
             appendMonitor(statementRenderer, method);
             writer.append(");").softNewLine();
@@ -238,7 +246,7 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         for (int i = 0; i < methodNode.getBody().size(); ++i) {
             writer.append("case ").append(i).append(":").indent().softNewLine();
             if (i == 0 && methodNode.getModifiers().contains(ElementModifier.SYNCHRONIZED)) {
-                writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_METHOD);
+                writer.appendMethod(NameFrequencyEstimator.MONITOR_ENTER_METHOD);
                 writer.append("(");
                 appendMonitor(statementRenderer, methodNode);
                 writer.append(");").softNewLine();
@@ -256,7 +264,7 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
             writer.outdent().append("}").ws().append("finally").ws().append('{').indent().softNewLine();
             writer.append("if").ws().append("(!").appendFunction("$rt_suspending").append("())")
                     .ws().append("{").indent().softNewLine();
-            writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_METHOD).append("(");
+            writer.appendMethod(NameFrequencyEstimator.MONITOR_EXIT_METHOD).append("(");
             appendMonitor(statementRenderer, methodNode);
             writer.append(");").softNewLine();
             writer.outdent().append('}').softNewLine();

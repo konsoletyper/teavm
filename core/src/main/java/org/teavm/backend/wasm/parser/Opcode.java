@@ -19,5 +19,7 @@ public enum Opcode {
     UNREACHABLE,
     NOP,
     RETURN,
-    DROP
+    DROP,
+    REF_EQ,
+    ARRAY_LENGTH
 }

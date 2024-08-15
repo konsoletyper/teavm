@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.webaudio;
 
+import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSArray;
 
@@ -23,9 +24,9 @@ public interface AudioWorkerNodeCreationEvent extends MediaEvent {
     AudioWorkerNodeProcessor getNode();
 
     @JSProperty
-    JSArray getInputs();
+    JSArray<JSObject> getInputs();
 
     @JSProperty
-    JSArray getOutputs();
+    JSArray<JSObject> getOutputs();
 }
 

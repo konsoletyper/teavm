@@ -16,67 +16,72 @@
 package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.file.FileList;
+import org.teavm.jso.popover.PopoverInvokerElement;
 
-public interface HTMLInputElement extends HTMLElement {
+public abstract class HTMLInputElement extends HTMLElement implements PopoverInvokerElement {
     @JSProperty
-    boolean isChecked();
-
-    @JSProperty
-    void setChecked(boolean checked);
-
-    @JSProperty
-    boolean isDisabled();
+    public abstract boolean isChecked();
 
     @JSProperty
-    void setDisabled(boolean disabled);
+    public abstract void setChecked(boolean checked);
 
     @JSProperty
-    int getMaxLength();
+    public abstract boolean isDisabled();
 
     @JSProperty
-    void setMaxLength(int maxLength);
+    public abstract void setDisabled(boolean disabled);
 
     @JSProperty
-    String getName();
+    public abstract int getMaxLength();
 
     @JSProperty
-    void setName(String name);
+    public abstract void setMaxLength(int maxLength);
 
     @JSProperty
-    boolean isReadOnly();
+    public abstract String getName();
 
     @JSProperty
-    void setReadOnly(boolean readOnly);
+    public abstract void setName(String name);
 
     @JSProperty
-    int getSize();
+    public abstract boolean isReadOnly();
 
     @JSProperty
-    void setSize(int size);
+    public abstract void setReadOnly(boolean readOnly);
 
     @JSProperty
-    String getType();
+    public abstract int getSize();
 
     @JSProperty
-    void setType(String type);
+    public abstract void setSize(int size);
 
     @JSProperty
-    String getValue();
+    public abstract String getType();
 
     @JSProperty
-    void setValue(String value);
+    public abstract void setType(String type);
+
+    @JSProperty
+    public abstract String getValue();
+
+    @JSProperty
+    public abstract void setValue(String value);
     
-    void setCustomValidity(String validationFailure);
+    public abstract void setCustomValidity(String validationFailure);
     
-    boolean checkValidity();
+    public abstract boolean checkValidity();
     
-    boolean reportValidity();
+    public abstract boolean reportValidity();
 
-    void select();
+    public abstract void select();
 
     @JSProperty
-    String getPlaceholder();
+    public abstract String getPlaceholder();
 
     @JSProperty
-    void setPlaceholder(String value);
+    public abstract void setPlaceholder(String value);
+
+    @JSProperty
+    public abstract FileList getFiles();
 }

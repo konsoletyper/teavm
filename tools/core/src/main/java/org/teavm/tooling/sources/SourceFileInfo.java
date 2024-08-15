@@ -15,6 +15,7 @@
  */
 package org.teavm.tooling.sources;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -22,4 +23,6 @@ public interface SourceFileInfo {
     long lastModified();
 
     InputStream open() throws IOException;
+
+    File getFile();
 }

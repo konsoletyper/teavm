@@ -56,10 +56,12 @@ include("hello")
 include("async")
 include("benchmark")
 include("pi")
+include("promise")
 include("kotlin")
 include("scala")
 include("web-apis")
 include("software3d")
+include("module-test")
 
 gradle.allprojects {
     apply<WarPlugin>()

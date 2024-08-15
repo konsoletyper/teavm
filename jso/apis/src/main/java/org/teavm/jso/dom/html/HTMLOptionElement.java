@@ -17,43 +17,43 @@ package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
 
-public interface HTMLOptionElement extends HTMLElement {
+public abstract class HTMLOptionElement extends HTMLElement {
     @JSProperty
-    boolean isDisabled();
+    public abstract boolean isDisabled();
 
     @JSProperty
-    void setDisabled(boolean disabled);
+    public abstract void setDisabled(boolean disabled);
 
     @JSProperty
-    String getLabel();
+    public abstract String getLabel();
 
     @JSProperty
-    void setLabel(String label);
+    public abstract void setLabel(String label);
 
     @JSProperty
-    boolean isDefaultSelected();
+    public abstract boolean isDefaultSelected();
 
     @JSProperty
-    void setDefaultSelected(boolean defaultSelected);
+    public abstract void setDefaultSelected(boolean defaultSelected);
 
     @JSProperty
-    boolean isSelected();
+    public abstract boolean isSelected();
 
     @JSProperty
-    void setSelected(boolean selected);
+    public abstract void setSelected(boolean selected);
 
     @JSProperty
-    String getValue();
+    public abstract String getValue();
 
     @JSProperty
-    void setValue(String value);
+    public abstract void setValue(String value);
 
     @JSProperty
-    String getText();
+    public abstract String getText();
 
     @JSProperty
-    void setText(String text);
+    public abstract void setText(String text);
 
     @JSProperty
-    int getIndex();
+    public abstract int getIndex();
 }

@@ -21,15 +21,28 @@ let $rt_isAssignable = (from, to) => {
     if (from === to) {
         return true;
     }
+    let map = from.$meta.assignableCache;
+    if (typeof map === 'undefined') {
+        map = new Map();
+        from.$meta.assignableCache = map;
+    }
+    let cachedResult = map.get(to);
+    if (typeof cachedResult !== 'undefined') {
+        return cachedResult;
+    }
     if (to.$meta.item !== null) {
-        return from.$meta.item !== null && $rt_isAssignable(from.$meta.item, to.$meta.item);
+        let result = from.$meta.item !== null && $rt_isAssignable(from.$meta.item, to.$meta.item);
+        map.set(to, result);
+        return result;
     }
     let supertypes = from.$meta.supertypes;
     for (let i = 0; i < supertypes.length; i = (i + 1) | 0) {
         if ($rt_isAssignable(supertypes[i], to)) {
+            map.set(to, true);
             return true;
         }
     }
+    map.set(to, false);
     return false;
 }
 let $rt_castToInterface = (obj, cls) => {
@@ -44,3 +57,4 @@ let $rt_castToClass = (obj, cls) => {
     }
     return obj;
 }
+let $rt_instanceOfOrNull = (obj, cls) => obj === null || obj instanceof cls;

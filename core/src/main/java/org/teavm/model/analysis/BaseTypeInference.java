@@ -17,6 +17,7 @@ package org.teavm.model.analysis;
 
 import com.carrotsearch.hppc.IntStack;
 import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Objects;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
@@ -39,10 +40,12 @@ import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.ConstructMultiArrayInstruction;
 import org.teavm.model.instructions.DoubleConstantInstruction;
+import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
 import org.teavm.model.instructions.GetElementInstruction;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.IsInstanceInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
@@ -50,6 +53,7 @@ import org.teavm.model.instructions.NegateInstruction;
 import org.teavm.model.instructions.NullCheckInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.NumericOperandType;
+import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 
@@ -59,10 +63,21 @@ public abstract class BaseTypeInference<T> {
     private Object[] types;
     private Graph graph;
     private Graph arrayGraph;
+    private Graph arrayUnwrapGraph;
+    private boolean phisSkipped;
+    private boolean backPropagation;
 
     public BaseTypeInference(Program program, MethodReference reference) {
         this.program = program;
         this.reference = reference;
+    }
+
+    public void setPhisSkipped(boolean phisSkipped) {
+        this.phisSkipped = phisSkipped;
+    }
+
+    public void setBackPropagation(boolean backPropagation) {
+        this.backPropagation = backPropagation;
     }
 
     private void prepare() {
@@ -77,14 +92,26 @@ public abstract class BaseTypeInference<T> {
             for (var insn : block) {
                 insn.acceptVisitor(visitor);
             }
-            for (var phi : block.getPhis()) {
-                for (var incoming : phi.getIncomings()) {
-                    visitor.graphBuilder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
+            if (!phisSkipped) {
+                for (var phi : block.getPhis()) {
+                    for (var incoming : phi.getIncomings()) {
+                        visitor.graphBuilder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
+                    }
+                }
+            }
+            for (var tryCatch : block.getTryCatchBlocks()) {
+                var exceptionVar = tryCatch.getHandler().getExceptionVariable();
+                if (exceptionVar != null) {
+                    var exceptionType = tryCatch.getExceptionType() != null
+                            ? ValueType.object(tryCatch.getExceptionType())
+                            : ValueType.object("java.lang.Throwable");
+                    visitor.type(exceptionVar, exceptionType);
                 }
             }
         }
         graph = visitor.graphBuilder.build();
         arrayGraph = visitor.arrayGraphBuilder.build();
+        arrayUnwrapGraph = visitor.arrayUnwrapGraphBuilder.build();
     }
 
     @SuppressWarnings("unchecked")
@@ -116,6 +143,12 @@ public abstract class BaseTypeInference<T> {
                     typeStack.push(type);
                 }
             }
+            for (var succ : arrayUnwrapGraph.outgoingEdges(variable)) {
+                if (!Objects.equals(types[succ], type)) {
+                    stack.push(succ);
+                    typeStack.push(arrayUnwrapType(type));
+                }
+            }
             if (arrayGraph.outgoingEdgesCount(variable) > 0) {
                 var elementType = elementType(type);
                 for (var succ : arrayGraph.outgoingEdges(variable)) {
@@ -128,19 +161,92 @@ public abstract class BaseTypeInference<T> {
         }
     }
 
+    private void propagateBack() {
+        if (!backPropagation) {
+            return;
+        }
+        var hasNullTypes = false;
+        for (var type : types) {
+            if (type == null) {
+                hasNullTypes = true;
+                break;
+            }
+        }
+        if (!hasNullTypes) {
+            return;
+        }
+
+        var nullTypes = new boolean[program.variableCount()];
+        for (var i = 0; i < types.length; ++i) {
+            nullTypes[i] = types[i] == null;
+        }
+        var stack = new IntStack();
+        var typeStack = new ArrayDeque<T>();
+        for (var i = 0; i < types.length; ++i) {
+            if (nullTypes[i]) {
+                for (var j : graph.outgoingEdges(i)) {
+                    if (!nullTypes[j]) {
+                        typeStack.push((T) types[j]);
+                        stack.push(i);
+                    }
+                }
+            }
+        }
+
+        var visitor = new BackPropagationVisitor(nullTypes, stack, typeStack);
+        for (var block : program.getBasicBlocks()) {
+            for (var insn : block) {
+                insn.acceptVisitor(visitor);
+            }
+        }
+
+        while (!stack.isEmpty()) {
+            var variable = stack.pop();
+            var type = typeStack.pop();
+            var formerType = (T) types[variable];
+            if (Objects.equals(formerType, type)) {
+                continue;
+            }
+            type = doMerge(type, formerType);
+            if (Objects.equals(type, formerType) || type == null) {
+                continue;
+            }
+            types[variable] = type;
+            for (var pred : graph.incomingEdges(variable)) {
+                if (nullTypes[pred] && !Objects.equals(types[pred], type)) {
+                    stack.push(pred);
+                    typeStack.push(type);
+                }
+            }
+            if (arrayGraph.incomingEdgesCount(variable) > 0) {
+                var arrayType = arrayType(type);
+                for (var pred : arrayGraph.incomingEdges(variable)) {
+                    if (nullTypes[pred] && !Objects.equals(types[pred], arrayType)) {
+                        stack.push(pred);
+                        typeStack.push(arrayType);
+                    }
+                }
+            }
+        }
+    }
+
     public void ensure() {
         if (types == null) {
             prepare();
             propagate();
+            propagateBack();
         }
     }
 
-    @SuppressWarnings("unchecked")
     public T typeOf(Variable variable) {
-        ensure();
-        return (T) types[variable.getIndex()];
+        return typeOf(variable.getIndex());
     }
 
+    @SuppressWarnings("unchecked")
+    public T typeOf(int index) {
+        ensure();
+        return (T) types[index];
+    }
 
     protected abstract T mapType(ValueType type);
 
@@ -160,17 +266,27 @@ public abstract class BaseTypeInference<T> {
 
     protected abstract T elementType(T t);
 
-    protected T methodReturnType(MethodReference methodRef) {
+    protected T arrayType(T t) {
+        throw new UnsupportedOperationException();
+    }
+
+    protected T methodReturnType(InvocationType invocationType, MethodReference methodRef) {
         return mapType(methodRef.getReturnType());
+    }
+
+    protected T arrayUnwrapType(T type) {
+        return type;
     }
 
     private class InitialTypeVisitor extends AbstractInstructionVisitor {
         private GraphBuilder graphBuilder;
         private GraphBuilder arrayGraphBuilder;
+        private GraphBuilder arrayUnwrapGraphBuilder;
 
         InitialTypeVisitor(int size) {
             graphBuilder = new GraphBuilder(size);
             arrayGraphBuilder = new GraphBuilder(size);
+            arrayUnwrapGraphBuilder = new GraphBuilder(size);
         }
 
         @Override
@@ -284,7 +400,7 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(InvokeInstruction insn) {
-            type(insn.getReceiver(), methodReturnType(insn.getMethod()));
+            type(insn.getReceiver(), methodReturnType(insn.getType(), insn.getMethod()));
         }
 
         @Override
@@ -299,7 +415,7 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(UnwrapArrayInstruction insn) {
-            graphBuilder.addEdge(insn.getArray().getIndex(), insn.getReceiver().getIndex());
+            arrayUnwrapGraphBuilder.addEdge(insn.getArray().getIndex(), insn.getReceiver().getIndex());
         }
 
         @Override
@@ -346,6 +462,57 @@ public abstract class BaseTypeInference<T> {
         void type(Variable target, T type) {
             if (target != null && type != null) {
                 types[target.getIndex()] = type;
+            }
+        }
+    }
+
+    private class BackPropagationVisitor extends AbstractInstructionVisitor {
+        private boolean[] nullTypes;
+        private IntStack stack;
+        private Deque<T> typeStack;
+
+        BackPropagationVisitor(boolean[] nullTypes, IntStack stack, Deque<T> typeStack) {
+            this.nullTypes = nullTypes;
+            this.stack = stack;
+            this.typeStack = typeStack;
+        }
+
+        @Override
+        public void visit(ExitInstruction insn) {
+            if (insn.getValueToReturn() != null) {
+                push(insn.getValueToReturn(), reference.getReturnType());
+            }
+        }
+
+        @Override
+        public void visit(InvokeInstruction insn) {
+            if (insn.getInstance() != null) {
+                push(insn.getInstance(), ValueType.object(insn.getMethod().getClassName()));
+            }
+            for (var i = 0; i < insn.getArguments().size(); ++i) {
+                push(insn.getArguments().get(i), insn.getMethod().parameterType(i));
+            }
+        }
+
+        @Override
+        public void visit(GetFieldInstruction insn) {
+            if (insn.getInstance() != null) {
+                push(insn.getInstance(), ValueType.object(insn.getField().getClassName()));
+            }
+        }
+
+        @Override
+        public void visit(PutFieldInstruction insn) {
+            if (insn.getInstance() != null) {
+                push(insn.getInstance(), ValueType.object(insn.getField().getClassName()));
+            }
+            push(insn.getValue(), insn.getFieldType());
+        }
+
+        private void push(Variable variable, ValueType type) {
+            if (nullTypes[variable.getIndex()]) {
+                stack.push(variable.getIndex());
+                typeStack.push(mapType(type));
             }
         }
     }

@@ -36,11 +36,27 @@ public interface SourceWriterSink {
         return this;
     }
 
-    default SourceWriterSink appendMethod(MethodDescriptor method) {
+    default SourceWriterSink appendVirtualMethod(MethodDescriptor method) {
         return this;
     }
 
-    default SourceWriterSink appendMethodBody(MethodReference method) {
+    default SourceWriterSink appendMethod(MethodReference method) {
+        return this;
+    }
+
+    default SourceWriterSink startVariableDeclaration() {
+        return this;
+    }
+
+    default SourceWriterSink startFunctionDeclaration() {
+        return this;
+    }
+
+    default SourceWriterSink endDeclaration() {
+        return this;
+    }
+
+    default SourceWriterSink declareVariable() {
         return this;
     }
 

@@ -18,9 +18,6 @@ package org.teavm.jso.geolocation;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 
-/**
- *
- */
 @JSFunctor
 public interface PositionHandler extends JSObject {
   void handlePosition(Position position);

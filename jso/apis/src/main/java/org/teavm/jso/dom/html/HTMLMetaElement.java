@@ -17,22 +17,22 @@ package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
 
-public interface HTMLMetaElement extends HTMLElement {
+public abstract class HTMLMetaElement extends HTMLElement {
     @JSProperty
-    String getName();
+    public abstract String getName();
 
     @JSProperty
-    void setName(String name);
+    public abstract void setName(String name);
 
     @JSProperty
-    String getHttpEquiv();
+    public abstract String getHttpEquiv();
 
     @JSProperty
-    void setHttpEquiv(String httpEquiv);
+    public abstract void setHttpEquiv(String httpEquiv);
 
     @JSProperty
-    String getContent();
+    public abstract String getContent();
 
     @JSProperty
-    void setContent(String content);
+    public abstract void setContent(String content);
 }

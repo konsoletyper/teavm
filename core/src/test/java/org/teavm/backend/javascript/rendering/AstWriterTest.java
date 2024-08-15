@@ -35,7 +35,7 @@ public class AstWriterTest {
         builder.setMinified(true);
         sourceWriter = builder.build(sb);
         writer = new AstWriter(sourceWriter, null);
-        writerWithGlobals = new AstWriter(sourceWriter, name -> prec -> sourceWriter.append("globals.").append(name));
+        writerWithGlobals = new AstWriter(sourceWriter, name -> (w, prec) -> w.append("globals.").append(name));
     }
 
     @Test

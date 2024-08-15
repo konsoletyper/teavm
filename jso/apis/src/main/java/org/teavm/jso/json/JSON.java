@@ -15,16 +15,15 @@
  */
 package org.teavm.jso.json;
 
-import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSObject;
 
-public final class JSON {
+@JSClass
+public final class JSON implements JSObject {
     private JSON() {
     }
 
-    @JSBody(params = "object", script = "return JSON.stringify(object);")
     public static native String stringify(JSObject object);
 
-    @JSBody(params = "string", script = "return JSON.parse(string);")
     public static native JSObject parse(String string);
 }

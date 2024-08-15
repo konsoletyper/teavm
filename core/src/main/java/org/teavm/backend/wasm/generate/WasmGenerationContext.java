@@ -20,10 +20,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.backend.lowlevel.generate.NameProvider;
+import org.teavm.backend.wasm.WasmFunctionRepository;
+import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationContext;
 import org.teavm.backend.wasm.generators.WasmMethodGenerator;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
-import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Import;
 import org.teavm.model.AnnotationReader;
@@ -40,9 +43,11 @@ import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.model.lowlevel.Characteristics;
 
-public class WasmGenerationContext {
+public class WasmGenerationContext implements BaseWasmGenerationContext {
     private ClassReaderSource classSource;
-    private WasmModule module;
+    public final WasmModule module;
+    private final WasmFunctionTypes functionTypes;
+    private final WasmFunctionRepository functions;
     private Diagnostics diagnostics;
     private VirtualTableProvider vtableProvider;
     private TagRegistry tagRegistry;
@@ -54,19 +59,43 @@ public class WasmGenerationContext {
     private List<WasmMethodGenerator> generators = new ArrayList<>();
     private Map<MethodReference, IntrinsicHolder> intrinsicCache = new HashMap<>();
     private Map<MethodReference, GeneratorHolder> generatorCache = new HashMap<>();
-    public final List<CallSiteDescriptor> callSites = new ArrayList<>();
+    private WasmTag exceptionTag;
+    private final List<CallSiteDescriptor> callSites = new ArrayList<>();
 
-    public WasmGenerationContext(ClassReaderSource classSource, WasmModule module, Diagnostics diagnostics,
-            VirtualTableProvider vtableProvider, TagRegistry tagRegistry, WasmStringPool stringPool,
-            NameProvider names, Characteristics characteristics) {
+    public WasmGenerationContext(ClassReaderSource classSource, WasmModule module, WasmFunctionTypes functionTypes,
+            WasmFunctionRepository functions, Diagnostics diagnostics, VirtualTableProvider vtableProvider,
+            TagRegistry tagRegistry, WasmStringPool stringPool, NameProvider names, Characteristics characteristics,
+            WasmTag exceptionTag) {
         this.classSource = classSource;
         this.module = module;
+        this.functionTypes = functionTypes;
+        this.functions = functions;
         this.diagnostics = diagnostics;
         this.vtableProvider = vtableProvider;
         this.tagRegistry = tagRegistry;
         this.stringPool = stringPool;
         this.names = names;
         this.characteristics = characteristics;
+        this.exceptionTag = exceptionTag;
+    }
+
+    @Override
+    public WasmFunctionRepository functions() {
+        return functions;
+    }
+
+    @Override
+    public WasmFunctionTypes functionTypes() {
+        return functionTypes;
+    }
+
+    @Override
+    public ClassReaderSource classes() {
+        return classSource;
+    }
+
+    public List<CallSiteDescriptor> callSites() {
+        return callSites;
     }
 
     public void addIntrinsic(WasmIntrinsic intrinsic) {
@@ -132,10 +161,6 @@ public class WasmGenerationContext {
         });
     }
 
-    public WasmFunction getFunction(String name) {
-        return module.getFunctions().get(name);
-    }
-
     public ClassReaderSource getClassSource() {
         return classSource;
     }
@@ -160,6 +185,11 @@ public class WasmGenerationContext {
 
     public Diagnostics getDiagnostics() {
         return diagnostics;
+    }
+
+    @Override
+    public WasmTag getExceptionTag() {
+        return exceptionTag;
     }
 
     public static class ImportedMethod {

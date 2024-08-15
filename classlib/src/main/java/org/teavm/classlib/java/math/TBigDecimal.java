@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.math;
 
 import java.io.Serializable;
+import org.teavm.classlib.impl.text.DoubleAnalyzer;
 
 /**
  * This class represents immutable arbitrary precision decimal numbers. Each
@@ -1691,7 +1692,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         // The ANSI standard X3.274-1996 algorithm
         int m = Math.abs(n);
         int mcPrecision = mc.getPrecision();
-        int elength = (int) Math.log10(m) + 1;   // decimal digits in 'n'
+        int elength = (int) DoubleAnalyzer.fastIntLog10(m) + 1;   // decimal digits in 'n'
         int oneBitMask; // mask of bits
         TBigDecimal accum; // the single accumulator
         TMathContext newPrecision = mc; // MathContext by default
@@ -1850,7 +1851,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             } else if (bitLength >= 1) {
                 doubleUnsc = smallValue;
             }
-            decimalDigits += Math.log10(Math.abs(doubleUnsc));
+            decimalDigits += DoubleAnalyzer.fastIntLog10(Math.abs(doubleUnsc));
         } else {
             // (bitLength >= 1024)
             /* To calculate the precision for large numbers
@@ -2044,7 +2045,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      * zero.
      * <p>
      * Note, that {@code movePointRight(0)} returns a result which is
-     * mathematically equivalent, but which has scale >= 0.
+     * mathematically equivalent, but which has scale &gt;= 0.
      *
      * @param n
      *            number of placed the decimal point has to be moved.
@@ -2126,8 +2127,8 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
     /**
      * Compares this {@code BigDecimal} with {@code val}. Returns one of the
      * three values {@code 1}, {@code 0}, or {@code -1}. The method behaves as
-     * if {@code this.subtract(val)} is computed. If this difference is > 0 then
-     * 1 is returned, if the difference is < 0 then -1 is returned, and if the
+     * if {@code this.subtract(val)} is computed. If this difference is &gt; 0 then
+     * 1 is returned, if the difference is &lt; 0 then -1 is returned, and if the
      * difference is 0 then 0 is returned. This means, that if two decimal
      * instances are compared which are equal in value but differ in scale, then
      * these two instances are considered as equal.
@@ -2306,7 +2307,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      * If the scale is negative or if {@code scale - precision >= 6} then
      * engineering notation is used. Engineering notation is similar to the
      * scientific notation except that the exponent is made to be a multiple of
-     * 3 such that the integer part is >= 1 and < 1000.
+     * 3 such that the integer part is &gt;= 1 and &lt; 1000.
      *
      * @return a string representation of {@code this} in engineering notation
      *         if necessary.
@@ -2816,7 +2817,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
                     Long.signum(fraction) * (5 + compRem),
                     mc.getRoundingMode());
             // If after to add the increment the precision changed, we normalize the size
-            if (Math.log10(Math.abs(integer)) >= mc.getPrecision()) {
+            if (DoubleAnalyzer.fastIntLog10(Math.abs(integer)) >= mc.getPrecision()) {
                 integer /= 10;
                 newScale--;
             }

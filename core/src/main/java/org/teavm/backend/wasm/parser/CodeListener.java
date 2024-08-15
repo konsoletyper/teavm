@@ -15,7 +15,7 @@
  */
 package org.teavm.backend.wasm.parser;
 
-import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
 import org.teavm.backend.wasm.model.expression.WasmFloatUnaryOperation;
@@ -24,20 +24,28 @@ import org.teavm.backend.wasm.model.expression.WasmInt64Subtype;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmSignedType;
 
 public interface CodeListener {
     default void error(int depth) {
     }
 
-    default int startBlock(boolean loop, WasmType type) {
+    default int startBlock(boolean loop, WasmHollowType type) {
         return 0;
     }
 
-    default int startConditionalBlock(WasmType type) {
+    default int startConditionalBlock(WasmHollowType type) {
         return 0;
     }
 
     default void startElseSection(int token) {
+    }
+
+    default int startTry(WasmHollowType type) {
+        return 0;
+    }
+
+    default void startCatch(int tagIndex) {
     }
 
     default void endBlock(int token, boolean loop) {
@@ -47,6 +55,9 @@ public interface CodeListener {
     }
 
     default void tableBranch(int[] depths, int[] targets, int defaultDepth, int defaultTarget) {
+    }
+
+    default void throwInstruction(int tagIndex) {
     }
 
     default void opcode(Opcode opcode) {
@@ -97,7 +108,7 @@ public interface CodeListener {
     default void storeFloat64(int align, int offset) {
     }
 
-    default void convert(WasmType sourceType, WasmType targetType, boolean signed, boolean reinterpret) {
+    default void convert(WasmNumType sourceType, WasmNumType targetType, boolean signed, boolean reinterpret) {
     }
 
     default void memoryGrow() {
@@ -119,5 +130,47 @@ public interface CodeListener {
     }
 
     default void float64Constant(double value) {
+    }
+
+    default void nullConstant(WasmHollowType.Reference type) {
+    }
+
+    default void cast(WasmHollowType.Reference type) {
+    }
+
+    default void structNew(int typeIndex) {
+    }
+
+    default void structNewDefault(int typeIndex) {
+    }
+
+    default void structGet(WasmSignedType signedType, int typeIndex, int fieldIndex) {
+    }
+
+    default void structSet(int typeIndex, int fieldIndex) {
+    }
+
+    default void arrayNewDefault(int typeIndex) {
+    }
+
+    default void arrayGet(WasmSignedType signedType, int typeIndex) {
+    }
+
+    default void arraySet(int typeIndex) {
+    }
+
+    default void arrayCopy(int targetTypeIndex, int sourceTypeIndex) {
+    }
+
+    default void getGlobal(int globalIndex) {
+    }
+
+    default void setGlobal(int globalIndex) {
+    }
+
+    default void callReference(int typeIndex) {
+    }
+
+    default void functionReference(int functionIndex) {
     }
 }

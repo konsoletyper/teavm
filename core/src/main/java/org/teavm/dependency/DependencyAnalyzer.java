@@ -142,6 +142,11 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         classType = getType("java.lang.Class");
     }
 
+    public void setEntryPoint(String entryPoint) {
+        classSource.setEntryPoint(entryPoint);
+        agent.setEntryPoint(entryPoint);
+    }
+
     public void setObfuscated(boolean obfuscated) {
         classSource.obfuscated = obfuscated;
     }
@@ -288,20 +293,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     public void addClassTransformer(ClassHolderTransformer transformer) {
         classSource.addTransformer(transformer);
-    }
-
-    public void addEntryPoint(MethodReference methodRef, String... argumentTypes) {
-        ValueType[] parameters = methodRef.getDescriptor().getParameterTypes();
-        if (parameters.length + 1 != argumentTypes.length) {
-            throw new IllegalArgumentException("argumentTypes length does not match the number of method's arguments");
-        }
-        MethodDependency method = linkMethod(methodRef);
-        method.use();
-        DependencyNode[] varNodes = method.getVariables();
-        varNodes[0].propagate(getType(methodRef.getClassName()));
-        for (int i = 0; i < argumentTypes.length; ++i) {
-            varNodes[i + 1].propagate(getType(argumentTypes[i]));
-        }
     }
 
     private int propagationDepth;

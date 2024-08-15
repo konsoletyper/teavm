@@ -20,7 +20,7 @@ import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
-import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
@@ -64,21 +64,21 @@ public class AddressIntrinsic implements WasmIntrinsic {
                 return manager.generate(invocation.getArguments().get(0));
             case "toLong": {
                 WasmExpression value = manager.generate(invocation.getArguments().get(0));
-                return new WasmConversion(WasmType.INT32, WasmType.INT64, false, value);
+                return new WasmConversion(WasmNumType.INT32, WasmNumType.INT64, false, value);
             }
             case "fromInt":
             case "ofObject":
                 return manager.generate(invocation.getArguments().get(0));
             case "fromLong": {
                 WasmExpression value = manager.generate(invocation.getArguments().get(0));
-                return new WasmConversion(WasmType.INT64, WasmType.INT32, false, value);
+                return new WasmConversion(WasmNumType.INT64, WasmNumType.INT32, false, value);
             }
             case "add": {
                 WasmExpression base = manager.generate(invocation.getArguments().get(0));
                 if (invocation.getMethod().parameterCount() == 1) {
                     WasmExpression offset = manager.generate(invocation.getArguments().get(1));
                     if (invocation.getMethod().parameterType(0) == ValueType.LONG) {
-                        offset = new WasmConversion(WasmType.INT64, WasmType.INT32, false, offset);
+                        offset = new WasmConversion(WasmNumType.INT64, WasmNumType.INT32, false, offset);
                     }
                     return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, base, offset);
                 } else {
@@ -155,7 +155,7 @@ public class AddressIntrinsic implements WasmIntrinsic {
             case "align": {
                 MethodReference delegate = new MethodReference(WasmRuntime.class.getName(),
                         invocation.getMethod().getDescriptor());
-                WasmCall call = new WasmCall(manager.getNames().forMethod(delegate));
+                WasmCall call = new WasmCall(manager.getFunctions().forStaticMethod(delegate));
                 call.getArguments().addAll(invocation.getArguments().stream()
                         .map(arg -> manager.generate(arg))
                         .collect(Collectors.toList()));
@@ -180,7 +180,7 @@ public class AddressIntrinsic implements WasmIntrinsic {
                         manager.generate(invocation.getArguments().get(0)),
                         manager.generate(invocation.getArguments().get(1))
                 );
-                result = new WasmConversion(WasmType.INT32, WasmType.INT64, true, result);
+                result = new WasmConversion(WasmNumType.INT32, WasmNumType.INT64, true, result);
                 result.setLocation(invocation.getLocation());
                 return result;
             }

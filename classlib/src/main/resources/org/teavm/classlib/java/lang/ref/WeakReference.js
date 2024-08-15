@@ -16,9 +16,9 @@
 
 function init(target, queue) {
     let supported = typeof teavm_globals.WeakRef !== 'undefined';
-    let value = supported ? new teavm_globals.WeakRef(target) : target;
+    let value = supported && target !== null ? new teavm_globals.WeakRef(target) : target;
     this[teavm_javaField("java.lang.ref.WeakReference", "value")] = value;
-    if (queue !== null && supported) {
+    if (queue !== null && supported && target !== null) {
         let registry = queue[teavm_javaField("java.lang.ref.ReferenceQueue", "registry")];
         if (registry !== null) {
             registry.register(target, this);

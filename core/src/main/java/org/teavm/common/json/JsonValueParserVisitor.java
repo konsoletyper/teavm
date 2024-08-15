@@ -18,6 +18,8 @@ package org.teavm.common.json;
 import java.util.function.Consumer;
 
 public abstract class JsonValueParserVisitor extends JsonAllErrorVisitor {
+    private JsonValue deferred;
+
     public abstract void consume(JsonValue value);
 
     public static JsonValueParserVisitor create(Consumer<JsonValue> consumer) {
@@ -32,7 +34,7 @@ public abstract class JsonValueParserVisitor extends JsonAllErrorVisitor {
     @Override
     public JsonVisitor object(JsonErrorReporter reporter) {
         var jsonObject = new JsonObjectValue();
-        consume(jsonObject);
+        deferred = jsonObject;
         return new JsonAllErrorVisitor() {
             @Override
             public JsonVisitor property(JsonErrorReporter reporter, String name) {
@@ -47,18 +49,21 @@ public abstract class JsonValueParserVisitor extends JsonAllErrorVisitor {
     }
 
     @Override
+    public void end(JsonErrorReporter reporter) {
+        super.end(reporter);
+        var value = deferred;
+        deferred = null;
+        consume(value);
+    }
+
+    @Override
     public JsonVisitor array(JsonErrorReporter reporter) {
         var jsonArray = new JsonArrayValue();
-        consume(jsonArray);
-        return new JsonAllErrorVisitor() {
+        deferred = jsonArray;
+        return new JsonValueParserVisitor() {
             @Override
-            public JsonVisitor array(JsonErrorReporter reporter) {
-                return new JsonValueParserVisitor() {
-                    @Override
-                    public void consume(JsonValue value) {
-                        jsonArray.add(value);
-                    }
-                };
+            public void consume(JsonValue value) {
+                jsonArray.add(value);
             }
         };
     }

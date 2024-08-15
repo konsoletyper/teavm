@@ -125,7 +125,7 @@ public class Decompiler {
             methodNode.getVariables().add(variable);
         }
 
-        Optimizer optimizer = new Optimizer();
+        Optimizer optimizer = new Optimizer(classSource);
         optimizer.optimize(methodNode, method.getProgram(), friendlyToDebugger);
         methodNode.getModifiers().addAll(method.getModifiers());
 
@@ -158,7 +158,7 @@ public class Decompiler {
             node.getVariables().add(variable);
         }
 
-        Optimizer optimizer = new Optimizer();
+        Optimizer optimizer = new Optimizer(classSource);
         optimizer.optimize(node, splitter, friendlyToDebugger);
         node.getModifiers().addAll(method.getModifiers());
 

@@ -15,5 +15,5 @@
  */
 package org.teavm.jso.dom.html;
 
-public interface HTMLHeadElement extends HTMLElement {
+public abstract class HTMLHeadElement extends HTMLElement {
 }

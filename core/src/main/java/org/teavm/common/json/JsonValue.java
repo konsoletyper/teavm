@@ -27,4 +27,8 @@ public abstract class JsonValue {
     public long asIntNumber() {
         throw new IllegalStateException();
     }
+
+    public double asNumber() {
+        throw new IllegalStateException();
+    }
 }

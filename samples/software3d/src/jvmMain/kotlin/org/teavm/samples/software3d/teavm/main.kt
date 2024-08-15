@@ -16,6 +16,7 @@
 
 package org.teavm.samples.software3d.teavm
 
+import org.teavm.jso.browser.Window
 import org.teavm.jso.dom.html.HTMLDocument
 import org.teavm.jso.dom.html.HTMLElement
 import org.teavm.jso.dom.html.HTMLOptionElement
@@ -34,20 +35,29 @@ fun main(args: Array<out String>) {
 
 fun runController() {
     val performanceIndicator = HTMLDocument.current().getElementById("performance-indicator")
+    val performanceIndicatorWorkerAverage = HTMLDocument.current().getElementById(
+            "performance-indicator-worker-average")
     var performanceIndicatorByWorkers: List<HTMLElement> = emptyList()
     val maxWorkers = Runtime.getRuntime().availableProcessors()
     var workerType = WorkerType.JS
+    val performanceByWorkers = LongArray(maxWorkers)
+    var workerCount = maxWorkers
+
     val controller = Controller(SCENE_WIDTH, SCENE_HEIGHT) { index, value ->
         if (index == -1) {
             performanceIndicator.innerText = value.toString()
         } else {
+            performanceByWorkers[index] = value
             performanceIndicatorByWorkers.getOrNull(index)?.let {
                 it.innerText = value.toString()
             }
+            val average = performanceByWorkers.slice(0 until workerCount).average().toLong()
+            performanceIndicatorWorkerAverage.innerText = average.toString()
         }
     }
     performanceIndicatorByWorkers = recreatePerformanceIndicators(maxWorkers)
     controller.startRendering(maxWorkers, workerType)
+    startTimer()
 
     val cpuSelector = HTMLDocument.current().getElementById("workers") as HTMLSelectElement
     for (i in 1..maxWorkers) {
@@ -61,7 +71,9 @@ fun runController() {
         val newValue = cpuSelector.value.toInt()
         if (controller.tasks != newValue) {
             controller.startRendering(newValue, workerType)
+            startTimer()
             performanceIndicatorByWorkers = recreatePerformanceIndicators(newValue)
+            workerCount = newValue
         }
     }
 
@@ -75,8 +87,25 @@ fun runController() {
         if (workerType != newValue) {
             workerType = newValue
             controller.startRendering(controller.tasks, workerType)
+            startTimer()
         }
     }
+}
+
+var currentTimeout: Int? = null
+
+private fun startTimer() {
+    currentTimeout?.let { Window.clearTimeout(it) }
+    val timerDisplay = HTMLDocument.current().getElementById("timer")
+    val startTime = System.currentTimeMillis()
+    var seconds = 0
+    fun updateTimer() {
+        val time = System.currentTimeMillis() - startTime
+        val nextTime = (time / 1000) * 1000 + 1000
+        timerDisplay.innerText = seconds++.toString()
+        currentTimeout = Window.setTimeout({ updateTimer() }, (nextTime - time).toInt())
+    }
+    updateTimer()
 }
 
 private fun recreatePerformanceIndicators(count: Int): List<HTMLElement> {

@@ -16,15 +16,11 @@
 package org.teavm.backend.javascript.templating;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import org.mozilla.javascript.ast.ElementGet;
 import org.mozilla.javascript.ast.FunctionCall;
-import org.mozilla.javascript.ast.FunctionNode;
 import org.mozilla.javascript.ast.Name;
 import org.mozilla.javascript.ast.PropertyGet;
-import org.mozilla.javascript.ast.Scope;
 import org.mozilla.javascript.ast.StringLiteral;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.AstWriter;
@@ -35,27 +31,14 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.analysis.ClassInitializerInfo;
 
 public class TemplatingAstWriter extends AstWriter {
-    private Map<String, SourceFragment> names;
-    private Scope scope;
     private Map<String, SourceFragment> fragments = new HashMap<>();
     private ClassInitializerInfo classInitializerInfo;
-    private Set<Scope> topLevelScopes = new HashSet<>();
-    private boolean inFunction;
+    private boolean topLevelOutput;
 
-    public TemplatingAstWriter(SourceWriter writer, Map<String, SourceFragment> names, Scope scope,
-            ClassInitializerInfo classInitializerInfo) {
-        super(writer, new DefaultGlobalNameWriter(writer));
+    public TemplatingAstWriter(SourceWriter writer, ClassInitializerInfo classInitializerInfo, boolean topLevelOutput) {
+        super(writer, new DefaultGlobalNameWriter());
         this.classInitializerInfo = classInitializerInfo;
-        this.names = names;
-        this.scope = scope;
-        if (names != null) {
-            for (var name : names.keySet()) {
-                currentScopes.put(name, scope);
-            }
-        }
-        if (scope instanceof FunctionNode) {
-            currentScopes.put("arguments", scope);
-        }
+        this.topLevelOutput = topLevelOutput;
     }
 
     public void setFragment(String name, SourceFragment fragment) {
@@ -66,7 +49,7 @@ public class TemplatingAstWriter extends AstWriter {
     protected boolean intrinsic(FunctionCall node, int precedence) {
         if (node.getTarget() instanceof Name) {
             var name = (Name) node.getTarget();
-            if (scopeOfId(name.getIdentifier()) == null) {
+            if (isTopLevelIdentifier(name.getIdentifier())) {
                 return tryIntrinsicName(node, name.getIdentifier());
             }
         }
@@ -113,7 +96,7 @@ public class TemplatingAstWriter extends AstWriter {
         }
         var method = new MethodReference(((StringLiteral) classArg).getValue(),
                 MethodDescriptor.parse(((StringLiteral) methodArg).getValue()));
-        writer.appendMethodBody(method);
+        writer.appendMethod(method);
         return true;
     }
 
@@ -168,7 +151,7 @@ public class TemplatingAstWriter extends AstWriter {
             var call = (FunctionCall) node.getElement();
             if (call.getTarget() instanceof Name) {
                 var name = (Name) call.getTarget();
-                if (scopeOfId(name.getIdentifier()) == null) {
+                if (isTopLevelIdentifier(name.getIdentifier())) {
                     switch (name.getIdentifier()) {
                         case "teavm_javaVirtualMethod":
                             if (writeJavaVirtualMethod(node, call)) {
@@ -191,8 +174,7 @@ public class TemplatingAstWriter extends AstWriter {
     public void print(PropertyGet node) {
         if (node.getTarget() instanceof Name) {
             var name = (Name) node.getTarget();
-            var scope = scopeOfId(name.getIdentifier());
-            if (scope == null && name.getIdentifier().equals("teavm_globals")) {
+            if (isTopLevelIdentifier(name.getIdentifier()) && name.getIdentifier().equals("teavm_globals")) {
                 var oldRootScope = rootScope;
                 rootScope = false;
                 writer.appendGlobal(node.getProperty().getIdentifier());
@@ -210,7 +192,7 @@ public class TemplatingAstWriter extends AstWriter {
         }
         var method = MethodDescriptor.parse(((StringLiteral) arg).getValue());
         print(get.getTarget());
-        writer.append('.').appendMethod(method);
+        writer.append('.').appendVirtualMethod(method);
         return true;
     }
 
@@ -231,46 +213,7 @@ public class TemplatingAstWriter extends AstWriter {
     }
 
     @Override
-    public void print(Name node, int precedence) {
-        var definingScope = scopeOfId(node.getIdentifier());
-        if (rootScope) {
-            if (names != null && definingScope == scope) {
-                var fragment = names.get(node.getIdentifier());
-                if (fragment != null) {
-                    fragment.write(writer, precedence);
-                    return;
-                }
-            }
-            if (definingScope == null || topLevelScopes.contains(definingScope)) {
-                writer.appendFunction(node.getIdentifier());
-                return;
-            }
-        }
-        super.print(node, precedence);
-    }
-
-    @Override
-    protected void print(FunctionNode node) {
-        if (inFunction) {
-            super.print(node);
-        } else {
-            inFunction = true;
-            super.print(node);
-            inFunction = false;
-        }
-    }
-
-    @Override
-    protected void onEnterScope(Scope scope) {
-        if (names == null && !inFunction) {
-            topLevelScopes.add(scope);
-        }
-    }
-
-    @Override
-    protected void onLeaveScope(Scope scope) {
-        if (names == null && !inFunction) {
-            topLevelScopes.remove(scope);
-        }
+    public boolean isTopLevelOutput() {
+        return topLevelOutput;
     }
 }

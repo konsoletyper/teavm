@@ -17,33 +17,29 @@ package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Junji Takakura
- */
-public interface HTMLVideoElement extends HTMLMediaElement {
+public abstract class HTMLVideoElement extends HTMLMediaElement {
 
     @JSProperty
-    int getWidth();
+    public abstract int getWidth();
 
     @JSProperty
-    int getHeight();
+    public abstract int getHeight();
 
     @JSProperty
-    void setWidth(int width);
+    public abstract void setWidth(int width);
 
     @JSProperty
-    void setHeight(int height);
+    public abstract void setHeight(int height);
 
     @JSProperty
-    int getVideoWidth();
+    public abstract int getVideoWidth();
 
     @JSProperty
-    int getVideoHeight();
+    public abstract int getVideoHeight();
 
     @JSProperty
-    String getPoster();
+    public abstract String getPoster();
 
     @JSProperty
-    void setPoster(String poster);
+    public abstract void setPoster(String poster);
 }

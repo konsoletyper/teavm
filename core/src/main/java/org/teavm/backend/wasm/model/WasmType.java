@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,9 +15,85 @@
  */
 package org.teavm.backend.wasm.model;
 
-public enum WasmType {
-    INT32,
-    INT64,
-    FLOAT32,
-    FLOAT64
+public abstract class WasmType {
+    public static final WasmType.Number INT32 = new Number(WasmNumType.INT32);
+    public static final WasmType.Number INT64 = new Number(WasmNumType.INT64);
+    public static final WasmType.Number FLOAT32 = new Number(WasmNumType.FLOAT32);
+    public static final WasmType.Number FLOAT64 = new Number(WasmNumType.FLOAT64);
+
+    private WasmStorageType.Regular storageType;
+
+    private WasmType() {
+    }
+
+    public WasmStorageType.Regular asStorage() {
+        if (storageType == null) {
+            storageType = new WasmStorageType.Regular(this);
+        }
+        return storageType;
+    }
+
+    public static WasmType.Number num(WasmNumType number) {
+        switch (number) {
+            case INT32:
+                return INT32;
+            case INT64:
+                return INT64;
+            case FLOAT32:
+                return FLOAT32;
+            case FLOAT64:
+                return FLOAT64;
+            default:
+                throw new IllegalArgumentException();
+        }
+    }
+
+    public static final class Number extends WasmType {
+        public final WasmNumType number;
+
+        private Number(WasmNumType number) {
+            this.number = number;
+        }
+    }
+
+    public static abstract class Reference extends WasmType {
+        public static final SpecialReference FUNC = SpecialReferenceKind.FUNC.asType();
+        public static final SpecialReference ANY = SpecialReferenceKind.ANY.asType();
+        public static final SpecialReference EXTERN = SpecialReferenceKind.EXTERN.asType();
+        public static final SpecialReference STRUCT = SpecialReferenceKind.STRUCT.asType();
+        public static final SpecialReference ARRAY = SpecialReferenceKind.ARRAY.asType();
+    }
+
+    public static final class CompositeReference extends Reference {
+        public final WasmCompositeType composite;
+
+        CompositeReference(WasmCompositeType composite) {
+            this.composite = composite;
+        }
+    }
+
+    public static final class SpecialReference extends Reference {
+        public final SpecialReferenceKind kind;
+
+        private SpecialReference(SpecialReferenceKind kind) {
+            this.kind = kind;
+        }
+    }
+
+    public enum SpecialReferenceKind {
+        FUNC,
+        ANY,
+        EXTERN,
+        STRUCT,
+        ARRAY;
+
+        private SpecialReference type;
+
+        final SpecialReference asType() {
+            if (type == null) {
+                type = new SpecialReference(this);
+            }
+            return type;
+        }
+    }
 }

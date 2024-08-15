@@ -17,10 +17,9 @@ package org.teavm.backend.wasm.generate;
 
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 
-abstract class CachedExpression {
-    abstract WasmExpression expr();
+public abstract class CachedExpression {
+    public abstract WasmExpression expr();
 
-    void release() {
+    public void release() {
     }
-
 }

@@ -37,6 +37,10 @@ final class JS {
     public static native JSObject arrayData(Object array);
 
     @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject concatArray(JSObject a, JSObject b);
+
+    @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
     public static native byte[] dataToByteArray(JSObject obj);
@@ -140,7 +144,18 @@ final class JS {
         if (array == null) {
             return null;
         }
-        JSArray<T> result = JSArray.create(array.length);
+        var result = new JSArray<T>(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            result.set(i, array[i]);
+        }
+        return result;
+    }
+
+    public static <T> JSArray<T> wrap(T[] array) {
+        if (array == null) {
+            return null;
+        }
+        var result = new JSArray<T>(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, array[i]);
         }
@@ -155,7 +170,7 @@ final class JS {
         if (array == null) {
             return null;
         }
-        JSArray<T> result = JSArray.create(array.length);
+        var result = new JSArray<T>(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, f.apply(array[i]));
         }
@@ -178,7 +193,7 @@ final class JS {
         if (array == null) {
             return null;
         }
-        JSArray<JSBoolean> result = JSArray.create(array.length);
+        var result = new JSArray<JSBoolean>(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSBoolean.valueOf(array[i]));
         }
@@ -193,7 +208,7 @@ final class JS {
         if (array == null) {
             return null;
         }
-        JSArray<JSNumber> result = JSArray.create(array.length);
+        var result = new JSArray<JSNumber>(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSNumber.valueOf(array[i]));
         }
@@ -208,7 +223,7 @@ final class JS {
         if (array == null) {
             return null;
         }
-        JSArray<JSNumber> result = JSArray.create(array.length);
+        var result = new JSArray<JSNumber>(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSNumber.valueOf(array[i]));
         }
@@ -223,7 +238,7 @@ final class JS {
         if (array == null) {
             return null;
         }
-        JSArray<JSNumber> result = JSArray.create(array.length);
+        var result = new JSArray<JSNumber>(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSNumber.valueOf(array[i]));
         }
@@ -238,7 +253,7 @@ final class JS {
         if (array == null) {
             return null;
         }
-        JSArray<JSNumber> result = JSArray.create(array.length);
+        var result = new JSArray<JSNumber>(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSNumber.valueOf(array[i]));
         }
@@ -249,11 +264,12 @@ final class JS {
         return JS::wrap;
     }
 
+    @NoSideEffects
     public static JSArray<JSString> wrap(String[] array) {
         if (array == null) {
             return null;
         }
-        JSArray<JSString> result = JSArray.create(array.length);
+        var result = new JSArray<JSString>(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSString.valueOf(array[i]));
         }
@@ -268,7 +284,7 @@ final class JS {
         if (array == null) {
             return null;
         }
-        JSArray<JSNumber> result = JSArray.create(array.length);
+        var result = new JSArray<JSNumber>(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSNumber.valueOf(array[i]));
         }
@@ -283,7 +299,7 @@ final class JS {
         if (array == null) {
             return null;
         }
-        JSArray<JSNumber> result = JSArray.create(array.length);
+        var result = new JSArray<JSNumber>(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSNumber.valueOf(array[i]));
         }
@@ -517,6 +533,145 @@ final class JS {
             JSObject l, JSObject m);
 
     @InjectedBy(JSNativeInjector.class)
+    public static native JSObject apply(JSObject instance, JSObject method, JSArray<JSObject> v);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g, JSObject h);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g, JSObject h, JSObject i);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g, JSObject h, JSObject i, JSObject j);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g, JSObject h, JSObject i, JSObject j, JSObject k);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g, JSObject h, JSObject i, JSObject j, JSObject k, JSObject l);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g, JSObject h, JSObject i, JSObject j, JSObject k, JSObject l, JSObject m);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls, JSObject a);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls, JSObject a, JSObject b);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
+            JSObject f);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
+            JSObject f, JSObject g);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
+            JSObject f, JSObject g, JSObject h);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
+            JSObject f, JSObject g, JSObject h, JSObject i);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
+            JSObject f, JSObject g, JSObject h, JSObject i, JSObject j);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
+            JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
+            JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k, JSObject l);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
+            JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k, JSObject l, JSObject m);
+
+
+    @InjectedBy(JSNativeInjector.class)
     @JSBody(params = { "instance", "index" }, script = "return instance[index];")
     public static native JSObject get(JSObject instance, JSObject index);
 
@@ -541,4 +696,32 @@ final class JS {
     @GeneratedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeInjector.class)
     public static native JSObject functionAsObject(JSObject instance, JSObject property);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject global(String name);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject importModule(String name);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native boolean instanceOf(JSObject obj, JSObject cls);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native boolean instanceOfOrNull(JSObject obj, JSObject cls);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native boolean isPrimitive(JSObject obj, JSObject primitive);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject throwCCEIfFalse(boolean value, JSObject o);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native JSObject argumentsBeginningAt(int index);
 }

@@ -24,6 +24,8 @@ import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.GeneratedLocation;
 import org.teavm.debugging.information.SourceLocation;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
+import org.teavm.jso.JSExport;
 import org.teavm.jso.ajax.XMLHttpRequest;
 import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSObjects;
@@ -33,15 +35,16 @@ import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Int8Array;
 import org.teavm.model.MethodReference;
 
+@JSClass
 public final class Deobfuscator {
-    private static final JSRegExp FRAME_PATTERN = JSRegExp.create(""
+    private static final JSRegExp FRAME_PATTERN = new JSRegExp(""
             + "(^ +at ([^(]+) *\\((.+):([0-9]+):([0-9]+)\\) *$)|"
             + "(^([^@]*)@(.+):([0-9]+):([0-9]+)$)");
     private DebugInformation debugInformation;
     private String classesFileName;
 
     public Deobfuscator(ArrayBuffer buffer, String classesFileName) throws IOException {
-        Int8Array array = Int8Array.create(buffer);
+        var array = new Int8Array(buffer);
         debugInformation = DebugInformation.read(new Int8ArrayInputStream(array));
         this.classesFileName = classesFileName;
     }
@@ -51,7 +54,7 @@ public final class Deobfuscator {
     }
 
     private static void loadDeobfuscator(String fileName, String classesFileName) {
-        XMLHttpRequest xhr = XMLHttpRequest.create();
+        var xhr = new XMLHttpRequest();
         xhr.setResponseType("arraybuffer");
         xhr.onComplete(() -> {
             installDeobfuscator(xhr.getResponse().cast(), classesFileName);
@@ -60,6 +63,7 @@ public final class Deobfuscator {
         xhr.send();
     }
 
+    @JSExport
     public Frame[] deobfuscate(String stack) {
         List<Frame> frames = new ArrayList<>();
         for (String line : splitLines(stack)) {
@@ -125,14 +129,16 @@ public final class Deobfuscator {
                 decodedFileName = decodedFileName.substring(decodedFileName.lastIndexOf('/') + 1);
             }
 
-            Frame frame = createEmptyFrame();
-            frame.setClassName(method.getClassName());
-            frame.setMethodName(method.getName());
-            frame.setFileName(decodedFileName);
+            var javaLineNumber = -1;
             if (location != null) {
-                frame.setLineNumber(location.getLine());
+                javaLineNumber = location.getLine();
             }
-            result.add(frame);
+            result.add(new Frame(
+                    method.getClassName(),
+                    method.getName(),
+                    decodedFileName,
+                    javaLineNumber
+            ));
         }
 
         if (result.isEmpty()) {
@@ -143,12 +149,12 @@ public final class Deobfuscator {
     }
 
     private static Frame createDefaultFrame(String fileName, String functionName, int lineNumber) {
-        Frame frame = createEmptyFrame();
-        frame.setFileName(fileName);
-        frame.setMethodName(functionName != null ? functionName : "<unknown function>");
-        frame.setClassName("<JS>");
-        frame.setLineNumber(lineNumber);
-        return frame;
+        return new Frame(
+                "<JS>",
+                functionName != null ? functionName : "<unknown function>",
+                fileName,
+                lineNumber
+        );
     }
 
     private static String[] splitLines(String text) {
@@ -164,9 +170,6 @@ public final class Deobfuscator {
         }
         return result.toArray(new String[0]);
     }
-
-    @JSBody(script = "return {};")
-    private static native Frame createEmptyFrame();
 
     @JSBody(params = "f", script = "window.$rt_decodeStack = f;")
     private static native void setDeobfuscateFunction(DeobfuscateFunction f);

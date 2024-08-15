@@ -36,10 +36,14 @@ import org.teavm.common.LCATree;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.instructions.CloneArrayInstruction;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.util.GraphColorer;
 
 public class VirtualTableBuilder {
@@ -123,12 +127,9 @@ public class VirtualTableBuilder {
             }
         }
 
-        List<MethodDescriptor> methodsAtCallSites = methodsUsedAtCallSites.get(className);
+        var methodsAtCallSites = methodsUsedAtCallSites.get(className);
         if (methodsAtCallSites != null) {
             for (MethodDescriptor methodDesc : methodsAtCallSites) {
-                if (cls.hasModifier(ElementModifier.FINAL) && !table.entries.containsKey(methodDesc)) {
-                    continue;
-                }
                 MethodReader method = cls.getMethod(methodDesc);
                 if (method != null && method.getLevel() == AccessLevel.PRIVATE) {
                     continue;
@@ -158,7 +159,7 @@ public class VirtualTableBuilder {
     }
 
     private void copyEntries(TableBuilder source, TableBuilder target) {
-        for (Map.Entry<MethodDescriptor, EntryBuilder> entry : source.entries.entrySet()) {
+        for (var entry : source.entries.entrySet()) {
             EntryBuilder targetEntry = target.entries.computeIfAbsent(entry.getKey(), k -> new EntryBuilder());
             targetEntry.addParent(entry.getValue());
             if (entry.getValue().implementor != null && targetEntry.implementor == null) {
@@ -193,7 +194,7 @@ public class VirtualTableBuilder {
 
     private void liftEntries() {
         buildClassTree();
-        for (Map.Entry<MethodDescriptor, List<String>> group : groupMethods().entrySet()) {
+        for (var group : groupMethods().entrySet()) {
             String commonSuperclass = commonSuperclass(group.getValue());
             Set<String> visited = new HashSet<>();
             for (String cls : group.getValue()) {
@@ -393,17 +394,16 @@ public class VirtualTableBuilder {
             }
         }
 
-        List<MethodDescriptor> newMethods = context.methods.subList(methodsStart, context.methods.size());
+        var newMethods = context.methods.subList(methodsStart, context.methods.size());
         Set<MethodDescriptor> methodSet = new HashSet<>();
         for (MethodDescriptor method : newMethods) {
             if (method != null) {
                 methodSet.add(method);
             }
         }
-        List<? extends MethodDescriptor> readonlyNewMethods = Collections.unmodifiableList(
-                Arrays.asList(newMethods.toArray(new MethodDescriptor[0])));
-        VirtualTable resultTable = new VirtualTable(className, parent, readonlyNewMethods,
-                methodSet, resultEntries);
+        var readonlyNewMethods = Collections.unmodifiableList(Arrays.asList(
+                newMethods.toArray(new MethodDescriptor[0])));
+        var resultTable = new VirtualTable(className, parent, readonlyNewMethods, methodSet, resultEntries);
         result.virtualTables.put(className, resultTable);
 
         List<String> children = classChildren.get(className);
@@ -485,10 +485,9 @@ public class VirtualTableBuilder {
                 methodSet.add(method);
             }
 
-            List<? extends MethodDescriptor> readonlyNewMethods = Collections.unmodifiableList(
+            var readonlyMethods = Collections.unmodifiableList(
                     Arrays.asList(methods.toArray(new MethodDescriptor[0])));
-            VirtualTable resultTable = new VirtualTable(className, null, readonlyNewMethods,
-                    methodSet, Collections.emptyMap());
+            var resultTable = new VirtualTable(className, null, readonlyMethods, methodSet, Map.of());
             result.virtualTables.put(className, resultTable);
         }
     }
@@ -517,5 +516,37 @@ public class VirtualTableBuilder {
         int[] indexes;
         IntArrayList colors = new IntArrayList();
         List<MethodDescriptor> methods = new ArrayList<>();
+    }
+
+    public static Set<MethodReference> getMethodsUsedOnCallSites(ListableClassHolderSource classes,
+            boolean withCloneArray) {
+        var virtualMethods = new HashSet<MethodReference>();
+
+        for (var className : classes.getClassNames()) {
+            var cls = classes.get(className);
+            for (var method : cls.getMethods()) {
+                var program = method.getProgram();
+                if (program == null) {
+                    continue;
+                }
+                for (int i = 0; i < program.basicBlockCount(); ++i) {
+                    var block = program.basicBlockAt(i);
+                    for (var insn : block) {
+                        if (insn instanceof InvokeInstruction) {
+                            var invoke = (InvokeInstruction) insn;
+                            if (invoke.getType() == InvocationType.VIRTUAL) {
+                                virtualMethods.add(invoke.getMethod());
+                            }
+                        } else if (insn instanceof CloneArrayInstruction) {
+                            if (withCloneArray) {
+                                virtualMethods.add(new MethodReference(Object.class, "clone", Object.class));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return virtualMethods;
     }
 }

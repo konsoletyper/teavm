@@ -25,52 +25,55 @@ import org.teavm.model.MethodReference;
 public class MinifyingAliasProvider implements AliasProvider {
     private static final String startLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final String startVirtualLetters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private final int maxTopLevelNames;
     private int lastSuffix;
-    private int lastVirtual;
+    private int lastInstanceSuffix;
+    private int topLevelNames;
+    private boolean additionalScopeStarted;
     private final Set<String> usedAliases = new HashSet<>();
-    private final Set<String> usedVirtualAliases = new HashSet<>();
 
-    @Override
-    public String getFieldAlias(FieldReference field) {
-        String result;
-        do {
-            result = RenderingUtil.indexToId(lastVirtual++, startVirtualLetters);
-        } while (!usedVirtualAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
-        return result;
+    public MinifyingAliasProvider(int maxTopLevelNames) {
+        this.maxTopLevelNames = maxTopLevelNames;
     }
 
     @Override
-    public String getStaticFieldAlias(FieldReference field) {
+    public String getFieldAlias(FieldReference field) {
+        return createInstanceName();
+    }
+
+    @Override
+    public ScopedName getStaticFieldAlias(FieldReference field) {
         return createTopLevelName();
     }
 
     @Override
-    public String getStaticMethodAlias(MethodReference method) {
+    public ScopedName getStaticMethodAlias(MethodReference method) {
         return createTopLevelName();
     }
 
     @Override
     public String getMethodAlias(MethodDescriptor method) {
-        String result;
-        do {
-            result = RenderingUtil.indexToId(lastVirtual++, startVirtualLetters);
-        } while (!usedVirtualAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
-        return result;
+        return createInstanceName();
     }
 
     @Override
-    public String getClassAlias(String className) {
+    public ScopedName getClassAlias(String className) {
         return createTopLevelName();
     }
 
     @Override
-    public String getFunctionAlias(String className) {
-        return RenderingUtil.indexToId(lastSuffix++, startLetters);
+    public ScopedName getFunctionAlias(String className) {
+        return createTopLevelName();
     }
 
     @Override
-    public String getClassInitAlias(String className) {
+    public ScopedName getClassInitAlias(String className) {
         return createTopLevelName();
+    }
+
+    @Override
+    public String getAdditionalScopeName() {
+        return createTopLevelName().name;
     }
 
     @Override
@@ -78,11 +81,24 @@ public class MinifyingAliasProvider implements AliasProvider {
         usedAliases.add(name);
     }
 
-    private String createTopLevelName() {
+    private ScopedName createTopLevelName() {
+        if (!additionalScopeStarted && topLevelNames >= maxTopLevelNames) {
+            additionalScopeStarted = true;
+            lastSuffix = 0;
+        }
         String result;
         do {
             result = RenderingUtil.indexToId(lastSuffix++, startLetters);
-        } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
+        } while ((!additionalScopeStarted && usedAliases.contains(result)) || RenderingUtil.KEYWORDS.contains(result));
+        ++topLevelNames;
+        return new ScopedName(result, additionalScopeStarted);
+    }
+
+    private String createInstanceName() {
+        String result;
+        do {
+            result = RenderingUtil.indexToId(lastInstanceSuffix++, startVirtualLetters);
+        } while (RenderingUtil.KEYWORDS.contains(result));
         return result;
     }
 }

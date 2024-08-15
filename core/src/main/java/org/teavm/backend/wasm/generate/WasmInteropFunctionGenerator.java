@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generate;
 
+import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
@@ -39,48 +40,49 @@ import org.teavm.runtime.RuntimeClass;
 
 public class WasmInteropFunctionGenerator {
     private WasmClassGenerator classGenerator;
+    private WasmFunctionTypes functionTypes;
 
-    public WasmInteropFunctionGenerator(WasmClassGenerator classGenerator) {
+    public WasmInteropFunctionGenerator(WasmClassGenerator classGenerator, WasmFunctionTypes functionTypes) {
         this.classGenerator = classGenerator;
+        this.functionTypes = functionTypes;
     }
 
     public void generateFunctions(WasmModule module) {
-        module.add(allocateString());
-        module.add(stringData());
+        module.functions.add(allocateString());
+        module.functions.add(stringData());
 
-        module.add(allocateArray("teavm_allocateObjectArray", ValueType.parse(Object.class)));
-        module.add(allocateArray("teavm_allocateStringArray", ValueType.parse(String.class)));
-        module.add(allocateArray("teavm_allocateByteArray", ValueType.parse(byte.class)));
-        module.add(allocateArray("teavm_allocateShortArray", ValueType.parse(short.class)));
-        module.add(allocateArray("teavm_allocateCharArray", ValueType.parse(char.class)));
-        module.add(allocateArray("teavm_allocateIntArray", ValueType.parse(int.class)));
-        module.add(allocateArray("teavm_allocateLongArray", ValueType.parse(long.class)));
-        module.add(allocateArray("teavm_allocateFloatArray", ValueType.parse(float.class)));
-        module.add(allocateArray("teavm_allocateDoubleArray", ValueType.parse(double.class)));
-        module.add(arrayData("teavm_objectArrayData", 4));
-        module.add(arrayData("teavm_byteArrayData", 1));
-        module.add(arrayData("teavm_shortArrayData", 2));
-        module.add(arrayData("teavm_charArrayData", 2));
-        module.add(arrayData("teavm_intArrayData", 4));
-        module.add(arrayData("teavm_longArrayData", 8));
-        module.add(arrayData("teavm_floatArrayData", 4));
-        module.add(arrayData("teavm_doubleArrayData", 8));
-        module.add(arrayLength());
+        module.functions.add(allocateArray("teavm_allocateObjectArray", ValueType.parse(Object.class)));
+        module.functions.add(allocateArray("teavm_allocateStringArray", ValueType.parse(String.class)));
+        module.functions.add(allocateArray("teavm_allocateByteArray", ValueType.parse(byte.class)));
+        module.functions.add(allocateArray("teavm_allocateShortArray", ValueType.parse(short.class)));
+        module.functions.add(allocateArray("teavm_allocateCharArray", ValueType.parse(char.class)));
+        module.functions.add(allocateArray("teavm_allocateIntArray", ValueType.parse(int.class)));
+        module.functions.add(allocateArray("teavm_allocateLongArray", ValueType.parse(long.class)));
+        module.functions.add(allocateArray("teavm_allocateFloatArray", ValueType.parse(float.class)));
+        module.functions.add(allocateArray("teavm_allocateDoubleArray", ValueType.parse(double.class)));
+        module.functions.add(arrayData("teavm_objectArrayData", 4));
+        module.functions.add(arrayData("teavm_byteArrayData", 1));
+        module.functions.add(arrayData("teavm_shortArrayData", 2));
+        module.functions.add(arrayData("teavm_charArrayData", 2));
+        module.functions.add(arrayData("teavm_intArrayData", 4));
+        module.functions.add(arrayData("teavm_longArrayData", 8));
+        module.functions.add(arrayData("teavm_floatArrayData", 4));
+        module.functions.add(arrayData("teavm_doubleArrayData", 8));
+        module.functions.add(arrayLength());
     }
 
 
     private WasmFunction allocateString() {
-        WasmFunction function = new WasmFunction("teavm_allocateString");
+        var function = new WasmFunction(functionTypes.of(WasmType.INT32, WasmType.INT32));
+        function.setName("teavm_allocateString");
         function.setExportName(function.getName());
-        function.setResult(WasmType.INT32);
-        function.getParameters().add(WasmType.INT32);
 
         WasmLocal sizeLocal = new WasmLocal(WasmType.INT32, "size");
         function.add(sizeLocal);
 
-        String constructorName = classGenerator.names.forMethod(new MethodReference(String.class, "allocate",
+        var constructor = classGenerator.functions.forStaticMethod(new MethodReference(String.class, "allocate",
                 int.class, String.class));
-        WasmCall constructorCall = new WasmCall(constructorName);
+        WasmCall constructorCall = new WasmCall(constructor);
         constructorCall.getArguments().add(new WasmGetLocal(sizeLocal));
         function.getBody().add(constructorCall);
 
@@ -90,18 +92,17 @@ public class WasmInteropFunctionGenerator {
     }
 
     private WasmFunction allocateArray(String name, ValueType type) {
-        WasmFunction function = new WasmFunction(name);
+        var function = new WasmFunction(functionTypes.of(WasmType.INT32, WasmType.INT32));
+        function.setName(name);
         function.setExportName(name);
-        function.setResult(WasmType.INT32);
-        function.getParameters().add(WasmType.INT32);
 
         WasmLocal sizeLocal = new WasmLocal(WasmType.INT32, "size");
         function.add(sizeLocal);
 
         int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(type));
-        String allocName = classGenerator.names.forMethod(new MethodReference(Allocator.class, "allocateArray",
-                RuntimeClass.class, int.class, Address.class));
-        WasmCall call = new WasmCall(allocName);
+        var allocFunction = classGenerator.functions.forStaticMethod(new MethodReference(Allocator.class,
+                "allocateArray", RuntimeClass.class, int.class, Address.class));
+        WasmCall call = new WasmCall(allocFunction);
         call.getArguments().add(new WasmInt32Constant(classPointer));
         call.getArguments().add(new WasmGetLocal(sizeLocal));
 
@@ -111,10 +112,9 @@ public class WasmInteropFunctionGenerator {
     }
 
     private WasmFunction stringData() {
-        WasmFunction function = new WasmFunction("teavm_stringData");
+        var function = new WasmFunction(functionTypes.of(WasmType.INT32, WasmType.INT32));
+        function.setName("teavm_stringData");
         function.setExportName(function.getName());
-        function.setResult(WasmType.INT32);
-        function.getParameters().add(WasmType.INT32);
 
         WasmLocal stringLocal = new WasmLocal(WasmType.INT32, "string");
         function.add(stringLocal);
@@ -128,10 +128,9 @@ public class WasmInteropFunctionGenerator {
     }
 
     private WasmFunction arrayData(String name, int alignment) {
-        WasmFunction function = new WasmFunction(name);
+        var function = new WasmFunction(functionTypes.of(WasmType.INT32, WasmType.INT32));
+        function.setName(name);
         function.setExportName(function.getName());
-        function.setResult(WasmType.INT32);
-        function.getParameters().add(WasmType.INT32);
 
         WasmLocal arrayLocal = new WasmLocal(WasmType.INT32, "array");
         function.add(arrayLocal);
@@ -147,10 +146,9 @@ public class WasmInteropFunctionGenerator {
     }
 
     private WasmFunction arrayLength() {
-        WasmFunction function = new WasmFunction("teavm_arrayLength");
+        WasmFunction function = new WasmFunction(functionTypes.of(WasmType.INT32, WasmType.INT32));
+        function.setName("teavm_arrayLength");
         function.setExportName(function.getName());
-        function.setResult(WasmType.INT32);
-        function.getParameters().add(WasmType.INT32);
 
         WasmLocal arrayLocal = new WasmLocal(WasmType.INT32, "array");
         function.add(arrayLocal);

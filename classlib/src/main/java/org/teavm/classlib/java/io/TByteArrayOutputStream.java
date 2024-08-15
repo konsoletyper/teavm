@@ -18,6 +18,7 @@ package org.teavm.classlib.java.io;
 import java.io.IOException;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TString;
+import org.teavm.classlib.java.nio.charset.TCharset;
 import org.teavm.classlib.java.util.TArrays;
 
 public class TByteArrayOutputStream extends TOutputStream {
@@ -64,6 +65,10 @@ public class TByteArrayOutputStream extends TOutputStream {
 
     public TString toString(TString charsetName) throws TUnsupportedEncodingException {
         return new TString(buf, 0, count, charsetName);
+    }
+
+    public TString toString(TCharset charset) {
+        return new TString(buf, 0, count, charset);
     }
 
     public void writeTo(TOutputStream out) throws IOException {

@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.transformation;
 
+import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
@@ -25,33 +26,32 @@ import org.teavm.backend.wasm.model.expression.WasmReplacingExpressionVisitor;
 
 public class MemoryAccessTraceTransformation {
     private WasmModule module;
+    private WasmFunctionTypes functionTypes;
 
-    public MemoryAccessTraceTransformation(WasmModule module) {
+    public MemoryAccessTraceTransformation(WasmModule module, WasmFunctionTypes functionTypes) {
         this.module = module;
+        this.functionTypes = functionTypes;
     }
 
     public void apply() {
-        WasmFunction traceFunction = new WasmFunction("traceMemoryAccess");
+        var traceFunction = new WasmFunction(functionTypes.of(WasmType.INT32, WasmType.INT32, WasmType.INT32));
         traceFunction.setImportModule("debug");
+        traceFunction.setName("traceMemoryAccess");
         traceFunction.setImportName("traceMemoryAccess");
-        traceFunction.getParameters().add(WasmType.INT32);
-        traceFunction.getParameters().add(WasmType.INT32);
-        traceFunction.setResult(WasmType.INT32);
-        module.add(traceFunction);
+        module.functions.add(traceFunction);
 
         int[] positionHolder = { 0 };
-        WasmReplacingExpressionVisitor visitor = new WasmReplacingExpressionVisitor(expression -> {
+        var visitor = new WasmReplacingExpressionVisitor(expression -> {
             if (expression instanceof WasmMemoryAccess) {
                 WasmMemoryAccess memoryAccess = (WasmMemoryAccess) expression;
-                WasmCall call = new WasmCall(traceFunction.getName());
-                call.setImported(true);
+                WasmCall call = new WasmCall(traceFunction);
                 call.getArguments().add(new WasmInt32Constant(positionHolder[0]++));
                 call.getArguments().add(memoryAccess.getIndex());
                 memoryAccess.setIndex(call);
             }
             return expression;
         });
-        for (WasmFunction function : module.getFunctions().values()) {
+        for (var function : module.functions) {
             visitor.replace(function);
         }
     }

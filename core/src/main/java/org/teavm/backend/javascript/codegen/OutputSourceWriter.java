@@ -29,6 +29,7 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 public class OutputSourceWriter extends SourceWriter implements LocationProvider {
+    private static final int LET_SEQUENCE_LIMIT = 50;
     private final Appendable innerWriter;
     private int indentSize;
     private final NamingStrategy naming;
@@ -45,6 +46,9 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
     private int sectionMarkSection = -1;
     private int sectionMarkPos;
     private IntIntMap sectionSizes = new IntIntHashMap();
+    private DeclarationType currentDeclarationType;
+    private boolean expectingDeclarationName;
+    private int letSequenceSize;
 
     OutputSourceWriter(NamingStrategy naming, Appendable innerWriter, int lineWidth) {
         this.naming = naming;
@@ -61,9 +65,34 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
         this.minified = minified;
     }
 
+    public void finish() {
+        finishLet();
+    }
+
+    private void finishLetImplicitly() {
+        if (currentDeclarationType == null) {
+            finishLet();
+        }
+    }
+
+    private void finishLet() {
+        if (letSequenceSize > 0) {
+            letSequenceSize = 0;
+            try {
+                innerWriter.append(";\n");
+                column = 0;
+                line++;
+                lineStart = true;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     @Override
     public SourceWriter append(char value) {
         appendIndent();
+        finishLetImplicitly();
         try {
             innerWriter.append(value);
         } catch (IOException e) {
@@ -96,6 +125,7 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
         if (start == end) {
             return;
         }
+        finishLetImplicitly();
         appendIndent();
         column += end - start;
         offset += end - start;
@@ -108,32 +138,32 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
 
     @Override
     public SourceWriter appendClass(String cls) {
-        return appendName(naming.getNameFor(cls));
+        return appendDeclaration(naming.className(cls));
     }
 
     @Override
     public SourceWriter appendField(FieldReference field) {
-        return append(naming.getNameFor(field));
+        return append(naming.instanceFieldName(field));
     }
 
     @Override
     public SourceWriter appendStaticField(FieldReference field) {
-        return appendName(naming.getFullNameFor(field));
+        return appendDeclaration(naming.fieldName(field));
     }
 
     @Override
-    public SourceWriter appendMethod(MethodDescriptor method) {
-        return append(naming.getNameFor(method));
+    public SourceWriter appendVirtualMethod(MethodDescriptor method) {
+        return append(naming.instanceMethodName(method));
     }
 
     @Override
-    public SourceWriter appendMethodBody(MethodReference method) {
-        return appendName(naming.getFullNameFor(method));
+    public SourceWriter appendMethod(MethodReference method) {
+        return appendDeclaration(naming.methodName(method));
     }
 
     @Override
     public SourceWriter appendFunction(String name) {
-        return append(naming.getNameForFunction(name));
+        return appendDeclaration(naming.functionName(name));
     }
 
     @Override
@@ -143,16 +173,117 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
 
     @Override
     public SourceWriter appendInit(MethodReference method) {
-        return appendName(naming.getNameForInit(method));
+        return appendDeclaration(naming.initializerName(method));
     }
 
     @Override
     public SourceWriter appendClassInit(String className) {
-        return appendName(naming.getNameForClassInit(className));
+        return appendDeclaration(naming.classInitializerName(className));
     }
 
-    private SourceWriter appendName(String name) {
-        append(name);
+    @Override
+    public SourceWriter startVariableDeclaration() {
+        checkStartDeclaration();
+        currentDeclarationType = DeclarationType.VARIABLE;
+        expectingDeclarationName = true;
+        return this;
+    }
+
+    @Override
+    public SourceWriter startFunctionDeclaration() {
+        checkStartDeclaration();
+        currentDeclarationType = DeclarationType.FUNCTION;
+        expectingDeclarationName = true;
+        return this;
+    }
+
+    @Override
+    public SourceWriter declareVariable() {
+        checkStartDeclaration();
+        currentDeclarationType = DeclarationType.VARIABLE_WITHOUT_VALUE;
+        expectingDeclarationName = true;
+        return this;
+    }
+
+    private void checkStartDeclaration() {
+        if (currentDeclarationType != null) {
+            throw new IllegalStateException();
+        }
+    }
+
+    @Override
+    public SourceWriter endDeclaration() {
+        if (currentDeclarationType == null || expectingDeclarationName) {
+            throw new IllegalStateException();
+        }
+        switch (currentDeclarationType) {
+            case FUNCTION:
+                newLine();
+                break;
+            case VARIABLE:
+                if (letSequenceSize == 0) {
+                    append(';').softNewLine();
+                } else if (letSequenceSize >= LET_SEQUENCE_LIMIT) {
+                    finishLet();
+                }
+                break;
+            case VARIABLE_WITHOUT_VALUE:
+                throw new IllegalStateException();
+        }
+        currentDeclarationType = null;
+        return this;
+    }
+
+    private SourceWriter appendDeclaration(ScopedName name) {
+        if (!expectingDeclarationName) {
+            return appendName(name);
+        }
+        expectingDeclarationName = false;
+        switch (currentDeclarationType) {
+            case FUNCTION:
+                finishLet();
+                if (name.scoped) {
+                    append(naming.additionalScopeName()).append('.').append(name.name).ws()
+                            .append('=').ws().append("function");
+                } else {
+                    append("function ").append(name.name);
+                }
+                break;
+            case VARIABLE:
+                if (name.scoped) {
+                    finishLet();
+                    append(naming.additionalScopeName()).append('.');
+                } else {
+                    if (letSequenceSize++ == 0) {
+                        append("let ");
+                    } else {
+                        append(',').softNewLine();
+                    }
+                }
+                append(name.name).ws().append('=').ws();
+                break;
+            case VARIABLE_WITHOUT_VALUE:
+                if (!name.scoped) {
+                    if (letSequenceSize++ == 0) {
+                        append("let ");
+                    } else {
+                        append(',').softNewLine();
+                    }
+                    append(name.name);
+                }
+                expectingDeclarationName = false;
+                currentDeclarationType = null;
+                break;
+        }
+        return this;
+    }
+
+    private SourceWriter appendName(ScopedName name) {
+        if (name.scoped) {
+            append(naming.additionalScopeName());
+            append('.');
+        }
+        append(name.name);
         return this;
     }
 
@@ -160,6 +291,7 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
         if (minified) {
             return;
         }
+        finishLetImplicitly();
         if (lineStart) {
             try {
                 for (int i = 0; i < indentSize; ++i) {
@@ -176,6 +308,7 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
 
     @Override
     public SourceWriter newLine() {
+        finishLetImplicitly();
         try {
             innerWriter.append('\n');
         } catch (IOException e) {
@@ -194,6 +327,7 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
             newLine();
         } else {
             if (!minified) {
+                finishLetImplicitly();
                 try {
                     innerWriter.append(' ');
                 } catch (IOException e) {
@@ -209,6 +343,7 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
     @Override
     public SourceWriter sameLineWs() {
         if (!minified) {
+            finishLetImplicitly();
             try {
                 innerWriter.append(' ');
             } catch (IOException e) {
@@ -231,6 +366,7 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
     @Override
     public SourceWriter softNewLine() {
         if (!minified) {
+            finishLetImplicitly();
             try {
                 innerWriter.append('\n');
             } catch (IOException e) {
@@ -361,5 +497,11 @@ public class OutputSourceWriter extends SourceWriter implements LocationProvider
 
     public int getSectionSize(int sectionId) {
         return sectionSizes.get(sectionId);
+    }
+
+    private enum DeclarationType {
+        FUNCTION,
+        VARIABLE,
+        VARIABLE_WITHOUT_VALUE
     }
 }

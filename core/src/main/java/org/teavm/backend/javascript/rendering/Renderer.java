@@ -17,6 +17,8 @@ package org.teavm.backend.javascript.rendering;
 
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,6 +37,7 @@ import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.analysis.LocationGraphBuilder;
 import org.teavm.ast.decompilation.DecompilationException;
 import org.teavm.ast.decompilation.Decompiler;
+import org.teavm.backend.javascript.ExportedDeclaration;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.Generator;
@@ -89,11 +92,15 @@ public class Renderer implements RenderingManager {
     private JavaScriptTemplateFactory templateFactory;
     private boolean threadLibraryUsed;
     private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
+    private List<ExportedDeclaration> exports;
+    private String entryPoint;
+
     public static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
 
     public Renderer(SourceWriter writer, Set<MethodReference> asyncMethods, RenderingContext context,
             Diagnostics diagnostics, Map<MethodReference, Generator> generators,
-            MethodNodeCache astCache, CacheStatus cacheStatus, JavaScriptTemplateFactory templateFactory) {
+            MethodNodeCache astCache, CacheStatus cacheStatus, JavaScriptTemplateFactory templateFactory,
+            List<ExportedDeclaration> exports, String entryPoint) {
         this.writer = writer;
         this.classSource = context.getClassSource();
         this.classLoader = context.getClassLoader();
@@ -106,11 +113,34 @@ public class Renderer implements RenderingManager {
         this.astCache = astCache;
         this.cacheStatus = cacheStatus;
         this.templateFactory = templateFactory;
+        this.exports = exports;
+        this.entryPoint = entryPoint;
     }
 
     @Override
     public SourceWriter getWriter() {
         return writer;
+    }
+
+    @Override
+    public String getEntryPoint() {
+        return entryPoint;
+    }
+
+    @Override
+    public void exportMethod(MethodReference method, String alias) {
+        exports.add(new ExportedDeclaration(w -> w.appendMethod(method), n -> n.methodName(method), alias));
+    }
+
+    @Override
+    public void exportClass(String className, String alias) {
+        exports.add(new ExportedDeclaration(w -> w.appendClass(className), n -> n.className(className), alias));
+    }
+
+    @Override
+    public void exportFunction(String functionName, String alias) {
+        exports.add(new ExportedDeclaration(w -> w.appendFunction(functionName),
+                n -> n.functionName(functionName), alias));
     }
 
     public boolean isThreadLibraryUsed() {
@@ -188,7 +218,7 @@ public class Renderer implements RenderingManager {
         writer.appendClass("java.lang.Object").append(".prototype.toString").ws().append("=").ws()
                 .append("function()").ws().append("{").indent().softNewLine();
         writer.append("return ").appendFunction("$rt_ustr").append("(")
-                .appendMethodBody(Object.class, "toString", String.class).append("(this));")
+                .appendMethod(Object.class, "toString", String.class).append("(this));")
                 .softNewLine();
         writer.outdent().append("};").newLine();
     }
@@ -265,7 +295,6 @@ public class Renderer implements RenderingManager {
             renderFullClassFunctionDeclaration(cls, nonStaticFields);
         }
 
-        var hasLet = false;
         for (FieldHolder field : staticFields) {
             Object value = field.getInitialValue();
             if (value == null) {
@@ -278,23 +307,16 @@ public class Renderer implements RenderingManager {
                 value = null;
             }
 
-            if (!hasLet) {
-                writer.append("let ");
-                hasLet = true;
-            } else {
-                writer.append(",").ws();
-            }
-            writer.appendStaticField(fieldRef).ws().append("=").ws();
+            writer.startVariableDeclaration().appendStaticField(fieldRef);
             context.constantToString(writer, value);
-        }
-        if (hasLet) {
-            writer.append(";").newLine();
+            writer.endDeclaration();
         }
     }
 
     private void renderFullClassFunctionDeclaration(ClassReader cls, List<FieldHolder> nonStaticFields) {
         boolean thisAliased = false;
-        writer.append("function ").appendClass(cls.getName()).append("()").ws().append("{").indent().softNewLine();
+        writer.startFunctionDeclaration().appendClass(cls.getName()).append("()").ws().append("{")
+                .indent().softNewLine();
         if (nonStaticFields.size() > 1) {
             thisAliased = true;
             writer.append("let a").ws().append("=").ws().append("this;").ws();
@@ -321,18 +343,18 @@ public class Renderer implements RenderingManager {
         }
 
         writer.outdent().append("}");
-        writer.newLine();
+        writer.endDeclaration();
     }
 
     private void renderShortClassFunctionDeclaration(ClassReader cls) {
-        writer.append("let ").appendClass(cls.getName()).ws().append("=").ws()
+        writer.startVariableDeclaration().appendClass(cls.getName())
                 .appendFunction("$rt_classWithoutFields").append("(");
         if (cls.hasModifier(ElementModifier.INTERFACE)) {
             writer.append("0");
         } else if (!cls.getParent().equals("java.lang.Object")) {
             writer.appendClass(cls.getParent());
         }
-        writer.append(");").newLine();
+        writer.append(")").endDeclaration();
     }
 
     private void renderMethodBodies(ClassHolder cls, Decompiler decompiler) {
@@ -346,26 +368,22 @@ public class Renderer implements RenderingManager {
 
         var needsInitializers = !cls.hasModifier(ElementModifier.INTERFACE)
             && !cls.hasModifier(ElementModifier.ABSTRACT);
-        var hasLet = false;
         for (var method : cls.getMethods()) {
             if (!filterMethod(method)) {
                 continue;
             }
-            if (!hasLet) {
-                writer.append("let ");
-                hasLet = true;
+            var isFunction = context.isForcedFunction(method.getReference());
+            if (isFunction) {
+                writer.startFunctionDeclaration();
             } else {
-                writer.append(",").newLine();
+                writer.startVariableDeclaration();
             }
-            renderBody(method, decompiler);
+            renderBody(method, decompiler, isFunction);
+            writer.endDeclaration();
             if (needsInitializers && !method.hasModifier(ElementModifier.STATIC)
                     && method.getName().equals("<init>")) {
-                writer.append(",").newLine();
                 renderInitializer(method);
             }
-        }
-        if (hasLet) {
-            writer.append(";").newLine();
         }
 
         writer.emitClass(null);
@@ -390,11 +408,10 @@ public class Renderer implements RenderingManager {
 
         var clinitCalledField = new FieldReference(cls.getName(), "$_teavm_clinitCalled_$");
         if (isAsync) {
-            writer.append("let ").appendStaticField(clinitCalledField).ws().append("=").ws().append("false;")
-                    .softNewLine();
+            writer.startVariableDeclaration().appendStaticField(clinitCalledField).append("false").endDeclaration();
         }
 
-        writer.append("let ").appendClassInit(cls.getName()).ws().append("=").ws();
+        writer.startVariableDeclaration().appendClassInit(cls.getName());
         writer.append("()").sameLineWs().append("=>").ws().append("{").softNewLine().indent();
 
         if (isAsync) {
@@ -423,7 +440,7 @@ public class Renderer implements RenderingManager {
             writer.outdent().append("case 1:").indent().softNewLine();
         }
 
-        writer.appendMethodBody(new MethodReference(cls.getName(), clinit.getDescriptor()))
+        writer.appendMethod(new MethodReference(cls.getName(), clinit.getDescriptor()))
                 .append("();").softNewLine();
 
         if (isAsync) {
@@ -438,8 +455,7 @@ public class Renderer implements RenderingManager {
             writer.appendFunction("$rt_nativeThread").append("().push(" + context.pointerName() + ");").softNewLine();
         }
 
-        writer.outdent().append("};");
-        writer.newLine();
+        writer.outdent().append("}").endDeclaration();
     }
 
     private void renderEraseClinit(ClassReader cls) {
@@ -507,7 +523,16 @@ public class Renderer implements RenderingManager {
             }
             writer.append("],").ws();
 
-            writer.append(ElementModifier.pack(cls.readModifiers())).append(',').ws();
+            var flags = ElementModifier.pack(cls.readModifiers());
+            if (cls.hasModifier(ElementModifier.ANNOTATION)) {
+                var retention = cls.getAnnotations().get(Retention.class.getName());
+                if (retention != null && retention.getValue("value").getEnumValue().getFieldName().equals("RUNTIME")) {
+                    if (cls.getAnnotations().get(Inherited.class.getName()) != null) {
+                        flags |= 32768;
+                    }
+                }
+            }
+            writer.append(flags).append(',').ws();
             writer.append(cls.getLevel().ordinal()).append(',').ws();
 
             if (!requiredMetadata.enclosingClass() && !requiredMetadata.declaringClass()
@@ -696,7 +721,7 @@ public class Renderer implements RenderingManager {
     private void renderInitializer(MethodReader method) {
         MethodReference ref = method.getReference();
         writer.emitMethod(ref.getDescriptor());
-        writer.appendInit(ref).ws().append("=").ws();
+        writer.startVariableDeclaration().appendInit(ref);
         if (ref.parameterCount() != 1) {
             writer.append("(");
         }
@@ -714,14 +739,14 @@ public class Renderer implements RenderingManager {
         String instanceName = variableNameForInitializer(ref.parameterCount());
         writer.append("let " + instanceName).ws().append("=").ws().append("new ").appendClass(
                 ref.getClassName()).append("();").softNewLine();
-        writer.appendMethodBody(ref).append("(" + instanceName);
+        writer.appendMethod(ref).append("(" + instanceName);
         for (int i = 0; i < ref.parameterCount(); ++i) {
             writer.append(",").ws();
             writer.append(variableNameForInitializer(i));
         }
         writer.append(");").softNewLine();
         writer.append("return " + instanceName + ";").softNewLine();
-        writer.outdent().append("}");
+        writer.outdent().append("}").endDeclaration();
         writer.emitMethod(null);
     }
 
@@ -753,16 +778,21 @@ public class Renderer implements RenderingManager {
     }
 
     private void emitVirtualDeclaration(MethodReference ref) {
-        String methodName = context.getNaming().getNameFor(ref.getDescriptor());
+        String methodName = context.getNaming().instanceMethodName(ref.getDescriptor());
         writer.append("\"").append(methodName).append("\"");
         writer.append(",").ws();
         emitVirtualFunctionWrapper(ref);
     }
 
     private void emitVirtualFunctionWrapper(MethodReference method) {
-        if (method.parameterCount() <= 4) {
+        var forced = context.isForcedFunction(method);
+        if (forced) {
+            writer.appendFunction("$rt_wrapFunctionVararg").append("(").appendMethod(method).append(")");
+            return;
+        }
+        if (method.parameterCount() <= 4 && !forced) {
             writer.appendFunction("$rt_wrapFunction" + method.parameterCount());
-            writer.append("(").appendMethodBody(method).append(")");
+            writer.append("(").appendMethod(method).append(")");
             return;
         }
 
@@ -781,7 +811,7 @@ public class Renderer implements RenderingManager {
         if (method.getDescriptor().getResultType() != ValueType.VOID) {
             writer.append("return ");
         }
-        writer.appendMethodBody(method).append("(");
+        writer.appendMethod(method).append("(");
         writer.append("this");
         for (String arg : args) {
             writer.append(",").ws().append(arg);
@@ -789,24 +819,22 @@ public class Renderer implements RenderingManager {
         writer.append(");").ws().append("}");
     }
 
-    private void renderBody(MethodHolder method, Decompiler decompiler) {
+    private void renderBody(MethodHolder method, Decompiler decompiler, boolean isFunction) {
         MethodReference ref = method.getReference();
         writer.emitMethod(ref.getDescriptor());
 
-        writer.appendMethodBody(ref).ws().append("=").ws();
-        methodBodyRenderer.renderParameters(ref, method.getModifiers());
-        writer.sameLineWs().append("=>").ws().append("{").indent().softNewLine();
+        writer.appendMethod(ref);
         if (method.hasModifier(ElementModifier.NATIVE)) {
-            renderNativeBody(method, classSource);
+            renderNativeBody(method, classSource, isFunction);
         } else {
-            renderRegularBody(method, decompiler);
+            renderRegularBody(method, decompiler, isFunction);
         }
 
         writer.outdent().append("}");
         writer.emitMethod(null);
     }
 
-    private void renderNativeBody(MethodHolder method, ClassReaderSource classes) {
+    private void renderNativeBody(MethodHolder method, ClassReaderSource classes, boolean isFunction) {
         var reference = method.getReference();
         var generator = generators.get(reference);
         if (generator == null) {
@@ -822,6 +850,7 @@ public class Renderer implements RenderingManager {
         }
 
         var async = asyncMethods.contains(reference);
+        renderMethodPrologue(reference, method.getModifiers(), isFunction);
         methodBodyRenderer.renderNative(generator, async, reference);
         threadLibraryUsed |= methodBodyRenderer.isThreadLibraryUsed();
     }
@@ -875,7 +904,7 @@ public class Renderer implements RenderingManager {
         }
     }
 
-    private void renderRegularBody(MethodHolder method, Decompiler decompiler) {
+    private void renderRegularBody(MethodHolder method, Decompiler decompiler, boolean isFunction) {
         MethodReference reference = method.getReference();
         MethodNode node;
         var async = asyncMethods.contains(reference);
@@ -885,8 +914,19 @@ public class Renderer implements RenderingManager {
             var entry = decompileRegular(decompiler, method);
             node = entry.method;
         }
+
+        methodBodyRenderer.setCurrentMethod(node);
+        renderMethodPrologue(method.getReference(), method.getModifiers(), isFunction);
         methodBodyRenderer.render(node, async);
         threadLibraryUsed |= methodBodyRenderer.isThreadLibraryUsed();
+    }
+
+    private void renderMethodPrologue(MethodReference reference, Set<ElementModifier> modifier, boolean isFunction) {
+        methodBodyRenderer.renderParameters(reference, modifier, isFunction);
+        if (!isFunction) {
+            writer.sameLineWs().append("=>");
+        }
+        writer.ws().append("{").indent().softNewLine();
     }
 
     private AstCacheEntry decompileRegular(Decompiler decompiler, MethodHolder method) {

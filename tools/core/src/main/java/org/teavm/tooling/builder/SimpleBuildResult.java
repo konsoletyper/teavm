@@ -15,21 +15,15 @@
  */
 package org.teavm.tooling.builder;
 
-import java.util.Collection;
-import java.util.List;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.ProblemProvider;
-import org.teavm.tooling.InstructionLocationReader;
 import org.teavm.vm.TeaVM;
 
 public class SimpleBuildResult implements BuildResult {
     private TeaVM vm;
-    private List<String> generatedFiles;
-    private Collection<String> usedResources;
 
-    public SimpleBuildResult(TeaVM vm, List<String> generatedFiles) {
+    public SimpleBuildResult(TeaVM vm) {
         this.vm = vm;
-        this.generatedFiles = generatedFiles;
     }
 
     @Override
@@ -40,23 +34,5 @@ public class SimpleBuildResult implements BuildResult {
     @Override
     public ProblemProvider getProblems() {
         return vm.getProblemProvider();
-    }
-
-    @Override
-    public Collection<String> getUsedResources() {
-        if (usedResources == null) {
-            usedResources = InstructionLocationReader.extractUsedResources(vm);
-        }
-        return usedResources;
-    }
-
-    @Override
-    public Collection<String> getClasses() {
-        return vm.getClasses();
-    }
-
-    @Override
-    public Collection<String> getGeneratedFiles() {
-        return generatedFiles;
     }
 }

@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -93,18 +92,15 @@ import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.interop.Address;
 import org.teavm.interop.Platforms;
-import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
-import org.teavm.model.Instruction;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
-import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
@@ -112,9 +108,6 @@ import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableBuilder;
 import org.teavm.model.classes.VirtualTableProvider;
-import org.teavm.model.instructions.CloneArrayInstruction;
-import org.teavm.model.instructions.InvocationType;
-import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
@@ -128,6 +121,8 @@ import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.model.util.AsyncMethodFinder;
+import org.teavm.model.util.DefaultVariableCategoryProvider;
+import org.teavm.model.util.VariableCategoryProvider;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.CallSite;
 import org.teavm.runtime.CallSiteLocation;
@@ -139,7 +134,6 @@ import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 import org.teavm.vm.BuildTarget;
-import org.teavm.vm.TeaVMEntryPoint;
 import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.TeaVMTargetController;
 import org.teavm.vm.spi.TeaVMHostExtension;
@@ -261,8 +255,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     }
 
     @Override
-    public boolean requiresRegisterAllocation() {
-        return true;
+    public VariableCategoryProvider variableCategoryProvider() {
+        return new DefaultVariableCategoryProvider();
     }
 
     @Override
@@ -623,38 +617,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {
         VirtualTableBuilder builder = new VirtualTableBuilder(classes);
-        builder.setMethodsUsedAtCallSites(getMethodsUsedOnCallSites(classes));
+        builder.setMethodsUsedAtCallSites(VirtualTableBuilder.getMethodsUsedOnCallSites(classes, true));
         builder.setMethodCalledVirtually(controller::isVirtual);
         return builder.build();
-    }
-
-    private Set<MethodReference> getMethodsUsedOnCallSites(ListableClassHolderSource classes) {
-        Set<MethodReference> virtualMethods = new HashSet<>();
-
-        for (String className : classes.getClassNames()) {
-            ClassHolder cls = classes.get(className);
-            for (MethodHolder method : cls.getMethods()) {
-                Program program = method.getProgram();
-                if (program == null) {
-                    continue;
-                }
-                for (int i = 0; i < program.basicBlockCount(); ++i) {
-                    BasicBlock block = program.basicBlockAt(i);
-                    for (Instruction insn : block) {
-                        if (insn instanceof InvokeInstruction) {
-                            InvokeInstruction invoke = (InvokeInstruction) insn;
-                            if (invoke.getType() == InvocationType.VIRTUAL) {
-                                virtualMethods.add(invoke.getMethod());
-                            }
-                        } else if (insn instanceof CloneArrayInstruction) {
-                            virtualMethods.add(new MethodReference(Object.class, "clone", Object.class));
-                        }
-                    }
-                }
-            }
-        }
-
-        return virtualMethods;
     }
 
     private void generateSpecialFunctions(GenerationContext context, CodeWriter writer) {
@@ -817,8 +782,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateMain(GenerationContext context, CodeWriter writer, IncludeManager includes,
             ListableClassHolderSource classes, List<? extends ValueType> types) {
-        Iterator<? extends TeaVMEntryPoint> entryPointIter = controller.getEntryPoints().values().iterator();
-        String mainFunctionName = entryPointIter.hasNext() ? entryPointIter.next().getPublicName() : null;
+        var mainFunctionName = controller.getEntryPointName();
         if (mainFunctionName == null) {
             mainFunctionName = "main";
         }
@@ -936,15 +900,13 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateCallToMainMethod(IntrinsicContext context, InvocationExpr invocation) {
         NameProvider names = context.names();
-        Iterator<? extends TeaVMEntryPoint> entryPointIter = controller.getEntryPoints().values().iterator();
-        if (entryPointIter.hasNext()) {
-            TeaVMEntryPoint entryPoint = entryPointIter.next();
-            context.importMethod(entryPoint.getMethod(), true);
-            String mainMethod = names.forMethod(entryPoint.getMethod());
-            context.writer().print(mainMethod + "(");
-            context.emit(invocation.getArguments().get(0));
-            context.writer().print(")");
-        }
+        var method = new MethodReference(controller.getEntryPoint(), "main", ValueType.parse(String[].class),
+                ValueType.parse(void.class));
+        context.importMethod(method, true);
+        String mainMethod = names.forMethod(method);
+        context.writer().print(mainMethod + "(");
+        context.emit(invocation.getArguments().get(0));
+        context.writer().print(")");
     }
 
     @Override

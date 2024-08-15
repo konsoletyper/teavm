@@ -17,16 +17,22 @@ package org.teavm.jso.core;
 
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSPrimitiveType;
 
-public abstract class JSSymbol<T> implements JSObject {
+@JSPrimitiveType("symbol")
+public class JSSymbol<T> implements JSObject {
+    private JSSymbol() {
+    }
+
     @JSBody(params = "name", script = "return Symbol(name);")
     public static native <T> JSSymbol<T> create(String name);
 
-    @JSBody(params = "obj", script = "return obj[this];")
+    @JSIndexer
     public native T get(Object obj);
 
-    @JSBody(params = { "obj", "value" }, script = "obj[this] = value;")
+    @JSIndexer
     @NoSideEffects
     public native void set(Object obj, T value);
 }

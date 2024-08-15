@@ -18,8 +18,11 @@ package org.teavm.jso.impl;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSModule;
 import org.teavm.jso.JSObject;
+import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -34,6 +37,7 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 
 class JSValueMarshaller {
@@ -127,6 +131,17 @@ class JSValueMarshaller {
                 }
             }
             if (!className.equals("java.lang.String")) {
+                if (!typeHelper.isJavaScriptClass(className) && !typeHelper.isJavaScriptImplementation(className)) {
+                    var unwrapNative = new InvokeInstruction();
+                    unwrapNative.setLocation(location);
+                    unwrapNative.setType(InvocationType.SPECIAL);
+                    unwrapNative.setMethod(new MethodReference(JSWrapper.class,
+                            "dependencyJavaToJs", Object.class, JSObject.class));
+                    unwrapNative.setArguments(var);
+                    unwrapNative.setReceiver(program.createVariable());
+                    replacement.add(unwrapNative);
+                    return unwrapNative.getReceiver();
+                }
                 return var;
             }
         }
@@ -192,8 +207,10 @@ class JSValueMarshaller {
         } else if (type instanceof ValueType.Object) {
             if (type.isObject(String.class)) {
                 return type;
-            } else {
+            } else if (typeHelper.isJavaScriptClass(((ValueType.Object) type).getClassName())) {
                 return JSMethods.JS_OBJECT;
+            } else {
+                return JSMethods.OBJECT;
             }
         } else {
             return type;
@@ -317,6 +334,15 @@ class JSValueMarshaller {
                 return unwrap(var, "unwrapString", JSMethods.JS_OBJECT, stringType, location.getSourceLocation());
             } else if (typeHelper.isJavaScriptClass(className)) {
                 return var;
+            } else {
+                var wrapNative = new InvokeInstruction();
+                wrapNative.setLocation(location.getSourceLocation());
+                wrapNative.setType(InvocationType.SPECIAL);
+                wrapNative.setMethod(LIGHTWEIGHT_JS_TO_JAVA);
+                wrapNative.setArguments(var);
+                wrapNative.setReceiver(program.createVariable());
+                replacement.add(wrapNative);
+                return wrapNative.getReceiver();
             }
         } else if (type instanceof ValueType.Array) {
             return unwrapArray(location, var, (ValueType.Array) type);
@@ -526,11 +552,120 @@ class JSValueMarshaller {
 
     Variable addString(String str, TextLocation location) {
         Variable var = program.createVariable();
-        StringConstantInstruction nameInsn = new StringConstantInstruction();
+        var nameInsn = new StringConstantInstruction();
         nameInsn.setReceiver(var);
         nameInsn.setConstant(str);
         nameInsn.setLocation(location);
         replacement.add(nameInsn);
         return var;
+    }
+
+    Variable addJsString(String str, TextLocation location) {
+        return addStringWrap(addString(str, location), location);
+    }
+
+    Variable classRef(String className, TextLocation location) {
+        return classRef(className, null, location);
+    }
+
+    Variable classRef(String className, AnnotationContainerReader annotations, TextLocation location) {
+        String name = null;
+        String module = null;
+        var cls = classSource.get(className);
+        if (cls != null) {
+            name = cls.getSimpleName();
+            var jsExport = cls.getAnnotations().get(JSClass.class.getName());
+            if (jsExport != null) {
+                var nameValue = jsExport.getValue("name");
+                if (nameValue != null) {
+                    var nameValueString = nameValue.getString();
+                    if (!nameValueString.isEmpty()) {
+                        name = nameValueString;
+                    }
+                }
+            }
+            module = moduleName(cls.getAnnotations());
+        }
+        if (name == null) {
+            name = cls.getName().substring(cls.getName().lastIndexOf('.') + 1);
+        }
+        if (module == null && annotations != null) {
+            module = moduleName(annotations);
+        }
+        return module != null ? moduleRef(module, name, location) : globalRef(name, location);
+    }
+
+    Variable moduleRef(String className, AnnotationContainerReader annotations, TextLocation location) {
+        String module = null;
+        var cls = classSource.get(className);
+        if (cls != null) {
+            module = moduleName(cls.getAnnotations());
+        }
+        if (module == null && annotations != null) {
+            module = moduleName(annotations);
+        }
+        return module != null ? moduleRef(module, location) : nullInstance(location);
+    }
+
+    private String moduleName(AnnotationContainerReader annotations) {
+        var jsModule = annotations.get(JSModule.class.getName());
+        if (jsModule != null) {
+            return jsModule.getValue("value").getString();
+        }
+        return null;
+    }
+
+    Variable globalRef(String name, TextLocation location) {
+        var invoke = new InvokeInstruction();
+        invoke.setType(InvocationType.SPECIAL);
+        invoke.setMethod(JSMethods.GLOBAL);
+        invoke.setArguments(addString(name, location));
+        invoke.setReceiver(program.createVariable());
+        invoke.setLocation(location);
+        replacement.add(invoke);
+
+        return invoke.getReceiver();
+    }
+
+    Variable moduleRef(String module, String name, TextLocation location) {
+        return dot(moduleRef(module, location), name, location);
+    }
+
+    Variable moduleRef(String module, TextLocation location) {
+        var moduleNameInsn = new StringConstantInstruction();
+        moduleNameInsn.setReceiver(program.createVariable());
+        moduleNameInsn.setConstant(module);
+        moduleNameInsn.setLocation(location);
+        replacement.add(moduleNameInsn);
+
+        var invoke = new InvokeInstruction();
+        invoke.setType(InvocationType.SPECIAL);
+        invoke.setMethod(JSMethods.IMPORT_MODULE);
+        invoke.setArguments(moduleNameInsn.getReceiver());
+        invoke.setReceiver(program.createVariable());
+        invoke.setLocation(location);
+        replacement.add(invoke);
+
+        return invoke.getReceiver();
+    }
+
+    Variable dot(Variable instance, String name, TextLocation location) {
+        var get = new InvokeInstruction();
+        get.setType(InvocationType.SPECIAL);
+        get.setMethod(JSMethods.GET_PURE);
+        get.setReceiver(program.createVariable());
+        get.setArguments(instance, addJsString(name, location));
+        get.setLocation(location);
+        replacement.add(get);
+
+        return get.getReceiver();
+    }
+
+    Variable nullInstance(TextLocation location) {
+        var nullConstant = new NullConstantInstruction();
+        nullConstant.setReceiver(program.createVariable());
+        nullConstant.setLocation(location);
+        replacement.add(nullConstant);
+        return nullConstant.getReceiver();
     }
 }

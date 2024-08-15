@@ -36,8 +36,8 @@ public abstract class IDBIndex implements JSObject, IDBCursorSource {
         }
     }
 
-    @JSBody(script = "return this;")
-    private native String[] unwrapStringArray(JSObject obj);
+    @JSBody(params = "obj", script = "return obj;")
+    private static native String[] unwrapStringArray(JSObject obj);
 
     @JSProperty
     public abstract boolean isMultiEntry();

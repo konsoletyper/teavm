@@ -18,8 +18,8 @@ package org.teavm.platform.plugin;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
-import org.teavm.backend.javascript.spi.VirtualMethodContributor;
-import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
+import org.teavm.backend.javascript.spi.MethodContributor;
+import org.teavm.backend.javascript.spi.MethodContributorContext;
 import org.teavm.backend.javascript.templating.JavaScriptTemplate;
 import org.teavm.backend.javascript.templating.JavaScriptTemplateFactory;
 import org.teavm.dependency.DependencyAgent;
@@ -34,7 +34,7 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-public class AsyncMethodGenerator implements Generator, DependencyPlugin, VirtualMethodContributor {
+public class AsyncMethodGenerator implements Generator, DependencyPlugin, MethodContributor {
     private static final MethodDescriptor completeMethod = new MethodDescriptor("complete", Object.class, void.class);
     private static final MethodDescriptor errorMethod = new MethodDescriptor("error", Throwable.class, void.class);
     private JavaScriptTemplate template;
@@ -49,7 +49,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Virtua
         template.builder("asyncMethod")
                 .withContext(context)
                 .withFragment("callMethod", (w, p) -> {
-                    w.appendMethodBody(asyncRef).append('(');
+                    w.appendMethod(asyncRef).append('(');
                     ClassReader cls = context.getClassSource().get(methodRef.getClassName());
                     MethodReader method = cls.getMethod(methodRef.getDescriptor());
                     int start = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;
@@ -101,7 +101,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Virtua
     }
 
     @Override
-    public boolean isVirtual(VirtualMethodContributorContext context, MethodReference methodRef) {
+    public boolean isContributing(MethodContributorContext context, MethodReference methodRef) {
         ClassReader cls = context.getClassSource().get(methodRef.getClassName());
         if (cls == null) {
             return false;

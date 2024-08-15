@@ -48,6 +48,7 @@ public class JSOPlugin implements TeaVMPlugin {
         jsHost.addInjectorProvider(new GeneratorAnnotationInstaller<>(new JSBodyGenerator(),
                 DynamicInjector.class.getName()));
         jsHost.addVirtualMethods(aliasRenderer);
+        jsHost.addForcedFunctionMethods(new JSExportedMethodAsFunction());
 
         JSExceptionsGenerator exceptionsGenerator = new JSExceptionsGenerator();
         jsHost.add(new MethodReference(JSExceptions.class, "getJavaException", JSObject.class, Throwable.class),
@@ -71,6 +72,8 @@ public class JSOPlugin implements TeaVMPlugin {
         jsHost.add(new MethodReference(JSWrapper.class, "wrapperToJs", JSWrapper.class, JSObject.class),
                 wrapperGenerator);
         jsHost.add(new MethodReference(JSWrapper.class, "jsToWrapper", JSObject.class, JSWrapper.class),
+                wrapperGenerator);
+        jsHost.add(new MethodReference(JSWrapper.class, "isJSImplementation", Object.class, boolean.class),
                 wrapperGenerator);
 
         host.add(new MethodReference(JSWrapper.class, "jsToWrapper", JSObject.class, JSWrapper.class),

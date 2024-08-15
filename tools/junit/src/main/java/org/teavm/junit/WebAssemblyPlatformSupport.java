@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.teavm.backend.wasm.WasmRuntimeType;
 import org.teavm.backend.wasm.WasmTarget;
+import org.teavm.browserrunner.BrowserRunner;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ReferenceCache;
@@ -35,20 +36,14 @@ class WebAssemblyPlatformSupport extends BaseWebAssemblyPlatformSupport {
     @Override
     TestRunStrategy createRunStrategy(File outputDir) {
         var runStrategyName = System.getProperty(WASM_RUNNER);
-        if (runStrategyName != null) {
-            switch (runStrategyName) {
-                case "browser":
-                    return new BrowserRunStrategy(outputDir, "WASM", BrowserRunStrategy::customBrowser);
-                case "chrome":
-                case "browser-chrome":
-                    return new BrowserRunStrategy(outputDir, "WASM", BrowserRunStrategy::chromeBrowser);
-                case "browser-firefox":
-                    return new BrowserRunStrategy(outputDir, "WASM", BrowserRunStrategy::firefoxBrowser);
-                default:
-                    throw new RuntimeException("Unknown run strategy: " + runStrategyName);
-            }
-        }
-        return null;
+        return runStrategyName != null
+                ? new BrowserRunStrategy(outputDir, "WASM", BrowserRunner.pickBrowser(runStrategyName))
+                : null;
+    }
+
+    @Override
+    protected boolean exceptionsUsed() {
+        return true;
     }
 
     @Override

@@ -16,11 +16,17 @@
 package org.teavm.jso.dom.events;
 
 public interface LoadEventTarget extends EventTarget {
+    @Deprecated
     default void listenLoad(EventListener<Event> listener) {
         addEventListener("load", listener);
     }
 
+    @Deprecated
     default void neglectLoad(EventListener<Event> listener) {
         addEventListener("load", listener);
+    }
+
+    default Registration onLoad(EventListener<Event> listener) {
+        return onEvent("load", listener);
     }
 }

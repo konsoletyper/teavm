@@ -21,6 +21,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.BaseTypeInference;
+import org.teavm.model.instructions.InvocationType;
 
 class JSTypeInference extends BaseTypeInference<JSType> {
     private JSTypeHelper typeHelper;
@@ -81,11 +82,14 @@ class JSTypeInference extends BaseTypeInference<JSType> {
 
     @Override
     protected JSType elementType(JSType jsType) {
+        if (jsType == JSType.NULL) {
+            return JSType.NULL;
+        }
         return jsType instanceof JSType.ArrayType ? ((JSType.ArrayType) jsType).elementType : JSType.MIXED;
     }
 
     @Override
-    protected JSType methodReturnType(MethodReference methodRef) {
+    protected JSType methodReturnType(InvocationType invocationType, MethodReference methodRef) {
         if (!methodRef.getReturnType().isObject(Object.class)) {
             return mapType(methodRef.getReturnType());
         }

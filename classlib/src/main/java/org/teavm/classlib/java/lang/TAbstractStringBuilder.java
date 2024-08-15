@@ -23,11 +23,6 @@ import org.teavm.classlib.java.util.TArrays;
 
 class TAbstractStringBuilder implements TSerializable, TCharSequence {
     static class Constants {
-        static int[] intPowersOfTen = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
-                1000000000 };
-        static long[] longPowersOfTen = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
-                1000000000, 10000000000L, 100000000000L, 1000000000000L, 10000000000000L, 100000000000000L,
-                1000000000000000L, 10000000000000000L, 100000000000000000L, 1000000000000000000L };
         static final long[] longLogPowersOfTen = { 1, 10, 100, 10000, 100000000, 10000000000000000L, };
 
         static final DoubleAnalyzer.Result doubleAnalysisResult = new DoubleAnalyzer.Result();

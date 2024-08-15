@@ -17,28 +17,42 @@ package org.teavm.classlib.java.util.stream.intimpl;
 
 import java.util.function.IntPredicate;
 
-public class TDropWhileIntStream extends TWrappingIntStreamImpl {
+public class TDropWhileIntStream extends TSimpleIntStreamImpl {
+    private TSimpleIntStreamImpl sourceStream;
     private IntPredicate predicate;
 
     /* set to `true` as soon as we see a value `v` in the source stream for which `predicate.test(v)` is true */
     private boolean isStarted;
 
-    TDropWhileIntStream(TSimpleIntStreamImpl innerStream, IntPredicate predicate) {
-        super(innerStream);
+    TDropWhileIntStream(TSimpleIntStreamImpl sourceStream, IntPredicate predicate) {
+        this.sourceStream = sourceStream;
         this.predicate = predicate;
     }
 
     @Override
-    protected IntPredicate wrap(IntPredicate consumer) {
-        return t -> {
-            if (!isStarted) {
-                if (predicate.test(t)) {
-                    return true;
-                } else {
+    public boolean next(IntPredicate consumer) {
+        if (!isStarted) {
+            var skippingPredicate = new IntPredicate() {
+                boolean consumerCanTakeMore;
+
+                @Override
+                public boolean test(int t) {
+                    if (predicate.test(t)) {
+                        return true;
+                    }
                     isStarted = true;
+                    consumerCanTakeMore = consumer.test(t);
+                    return false;
                 }
+            };
+            var result = sourceStream.next(skippingPredicate);
+            if (!result) {
+                return false;
             }
-            return consumer.test(t);
-        };
+            if (!skippingPredicate.consumerCanTakeMore) {
+                return true;
+            }
+        }
+        return sourceStream.next(consumer);
     }
 }

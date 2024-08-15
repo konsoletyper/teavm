@@ -16,11 +16,19 @@
 package org.teavm.jso.core;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-public abstract class JSError implements JSObject {
+@JSClass(name = "Error")
+public class JSError implements JSObject {
+    public JSError() {
+    }
+
+    public JSError(String message) {
+    }
+
     @JSBody(params = { "tryClause", "catchClause" }, script = ""
             + "try {"
                 + "return tryClause();"
@@ -29,17 +37,19 @@ public abstract class JSError implements JSObject {
             + "}")
     public static native <T> T catchNative(TryClause<T> tryClause, CatchClause<T> catchClause);
 
-    @JSBody(params = "object", script = "return object instanceof Error;")
-    public static native boolean isError(JSObject object);
+    @Deprecated
+    public static boolean isError(JSObject object) {
+        return object instanceof JSError;
+    }
 
     @JSProperty
-    public abstract String getStack();
+    public native String getStack();
 
     @JSProperty
-    public abstract String getMessage();
+    public native String getMessage();
 
     @JSProperty
-    public abstract String getName();
+    public native String getName();
 
     @JSFunctor
     public interface TryClause<T> extends JSObject {

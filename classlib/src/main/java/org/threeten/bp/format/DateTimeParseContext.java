@@ -70,7 +70,7 @@ import org.threeten.bp.temporal.UnsupportedTemporalTypeException;
  * It has the ability to store and retrieve the parsed values and manage optional segments.
  * It also provides key information to the parsing methods.
  * <p>
- * Once parsing is complete, the {@link #toBuilder()} is typically used
+ * Once parsing is complete, the toBuilder() is typically used
  * to obtain a builder that can combine the separate parsed fields into meaningful values.
  *
  * <h3>Specification for implementors</h3>

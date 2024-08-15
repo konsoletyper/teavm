@@ -15,15 +15,15 @@
  */
 package org.teavm.classlib.impl;
 
-import org.teavm.backend.javascript.spi.VirtualMethodContributor;
-import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
+import org.teavm.backend.javascript.spi.MethodContributor;
+import org.teavm.backend.javascript.spi.MethodContributorContext;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.PlatformAnnotationProvider;
 
-public class AnnotationVirtualMethods implements VirtualMethodContributor {
+public class AnnotationVirtualMethods implements MethodContributor {
     @Override
-    public boolean isVirtual(VirtualMethodContributorContext context, MethodReference methodRef) {
+    public boolean isContributing(MethodContributorContext context, MethodReference methodRef) {
         ClassReader cls = context.getClassSource().get(methodRef.getClassName());
         if (cls == null || !cls.getInterfaces().contains(PlatformAnnotationProvider.class.getName())) {
             return false;

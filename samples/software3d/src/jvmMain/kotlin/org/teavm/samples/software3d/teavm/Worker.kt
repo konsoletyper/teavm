@@ -26,7 +26,7 @@ import org.teavm.samples.software3d.scenes.geometry
 
 fun worker() {
     val worker = RenderWorker()
-    Window.worker().listenMessage {
+    Window.worker().onMessage {
         val dataJson = it.data as JSMapLike<*>
         when ((dataJson["type"] as JSString).stringValue()) {
             "init" -> worker.init(dataJson)

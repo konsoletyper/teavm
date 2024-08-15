@@ -25,6 +25,7 @@ import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmDefaultExpressionVisitor;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmExpressionVisitor;
+import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 
 public class UnusedFunctionElimination {
     private WasmModule module;
@@ -35,7 +36,7 @@ public class UnusedFunctionElimination {
     }
 
     public void apply() {
-        List<WasmFunction> exported = module.getFunctions().values().stream()
+        List<WasmFunction> exported = module.functions.stream()
                 .filter(function -> function.getExportName() != null)
                 .collect(Collectors.toList());
         for (WasmFunction function : exported) {
@@ -48,11 +49,7 @@ public class UnusedFunctionElimination {
             use(module.getStartFunction());
         }
 
-        for (WasmFunction function : module.getFunctions().values().toArray(new WasmFunction[0])) {
-            if (!usedFunctions.contains(function)) {
-                module.remove(function);
-            }
-        }
+        module.functions.removeIf(function -> !usedFunctions.contains(function));
     }
 
     private void use(WasmFunction function) {
@@ -68,10 +65,13 @@ public class UnusedFunctionElimination {
         @Override
         public void visit(WasmCall expression) {
             super.visit(expression);
-            WasmFunction function = module.getFunctions().get(expression.getFunctionName());
-            if (function != null) {
-                use(function);
-            }
+            use(expression.getFunction());
+        }
+
+        @Override
+        public void visit(WasmFunctionReference expression) {
+            super.visit(expression);
+            use(expression.getFunction());
         }
     };
 }

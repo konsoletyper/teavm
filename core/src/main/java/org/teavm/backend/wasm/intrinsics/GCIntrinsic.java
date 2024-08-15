@@ -20,7 +20,7 @@ import java.util.List;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmHeap;
 import org.teavm.backend.wasm.WasmRuntime;
-import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
@@ -100,8 +100,8 @@ public class GCIntrinsic implements WasmIntrinsic {
                 return intToLong(getStaticField(manager, "maxHeapSize"));
             case "resizeHeap": {
                 WasmExpression amount = manager.generate(invocation.getArguments().get(0));
-                amount = new WasmConversion(WasmType.INT64, WasmType.INT32, false, amount);
-                return new WasmCall(manager.getNames().forMethod(RESIZE_HEAP), amount);
+                amount = new WasmConversion(WasmNumType.INT64, WasmNumType.INT32, false, amount);
+                return new WasmCall(manager.getFunctions().forStaticMethod(RESIZE_HEAP), amount);
             }
             case "regionSize": {
                 WasmInt32Constant result = new WasmInt32Constant(0);
@@ -112,7 +112,7 @@ public class GCIntrinsic implements WasmIntrinsic {
                 return intToLong(getStaticField(manager, "heapSize"));
             case "outOfMemory": {
                 WasmBlock block = new WasmBlock(false);
-                WasmCall call = new WasmCall(manager.getNames().forMethod(PRINT_OUT_OF_MEMORY));
+                WasmCall call = new WasmCall(manager.getFunctions().forStaticMethod(PRINT_OUT_OF_MEMORY));
                 block.getBody().add(call);
                 block.getBody().add(new WasmUnreachable());
                 return block;
@@ -149,6 +149,6 @@ public class GCIntrinsic implements WasmIntrinsic {
     }
 
     private static WasmExpression intToLong(WasmExpression expression) {
-        return new WasmConversion(WasmType.INT32, WasmType.INT64, false, expression);
+        return new WasmConversion(WasmNumType.INT32, WasmNumType.INT64, false, expression);
     }
 }

@@ -21,6 +21,7 @@ import java.util.function.IntFunction;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.FunctionNode;
 import org.mozilla.javascript.ast.Name;
+import org.teavm.backend.javascript.rendering.NameEmitter;
 import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.model.ClassReaderSource;
 
@@ -65,27 +66,26 @@ public class JavaScriptTemplate {
 
         public SourceFragment build() {
             var intParameters = parameters;
-            var nameParameters = new HashMap<String, SourceFragment>();
+            var nameParameters = new HashMap<String, NameEmitter>();
             for (var i = 0; i < node.getParams().size(); ++i) {
                 var param = node.getParams().get(i);
                 if (param instanceof Name) {
-                    nameParameters.put(((Name) param).getIdentifier(), intParameters.apply(i + 1));
+                    var sourceFragment = intParameters.apply(i + 1);
+                    nameParameters.put(((Name) param).getIdentifier(), sourceFragment::write);
                 }
             }
             var thisFragment = parameters.apply(0);
             var body = node.getBody();
             return (writer, precedence) -> {
-                var astWriter = new TemplatingAstWriter(writer, nameParameters, node, null);
+                var astWriter = new TemplatingAstWriter(writer, null, false);
+                for (var entry : nameParameters.entrySet()) {
+                    astWriter.declareNameEmitter(entry.getKey(), entry.getValue());
+                }
                 for (var entry : fragments.entrySet()) {
                     astWriter.setFragment(entry.getKey(), entry.getValue());
                 }
-                if (node.getSymbolTable() != null) {
-                    for (var name : node.getSymbolTable().keySet()) {
-                        astWriter.currentScopes.put(name, node);
-                    }
-                }
                 if (thisFragment != null) {
-                    astWriter.declareNameEmitter("this", thisPrecedence -> thisFragment.write(writer, thisPrecedence));
+                    astWriter.declareNameEmitter("this", thisFragment::write);
                 }
                 for (var child = body.getFirstChild(); child != null; child = child.getNext()) {
                     astWriter.print((AstNode) child);

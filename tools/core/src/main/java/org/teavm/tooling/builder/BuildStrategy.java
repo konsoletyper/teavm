@@ -17,7 +17,9 @@ package org.teavm.tooling.builder;
 
 import java.util.List;
 import java.util.Properties;
+import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
+import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMToolLog;
 import org.teavm.vm.TeaVMOptimizationLevel;
@@ -46,7 +48,10 @@ public interface BuildStrategy {
 
     void setDebugInformationGenerated(boolean debugInformationGenerated);
 
+    @Deprecated
     void setSourceFilesCopied(boolean sourceFilesCopied);
+
+    void setSourceFilePolicy(TeaVMSourceFilePolicy sourceFilePolicy);
 
     void setProgressListener(TeaVMProgressListener progressListener);
 
@@ -55,6 +60,10 @@ public interface BuildStrategy {
     void setObfuscated(boolean obfuscated);
 
     void setStrict(boolean strict);
+
+    void setJsModuleType(JSModuleType jsModuleType);
+
+    void setMaxTopLevelNames(int maxTopLevelNames);
 
     void setProperties(Properties properties);
 
@@ -71,6 +80,8 @@ public interface BuildStrategy {
     void setCacheDirectory(String cacheDirectory);
 
     void setWasmVersion(WasmBinaryVersion wasmVersion);
+
+    void setWasmExceptionsUsed(boolean wasmExceptionsUsed);
 
     void setMinHeapSize(int minHeapSize);
 

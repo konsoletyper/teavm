@@ -15,11 +15,12 @@
  */
 package org.teavm.jso.webaudio;
 
-import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
+import org.teavm.jso.dom.events.EventTarget;
+import org.teavm.jso.dom.events.Registration;
 
-public interface AudioWorkerGlobalScope extends JSObject {
+public interface AudioWorkerGlobalScope extends EventTarget {
     @JSProperty
     float getSampleRate();
 
@@ -29,11 +30,19 @@ public interface AudioWorkerGlobalScope extends JSObject {
     @JSProperty("onaudioprocess")
     EventListener<MediaEvent> getOnAudioProcess();
 
+    default Registration onAudioProcess(EventListener<MediaEvent> listener) {
+        return onEvent("audioprocess", listener);
+    }
+
     @JSProperty("onnodecreate")
     void setOnNodeCreate(EventListener<MediaEvent> event);
 
     @JSProperty("onnodecreate")
     EventListener<MediaEvent> getOnNodeCreate();
+
+    default Registration onNodeCreate(EventListener<MediaEvent> listener) {
+        return onEvent("nodecreate", listener);
+    }
 
     @JSProperty
     AudioWorkerParamDescriptor[] getParameters();

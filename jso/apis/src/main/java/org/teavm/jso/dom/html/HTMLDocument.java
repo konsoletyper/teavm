@@ -22,74 +22,74 @@ import org.teavm.jso.dom.events.EventTarget;
 import org.teavm.jso.dom.xml.Document;
 import org.teavm.jso.dom.xml.NodeList;
 
-public interface HTMLDocument extends Document, EventTarget {
+public abstract class HTMLDocument implements Document, EventTarget {
     @JSProperty
     @Override
-    HTMLHtmlElement getDocumentElement();
+    public abstract HTMLHtmlElement getDocumentElement();
 
     @Override
-    HTMLElement createElement(String tagName);
+    public abstract HTMLElement createElement(String tagName);
 
-    default HTMLElement createElement(String tagName, Consumer<HTMLElement> consumer) {
+    public final HTMLElement createElement(String tagName, Consumer<HTMLElement> consumer) {
         HTMLElement result = createElement(tagName);
         consumer.accept(result);
         return result;
     }
 
     @Override
-    HTMLElement getElementById(String elementId);
+    public abstract HTMLElement getElementById(String elementId);
 
     @JSProperty
-    HTMLBodyElement getBody();
+    public abstract HTMLBodyElement getBody();
 
     @JSProperty
-    HTMLHeadElement getHead();
+    public abstract HTMLHeadElement getHead();
 
     @JSProperty
-    int getScrollLeft();
+    public abstract int getScrollLeft();
 
     @JSProperty
-    int getScrollTop();
+    public abstract int getScrollTop();
 
-    static HTMLDocument current() {
+    public static HTMLDocument current() {
         return Window.current().getDocument();
     }
 
     @Override
-    HTMLElement querySelector(String selectors);
+    public abstract HTMLElement querySelector(String selectors);
 
     @Override
-    NodeList<? extends HTMLElement> querySelectorAll(String selectors);
+    public abstract NodeList<? extends HTMLElement> querySelectorAll(String selectors);
 
     @JSProperty
-    HTMLElement getActiveElement();
+    public abstract HTMLElement getActiveElement();
 
-    HTMLElement elementFromPoint(int x, int y);
-
-    @JSProperty
-    boolean isDesignMode();
+    public abstract HTMLElement elementFromPoint(int x, int y);
 
     @JSProperty
-    void setDesignMode(boolean value);
-
-    void execCommand(String commandName, boolean showDefaultUI, String valueArgument);
-
-    void execCommand(String commandName);
+    public abstract boolean isDesignMode();
 
     @JSProperty
-    String getCookie();
+    public abstract void setDesignMode(boolean value);
+
+    public abstract void execCommand(String commandName, boolean showDefaultUI, String valueArgument);
+
+    public abstract void execCommand(String commandName);
 
     @JSProperty
-    void setCookie(String cookie);
+    public abstract String getCookie();
 
     @JSProperty
-    String getTitle();
+    public abstract void setCookie(String cookie);
 
     @JSProperty
-    void setTitle(String title);
+    public abstract String getTitle();
 
     @JSProperty
-    HTMLElement getPointerLockElement();
+    public abstract void setTitle(String title);
 
-    void exitPointerLock();
+    @JSProperty
+    public abstract HTMLElement getPointerLockElement();
+
+    public abstract void exitPointerLock();
 }

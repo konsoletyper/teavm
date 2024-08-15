@@ -18,11 +18,11 @@ package org.teavm.backend.wasm.intrinsics;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
+import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
 import org.teavm.interop.Function;
 import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 
 public class FunctionIntrinsic implements WasmIntrinsic {
     private WasmClassGenerator classGenerator;
@@ -42,15 +42,16 @@ public class FunctionIntrinsic implements WasmIntrinsic {
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
-        WasmExpression selector = manager.generate(invocation.getArguments().get(0));
-        WasmIndirectCall call = new WasmIndirectCall(selector);
+        var parameterTypes = new WasmType[invocation.getMethod().parameterCount()];
+        for (var i = 0; i < parameterTypes.length; ++i) {
+            parameterTypes[i] = WasmGeneratorUtil.mapType(invocation.getMethod().parameterType(i));
+        }
+        var returnType = WasmGeneratorUtil.mapType(invocation.getMethod().getReturnType());
+        var functionType = manager.getFunctionTypes().of(returnType, parameterTypes);
 
-        for (ValueType type : invocation.getMethod().getParameterTypes()) {
-            call.getParameterTypes().add(WasmGeneratorUtil.mapType(type));
-        }
-        if (invocation.getMethod().getReturnType() != ValueType.VOID) {
-            call.setReturnType(WasmGeneratorUtil.mapType(invocation.getMethod().getReturnType()));
-        }
+        var selector = manager.generate(invocation.getArguments().get(0));
+        var call = new WasmIndirectCall(selector, functionType);
+
         for (int i = 1; i < invocation.getArguments().size(); ++i) {
             call.getArguments().add(manager.generate(invocation.getArguments().get(i)));
         }

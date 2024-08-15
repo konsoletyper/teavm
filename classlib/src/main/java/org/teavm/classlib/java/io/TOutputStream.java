@@ -19,6 +19,36 @@ import java.io.IOException;
 import org.teavm.classlib.java.lang.TObject;
 
 public abstract class TOutputStream extends TObject implements TCloseable, TFlushable {
+    public static TOutputStream nullOutputStream() {
+        return new TOutputStream() {
+            private boolean isClosed;
+
+            @Override
+            public void write(int b) throws IOException {
+                if (isClosed) {
+                    throw new IOException("Stream closed");
+                }
+            }
+
+            @Override
+            public void write(byte[] b) throws IOException {
+                write(b, 0, b.length);
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len) throws IOException {
+                if (isClosed) {
+                    throw new IOException("Stream closed");
+                }
+            }
+
+            @Override
+            public void close() throws IOException {
+                isClosed = true;
+            }
+        };
+    }
+
     public abstract void write(int b) throws IOException;
 
     public void write(byte[] b) throws IOException {

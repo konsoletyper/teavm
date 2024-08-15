@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.javascript.rendering;
 
+import org.teavm.backend.javascript.codegen.SourceWriter;
+
 public interface NameEmitter {
-    void emit(int precedence);
+    void emit(SourceWriter writer, int precedence);
 }

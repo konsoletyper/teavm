@@ -17,15 +17,15 @@ package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
 
-public interface HTMLBaseElement extends HTMLElement {
+public abstract class HTMLBaseElement extends HTMLElement {
     @JSProperty
-    String getHref();
+    public abstract String getHref();
 
     @JSProperty
-    void setHref(String href);
+    public abstract void setHref(String href);
 
     @JSProperty
-    String getTarget();
+    public abstract String getTarget();
 
-    void setTarget(String target);
+    public abstract void setTarget(String target);
 }

@@ -110,7 +110,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         platforms.add(new CPlatformSupport(classSource, referenceCache));
 
         for (var platform : platforms) {
-            if (platform.isEnabled()) {
+            if (platform.isEnabled() && !platform.getConfigurations().isEmpty()) {
                 var runStrategy = platform.createRunStrategy(outputDir);
                 if (runStrategy != null) {
                     runners.put(platform.getPlatform(), runStrategy);
@@ -133,7 +133,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         this.testClass = testClass;
     }
 
-
     @Override
     public Description getDescription() {
         if (suiteDescription == null) {
@@ -148,7 +147,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     @Override
     public void run(RunNotifier notifier) {
         for (var platform : platforms) {
-            if (!platform.getConfigurations().isEmpty()) {
+            if (platform.isEnabled() && !platform.getConfigurations().isEmpty()) {
                 participatingPlatforms.add(platform);
             }
         }
@@ -228,13 +227,13 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     @SuppressWarnings("unchecked")
     private boolean compileClassForPlatform(TestPlatformSupport<?> platform, List<Method> children,
             Description description, RunNotifier notifier) {
-        if (hasChildrenToRun(children, platform.getPlatform())) {
+        if (platform.isEnabled() && hasChildrenToRun(children, platform.getPlatform())) {
             for (var configuration : platform.getConfigurations()) {
                 var path = getOutputPathForClass(platform);
                 var castPlatform = (TestPlatformSupport<TeaVMTarget>) platform;
                 var castConfiguration = (TeaVMTestConfiguration<TeaVMTarget>) configuration;
                 var result = castPlatform.compile(wholeClass(children, platform.getPlatform()), "classTest",
-                        castConfiguration, path);
+                        castConfiguration, path, testClass);
                 if (!result.success) {
                     notifier.fireTestFailure(createFailure(description, result));
                     return false;
@@ -337,16 +336,17 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         MethodReference reference = new MethodReference(child.getDeclaringClass().getName(), descriptor);
 
         for (var platform : participatingPlatforms) {
-            if (shouldRunChild(child, platform.getPlatform())) {
+            if (platform.isEnabled() && shouldRunChild(child, platform.getPlatform())) {
                 var outputPath = getOutputPathForClass(platform);
                 var outputPathForMethod = getOutputPath(child, platform);
                 for (var configuration : platform.getConfigurations()) {
                     var testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), false,
                             platform.getExtension());
                     runs.add(createTestRun(configuration, testPath, child, platform.getPlatform(),
-                            reference.toString()));
+                            reference.toString(), isModule(child)));
                     platform.additionalOutput(outputPath, outputPathForMethod, configuration, reference);
                 }
+                platform.additionalOutputForAllConfigurations(outputPath, child);
             }
         }
     }
@@ -357,20 +357,22 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
         try {
             for (var platform : participatingPlatforms) {
-                if (shouldRunChild(child, platform.getPlatform())) {
+                if (platform.isEnabled() && shouldRunChild(child, platform.getPlatform())) {
                     File outputPath = getOutputPath(child, platform);
                     for (var configuration : platform.getConfigurations()) {
                         @SuppressWarnings("unchecked")
                         var castPlatform = (TestPlatformSupport<TeaVMTarget>) platform;
                         @SuppressWarnings("unchecked")
                         var castConfig = (TeaVMTestConfiguration<TeaVMTarget>) configuration;
-                        var compileResult = castPlatform.compile(singleTest(child), "test", castConfig, outputPath);
+                        var compileResult = castPlatform.compile(singleTest(child), "test", castConfig, outputPath,
+                                child);
                         var run = prepareRun(configuration, child, compileResult, notifier, platform.getPlatform());
                         if (run != null) {
                             runs.add(run);
                             platform.additionalSingleTestOutput(outputPath, configuration, reference);
                         }
                     }
+                    platform.additionalOutputForAllConfigurations(outputPath, child);
                 }
             }
         } catch (Throwable e) {
@@ -711,13 +713,18 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             return null;
         }
 
-        return createTestRun(configuration, result.file, child, kind, null);
+        return createTestRun(configuration, result.file, child, kind, null, isModule(child));
+    }
+
+    private boolean isModule(Method method) {
+        return method.isAnnotationPresent(JsModuleTest.class)
+                || method.getDeclaringClass().isAnnotationPresent(JsModuleTest.class);
     }
 
     private TestRun createTestRun(TeaVMTestConfiguration<?> configuration, File file, Method child, TestPlatform kind,
-            String argument) {
+            String argument, boolean module) {
         return new TestRun(generateName(child.getName(), configuration), file.getParentFile(), child,
-                file.getName(), kind, argument);
+                file.getName(), kind, argument, module);
     }
 
     private String generateName(String baseName, TeaVMTestConfiguration<?> configuration) {

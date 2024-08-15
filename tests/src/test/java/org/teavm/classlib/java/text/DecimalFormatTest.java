@@ -27,15 +27,12 @@ import java.util.Currency;
 import java.util.Locale;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMProperties;
 import org.teavm.junit.TeaVMProperty;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @TeaVMProperties(@TeaVMProperty(key = "java.util.Locale.available", value = "en, en_US, en_GB, ru, ru_RU"))
-@SkipPlatform(TestPlatform.WASI)
 public class DecimalFormatTest {
     private static DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.ENGLISH);
 
@@ -480,6 +477,22 @@ public class DecimalFormatTest {
         format = createFormat("0.00 ¤");
         format.setCurrency(Currency.getInstance("RUB"));
         assertEquals("23.00 RUB", format.format(23));
+    }
+
+    @Test
+    public void formatsManual() {
+        DecimalFormat format = new DecimalFormat();
+        format.setDecimalFormatSymbols(new DecimalFormatSymbols(Locale.US));
+        format.setMaximumFractionDigits(6);
+        format.setMinimumFractionDigits(6);
+        format.setGroupingUsed(false);
+        assertEquals("1.200000", format.format((Object) 1.2));
+        assertEquals("12.200000", format.format((Object) 12.2));
+        format.setMaximumFractionDigits(0);
+        format.setMinimumFractionDigits(0);
+        format.setMaximumIntegerDigits(5);
+        format.setMinimumIntegerDigits(5);
+        assertEquals("00002", format.format((Object) 2.0));
     }
 
     private DecimalFormat createFormat(String format) {

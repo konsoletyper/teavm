@@ -23,4 +23,5 @@ public final class Platforms {
     public static final String WEBASSEMBLY = "webassembly";
     public static final String C = "c";
     public static final String LOW_LEVEL = "low_level";
+    public static final String WEBASSEMBLY_GC = "webassembly-gc";
 }

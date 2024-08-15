@@ -15,66 +15,62 @@
  */
 package org.teavm.classlib.java.lang.ref;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ArrayBlockingQueue;
-import org.junit.Ignore;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.classlib.PlatformDetector;
+import org.teavm.classlib.support.GCSupport;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@SkipJVM
 @EachTestCompiledSeparately
 public class WeakReferenceTest {
-    private Node lastNode;
-
     @Test
-    @Ignore
-    public void deref() throws InterruptedException {
+    @SkipPlatform({ TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
+    public void deref() {
         var ref = createAndTestRef(null);
-
-        for (var i = 0; i < 100; ++i) {
-            lastNode = createNodes(20);
-            Thread.sleep(1);
-            if (ref.get() == null) {
-                break;
-            }
-            assertNotNull(lastNode);
-        }
+        GCSupport.tryToTriggerGC(ref);
         assertNull(ref.get());
     }
 
     @Test
-    @Ignore
-    public void refQueue() throws InterruptedException {
+    @SkipPlatform({ TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
+    public void refQueue() {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);
-        var hasValue = false;
-        for (var i = 0; i < 100; ++i) {
-            lastNode = createNodes(20);
-            Thread.sleep(1);
-            var polledRef = queue.poll();
-            if (polledRef != null) {
-                hasValue = true;
-                assertNull(ref.get());
+        GCSupport.tryToTriggerGC(ref);
+        int attemptCount = 0;
+        Object value;
+        do {
+            value = queue.poll();
+            if (value != null) {
                 break;
-            } else {
-                assertNotNull(ref.get());
             }
-            assertNotNull(lastNode);
+            waitInJVM();
+        } while (attemptCount++ < 50);
+        assertSame(ref, value);
+    }
+
+    private static void waitInJVM() {
+        if (!PlatformDetector.isTeaVM()) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                // do nothing
+            }
         }
-        assertTrue(hasValue);
     }
 
     @Test
-    @Ignore
+    @SkipPlatform({ TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI })
     public void queueRemove() throws InterruptedException {
         var queue = new ReferenceQueue<>();
         var ref = createAndTestRef(queue);
@@ -88,17 +84,10 @@ public class WeakReferenceTest {
         });
         thread.setDaemon(true);
         thread.start();
-        Object value = null;
-        for (var i = 0; i < 100; ++i) {
-            lastNode = createNodes(20);
-            Thread.sleep(1);
-            value = threadQueue.poll();
-            if (value != null) {
-                break;
-            }
-            assertNotNull(lastNode);
-        }
-        assertSame(ref, value);
+
+        GCSupport.tryToTriggerGC(ref);
+        var result = threadQueue.poll(2, TimeUnit.SECONDS);
+        assertSame(ref, result);
     }
 
     private WeakReference<Object> createAndTestRef(ReferenceQueue<Object> queue) {
@@ -116,23 +105,5 @@ public class WeakReferenceTest {
 
         ref.clear();
         assertNull(ref.get());
-    }
-
-    private Node createNodes(int depth) {
-        if (depth == 0) {
-            return null;
-        } else {
-            return new Node(createNodes(depth - 1), createNodes(depth - 1));
-        }
-    }
-
-    private class Node {
-        Node left;
-        Node right;
-
-        Node(Node left, Node right) {
-            this.left = left;
-            this.right = right;
-        }
     }
 }

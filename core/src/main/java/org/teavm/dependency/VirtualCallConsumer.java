@@ -15,17 +15,21 @@
  */
 package org.teavm.dependency;
 
+import com.carrotsearch.hppc.IntHashSet;
+import com.carrotsearch.hppc.IntSet;
 import java.util.BitSet;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodDescriptor;
 
 class VirtualCallConsumer implements DependencyConsumer {
+    private static final int SMALL_TYPES_THRESHOLD = 16;
     private final MethodDescriptor methodDesc;
     private final DependencyAnalyzer analyzer;
     private final DependencyNode[] parameters;
     private final DependencyNode result;
     private final CallLocation location;
-    private final BitSet knownTypes = new BitSet();
+    private IntSet smallKnownTypes;
+    private BitSet knownTypes;
     private DependencyGraphBuilder.ExceptionConsumer exceptionConsumer;
     private DependencyTypeFilter filter;
     private boolean isPolymorphic;
@@ -43,16 +47,40 @@ class VirtualCallConsumer implements DependencyConsumer {
         this.exceptionConsumer = exceptionConsumer;
     }
 
+    private boolean addKnownType(int index) {
+        if (knownTypes != null) {
+            if (knownTypes.get(index)) {
+                return false;
+            } else {
+                knownTypes.set(index);
+                return true;
+            }
+        }
+        if (smallKnownTypes == null) {
+            smallKnownTypes = new IntHashSet();
+        }
+        if (smallKnownTypes.add(index)) {
+            if (smallKnownTypes.size() > SMALL_TYPES_THRESHOLD) {
+                knownTypes = new BitSet();
+                for (var cursor : smallKnownTypes) {
+                    knownTypes.set(cursor.value);
+                }
+                smallKnownTypes = null;
+            }
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public void consume(DependencyType type) {
         if (!filter.match(type)) {
             return;
         }
 
-        if (knownTypes.get(type.index)) {
+        if (!addKnownType(type.index)) {
             return;
         }
-        knownTypes.set(type.index);
 
         String className = type.getName();
 

@@ -17,40 +17,40 @@ package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
 
-public interface HTMLScriptElement extends HTMLElement {
+public abstract class HTMLScriptElement extends HTMLElement {
     @JSProperty
-    String getSrc();
+    public abstract String getSrc();
 
     @JSProperty
-    void setSrc(String value);
+    public abstract void setSrc(String value);
 
     @JSProperty
-    boolean isAsync();
+    public abstract boolean isAsync();
 
     @JSProperty
-    void setAsync(boolean value);
+    public abstract void setAsync(boolean value);
 
     @JSProperty
-    boolean isDefer();
+    public abstract boolean isDefer();
 
     @JSProperty
-    void setDefer(boolean value);
+    public abstract void setDefer(boolean value);
 
     @JSProperty
-    String getType();
+    public abstract String getType();
 
     @JSProperty
-    void setType(String value);
+    public abstract void setType(String value);
 
     @JSProperty
-    String getCharset();
+    public abstract String getCharset();
 
     @JSProperty
-    void setCharset(String value);
+    public abstract void setCharset(String value);
 
     @JSProperty
-    String getText();
+    public abstract String getText();
 
     @JSProperty
-    void setText(String value);
+    public abstract void setText(String value);
 }
