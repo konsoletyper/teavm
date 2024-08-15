@@ -73,18 +73,6 @@ public class VMTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WASI, TestPlatform.WEBASSEMBLY, TestPlatform.C})
-    public void checkNegative() {
-        try {
-            int[] x = new int[-1];
-            System.out.println(x.length);
-            fail();
-        } catch (RuntimeException e) {
-            // ok
-        }
-    }
-
-    @Test
     public void catchExceptionFromLambda() {
         try {
             Runnable r = () -> throwException();

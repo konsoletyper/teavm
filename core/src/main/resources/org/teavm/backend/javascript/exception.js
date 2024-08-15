@@ -132,17 +132,6 @@ let $rt_throwCCEIfFalse = (value, o) => {
     return o;
 }
 
-let $rt_checkArraySize = sz => {
-    if (sz < 0) {
-        if (teavm_javaConstructorExists("java.lang.NegativeArraySizeException", "()V")) {
-            $rt_throw(teavm_javaConstructor("java.lang.NegativeArraySizeException", "()V")());
-        } else {
-            $rt_throw($rt_createException($rt_str("")));
-        }
-    }
-    return sz;
-}
-
 let $rt_createStackElement = (className, methodName, fileName, lineNumber) => {
     if (teavm_javaConstructorExists("java.lang.StackTraceElement",
         "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V")) {
