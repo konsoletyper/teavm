@@ -36,6 +36,9 @@ public class ClassGenerators implements WasmGCCustomGenerator {
             case "isInstance":
                 generateIsInstance(function, context);
                 break;
+            case "getName":
+                generateGetName(function, context);
+                break;
             default:
                 throw new IllegalArgumentException("Unsupported method: " + method);
         }
@@ -64,5 +67,15 @@ public class ClassGenerators implements WasmGCCustomGenerator {
         conditional.getElseBlock().getBody().add(call);
 
         function.getBody().add(new WasmReturn(conditional));
+    }
+
+    private void generateGetName(WasmFunction function, WasmGCCustomGeneratorContext context) {
+        var classCls = context.classInfoProvider().getClassInfo("java.lang.Class");
+        var thisVar = new WasmLocal(classCls.getType());
+        function.add(thisVar);
+
+        var nameRef = new WasmStructGet(classCls.getStructure(), new WasmGetLocal(thisVar),
+                context.classInfoProvider().getClassNameOffset());
+        function.getBody().add(new WasmReturn(nameRef));
     }
 }

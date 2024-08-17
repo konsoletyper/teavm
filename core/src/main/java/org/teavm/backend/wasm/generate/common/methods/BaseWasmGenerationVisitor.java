@@ -575,6 +575,8 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
     protected abstract WasmExpression nullLiteral(Expr expr);
 
+    protected abstract WasmExpression nullLiteral(WasmType type);
+
     protected abstract WasmExpression stringLiteral(String s);
 
     protected abstract WasmExpression classLiteral(ValueType type);
@@ -1179,13 +1181,13 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         var valueToCast = exprCache.create(result, wasmSourceType, expr.getLocation(), block.getBody());
 
         var nullCheck = new WasmBranch(genIsNull(valueToCast.expr()), block);
-        nullCheck.setResult(valueToCast.expr());
+        nullCheck.setResult(nullLiteral(wasmTargetType));
         block.getBody().add(new WasmDrop(nullCheck));
 
         var supertypeCall = generateInstanceOf(valueToCast.expr(), expr.getTarget());
 
         var breakIfPassed = new WasmBranch(supertypeCall, block);
-        breakIfPassed.setResult(valueToCast.expr());
+        breakIfPassed.setResult(generateCast(valueToCast.expr(), wasmTargetType));
         block.getBody().add(new WasmDrop(breakIfPassed));
 
         var callSiteId = generateCallSiteId(expr.getLocation());
@@ -1194,7 +1196,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         callSiteId.generateThrow(block.getBody(), expr.getLocation());
 
         valueToCast.release();
-        result = generateCast(block, wasmTargetType);
+        result = block;
     }
 
     protected abstract WasmExpression generateCast(WasmExpression value, WasmType targetType);

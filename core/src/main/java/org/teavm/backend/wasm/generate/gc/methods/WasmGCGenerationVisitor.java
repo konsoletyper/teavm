@@ -212,6 +212,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
+    protected WasmExpression nullLiteral(WasmType type) {
+        return new WasmNullConstant((WasmType.Reference) type);
+    }
+
+    @Override
     protected WasmExpression genIsNull(WasmExpression value) {
         return new WasmReferencesEqual(value, new WasmNullConstant(WasmType.Reference.STRUCT));
     }

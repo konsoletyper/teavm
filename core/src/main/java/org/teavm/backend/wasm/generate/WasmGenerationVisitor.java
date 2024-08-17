@@ -305,6 +305,11 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
+    protected WasmExpression nullLiteral(WasmType type) {
+        return new WasmInt32Constant(0);
+    }
+
+    @Override
     protected WasmExpression genIsNull(WasmExpression value) {
         return new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ, value);
     }

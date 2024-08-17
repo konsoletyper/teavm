@@ -96,6 +96,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private WasmFunction createPrimitiveClassFunction;
     private WasmFunction createArrayClassFunction;
     private final WasmGCSupertypeFunctionGenerator supertypeGenerator;
+    private final WasmGCNewArrayFunctionGenerator newArrayGenerator;
 
     private int classTagOffset;
     private int classFlagsOffset;
@@ -103,6 +104,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private int classParentOffset;
     private int classArrayOffset;
     private int classArrayItemOffset;
+    private int classNewArrayOffset;
     private int classSupertypeFunctionOffset;
     private int virtualTableFieldOffset;
 
@@ -123,6 +125,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         standardClasses = new WasmGCStandardClasses(this);
         strings = new WasmGCStringPool(standardClasses, module, functionProvider);
         supertypeGenerator = new WasmGCSupertypeFunctionGenerator(module, this, names, tagRegistry, functionTypes);
+        newArrayGenerator = new WasmGCNewArrayFunctionGenerator(module, functionTypes, this);
         typeMapper = new WasmGCTypeMapper(this, functionTypes, module);
     }
 
@@ -190,11 +193,19 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         initializerFunctionStatements.clear();
         for (var classInfo : classInfoMap.values()) {
             var req = metadataRequirements.getInfo(classInfo.getValueType());
-            if (req != null && req.isAssignable()) {
-                var supertypeFunction = supertypeGenerator.getIsSupertypeFunction(classInfo.getValueType());
-                supertypeFunction.setReferenced(true);
-                function.getBody().add(setClassField(classInfo, classSupertypeFunctionOffset,
-                        new WasmFunctionReference(supertypeFunction)));
+            if (req != null) {
+                if (req.isAssignable()) {
+                    var supertypeFunction = supertypeGenerator.getIsSupertypeFunction(classInfo.getValueType());
+                    supertypeFunction.setReferenced(true);
+                    function.getBody().add(setClassField(classInfo, classSupertypeFunctionOffset,
+                            new WasmFunctionReference(supertypeFunction)));
+                }
+                if (req.newArray()) {
+                    var newArrayFunction = newArrayGenerator.generateNewArrayFunction(classInfo.getValueType());
+                    newArrayFunction.setReferenced(true);
+                    function.getBody().add(setClassField(classInfo, classNewArrayOffset,
+                            new WasmFunctionReference(newArrayFunction)));
+                }
             }
             function.getBody().add(setClassField(classInfo, CLASS_FIELD_OFFSET,
                     new WasmGetGlobal(classClass.pointer)));
@@ -273,6 +284,16 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     @Override
     public int getClassSupertypeFunctionOffset() {
         return classSupertypeFunctionOffset;
+    }
+
+    @Override
+    public int getClassNameOffset() {
+        return classNameOffset;
+    }
+
+    @Override
+    public int getNewArrayFunctionOffset() {
+        return classNewArrayOffset;
     }
 
     @Override
@@ -546,6 +567,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             fields.add(standardClasses.classClass().getType().asStorage());
             classSupertypeFunctionOffset = fields.size();
             fields.add(supertypeGenerator.getFunctionType().getReference().asStorage());
+            classNewArrayOffset = fields.size();
+            fields.add(newArrayGenerator.getNewArrayFunctionType().getReference().asStorage());
             virtualTableFieldOffset = fields.size();
             classNameOffset = fieldIndexes.getOrDefault(new FieldReference(className, "name"), -1);
         }
