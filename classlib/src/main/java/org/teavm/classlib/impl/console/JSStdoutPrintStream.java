@@ -22,6 +22,9 @@ import org.teavm.jso.JSBody;
 public class JSStdoutPrintStream extends JsConsolePrintStream {
     @Override
     public void print(String s) {
+        if (s == null) {
+            s = "null";
+        }
         if (PlatformDetector.isWebAssemblyGC()) {
             for (int i = 0; i < s.length(); ++i) {
                 WasmGCSupport.putCharStdout(s.charAt(i));
