@@ -117,7 +117,20 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
     }
 
     public String getName() {
-        if (PlatformDetector.isLowLevel()) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            var result = getNameImpl();
+            if (result == null) {
+                if (isArray()) {
+                    var componentType = getComponentType();
+                    String componentName = componentType.getName();
+                    if (componentName != null) {
+                        result = componentType.isArray() ? "[" + componentName : "[L" + componentName + ";";
+                        setNameImpl(result);
+                    }
+                }
+            }
+            return result;
+        } else if (PlatformDetector.isLowLevel()) {
             String result = getNameCache(this);
             if (result == null) {
                 result = Platform.getName(platformClass);
@@ -140,6 +153,10 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
             return name;
         }
     }
+
+    private native String getNameImpl();
+
+    private native void setNameImpl(String name);
 
     public String getSimpleName() {
         String simpleName = getSimpleNameCache(this);
@@ -274,6 +291,9 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
     }
 
     public boolean isArray() {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return getComponentType() != null;
+        }
         return Platform.getArrayItem(platformClass) != null;
     }
 

@@ -714,6 +714,7 @@ public class AstIO {
                 output.writeUnsigned(23);
                 output.writeUnsigned(symbolTable.lookup(expr.getTarget().toString()));
                 writeExpr(expr.getValue());
+                output.writeUnsigned(expr.isWeak() ? 1 : 0);
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -1106,6 +1107,7 @@ public class AstIO {
                 expr.setLocation(lastReadLocation);
                 expr.setTarget(ValueType.parse(symbolTable.at(input.readUnsigned())));
                 expr.setValue(readExpr(input));
+                expr.setWeak(input.readUnsigned() != 0);
                 return expr;
             }
             case 24: {

@@ -451,12 +451,13 @@ public class ProgramIO {
         }
 
         @Override
-        public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
+        public void cast(VariableReader receiver, VariableReader value, ValueType targetType, boolean weak) {
             try {
                 output.writeUnsigned(25);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(symbolTable.lookup(targetType.toString()));
                 output.writeUnsigned(value.getIndex());
+                output.writeUnsigned(weak ? 1 : 0);
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -988,6 +989,7 @@ public class ProgramIO {
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
                 insn.setTargetType(parseValueType(symbolTable.at(input.readUnsigned())));
                 insn.setValue(program.variableAt(input.readUnsigned()));
+                insn.setWeak(input.readUnsigned() != 0);
                 return insn;
             }
             case 26: {

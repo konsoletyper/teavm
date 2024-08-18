@@ -15,6 +15,7 @@
  */
 package org.teavm.model.analysis;
 
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
 import org.teavm.dependency.DependencyInfo;
@@ -34,6 +35,8 @@ public class ClassMetadataRequirements {
             "getDeclaringClass", Class.class);
     private static final MethodReference GET_ENCLOSING_CLASS_METHOD = new MethodReference(Class.class,
             "getEnclosingClass", Class.class);
+    private static final MethodReference NEW_ARRAY = new MethodReference(Array.class,
+            "newInstance", Class.class, int.class, Object.class);
     private static final ClassInfo EMPTY_INFO = new ClassInfo();
     private Map<ValueType, ClassInfo> requirements = new HashMap<>();
 
@@ -85,6 +88,14 @@ public class ClassMetadataRequirements {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).enclosingClass = true;
             }
         }
+
+        var newArrayMethod = dependencyInfo.getMethod(NEW_ARRAY);
+        if (newArrayMethod != null) {
+            var classNames = newArrayMethod.getVariable(1).getClassValueNode().getTypes();
+            for (var className : classNames) {
+                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).newArray = true;
+            }
+        }
     }
 
     public Info getInfo(String className) {
@@ -122,6 +133,7 @@ public class ClassMetadataRequirements {
         boolean enclosingClass;
         boolean superclass;
         boolean isAssignable;
+        boolean newArray;
 
         @Override
         public boolean name() {
@@ -152,6 +164,11 @@ public class ClassMetadataRequirements {
         public boolean isAssignable() {
             return isAssignable;
         }
+
+        @Override
+        public boolean newArray() {
+            return newArray;
+        }
     }
 
     public interface Info {
@@ -166,5 +183,7 @@ public class ClassMetadataRequirements {
         boolean superclass();
 
         boolean isAssignable();
+
+        boolean newArray();
     }
 }

@@ -31,7 +31,6 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
-import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
@@ -172,11 +171,7 @@ public class Devirtualization {
                 }
                 System.out.println();
             }
-            AssignInstruction assign = new AssignInstruction();
-            assign.setAssignee(cast.getValue());
-            assign.setReceiver(cast.getReceiver());
-            assign.setLocation(cast.getLocation());
-            cast.replace(assign);
+            cast.setWeak(true);
             eliminatedCasts++;
         }
     }

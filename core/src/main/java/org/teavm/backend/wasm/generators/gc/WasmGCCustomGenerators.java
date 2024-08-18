@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generators.gc;
 
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCCustomGeneratorProvider;
@@ -28,6 +29,7 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
         fillClass();
         fillStringPool();
         fillSystem();
+        fillArray();
     }
 
     private void fillClass() {
@@ -48,6 +50,12 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
                         int.class, int.class, void.class),
                 new SystemDoArrayCopyGenerator()
         );
+    }
+
+    private void fillArray() {
+        var arrayGenerator = new ArrayGenerator();
+        generators.put(new MethodReference(Array.class, "newInstanceImpl", Class.class, int.class, Object.class),
+                arrayGenerator);
     }
 
     @Override

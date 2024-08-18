@@ -28,6 +28,7 @@ public class WasmGCClassInfo {
     private ValueType valueType;
     WasmStructure structure;
     WasmArray array;
+    boolean hasOwnVirtualTable;
     WasmStructure virtualTableStructure;
     WasmGlobal pointer;
     WasmGlobal initializerPointer;

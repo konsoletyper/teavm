@@ -465,6 +465,9 @@ class JSClassProcessor {
     }
 
     private boolean processCast(CastInstruction cast, CallLocation location) {
+        if (cast.isWeak()) {
+            return false;
+        }
         if (!(cast.getTargetType() instanceof ValueType.Object)) {
             cast.setTargetType(processType(cast.getTargetType()));
             return false;

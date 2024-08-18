@@ -240,8 +240,12 @@ class InstructionStringifier implements InstructionReader {
     }
 
     @Override
-    public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
-        appendLocalVar(receiver).append(" := cast ").appendLocalVar(value).append(" to ")
+    public void cast(VariableReader receiver, VariableReader value, ValueType targetType, boolean weak) {
+        appendLocalVar(receiver).append(" := ");
+        if (weak) {
+            append("weak ");
+        }
+        append("cast ").appendLocalVar(value).append(" to ")
                 .escapeIdentifierIfNeeded(targetType.toString());
     }
 

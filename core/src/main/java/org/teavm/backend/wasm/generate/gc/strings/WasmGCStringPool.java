@@ -72,6 +72,9 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
             var value = new WasmCall(nextCharArrayFunction);
             function.getBody().add(new WasmStructSet(stringStruct, new WasmGetGlobal(str.global),
                     WasmGCClassInfoProvider.CUSTOM_FIELD_OFFSETS, value));
+            function.getBody().add(new WasmStructSet(stringStruct, new WasmGetGlobal(str.global),
+                    WasmGCClassInfoProvider.CLASS_FIELD_OFFSET,
+                    new WasmGetGlobal(standardClasses.stringClass().getPointer())));
         }
     }
 

@@ -83,7 +83,7 @@ public class InstructionReadVisitor implements InstructionVisitor {
 
     @Override
     public void visit(CastInstruction insn) {
-        reader.cast(insn.getReceiver(), insn.getValue(), insn.getTargetType());
+        reader.cast(insn.getReceiver(), insn.getValue(), insn.getTargetType(), insn.isWeak());
     }
 
     @Override

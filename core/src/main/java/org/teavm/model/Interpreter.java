@@ -340,7 +340,7 @@ public class Interpreter {
         }
 
         @Override
-        public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
+        public void cast(VariableReader receiver, VariableReader value, ValueType targetType, boolean cast) {
             variables[receiver.getIndex()] = asJvmClass(targetType).cast(variables[value.getIndex()]);
         }
 

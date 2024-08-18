@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.gc;
 
 import java.util.Arrays;
+import java.util.List;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.dependency.DependencyAnalyzer;
@@ -29,6 +30,7 @@ public class WasmGCDependencies {
     }
 
     public void contribute() {
+        contributeWasmRuntime();
         contributeMathUtils();
         contributeExceptionUtils();
         contributeInitializerUtils();
@@ -50,6 +52,21 @@ public class WasmGCDependencies {
         analyzer.linkMethod(new MethodReference(StringBuilder.class, "toString", String.class))
                 .propagate(0, analyzer.getType("java.lang.StringBuilder"))
                 .use();
+    }
+
+    private void contributeWasmRuntime() {
+        for (var cls : List.of(int.class, long.class, float.class, double.class)) {
+            analyzer.linkMethod(new MethodReference(WasmRuntime.class, "lt", cls, cls, boolean.class)).use();
+            analyzer.linkMethod(new MethodReference(WasmRuntime.class, "gt", cls, cls, boolean.class)).use();
+        }
+        for (var cls : List.of(int.class, long.class)) {
+            analyzer.linkMethod(new MethodReference(WasmRuntime.class, "ltu", cls, cls, boolean.class)).use();
+            analyzer.linkMethod(new MethodReference(WasmRuntime.class, "gtu", cls, cls, boolean.class)).use();
+        }
+        for (var cls : List.of(float.class, double.class)) {
+            analyzer.linkMethod(new MethodReference(WasmRuntime.class, "min", cls, cls, cls)).use();
+            analyzer.linkMethod(new MethodReference(WasmRuntime.class, "max", cls, cls, cls)).use();
+        }
     }
 
     private void contributeMathUtils() {
@@ -74,6 +91,7 @@ public class WasmGCDependencies {
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "aiiobe", ArrayIndexOutOfBoundsException.class))
                 .use();
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "cce", ClassCastException.class)).use();
+        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "cnse", CloneNotSupportedException.class)).use();
     }
 
     private void contributeInitializerUtils() {

@@ -65,4 +65,5 @@ public class ClassGenerators implements WasmGCCustomGenerator {
 
         function.getBody().add(new WasmReturn(conditional));
     }
+
 }

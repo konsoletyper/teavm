@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Set;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
-import org.teavm.backend.wasm.gc.WasmGCMethodReturnTypes;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationContext;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
@@ -57,7 +56,6 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmGCSupertypeFunctionProvider supertypeFunctions;
     private WasmGCCustomGeneratorProvider customGenerators;
     private WasmGCIntrinsicProvider intrinsics;
-    private WasmGCMethodReturnTypes returnTypes;
     private WasmFunction npeMethod;
     private WasmFunction aaiobeMethod;
     private WasmFunction cceMethod;
@@ -70,8 +68,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
             ClassHierarchy hierarchy, BaseWasmFunctionRepository functions,
             WasmGCSupertypeFunctionProvider supertypeFunctions, WasmGCClassInfoProvider classInfoProvider,
             WasmGCStandardClasses standardClasses, WasmGCStringProvider strings,
-            WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics,
-            WasmGCMethodReturnTypes returnTypes) {
+            WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics) {
         this.module = module;
         this.virtualTables = virtualTables;
         this.typeMapper = typeMapper;
@@ -85,7 +82,6 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         this.strings = strings;
         this.customGenerators = customGenerators;
         this.intrinsics = intrinsics;
-        this.returnTypes = returnTypes;
     }
 
     public WasmGCClassInfoProvider classInfoProvider() {
@@ -184,10 +180,6 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
 
     public WasmGCIntrinsicProvider intrinsics() {
         return intrinsics;
-    }
-
-    public WasmGCMethodReturnTypes returnTypes() {
-        return returnTypes;
     }
 
     public Collection<String> getInterfaceImplementors(String className) {

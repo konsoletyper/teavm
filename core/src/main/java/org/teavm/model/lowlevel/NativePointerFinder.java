@@ -93,7 +93,7 @@ public class NativePointerFinder {
         }
 
         @Override
-        public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
+        public void cast(VariableReader receiver, VariableReader value, ValueType targetType, boolean weak) {
             assignmentGraph.addEdge(value.getIndex(), receiver.getIndex());
         }
 

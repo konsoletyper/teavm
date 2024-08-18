@@ -20,19 +20,15 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.BaseTypeInference;
-import org.teavm.model.instructions.InvocationType;
 
 public class PreciseTypeInference extends BaseTypeInference<PreciseValueType> {
     public static final PreciseValueType OBJECT_TYPE = new PreciseValueType(ValueType.object("java.lang.Object"),
             false);
     private ClassHierarchy hierarchy;
-    private WasmGCMethodReturnTypes returnTypes;
 
-    public PreciseTypeInference(Program program, MethodReference reference, ClassHierarchy hierarchy,
-            WasmGCMethodReturnTypes returnTypes) {
+    public PreciseTypeInference(Program program, MethodReference reference, ClassHierarchy hierarchy) {
         super(program, reference);
         this.hierarchy = hierarchy;
-        this.returnTypes = returnTypes;
     }
 
     @Override
@@ -106,14 +102,6 @@ public class PreciseTypeInference extends BaseTypeInference<PreciseValueType> {
     @Override
     protected PreciseValueType arrayType(PreciseValueType preciseValueType) {
         return new PreciseValueType(ValueType.arrayOf(preciseValueType.valueType), false);
-    }
-
-    @Override
-    protected PreciseValueType methodReturnType(InvocationType invocationType, MethodReference methodRef) {
-        if (invocationType == InvocationType.SPECIAL) {
-            return new PreciseValueType(returnTypes.returnTypeOf(methodRef), false);
-        }
-        return super.methodReturnType(invocationType, methodRef);
     }
 
     @Override

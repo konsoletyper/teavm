@@ -44,7 +44,7 @@ public interface InstructionReader {
 
     void assign(VariableReader receiver, VariableReader assignee);
 
-    void cast(VariableReader receiver, VariableReader value, ValueType targetType);
+    void cast(VariableReader receiver, VariableReader value, ValueType targetType, boolean weak);
 
     void cast(VariableReader receiver, VariableReader value, NumericOperandType sourceType,
             NumericOperandType targetType);

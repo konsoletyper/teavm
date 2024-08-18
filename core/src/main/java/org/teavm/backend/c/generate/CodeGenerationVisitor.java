@@ -1056,6 +1056,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(CastExpr expr) {
+        if (expr.isWeak()) {
+            expr.getValue().acceptVisitor(this);
+            return;
+        }
+
         if (expr.getTarget() instanceof ValueType.Object) {
             String className = ((ValueType.Object) expr.getTarget()).getClassName();
             if (!context.getCharacteristics().isManaged(className)) {

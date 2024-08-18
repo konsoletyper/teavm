@@ -19,7 +19,7 @@
 window.addEventListener("message", event => {
     let request = event.data;
     switch (request.type) {
-        case "JAVASCRIPT":
+        case "JAVASCRIPT": {
             const files = request.additionalFiles ? [...request.additionalFiles, request.file] : [request.file];
             appendFiles(files, 0, () => {
                 launchTest(request.argument, response => {
@@ -29,8 +29,8 @@ window.addEventListener("message", event => {
                 event.source.postMessage(wrapResponse({ status: "failed", errorMessage: error }), "*");
             });
             break;
-
-        case "WASM":
+        }
+        case "WASM": {
             const runtimeFile = request.file.path + "-runtime.js";
             appendFiles([{ path: runtimeFile, type: "regular" }], 0, () => {
                 launchWasmTest(request.file, request.argument, response => {
@@ -40,6 +40,19 @@ window.addEventListener("message", event => {
                 event.source.postMessage(wrapResponse({ status: "failed", errorMessage: error }), "*");
             });
             break;
+        }
+
+        case "WASM_GC": {
+            const runtimeFile = request.file.path + "-runtime.js";
+            appendFiles([{ path: runtimeFile, type: "regular" }], 0, () => {
+                launchWasmTest(request.file, request.argument, response => {
+                    event.source.postMessage(response, "*");
+                });
+            }, error => {
+                event.source.postMessage(wrapResponse({ status: "failed", errorMessage: error} ), "*");
+            });
+            break;
+        }
     }
 });
 

@@ -15,10 +15,12 @@
  */
 package org.teavm.backend.wasm.transformation.gc;
 
+import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.emit.ProgramEmitter;
 
 public class BaseClassesTransformation implements ClassHolderTransformer {
     @Override
@@ -30,6 +32,11 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
                         method.setProgram(null);
                         method.getModifiers().add(ElementModifier.NATIVE);
                         break;
+                    case "clone": {
+                        var em = ProgramEmitter.create(method, context.getHierarchy());
+                        em.invoke(WasmGCSupport.class, "cnse", CloneNotSupportedException.class).raise();
+                        break;
+                    }
                 }
             }
         } else if (cls.getName().equals("java.lang.Class")) {

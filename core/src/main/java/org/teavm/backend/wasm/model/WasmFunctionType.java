@@ -15,7 +15,9 @@
  */
 package org.teavm.backend.wasm.model;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 public class WasmFunctionType extends WasmCompositeType {
@@ -23,6 +25,8 @@ public class WasmFunctionType extends WasmCompositeType {
     private WasmType returnType;
     private Supplier<List<? extends WasmType>> parameterTypesSupplier;
     private Supplier<WasmType> returnTypeSupplier;
+    private Set<WasmFunctionType> supertypes = new LinkedHashSet<>();
+    private boolean isFinal = true;
 
     public WasmFunctionType(String name, WasmType returnType, List<? extends WasmType> parameterTypes) {
         super(name);
@@ -51,6 +55,18 @@ public class WasmFunctionType extends WasmCompositeType {
             returnTypeSupplier = null;
         }
         return returnType;
+    }
+
+    public Set<WasmFunctionType> getSupertypes() {
+        return supertypes;
+    }
+
+    public boolean isFinal() {
+        return isFinal;
+    }
+
+    public void setFinal(boolean aFinal) {
+        isFinal = aFinal;
     }
 
     @Override

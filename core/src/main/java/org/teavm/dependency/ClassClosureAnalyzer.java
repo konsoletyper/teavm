@@ -95,7 +95,7 @@ class ClassClosureAnalyzer extends AbstractInstructionReader {
     }
 
     @Override
-    public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
+    public void cast(VariableReader receiver, VariableReader value, ValueType targetType, boolean weak) {
         build(targetType);
     }
 

@@ -607,7 +607,7 @@ public class CompositeMethodGenerator {
         }
 
         @Override
-        public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
+        public void cast(VariableReader receiver, VariableReader value, ValueType targetType, boolean weak) {
             CastInstruction insn = new CastInstruction();
             insn.setTargetType(targetType);
             insn.setValue(var(value));

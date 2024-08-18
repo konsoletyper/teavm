@@ -77,7 +77,7 @@ public class AbstractInstructionReader implements InstructionReader {
     }
 
     @Override
-    public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
+    public void cast(VariableReader receiver, VariableReader value, ValueType targetType, boolean weak) {
     }
 
     @Override

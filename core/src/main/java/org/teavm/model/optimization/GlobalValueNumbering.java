@@ -570,7 +570,8 @@ public class GlobalValueNumbering implements MethodOptimization {
             int a = map[insn.getValue().getIndex()];
             int p = replaceMap[insn.getValue().getIndex()];
             insn.setValue(program.variableAt(p));
-            bind(insn.getReceiver().getIndex(), "@" + a + "::" + insn.getTargetType());
+            var operator = insn.isWeak() ? ":::" : "::";
+            bind(insn.getReceiver().getIndex(), "@" + a + operator + insn.getTargetType());
         }
 
         @Override

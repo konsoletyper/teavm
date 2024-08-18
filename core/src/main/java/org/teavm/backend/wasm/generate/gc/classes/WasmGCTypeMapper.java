@@ -15,16 +15,26 @@
  */
 package org.teavm.backend.wasm.generate.gc.classes;
 
+import java.util.List;
+import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.model.WasmFunctionType;
+import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmPackedType;
 import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.ValueType;
 
 public class WasmGCTypeMapper {
     private WasmGCClassInfoProvider classInfoProvider;
+    private WasmFunctionTypes functionTypes;
+    private WasmModule module;
 
-    WasmGCTypeMapper(WasmGCClassInfoProvider classInfoProvider) {
+    WasmGCTypeMapper(WasmGCClassInfoProvider classInfoProvider, WasmFunctionTypes functionTypes,
+            WasmModule module) {
         this.classInfoProvider = classInfoProvider;
+        this.functionTypes = functionTypes;
+        this.module = module;
     }
 
     public WasmStorageType mapStorageType(ValueType type) {
@@ -74,6 +84,23 @@ public class WasmGCTypeMapper {
             return null;
         } else {
             return classInfoProvider.getClassInfo(type).getType();
+        }
+    }
+
+    public WasmFunctionType getFunctionType(String className, MethodDescriptor methodDesc, boolean fresh) {
+        var returnType = mapType(methodDesc.getResultType());
+        var javaParamTypes = methodDesc.getParameterTypes();
+        var paramTypes = new WasmType[javaParamTypes.length + 1];
+        paramTypes[0] = classInfoProvider.getClassInfo(className).getType();
+        for (var i = 0; i < javaParamTypes.length; ++i) {
+            paramTypes[i + 1] = mapType(javaParamTypes[i]);
+        }
+        if (fresh) {
+            var type = new WasmFunctionType(null, returnType, List.of(paramTypes));
+            module.types.add(type);
+            return type;
+        } else {
+            return functionTypes.of(returnType, paramTypes);
         }
     }
 }

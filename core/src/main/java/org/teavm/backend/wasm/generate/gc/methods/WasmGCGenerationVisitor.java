@@ -212,6 +212,16 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
+    protected WasmExpression nullLiteral(WasmType type) {
+        return new WasmNullConstant((WasmType.Reference) type);
+    }
+
+    @Override
+    protected WasmExpression genIsNull(WasmExpression value) {
+        return new WasmReferencesEqual(value, new WasmNullConstant(WasmType.Reference.STRUCT));
+    }
+
+    @Override
     protected CallSiteIdentifier generateCallSiteId(TextLocation location) {
         return new SimpleCallSite();
     }
@@ -268,12 +278,19 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         }
         var instanceStruct = context.classInfoProvider().getClassInfo(vtable.getClassName()).getStructure();
 
+        var actualInstanceType = (WasmType.CompositeReference) instance.getType();
+        var actualInstanceStruct = (WasmStructure) actualInstanceType.composite;
+        var actualVtableType = (WasmType.CompositeReference) actualInstanceStruct.getFields().get(0).asUnpackedType();
+        var actualVtableStruct = (WasmStructure) actualVtableType.composite;
+
         WasmExpression classRef = new WasmStructGet(instanceStruct, new WasmGetLocal(instance),
                 WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
         var index = context.classInfoProvider().getVirtualMethodsOffset() + vtableIndex;
         var vtableStruct = context.classInfoProvider().getClassInfo(vtable.getClassName())
                 .getVirtualTableStructure();
-        classRef = new WasmCast(classRef, vtableStruct.getReference());
+        if (!vtableStruct.isSupertypeOf(actualVtableStruct)) {
+            classRef = new WasmCast(classRef, vtableStruct.getReference());
+        }
 
         var functionRef = new WasmStructGet(vtableStruct, classRef, index);
         var functionTypeRef = (WasmType.CompositeReference) vtableStruct.getFields().get(index).asUnpackedType();
@@ -432,13 +449,13 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         result = invocation(expr, null, false);
     }
 
-
     @Override
     protected WasmExpression invocation(InvocationExpr expr, List<WasmExpression> resultConsumer, boolean willDrop) {
         if (expr.getType() == InvocationType.SPECIAL || expr.getType() == InvocationType.STATIC) {
             var intrinsic = context.intrinsics().get(expr.getMethod());
             if (intrinsic != null) {
                 var resultExpr = intrinsic.apply(expr, intrinsicContext);
+                resultExpr.setLocation(expr.getLocation());
                 if (resultConsumer != null) {
                     if (willDrop) {
                         var drop = new WasmDrop(resultExpr);
@@ -465,7 +482,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected WasmExpression forceType(WasmExpression expression, ValueType type) {
-        return forceType(expression, mapType(context.returnTypes().returnTypeOf(currentMethod)));
+        return forceType(expression, mapType(currentMethod.getReturnType()));
     }
 
     private WasmExpression forceType(WasmExpression expression, WasmType expectedType) {

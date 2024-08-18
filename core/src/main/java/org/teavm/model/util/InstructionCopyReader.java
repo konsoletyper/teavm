@@ -208,11 +208,12 @@ public class InstructionCopyReader implements InstructionReader {
     }
 
     @Override
-    public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
+    public void cast(VariableReader receiver, VariableReader value, ValueType targetType, boolean weak) {
         CastInstruction insnCopy = new CastInstruction();
         insnCopy.setValue(copyVar(value));
         insnCopy.setReceiver(copyVar(receiver));
         insnCopy.setTargetType(targetType);
+        insnCopy.setWeak(weak);
         copy = insnCopy;
         copy.setLocation(location);
     }

@@ -121,6 +121,7 @@ public class WasmModule {
         sorting.original = types;
         sorting.graph = typeGraph;
         sorting.visited = new boolean[types.size()];
+        sorting.sccVisited = new boolean[types.size()];
         sorting.sccMap = sccStartNode;
         sorting.sccsByIndex = sccsByIndex;
         for (var i = 0; i < types.size(); ++i) {
@@ -137,6 +138,7 @@ public class WasmModule {
         WasmCollection<WasmCompositeType> original;
         Graph graph;
         boolean[] visited;
+        boolean[] sccVisited;
         int[] sccMap;
         int[][] sccsByIndex;
         List<WasmCompositeType> sorted = new ArrayList<>();
@@ -146,18 +148,46 @@ public class WasmModule {
             if (visited[typeIndex]) {
                 return;
             }
-            visited[typeIndex] = true;
-            for (var outgoing : graph.outgoingEdges(typeIndex)) {
-                visit(outgoing);
-            }
             var scc = sccsByIndex[typeIndex];
             if (scc == null) {
+                visited[typeIndex] = true;
+                for (var outgoing : graph.outgoingEdges(typeIndex)) {
+                    visit(outgoing);
+                }
                 sorted.add(original.get(typeIndex));
             } else {
+                visited[typeIndex] = true;
                 for (var index : scc) {
-                    sorted.add(original.get(index));
+                    for (var outgoing : graph.outgoingEdges(index)) {
+                        visit(outgoing);
+                    }
+                }
+                for (var index : scc) {
+                    visitScc(index, typeIndex);
                 }
             }
+        }
+
+        void visitScc(int index, int sccBase) {
+            if (sccVisited[index]) {
+                return;
+            }
+            sccVisited[index] = true;
+            var type = original.get(index);
+            if (type instanceof WasmStructure) {
+                var supertype = ((WasmStructure) type).getSupertype();
+                if (supertype != null && sccMap[supertype.index] == sccBase) {
+                    visitScc(supertype.index, sccBase);
+                }
+            } else if (type instanceof WasmFunctionType) {
+                var supertypes = ((WasmFunctionType) type).getSupertypes();
+                for (var supertype : supertypes) {
+                    if (sccMap[supertype.index] == sccBase) {
+                        visitScc(supertype.index, sccBase);
+                    }
+                }
+            }
+            sorted.add(type);
         }
     }
 }

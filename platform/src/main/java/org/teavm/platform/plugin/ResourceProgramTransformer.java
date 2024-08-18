@@ -77,7 +77,7 @@ class ResourceProgramTransformer {
     }
 
     private void removeCastToResource(CastInstruction cast) {
-        if (hierarchy.isSuperType(RESOURCE, cast.getTargetType(), false)) {
+        if (!cast.isWeak() && hierarchy.isSuperType(RESOURCE, cast.getTargetType(), false)) {
             AssignInstruction assign = new AssignInstruction();
             assign.setReceiver(cast.getReceiver());
             assign.setAssignee(cast.getValue());
