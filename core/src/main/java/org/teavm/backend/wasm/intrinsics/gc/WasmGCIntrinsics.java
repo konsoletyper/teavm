@@ -16,7 +16,9 @@
 package org.teavm.backend.wasm.intrinsics.gc;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCIntrinsicProvider;
 import org.teavm.model.MethodReference;
 
@@ -24,9 +26,27 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
     private Map<MethodReference, WasmGCIntrinsic> intrinsics = new HashMap<>();
 
     public WasmGCIntrinsics() {
+        fillWasmRuntime();
         fillObject();
         fillClass();
         fillSystem();
+        fillLong();
+    }
+
+    private void fillWasmRuntime() {
+        var intrinsic = new WasmRuntimeIntrinsic();
+        for (var cls : List.of(int.class, long.class, float.class, double.class)) {
+            intrinsics.put(new MethodReference(WasmRuntime.class, "lt", cls, cls, boolean.class), intrinsic);
+            intrinsics.put(new MethodReference(WasmRuntime.class, "gt", cls, cls, boolean.class), intrinsic);
+        }
+        for (var cls : List.of(int.class, long.class)) {
+            intrinsics.put(new MethodReference(WasmRuntime.class, "ltu", cls, cls, boolean.class), intrinsic);
+            intrinsics.put(new MethodReference(WasmRuntime.class, "gtu", cls, cls, boolean.class), intrinsic);
+        }
+        for (var cls : List.of(float.class, double.class)) {
+            intrinsics.put(new MethodReference(WasmRuntime.class, "min", cls, cls, cls), intrinsic);
+            intrinsics.put(new MethodReference(WasmRuntime.class, "max", cls, cls, cls), intrinsic);
+        }
     }
 
     private void fillObject() {
@@ -35,13 +55,25 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
     }
 
     private void fillClass() {
-        var classIntrinsics = new ClassIntrinsics();
-        intrinsics.put(new MethodReference(Class.class, "getComponentType", Class.class), classIntrinsics);
+        var intrinsic = new ClassIntrinsics();
+        intrinsics.put(new MethodReference(Class.class, "getComponentType", Class.class), intrinsic);
+        intrinsics.put(new MethodReference(Class.class, "getNameImpl", String.class), intrinsic);
+        intrinsics.put(new MethodReference(Class.class, "setNameImpl", String.class, void.class), intrinsic);
     }
 
     private void fillSystem() {
         intrinsics.put(new MethodReference(System.class, "arraycopy", Object.class, int.class, Object.class,
                 int.class, int.class, void.class), new SystemArrayCopyIntrinsic());
+    }
+
+    private void fillLong() {
+        var intrinsic = new LongIntrinsic();
+        intrinsics.put(new MethodReference(Long.class, "divideUnsigned", long.class, long.class, long.class),
+                intrinsic);
+        intrinsics.put(new MethodReference(Long.class, "remainderUnsigned", long.class, long.class, long.class),
+                intrinsic);
+        intrinsics.put(new MethodReference(Long.class, "compareUnsigned", long.class, long.class, int.class),
+                intrinsic);
     }
 
     @Override

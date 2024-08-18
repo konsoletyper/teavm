@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.intrinsics.gc;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.expression.WasmStructSet;
 
 public class ClassIntrinsics implements WasmGCIntrinsic {
     @Override
@@ -30,8 +31,26 @@ public class ClassIntrinsics implements WasmGCIntrinsic {
                         context.classInfoProvider().getClassArrayItemOffset());
                 result.setLocation(invocation.getLocation());
                 return result;
+            case "getNameImpl":
+                return generateGetName(invocation, context);
+            case "setNameImpl":
+                return generateSetName(invocation, context);
             default:
                 throw new IllegalArgumentException("Unsupported invocation method: " + invocation.getMethod());
         }
+    }
+
+    private WasmExpression generateGetName(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var classCls = context.classInfoProvider().getClassInfo("java.lang.Class");
+        var arg = context.generate(invocation.getArguments().get(0));
+        return new WasmStructGet(classCls.getStructure(), arg, context.classInfoProvider().getClassNameOffset());
+    }
+
+    private WasmExpression generateSetName(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var classCls = context.classInfoProvider().getClassInfo("java.lang.Class");
+        var arg = context.generate(invocation.getArguments().get(0));
+        var value = context.generate(invocation.getArguments().get(1));
+        return new WasmStructSet(classCls.getStructure(), arg, context.classInfoProvider().getClassNameOffset(),
+                value);
     }
 }

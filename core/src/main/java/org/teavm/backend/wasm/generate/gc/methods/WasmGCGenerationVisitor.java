@@ -455,6 +455,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             var intrinsic = context.intrinsics().get(expr.getMethod());
             if (intrinsic != null) {
                 var resultExpr = intrinsic.apply(expr, intrinsicContext);
+                resultExpr.setLocation(expr.getLocation());
                 if (resultConsumer != null) {
                     if (willDrop) {
                         var drop = new WasmDrop(resultExpr);
