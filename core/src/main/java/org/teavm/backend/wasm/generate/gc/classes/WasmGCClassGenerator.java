@@ -407,6 +407,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                         || expectedFunctionType != function.getType()) {
                     var functionType = typeMapper.getFunctionType(virtualTable.getClassName(), method, true);
                     functionType.getSupertypes().add(expectedFunctionType);
+                    expectedFunctionType.setFinal(false);
                     var wrapperFunction = new WasmFunction(functionType);
                     module.functions.add(wrapperFunction);
                     var call = new WasmCall(function);

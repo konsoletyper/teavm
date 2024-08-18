@@ -57,10 +57,12 @@ public class WasmCompositeTypeBinaryRenderer implements WasmCompositeTypeVisitor
 
     @Override
     public void visit(WasmFunctionType type) {
-        section.writeByte(0x50);
-        section.writeLEB(type.getSupertypes().size());
-        for (var supertype : type.getSupertypes()) {
-            section.writeLEB(module.types.indexOf(supertype));
+        if (!type.isFinal() || !type.getSupertypes().isEmpty()) {
+            section.writeByte(0x50);
+            section.writeLEB(type.getSupertypes().size());
+            for (var supertype : type.getSupertypes()) {
+                section.writeLEB(module.types.indexOf(supertype));
+            }
         }
         section.writeByte(0x60);
         section.writeLEB(type.getParameterTypes().size());

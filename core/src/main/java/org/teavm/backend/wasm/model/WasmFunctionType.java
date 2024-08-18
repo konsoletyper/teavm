@@ -26,6 +26,7 @@ public class WasmFunctionType extends WasmCompositeType {
     private Supplier<List<? extends WasmType>> parameterTypesSupplier;
     private Supplier<WasmType> returnTypeSupplier;
     private Set<WasmFunctionType> supertypes = new LinkedHashSet<>();
+    private boolean isFinal = true;
 
     public WasmFunctionType(String name, WasmType returnType, List<? extends WasmType> parameterTypes) {
         super(name);
@@ -58,6 +59,14 @@ public class WasmFunctionType extends WasmCompositeType {
 
     public Set<WasmFunctionType> getSupertypes() {
         return supertypes;
+    }
+
+    public boolean isFinal() {
+        return isFinal;
+    }
+
+    public void setFinal(boolean aFinal) {
+        isFinal = aFinal;
     }
 
     @Override
