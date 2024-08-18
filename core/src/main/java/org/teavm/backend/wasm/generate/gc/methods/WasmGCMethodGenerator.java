@@ -25,7 +25,6 @@ import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
-import org.teavm.backend.wasm.gc.WasmGCMethodReturnTypes;
 import org.teavm.backend.wasm.gc.WasmGCVariableCategoryProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
@@ -78,7 +77,6 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private WasmGCClassInfoProvider classInfoProvider;
     private WasmGCStandardClasses standardClasses;
     private WasmGCStringProvider strings;
-    private WasmGCMethodReturnTypes returnTypes;
 
     public WasmGCMethodGenerator(
             WasmModule module,
@@ -89,7 +87,6 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             WasmFunctionTypes functionTypes,
             NameProvider names,
             Diagnostics diagnostics,
-            WasmGCMethodReturnTypes returnTypes,
             WasmGCCustomGeneratorProvider customGenerators,
             WasmGCIntrinsicProvider intrinsics
     ) {
@@ -101,7 +98,6 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         this.functionTypes = functionTypes;
         this.names = names;
         this.diagnostics = diagnostics;
-        this.returnTypes = returnTypes;
         this.customGenerators = customGenerators;
         this.intrinsics = intrinsics;
     }
@@ -146,7 +142,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     }
 
     private WasmFunction createStaticFunction(MethodReference methodReference) {
-        var returnType = typeMapper.mapType(returnTypes.returnTypeOf(methodReference));
+        var returnType = typeMapper.mapType(methodReference.getReturnType());
         var parameterTypes = new WasmType[methodReference.parameterCount()];
         for (var i = 0; i < parameterTypes.length; ++i) {
             parameterTypes[i] = typeMapper.mapType(methodReference.parameterType(i));
@@ -173,7 +169,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     }
 
     private WasmFunction createInstanceFunction(MethodReference methodReference) {
-        var returnType = typeMapper.mapType(returnTypes.returnTypeOf(methodReference));
+        var returnType = typeMapper.mapType(methodReference.getReturnType());
         var parameterTypes = new WasmType[methodReference.parameterCount() + 1];
         parameterTypes[0] = typeMapper.mapType(ValueType.object(methodReference.getClassName()));
         for (var i = 0; i < methodReference.parameterCount(); ++i) {
@@ -213,7 +209,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
 
     private void generateRegularMethodBody(MethodHolder method, WasmFunction function) {
         var decompiler = getDecompiler();
-        var categoryProvider = new WasmGCVariableCategoryProvider(hierarchy, returnTypes);
+        var categoryProvider = new WasmGCVariableCategoryProvider(hierarchy);
         var allocator = new RegisterAllocator(categoryProvider);
         allocator.allocateRegisters(method.getReference(), method.getProgram(), friendlyToDebugger);
         var ast = decompiler.decompileRegular(method);
@@ -302,8 +298,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                     standardClasses,
                     strings,
                     customGenerators,
-                    intrinsics,
-                    returnTypes
+                    intrinsics
             );
         }
         return context;

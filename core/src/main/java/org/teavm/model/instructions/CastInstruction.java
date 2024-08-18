@@ -23,6 +23,7 @@ public class CastInstruction extends Instruction {
     private Variable value;
     private Variable receiver;
     private ValueType targetType;
+    private boolean weak;
 
     public Variable getValue() {
         return value;
@@ -46,6 +47,14 @@ public class CastInstruction extends Instruction {
 
     public void setTargetType(ValueType targetType) {
         this.targetType = targetType;
+    }
+
+    public boolean isWeak() {
+        return weak;
+    }
+
+    public void setWeak(boolean weak) {
+        this.weak = weak;
     }
 
     @Override

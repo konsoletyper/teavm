@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.function.Predicate;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
-import org.teavm.backend.wasm.gc.WasmGCMethodReturnTypes;
 import org.teavm.backend.wasm.generate.WasmNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassGenerator;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
@@ -47,7 +46,6 @@ public class WasmGCDeclarationsGenerator {
     public final WasmFunctionTypes functionTypes;
     private final WasmGCClassGenerator classGenerator;
     private final WasmGCMethodGenerator methodGenerator;
-    private final WasmGCMethodReturnTypes returnTypes;
 
     public WasmGCDeclarationsGenerator(
             WasmModule module,
@@ -64,7 +62,6 @@ public class WasmGCDeclarationsGenerator {
         var virtualTables = createVirtualTableProvider(classes, virtualMethods);
         functionTypes = new WasmFunctionTypes(module);
         var names = new WasmNameProvider();
-        returnTypes = new WasmGCMethodReturnTypes(dependencyInfo, hierarchy);
         methodGenerator = new WasmGCMethodGenerator(
                 module,
                 hierarchy,
@@ -74,7 +71,6 @@ public class WasmGCDeclarationsGenerator {
                 functionTypes,
                 names,
                 diagnostics,
-                returnTypes,
                 customGenerators,
                 intrinsics
         );

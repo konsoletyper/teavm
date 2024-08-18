@@ -214,6 +214,7 @@ class StatementGenerator implements InstructionVisitor {
         expr.setVariableIndex(insn.getReceiver().getIndex());
         expr.setValue(Expr.var(insn.getValue().getIndex()));
         expr.setTarget(insn.getTargetType());
+        expr.setWeak(insn.isWeak());
         assign(expr, insn.getReceiver());
     }
 

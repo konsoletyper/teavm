@@ -878,7 +878,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(CastExpr expr) {
-        if (context.isStrict()) {
+        if (context.isStrict() && !expr.isWeak()) {
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }

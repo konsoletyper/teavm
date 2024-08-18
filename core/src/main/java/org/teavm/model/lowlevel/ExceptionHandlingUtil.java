@@ -43,9 +43,10 @@ public final class ExceptionHandlingUtil {
                 || insn instanceof ConstructArrayInstruction || insn instanceof ConstructMultiArrayInstruction
                 || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction
                 || insn instanceof MonitorEnterInstruction || insn instanceof MonitorExitInstruction
-                || insn instanceof NullCheckInstruction || insn instanceof BoundCheckInstruction
-                || insn instanceof CastInstruction) {
+                || insn instanceof NullCheckInstruction || insn instanceof BoundCheckInstruction) {
             return true;
+        } else if (insn instanceof CastInstruction) {
+            return !((CastInstruction) insn).isWeak();
         } else if (insn instanceof InvokeInstruction) {
             return isManagedMethodCall(characteristics, ((InvokeInstruction) insn).getMethod());
         }

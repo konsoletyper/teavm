@@ -1170,6 +1170,11 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
     @Override
     public void visit(CastExpr expr) {
+        if (expr.isWeak()) {
+            acceptWithType(expr.getValue(), expr.getTarget());
+            result = generateCast(result, mapType(expr.getTarget()));
+            return;
+        }
         var block = new WasmBlock(false);
         var wasmTargetType = mapType(expr.getTarget());
         block.setType(wasmTargetType);

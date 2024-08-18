@@ -143,7 +143,7 @@ public class DataFlowGraphBuilder extends AbstractInstructionReader {
     }
 
     @Override
-    public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
+    public void cast(VariableReader receiver, VariableReader value, ValueType targetType, boolean weak) {
         builder.addEdge(value.getIndex(), receiver.getIndex());
     }
 

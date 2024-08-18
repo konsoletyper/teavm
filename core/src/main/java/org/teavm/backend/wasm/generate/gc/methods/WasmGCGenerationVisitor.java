@@ -481,7 +481,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected WasmExpression forceType(WasmExpression expression, ValueType type) {
-        return forceType(expression, mapType(context.returnTypes().returnTypeOf(currentMethod)));
+        return forceType(expression, mapType(currentMethod.getReturnType()));
     }
 
     private WasmExpression forceType(WasmExpression expression, WasmType expectedType) {
