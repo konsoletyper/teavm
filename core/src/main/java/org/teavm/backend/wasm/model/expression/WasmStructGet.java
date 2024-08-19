@@ -25,6 +25,7 @@ public class WasmStructGet extends WasmExpression {
     private WasmSignedType signedType;
 
     public WasmStructGet(WasmStructure type, WasmExpression instance, int fieldIndex) {
+        checkFieldIndex(fieldIndex);
         this.type = Objects.requireNonNull(type);
         this.instance = Objects.requireNonNull(instance);
         this.fieldIndex = fieldIndex;
@@ -51,6 +52,7 @@ public class WasmStructGet extends WasmExpression {
     }
 
     public void setFieldIndex(int fieldIndex) {
+        checkFieldIndex(fieldIndex);
         this.fieldIndex = fieldIndex;
     }
 
@@ -65,5 +67,11 @@ public class WasmStructGet extends WasmExpression {
     @Override
     public void acceptVisitor(WasmExpressionVisitor visitor) {
         visitor.visit(this);
+    }
+
+    private static void checkFieldIndex(int fieldIndex) {
+        if (fieldIndex < 0) {
+            throw new IllegalArgumentException("Field index must be >= 0");
+        }
     }
 }

@@ -260,42 +260,41 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             List<WasmExpression> arguments) {
         var vtable = context.virtualTables().lookup(method.getClassName());
         if (vtable != null) {
+            var cls = context.classes().get(method.getClassName());
+            assert cls != null : "Virtual table can't be generated for absent class";
+            if (cls.hasModifier(ElementModifier.INTERFACE)) {
+                vtable = pickVirtualTableForInterfaceCall(vtable, method.getDescriptor());
+            }
             vtable = vtable.findMethodContainer(method.getDescriptor());
         }
         if (vtable == null) {
             return new WasmUnreachable();
-        }
-        var cls = context.classes().get(method.getClassName());
-        assert cls != null : "Virtual table can't be generated for absent class";
-
-        if (cls.hasModifier(ElementModifier.INTERFACE)) {
-            vtable = pickVirtualTableForInterfaceCall(vtable, method.getDescriptor());
         }
 
         int vtableIndex = vtable.getMethods().indexOf(method.getDescriptor());
         if (vtable.getParent() != null) {
             vtableIndex += vtable.getParent().size();
         }
-        var instanceStruct = context.classInfoProvider().getClassInfo(vtable.getClassName()).getStructure();
 
-        var actualInstanceType = (WasmType.CompositeReference) instance.getType();
-        var actualInstanceStruct = (WasmStructure) actualInstanceType.composite;
-        var actualVtableType = (WasmType.CompositeReference) actualInstanceStruct.getFields().get(0).asUnpackedType();
-        var actualVtableStruct = (WasmStructure) actualVtableType.composite;
-
-        WasmExpression classRef = new WasmStructGet(instanceStruct, new WasmGetLocal(instance),
-                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
+        WasmExpression classRef = new WasmStructGet(context.standardClasses().objectClass().getStructure(),
+                new WasmGetLocal(instance), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
         var index = context.classInfoProvider().getVirtualMethodsOffset() + vtableIndex;
-        var vtableStruct = context.classInfoProvider().getClassInfo(vtable.getClassName())
-                .getVirtualTableStructure();
-        if (!vtableStruct.isSupertypeOf(actualVtableStruct)) {
-            classRef = new WasmCast(classRef, vtableStruct.getReference());
-        }
+        var expectedInstanceClassInfo = context.classInfoProvider().getClassInfo(vtable.getClassName());
+        var vtableStruct = expectedInstanceClassInfo.getVirtualTableStructure();
+        classRef = new WasmCast(classRef, vtableStruct.getReference());
 
         var functionRef = new WasmStructGet(vtableStruct, classRef, index);
         var functionTypeRef = (WasmType.CompositeReference) vtableStruct.getFields().get(index).asUnpackedType();
         var invoke = new WasmCallReference(functionRef, (WasmFunctionType) functionTypeRef.composite);
-        invoke.getArguments().addAll(arguments);
+        WasmExpression instanceRef = new WasmGetLocal(instance);
+        var instanceType = (WasmType.CompositeReference) instance.getType();
+        var instanceStruct = (WasmStructure) instanceType.composite;
+        if (!expectedInstanceClassInfo.getStructure().isSupertypeOf(instanceStruct)) {
+            instanceRef = new WasmCast(instanceRef, expectedInstanceClassInfo.getType());
+        }
+
+        invoke.getArguments().add(instanceRef);
+        invoke.getArguments().addAll(arguments.subList(1, arguments.size()));
         return invoke;
     }
 

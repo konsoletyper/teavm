@@ -98,7 +98,7 @@ public class WasmModule {
     }
 
     private void prepareTypes() {
-        var typeGraph = WasmTypeGraphBuilder.buildTypeGraph(types, types.size());
+        var typeGraph = WasmTypeGraphBuilder.buildTypeGraph(this, types, types.size());
         var sccs = GraphUtils.findStronglyConnectedComponents(typeGraph);
         var sccStartNode = new int[types.size()];
         for (var i = 0; i < sccStartNode.length; ++i) {

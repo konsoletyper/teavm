@@ -100,7 +100,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     private int classTagOffset;
     private int classFlagsOffset;
-    private int classNameOffset = -1;
+    private int classNameOffset;
     private int classParentOffset;
     private int classArrayOffset;
     private int classArrayItemOffset;
@@ -162,7 +162,10 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             if (classInfo.virtualTableStructure != null && classInfo.getValueType() instanceof ValueType.Object
                     && classInfo.hasOwnVirtualTable) {
                 var className = ((ValueType.Object) classInfo.getValueType()).getClassName();
-                classInfo.virtualTableStructure.setSupertype(findVirtualTableSupertype(className));
+                var candidate = findVirtualTableSupertype(className);
+                if (candidate != null) {
+                    classInfo.virtualTableStructure.setSupertype(candidate);
+                }
             }
         }
     }
@@ -235,20 +238,28 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 var name = type instanceof ValueType.Object
                         ? ((ValueType.Object) type).getClassName()
                         : null;
-                classInfo.structure = new WasmStructure(name != null ? names.forClass(name) : null);
+                var isInterface = false;
+                var classReader = name != null ? classSource.get(name) : null;
+                if (classReader != null && classReader.hasModifier(ElementModifier.INTERFACE)) {
+                    isInterface = true;
+                    classInfo.structure = standardClasses.objectClass().structure;
+                } else {
+                    classInfo.structure = new WasmStructure(name != null ? names.forClass(name) : null);
+                    module.types.add(classInfo.structure);
+                }
                 if (name != null) {
-                    var classReader = classSource.get(name);
-                    if (classReader == null || !classReader.hasModifier(ElementModifier.INTERFACE)) {
+                    if (!isInterface) {
                         virtualTable = virtualTables.lookup(name);
                     }
-                    if (classReader != null && classReader.getParent() != null) {
+                    if (classReader != null && classReader.getParent() != null && !isInterface) {
                         classInfo.structure.setSupertype(getClassInfo(classReader.getParent()).structure);
                     }
                 } else {
                     classInfo.structure.setSupertype(standardClasses.objectClass().structure);
                 }
-                module.types.add(classInfo.structure);
-                fillFields(classInfo, type);
+                if (!isInterface) {
+                    fillFields(classInfo, type);
+                    }
             }
             var pointerName = names.forClassInstance(type);
             classInfo.hasOwnVirtualTable = virtualTable != null && virtualTable.hasValidEntries();
@@ -405,10 +416,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 var function = functionProvider.forInstanceMethod(entry.getImplementor());
                 if (!virtualTable.getClassName().equals(entry.getImplementor().getClassName())
                         || expectedFunctionType != function.getType()) {
-                    var functionType = typeMapper.getFunctionType(virtualTable.getClassName(), method, true);
-                    functionType.getSupertypes().add(expectedFunctionType);
-                    expectedFunctionType.setFinal(false);
-                    var wrapperFunction = new WasmFunction(functionType);
+                    var wrapperFunction = new WasmFunction(expectedFunctionType);
                     module.functions.add(wrapperFunction);
                     var call = new WasmCall(function);
                     var instanceParam = new WasmLocal(getClassInfo(virtualTable.getClassName()).getType());
@@ -451,7 +459,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             if (methodDesc == null) {
                 structure.getFields().add(WasmType.Reference.FUNC.asStorage());
             } else {
-                var functionType = typeMapper.getFunctionType(virtualTable.getClassName(), methodDesc, false);
+                var originalVirtualTable = virtualTable.findMethodContainer(methodDesc);
+                var functionType = typeMapper.getFunctionType(originalVirtualTable.getClassName(), methodDesc, false);
                 structure.getFields().add(functionType.getReference().asStorage());
             }
         }
@@ -570,8 +579,9 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             fields.add(supertypeGenerator.getFunctionType().getReference().asStorage());
             classNewArrayOffset = fields.size();
             fields.add(newArrayGenerator.getNewArrayFunctionType().getReference().asStorage());
+            classNameOffset = fields.size();
+            fields.add(standardClasses.stringClass().getType().asStorage());
             virtualTableFieldOffset = fields.size();
-            classNameOffset = fieldIndexes.getOrDefault(new FieldReference(className, "name"), -1);
         }
     }
 
@@ -654,14 +664,12 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 classFlagsOffset,
                 flagsExpr
         ));
-        if (classNameOffset >= 0) {
-            function.getBody().add(new WasmStructSet(
-                    standardClasses.classClass().getStructure(),
-                    new WasmGetLocal(targetVar),
-                    classNameOffset,
-                    new WasmGetLocal(nameVar)
-            ));
-        }
+        function.getBody().add(new WasmStructSet(
+                standardClasses.classClass().getStructure(),
+                new WasmGetLocal(targetVar),
+                classNameOffset,
+                new WasmGetLocal(nameVar)
+        ));
         function.getBody().add(new WasmStructSet(
                 standardClasses.classClass().getStructure(),
                 new WasmGetLocal(targetVar),

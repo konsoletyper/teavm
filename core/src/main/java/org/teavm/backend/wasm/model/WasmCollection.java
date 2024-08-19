@@ -43,6 +43,9 @@ public class WasmCollection<T extends WasmEntity> implements Iterable<T> {
     }
 
     public void add(T entity) {
+        if (entity.collection != null) {
+            throw new IllegalArgumentException("Entity already belongs some collection");
+        }
         if (!indexesInvalid) {
             entity.index = items.size();
         }

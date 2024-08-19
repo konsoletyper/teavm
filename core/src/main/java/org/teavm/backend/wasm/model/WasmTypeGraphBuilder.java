@@ -22,21 +22,23 @@ final class WasmTypeGraphBuilder {
     private WasmTypeGraphBuilder() {
     }
 
-    static Graph buildTypeGraph(Iterable<WasmCompositeType> types, int size) {
+    static Graph buildTypeGraph(WasmModule module, Iterable<WasmCompositeType> types, int size) {
         var graphBuilder = new GraphBuilder(size);
-        var visitor = new GraphBuilderVisitor(graphBuilder);
+        var visitor = new GraphBuilderVisitor(module, graphBuilder);
         for (var type : types) {
-            visitor.currentIndex = type.index;
+            visitor.currentIndex = module.types.indexOf(type);
             type.acceptVisitor(visitor);
         }
         return graphBuilder.build();
     }
 
     private static class GraphBuilderVisitor implements WasmCompositeTypeVisitor {
+        final WasmModule module;
         final GraphBuilder graphBuilder;
         int currentIndex;
 
-        GraphBuilderVisitor(GraphBuilder graphBuilder) {
+        GraphBuilderVisitor(WasmModule module, GraphBuilder graphBuilder) {
+            this.module = module;
             this.graphBuilder = graphBuilder;
         }
 
@@ -71,7 +73,7 @@ final class WasmTypeGraphBuilder {
         private void addEdge(WasmType type) {
             if (type instanceof WasmType.CompositeReference) {
                 var composite = ((WasmType.CompositeReference) type).composite;
-                graphBuilder.addEdge(currentIndex, composite.index);
+                graphBuilder.addEdge(currentIndex, module.types.indexOf(composite));
             }
         }
     }

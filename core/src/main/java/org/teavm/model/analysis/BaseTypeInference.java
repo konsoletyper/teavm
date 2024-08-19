@@ -316,12 +316,12 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(ClassConstantInstruction insn) {
-            type(insn.getReceiver(), ValueType.object("java/lang/Class"));
+            type(insn.getReceiver(), ValueType.object("java.lang.Class"));
         }
 
         @Override
         public void visit(StringConstantInstruction insn) {
-            type(insn.getReceiver(), ValueType.object("java/lang/String"));
+            type(insn.getReceiver(), ValueType.object("java.lang.String"));
         }
 
         @Override
