@@ -26,6 +26,7 @@ import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.WasmGCVariableCategoryProvider;
+import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCSupertypeFunctionProvider;
@@ -51,14 +52,13 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.ClassInitializerInfo;
-import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.util.RegisterAllocator;
 
 public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private WasmModule module;
     private ClassHierarchy hierarchy;
     private ListableClassHolderSource classes;
-    private VirtualTableProvider virtualTables;
+    private WasmGCVirtualTableProvider virtualTables;
     private ClassInitializerInfo classInitInfo;
     private WasmFunctionTypes functionTypes;
     private WasmGCSupertypeFunctionProvider supertypeFunctions;
@@ -82,7 +82,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             WasmModule module,
             ClassHierarchy hierarchy,
             ListableClassHolderSource classes,
-            VirtualTableProvider virtualTables,
+            WasmGCVirtualTableProvider virtualTables,
             ClassInitializerInfo classInitInfo,
             WasmFunctionTypes functionTypes,
             NameProvider names,

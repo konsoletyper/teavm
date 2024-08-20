@@ -118,7 +118,6 @@ public class WasmGCTarget implements TeaVMTarget {
         var declarationsGenerator = new WasmGCDeclarationsGenerator(
                 module,
                 classes,
-                controller::isVirtual,
                 controller.getClassInitializerInfo(),
                 controller.getDependencyInfo(),
                 controller.getDiagnostics(),

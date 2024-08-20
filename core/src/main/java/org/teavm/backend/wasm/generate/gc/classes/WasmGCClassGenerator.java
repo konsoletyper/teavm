@@ -20,16 +20,16 @@ import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.function.Consumer;
 import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTable;
+import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.gc.WasmGCInitializerContributor;
 import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringPool;
 import org.teavm.backend.wasm.model.WasmArray;
@@ -66,8 +66,6 @@ import org.teavm.model.ValueType;
 import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.TagRegistry;
-import org.teavm.model.classes.VirtualTable;
-import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.util.ReflectionUtil;
 
 public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInitializerContributor {
@@ -82,7 +80,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private WasmFunctionTypes functionTypes;
     private TagRegistry tagRegistry;
     private ClassMetadataRequirements metadataRequirements;
-    private VirtualTableProvider virtualTables;
+    private WasmGCVirtualTableProvider virtualTables;
     private BaseWasmFunctionRepository functionProvider;
     private Map<ValueType, WasmGCClassInfo> classInfoMap = new LinkedHashMap<>();
     private Queue<WasmGCClassInfo> classInfoQueue = new ArrayDeque<>();
@@ -113,7 +111,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     public WasmGCClassGenerator(WasmModule module, ClassReaderSource classSource,
             WasmFunctionTypes functionTypes, TagRegistry tagRegistry,
-            ClassMetadataRequirements metadataRequirements, VirtualTableProvider virtualTables,
+            ClassMetadataRequirements metadataRequirements, WasmGCVirtualTableProvider virtualTables,
             BaseWasmFunctionRepository functionProvider, NameProvider names,
             ClassInitializerInfo classInitializerInfo) {
         this.module = module;
@@ -236,7 +234,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             classInfo = new WasmGCClassInfo(type);
             classInfoQueue.add(classInfo);
             classInfoMap.put(type, classInfo);
-            VirtualTable virtualTable = null;
+            WasmGCVirtualTable virtualTable = null;
             if (!(type instanceof ValueType.Primitive)) {
                 var name = type instanceof ValueType.Object
                         ? ((ValueType.Object) type).getClassName()
@@ -265,7 +263,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 }
             }
             var pointerName = names.forClassInstance(type);
-            classInfo.hasOwnVirtualTable = virtualTable != null && virtualTable.hasValidEntries();
+            classInfo.hasOwnVirtualTable = virtualTable != null && !virtualTable.getEntries().isEmpty();
             var classStructure = classInfo.hasOwnVirtualTable
                     ? initRegularClassStructure(((ValueType.Object) type).getClassName())
                     : standardClasses.classClass().getStructure();
@@ -366,8 +364,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         };
     }
 
-    private void initRegularClass(WasmGCClassInfo classInfo, VirtualTable virtualTable, WasmStructure classStructure,
-            String name) {
+    private void initRegularClass(WasmGCClassInfo classInfo, WasmGCVirtualTable virtualTable,
+            WasmStructure classStructure, String name) {
         var cls = classSource.get(name);
         if (classInitializerInfo.isDynamicInitializer(name)) {
             if (cls != null && cls.getMethod(CLINIT_METHOD_DESC) != null) {
@@ -396,39 +394,34 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     target.add(setClassField(classInfo, classParentOffset, new WasmGetGlobal(parent.pointer)));
                 }
             }
-            if (virtualTable != null && virtualTable.hasValidEntries()) {
-                fillVirtualTableMethods(target, classStructure, classInfo.pointer, virtualTable, virtualTable,
-                        new HashSet<>());
+            if (virtualTable != null) {
+                fillVirtualTableMethods(target, classStructure, classInfo.pointer, virtualTable);
             }
         };
     }
 
     private void fillVirtualTableMethods(List<WasmExpression> target, WasmStructure structure, WasmGlobal global,
-            VirtualTable virtualTable, VirtualTable original, Set<MethodDescriptor> filled) {
-        if (virtualTable.getParent() != null) {
-            fillVirtualTableMethods(target, structure, global, virtualTable.getParent(), original, filled);
-        }
-        for (var method : virtualTable.getMethods()) {
-            var entry = original.getEntry(method);
-            if (entry != null && entry.getImplementor() != null && filled.add(method)
-                    && !method.equals(GET_CLASS_METHOD)) {
+            WasmGCVirtualTable virtualTable) {
+        for (var entry : virtualTable.getEntries()) {
+            var implementor = virtualTable.implementor(entry);
+            if (implementor != null && !entry.getMethod().equals(GET_CLASS_METHOD)) {
                 var fieldIndex = virtualTableFieldOffset + entry.getIndex();
                 var expectedType = (WasmType.CompositeReference) structure.getFields().get(fieldIndex)
                         .getUnpackedType();
                 var expectedFunctionType = (WasmFunctionType) expectedType.composite;
-                var function = functionProvider.forInstanceMethod(entry.getImplementor());
-                if (!virtualTable.getClassName().equals(entry.getImplementor().getClassName())
+                var function = functionProvider.forInstanceMethod(implementor);
+                if (entry.getOrigin().getClassName().equals(implementor.getClassName())
                         || expectedFunctionType != function.getType()) {
                     var wrapperFunction = new WasmFunction(expectedFunctionType);
                     module.functions.add(wrapperFunction);
                     var call = new WasmCall(function);
                     var instanceParam = new WasmLocal(getClassInfo(virtualTable.getClassName()).getType());
                     wrapperFunction.add(instanceParam);
-                    var castTarget = getClassInfo(entry.getImplementor().getClassName()).getType();
+                    var castTarget = getClassInfo(implementor.getClassName()).getType();
                     call.getArguments().add(new WasmCast(new WasmGetLocal(instanceParam), castTarget));
-                    var params = new WasmLocal[method.parameterCount()];
-                    for (var i = 0; i < method.parameterCount(); ++i) {
-                        params[i] = new WasmLocal(typeMapper.mapType(method.parameterType(i)));
+                    var params = new WasmLocal[entry.getMethod().parameterCount()];
+                    for (var i = 0; i < entry.getMethod().parameterCount(); ++i) {
+                        params[i] = new WasmLocal(typeMapper.mapType(entry.getMethod().parameterType(i)));
                         call.getArguments().add(new WasmGetLocal(params[i]));
                         wrapperFunction.add(params[i]);
                     }
@@ -462,20 +455,12 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         fields.add(monitorField);
     }
 
-    private void addVirtualTableFields(WasmStructure structure, VirtualTable virtualTable) {
-        if (virtualTable.getParent() != null) {
-            addVirtualTableFields(structure, virtualTable.getParent());
-        }
-        for (var methodDesc : virtualTable.getMethods()) {
-            if (methodDesc == null) {
-                structure.getFields().add(new WasmField(WasmType.Reference.FUNC.asStorage()));
-            } else {
-                var originalVirtualTable = virtualTable.findMethodContainer(methodDesc);
-                var functionType = typeMapper.getFunctionType(originalVirtualTable.getClassName(), methodDesc, false);
-                var field = new WasmField(functionType.getReference().asStorage());
-                field.setName(names.forVirtualMethod(methodDesc));
-                structure.getFields().add(field);
-            }
+    private void addVirtualTableFields(WasmStructure structure, WasmGCVirtualTable virtualTable) {
+        for (var entry : virtualTable.getEntries()) {
+            var functionType = typeMapper.getFunctionType(entry.getOrigin().getClassName(), entry.getMethod(), false);
+            var field = new WasmField(functionType.getReference().asStorage());
+            field.setName(names.forVirtualMethod(entry.getMethod()));
+            structure.getFields().add(field);
         }
     }
 

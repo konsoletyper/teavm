@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationContext;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
@@ -40,14 +41,13 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
-import org.teavm.model.classes.VirtualTableProvider;
 
 public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmModule module;
     private WasmGCClassInfoProvider classInfoProvider;
     private WasmGCStandardClasses standardClasses;
     private WasmGCStringProvider strings;
-    private VirtualTableProvider virtualTables;
+    private WasmGCVirtualTableProvider virtualTables;
     private WasmGCTypeMapper typeMapper;
     private WasmFunctionTypes functionTypes;
     private ListableClassReaderSource classes;
@@ -63,7 +63,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmTag exceptionTag;
     private Map<String, Set<String>> interfaceImplementors;
 
-    public WasmGCGenerationContext(WasmModule module, VirtualTableProvider virtualTables,
+    public WasmGCGenerationContext(WasmModule module, WasmGCVirtualTableProvider virtualTables,
             WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes, ListableClassReaderSource classes,
             ClassHierarchy hierarchy, BaseWasmFunctionRepository functions,
             WasmGCSupertypeFunctionProvider supertypeFunctions, WasmGCClassInfoProvider classInfoProvider,
@@ -96,7 +96,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         return strings;
     }
 
-    public VirtualTableProvider virtualTables() {
+    public WasmGCVirtualTableProvider virtualTables() {
         return virtualTables;
     }
 

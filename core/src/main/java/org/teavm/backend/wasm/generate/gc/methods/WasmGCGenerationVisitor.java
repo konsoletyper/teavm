@@ -62,13 +62,10 @@ import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.ClassHierarchy;
-import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
-import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
-import org.teavm.model.classes.VirtualTable;
 
 public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     private WasmGCGenerationContext context;
@@ -259,26 +256,18 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     protected WasmExpression generateVirtualCall(WasmLocal instance, MethodReference method,
             List<WasmExpression> arguments) {
         var vtable = context.virtualTables().lookup(method.getClassName());
-        if (vtable != null) {
-            var cls = context.classes().get(method.getClassName());
-            assert cls != null : "Virtual table can't be generated for absent class";
-            if (cls.hasModifier(ElementModifier.INTERFACE)) {
-                vtable = pickVirtualTableForInterfaceCall(vtable, method.getDescriptor());
-            }
-            vtable = vtable.findMethodContainer(method.getDescriptor());
-        }
         if (vtable == null) {
             return new WasmUnreachable();
         }
 
-        int vtableIndex = vtable.getMethods().indexOf(method.getDescriptor());
-        if (vtable.getParent() != null) {
-            vtableIndex += vtable.getParent().size();
+        var entry = vtable.entry(method.getDescriptor());
+        if (entry == null) {
+            return new WasmUnreachable();
         }
 
         WasmExpression classRef = new WasmStructGet(context.standardClasses().objectClass().getStructure(),
                 new WasmGetLocal(instance), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-        var index = context.classInfoProvider().getVirtualMethodsOffset() + vtableIndex;
+        var index = context.classInfoProvider().getVirtualMethodsOffset() + entry.getIndex();
         var expectedInstanceClassInfo = context.classInfoProvider().getClassInfo(vtable.getClassName());
         var vtableStruct = expectedInstanceClassInfo.getVirtualTableStructure();
         classRef = new WasmCast(classRef, vtableStruct.getReference());
@@ -296,20 +285,6 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         invoke.getArguments().add(instanceRef);
         invoke.getArguments().addAll(arguments.subList(1, arguments.size()));
         return invoke;
-    }
-
-    private VirtualTable pickVirtualTableForInterfaceCall(VirtualTable virtualTable, MethodDescriptor descriptor) {
-        var implementors = context.getInterfaceImplementors(virtualTable.getClassName());
-        for (var implementor : implementors) {
-            var implementorVtable = context.virtualTables().lookup(implementor);
-            if (implementorVtable != null && implementorVtable.hasMethod(descriptor)) {
-                while (implementorVtable.getParent() != null && implementorVtable.getParent().hasMethod(descriptor)) {
-                    implementorVtable = implementorVtable.getParent();
-                }
-                return implementorVtable;
-            }
-        }
-        throw new IllegalStateException();
     }
 
     @Override

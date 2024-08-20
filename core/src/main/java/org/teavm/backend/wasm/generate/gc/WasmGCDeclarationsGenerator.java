@@ -16,9 +16,9 @@
 package org.teavm.backend.wasm.generate.gc;
 
 import java.util.List;
-import java.util.function.Predicate;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.WasmNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassGenerator;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
@@ -33,12 +33,10 @@ import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ListableClassHolderSource;
-import org.teavm.model.MethodReference;
 import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableBuilder;
-import org.teavm.model.classes.VirtualTableProvider;
 
 public class WasmGCDeclarationsGenerator {
     public final ClassHierarchy hierarchy;
@@ -50,7 +48,6 @@ public class WasmGCDeclarationsGenerator {
     public WasmGCDeclarationsGenerator(
             WasmModule module,
             ListableClassHolderSource classes,
-            Predicate<MethodReference> virtualMethods,
             ClassInitializerInfo classInitializerInfo,
             DependencyInfo dependencyInfo,
             Diagnostics diagnostics,
@@ -59,7 +56,7 @@ public class WasmGCDeclarationsGenerator {
     ) {
         this.module = module;
         hierarchy = new ClassHierarchy(classes);
-        var virtualTables = createVirtualTableProvider(classes, virtualMethods);
+        var virtualTables = createVirtualTableProvider(classes);
         functionTypes = new WasmFunctionTypes(module);
         var names = new WasmNameProvider();
         methodGenerator = new WasmGCMethodGenerator(
@@ -133,12 +130,8 @@ public class WasmGCDeclarationsGenerator {
         }
     }
 
-    private static VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes,
-            Predicate<MethodReference> virtualMethods) {
-        var builder = new VirtualTableBuilder(classes);
-        builder.setMethodsUsedAtCallSites(VirtualTableBuilder.getMethodsUsedOnCallSites(classes, false));
-        builder.setMethodCalledVirtually(virtualMethods);
-        return builder.build();
+    private static WasmGCVirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {
+        return new WasmGCVirtualTableProvider(classes, VirtualTableBuilder.getMethodsUsedOnCallSites(classes, false));
     }
 
     public WasmFunction dummyInitializer() {

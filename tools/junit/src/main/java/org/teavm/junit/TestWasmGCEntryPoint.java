@@ -15,11 +15,21 @@
  */
 package org.teavm.junit;
 
+import org.teavm.classlib.impl.console.JSStdoutPrintStream;
+
 final class TestWasmGCEntryPoint {
     private TestWasmGCEntryPoint() {
     }
 
     public static void main(String[] args) throws Throwable {
+        try {
+            TestEntryPoint.run(args.length > 0 ? args[0] : null);
+            new JSStdoutPrintStream().println("SUCCESS");
+        } catch (Throwable e) {
+            var out = new JSStdoutPrintStream();
+            e.printStackTrace(out);
+            out.println("FAILURE");
+        }
         TestEntryPoint.run(args.length > 0 ? args[0] : null);
     }
 }
