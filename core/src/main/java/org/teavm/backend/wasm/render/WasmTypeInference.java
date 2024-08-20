@@ -290,7 +290,7 @@ public class WasmTypeInference implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmStructGet expression) {
-        result = expression.getType().getFields().get(expression.getFieldIndex()).asUnpackedType();
+        result = expression.getType().getFields().get(expression.getFieldIndex()).getUnpackedType();
     }
 
     @Override

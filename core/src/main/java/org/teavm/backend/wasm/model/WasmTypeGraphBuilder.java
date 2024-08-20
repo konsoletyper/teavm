@@ -48,7 +48,7 @@ final class WasmTypeGraphBuilder {
                 addEdge(type.getSupertype().getReference());
             }
             for (var field : type.getFields()) {
-                addEdge(field.asUnpackedType());
+                addEdge(field.getUnpackedType());
             }
         }
 

@@ -170,7 +170,7 @@ public class UnusedTypeElimination {
         @Override
         public void visit(WasmStructure type) {
             for (var field : type.getFields()) {
-                visit(field);
+                visit(field.getType());
             }
         }
 

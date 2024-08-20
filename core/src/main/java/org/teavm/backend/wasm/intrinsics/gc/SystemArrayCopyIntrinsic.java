@@ -85,9 +85,9 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
         var wasmSize = context.generate(invocation.getArguments().get(4));
 
         var wasmTargetArrayTypeRef = (WasmType.CompositeReference) wasmTargetArrayStruct.getFields()
-                .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).asUnpackedType();
+                .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
         var wasmSourceArrayTypeRef = (WasmType.CompositeReference) wasmSourceArrayStruct.getFields()
-                .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).asUnpackedType();
+                .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
 
         return new WasmArrayCopy((WasmArray) wasmTargetArrayTypeRef.composite, wasmTargetArray, wasmTargetIndex,
                 (WasmArray) wasmSourceArrayTypeRef.composite, wasmSourceArray, wasmSourceIndex, wasmSize);

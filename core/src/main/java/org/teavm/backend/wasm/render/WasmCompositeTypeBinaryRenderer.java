@@ -43,7 +43,7 @@ public class WasmCompositeTypeBinaryRenderer implements WasmCompositeTypeVisitor
         section.writeByte(0x5F);
         section.writeLEB(type.getFields().size());
         for (var fieldType : type.getFields()) {
-            writeStorageType(fieldType);
+            writeStorageType(fieldType.getType());
             section.writeLEB(0x01); // mutable
         }
     }

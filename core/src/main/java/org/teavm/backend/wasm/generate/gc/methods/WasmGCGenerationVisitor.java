@@ -176,7 +176,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             var struct = (WasmStructure) type.composite;
             var fieldIndex = context.classInfoProvider().getFieldIndex(field);
 
-            accept(value, struct.getFields().get(fieldIndex).asUnpackedType());
+            accept(value, struct.getFields().get(fieldIndex).getUnpackedType());
             var wasmValue = result;
 
             var expr = new WasmStructSet(struct, target, fieldIndex, wasmValue);
@@ -284,7 +284,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         classRef = new WasmCast(classRef, vtableStruct.getReference());
 
         var functionRef = new WasmStructGet(vtableStruct, classRef, index);
-        var functionTypeRef = (WasmType.CompositeReference) vtableStruct.getFields().get(index).asUnpackedType();
+        var functionTypeRef = (WasmType.CompositeReference) vtableStruct.getFields().get(index).getUnpackedType();
         var invoke = new WasmCallReference(functionRef, (WasmFunctionType) functionTypeRef.composite);
         WasmExpression instanceRef = new WasmGetLocal(instance);
         var instanceType = (WasmType.CompositeReference) instance.getType();

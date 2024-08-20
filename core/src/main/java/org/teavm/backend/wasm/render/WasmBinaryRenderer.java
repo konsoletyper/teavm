@@ -29,6 +29,7 @@ import org.teavm.backend.wasm.model.WasmCustomSection;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
 
 public class WasmBinaryRenderer {
@@ -505,6 +506,31 @@ public class WasmBinaryRenderer {
 
             payload = globalsSubsection.getData();
             section.writeLEB(7);
+            section.writeLEB(payload.length);
+            section.writeBytes(payload);
+        }
+
+        var typesWithNamedFields = module.types.stream()
+                .filter(t -> t instanceof WasmStructure)
+                .filter(t -> ((WasmStructure) t).getFields().stream().anyMatch(f -> f.getName() != null))
+                .collect(Collectors.toList());
+        if (!typesWithNamedFields.isEmpty()) {
+            var subsection = new WasmBinaryWriter();
+            subsection.writeLEB(typesWithNamedFields.size());
+            for (var type : typesWithNamedFields) {
+                subsection.writeLEB(module.types.indexOf(type));
+                var fields = ((WasmStructure) type).getFields().stream()
+                        .filter(t -> t.getName() != null)
+                        .collect(Collectors.toList());
+                subsection.writeLEB(fields.size());
+                for (var field : fields) {
+                    subsection.writeLEB(field.getIndex());
+                    subsection.writeAsciiString(field.getName());
+                }
+            }
+
+            payload = subsection.getData();
+            section.writeLEB(10);
             section.writeLEB(payload.length);
             section.writeBytes(payload);
         }

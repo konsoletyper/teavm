@@ -15,18 +15,20 @@
  */
 package org.teavm.backend.wasm.model;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 
 public class WasmStructure extends WasmCompositeType {
-    private List<WasmStorageType> fields = new ArrayList<>();
+    private List<WasmField> fieldsStorage = new ArrayList<>();
     private WasmStructure supertype;
+    private boolean indexesValid = true;
 
     public WasmStructure(String name) {
         super(name);
     }
 
-    public List<WasmStorageType> getFields() {
+    public List<WasmField> getFields() {
         return fields;
     }
 
@@ -48,8 +50,80 @@ public class WasmStructure extends WasmCompositeType {
         return false;
     }
 
+    void ensureIndexes() {
+        if (!indexesValid) {
+            indexesValid = true;
+            for (var i = 0; i < fieldsStorage.size(); ++i) {
+                fieldsStorage.get(i).index = i;
+            }
+        }
+    }
+
     @Override
     public void acceptVisitor(WasmCompositeTypeVisitor visitor) {
         visitor.visit(this);
     }
+
+    private List<WasmField> fields = new AbstractList<WasmField>() {
+        @Override
+        public WasmField get(int index) {
+            return fieldsStorage.get(index);
+        }
+
+        @Override
+        public int size() {
+            return fieldsStorage.size();
+        }
+
+        @Override
+        public void add(int index, WasmField element) {
+            if (element.structure != null) {
+                throw new IllegalArgumentException("This field already belongs to structure");
+            }
+            element.structure = WasmStructure.this;
+            indexesValid = false;
+            fieldsStorage.add(index, element);
+        }
+
+        @Override
+        public WasmField remove(int index) {
+            var result = fieldsStorage.remove(index);
+            indexesValid = false;
+            result.structure = null;
+            return result;
+        }
+
+        @Override
+        protected void removeRange(int fromIndex, int toIndex) {
+            var sublist = fieldsStorage.subList(fromIndex, toIndex);
+            for (var field : sublist) {
+                field.structure = null;
+            }
+            indexesValid = false;
+            sublist.clear();
+        }
+
+        @Override
+        public void clear() {
+            for (var field : fieldsStorage) {
+                field.structure = null;
+            }
+            indexesValid = true;
+            fieldsStorage.clear();
+        }
+
+        @Override
+        public WasmField set(int index, WasmField element) {
+            if (element.structure != null) {
+                throw new IllegalArgumentException("This field already belongs to structure");
+            }
+            var former = fieldsStorage.set(index, element);
+            former.structure = null;
+            if (indexesValid) {
+                element.index = former.index;
+            }
+            element.structure = WasmStructure.this;
+            return former;
+        }
+    };
 }

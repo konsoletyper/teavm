@@ -62,7 +62,7 @@ public class WasmGCGenerationUtil {
 
         var wasmArrayType = (WasmType.CompositeReference) classInfo.getStructure().getFields()
                 .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET)
-                .asUnpackedType();
+                .getUnpackedType();
         var wasmArray = (WasmArray) wasmArrayType.composite;
         var initArrayField = new WasmStructSet(
                 classInfo.getStructure(),
