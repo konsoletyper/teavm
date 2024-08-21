@@ -143,6 +143,35 @@ public class WasmGCModuleGenerator {
         return caller;
     }
 
+    public WasmFunction generateStringLengthFunction() {
+        var function = declarationsGenerator.functions().forInstanceMethod(new MethodReference(
+                String.class, "length", int.class));
+        var stringType = declarationsGenerator.typeMapper().mapType(ValueType.parse(String.class));
+        var caller = new WasmFunction(function.getType());
+        var stringLocal = new WasmLocal(stringType);
+        caller.add(stringLocal);
+        caller.getBody().add(callInitializer());
+        caller.getBody().add(new WasmReturn(new WasmCall(function, new WasmGetLocal(stringLocal))));
+        declarationsGenerator.module.functions.add(caller);
+        return caller;
+    }
+
+    public WasmFunction generateCharAtFunction() {
+        var function = declarationsGenerator.functions().forInstanceMethod(new MethodReference(
+                String.class, "charAt", int.class, char.class));
+        var stringType = declarationsGenerator.typeMapper().mapType(ValueType.parse(String.class));
+        var caller = new WasmFunction(function.getType());
+        var stringLocal = new WasmLocal(stringType);
+        var indexLocal = new WasmLocal(WasmType.INT32);
+        caller.add(stringLocal);
+        caller.add(indexLocal);
+        caller.getBody().add(callInitializer());
+        caller.getBody().add(new WasmReturn(new WasmCall(function, new WasmGetLocal(stringLocal),
+                new WasmGetLocal(indexLocal))));
+        declarationsGenerator.module.functions.add(caller);
+        return caller;
+    }
+
     private void createInitializer() {
         if (initializer != null) {
             return;

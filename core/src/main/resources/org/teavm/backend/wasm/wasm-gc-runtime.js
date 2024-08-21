@@ -53,6 +53,7 @@ TeaVM.wasm = function() {
         return WebAssembly.instantiateStreaming(fetch(path), importObj).then((obj => {
             let teavm = {};
             teavm.main = createMain(obj.instance);
+            teavm.instance = obj.instance;
             return teavm;
         }));
     }

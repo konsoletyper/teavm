@@ -303,27 +303,29 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         if (success && outputDir != null) {
             List<TestRun> runs = new ArrayList<>();
 
-            if (isWholeClassCompilation) {
-                if (!classCompilationOk) {
-                    notifier.fireTestFinished(description);
-                    notifier.fireTestFailure(new Failure(description,
-                            new AssertionError("Could not compile test class")));
+            try {
+                if (isWholeClassCompilation) {
+                    if (!classCompilationOk) {
+                        notifier.fireTestFailure(new Failure(description,
+                                new AssertionError("Could not compile test class")));
+                    } else {
+                        prepareTestsFromWholeClass(child, runs);
+                    }
                 } else {
-                    prepareTestsFromWholeClass(child, runs);
+                    prepareCompiledTest(child, notifier, runs);
                 }
-            } else {
-                prepareCompiledTest(child, notifier, runs);
-            }
 
-            for (var run : runs) {
-                try {
-                    submitRun(run);
-                } catch (Throwable e) {
-                    notifier.fireTestFailure(new Failure(description, e));
-                    break;
+                for (var run : runs) {
+                    try {
+                        submitRun(run);
+                    } catch (Throwable e) {
+                        notifier.fireTestFailure(new Failure(description, e));
+                        break;
+                    }
                 }
+            } finally {
+                notifier.fireTestFinished(description);
             }
-            notifier.fireTestFinished(description);
         } else {
             if (!ran) {
                 notifier.fireTestIgnored(description);
@@ -378,7 +380,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             }
         } catch (Throwable e) {
             notifier.fireTestFailure(new Failure(describeChild(child), e));
-            notifier.fireTestFinished(describeChild(child));
         }
     }
 
@@ -710,7 +711,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
         if (!result.success) {
             notifier.fireTestFailure(createFailure(description, result));
-            notifier.fireTestFinished(description);
             return null;
         }
 

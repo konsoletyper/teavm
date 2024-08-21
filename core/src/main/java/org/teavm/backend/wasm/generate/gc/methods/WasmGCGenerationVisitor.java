@@ -172,13 +172,17 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             var type = (WasmType.CompositeReference) typeInference.getResult();
             var struct = (WasmStructure) type.composite;
             var fieldIndex = context.classInfoProvider().getFieldIndex(field);
+            if (fieldIndex >= 0) {
+                accept(value, struct.getFields().get(fieldIndex).getUnpackedType());
+                var wasmValue = result;
 
-            accept(value, struct.getFields().get(fieldIndex).getUnpackedType());
-            var wasmValue = result;
-
-            var expr = new WasmStructSet(struct, target, fieldIndex, wasmValue);
-            expr.setLocation(location);
-            resultConsumer.add(expr);
+                var expr = new WasmStructSet(struct, target, fieldIndex, wasmValue);
+                expr.setLocation(location);
+                resultConsumer.add(expr);
+            } else {
+                accept(value);
+                resultConsumer.add(result);
+            }
         }
     }
 
@@ -495,31 +499,36 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             var type = (WasmType.CompositeReference) typeInference.getResult();
             var struct = (WasmStructure) type.composite;
             var fieldIndex = context.classInfoProvider().getFieldIndex(expr.getField());
-            var structGet = new WasmStructGet(struct, target, fieldIndex);
-            var cls = context.classes().get(expr.getField().getClassName());
-            if (cls != null) {
-                var field = cls.getField(expr.getField().getFieldName());
-                if (field != null) {
-                    var fieldType = field.getType();
-                    if (fieldType instanceof ValueType.Primitive) {
-                        switch (((ValueType.Primitive) fieldType).getKind()) {
-                            case BYTE:
-                                structGet.setSignedType(WasmSignedType.SIGNED);
-                                break;
-                            case SHORT:
-                                structGet.setSignedType(WasmSignedType.SIGNED);
-                                break;
-                            case CHARACTER:
-                                structGet.setSignedType(WasmSignedType.UNSIGNED);
-                                break;
-                            default:
-                                break;
+            if (fieldIndex >= 0) {
+                var structGet = new WasmStructGet(struct, target, fieldIndex);
+                var cls = context.classes().get(expr.getField().getClassName());
+                if (cls != null) {
+                    var field = cls.getField(expr.getField().getFieldName());
+                    if (field != null) {
+                        var fieldType = field.getType();
+                        if (fieldType instanceof ValueType.Primitive) {
+                            switch (((ValueType.Primitive) fieldType).getKind()) {
+                                case BYTE:
+                                    structGet.setSignedType(WasmSignedType.SIGNED);
+                                    break;
+                                case SHORT:
+                                    structGet.setSignedType(WasmSignedType.SIGNED);
+                                    break;
+                                case CHARACTER:
+                                    structGet.setSignedType(WasmSignedType.UNSIGNED);
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
                     }
                 }
+                structGet.setLocation(expr.getLocation());
+                result = structGet;
+            } else {
+                result = new WasmUnreachable();
+                result.setLocation(expr.getLocation());
             }
-            structGet.setLocation(expr.getLocation());
-            result = structGet;
         }
     }
 

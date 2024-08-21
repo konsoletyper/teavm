@@ -49,7 +49,7 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
     TestRunStrategy createRunStrategy(File outputDir) {
         var runStrategyName = System.getProperty(WASM_RUNNER);
         return runStrategyName != null
-                ? new BrowserRunStrategy(outputDir, "WASM", BrowserRunner.pickBrowser(runStrategyName))
+                ? new BrowserRunStrategy(outputDir, "WASM_GC", BrowserRunner.pickBrowser(runStrategyName))
                 : null;
     }
 

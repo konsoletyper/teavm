@@ -146,6 +146,12 @@ public class WasmGCTarget implements TeaVMTarget {
         var setArrayFunction = moduleGenerator.generateSetToStringArrayFunction();
         setArrayFunction.setExportName("setToStringArray");
 
+        var stringLengthFunction = moduleGenerator.generateStringLengthFunction();
+        stringLengthFunction.setExportName("stringLength");
+
+        var charAtFunction = moduleGenerator.generateCharAtFunction();
+        charAtFunction.setExportName("charAt");
+
         moduleGenerator.generate();
         adjustModuleMemory(module);
 

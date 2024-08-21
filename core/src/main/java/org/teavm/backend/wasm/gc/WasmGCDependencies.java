@@ -52,6 +52,12 @@ public class WasmGCDependencies {
         analyzer.linkMethod(new MethodReference(StringBuilder.class, "toString", String.class))
                 .propagate(0, analyzer.getType("java.lang.StringBuilder"))
                 .use();
+        analyzer.linkMethod(new MethodReference(String.class, "length", int.class))
+                .propagate(0, analyzer.getType("java.lang.String"))
+                .use();
+        analyzer.linkMethod(new MethodReference(String.class, "charAt", int.class, char.class))
+                .propagate(0, analyzer.getType("java.lang.String"))
+                .use();
     }
 
     private void contributeWasmRuntime() {

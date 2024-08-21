@@ -22,16 +22,19 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmPackedType;
 import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.ValueType;
 
 public class WasmGCTypeMapper {
+    private ClassReaderSource classes;
     private WasmGCClassInfoProvider classInfoProvider;
     private WasmFunctionTypes functionTypes;
     private WasmModule module;
 
-    WasmGCTypeMapper(WasmGCClassInfoProvider classInfoProvider, WasmFunctionTypes functionTypes,
-            WasmModule module) {
+    WasmGCTypeMapper(ClassReaderSource classes, WasmGCClassInfoProvider classInfoProvider,
+            WasmFunctionTypes functionTypes, WasmModule module) {
+        this.classes = classes;
         this.classInfoProvider = classInfoProvider;
         this.functionTypes = functionTypes;
         this.module = module;
@@ -82,8 +85,32 @@ public class WasmGCTypeMapper {
             }
         } else if (type instanceof ValueType.Void) {
             return null;
-        } else {
+        } else if (type instanceof ValueType.Object) {
+            var className = ((ValueType.Object) type).getClassName();
+            var cls = classes.get(className);
+            if (cls == null) {
+                className = "java.lang.Object";
+            }
+            return classInfoProvider.getClassInfo(className).getType();
+        } else if (type instanceof ValueType.Array) {
+            var degree = 0;
+            while (type instanceof ValueType.Array) {
+                type = ((ValueType.Array) type).getItemType();
+                ++degree;
+            }
+            if (type instanceof ValueType.Object) {
+                var className = ((ValueType.Object) type).getClassName();
+                var cls = classes.get(className);
+                if (cls != null) {
+                    className = "java.lang.Object";
+                }
+            }
+            while (degree-- > 0) {
+                type = ValueType.arrayOf(type);
+            }
             return classInfoProvider.getClassInfo(type).getType();
+        } else {
+            throw new IllegalArgumentException();
         }
     }
 

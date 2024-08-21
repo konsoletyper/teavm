@@ -175,6 +175,9 @@ class WasmGCVirtualTableBuilder {
 
         for (var method : table.cls.getMethods()) {
             if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)) {
+                if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
+                    continue;
+                }
                 var index = indexes.getOrDefault(method.getDescriptor(), -1);
                 if (index >= 0) {
                     table.implementors.set(index, method.getReference());

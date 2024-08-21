@@ -19,6 +19,7 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import org.teavm.ast.decompilation.Decompiler;
@@ -192,13 +193,17 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     }
 
     private void generateMethodBody(MethodHolder method, WasmFunction function) {
-        var customGenerator = customGenerators.get(method.getReference());
-        if (customGenerator != null) {
-            generateCustomMethodBody(customGenerator, method.getReference(), function);
-        } else if (!method.hasModifier(ElementModifier.NATIVE)) {
-            generateRegularMethodBody(method, function);
-        } else {
-            generateNativeMethodBody(method, function);
+        try {
+            var customGenerator = customGenerators.get(method.getReference());
+            if (customGenerator != null) {
+                generateCustomMethodBody(customGenerator, method.getReference(), function);
+            } else if (!method.hasModifier(ElementModifier.NATIVE)) {
+                generateRegularMethodBody(method, function);
+            } else {
+                generateNativeMethodBody(method, function);
+            }
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Failed generating method body: " + method.getReference(), e);
         }
     }
 
@@ -208,6 +213,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     }
 
     private void generateRegularMethodBody(MethodHolder method, WasmFunction function) {
+        Objects.requireNonNull(method.getProgram());
         var decompiler = getDecompiler();
         var categoryProvider = new WasmGCVariableCategoryProvider(hierarchy);
         var allocator = new RegisterAllocator(categoryProvider);

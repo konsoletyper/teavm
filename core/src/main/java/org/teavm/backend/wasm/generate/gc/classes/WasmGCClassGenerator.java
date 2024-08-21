@@ -127,7 +127,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         strings = new WasmGCStringPool(standardClasses, module, functionProvider);
         supertypeGenerator = new WasmGCSupertypeFunctionGenerator(module, this, names, tagRegistry, functionTypes);
         newArrayGenerator = new WasmGCNewArrayFunctionGenerator(module, functionTypes, this);
-        typeMapper = new WasmGCTypeMapper(this, functionTypes, module);
+        typeMapper = new WasmGCTypeMapper(classSource, this, functionTypes, module);
     }
 
     public WasmGCSupertypeFunctionProvider getSupertypeProvider() {
@@ -490,11 +490,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     @Override
     public int getFieldIndex(FieldReference fieldRef) {
         getClassInfo(fieldRef.getClassName());
-        var result = fieldIndexes.getOrDefault(fieldRef, -1);
-        if (result < 0) {
-            throw new IllegalStateException("Can't get offset of field " + fieldRef);
-        }
-        return result;
+        return fieldIndexes.getOrDefault(fieldRef, -1);
     }
 
     @Override
