@@ -61,6 +61,7 @@ public class WasmHollowType {
         public static final SpecialReference EXTERN = new SpecialReference(WasmType.SpecialReferenceKind.EXTERN);
         public static final SpecialReference STRUCT = new SpecialReference(WasmType.SpecialReferenceKind.STRUCT);
         public static final SpecialReference ARRAY = new SpecialReference(WasmType.SpecialReferenceKind.ARRAY);
+        public static final SpecialReference I31 = new SpecialReference(WasmType.SpecialReferenceKind.I31);
     }
 
     public static final class CompositeReference extends WasmHollowType.Reference {

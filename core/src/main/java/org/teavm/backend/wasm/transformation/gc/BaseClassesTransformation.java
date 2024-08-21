@@ -16,13 +16,29 @@
 package org.teavm.backend.wasm.transformation.gc;
 
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.model.AccessLevel;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
+import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
+import org.teavm.model.instructions.GetFieldInstruction;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.PutFieldInstruction;
 
 public class BaseClassesTransformation implements ClassHolderTransformer {
+    private static final MethodReference GET_MONITOR = new MethodReference(Object.class.getName(),
+            "getMonitor", ValueType.object("java.lang.Object$Monitor"));
+    private static final MethodReference SET_MONITOR = new MethodReference(Object.class.getName(),
+            "setMonitor", ValueType.object("java.lang.Object$Monitor"), ValueType.VOID);
+    private static final FieldReference MONITOR = new FieldReference(Object.class.getName(), "monitor");
+
     @Override
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         if (cls.getName().equals("java.lang.Object")) {
@@ -37,8 +53,22 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
                         em.invoke(WasmGCSupport.class, "cnse", CloneNotSupportedException.class).raise();
                         break;
                     }
+                    default:
+                        if (method.getProgram() != null) {
+                            transformMonitorFieldAccess(method.getProgram());
+                        }
+                        break;
                 }
             }
+            var getMonitorMethod = new MethodHolder(GET_MONITOR.getDescriptor());
+            getMonitorMethod.setLevel(AccessLevel.PRIVATE);
+            getMonitorMethod.getModifiers().add(ElementModifier.NATIVE);
+            cls.addMethod(getMonitorMethod);
+
+            var setMonitorMethod = new MethodHolder(SET_MONITOR.getDescriptor());
+            setMonitorMethod.setLevel(AccessLevel.PRIVATE);
+            setMonitorMethod.getModifiers().add(ElementModifier.NATIVE);
+            cls.addMethod(setMonitorMethod);
         } else if (cls.getName().equals("java.lang.Class")) {
             for (var method : cls.getMethods()) {
                 switch (method.getName()) {
@@ -47,6 +77,45 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
                         method.setProgram(null);
                         method.getModifiers().add(ElementModifier.NATIVE);
                         break;
+                }
+            }
+        } else if (cls.getName().equals("java.lang.System")) {
+            for (var method : cls.getMethods()) {
+                switch (method.getName()) {
+                    case "arraycopy":
+                        method.setProgram(null);
+                        method.getModifiers().add(ElementModifier.NATIVE);
+                        break;
+                }
+            }
+        }
+    }
+
+    private void transformMonitorFieldAccess(Program program) {
+        for (var block : program.getBasicBlocks()) {
+            for (var instruction : block) {
+                if (instruction instanceof GetFieldInstruction) {
+                    var getField = (GetFieldInstruction) instruction;
+                    if (getField.getField().equals(MONITOR)) {
+                        var invocation = new InvokeInstruction();
+                        invocation.setType(InvocationType.SPECIAL);
+                        invocation.setInstance(getField.getInstance());
+                        invocation.setMethod(GET_MONITOR);
+                        invocation.setReceiver(getField.getReceiver());
+                        invocation.setLocation(getField.getLocation());
+                        getField.replace(invocation);
+                    }
+                } else if (instruction instanceof PutFieldInstruction) {
+                    var putField = (PutFieldInstruction) instruction;
+                    if (putField.getField().equals(MONITOR)) {
+                        var invocation = new InvokeInstruction();
+                        invocation.setType(InvocationType.SPECIAL);
+                        invocation.setInstance(putField.getInstance());
+                        invocation.setMethod(SET_MONITOR);
+                        invocation.setArguments(putField.getValue());
+                        invocation.setLocation(putField.getLocation());
+                        putField.replace(invocation);
+                    }
                 }
             }
         }

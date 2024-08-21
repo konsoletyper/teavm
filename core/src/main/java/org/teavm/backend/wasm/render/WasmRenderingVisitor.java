@@ -53,6 +53,8 @@ import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
+import org.teavm.backend.wasm.model.expression.WasmInt31Get;
+import org.teavm.backend.wasm.model.expression.WasmInt31Reference;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt64Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
@@ -70,6 +72,7 @@ import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
+import org.teavm.backend.wasm.model.expression.WasmSignedType;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
@@ -79,6 +82,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructNew;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
+import org.teavm.backend.wasm.model.expression.WasmTest;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmTry;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
@@ -701,6 +705,13 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmTest expression) {
+        open().append("ref.test ").append(type(expression.getTestType()));
+        line(expression.getValue());
+        close();
+    }
+
+    @Override
     public void visit(WasmStructNew expression) {
         open().append("struct.new ");
         append(expression.getType().getReference());
@@ -811,6 +822,20 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         close();
     }
 
+    @Override
+    public void visit(WasmInt31Reference expression) {
+        open().append("ref.i31 ");
+        line(expression.getValue());
+        close();
+    }
+
+    @Override
+    public void visit(WasmInt31Get expression) {
+        open().append("i31.get_" + (expression.getSignedType() == WasmSignedType.SIGNED ? "s" : "u"));
+        line(expression.getValue());
+        close();
+    }
+
     private String type(WasmType type) {
         if (type instanceof WasmType.Number) {
             return type(((WasmType.Number) type).number);
@@ -826,6 +851,8 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                     return "funcref";
                 case ARRAY:
                     return "arrayref";
+                case I31:
+                    return "i31ref";
                 default:
                     throw new IllegalArgumentException();
             }

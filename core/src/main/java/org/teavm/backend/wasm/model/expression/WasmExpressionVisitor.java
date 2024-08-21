@@ -96,6 +96,8 @@ public interface WasmExpressionVisitor {
 
     void visit(WasmCast expression);
 
+    void visit(WasmTest expression);
+
     void visit(WasmStructNew expression);
 
     void visit(WasmStructNewDefault expression);
@@ -115,4 +117,8 @@ public interface WasmExpressionVisitor {
     void visit(WasmArrayCopy expression);
 
     void visit(WasmFunctionReference expression);
+
+    void visit(WasmInt31Reference expression);
+
+    void visit(WasmInt31Get expression);
 }

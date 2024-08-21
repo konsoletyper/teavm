@@ -291,7 +291,7 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(NullConstantInstruction insn) {
-            types[insn.getReceiver().getIndex()] = nullType();
+            type(insn.getReceiver(), nullType());
         }
 
         @Override
@@ -454,6 +454,10 @@ public abstract class BaseTypeInference<T> {
             if (target != null) {
                 var t = mapType(type);
                 if (t != null) {
+                    if (types[target.getIndex()] != null) {
+                        //noinspection unchecked
+                        t = merge((T) types[target.getIndex()], t);
+                    }
                     types[target.getIndex()] = t;
                 }
             }
@@ -461,6 +465,10 @@ public abstract class BaseTypeInference<T> {
 
         void type(Variable target, T type) {
             if (target != null && type != null) {
+                if (types[target.getIndex()] != null) {
+                    //noinspection unchecked
+                    type = merge((T) types[target.getIndex()], type);
+                }
                 types[target.getIndex()] = type;
             }
         }

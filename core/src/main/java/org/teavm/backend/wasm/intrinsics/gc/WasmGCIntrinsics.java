@@ -20,7 +20,9 @@ import java.util.List;
 import java.util.Map;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCIntrinsicProvider;
+import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
     private Map<MethodReference, WasmGCIntrinsic> intrinsics = new HashMap<>();
@@ -30,7 +32,7 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         fillObject();
         fillClass();
         fillSystem();
-        fillLong();
+        fillLongAndInteger();
     }
 
     private void fillWasmRuntime() {
@@ -50,8 +52,16 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
     }
 
     private void fillObject() {
-        var objectIntrinsics = new ObjectIntrinsics();
+        var objectIntrinsics = new ObjectIntrinsic();
         intrinsics.put(new MethodReference(Object.class, "getClass", Class.class), objectIntrinsics);
+        intrinsics.put(new MethodReference(Object.class.getName(), "getMonitor",
+                ValueType.object("java.lang.Object$Monitor")), objectIntrinsics);
+        intrinsics.put(new MethodReference(Object.class.getName(), "setMonitor",
+                ValueType.object("java.lang.Object$Monitor"), ValueType.VOID), objectIntrinsics);
+        intrinsics.put(new MethodReference(Object.class.getName(), "wasmGCIdentity", ValueType.INTEGER),
+                objectIntrinsics);
+        intrinsics.put(new MethodReference(Object.class.getName(), "setWasmGCIdentity", ValueType.INTEGER,
+                ValueType.VOID), objectIntrinsics);
     }
 
     private void fillClass() {
@@ -66,13 +76,18 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
                 int.class, int.class, void.class), new SystemArrayCopyIntrinsic());
     }
 
-    private void fillLong() {
-        var intrinsic = new LongIntrinsic();
-        intrinsics.put(new MethodReference(Long.class, "divideUnsigned", long.class, long.class, long.class),
+    private void fillLongAndInteger() {
+        fillIntNum(int.class, Integer.class, WasmIntType.INT32);
+        fillIntNum(long.class, Long.class, WasmIntType.INT64);
+    }
+
+    private void fillIntNum(Class<?> javaClass, Class<?> wrapperClass, WasmIntType wasmType) {
+        var intrinsic = new IntNumIntrinsic(javaClass, wasmType);
+        intrinsics.put(new MethodReference(wrapperClass, "divideUnsigned", javaClass, javaClass, javaClass),
                 intrinsic);
-        intrinsics.put(new MethodReference(Long.class, "remainderUnsigned", long.class, long.class, long.class),
+        intrinsics.put(new MethodReference(wrapperClass, "remainderUnsigned", javaClass, javaClass, javaClass),
                 intrinsic);
-        intrinsics.put(new MethodReference(Long.class, "compareUnsigned", long.class, long.class, int.class),
+        intrinsics.put(new MethodReference(wrapperClass, "compareUnsigned", javaClass, javaClass, int.class),
                 intrinsic);
     }
 

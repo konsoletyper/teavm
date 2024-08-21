@@ -16,21 +16,12 @@
 package org.teavm.backend.wasm.model.expression;
 
 import java.util.Objects;
-import org.teavm.backend.wasm.model.WasmType;
 
-public class WasmCast extends WasmExpression {
+public class WasmInt31Reference extends WasmExpression {
     private WasmExpression value;
-    private WasmType.Reference targetType;
-    private boolean nullable;
 
-    public WasmCast(WasmExpression value, WasmType.Reference targetType) {
-        this(value, targetType, true);
-    }
-
-    public WasmCast(WasmExpression value, WasmType.Reference targetType, boolean nullable) {
+    public WasmInt31Reference(WasmExpression value) {
         this.value = Objects.requireNonNull(value);
-        this.targetType = Objects.requireNonNull(targetType);
-        this.nullable = nullable;
     }
 
     public WasmExpression getValue() {
@@ -39,22 +30,6 @@ public class WasmCast extends WasmExpression {
 
     public void setValue(WasmExpression value) {
         this.value = Objects.requireNonNull(value);
-    }
-
-    public WasmType.Reference getTargetType() {
-        return targetType;
-    }
-
-    public void setTargetType(WasmType.Reference targetType) {
-        this.targetType = Objects.requireNonNull(targetType);
-    }
-
-    public boolean isNullable() {
-        return nullable;
-    }
-
-    public void setNullable(boolean nullable) {
-        this.nullable = nullable;
     }
 
     @Override

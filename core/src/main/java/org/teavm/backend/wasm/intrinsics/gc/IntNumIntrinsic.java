@@ -24,23 +24,28 @@ import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.model.MethodReference;
 
-public class LongIntrinsic implements WasmGCIntrinsic {
-    private static final MethodReference COMPARE_UNSIGNED = new MethodReference(WasmRuntime.class,
-            "compareUnsigned", long.class, long.class, int.class);
+public class IntNumIntrinsic implements WasmGCIntrinsic {
+    private final MethodReference compareUnsigned;
+    private final WasmIntType wasmType;
+
+    public IntNumIntrinsic(Class<?> javaType, WasmIntType wasmType) {
+        compareUnsigned = new MethodReference(WasmRuntime.class, "compareUnsigned", javaType, javaType, int.class);
+        this.wasmType = wasmType;
+    }
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         switch (invocation.getMethod().getName()) {
             case "divideUnsigned":
-                return new WasmIntBinary(WasmIntType.INT64, WasmIntBinaryOperation.DIV_UNSIGNED,
+                return new WasmIntBinary(wasmType, WasmIntBinaryOperation.DIV_UNSIGNED,
                         context.generate(invocation.getArguments().get(0)),
                         context.generate(invocation.getArguments().get(1)));
             case "remainderUnsigned":
-                return new WasmIntBinary(WasmIntType.INT64, WasmIntBinaryOperation.REM_UNSIGNED,
+                return new WasmIntBinary(wasmType, WasmIntBinaryOperation.REM_UNSIGNED,
                         context.generate(invocation.getArguments().get(0)),
                         context.generate(invocation.getArguments().get(1)));
             case "compareUnsigned":
-                return new WasmCall(context.functions().forStaticMethod(COMPARE_UNSIGNED),
+                return new WasmCall(context.functions().forStaticMethod(compareUnsigned),
                         context.generate(invocation.getArguments().get(0)),
                         context.generate(invocation.getArguments().get(1)));
             default:

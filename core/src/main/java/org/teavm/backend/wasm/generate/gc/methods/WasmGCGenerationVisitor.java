@@ -26,6 +26,7 @@ import org.teavm.ast.SubscriptExpr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.PreciseTypeInference;
+import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationVisitor;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
@@ -586,6 +587,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         @Override
         public WasmGCClassInfoProvider classInfoProvider() {
             return context.classInfoProvider();
+        }
+
+        @Override
+        public TemporaryVariablePool tempVars() {
+            return tempVars;
         }
     };
 }

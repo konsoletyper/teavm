@@ -388,7 +388,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return !cancelled;
         });
         target.contributeDependencies(dependencyAnalyzer);
-        dependencyAnalyzer.addDependencyListener(new StdlibDependencyListener());
+        if (target.needsSystemArrayCopyOptimization()) {
+            dependencyAnalyzer.addDependencyListener(new StdlibDependencyListener());
+        }
         dependencyAnalyzer.processDependencies();
         if (wasCancelled() || !diagnostics.getSevereProblems().isEmpty()) {
             return;

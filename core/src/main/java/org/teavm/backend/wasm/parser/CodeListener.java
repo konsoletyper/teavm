@@ -135,7 +135,10 @@ public interface CodeListener {
     default void nullConstant(WasmHollowType.Reference type) {
     }
 
-    default void cast(WasmHollowType.Reference type) {
+    default void cast(WasmHollowType.Reference type, boolean nullable) {
+    }
+
+    default void test(WasmHollowType.Reference type, boolean nullable) {
     }
 
     default void structNew(int typeIndex) {
@@ -172,5 +175,11 @@ public interface CodeListener {
     }
 
     default void functionReference(int functionIndex) {
+    }
+
+    default void int31Reference() {
+    }
+
+    default void int31Get(WasmSignedType signedType) {
     }
 }

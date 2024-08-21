@@ -18,18 +18,18 @@ package org.teavm.backend.wasm.model.expression;
 import java.util.Objects;
 import org.teavm.backend.wasm.model.WasmType;
 
-public class WasmCast extends WasmExpression {
+public class WasmTest extends WasmExpression {
     private WasmExpression value;
-    private WasmType.Reference targetType;
+    private WasmType.Reference testType;
     private boolean nullable;
 
-    public WasmCast(WasmExpression value, WasmType.Reference targetType) {
-        this(value, targetType, true);
+    public WasmTest(WasmExpression value, WasmType.Reference testType) {
+        this(value, testType, true);
     }
 
-    public WasmCast(WasmExpression value, WasmType.Reference targetType, boolean nullable) {
+    public WasmTest(WasmExpression value, WasmType.Reference testType, boolean nullable) {
         this.value = Objects.requireNonNull(value);
-        this.targetType = Objects.requireNonNull(targetType);
+        this.testType = Objects.requireNonNull(testType);
         this.nullable = nullable;
     }
 
@@ -41,12 +41,12 @@ public class WasmCast extends WasmExpression {
         this.value = Objects.requireNonNull(value);
     }
 
-    public WasmType.Reference getTargetType() {
-        return targetType;
+    public WasmType.Reference getTestType() {
+        return testType;
     }
 
-    public void setTargetType(WasmType.Reference targetType) {
-        this.targetType = Objects.requireNonNull(targetType);
+    public void setTestType(WasmType.Reference testType) {
+        this.testType = Objects.requireNonNull(testType);
     }
 
     public boolean isNullable() {

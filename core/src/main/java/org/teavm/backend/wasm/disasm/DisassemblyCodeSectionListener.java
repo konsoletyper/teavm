@@ -135,6 +135,8 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
                         return "extern";
                     case STRUCT:
                         return "struct";
+                    case I31:
+                        return "i31";
                     default:
                         throw new IllegalArgumentException();
                 }
@@ -829,8 +831,21 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     }
 
     @Override
-    public void cast(WasmHollowType.Reference type) {
-        writer.address(address).write("ref.cast ").write(typeToString(type)).eol();
+    public void cast(WasmHollowType.Reference type, boolean nullable) {
+        writer.address(address).write("ref.cast (ref ");
+        if (!nullable) {
+            writer.write("null ");
+        }
+        writer.write(typeToString(type)).write(")").eol();
+    }
+
+    @Override
+    public void test(WasmHollowType.Reference type, boolean nullable) {
+        writer.address(address).write("ref.test (ref ");
+        if (!nullable) {
+            writer.write("null ");
+        }
+        writer.write(typeToString(type)).write(")").eol();
     }
 
     @Override
@@ -888,6 +903,16 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     @Override
     public void functionReference(int functionIndex) {
         writer.address(address).write("ref.func ").write(Integer.toString(functionIndex)).eol();
+    }
+
+    @Override
+    public void int31Reference() {
+        writer.address(address).write("ref.i31").eol();
+    }
+
+    @Override
+    public void int31Get(WasmSignedType signedType) {
+        writer.address(address).write("ref.i31_").write(signedType == WasmSignedType.SIGNED ? "s" : "u").eol();
     }
 
     public static void main(String[] args) throws IOException {

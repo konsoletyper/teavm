@@ -252,6 +252,11 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmTest expression) {
+        expression.getValue().acceptVisitor(this);
+    }
+
+    @Override
     public void visit(WasmStructNew expression) {
         for (var initializer : expression.getInitializers()) {
             initializer.acceptVisitor(this);
@@ -307,5 +312,15 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmFunctionReference expression) {
+    }
+
+    @Override
+    public void visit(WasmInt31Reference expression) {
+        expression.getValue().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(WasmInt31Get expression) {
+        expression.getValue().acceptVisitor(this);
     }
 }

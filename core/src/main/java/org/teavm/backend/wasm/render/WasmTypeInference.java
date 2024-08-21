@@ -42,6 +42,8 @@ import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
+import org.teavm.backend.wasm.model.expression.WasmInt31Get;
+import org.teavm.backend.wasm.model.expression.WasmInt31Reference;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt64Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
@@ -66,6 +68,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructNew;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
+import org.teavm.backend.wasm.model.expression.WasmTest;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmTry;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
@@ -279,6 +282,11 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmTest expression) {
+        result = WasmType.INT32;
+    }
+
+    @Override
     public void visit(WasmStructNew expression) {
         result = expression.getType().getReference();
     }
@@ -326,6 +334,16 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     @Override
     public void visit(WasmFunctionReference expression) {
         result = expression.getFunction().getType().getReference();
+    }
+
+    @Override
+    public void visit(WasmInt31Get expression) {
+        result = WasmType.INT32;
+    }
+
+    @Override
+    public void visit(WasmInt31Reference expression) {
+        result = WasmType.Reference.I31;
     }
 
     private static WasmType map(WasmIntType type) {

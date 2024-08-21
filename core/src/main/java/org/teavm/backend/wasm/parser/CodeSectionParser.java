@@ -727,8 +727,31 @@ public class CodeSectionParser {
                 codeListener.arrayCopy(readLEB(), readLEB());
                 return true;
 
+            case 20:
+                codeListener.test(readHeapType(), false);
+                return true;
+
+            case 21:
+                codeListener.test(readHeapType(), true);
+                return true;
+
+            case 22:
+                codeListener.cast(readHeapType(), false);
+                return true;
+
             case 23:
-                codeListener.cast(readHeapType());
+                codeListener.cast(readHeapType(), true);
+                return true;
+
+            case 28:
+                codeListener.int31Reference();
+                return true;
+
+            case 29:
+                codeListener.int31Get(WasmSignedType.SIGNED);
+                return true;
+            case 30:
+                codeListener.int31Get(WasmSignedType.UNSIGNED);
                 return true;
 
             default:
@@ -868,6 +891,8 @@ public class CodeSectionParser {
                 return WasmHollowType.Reference.EXTERN;
             case 0x6E:
                 return WasmHollowType.Reference.ANY;
+            case 0x6C:
+                return WasmHollowType.Reference.I31;
             case 0x6B:
                 return WasmHollowType.Reference.STRUCT;
             case 0x6A:

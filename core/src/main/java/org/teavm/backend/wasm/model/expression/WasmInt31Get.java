@@ -16,21 +16,22 @@
 package org.teavm.backend.wasm.model.expression;
 
 import java.util.Objects;
-import org.teavm.backend.wasm.model.WasmType;
 
-public class WasmCast extends WasmExpression {
+public class WasmInt31Get extends WasmExpression {
+    private WasmSignedType signedType;
     private WasmExpression value;
-    private WasmType.Reference targetType;
-    private boolean nullable;
 
-    public WasmCast(WasmExpression value, WasmType.Reference targetType) {
-        this(value, targetType, true);
+    public WasmInt31Get(WasmExpression value, WasmSignedType signedType) {
+        this.signedType = Objects.requireNonNull(signedType);
+        this.value = Objects.requireNonNull(value);
     }
 
-    public WasmCast(WasmExpression value, WasmType.Reference targetType, boolean nullable) {
-        this.value = Objects.requireNonNull(value);
-        this.targetType = Objects.requireNonNull(targetType);
-        this.nullable = nullable;
+    public WasmSignedType getSignedType() {
+        return signedType;
+    }
+
+    public void setSignedType(WasmSignedType signedType) {
+        this.signedType = Objects.requireNonNull(signedType);
     }
 
     public WasmExpression getValue() {
@@ -39,22 +40,6 @@ public class WasmCast extends WasmExpression {
 
     public void setValue(WasmExpression value) {
         this.value = Objects.requireNonNull(value);
-    }
-
-    public WasmType.Reference getTargetType() {
-        return targetType;
-    }
-
-    public void setTargetType(WasmType.Reference targetType) {
-        this.targetType = Objects.requireNonNull(targetType);
-    }
-
-    public boolean isNullable() {
-        return nullable;
-    }
-
-    public void setNullable(boolean nullable) {
-        this.nullable = nullable;
     }
 
     @Override

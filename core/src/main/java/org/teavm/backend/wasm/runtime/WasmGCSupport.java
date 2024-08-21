@@ -18,6 +18,8 @@ package org.teavm.backend.wasm.runtime;
 import org.teavm.interop.Import;
 
 public class WasmGCSupport {
+    private static int lastObjectId = 1831433054;
+
     private WasmGCSupport() {
     }
 
@@ -35,6 +37,15 @@ public class WasmGCSupport {
 
     public static CloneNotSupportedException cnse() {
         return new CloneNotSupportedException();
+    }
+
+    public static int nextObjectId() {
+        var x = lastObjectId;
+        x ^= x << 13;
+        x ^= x >>> 17;
+        x ^= x << 5;
+        lastObjectId = x;
+        return x;
     }
 
     @Import(name = "putcharStdout")

@@ -62,6 +62,7 @@ public abstract class WasmType {
         public static final SpecialReference EXTERN = SpecialReferenceKind.EXTERN.asType();
         public static final SpecialReference STRUCT = SpecialReferenceKind.STRUCT.asType();
         public static final SpecialReference ARRAY = SpecialReferenceKind.ARRAY.asType();
+        public static final SpecialReference I31 = SpecialReferenceKind.I31.asType();
     }
 
     public static final class CompositeReference extends Reference {
@@ -85,7 +86,8 @@ public abstract class WasmType {
         ANY,
         EXTERN,
         STRUCT,
-        ARRAY;
+        ARRAY,
+        I31;
 
         private SpecialReference type;
 
