@@ -131,7 +131,7 @@ public class WasmGCDeclarationsGenerator {
     }
 
     private static WasmGCVirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {
-        return new WasmGCVirtualTableProvider(classes, VirtualTableBuilder.getMethodsUsedOnCallSites(classes, false));
+        return new WasmGCVirtualTableProvider(classes, VirtualTableBuilder.getMethodsUsedOnCallSites(classes, true));
     }
 
     public WasmFunction dummyInitializer() {

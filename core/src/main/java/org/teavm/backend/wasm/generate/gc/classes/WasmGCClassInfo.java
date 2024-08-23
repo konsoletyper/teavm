@@ -47,6 +47,7 @@ public class WasmGCClassInfo {
     }
 
     public WasmArray getArray() {
+        structure.init();
         return array;
     }
 

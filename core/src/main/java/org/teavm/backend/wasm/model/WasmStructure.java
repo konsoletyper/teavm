@@ -18,14 +18,21 @@ package org.teavm.backend.wasm.model;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class WasmStructure extends WasmCompositeType {
+    private Consumer<List<WasmField>> fieldsSupplier;
     private List<WasmField> fieldsStorage = new ArrayList<>();
     private WasmStructure supertype;
     private boolean indexesValid = true;
 
     public WasmStructure(String name) {
         super(name);
+    }
+
+    public WasmStructure(String name, Consumer<List<WasmField>> fieldsSupplier) {
+        super(name);
+        this.fieldsSupplier = fieldsSupplier;
     }
 
     public List<WasmField> getFields() {
@@ -59,24 +66,35 @@ public class WasmStructure extends WasmCompositeType {
         }
     }
 
+    public void init() {
+        if (fieldsSupplier != null) {
+            var supplier = fieldsSupplier;
+            fieldsSupplier = null;
+            supplier.accept(fieldsStorage);
+        }
+    }
+
     @Override
     public void acceptVisitor(WasmCompositeTypeVisitor visitor) {
         visitor.visit(this);
     }
 
-    private List<WasmField> fields = new AbstractList<WasmField>() {
+    private List<WasmField> fields = new AbstractList<>() {
         @Override
         public WasmField get(int index) {
+            init();
             return fieldsStorage.get(index);
         }
 
         @Override
         public int size() {
+            init();
             return fieldsStorage.size();
         }
 
         @Override
         public void add(int index, WasmField element) {
+            init();
             if (element.structure != null) {
                 throw new IllegalArgumentException("This field already belongs to structure");
             }
@@ -87,6 +105,7 @@ public class WasmStructure extends WasmCompositeType {
 
         @Override
         public WasmField remove(int index) {
+            init();
             var result = fieldsStorage.remove(index);
             indexesValid = false;
             result.structure = null;
@@ -95,6 +114,7 @@ public class WasmStructure extends WasmCompositeType {
 
         @Override
         protected void removeRange(int fromIndex, int toIndex) {
+            init();
             var sublist = fieldsStorage.subList(fromIndex, toIndex);
             for (var field : sublist) {
                 field.structure = null;
@@ -105,6 +125,7 @@ public class WasmStructure extends WasmCompositeType {
 
         @Override
         public void clear() {
+            fieldsSupplier = null;
             for (var field : fieldsStorage) {
                 field.structure = null;
             }
@@ -114,6 +135,7 @@ public class WasmStructure extends WasmCompositeType {
 
         @Override
         public WasmField set(int index, WasmField element) {
+            init();
             if (element.structure != null) {
                 throw new IllegalArgumentException("This field already belongs to structure");
             }

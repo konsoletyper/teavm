@@ -114,11 +114,11 @@ public class WasmGCTypeMapper {
         }
     }
 
-    public WasmFunctionType getFunctionType(String className, MethodDescriptor methodDesc, boolean fresh) {
+    public WasmFunctionType getFunctionType(WasmType receiverType, MethodDescriptor methodDesc, boolean fresh) {
         var returnType = mapType(methodDesc.getResultType());
         var javaParamTypes = methodDesc.getParameterTypes();
         var paramTypes = new WasmType[javaParamTypes.length + 1];
-        paramTypes[0] = classInfoProvider.getClassInfo(className).getType();
+        paramTypes[0] = receiverType;
         for (var i = 0; i < javaParamTypes.length; ++i) {
             paramTypes[i + 1] = mapType(javaParamTypes[i]);
         }
@@ -129,5 +129,9 @@ public class WasmGCTypeMapper {
         } else {
             return functionTypes.of(returnType, paramTypes);
         }
+    }
+
+    public WasmFunctionType getFunctionType(String className, MethodDescriptor methodDesc, boolean fresh) {
+        return getFunctionType(classInfoProvider.getClassInfo(className).getType(), methodDesc, fresh);
     }
 }

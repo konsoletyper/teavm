@@ -343,6 +343,9 @@ public class TObject {
     @DelegateTo("cloneLowLevel")
     @PluggableDependency(ObjectDependencyPlugin.class)
     protected Object clone() throws TCloneNotSupportedException {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            throw new TCloneNotSupportedException();
+        }
         if (!(this instanceof TCloneable) && Platform.getPlatformObject(this)
                 .getPlatformClass().getMetadata().getArrayItem() == null) {
             throw new TCloneNotSupportedException();
