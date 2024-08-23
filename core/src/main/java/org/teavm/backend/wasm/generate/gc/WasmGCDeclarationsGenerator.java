@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.generate.gc;
 
 import java.util.List;
+import java.util.function.Predicate;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
@@ -33,6 +34,7 @@ import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ListableClassHolderSource;
+import org.teavm.model.MethodReference;
 import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.TagRegistry;
@@ -52,11 +54,12 @@ public class WasmGCDeclarationsGenerator {
             DependencyInfo dependencyInfo,
             Diagnostics diagnostics,
             WasmGCCustomGeneratorProvider customGenerators,
-            WasmGCIntrinsicProvider intrinsics
+            WasmGCIntrinsicProvider intrinsics,
+            Predicate<MethodReference> isVirtual
     ) {
         this.module = module;
         hierarchy = new ClassHierarchy(classes);
-        var virtualTables = createVirtualTableProvider(classes);
+        var virtualTables = createVirtualTableProvider(classes, isVirtual);
         functionTypes = new WasmFunctionTypes(module);
         var names = new WasmNameProvider();
         methodGenerator = new WasmGCMethodGenerator(
@@ -130,8 +133,10 @@ public class WasmGCDeclarationsGenerator {
         }
     }
 
-    private static WasmGCVirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {
-        return new WasmGCVirtualTableProvider(classes, VirtualTableBuilder.getMethodsUsedOnCallSites(classes, true));
+    private static WasmGCVirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes,
+            Predicate<MethodReference> isVirtual) {
+        return new WasmGCVirtualTableProvider(classes, VirtualTableBuilder.getMethodsUsedOnCallSites(classes, true),
+                isVirtual);
     }
 
     public WasmFunction dummyInitializer() {

@@ -24,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.teavm.common.LCATree;
 import org.teavm.model.ClassReader;
@@ -35,6 +36,7 @@ import org.teavm.model.MethodReference;
 class WasmGCVirtualTableBuilder {
     ListableClassReaderSource classes;
     Collection<MethodReference> methodsAtCallSites;
+    Predicate<MethodReference> isVirtual;
     private Map<String, Set<MethodDescriptor>> groupedMethodsAtCallSites = new HashMap<>();
     private List<Table> tables = new ArrayList<>();
     private Map<String, Table> tableMap = new HashMap<>();
@@ -176,6 +178,9 @@ class WasmGCVirtualTableBuilder {
         for (var method : table.cls.getMethods()) {
             if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)) {
                 if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
+                    continue;
+                }
+                if (!isVirtual.test(method.getReference())) {
                     continue;
                 }
                 var index = indexes.getOrDefault(method.getDescriptor(), -1);

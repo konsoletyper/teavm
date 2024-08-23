@@ -451,7 +451,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     .getUnpackedType();
             var expectedFunctionType = (WasmFunctionType) expectedType.composite;
             var function = functionProvider.forInstanceMethod(implementor);
-            if (entry.getOrigin().getClassName().equals(implementor.getClassName())
+            if (!entry.getOrigin().getClassName().equals(implementor.getClassName())
                     || expectedFunctionType != function.getType()) {
                 var wrapperFunction = new WasmFunction(expectedFunctionType);
                 module.functions.add(wrapperFunction);

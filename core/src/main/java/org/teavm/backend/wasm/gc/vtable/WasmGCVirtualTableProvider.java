@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.gc.vtable;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Predicate;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 
@@ -24,10 +25,11 @@ public class WasmGCVirtualTableProvider {
     private Map<String, WasmGCVirtualTable> virtualTables;
 
     public WasmGCVirtualTableProvider(ListableClassReaderSource classes,
-            Collection<MethodReference> methodsAtCallSites) {
+            Collection<MethodReference> methodsAtCallSites, Predicate<MethodReference> isVirtual) {
         var builder = new WasmGCVirtualTableBuilder();
         builder.classes = classes;
         builder.methodsAtCallSites = methodsAtCallSites;
+        builder.isVirtual = isVirtual;
         builder.build();
         virtualTables = builder.result;
     }

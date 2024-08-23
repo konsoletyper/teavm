@@ -122,7 +122,8 @@ public class WasmGCTarget implements TeaVMTarget {
                 controller.getDependencyInfo(),
                 controller.getDiagnostics(),
                 customGenerators,
-                intrinsics
+                intrinsics,
+                controller::isVirtual
         );
         declarationsGenerator.setFriendlyToDebugger(controller.isFriendlyToDebugger());
         var moduleGenerator = new WasmGCModuleGenerator(declarationsGenerator);
