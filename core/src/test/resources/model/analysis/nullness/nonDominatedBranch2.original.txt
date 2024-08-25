@@ -1,0 +1,11 @@
+var @this as this
+
+$start
+    @a := invokeStatic `Foo.f()LBar;`
+    if @a === null then goto $joint else goto $ifNonNull
+$ifNonNull
+    goto $joint
+$joint
+    @c := phi @a from $start, @a from $ifNonNull
+    @d := @a
+    return @c

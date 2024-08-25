@@ -1,0 +1,10 @@
+var @this as this // 0
+$0
+    @a := invokeStatic `Foo.f()LBar;`
+    if @a === null then goto $2 else goto $1
+$1
+    goto $2
+$2
+    @c := phi @a_1 from $0, @a_2 from $1
+    @d := @a
+    return @c
