@@ -30,6 +30,7 @@ public class WasmGCDependencies {
     }
 
     public void contribute() {
+        analyzer.linkClass("java.lang.Class");
         contributeWasmRuntime();
         contributeMathUtils();
         contributeExceptionUtils();

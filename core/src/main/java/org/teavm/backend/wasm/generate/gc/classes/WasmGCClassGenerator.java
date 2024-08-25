@@ -296,31 +296,37 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     public int getClassTagOffset() {
+        standardClasses.classClass().getStructure().init();
         return classTagOffset;
     }
 
     @Override
     public int getClassArrayItemOffset() {
+        standardClasses.classClass().getStructure().init();
         return classArrayItemOffset;
     }
 
     @Override
     public int getClassSupertypeFunctionOffset() {
+        standardClasses.classClass().getStructure().init();
         return classSupertypeFunctionOffset;
     }
 
     @Override
     public int getClassNameOffset() {
+        standardClasses.classClass().getStructure().init();
         return classNameOffset;
     }
 
     @Override
     public int getNewArrayFunctionOffset() {
+        standardClasses.classClass().getStructure().init();
         return classNewArrayOffset;
     }
 
     @Override
     public int getVirtualMethodsOffset() {
+        standardClasses.classClass().getStructure().init();
         return virtualTableFieldOffset;
     }
 
@@ -387,6 +393,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             }
         }
         classInfo.initializer = target -> {
+            standardClasses.classClass().getStructure().init();
             var ranges = tagRegistry.getRanges(name);
             int tag = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
             target.add(setClassField(classInfo, classTagOffset, new WasmInt32Constant(tag)));
@@ -770,6 +777,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         function.add(nameVar);
         function.add(kindVar);
 
+        standardClasses.classClass().getStructure().getFields().size();
         var flagsExpr = new WasmIntBinary(
                 WasmIntType.INT32,
                 WasmIntBinaryOperation.SHL,
@@ -824,6 +832,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         var itemVar = new WasmLocal(standardClasses.classClass().getType(), "item");
         function.add(targetVar);
         function.add(itemVar);
+        standardClasses.classClass().getStructure().init();
 
         function.getBody().add(new WasmStructSet(
                 standardClasses.classClass().getStructure(),

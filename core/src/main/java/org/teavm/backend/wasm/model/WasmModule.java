@@ -107,12 +107,7 @@ public class WasmModule {
         var sccsByIndex = new int[types.size()][];
         for (var scc : sccs) {
             sccsByIndex[scc[0]] = scc;
-            var firstType = types.get(scc[0]);
-            firstType.recursiveTypeCount = scc.length;
             for (var i = 0; i < scc.length; i++) {
-                var index = scc[i];
-                var type = types.get(index);
-                type.indexInRecursiveType = i;
                 sccStartNode[scc[i]] = sccStartNode[scc[0]];
             }
         }
@@ -162,9 +157,11 @@ public class WasmModule {
                         visit(outgoing);
                     }
                 }
+                var indexOfFirst = sorted.size();
                 for (var index : scc) {
                     visitScc(index, typeIndex);
                 }
+                sorted.get(indexOfFirst).recursiveTypeCount = scc.length;
             }
         }
 
