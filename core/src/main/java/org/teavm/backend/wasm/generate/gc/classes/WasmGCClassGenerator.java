@@ -44,6 +44,7 @@ import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
+import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmCall;
@@ -71,6 +72,7 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
+import org.teavm.model.PrimitiveType;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.analysis.ClassMetadataRequirements;
@@ -85,6 +87,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             ValueType.parse(Class.class));
     private static final FieldReference FAKE_CLASS_FIELD = new FieldReference(Object.class.getName(), "class");
     private static final FieldReference FAKE_MONITOR_FIELD = new FieldReference(Object.class.getName(), "monitor");
+    private static final ValueType OBJECT_TYPE = ValueType.parse(Object.class);
 
     private final WasmModule module;
     private ClassReaderSource classSource;
@@ -119,6 +122,13 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private int classNewArrayOffset;
     private int classSupertypeFunctionOffset;
     private int virtualTableFieldOffset;
+    private int arrayLengthOffset = -1;
+    private int arrayGetOffset = -1;
+    private WasmStructure arrayVirtualTableStruct;
+    private WasmFunction arrayGetObjectFunction;
+    private WasmFunction arrayLengthObjectFunction;
+    private WasmFunctionType arrayGetType;
+    private WasmFunctionType arrayLengthType;
 
     public WasmGCClassGenerator(WasmModule module, ClassReaderSource classSource,
             WasmFunctionTypes functionTypes, TagRegistry tagRegistry,
@@ -249,9 +259,17 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     classInfo.structure = standardClasses.objectClass().structure;
                 } else {
                     var finalClassInfo = classInfo;
-                    classInfo.structure = new WasmStructure(name != null ? names.forClass(name) : null,
-                            fields -> fillFields(finalClassInfo, fields, type));
-                    module.types.add(classInfo.structure);
+                    if (type instanceof ValueType.Array) {
+                        var itemType = ((ValueType.Array) type).getItemType();
+                        if (!(itemType instanceof ValueType.Primitive) && !itemType.equals(OBJECT_TYPE)) {
+                            classInfo.structure = getClassInfo(ValueType.arrayOf(OBJECT_TYPE)).structure;
+                        }
+                    }
+                    if (classInfo.structure == null) {
+                        classInfo.structure = new WasmStructure(name != null ? names.forClass(name) : null,
+                                fields -> fillFields(finalClassInfo, fields, type));
+                        module.types.add(classInfo.structure);
+                    }
                 }
                 if (name != null) {
                     if (!isInterface) {
@@ -272,7 +290,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 if (type instanceof ValueType.Object) {
                     classStructure = initRegularClassStructure(((ValueType.Object) type).getClassName());
                 } else {
-                    classStructure = standardClasses.objectClass().getVirtualTableStructure();
+                    classStructure = getArrayVirtualTableStructure();
                 }
             } else {
                 classStructure = standardClasses.classClass().getStructure();
@@ -431,10 +449,10 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         }
     }
 
-    private void fillArrayVirtualTableMethods(List<WasmExpression> target, WasmGlobal global,
+    private void fillArrayVirtualTableMethods(ValueType type, List<WasmExpression> target, WasmGlobal global,
             WasmStructure objectStructure) {
         var virtualTable = virtualTables.lookup("java.lang.Object");
-        var structure = standardClasses.objectClass().getVirtualTableStructure();
+        var structure = getArrayVirtualTableStructure();
 
         for (var entry : virtualTable.getEntries()) {
             if (entry.getMethod().getName().equals("clone")) {
@@ -447,6 +465,157 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 fillVirtualTableEntry(target, global, structure, virtualTable, entry);
             }
         }
+
+        var itemType = ((ValueType.Array) type).getItemType();
+        var info = metadataRequirements.getInfo(type);
+        if (info.arrayLength()) {
+            var lengthFunction = getArrayLengthFunction(objectStructure);
+            target.add(new WasmStructSet(structure, new WasmGetGlobal(global), arrayLengthOffset,
+                    new WasmFunctionReference(lengthFunction)));
+        }
+        if (info.arrayGet()) {
+            var getFunction = getArrayGetFunction(itemType);
+            target.add(new WasmStructSet(structure, new WasmGetGlobal(global), arrayGetOffset,
+                    new WasmFunctionReference(getFunction)));
+        }
+    }
+
+
+    private WasmFunction getArrayLengthFunction(WasmStructure objectStructure) {
+        var arrayTypeRef = (WasmType.CompositeReference) objectStructure.getFields().get(ARRAY_DATA_FIELD_OFFSET)
+                .getUnpackedType();
+        var arrayType = (WasmArray) arrayTypeRef.composite;
+        var elementType = arrayType.getElementType().asUnpackedType();
+        if (elementType instanceof WasmType.Reference) {
+            if (arrayLengthObjectFunction == null) {
+                arrayLengthObjectFunction = getArrayLengthFunction(objectStructure, arrayType);
+            }
+            return arrayLengthObjectFunction;
+        }
+        return getArrayLengthFunction(objectStructure, arrayType);
+    }
+
+    private WasmFunction getArrayLengthFunction(WasmStructure objectStructure, WasmArray arrayType) {
+        var function = new WasmFunction(functionTypes.of(WasmType.INT32, standardClasses.objectClass().getType()));
+        function.setReferenced(true);
+        module.functions.add(function);
+
+        var objectLocal = new WasmLocal(standardClasses.objectClass().getType());
+        function.add(objectLocal);
+
+        var castObject = new WasmCast(new WasmGetLocal(objectLocal), objectStructure.getReference());
+        var arrayField = new WasmStructGet(objectStructure, castObject, ARRAY_DATA_FIELD_OFFSET);
+        var result = new WasmArrayLength(arrayField);
+        function.getBody().add(new WasmReturn(result));
+        return function;
+    }
+
+    private WasmFunction getArrayGetFunction(ValueType itemType) {
+        if (itemType instanceof ValueType.Primitive) {
+            return generateArrayGetPrimitiveFunction(((ValueType.Primitive) itemType).getKind());
+        }
+        return getArrayGetObjectFunction();
+    }
+
+    private WasmFunction getArrayGetObjectFunction() {
+        if (arrayGetObjectFunction == null) {
+            arrayGetObjectFunction = new WasmFunction(getArrayGetType());
+            module.functions.add(arrayGetObjectFunction);
+            arrayGetObjectFunction.setReferenced(true);
+
+            var arrayStruct = getClassInfo(ValueType.arrayOf(OBJECT_TYPE)).structure;
+            var arrayDataTypeRef = (WasmType.CompositeReference) arrayStruct.getFields()
+                    .get(ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
+            var arrayDataType = (WasmArray) arrayDataTypeRef.composite;
+            var objectLocal = new WasmLocal(standardClasses.objectClass().getType());
+            var indexLocal = new WasmLocal(WasmType.INT32);
+            arrayGetObjectFunction.add(objectLocal);
+            arrayGetObjectFunction.add(indexLocal);
+
+            var array = new WasmCast(new WasmGetLocal(objectLocal), arrayStruct.getReference());
+            var arrayData = new WasmStructGet(arrayStruct, array, ARRAY_DATA_FIELD_OFFSET);
+            var result = new WasmArrayGet(arrayDataType, arrayData, new WasmGetLocal(indexLocal));
+            arrayGetObjectFunction.getBody().add(new WasmReturn(result));
+        }
+        return arrayGetObjectFunction;
+    }
+
+    private WasmFunction generateArrayGetPrimitiveFunction(PrimitiveType type) {
+        var function = new WasmFunction(getArrayGetType());
+        module.functions.add(function);
+        function.setReferenced(true);
+
+        var arrayStruct = getClassInfo(ValueType.arrayOf(ValueType.primitive(type))).structure;
+        var arrayDataTypeRef = (WasmType.CompositeReference) arrayStruct.getFields()
+                .get(ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
+        var arrayDataType = (WasmArray) arrayDataTypeRef.composite;
+        var objectLocal = new WasmLocal(standardClasses.objectClass().getType());
+        var indexLocal = new WasmLocal(WasmType.INT32);
+        function.add(objectLocal);
+        function.add(indexLocal);
+
+        var array = new WasmCast(new WasmGetLocal(objectLocal), arrayStruct.getReference());
+        var arrayData = new WasmStructGet(arrayStruct, array, ARRAY_DATA_FIELD_OFFSET);
+        var result = new WasmArrayGet(arrayDataType, arrayData, new WasmGetLocal(indexLocal));
+        Class<?> primitiveType;
+        Class<?> wrapperType;
+        switch (type) {
+            case BOOLEAN:
+                primitiveType = boolean.class;
+                wrapperType = Boolean.class;
+                break;
+            case BYTE:
+                primitiveType = byte.class;
+                wrapperType = Byte.class;
+                break;
+            case SHORT:
+                primitiveType = short.class;
+                wrapperType = Short.class;
+                break;
+            case CHARACTER:
+                primitiveType = char.class;
+                wrapperType = Character.class;
+                break;
+            case INTEGER:
+                primitiveType = int.class;
+                wrapperType = Integer.class;
+                break;
+            case LONG:
+                primitiveType = long.class;
+                wrapperType = Long.class;
+                break;
+            case FLOAT:
+                primitiveType = float.class;
+                wrapperType = Float.class;
+                break;
+            case DOUBLE:
+                primitiveType = double.class;
+                wrapperType = Double.class;
+                break;
+            default:
+                throw new IllegalArgumentException();
+        }
+        var method = new MethodReference(wrapperType, "valueOf", primitiveType, wrapperType);
+        var wrapFunction = functionProvider.forStaticMethod(method);
+        var castResult = new WasmCall(wrapFunction, result);
+        function.getBody().add(new WasmReturn(castResult));
+
+        return function;
+    }
+
+    private WasmFunctionType getArrayGetType() {
+        if (arrayGetType == null) {
+            arrayGetType = functionTypes.of(standardClasses.objectClass().getType(),
+                    standardClasses.objectClass().getType(), WasmType.INT32);
+        }
+        return arrayGetType;
+    }
+
+    private WasmFunctionType getArrayLengthType() {
+        if (arrayLengthType == null) {
+            arrayLengthType = functionTypes.of(WasmType.INT32, standardClasses.objectClass().getType());
+        }
+        return arrayLengthType;
     }
 
     private void fillVirtualTableEntry(List<WasmExpression> target, WasmGlobal global,
@@ -556,6 +725,40 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         }
     }
 
+    @Override
+    public WasmStructure getArrayVirtualTableStructure() {
+        if (arrayVirtualTableStruct == null) {
+            arrayVirtualTableStruct = new WasmStructure(null);
+            arrayVirtualTableStruct.setSupertype(standardClasses.objectClass().getVirtualTableStructure());
+            module.types.add(arrayVirtualTableStruct);
+            addSystemFields(arrayVirtualTableStruct.getFields());
+            fillSimpleClassFields(arrayVirtualTableStruct.getFields(), "java.lang.Class");
+            addVirtualTableFields(arrayVirtualTableStruct, virtualTables.lookup("java.lang.Object"));
+
+            if (metadataRequirements.hasArrayLength()) {
+                arrayLengthOffset = arrayVirtualTableStruct.getFields().size();
+                var arrayLengthType = getArrayLengthType();
+                arrayVirtualTableStruct.getFields().add(new WasmField(arrayLengthType.getReference().asStorage()));
+            }
+            if (metadataRequirements.hasArrayGet()) {
+                arrayGetOffset = arrayVirtualTableStruct.getFields().size();
+                var arrayGetType = getArrayGetType();
+                arrayVirtualTableStruct.getFields().add(new WasmField(arrayGetType.getReference().asStorage()));
+            }
+        }
+        return arrayVirtualTableStruct;
+    }
+
+    @Override
+    public int getArrayLengthOffset() {
+        return arrayLengthOffset;
+    }
+
+    @Override
+    public int getArrayGetOffset() {
+        return arrayGetOffset;
+    }
+
     private void initArrayClass(WasmGCClassInfo classInfo, ValueType.Array type) {
         classInfo.initializer = target -> {
             var itemTypeInfo = getClassInfo(type.getItemType());
@@ -564,7 +767,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     new WasmGetGlobal(classInfo.pointer),
                     new WasmGetGlobal(itemTypeInfo.pointer)
             ));
-            fillArrayVirtualTableMethods(target, classInfo.pointer, classInfo.structure);
+            fillArrayVirtualTableMethods(classInfo.getValueType(), target, classInfo.pointer, classInfo.structure);
         };
     }
 
@@ -744,12 +947,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     throw new IllegalArgumentException();
             }
         } else {
-            wasmElementType = WasmType.Reference.STRUCT.asStorage();
+            wasmElementType = standardClasses.objectClass().getType().asStorage();
         }
         var wasmArray = new WasmArray(null, wasmElementType);
         module.types.add(wasmArray);
         classInfo.structure.getFields().add(new WasmField(wasmArray.getReference().asStorage(), "data"));
-        classInfo.array = wasmArray;
     }
 
     private WasmFunction getCreatePrimitiveClassFunction() {

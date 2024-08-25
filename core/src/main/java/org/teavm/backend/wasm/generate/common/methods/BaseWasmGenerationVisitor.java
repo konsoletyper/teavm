@@ -538,10 +538,14 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         var elseType = typeInference.getResult();
         conditional.getElseBlock().setType(elseType);
 
-        assert thenType == elseType;
-        conditional.setType(thenType);
+        conditional.setType(condBlockType(thenType, elseType, expr));
 
         result = conditional;
+    }
+
+    protected WasmType condBlockType(WasmType thenType, WasmType elseType, ConditionalExpr conditional) {
+        assert thenType == elseType;
+        return thenType;
     }
 
     @Override

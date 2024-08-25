@@ -37,8 +37,14 @@ public class ClassMetadataRequirements {
             "getEnclosingClass", Class.class);
     private static final MethodReference NEW_ARRAY = new MethodReference(Array.class,
             "newInstance", Class.class, int.class, Object.class);
+    private static final MethodReference ARRAY_GET = new MethodReference(Array.class,
+            "get", Object.class, int.class, Object.class);
+    private static final MethodReference ARRAY_LENGTH = new MethodReference(Array.class,
+            "getLength", Object.class, int.class);
     private static final ClassInfo EMPTY_INFO = new ClassInfo();
     private Map<ValueType, ClassInfo> requirements = new HashMap<>();
+    private boolean hasArrayGet;
+    private boolean hasArrayLength;
 
     public ClassMetadataRequirements(DependencyInfo dependencyInfo) {
         MethodDependencyInfo getNameMethod = dependencyInfo.getMethod(GET_NAME_METHOD);
@@ -96,6 +102,24 @@ public class ClassMetadataRequirements {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).newArray = true;
             }
         }
+
+        var arrayGet = dependencyInfo.getMethod(ARRAY_GET);
+        if (arrayGet != null) {
+            hasArrayGet = arrayGet.isUsed();
+            var classNames = arrayGet.getVariable(1).getTypes();
+            for (var className : classNames) {
+                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).arrayGet = true;
+            }
+        }
+
+        var arrayLength = dependencyInfo.getMethod(ARRAY_LENGTH);
+        if (arrayLength != null) {
+            hasArrayLength = arrayLength.isUsed();
+            var classNames = arrayLength.getVariable(1).getTypes();
+            for (var className : classNames) {
+                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).arrayLength = true;
+            }
+        }
     }
 
     public Info getInfo(String className) {
@@ -108,6 +132,14 @@ public class ClassMetadataRequirements {
             result = EMPTY_INFO;
         }
         return result;
+    }
+
+    public boolean hasArrayGet() {
+        return hasArrayGet;
+    }
+
+    public boolean hasArrayLength() {
+        return hasArrayLength;
     }
 
     private void addClassesRequiringName(Map<ValueType, ClassInfo> target, String[] source) {
@@ -134,6 +166,8 @@ public class ClassMetadataRequirements {
         boolean superclass;
         boolean isAssignable;
         boolean newArray;
+        boolean arrayLength;
+        boolean arrayGet;
 
         @Override
         public boolean name() {
@@ -169,6 +203,16 @@ public class ClassMetadataRequirements {
         public boolean newArray() {
             return newArray;
         }
+
+        @Override
+        public boolean arrayLength() {
+            return arrayLength;
+        }
+
+        @Override
+        public boolean arrayGet() {
+            return arrayGet;
+        }
     }
 
     public interface Info {
@@ -185,5 +229,9 @@ public class ClassMetadataRequirements {
         boolean isAssignable();
 
         boolean newArray();
+
+        boolean arrayLength();
+
+        boolean arrayGet();
     }
 }

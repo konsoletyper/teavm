@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.generate.gc.methods;
 import java.util.List;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.BinaryExpr;
+import org.teavm.ast.ConditionalExpr;
 import org.teavm.ast.Expr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.InvocationType;
@@ -26,6 +27,7 @@ import org.teavm.ast.SubscriptExpr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.PreciseTypeInference;
+import org.teavm.backend.wasm.generate.ExpressionCache;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationVisitor;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
@@ -533,6 +535,24 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         }
     }
 
+    @Override
+    protected WasmType condBlockType(WasmType thenType, WasmType elseType, ConditionalExpr conditional) {
+        if (conditional.getVariableIndex() >= 0) {
+            var javaType = types.typeOf(conditional.getVariableIndex());
+            if (javaType != null) {
+                return mapType(javaType.valueType);
+            }
+        }
+        if (conditional.getConsequent().getVariableIndex() >= 0
+                && conditional.getConsequent().getVariableIndex() == conditional.getAlternative().getVariableIndex()) {
+            var javaType = types.typeOf(conditional.getConsequent().getVariableIndex());
+            if (javaType != null) {
+                return mapType(javaType.valueType);
+            }
+        }
+        return super.condBlockType(thenType, elseType, conditional);
+    }
+
     private class SimpleCallSite extends CallSiteIdentifier {
         @Override
         public void generateRegister(List<WasmExpression> consumer, TextLocation location) {
@@ -592,6 +612,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         @Override
         public TemporaryVariablePool tempVars() {
             return tempVars;
+        }
+
+        @Override
+        public ExpressionCache exprCache() {
+            return exprCache;
         }
     };
 }

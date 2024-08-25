@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.generate.gc.classes;
 
 import org.teavm.backend.wasm.model.WasmGlobal;
+import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.model.FieldReference;
 import org.teavm.model.ValueType;
 
@@ -26,6 +27,8 @@ public interface WasmGCClassInfoProvider {
     int ARRAY_DATA_FIELD_OFFSET = 2;
 
     WasmGCClassInfo getClassInfo(ValueType type);
+
+    WasmStructure getArrayVirtualTableStructure();
 
     int getFieldIndex(FieldReference fieldRef);
 
@@ -40,6 +43,10 @@ public interface WasmGCClassInfoProvider {
     int getNewArrayFunctionOffset();
 
     int getClassNameOffset();
+
+    int getArrayGetOffset();
+
+    int getArrayLengthOffset();
 
     default WasmGCClassInfo getClassInfo(String name) {
         return getClassInfo(ValueType.object(name));

@@ -27,7 +27,6 @@ import org.teavm.model.ValueType;
 public class WasmGCClassInfo {
     private ValueType valueType;
     WasmStructure structure;
-    WasmArray array;
     boolean hasOwnVirtualTable;
     WasmStructure virtualTableStructure;
     WasmGlobal pointer;
@@ -47,8 +46,9 @@ public class WasmGCClassInfo {
     }
 
     public WasmArray getArray() {
-        structure.init();
-        return array;
+        var field = structure.getFields().get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
+        var type = (WasmType.CompositeReference) field.getUnpackedType();
+        return (WasmArray) type.composite;
     }
 
     public WasmStructure getVirtualTableStructure() {

@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.intrinsics.gc;
 
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         fillClass();
         fillSystem();
         fillLongAndInteger();
+        fillArray();
     }
 
     private void fillWasmRuntime() {
@@ -89,6 +91,12 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
                 intrinsic);
         intrinsics.put(new MethodReference(wrapperClass, "compareUnsigned", javaClass, javaClass, int.class),
                 intrinsic);
+    }
+
+    private void fillArray() {
+        var intrinsic = new ArrayIntrinsic();
+        intrinsics.put(new MethodReference(Array.class, "getLength", Object.class, int.class), intrinsic);
+        intrinsics.put(new MethodReference(Array.class, "getImpl", Object.class, int.class, Object.class), intrinsic);
     }
 
     @Override
