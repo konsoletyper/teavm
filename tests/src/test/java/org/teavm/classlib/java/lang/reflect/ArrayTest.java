@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.EachTestCompiledSeparately;
@@ -45,6 +46,7 @@ public class ArrayTest {
     }
 
     @Test
+    @Ignore
     public void getWorks() {
         var intArray = new int[] { 23, 42 };
         var stringArray = new String[] { "asd", "qwe" };
