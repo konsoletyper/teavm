@@ -109,7 +109,7 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
     @Override
     void additionalOutput(File outputPath, File outputPathForMethod, TeaVMTestConfiguration<?> configuration,
             MethodReference reference) {
-        htmlOutput(outputPath, outputPathForMethod, configuration, reference, "teavm-run-test-wasm.html");
+        htmlOutput(outputPath, outputPathForMethod, configuration, reference, "teavm-run-test-wasm-gc.html");
         var testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(),
                 getExtension() + "-runtime.js");
         try {
@@ -122,7 +122,7 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
     @Override
     void additionalSingleTestOutput(File outputPathForMethod, TeaVMTestConfiguration<?> configuration,
             MethodReference reference) {
-        htmlSingleTestOutput(outputPathForMethod, configuration, "teavm-run-test-wasm.html");
+        htmlSingleTestOutput(outputPathForMethod, configuration, "teavm-run-test-wasm-gc.html");
         var testPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(),
                 getExtension() + "-runtime.js");
         try {
