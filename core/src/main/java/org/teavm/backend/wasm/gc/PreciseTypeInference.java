@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.gc;
 
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.MethodReference;
+import org.teavm.model.PrimitiveType;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.BaseTypeInference;
@@ -50,6 +51,17 @@ public class PreciseTypeInference extends BaseTypeInference<PreciseValueType> {
         } else {
             if (a.valueType instanceof ValueType.Primitive && b.valueType instanceof ValueType.Primitive) {
                 if (a.valueType != b.valueType) {
+                    var firstKind = ((ValueType.Primitive) a.valueType).getKind();
+                    var secondKind = ((ValueType.Primitive) b.valueType).getKind();
+                    if (firstKind == PrimitiveType.INTEGER) {
+                        if (isIntegerSubtype(secondKind)) {
+                            return new PreciseValueType(ValueType.INTEGER, false);
+                        }
+                    } else if (secondKind == PrimitiveType.INTEGER) {
+                        if (isIntegerSubtype(firstKind)) {
+                            return new PreciseValueType(ValueType.INTEGER, false);
+                        }
+                    }
                     return OBJECT_TYPE;
                 } else {
                     return a;
@@ -94,6 +106,19 @@ public class PreciseTypeInference extends BaseTypeInference<PreciseValueType> {
             }
         }
     }
+
+    private boolean isIntegerSubtype(PrimitiveType type) {
+        switch (type) {
+            case BOOLEAN:
+            case BYTE:
+            case SHORT:
+            case CHARACTER:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     @Override
     protected PreciseValueType elementType(PreciseValueType valueType) {
         return new PreciseValueType(((ValueType.Array) valueType.valueType).getItemType(), false);
