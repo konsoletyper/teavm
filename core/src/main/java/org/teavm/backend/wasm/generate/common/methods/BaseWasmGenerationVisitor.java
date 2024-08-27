@@ -1300,7 +1300,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             var catchLocal = tryCatch.getExceptionVariable() != null
                     ? localVar(tryCatch.getExceptionVariable())
                     : null;
-            catchException(null, catchBlock.getBody(), catchLocal);
+            catchException(null, catchBlock.getBody(), catchLocal, tryCatch.getExceptionType());
             visitMany(tryCatch.getHandler(), catchBlock.getBody());
             if (!catchBlock.isTerminating() && catchBlock != outerCatchBlock) {
                 catchBlock.getBody().add(new WasmBreak(outerCatchBlock));
@@ -1313,7 +1313,8 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
     protected abstract WasmExpression peekException();
 
-    protected abstract void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local);
+    protected abstract void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local,
+            String exceptionClass);
 
     private void visitMany(List<Statement> statements, List<WasmExpression> target) {
         var oldTarget = resultConsumer;

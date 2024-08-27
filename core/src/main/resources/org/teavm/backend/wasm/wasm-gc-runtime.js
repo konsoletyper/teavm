@@ -35,8 +35,12 @@ TeaVM.wasm = function() {
                 } else {
                     stdout += String.fromCharCode(c);
                 }
+            },
+            currentTimeMillis() {
+                return new Date().getTime();
             }
         };
+        imports.teavmMath = Math;
     }
 
     function load(path, options) {

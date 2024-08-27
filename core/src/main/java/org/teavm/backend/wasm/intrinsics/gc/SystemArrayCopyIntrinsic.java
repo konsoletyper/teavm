@@ -35,6 +35,7 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
     public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         var result = tryGenerateSpecialCase(invocation, context);
         if (result == null) {
+            tryGenerateSpecialCase(invocation, context);
             var function = getDefaultFunction(context);
             result = new WasmCall(function, context.generate(invocation.getArguments().get(0)),
                     context.generate(invocation.getArguments().get(1)),

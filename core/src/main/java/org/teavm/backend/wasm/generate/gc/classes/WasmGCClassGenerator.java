@@ -129,6 +129,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private WasmFunction arrayLengthObjectFunction;
     private WasmFunctionType arrayGetType;
     private WasmFunctionType arrayLengthType;
+    private List<WasmStructure> nonInitializedStructures = new ArrayList<>();
 
     public WasmGCClassGenerator(WasmModule module, ClassReaderSource classSource,
             WasmFunctionTypes functionTypes, TagRegistry tagRegistry,
@@ -163,8 +164,20 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             var classInfo = classInfoQueue.remove();
             classInfo.initializer.accept(initializerFunctionStatements);
             classInfo.initializer = null;
+            initStructures();
         }
         return true;
+    }
+
+    private void initStructures() {
+        if (nonInitializedStructures.isEmpty()) {
+            return;
+        }
+        var copy = List.copyOf(nonInitializedStructures);
+        nonInitializedStructures.clear();
+        for (var structure : copy) {
+            structure.init();
+        }
     }
 
     @Override
@@ -269,6 +282,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                         classInfo.structure = new WasmStructure(name != null ? names.forClass(name) : null,
                                 fields -> fillFields(finalClassInfo, fields, type));
                         module.types.add(classInfo.structure);
+                        nonInitializedStructures.add(classInfo.structure);
                     }
                 }
                 if (name != null) {
@@ -698,12 +712,14 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     private WasmStructure initRegularClassStructure(String className) {
         var virtualTable = virtualTables.lookup(className);
-        var structure = new WasmStructure(names.forClassClass(className));
+        var structure = new WasmStructure(names.forClassClass(className), fields -> {
+            addSystemFields(fields);
+            fillSimpleClassFields(fields, "java.lang.Class");
+            addVirtualTableFields(fields, virtualTable);
+        });
+        nonInitializedStructures.add(structure);
         structure.setSupertype(standardClasses.classClass().getStructure());
         module.types.add(structure);
-        addSystemFields(structure.getFields());
-        fillSimpleClassFields(structure.getFields(), "java.lang.Class");
-        addVirtualTableFields(structure, virtualTable);
         return structure;
     }
 
@@ -716,46 +732,49 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         fields.add(monitorField);
     }
 
-    private void addVirtualTableFields(WasmStructure structure, WasmGCVirtualTable virtualTable) {
+    private void addVirtualTableFields(List<WasmField> fields, WasmGCVirtualTable virtualTable) {
         for (var entry : virtualTable.getEntries()) {
             var functionType = typeMapper.getFunctionType(entry.getOrigin().getClassName(), entry.getMethod(), false);
             var field = new WasmField(functionType.getReference().asStorage());
             field.setName(names.forVirtualMethod(entry.getMethod()));
-            structure.getFields().add(field);
+            fields.add(field);
         }
     }
 
     @Override
     public WasmStructure getArrayVirtualTableStructure() {
         if (arrayVirtualTableStruct == null) {
-            arrayVirtualTableStruct = new WasmStructure(null);
+            arrayVirtualTableStruct = new WasmStructure(null, fields -> {
+                addSystemFields(fields);
+                fillSimpleClassFields(fields, "java.lang.Class");
+                addVirtualTableFields(fields, virtualTables.lookup("java.lang.Object"));
+                if (metadataRequirements.hasArrayLength()) {
+                    arrayLengthOffset = fields.size();
+                    var arrayLengthType = getArrayLengthType();
+                    fields.add(new WasmField(arrayLengthType.getReference().asStorage()));
+                }
+                if (metadataRequirements.hasArrayGet()) {
+                    arrayGetOffset = fields.size();
+                    var arrayGetType = getArrayGetType();
+                    fields.add(new WasmField(arrayGetType.getReference().asStorage()));
+                }
+            });
             arrayVirtualTableStruct.setSupertype(standardClasses.objectClass().getVirtualTableStructure());
             module.types.add(arrayVirtualTableStruct);
-            addSystemFields(arrayVirtualTableStruct.getFields());
-            fillSimpleClassFields(arrayVirtualTableStruct.getFields(), "java.lang.Class");
-            addVirtualTableFields(arrayVirtualTableStruct, virtualTables.lookup("java.lang.Object"));
-
-            if (metadataRequirements.hasArrayLength()) {
-                arrayLengthOffset = arrayVirtualTableStruct.getFields().size();
-                var arrayLengthType = getArrayLengthType();
-                arrayVirtualTableStruct.getFields().add(new WasmField(arrayLengthType.getReference().asStorage()));
-            }
-            if (metadataRequirements.hasArrayGet()) {
-                arrayGetOffset = arrayVirtualTableStruct.getFields().size();
-                var arrayGetType = getArrayGetType();
-                arrayVirtualTableStruct.getFields().add(new WasmField(arrayGetType.getReference().asStorage()));
-            }
+            nonInitializedStructures.add(arrayVirtualTableStruct);
         }
         return arrayVirtualTableStruct;
     }
 
     @Override
     public int getArrayLengthOffset() {
+        initStructures();
         return arrayLengthOffset;
     }
 
     @Override
     public int getArrayGetOffset() {
+        initStructures();
         return arrayGetOffset;
     }
 

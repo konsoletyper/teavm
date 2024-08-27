@@ -401,6 +401,7 @@ class StatementGenerator implements InstructionVisitor {
         if (insn.getInstance() != null) {
             AssignmentStatement stmt = Statement.assign(Expr.var(insn.getReceiver().getIndex()),
                     Expr.qualify(Expr.var(insn.getInstance().getIndex()), insn.getField()));
+            stmt.getRightValue().setVariableIndex(insn.getReceiver().getIndex());
             stmt.setLocation(currentLocation);
             statements.add(stmt);
         } else {

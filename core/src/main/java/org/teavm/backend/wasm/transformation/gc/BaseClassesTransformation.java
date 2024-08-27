@@ -16,7 +16,10 @@
 package org.teavm.backend.wasm.transformation.gc;
 
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.interop.Import;
 import org.teavm.model.AccessLevel;
+import org.teavm.model.AnnotationHolder;
+import org.teavm.model.AnnotationValue;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
@@ -86,6 +89,12 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
                         method.setProgram(null);
                         method.getModifiers().add(ElementModifier.NATIVE);
                         break;
+                    case "currentTimeMillis": {
+                        var annotation = new AnnotationHolder(Import.class.getName());
+                        annotation.getValues().put("module", new AnnotationValue("teavm"));
+                        annotation.getValues().put("name", new AnnotationValue("currentTimeMillis"));
+                        method.getAnnotations().add(annotation);
+                    }
                 }
             }
         }

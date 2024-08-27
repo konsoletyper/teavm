@@ -372,10 +372,16 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local) {
+    protected void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local,
+            String exceptionClass) {
         var type = context.classInfoProvider().getClassInfo("java.lang.Throwable").getType();
         if (local != null) {
-            var save = new WasmSetLocal(local, new WasmGetGlobal(context.exceptionGlobal()));
+            WasmExpression exception = new WasmGetGlobal(context.exceptionGlobal());
+            if (exceptionClass != null && !exceptionClass.equals("java.lang.Throwable")) {
+                exception = new WasmCast(exception, context.classInfoProvider().getClassInfo(exceptionClass)
+                        .getStructure().getReference());
+            }
+            var save = new WasmSetLocal(local, exception);
             save.setLocation(location);
             target.add(save);
         }
@@ -511,6 +517,9 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
                         var fieldType = field.getType();
                         if (fieldType instanceof ValueType.Primitive) {
                             switch (((ValueType.Primitive) fieldType).getKind()) {
+                                case BOOLEAN:
+                                    structGet.setSignedType(WasmSignedType.UNSIGNED);
+                                    break;
                                 case BYTE:
                                     structGet.setSignedType(WasmSignedType.SIGNED);
                                     break;

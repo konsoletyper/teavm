@@ -175,7 +175,8 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local) {
+    protected void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local,
+            String exceptionClass) {
         var call = new WasmCall(context.functions().forStaticMethod(CATCH_METHOD));
         if (local != null) {
             var save = new WasmSetLocal(local, call);

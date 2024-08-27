@@ -299,6 +299,8 @@ public final class TMath extends TObject {
             return randomC();
         } else if (PlatformDetector.isWebAssembly()) {
             return WasmSupport.random();
+        } else if (PlatformDetector.isWebAssemblyGC()) {
+            return randomWasmGC();
         } else {
             return randomImpl();
         }
@@ -309,6 +311,9 @@ public final class TMath extends TObject {
 
     @GeneratedBy(MathNativeGenerator.class)
     private static native double randomImpl();
+
+    @Import(module = "teavmMath", name = "random")
+    private static native double randomWasmGC();
 
     public static int min(int a, int b) {
         return a < b ? a : b;
