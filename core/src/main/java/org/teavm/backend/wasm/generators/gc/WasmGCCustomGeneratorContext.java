@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.generators.gc;
 
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.model.WasmModule;
@@ -28,4 +29,6 @@ public interface WasmGCCustomGeneratorContext {
     WasmGCTypeMapper typeMapper();
 
     WasmGCClassInfoProvider classInfoProvider();
+
+    WasmGCNameProvider names();
 }

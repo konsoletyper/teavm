@@ -36,7 +36,8 @@ public class WasmGCStringPoolGenerator implements WasmGCCustomGenerator {
     @Override
     public void apply(MethodReference method, WasmFunction function, WasmGCCustomGeneratorContext context) {
         var module = context.module();
-        var pointer = new WasmGlobal("teavm_string_pool_pointer", WasmType.INT32, new WasmInt32Constant(0));
+        var pointer = new WasmGlobal(context.names().topLevel("teavm@stringPoolPointer"), WasmType.INT32,
+                new WasmInt32Constant(0));
         module.globals.add(pointer);
 
         var resultLocal = new WasmLocal(WasmType.INT32);

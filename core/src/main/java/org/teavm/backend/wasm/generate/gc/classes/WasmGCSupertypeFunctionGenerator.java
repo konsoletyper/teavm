@@ -19,8 +19,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -47,7 +47,7 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
     private Map<ValueType, WasmFunction> functions = new HashMap<>();
     private WasmModule module;
     private WasmGCClassGenerator classGenerator;
-    private NameProvider nameProvider;
+    private WasmGCNameProvider nameProvider;
     private TagRegistry tagRegistry;
     private WasmFunctionTypes functionTypes;
     private WasmFunctionType functionType;
@@ -55,7 +55,7 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
     WasmGCSupertypeFunctionGenerator(
             WasmModule module,
             WasmGCClassGenerator classGenerator,
-            NameProvider nameProvider,
+            WasmGCNameProvider nameProvider,
             TagRegistry tagRegistry,
             WasmFunctionTypes functionTypes
     ) {
@@ -78,7 +78,7 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
 
     private WasmFunction generateIsSupertypeFunction(ValueType type) {
         var function = new WasmFunction(getFunctionType());
-        function.setName(nameProvider.forSupertypeFunction(type));
+        function.setName(nameProvider.topLevel(nameProvider.suggestForType(type) + "@isSupertypes"));
         var subtypeVar = new WasmLocal(classGenerator.standardClasses.classClass().getType(), "subtype");
         function.add(subtypeVar);
         module.functions.add(function);

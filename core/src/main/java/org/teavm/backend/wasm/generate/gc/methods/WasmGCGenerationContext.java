@@ -25,6 +25,7 @@ import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationContext;
+import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCSupertypeFunctionProvider;
@@ -62,13 +63,15 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmGlobal exceptionGlobal;
     private WasmTag exceptionTag;
     private Map<String, Set<String>> interfaceImplementors;
+    private WasmGCNameProvider names;
 
     public WasmGCGenerationContext(WasmModule module, WasmGCVirtualTableProvider virtualTables,
             WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes, ListableClassReaderSource classes,
             ClassHierarchy hierarchy, BaseWasmFunctionRepository functions,
             WasmGCSupertypeFunctionProvider supertypeFunctions, WasmGCClassInfoProvider classInfoProvider,
             WasmGCStandardClasses standardClasses, WasmGCStringProvider strings,
-            WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics) {
+            WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics,
+            WasmGCNameProvider names) {
         this.module = module;
         this.virtualTables = virtualTables;
         this.typeMapper = typeMapper;
@@ -82,6 +85,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         this.strings = strings;
         this.customGenerators = customGenerators;
         this.intrinsics = intrinsics;
+        this.names = names;
     }
 
     public WasmGCClassInfoProvider classInfoProvider() {
@@ -164,7 +168,8 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     public WasmGlobal exceptionGlobal() {
         if (exceptionGlobal == null) {
             var type = classInfoProvider.getClassInfo("java.lang.Throwable").getType();
-            exceptionGlobal = new WasmGlobal("teavm_thrown_exception", type, new WasmNullConstant(type));
+            exceptionGlobal = new WasmGlobal(names.topLevel("teavm@thrownException"), type,
+                    new WasmNullConstant(type));
             module.globals.add(exceptionGlobal);
         }
         return exceptionGlobal;

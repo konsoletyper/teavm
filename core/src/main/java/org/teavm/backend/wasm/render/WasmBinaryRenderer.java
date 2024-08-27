@@ -476,6 +476,30 @@ public class WasmBinaryRenderer {
         section.writeLEB(payload.length);
         section.writeBytes(payload);
 
+        var functionsWithLocalNames = module.functions.stream()
+                .filter(fn -> fn.getLocalVariables().stream().anyMatch(v -> v.getName() != null))
+                .collect(Collectors.toList());
+        if (!functionsWithLocalNames.isEmpty()) {
+            var subsection = new WasmBinaryWriter();
+            subsection.writeLEB(functionsWithLocalNames.size());
+            for (var function : functionsWithLocalNames) {
+                subsection.writeLEB(module.functions.indexOf(function));
+                var locals = function.getLocalVariables().stream()
+                        .filter(t -> t.getName() != null)
+                        .collect(Collectors.toList());
+                subsection.writeLEB(locals.size());
+                for (var local : locals) {
+                    subsection.writeLEB(local.getIndex());
+                    subsection.writeAsciiString(local.getName());
+                }
+            }
+
+            payload = subsection.getData();
+            section.writeLEB(2);
+            section.writeLEB(payload.length);
+            section.writeBytes(payload);
+        }
+
         var types = module.types.stream()
                 .filter(t -> t.getName() != null)
                 .collect(Collectors.toList());

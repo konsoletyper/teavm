@@ -71,6 +71,10 @@ public class WasmStructure extends WasmCompositeType {
             var supplier = fieldsSupplier;
             fieldsSupplier = null;
             supplier.accept(fieldsStorage);
+            for (var field : fieldsStorage) {
+                field.structure = this;
+            }
+            indexesValid = false;
         }
     }
 

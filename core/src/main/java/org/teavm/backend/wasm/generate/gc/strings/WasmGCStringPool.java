@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.generate.gc.WasmGCInitializerContributor;
+import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -43,12 +44,14 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
     private Map<String, WasmGCStringConstant> stringMap = new LinkedHashMap<>();
     private BaseWasmFunctionRepository functionProvider;
     private WasmFunction nextCharArrayFunction;
+    private WasmGCNameProvider names;
 
     public WasmGCStringPool(WasmGCStandardClasses standardClasses, WasmModule module,
-            BaseWasmFunctionRepository functionProvider) {
+            BaseWasmFunctionRepository functionProvider, WasmGCNameProvider names) {
         this.standardClasses = standardClasses;
         this.module = module;
         this.functionProvider = functionProvider;
+        this.names = names;
     }
 
     @Override
@@ -86,7 +89,9 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
             }
             binaryWriter.writeLEB(string.length());
             binaryWriter.writeBytes(string.getBytes(StandardCharsets.UTF_8));
-            var globalName = "teavm_java_string_" + stringMap.size();
+            var brief = string.length() > 16 ? string.substring(0, 16) : string;
+            var globalName = names.topLevel("teavm@string<" + stringMap.size() + ">"
+                    + WasmGCNameProvider.sanitize(brief));
             var globalType = standardClasses.stringClass().getType();
             var global = new WasmGlobal(globalName, globalType, WasmExpression.defaultValueOfType(globalType));
             module.globals.add(global);

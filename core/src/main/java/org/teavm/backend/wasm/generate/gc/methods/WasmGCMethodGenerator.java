@@ -23,11 +23,11 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import org.teavm.ast.decompilation.Decompiler;
-import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.WasmGCVariableCategoryProvider;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
+import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCSupertypeFunctionProvider;
@@ -63,7 +63,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private ClassInitializerInfo classInitInfo;
     private WasmFunctionTypes functionTypes;
     private WasmGCSupertypeFunctionProvider supertypeFunctions;
-    private NameProvider names;
+    private WasmGCNameProvider names;
     private Diagnostics diagnostics;
     private WasmGCTypeMapper typeMapper;
     private WasmGCCustomGeneratorProvider customGenerators;
@@ -86,7 +86,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             WasmGCVirtualTableProvider virtualTables,
             ClassInitializerInfo classInitInfo,
             WasmFunctionTypes functionTypes,
-            NameProvider names,
+            WasmGCNameProvider names,
             Diagnostics diagnostics,
             WasmGCCustomGeneratorProvider customGenerators,
             WasmGCIntrinsicProvider intrinsics
@@ -149,7 +149,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             parameterTypes[i] = typeMapper.mapType(methodReference.parameterType(i));
         }
         var function = new WasmFunction(functionTypes.of(returnType, parameterTypes));
-        function.setName(names.forMethod(methodReference));
+        function.setName(names.topLevel(names.suggestForMethod(methodReference)));
         module.functions.add(function);
         function.setJavaMethod(methodReference);
 
@@ -177,7 +177,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             parameterTypes[i + 1] = typeMapper.mapType(methodReference.parameterType(i));
         }
         var function = new WasmFunction(functionTypes.of(returnType, parameterTypes));
-        function.setName(names.forMethod(methodReference));
+        function.setName(names.topLevel(names.suggestForMethod(methodReference)));
         module.functions.add(function);
         function.setJavaMethod(methodReference);
 
@@ -304,7 +304,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                     standardClasses,
                     strings,
                     customGenerators,
-                    intrinsics
+                    intrinsics,
+                    names
             );
         }
         return context;
@@ -314,7 +315,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         if (dummyInitializer == null) {
             dummyInitializer = new WasmFunction(functionTypes.of(null));
             dummyInitializer.getBody().add(new WasmReturn());
-            dummyInitializer.setName("teavm_dummy_initializer");
+            dummyInitializer.setName(names.topLevel("teavm@dummyInitializer"));
             dummyInitializer.setReferenced(true);
             module.functions.add(dummyInitializer);
         }
@@ -340,6 +341,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         @Override
         public WasmGCClassInfoProvider classInfoProvider() {
             return classInfoProvider;
+        }
+
+        @Override
+        public WasmGCNameProvider names() {
+            return names;
         }
     };
 }

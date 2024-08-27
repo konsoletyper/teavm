@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.generate.gc.classes;
 
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
+import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmFunctionType;
@@ -32,22 +33,26 @@ class WasmGCNewArrayFunctionGenerator {
     private WasmFunctionTypes functionTypes;
     private WasmGCClassInfoProvider classInfoProvider;
     private WasmFunctionType newArrayFunctionType;
+    private WasmGCNameProvider names;
 
     WasmGCNewArrayFunctionGenerator(WasmModule module, WasmFunctionTypes functionTypes,
-            WasmGCClassInfoProvider classInfoProvider) {
+            WasmGCClassInfoProvider classInfoProvider, WasmGCNameProvider names) {
         this.module = module;
         this.functionTypes = functionTypes;
         this.classInfoProvider = classInfoProvider;
+        this.names = names;
     }
 
     WasmFunction generateNewArrayFunction(ValueType itemType) {
         var function = new WasmFunction(getNewArrayFunctionType());
+        function.setName(names.topLevel("Array<" + names.suggestForType(itemType) + ">@new"));
         module.functions.add(function);
-        var sizeLocal = new WasmLocal(WasmType.INT32);
+        var sizeLocal = new WasmLocal(WasmType.INT32, "length");
         function.add(sizeLocal);
         var tempVars = new TemporaryVariablePool(function);
         var genUtil = new WasmGCGenerationUtil(classInfoProvider, tempVars);
-        var targetVar = new WasmLocal(classInfoProvider.getClassInfo(ValueType.arrayOf(itemType)).getType());
+        var targetVar = new WasmLocal(classInfoProvider.getClassInfo(ValueType.arrayOf(itemType)).getType(),
+                "result");
         function.add(targetVar);
         genUtil.allocateArray(itemType, new WasmGetLocal(sizeLocal), null, targetVar, function.getBody());
         function.getBody().add(new WasmReturn(new WasmGetLocal(targetVar)));

@@ -20,7 +20,6 @@ import java.util.function.Predicate;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
-import org.teavm.backend.wasm.generate.WasmNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassGenerator;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCSupertypeFunctionProvider;
@@ -61,7 +60,7 @@ public class WasmGCDeclarationsGenerator {
         hierarchy = new ClassHierarchy(classes);
         var virtualTables = createVirtualTableProvider(classes, isVirtual);
         functionTypes = new WasmFunctionTypes(module);
-        var names = new WasmNameProvider();
+        var names = new WasmGCNameProvider();
         methodGenerator = new WasmGCMethodGenerator(
                 module,
                 hierarchy,
