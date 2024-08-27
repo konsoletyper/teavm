@@ -15,11 +15,6 @@
  */
 package org.teavm.backend.wasm.disasm;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.util.function.Consumer;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
@@ -34,35 +29,16 @@ import org.teavm.backend.wasm.parser.AddressListener;
 import org.teavm.backend.wasm.parser.BranchOpcode;
 import org.teavm.backend.wasm.parser.CodeListener;
 import org.teavm.backend.wasm.parser.CodeSectionListener;
-import org.teavm.backend.wasm.parser.CodeSectionParser;
 import org.teavm.backend.wasm.parser.LocalOpcode;
-import org.teavm.backend.wasm.parser.ModuleParser;
 import org.teavm.backend.wasm.parser.Opcode;
 import org.teavm.backend.wasm.parser.WasmHollowType;
-import org.teavm.common.ByteArrayAsyncInputStream;
 
-public class DisassemblyCodeSectionListener implements AddressListener, CodeSectionListener, CodeListener {
-    private DisassemblyWriter writer;
-    private int address;
-    private int addressOffset;
+public class DisassemblyCodeSectionListener extends BaseDisassemblyListener implements AddressListener,
+        CodeSectionListener, CodeListener {
     private int blockIdGen;
 
     public DisassemblyCodeSectionListener(DisassemblyWriter writer) {
-        this.writer = writer;
-    }
-
-    public void setAddressOffset(int addressOffset) {
-        this.addressOffset = addressOffset;
-    }
-
-    @Override
-    public void address(int address) {
-        this.address = address + addressOffset;
-    }
-
-    @Override
-    public void sectionStart(int functionCount) {
-        writer.address(address).write("(; code section ;)").eol();
+        super(writer);
     }
 
     @Override
@@ -80,7 +56,9 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     public void local(int start, int count, WasmHollowType type) {
         writer.address(address);
         for (int i = 0; i < count; ++i) {
-            writer.write("(local (; " + (i + start) + " ;) " + typeToString(type) + ")").eol();
+            writer.write("(local (; " + (i + start) + " ;) ");
+            writeType(type);
+            writer.write(")").eol();
         }
     }
 
@@ -100,52 +78,6 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
         writer.outdent().write(")").eol();
     }
 
-    private String blockTypeToString(WasmHollowType type) {
-        if (type == null) {
-            return "";
-        } else {
-            return " " + typeToString(type);
-        }
-    }
-
-    private String typeToString(WasmHollowType type) {
-        if (type != null) {
-            if (type instanceof WasmHollowType.Number) {
-                switch (((WasmHollowType.Number) type).number) {
-                    case INT32:
-                        return "i32";
-                    case INT64:
-                        return "i64";
-                    case FLOAT32:
-                        return "f32";
-                    case FLOAT64:
-                        return "f64";
-                    default:
-                        break;
-                }
-            } else if (type instanceof WasmHollowType.SpecialReference) {
-                switch (((WasmHollowType.SpecialReference) type).kind) {
-                    case ANY:
-                        return "any";
-                    case FUNC:
-                        return "func";
-                    case ARRAY:
-                        return "array";
-                    case EXTERN:
-                        return "extern";
-                    case STRUCT:
-                        return "struct";
-                    case I31:
-                        return "i31";
-                    default:
-                        throw new IllegalArgumentException();
-                }
-            } else if (type instanceof WasmHollowType.CompositeReference) {
-                return String.valueOf(((WasmHollowType.CompositeReference) type).index);
-            }
-        }
-        return "unknown";
-    }
 
     @Override
     public void error(int depth) {
@@ -160,8 +92,9 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     public int startBlock(boolean loop, WasmHollowType type) {
         writer.address(address);
         var label = blockIdGen++;
-        writer.write(loop ? "loop" : "block").write(" $label_" + label).write(blockTypeToString(type))
-                .indent().eol();
+        writer.write(loop ? "loop" : "block").write(" $label_" + label);
+        writeBlockType(type);
+        writer.indent().eol();
         return label;
     }
 
@@ -169,7 +102,9 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     public int startConditionalBlock(WasmHollowType type) {
         writer.address(address);
         var label = blockIdGen++;
-        writer.write("if ").write(" $label_" + label).write(blockTypeToString(type)).indent().eol();
+        writer.write("if ").write(" $label_" + label);
+        writeBlockType(type);
+        writer.indent().eol();
         return label;
     }
 
@@ -183,7 +118,9 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     public int startTry(WasmHollowType type) {
         writer.address(address);
         var label = blockIdGen++;
-        writer.write("try ").write(" $label_" + label).write(blockTypeToString(type)).indent().eol();
+        writer.write("try ").write(" $label_" + label);
+        writeBlockType(type);
+        writer.indent().eol();
         return label;
     }
 
@@ -827,7 +764,9 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
 
     @Override
     public void nullConstant(WasmHollowType.Reference type) {
-        writer.address(address).write("ref.null ").write(typeToString(type)).eol();
+        writer.address(address).write("ref.null ");
+        writeType(type);
+        writer.eol();
     }
 
     @Override
@@ -836,7 +775,8 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
         if (!nullable) {
             writer.write("null ");
         }
-        writer.write(typeToString(type)).write(")").eol();
+        writeType(type);
+        writer.write(")").eol();
     }
 
     @Override
@@ -845,7 +785,8 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
         if (!nullable) {
             writer.write("null ");
         }
-        writer.write(typeToString(type)).write(")").eol();
+        writeType(type);
+        writer.write(")").eol();
     }
 
     @Override
@@ -913,29 +854,5 @@ public class DisassemblyCodeSectionListener implements AddressListener, CodeSect
     @Override
     public void int31Get(WasmSignedType signedType) {
         writer.address(address).write("ref.i31_").write(signedType == WasmSignedType.SIGNED ? "s" : "u").eol();
-    }
-
-    public static void main(String[] args) throws IOException {
-        var file = new File(args[0]);
-        var bytes = Files.readAllBytes(file.toPath());
-        var input = new ByteArrayAsyncInputStream(bytes);
-        var parser = new ModuleParser(input) {
-            @Override
-            protected Consumer<byte[]> getSectionConsumer(int code, int pos, String name) {
-                if (code == 10) {
-                    return bytes -> {
-                        var out = new PrintWriter(System.out);
-                        var writer = new DisassemblyWriter(out, true);
-                        var disassembler = new DisassemblyCodeSectionListener(writer);
-                        disassembler.setAddressOffset(pos);
-                        var sectionParser = new CodeSectionParser(disassembler, disassembler);
-                        sectionParser.parse(bytes);
-                        out.flush();
-                    };
-                }
-                return null;
-            }
-        };
-        input.readFully(parser::parse);
     }
 }

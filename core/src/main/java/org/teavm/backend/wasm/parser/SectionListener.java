@@ -1,5 +1,5 @@
 /*
- *  Copyright 2022 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,21 +15,10 @@
  */
 package org.teavm.backend.wasm.parser;
 
-public interface CodeSectionListener extends SectionListener {
-    default boolean functionStart(int index, int size) {
-        return false;
+public interface SectionListener {
+    default void sectionStart(int functionCount) {
     }
 
-    default void localsStart(int count) {
-    }
-
-    default void local(int start, int count, WasmHollowType type) {
-    }
-
-    default CodeListener code() {
-        return null;
-    }
-
-    default void functionEnd() {
+    default void sectionEnd() {
     }
 }
