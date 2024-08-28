@@ -21,11 +21,13 @@ import org.teavm.backend.wasm.parser.WasmHollowType;
 
 public abstract class BaseDisassemblyListener implements AddressListener {
     protected final DisassemblyWriter writer;
+    protected final NameProvider nameProvider;
     protected int address;
     private int addressOffset;
 
-    public BaseDisassemblyListener(DisassemblyWriter writer) {
+    public BaseDisassemblyListener(DisassemblyWriter writer, NameProvider nameProvider) {
         this.writer = writer;
+        this.nameProvider = nameProvider;
     }
 
     public void setAddressOffset(int addressOffset) {
@@ -103,7 +105,7 @@ public abstract class BaseDisassemblyListener implements AddressListener {
                 }
             } else if (type instanceof WasmHollowType.CompositeReference) {
                 writer.write("(ref null ");
-                writeTypeId(((WasmHollowType.CompositeReference) type).index);
+                writeTypeRef(((WasmHollowType.CompositeReference) type).index);
                 writer.write(")");
                 return;
             }
@@ -111,7 +113,31 @@ public abstract class BaseDisassemblyListener implements AddressListener {
         writer.write("unknown");
     }
 
-    protected void writeTypeId(int index) {
-        writer.write(String.valueOf(index));
+    protected void writeGlobalRef(int index) {
+        writeRef(nameProvider.global(index), index);
+    }
+
+    protected void writeFunctionRef(int index) {
+        writeRef(nameProvider.function(index), index);
+    }
+
+    protected void writeTypeRef(int index) {
+        writeRef(nameProvider.type(index), index);
+    }
+
+    protected void writeFieldRef(int typeIndex, int index) {
+        writeRef(nameProvider.field(typeIndex, index), index);
+    }
+
+    protected void writeLocalRef(int functionIndex, int index) {
+        writeRef(nameProvider.local(functionIndex, index), index);
+    }
+
+    private void writeRef(String name, int index) {
+        if (name == null) {
+            writer.write(Integer.toString(index));
+        } else {
+            writer.write("(; ").write(Integer.toString(index)).write(" ;) $").write(name);
+        }
     }
 }

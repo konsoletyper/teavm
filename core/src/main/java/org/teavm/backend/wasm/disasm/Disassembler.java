@@ -22,8 +22,13 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.util.function.Consumer;
+import org.teavm.backend.wasm.parser.AddressListener;
 import org.teavm.backend.wasm.parser.CodeSectionParser;
+import org.teavm.backend.wasm.parser.ImportSectionListener;
+import org.teavm.backend.wasm.parser.ImportSectionParser;
 import org.teavm.backend.wasm.parser.ModuleParser;
+import org.teavm.backend.wasm.parser.NameSectionListener;
+import org.teavm.backend.wasm.parser.NameSectionParser;
 import org.teavm.backend.wasm.parser.TypeSectionParser;
 import org.teavm.common.AsyncInputStream;
 import org.teavm.common.ByteArrayAsyncInputStream;
@@ -52,36 +57,74 @@ public final class Disassembler {
     }
 
     public void read(byte[] bytes) {
+        var nameAccumulator = new NameAccumulatingSectionListener();
         var input = new ByteArrayAsyncInputStream(bytes);
-        var parser = createParser(input);
+        var nameParser = createNameParser(input, nameAccumulator);
+        input.readFully(nameParser::parse);
+
+        input = new ByteArrayAsyncInputStream(bytes);
+        var parser = createParser(input, nameAccumulator.buildProvider());
         input.readFully(parser::parse);
     }
 
-    public ModuleParser createParser(AsyncInputStream input) {
+    public ModuleParser createNameParser(AsyncInputStream input, NameSectionListener listener) {
         return new ModuleParser(input) {
             @Override
             protected Consumer<byte[]> getSectionConsumer(int code, int pos, String name) {
-                return Disassembler.this.getSectionConsumer(code, pos, name);
+                return Disassembler.this.getNameSectionConsumer(code, name, listener);
             }
         };
     }
 
-    public Consumer<byte[]> getSectionConsumer(int code, int pos, String name) {
+    public ModuleParser createParser(AsyncInputStream input, NameProvider nameProvider) {
+        return new ModuleParser(input) {
+            @Override
+            protected Consumer<byte[]> getSectionConsumer(int code, int pos, String name) {
+                return Disassembler.this.getSectionConsumer(code, pos, nameProvider);
+            }
+        };
+    }
+
+    public Consumer<byte[]> getSectionConsumer(int code, int pos, NameProvider nameProvider) {
+        var importListener = new ImportSectionListener() {
+            int count;
+
+            @Override
+            public void function(int typeIndex) {
+                ++count;
+            }
+        };
         if (code == 1) {
             return bytes -> {
-                var disassembler = new DisassemblyTypeSectionListener(writer);
-                disassembler.setAddressOffset(pos);
-                var sectionParser = new TypeSectionParser(disassembler, disassembler);
+                var typeWriter = new DisassemblyTypeSectionListener(writer, nameProvider);
+                typeWriter.setAddressOffset(pos);
+                var sectionParser = new TypeSectionParser(typeWriter, typeWriter);
                 sectionParser.parse(bytes);
                 out.flush();
             };
+        } else if (code == 2) {
+            return bytes -> {
+                var parser = new ImportSectionParser(AddressListener.EMPTY, importListener);
+                parser.parse(bytes);
+            };
         } else if (code == 10) {
             return bytes -> {
-                var disassembler = new DisassemblyCodeSectionListener(writer);
+                var disassembler = new DisassemblyCodeSectionListener(writer, nameProvider);
                 disassembler.setAddressOffset(pos);
                 var sectionParser = new CodeSectionParser(disassembler, disassembler);
                 sectionParser.parse(bytes);
                 out.flush();
+            };
+        } else {
+            return null;
+        }
+    }
+
+    public Consumer<byte[]> getNameSectionConsumer(int code, String name, NameSectionListener listener) {
+        if (code == 0 && name.equals("name")) {
+            return bytes -> {
+                var parser = new NameSectionParser(listener);
+                parser.parse(bytes);
             };
         } else {
             return null;

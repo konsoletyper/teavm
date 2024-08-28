@@ -32,10 +32,15 @@ public class CodeSectionParser extends BaseSectionParser {
     private CodeSectionListener listener;
     private CodeListener codeListener;
     private List<Block> blockStack = new ArrayList<>();
+    private int functionIndexOffset;
 
     public CodeSectionParser(AddressListener addressListener, CodeSectionListener listener) {
         super(addressListener);
         this.listener = listener;
+    }
+
+    public void setFunctionIndexOffset(int functionIndexOffset) {
+        this.functionIndexOffset = functionIndexOffset;
     }
 
     @Override
@@ -54,7 +59,7 @@ public class CodeSectionParser extends BaseSectionParser {
         reportAddress();
         var functionSize = readLEB();
         var end = ptr + functionSize;
-        if (listener.functionStart(index, functionSize)) {
+        if (listener.functionStart(index + functionIndexOffset, functionSize)) {
             parseLocals();
             codeListener = listener.code();
             if (codeListener != null) {
@@ -130,7 +135,7 @@ public class CodeSectionParser extends BaseSectionParser {
                 codeListener.opcode(Opcode.RETURN);
                 break;
             case 0x10:
-                codeListener.call(readLEB());
+                codeListener.call(readLEB() + functionIndexOffset);
                 break;
             case 0x11:
                 codeListener.indirectCall(readLEB(), readLEB());
@@ -624,7 +629,7 @@ public class CodeSectionParser extends BaseSectionParser {
                 break;
 
             case 0xD2:
-                codeListener.functionReference(readLEB());
+                codeListener.functionReference(readLEB() + functionIndexOffset);
                 break;
 
             case 0xD3:

@@ -36,14 +36,21 @@ import org.teavm.backend.wasm.parser.WasmHollowType;
 public class DisassemblyCodeSectionListener extends BaseDisassemblyListener implements AddressListener,
         CodeSectionListener, CodeListener {
     private int blockIdGen;
+    private int currentFunctionId;
 
-    public DisassemblyCodeSectionListener(DisassemblyWriter writer) {
-        super(writer);
+    public DisassemblyCodeSectionListener(DisassemblyWriter writer, NameProvider nameProvider) {
+        super(writer, nameProvider);
     }
 
     @Override
     public boolean functionStart(int index, int size) {
-        writer.address(address).write("(func (; " + index + " ;)").indent().eol();
+        currentFunctionId = index;
+        writer.address(address).write("(func ").write("(; " + index + " ;)");
+        var name = nameProvider.function(index);
+        if (name != null) {
+            writer.write(" $").write(name);
+        }
+        writer.indent().eol();
         return true;
     }
 
@@ -57,6 +64,10 @@ public class DisassemblyCodeSectionListener extends BaseDisassemblyListener impl
         writer.address(address);
         for (int i = 0; i < count; ++i) {
             writer.write("(local (; " + (i + start) + " ;) ");
+            var name = nameProvider.local(currentFunctionId, i + start);
+            if (name != null) {
+                writer.write("$").write(name).write(" ");
+            }
             writeType(type);
             writer.write(")").eol();
         }
@@ -77,7 +88,6 @@ public class DisassemblyCodeSectionListener extends BaseDisassemblyListener impl
     public void sectionEnd() {
         writer.outdent().write(")").eol();
     }
-
 
     @Override
     public void error(int depth) {
@@ -202,23 +212,31 @@ public class DisassemblyCodeSectionListener extends BaseDisassemblyListener impl
                 writer.write("local.set");
                 break;
         }
-        writer.write(" " + index).eol();
+        writer.write(" ");
+        writeLocalRef(currentFunctionId, index);
+        writer.eol();
     }
 
     @Override
     public void getGlobal(int globalIndex) {
-        writer.address(address).write("global.get ").write(Integer.toString(globalIndex)).eol();
+        writer.address(address).write("global.get ");
+        writeGlobalRef(globalIndex);
+        writer.eol();
     }
 
     @Override
     public void setGlobal(int globalIndex) {
-        writer.address(address).write("global.set ").write(Integer.toString(globalIndex)).eol();
+        writer.address(address).write("global.set ");
+        writeGlobalRef(globalIndex);
+        writer.eol();
     }
 
     @Override
     public void call(int functionIndex) {
         writer.address(address);
-        writer.write("call " + functionIndex).eol();
+        writer.write("call ");
+        writeFunctionRef(functionIndex);
+        writer.eol();
     }
 
     @Override
@@ -791,12 +809,16 @@ public class DisassemblyCodeSectionListener extends BaseDisassemblyListener impl
 
     @Override
     public void structNew(int typeIndex) {
-        writer.address(address).write("struct.new ").write(Integer.toString(typeIndex)).eol();
+        writer.address(address).write("struct.new ");
+        writeTypeRef(typeIndex);
+        writer.eol();
     }
 
     @Override
     public void structNewDefault(int typeIndex) {
-        writer.address(address).write("struct.new_default ").write(Integer.toString(typeIndex)).eol();
+        writer.address(address).write("struct.new_default ");
+        writeTypeRef(typeIndex);
+        writer.eol();
     }
 
     @Override
@@ -809,18 +831,27 @@ public class DisassemblyCodeSectionListener extends BaseDisassemblyListener impl
         } else {
             writer.write("struct.get_u");
         }
-        writer.write(" ").write(Integer.toString(typeIndex)).write(" ").write(Integer.toString(fieldIndex)).eol();
+        writer.write(" ");
+        writeTypeRef(typeIndex);
+        writer.write(" ");
+        writeFieldRef(typeIndex, fieldIndex);
+        writer.eol();
     }
 
     @Override
     public void structSet(int typeIndex, int fieldIndex) {
-        writer.address(address).write("struct.set ").write(Integer.toString(typeIndex)).write(" ")
-                .write(Integer.toString(fieldIndex)).eol();
+        writer.address(address).write("struct.set ");
+        writeTypeRef(typeIndex);
+        writer.write(" ");
+        writeFieldRef(typeIndex, fieldIndex);
+        writer.eol();
     }
 
     @Override
     public void arrayNewDefault(int typeIndex) {
-        writer.address(address).write("array.new_default ").write(Integer.toString(typeIndex)).eol();
+        writer.address(address).write("array.new_default ");
+        writeTypeRef(typeIndex);
+        writer.eol();
     }
 
     @Override
@@ -833,17 +864,23 @@ public class DisassemblyCodeSectionListener extends BaseDisassemblyListener impl
         } else {
             writer.write("array.get_u");
         }
-        writer.write(" ").write(Integer.toString(typeIndex)).eol();
+        writer.write(" ");
+        writeTypeRef(typeIndex);
+        writer.eol();
     }
 
     @Override
     public void arraySet(int typeIndex) {
-        writer.address(address).write("array.set ").write(Integer.toString(typeIndex)).eol();
+        writer.address(address).write("array.set ");
+        writeTypeRef(typeIndex);
+        writer.eol();
     }
 
     @Override
     public void functionReference(int functionIndex) {
-        writer.address(address).write("ref.func ").write(Integer.toString(functionIndex)).eol();
+        writer.address(address).write("ref.func ");
+        writeFunctionRef(functionIndex);
+        writer.eol();
     }
 
     @Override
@@ -855,4 +892,5 @@ public class DisassemblyCodeSectionListener extends BaseDisassemblyListener impl
     public void int31Get(WasmSignedType signedType) {
         writer.address(address).write("ref.i31_").write(signedType == WasmSignedType.SIGNED ? "s" : "u").eol();
     }
+
 }

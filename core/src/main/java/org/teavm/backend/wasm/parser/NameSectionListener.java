@@ -1,5 +1,5 @@
 /*
- *  Copyright 2022 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,10 +15,25 @@
  */
 package org.teavm.backend.wasm.parser;
 
-public interface AddressListener {
-    default void address(int address) {
+public interface NameSectionListener {
+    default NameMapListener functions() {
+        return null;
     }
 
-    AddressListener EMPTY = new AddressListener() {
-    };
+    default NameIndirectMapListener locals() {
+        return null;
+    }
+
+    default NameMapListener types() {
+        return null;
+    }
+
+    default NameMapListener globals() {
+        return null;
+    }
+
+
+    default NameIndirectMapListener fields() {
+        return null;
+    }
 }

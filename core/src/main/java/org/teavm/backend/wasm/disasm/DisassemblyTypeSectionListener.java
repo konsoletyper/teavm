@@ -24,11 +24,12 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
         TypeSectionListener {
     private boolean currentTypeNeedsClosing;
     private boolean emittingReturn;
+    private int currentTypeIndex;
     private int fieldIndex;
     private boolean needsFieldIndex;
 
-    public DisassemblyTypeSectionListener(DisassemblyWriter writer) {
-        super(writer);
+    public DisassemblyTypeSectionListener(DisassemblyWriter writer, NameProvider nameProvider) {
+        super(writer, nameProvider);
     }
 
     @Override
@@ -43,7 +44,12 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
 
     @Override
     public void startType(int index, boolean open, int[] supertypes) {
+        currentTypeIndex = index;
         writer.address(address).write("(type (; ").write(String.valueOf(index)).write(" ;) ");
+        var name = nameProvider.type(index);
+        if (name != null) {
+            writer.write("$").write(name).write(" ");
+        }
         if (!open || supertypes.length > 0) {
             currentTypeNeedsClosing = true;
             writer.write("(sub ");
@@ -78,6 +84,10 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
         writer.address(address).write("(field ");
         if (needsFieldIndex) {
             writer.write("(; " + fieldIndex++ + " ;) ");
+            var name = nameProvider.field(currentTypeIndex, fieldIndex);
+            if (name != null) {
+                writer.write("$").write(name);
+            }
         }
         if (mutable) {
             writer.write("(mut ");
@@ -97,7 +107,7 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
 
     @Override
     public void funcType(int paramCount) {
-        writer.address(address).write("(struct ").indent().eol();
+        writer.address(address).write("(func ").indent().eol();
     }
 
     @Override

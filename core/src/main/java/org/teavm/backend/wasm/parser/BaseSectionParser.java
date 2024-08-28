@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.wasm.parser;
 
+import java.nio.charset.StandardCharsets;
+
 public abstract class BaseSectionParser {
     protected AddressListener addressListener;
     protected byte[] data;
@@ -187,5 +189,12 @@ public abstract class BaseSectionParser {
                 | ((data[ptr++] & 0xFF) << 16)
                 | ((data[ptr++] & 0xFF) << 8)
                 | (data[ptr++] & 0xFF);
+    }
+
+    protected String readString() {
+        var size = readLEB();
+        var result = new String(data, ptr, size, StandardCharsets.UTF_8);
+        ptr += size;
+        return result;
     }
 }
