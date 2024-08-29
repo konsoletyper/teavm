@@ -31,12 +31,13 @@ public class DisassemblyCodeSectionListener extends BaseDisassemblyListener impl
     @Override
     public boolean functionStart(int index, int size) {
         currentFunctionId = index;
-        writer.address().write("(func ").write("(; " + index + " ;)");
+        writer.address().write("(func ");
+        writer.startLinkTarget("f" + index).write("(; " + index + " ;)");
         var name = nameProvider.function(index);
         if (name != null) {
             writer.write(" $").write(name);
         }
-        writer.indent().eol();
+        writer.endLinkTarget().indent().eol();
         return true;
     }
 
@@ -49,11 +50,14 @@ public class DisassemblyCodeSectionListener extends BaseDisassemblyListener impl
     public void local(int start, int count, WasmHollowType type) {
         writer.address();
         for (int i = 0; i < count; ++i) {
-            writer.write("(local (; " + (i + start) + " ;) ");
-            var name = nameProvider.local(currentFunctionId, i + start);
+            writer.write("(local ");
+            var id = i + start;
+            writer.startLinkTarget("l" + currentFunctionId + "." + id).write("(; " + id + " ;)");
+            var name = nameProvider.local(currentFunctionId, id);
             if (name != null) {
-                writer.write("$").write(name).write(" ");
+                writer.write(" ").write("$").write(name);
             }
+            writer.endLinkTarget().write(" ");
             writeType(type);
             writer.write(")").eol();
         }
@@ -62,6 +66,7 @@ public class DisassemblyCodeSectionListener extends BaseDisassemblyListener impl
     @Override
     public CodeListener code() {
         codeListener.setCurrentFunctionId(currentFunctionId);
+        codeListener.reset();
         return codeListener;
     }
 

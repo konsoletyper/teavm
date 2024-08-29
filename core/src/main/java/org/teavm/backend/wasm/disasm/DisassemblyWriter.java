@@ -18,7 +18,7 @@ package org.teavm.backend.wasm.disasm;
 import java.io.PrintWriter;
 import org.teavm.backend.wasm.parser.AddressListener;
 
-public class DisassemblyWriter {
+public abstract class DisassemblyWriter {
     private PrintWriter out;
     private boolean withAddress;
     private int indentLevel;
@@ -27,8 +27,11 @@ public class DisassemblyWriter {
     private boolean lineStarted;
     private int addressOffset;
 
-    public DisassemblyWriter(PrintWriter out, boolean withAddress) {
+    public DisassemblyWriter(PrintWriter out) {
         this.out = out;
+    }
+
+    public void setWithAddress(boolean withAddress) {
         this.withAddress = withAddress;
     }
 
@@ -84,9 +87,29 @@ public class DisassemblyWriter {
     }
 
     public DisassemblyWriter write(String s) {
+        return writeExact(s);
+    }
+
+    protected DisassemblyWriter writeExact(String s) {
         startLine();
         out.print(s);
         return this;
+    }
+
+    public abstract DisassemblyWriter startLink(String s);
+
+    public abstract DisassemblyWriter endLink();
+
+    public abstract DisassemblyWriter startLinkTarget(String s);
+
+    public abstract DisassemblyWriter endLinkTarget();
+
+    public abstract DisassemblyWriter prologue();
+
+    public abstract DisassemblyWriter epilogue();
+
+    public void flush() {
+        out.flush();
     }
 
     public final AddressListener addressListener = new AddressListener() {

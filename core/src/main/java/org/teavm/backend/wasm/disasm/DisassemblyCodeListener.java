@@ -43,6 +43,10 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
         this.currentFunctionId = currentFunctionId;
     }
 
+    public void reset() {
+        blockIdGen = 0;
+    }
+
     @Override
     public void error(int depth) {
         writer.address();
@@ -56,7 +60,9 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
     public int startBlock(boolean loop, WasmHollowType type) {
         writer.address();
         var label = blockIdGen++;
-        writer.write(loop ? "loop" : "block").write(" $label_" + label);
+        writer.startLinkTarget("start" + label).startLink("end" + label).write(loop ? "loop" : "block")
+                .endLink().endLinkTarget();
+        writer.write(" $label_" + label);
         writeBlockType(type);
         writer.indent().eol();
         return label;
@@ -66,7 +72,8 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
     public int startConditionalBlock(WasmHollowType type) {
         writer.address();
         var label = blockIdGen++;
-        writer.write("if ").write(" $label_" + label);
+        writer.startLinkTarget("start" + label).startLink("end" + label).write("if").endLink().endLinkTarget();
+        writer.write(" $label_" + label);
         writeBlockType(type);
         writer.indent().eol();
         return label;
@@ -75,14 +82,16 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
     @Override
     public void startElseSection(int token) {
         writer.address();
-        writer.outdent().write("else  (; $label_" + token + " ;)").indent().eol();
+        writer.outdent().startLink("start" + token).write("else").endLink();
+        writer.write(" (; $label_" + token + " ;)").indent().eol();
     }
 
     @Override
     public int startTry(WasmHollowType type) {
         writer.address();
         var label = blockIdGen++;
-        writer.write("try ").write(" $label_" + label);
+        writer.startLinkTarget("start" + label).startLink("end" + label).write("try").endLink().endLinkTarget();
+        writer.write(" $label_" + label);
         writeBlockType(type);
         writer.indent().eol();
         return label;
@@ -96,12 +105,14 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
 
     @Override
     public void endBlock(int token, boolean loop) {
-        writer.address().outdent().write("end  (; $label_" + token + " ;)").eol();
+        writer.address().outdent();
+        writer.startLinkTarget("end" + token).startLink("start" + token).write("end").endLink().endLinkTarget();
+        writer.write(" (; $label_" + token + " ;)").eol();
     }
 
     @Override
     public void branch(BranchOpcode opcode, int depth, int target) {
-        writer.address();
+        writer.address().startLink("start" + target);
         switch (opcode) {
             case BR:
                 writer.write("br");
@@ -110,7 +121,7 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
                 writer.write("br_if");
                 break;
         }
-        writer.write(" $label_" + target).eol();
+        writer.endLink().write(" $label_" + target).eol();
     }
 
     @Override
@@ -202,7 +213,9 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
     @Override
     public void callReference(int typeIndex) {
         writer.address();
-        writer.write("call_ref " + typeIndex).eol();
+        writer.write("call_ref ");
+        writeTypeRef(typeIndex);
+        writer.eol();
     }
 
     @Override

@@ -102,23 +102,33 @@ public abstract class BaseDisassemblyListener  {
     }
 
     protected void writeGlobalRef(int index) {
+        writer.startLink("g" + index);
         writeRef(nameProvider.global(index), index);
+        writer.endLink();
     }
 
     protected void writeFunctionRef(int index) {
+        writer.startLink("f" + index);
         writeRef(nameProvider.function(index), index);
+        writer.endLink();
     }
 
     protected void writeTypeRef(int index) {
+        writer.startLink("t" + index);
         writeRef(nameProvider.type(index), index);
+        writer.endLink();
     }
 
     protected void writeFieldRef(int typeIndex, int index) {
+        writer.startLink("f" + typeIndex + "." + index);
         writeRef(nameProvider.field(typeIndex, index), index);
+        writer.endLink();
     }
 
     protected void writeLocalRef(int functionIndex, int index) {
+        writer.startLink("l" + functionIndex + "." + index);
         writeRef(nameProvider.local(functionIndex, index), index);
+        writer.endLink();
     }
 
     private void writeRef(String name, int index) {

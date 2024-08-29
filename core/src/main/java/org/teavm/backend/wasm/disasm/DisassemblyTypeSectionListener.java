@@ -43,11 +43,13 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
     @Override
     public void startType(int index, boolean open, int[] supertypes) {
         currentTypeIndex = index;
-        writer.address().write("(type (; ").write(String.valueOf(index)).write(" ;) ");
+        writer.address().write("(type ");
+        writer.startLinkTarget("t" + index).write("(; ").write(String.valueOf(index)).write(" ;) ");
         var name = nameProvider.type(index);
         if (name != null) {
-            writer.write("$").write(name).write(" ");
+            writer.write("$").write(name);
         }
+        writer.endLinkTarget().write(" ");
         if (!open || supertypes.length > 0) {
             currentTypeNeedsClosing = true;
             writer.write("(sub ");
@@ -81,11 +83,13 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
     public void field(WasmHollowStorageType hollowType, boolean mutable) {
         writer.address().write("(field ");
         if (needsFieldIndex) {
-            writer.write("(; " + fieldIndex++ + " ;) ");
-            var name = nameProvider.field(currentTypeIndex, fieldIndex);
+            var index = fieldIndex++;
+            writer.startLinkTarget("f" + currentTypeIndex + "." + index).write("(; " + index + " ;)");
+            var name = nameProvider.field(currentTypeIndex, index);
             if (name != null) {
-                writer.write("$").write(name);
+                writer.write(" ").write("$").write(name);
             }
+            writer.endLinkTarget().write(" ");
         }
         if (mutable) {
             writer.write("(mut ");

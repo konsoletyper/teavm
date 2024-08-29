@@ -16,10 +16,9 @@
 package org.teavm.backend.wasm.disasm;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.Writer;
 import java.nio.file.Files;
 import java.util.function.Consumer;
 import org.teavm.backend.wasm.parser.AddressListener;
@@ -35,12 +34,10 @@ import org.teavm.common.AsyncInputStream;
 import org.teavm.common.ByteArrayAsyncInputStream;
 
 public final class Disassembler {
-    private PrintWriter out;
     private DisassemblyWriter writer;
 
-    public Disassembler(Writer writer) {
-        out = new PrintWriter(writer);
-        this.writer = new DisassemblyWriter(out, true);
+    public Disassembler(DisassemblyWriter writer) {
+        this.writer = writer;
     }
 
     public void startModule() {
@@ -52,9 +49,11 @@ public final class Disassembler {
     }
 
     public void disassemble(byte[] bytes) {
+        writer.prologue();
         startModule();
         read(bytes);
         endModule();
+        writer.epilogue();
     }
 
     public void read(byte[] bytes) {
@@ -97,12 +96,12 @@ public final class Disassembler {
         };
         if (code == 1) {
             return bytes -> {
-                writer.write("(; type section size: " + bytes.length + " ;)");
+                writer.write("(; type section size: " + bytes.length + " ;)").eol();
                 var typeWriter = new DisassemblyTypeSectionListener(writer, nameProvider);
                 writer.setAddressOffset(pos);
                 var sectionParser = new TypeSectionParser(typeWriter);
                 sectionParser.parse(writer.addressListener, bytes);
-                out.flush();
+                writer.flush();
             };
         } else if (code == 2) {
             return bytes -> {
@@ -111,23 +110,23 @@ public final class Disassembler {
             };
         } else if (code == 6) {
             return bytes -> {
-                writer.write("(; global section size: " + bytes.length + " ;)");
+                writer.write("(; global section size: " + bytes.length + " ;)").eol();
                 var globalWriter = new DisassemblyGlobalSectionListener(writer, nameProvider);
                 writer.setAddressOffset(pos);
                 var sectionParser = new GlobalSectionParser(globalWriter);
                 sectionParser.setFunctionIndexOffset(importListener.count);
                 sectionParser.parse(writer.addressListener, bytes);
-                out.flush();
+                writer.flush();
             };
         } else if (code == 10) {
             return bytes -> {
                 var disassembler = new DisassemblyCodeSectionListener(writer, nameProvider);
                 writer.setAddressOffset(pos);
-                writer.write("(; code section size: " + bytes.length + " ;)");
+                writer.write("(; code section size: " + bytes.length + " ;)").eol();
                 var sectionParser = new CodeSectionParser(disassembler);
                 sectionParser.setFunctionIndexOffset(importListener.count);
                 sectionParser.parse(writer.addressListener, bytes);
-                out.flush();
+                writer.flush();
             };
         } else {
             return null;
@@ -146,9 +145,34 @@ public final class Disassembler {
     }
 
     public static void main(String[] args) throws IOException {
-        var file = new File(args[0]);
+        String fileName = null;
+        String outFileName = null;
+        var htmlMode = false;
+        for (var i = 0; i < args.length; i++) {
+            var arg = args[i];
+            if (arg.equals("--html")) {
+                htmlMode = true;
+            } else if (arg.equals("--output") || arg.equals("-o")) {
+                outFileName = args[++i];
+            } else {
+                fileName = arg;
+            }
+        }
+        var file = new File(fileName);
         var bytes = Files.readAllBytes(file.toPath());
-        var disassembler = new Disassembler(new OutputStreamWriter(System.out));
+        var output = outFileName != null ? new FileOutputStream(outFileName) : System.out;
+        var writer = new PrintWriter(output);
+        var disassemblyWriter = htmlMode
+                ? new DisassemblyHTMLWriter(writer)
+                : new DisassemblyTextWriter(writer);
+        disassemblyWriter.setWithAddress(true);
+        if (htmlMode) {
+            disassemblyWriter.write("<html><body><pre>").eol();
+        }
+        var disassembler = new Disassembler(disassemblyWriter);
         disassembler.disassemble(bytes);
+        if (htmlMode) {
+            disassemblyWriter.write("</pre></body></html>").eol();
+        }
     }
 }
