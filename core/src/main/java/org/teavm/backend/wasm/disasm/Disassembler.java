@@ -85,15 +85,18 @@ public final class Disassembler {
         };
     }
 
-    public Consumer<byte[]> getSectionConsumer(int code, int pos, NameProvider nameProvider) {
-        var importListener = new ImportSectionListener() {
-            int count;
+    ImportListenerImpl importListener = new ImportListenerImpl();
 
-            @Override
-            public void function(int typeIndex) {
-                ++count;
-            }
-        };
+    static class ImportListenerImpl implements ImportSectionListener {
+        int count;
+
+        @Override
+        public void function(int typeIndex) {
+            ++count;
+        }
+    }
+
+    public Consumer<byte[]> getSectionConsumer(int code, int pos, NameProvider nameProvider) {
         if (code == 1) {
             return bytes -> {
                 writer.write("(; type section size: " + bytes.length + " ;)").eol();
