@@ -15,28 +15,16 @@
  */
 package org.teavm.backend.wasm.disasm;
 
-import org.teavm.backend.wasm.parser.AddressListener;
 import org.teavm.backend.wasm.parser.WasmHollowStorageType;
 import org.teavm.backend.wasm.parser.WasmHollowType;
 
-public abstract class BaseDisassemblyListener implements AddressListener {
+public abstract class BaseDisassemblyListener  {
     protected final DisassemblyWriter writer;
     protected final NameProvider nameProvider;
-    protected int address;
-    private int addressOffset;
 
     public BaseDisassemblyListener(DisassemblyWriter writer, NameProvider nameProvider) {
         this.writer = writer;
         this.nameProvider = nameProvider;
-    }
-
-    public void setAddressOffset(int addressOffset) {
-        this.addressOffset = addressOffset;
-    }
-
-    @Override
-    public void address(int address) {
-        this.address = address + addressOffset;
     }
 
     protected void writeBlockType(WasmHollowType type) {

@@ -19,16 +19,15 @@ public class NameSectionParser extends BaseSectionParser {
     private final NameSectionListener listener;
 
     public NameSectionParser(NameSectionListener listener) {
-        super(AddressListener.EMPTY);
         this.listener = listener;
     }
 
     @Override
     protected void parseContent() {
-        while (ptr < data.length) {
-            var sectionType = data[ptr++];
+        while (reader.ptr < reader.data.length) {
+            var sectionType = reader.data[reader.ptr++];
             var sectionLength = readLEB();
-            var next = ptr + sectionLength;
+            var next = reader.ptr + sectionLength;
             switch (sectionType) {
                 case 1:
                     parseNameMapSubsection(listener.functions());
@@ -46,7 +45,7 @@ public class NameSectionParser extends BaseSectionParser {
                     parseIndirectNameMap(listener.fields());
                     break;
             }
-            ptr = next;
+            reader.ptr = next;
         }
     }
 

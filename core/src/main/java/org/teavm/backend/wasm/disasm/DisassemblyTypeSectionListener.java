@@ -15,13 +15,11 @@
  */
 package org.teavm.backend.wasm.disasm;
 
-import org.teavm.backend.wasm.parser.AddressListener;
 import org.teavm.backend.wasm.parser.TypeSectionListener;
 import org.teavm.backend.wasm.parser.WasmHollowStorageType;
 import org.teavm.backend.wasm.parser.WasmHollowType;
 
-public class DisassemblyTypeSectionListener extends BaseDisassemblyListener implements AddressListener,
-        TypeSectionListener {
+public class DisassemblyTypeSectionListener extends BaseDisassemblyListener implements TypeSectionListener {
     private boolean currentTypeNeedsClosing;
     private boolean emittingReturn;
     private int currentTypeIndex;
@@ -34,7 +32,7 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
 
     @Override
     public void startRecType(int count) {
-        writer.address(address).write("(rec ").indent().eol();
+        writer.address().write("(rec ").indent().eol();
     }
 
     @Override
@@ -45,7 +43,7 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
     @Override
     public void startType(int index, boolean open, int[] supertypes) {
         currentTypeIndex = index;
-        writer.address(address).write("(type (; ").write(String.valueOf(index)).write(" ;) ");
+        writer.address().write("(type (; ").write(String.valueOf(index)).write(" ;) ");
         var name = nameProvider.type(index);
         if (name != null) {
             writer.write("$").write(name).write(" ");
@@ -65,7 +63,7 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
 
     @Override
     public void startArrayType() {
-        writer.address(address).write("(array ").indent().eol();
+        writer.address().write("(array ").indent().eol();
     }
 
     @Override
@@ -76,12 +74,12 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
     @Override
     public void startStructType(int fieldCount) {
         needsFieldIndex = true;
-        writer.address(address).write("(struct ").indent().eol();
+        writer.address().write("(struct ").indent().eol();
     }
 
     @Override
     public void field(WasmHollowStorageType hollowType, boolean mutable) {
-        writer.address(address).write("(field ");
+        writer.address().write("(field ");
         if (needsFieldIndex) {
             writer.write("(; " + fieldIndex++ + " ;) ");
             var name = nameProvider.field(currentTypeIndex, fieldIndex);
@@ -107,7 +105,7 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
 
     @Override
     public void funcType(int paramCount) {
-        writer.address(address).write("(func ").indent().eol();
+        writer.address().write("(func ").indent().eol();
     }
 
     @Override
@@ -117,7 +115,7 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
 
     @Override
     public void resultType(WasmHollowType type) {
-        writer.address(address).write("(").write(emittingReturn ? "result" : "param").write(" ");
+        writer.address().write("(").write(emittingReturn ? "result" : "param").write(" ");
         writeType(type);
         writer.write(")").eol();
     }

@@ -18,8 +18,7 @@ package org.teavm.backend.wasm.parser;
 public class ImportSectionParser extends BaseSectionParser {
     private final ImportSectionListener listener;
 
-    public ImportSectionParser(AddressListener addressListener, ImportSectionListener listener) {
-        super(addressListener);
+    public ImportSectionParser(ImportSectionListener listener) {
         this.listener = listener;
     }
 
@@ -37,12 +36,12 @@ public class ImportSectionParser extends BaseSectionParser {
         var name = readString();
         listener.startEntry(module, name);
         reportAddress();
-        var type = data[ptr++];
+        var type = reader.data[reader.ptr++];
         if (type == 0) {
             var typeIndex = readLEB();
             listener.function(typeIndex);
         } else {
-            throw new ParseException("Unsupported import type", ptr);
+            throw new ParseException("Unsupported import type", reader.ptr);
         }
         listener.endEntry();
     }

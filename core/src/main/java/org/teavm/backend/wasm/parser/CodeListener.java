@@ -182,4 +182,7 @@ public interface CodeListener {
 
     default void int31Get(WasmSignedType signedType) {
     }
+
+    CodeListener EMPTY = new CodeListener() {
+    };
 }

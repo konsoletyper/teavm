@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.util.function.Consumer;
 import org.teavm.backend.wasm.parser.AddressListener;
 import org.teavm.backend.wasm.parser.CodeSectionParser;
+import org.teavm.backend.wasm.parser.GlobalSectionParser;
 import org.teavm.backend.wasm.parser.ImportSectionListener;
 import org.teavm.backend.wasm.parser.ImportSectionParser;
 import org.teavm.backend.wasm.parser.ModuleParser;
@@ -96,23 +97,36 @@ public final class Disassembler {
         };
         if (code == 1) {
             return bytes -> {
+                writer.write("(; type section size: " + bytes.length + " ;)");
                 var typeWriter = new DisassemblyTypeSectionListener(writer, nameProvider);
-                typeWriter.setAddressOffset(pos);
-                var sectionParser = new TypeSectionParser(typeWriter, typeWriter);
-                sectionParser.parse(bytes);
+                writer.setAddressOffset(pos);
+                var sectionParser = new TypeSectionParser(typeWriter);
+                sectionParser.parse(writer.addressListener, bytes);
                 out.flush();
             };
         } else if (code == 2) {
             return bytes -> {
-                var parser = new ImportSectionParser(AddressListener.EMPTY, importListener);
-                parser.parse(bytes);
+                var parser = new ImportSectionParser(importListener);
+                parser.parse(AddressListener.EMPTY, bytes);
+            };
+        } else if (code == 6) {
+            return bytes -> {
+                writer.write("(; global section size: " + bytes.length + " ;)");
+                var globalWriter = new DisassemblyGlobalSectionListener(writer, nameProvider);
+                writer.setAddressOffset(pos);
+                var sectionParser = new GlobalSectionParser(globalWriter);
+                sectionParser.setFunctionIndexOffset(importListener.count);
+                sectionParser.parse(writer.addressListener, bytes);
+                out.flush();
             };
         } else if (code == 10) {
             return bytes -> {
                 var disassembler = new DisassemblyCodeSectionListener(writer, nameProvider);
-                disassembler.setAddressOffset(pos);
-                var sectionParser = new CodeSectionParser(disassembler, disassembler);
-                sectionParser.parse(bytes);
+                writer.setAddressOffset(pos);
+                writer.write("(; code section size: " + bytes.length + " ;)");
+                var sectionParser = new CodeSectionParser(disassembler);
+                sectionParser.setFunctionIndexOffset(importListener.count);
+                sectionParser.parse(writer.addressListener, bytes);
                 out.flush();
             };
         } else {
@@ -124,7 +138,7 @@ public final class Disassembler {
         if (code == 0 && name.equals("name")) {
             return bytes -> {
                 var parser = new NameSectionParser(listener);
-                parser.parse(bytes);
+                parser.parse(AddressListener.EMPTY, bytes);
             };
         } else {
             return null;

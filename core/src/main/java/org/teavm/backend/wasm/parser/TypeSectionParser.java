@@ -19,8 +19,7 @@ public class TypeSectionParser extends BaseSectionParser {
     private TypeSectionListener listener;
     private int typeIndex;
 
-    public TypeSectionParser(AddressListener addressListener, TypeSectionListener listener) {
-        super(addressListener);
+    public TypeSectionParser(TypeSectionListener listener) {
         this.listener = listener;
     }
 
@@ -38,7 +37,7 @@ public class TypeSectionParser extends BaseSectionParser {
     }
 
     private void parseType() {
-        if (data[ptr] == 0x4E) {
+        if (reader.data[reader.ptr] == 0x4E) {
             parseRecType();
         } else {
             parseSubtype();
@@ -47,7 +46,7 @@ public class TypeSectionParser extends BaseSectionParser {
 
     private void parseRecType() {
         reportAddress();
-        ++ptr;
+        ++reader.ptr;
         var count = readLEB();
         listener.startRecType(count);
         for (var i = 0; i < count; ++i) {
@@ -57,15 +56,15 @@ public class TypeSectionParser extends BaseSectionParser {
     }
 
     private void parseSubtype() {
-        switch (data[ptr]) {
+        switch (reader.data[reader.ptr]) {
             case 0x50:
                 reportAddress();
-                ++ptr;
+                ++reader.ptr;
                 parseCompositeType(true, readSupertypes());
                 break;
             case 0x4F:
                 reportAddress();
-                ++ptr;
+                ++reader.ptr;
                 parseCompositeType(false, readSupertypes());
                 break;
             default:
@@ -77,17 +76,17 @@ public class TypeSectionParser extends BaseSectionParser {
     private void parseCompositeType(boolean open, int[] supertypes) {
         reportAddress();
         listener.startType(typeIndex++, open, supertypes);
-        switch (data[ptr]) {
+        switch (reader.data[reader.ptr]) {
             case 0x5E:
                 reportAddress();
-                ++ptr;
+                ++reader.ptr;
                 listener.startArrayType();
                 parseField();
                 listener.endArrayType();
                 break;
             case 0x5F: {
                 reportAddress();
-                ++ptr;
+                ++reader.ptr;
                 var fieldCount = readLEB();
                 listener.startStructType(fieldCount);
                 for (var i = 0; i < fieldCount; ++i) {
@@ -98,32 +97,32 @@ public class TypeSectionParser extends BaseSectionParser {
             }
             case 0x60: {
                 reportAddress();
-                ++ptr;
+                ++reader.ptr;
                 var paramCount = readLEB();
                 listener.funcType(paramCount);
                 for (var i = 0; i < paramCount; ++i) {
                     reportAddress();
-                    listener.resultType(readType());
+                    listener.resultType(reader.readType());
                 }
                 var resultCount = readLEB();
                 listener.funcTypeResults(resultCount);
                 for (var i = 0; i < resultCount; ++i) {
                     reportAddress();
-                    listener.resultType(readType());
+                    listener.resultType(reader.readType());
                 }
                 listener.endFuncType();
                 break;
             }
             default:
-                throw new ParseException("Unknown type declaration", ptr);
+                throw new ParseException("Unknown type declaration", reader.ptr);
         }
         listener.endType();
     }
 
     private void parseField() {
         reportAddress();
-        var type = readStorageType();
-        var mutable = data[ptr++] != 0;
+        var type = reader.readStorageType();
+        var mutable = reader.data[reader.ptr++] != 0;
         listener.field(type, mutable);
     }
 
