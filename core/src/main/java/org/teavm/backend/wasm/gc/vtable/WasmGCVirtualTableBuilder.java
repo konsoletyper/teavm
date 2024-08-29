@@ -161,6 +161,7 @@ class WasmGCVirtualTableBuilder {
             for (var entry : table.entries) {
                 indexes.put(entry.method, entry.index);
             }
+            table.currentImplementors.putAll(parent.currentImplementors);
         }
 
         var group = groupedMethodsAtCallSites.get(table.cls.getName());
@@ -170,7 +171,7 @@ class WasmGCVirtualTableBuilder {
                     var entry = new Entry(method, table, table.entries.size());
                     table.entries.add(entry);
                     indexes.put(method, entry.index);
-                    table.implementors.add(null);
+                    table.implementors.add(table.currentImplementors.get(method));
                 }
             }
         }
@@ -187,6 +188,7 @@ class WasmGCVirtualTableBuilder {
                 if (index >= 0) {
                     table.implementors.set(index, method.getReference());
                 }
+                table.currentImplementors.put(method.getDescriptor(), method.getReference());
             }
         }
     }
@@ -210,6 +212,7 @@ class WasmGCVirtualTableBuilder {
         Table parent;
         List<Entry> entries = new ArrayList<>();
         List<MethodReference> implementors = new ArrayList<>();
+        Map<MethodDescriptor, MethodReference> currentImplementors = new HashMap<>();
         private WasmGCVirtualTable buildResult;
 
         Table(ClassReader cls, int index) {
