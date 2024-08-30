@@ -31,14 +31,9 @@ import org.teavm.backend.wasm.model.expression.WasmSignedType;
 public class CodeParser extends BaseSectionParser {
     private CodeListener codeListener;
     private final List<Block> blockStack = new ArrayList<>();
-    private int functionIndexOffset;
 
     public void setCodeListener(CodeListener codeListener) {
         this.codeListener = codeListener;
-    }
-
-    public void setFunctionIndexOffset(int functionIndexOffset) {
-        this.functionIndexOffset = functionIndexOffset;
     }
 
     @Override
@@ -104,7 +99,7 @@ public class CodeParser extends BaseSectionParser {
                 codeListener.opcode(Opcode.RETURN);
                 break;
             case 0x10:
-                codeListener.call(readLEB() + functionIndexOffset);
+                codeListener.call(readLEB());
                 break;
             case 0x11:
                 codeListener.indirectCall(readLEB(), readLEB());
@@ -598,7 +593,7 @@ public class CodeParser extends BaseSectionParser {
                 break;
 
             case 0xD2:
-                codeListener.functionReference(readLEB() + functionIndexOffset);
+                codeListener.functionReference(readLEB());
                 break;
 
             case 0xD3:

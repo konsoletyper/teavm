@@ -15,7 +15,10 @@
  */
 package org.teavm.backend.wasm.disasm;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.teavm.backend.wasm.parser.TypeSectionListener;
+import org.teavm.backend.wasm.parser.WasmHollowFunctionType;
 import org.teavm.backend.wasm.parser.WasmHollowStorageType;
 import org.teavm.backend.wasm.parser.WasmHollowType;
 
@@ -25,6 +28,9 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
     private int currentTypeIndex;
     private int fieldIndex;
     private boolean needsFieldIndex;
+    private List<WasmHollowFunctionType> functionTypes = new ArrayList<>();
+    private List<WasmHollowType> parameterTypes = new ArrayList<>();
+    private List<WasmHollowType> resultTypes = new ArrayList<>();
 
     public DisassemblyTypeSectionListener(DisassemblyWriter writer, NameProvider nameProvider) {
         super(writer, nameProvider);
@@ -42,6 +48,7 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
 
     @Override
     public void startType(int index, boolean open, int[] supertypes) {
+        functionTypes.add(null);
         currentTypeIndex = index;
         writer.address().write("(type ");
         writer.startLinkTarget("t" + index).write("(; ").write(String.valueOf(index)).write(" ;) ");
@@ -119,6 +126,11 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
 
     @Override
     public void resultType(WasmHollowType type) {
+        if (emittingReturn) {
+            resultTypes.add(type);
+        } else {
+            parameterTypes.add(type);
+        }
         writer.address().write("(").write(emittingReturn ? "result" : "param").write(" ");
         writeType(type);
         writer.write(")").eol();
@@ -126,6 +138,11 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
 
     @Override
     public void endFuncType() {
+        var type = new WasmHollowFunctionType(parameterTypes.toArray(new WasmHollowType[0]),
+                resultTypes.toArray(new WasmHollowType[0]));
+        functionTypes.set(currentTypeIndex, type);
+        parameterTypes.clear();
+        resultTypes.clear();
         emittingReturn = false;
         writer.outdent().write(")").eol();
     }
@@ -138,5 +155,9 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
             currentTypeNeedsClosing = false;
         }
         writer.write(")").eol();
+    }
+
+    public WasmHollowFunctionType[] getFunctionTypes() {
+        return functionTypes.toArray(new WasmHollowFunctionType[0]);
     }
 }

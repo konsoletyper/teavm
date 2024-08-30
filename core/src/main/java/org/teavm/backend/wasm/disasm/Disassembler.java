@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.disasm;
 
+import com.carrotsearch.hppc.IntArrayList;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -23,6 +24,8 @@ import java.nio.file.Files;
 import java.util.function.Consumer;
 import org.teavm.backend.wasm.parser.AddressListener;
 import org.teavm.backend.wasm.parser.CodeSectionParser;
+import org.teavm.backend.wasm.parser.FunctionSectionListener;
+import org.teavm.backend.wasm.parser.FunctionSectionParser;
 import org.teavm.backend.wasm.parser.GlobalSectionParser;
 import org.teavm.backend.wasm.parser.ImportSectionListener;
 import org.teavm.backend.wasm.parser.ImportSectionParser;
@@ -30,11 +33,14 @@ import org.teavm.backend.wasm.parser.ModuleParser;
 import org.teavm.backend.wasm.parser.NameSectionListener;
 import org.teavm.backend.wasm.parser.NameSectionParser;
 import org.teavm.backend.wasm.parser.TypeSectionParser;
+import org.teavm.backend.wasm.parser.WasmHollowFunctionType;
 import org.teavm.common.AsyncInputStream;
 import org.teavm.common.ByteArrayAsyncInputStream;
 
 public final class Disassembler {
     private DisassemblyWriter writer;
+    private WasmHollowFunctionType[] functionTypes;
+    private int[] functionTypeRefs;
 
     public Disassembler(DisassemblyWriter writer) {
         this.writer = writer;
@@ -104,6 +110,7 @@ public final class Disassembler {
                 writer.setAddressOffset(pos);
                 var sectionParser = new TypeSectionParser(typeWriter);
                 sectionParser.parse(writer.addressListener, bytes);
+                functionTypes = typeWriter.getFunctionTypes();
                 writer.flush();
             };
         } else if (code == 2) {
@@ -111,19 +118,35 @@ public final class Disassembler {
                 var parser = new ImportSectionParser(importListener);
                 parser.parse(AddressListener.EMPTY, bytes);
             };
+        } else if (code == 3) {
+            return bytes -> {
+                var signatures = new IntArrayList();
+                for (var i = 0; i < importListener.count; ++i) {
+                    signatures.add(0);
+                }
+                var parser = new FunctionSectionParser(new FunctionSectionListener() {
+                    @Override
+                    public void function(int index, int typeIndex) {
+                        signatures.add(typeIndex);
+                    }
+                });
+                parser.parse(AddressListener.EMPTY, bytes);
+                functionTypeRefs = signatures.toArray();
+            };
         } else if (code == 6) {
             return bytes -> {
                 writer.write("(; global section size: " + bytes.length + " ;)").eol();
                 var globalWriter = new DisassemblyGlobalSectionListener(writer, nameProvider);
                 writer.setAddressOffset(pos);
                 var sectionParser = new GlobalSectionParser(globalWriter);
-                sectionParser.setFunctionIndexOffset(importListener.count);
                 sectionParser.parse(writer.addressListener, bytes);
                 writer.flush();
             };
         } else if (code == 10) {
             return bytes -> {
                 var disassembler = new DisassemblyCodeSectionListener(writer, nameProvider);
+                disassembler.setFunctionTypes(functionTypes);
+                disassembler.setFunctionTypeRefs(functionTypeRefs);
                 writer.setAddressOffset(pos);
                 writer.write("(; code section size: " + bytes.length + " ;)").eol();
                 var sectionParser = new CodeSectionParser(disassembler);

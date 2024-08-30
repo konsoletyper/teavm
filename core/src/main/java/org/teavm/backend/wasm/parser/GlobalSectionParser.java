@@ -18,15 +18,10 @@ package org.teavm.backend.wasm.parser;
 public class GlobalSectionParser extends BaseSectionParser {
     private final GlobalSectionListener listener;
     private CodeParser codeParser;
-    private int functionIndexOffset;
 
     public GlobalSectionParser(GlobalSectionListener listener) {
         this.listener = listener;
         codeParser = new CodeParser();
-    }
-
-    public void setFunctionIndexOffset(int functionIndexOffset) {
-        this.functionIndexOffset = functionIndexOffset;
     }
 
     @Override
@@ -41,7 +36,6 @@ public class GlobalSectionParser extends BaseSectionParser {
                 codeListener = CodeListener.EMPTY;
             }
             codeParser.setCodeListener(codeListener);
-            codeParser.setFunctionIndexOffset(functionIndexOffset);
             if (!codeParser.parseSingleExpression(reader)) {
                 throw new ParseException("Error parsing global initializer", reader.ptr);
             }

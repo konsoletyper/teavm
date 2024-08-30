@@ -49,7 +49,6 @@ public class CodeSectionParser extends BaseSectionParser {
             var codeListener = listener.code();
             if (codeListener != null) {
                 codeParser.setCodeListener(codeListener);
-                codeParser.setFunctionIndexOffset(functionIndexOffset);
                 codeParser.parse(reader);
             }
         }
