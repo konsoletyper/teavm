@@ -64,7 +64,8 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
                 writer.write("final");
             }
             for (var supertype : supertypes) {
-                writer.write(supertype + " ");
+                writeTypeRef(supertype);
+                writer.write(" ");
             }
         }
         writer.indent().eol();

@@ -23,18 +23,39 @@ import org.teavm.model.MethodReference;
 
 public class WasmGCVirtualTable {
     private WasmGCVirtualTable parent;
+    private WasmGCVirtualTable usedParent;
+    private boolean usedParentCalculated;
+    private boolean used;
+    private boolean concrete;
     private String className;
     List<WasmGCVirtualTableEntry> entries;
     MethodReference[] implementors;
     private Map<MethodDescriptor, WasmGCVirtualTableEntry> entryMap;
 
-    WasmGCVirtualTable(WasmGCVirtualTable parent, String className) {
+    WasmGCVirtualTable(WasmGCVirtualTable parent, String className, boolean used, boolean concrete) {
         this.parent = parent;
         this.className = className;
+        this.used = used;
+        this.concrete = concrete;
     }
 
     public WasmGCVirtualTable getParent() {
         return parent;
+    }
+
+    public WasmGCVirtualTable getUsedParent() {
+        if (parent == null) {
+            return null;
+        }
+        if (!usedParentCalculated) {
+            usedParentCalculated = true;
+            usedParent = parent.getFirstUsed();
+        }
+        return usedParent;
+    }
+
+    public WasmGCVirtualTable getFirstUsed() {
+        return used ? this : getUsedParent();
     }
 
     public String getClassName() {
@@ -47,6 +68,14 @@ public class WasmGCVirtualTable {
 
     public MethodReference implementor(WasmGCVirtualTableEntry entry) {
         return implementors[entry.getIndex()];
+    }
+
+    public boolean isUsed() {
+        return used;
+    }
+
+    public boolean isConcrete() {
+        return concrete;
     }
 
     public WasmGCVirtualTableEntry entry(MethodDescriptor method) {

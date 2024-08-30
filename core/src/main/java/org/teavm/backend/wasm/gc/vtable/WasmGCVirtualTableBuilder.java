@@ -166,6 +166,7 @@ class WasmGCVirtualTableBuilder {
 
         var group = groupedMethodsAtCallSites.get(table.cls.getName());
         if (group != null) {
+            table.used = true;
             for (var method : group) {
                 if (indexes.getOrDefault(method, -1) < 0) {
                     var entry = new Entry(method, table, table.entries.size());
@@ -209,6 +210,7 @@ class WasmGCVirtualTableBuilder {
         final ClassReader cls;
         int index;
         boolean filled;
+        boolean used;
         Table parent;
         List<Entry> entries = new ArrayList<>();
         List<MethodReference> implementors = new ArrayList<>();
@@ -222,7 +224,8 @@ class WasmGCVirtualTableBuilder {
 
         WasmGCVirtualTable getBuildResult() {
             if (buildResult == null) {
-                buildResult = new WasmGCVirtualTable(parent != null ? parent.getBuildResult() : null, cls.getName());
+                buildResult = new WasmGCVirtualTable(parent != null ? parent.getBuildResult() : null, cls.getName(),
+                        used, !cls.hasModifier(ElementModifier.ABSTRACT));
                 buildResult.entries = entries.stream()
                         .map(Entry::getBuildResult)
                         .collect(Collectors.toList());

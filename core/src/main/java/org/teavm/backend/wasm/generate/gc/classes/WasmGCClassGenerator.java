@@ -183,46 +183,6 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     @Override
     public void contributeToInitializerDefinitions(WasmFunction function) {
-        fillVirtualTableSupertypes();
-        for (var classInfo : classInfoMap.values()) {
-            var classInstanceType = classInfo.virtualTableStructure != null
-                    ? classInfo.virtualTableStructure
-                    : standardClasses.classClass().getStructure();
-            var newStruct = new WasmStructNewDefault(classInstanceType);
-            function.getBody().add(new WasmSetGlobal(classInfo.pointer, newStruct));
-        }
-    }
-
-    private void fillVirtualTableSupertypes() {
-        for (var classInfo : classInfoMap.values()) {
-            if (classInfo.virtualTableStructure != null && classInfo.getValueType() instanceof ValueType.Object
-                    && classInfo.hasOwnVirtualTable) {
-                var className = ((ValueType.Object) classInfo.getValueType()).getClassName();
-                var candidate = findVirtualTableSupertype(className);
-                if (candidate != null) {
-                    classInfo.virtualTableStructure.setSupertype(candidate);
-                }
-            }
-        }
-    }
-
-    private WasmStructure findVirtualTableSupertype(String className) {
-        while (className != null) {
-            var cls = classSource.get(className);
-            if (cls == null) {
-                break;
-            }
-            className = cls.getParent();
-            if (className == null) {
-                break;
-            }
-            var parentInfo = classInfoMap.get(ValueType.object(className));
-            if (parentInfo != null && parentInfo.virtualTableStructure != null) {
-                return parentInfo.virtualTableStructure;
-            }
-        }
-        var classClass = classInfoMap.get(ValueType.object("java.lang.Class"));
-        return classClass != null ? classClass.structure : null;
     }
 
     @Override
@@ -300,21 +260,29 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 }
             }
             var pointerName = names.topLevel(names.suggestForType(type) + "@class");
-            classInfo.hasOwnVirtualTable = virtualTable != null && !virtualTable.getEntries().isEmpty();
-            WasmStructure classStructure;
-            if (classInfo.hasOwnVirtualTable) {
+            if (virtualTable != null) {
                 if (type instanceof ValueType.Object) {
-                    classStructure = initRegularClassStructure(((ValueType.Object) type).getClassName());
+                    if (virtualTable.isUsed()) {
+                        initRegularClassStructure(classInfo, ((ValueType.Object) type).getClassName());
+                    } else {
+                        var usedVt = virtualTable.getFirstUsed();
+                        if (usedVt != null) {
+                            classInfo.virtualTableStructure = getClassInfo(usedVt.getClassName())
+                                    .virtualTableStructure;
+                        } else {
+                            classInfo.virtualTableStructure = standardClasses.classClass().getStructure();
+                        }
+                    }
                 } else {
-                    classStructure = getArrayVirtualTableStructure();
+                    classInfo.virtualTableStructure = getArrayVirtualTableStructure();
                 }
             } else {
-                classStructure = standardClasses.classClass().getStructure();
+                classInfo.virtualTableStructure = standardClasses.classClass().getStructure();
             }
 
-            classInfo.virtualTableStructure = classStructure;
+            var classStructure = classInfo.virtualTableStructure;
             classInfo.pointer = new WasmGlobal(pointerName, classStructure.getReference(),
-                    new WasmNullConstant(classStructure.getReference()));
+                    new WasmStructNewDefault(classStructure));
             module.globals.add(classInfo.pointer);
             if (type instanceof ValueType.Primitive) {
                 initPrimitiveClass(classInfo, (ValueType.Primitive) type);
@@ -447,7 +415,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     target.add(setClassField(classInfo, classParentOffset, new WasmGetGlobal(parent.pointer)));
                 }
             }
-            if (virtualTable != null) {
+            if (virtualTable != null && virtualTable.isConcrete()) {
                 fillVirtualTableMethods(target, classStructure, classInfo.pointer, virtualTable);
             }
             if (classInfo.initializerPointer != null) {
@@ -461,7 +429,12 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     private void fillVirtualTableMethods(List<WasmExpression> target, WasmStructure structure, WasmGlobal global,
             WasmGCVirtualTable virtualTable) {
-        for (var entry : virtualTable.getEntries()) {
+        var usedVt = virtualTable.getFirstUsed();
+        if (usedVt == null) {
+            return;
+        }
+        for (var i = 0; i < usedVt.getEntries().size(); ++i) {
+            var entry = virtualTable.getEntries().get(i);
             fillVirtualTableEntry(target, global, structure, virtualTable, entry);
         }
     }
@@ -720,7 +693,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         return function;
     }
 
-    private WasmStructure initRegularClassStructure(String className) {
+    private void initRegularClassStructure(WasmGCClassInfo classInfo, String className) {
         var virtualTable = virtualTables.lookup(className);
         var wasmName = names.topLevel("Class<" + names.suggestForClass(className) + ">");
         var structure = new WasmStructure(wasmName, fields -> {
@@ -728,10 +701,14 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             fillSimpleClassFields(fields, "java.lang.Class");
             addVirtualTableFields(fields, virtualTable);
         });
+        classInfo.virtualTableStructure = structure;
         nonInitializedStructures.add(structure);
-        structure.setSupertype(standardClasses.classClass().getStructure());
+        var usedParent = virtualTable.getUsedParent();
+        var supertype = usedParent != null
+                ? getClassInfo(usedParent.getClassName()).getVirtualTableStructure()
+                : standardClasses.classClass().getStructure();
+        structure.setSupertype(supertype);
         module.types.add(structure);
-        return structure;
     }
 
     private void addSystemFields(List<WasmField> fields) {

@@ -28,9 +28,7 @@ import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
@@ -59,10 +57,6 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
         var segment = new WasmMemorySegment();
         module.getSegments().add(segment);
         segment.setData(binaryWriter.getData());
-        for (var str : stringMap.values()) {
-            var newStruct = new WasmStructNewDefault(standardClasses.stringClass().getStructure());
-            function.getBody().add(new WasmSetGlobal(str.global, newStruct));
-        }
     }
 
     @Override
@@ -93,7 +87,8 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
             var globalName = names.topLevel("teavm@string<" + stringMap.size() + ">"
                     + WasmGCNameProvider.sanitize(brief));
             var globalType = standardClasses.stringClass().getType();
-            var global = new WasmGlobal(globalName, globalType, WasmExpression.defaultValueOfType(globalType));
+            var global = new WasmGlobal(globalName, globalType,
+                    new WasmStructNewDefault(standardClasses.stringClass().getStructure()));
             module.globals.add(global);
             return new WasmGCStringConstant(stringMap.size(), global);
         });

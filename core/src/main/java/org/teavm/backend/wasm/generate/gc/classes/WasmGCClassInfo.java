@@ -27,7 +27,6 @@ import org.teavm.model.ValueType;
 public class WasmGCClassInfo {
     private ValueType valueType;
     WasmStructure structure;
-    boolean hasOwnVirtualTable;
     WasmStructure virtualTableStructure;
     WasmGlobal pointer;
     WasmGlobal initializerPointer;
