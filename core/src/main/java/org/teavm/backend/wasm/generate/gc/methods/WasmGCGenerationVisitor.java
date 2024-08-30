@@ -151,12 +151,14 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression storeArrayItem(WasmExpression array, WasmExpression index, WasmExpression value,
+    protected WasmExpression storeArrayItem(WasmExpression array, WasmExpression index, Expr value,
             ArrayType type) {
         array.acceptVisitor(typeInference);
         var arrayRefType = (WasmType.CompositeReference) typeInference.getResult();
         var arrayType = (WasmArray) arrayRefType.composite;
-        return new WasmArraySet(arrayType, array, index, value);
+        accept(value, arrayType.getElementType().asUnpackedType());
+        var wasmValue = result;
+        return new WasmArraySet(arrayType, array, index, wasmValue);
     }
 
     @Override

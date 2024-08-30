@@ -513,12 +513,10 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         var array = result;
         leftValue.getIndex().acceptVisitor(this);
         var index = result;
-        rightValue.acceptVisitor(this);
-        var value = result;
-        resultConsumer.add(storeArrayItem(array, index, value, leftValue.getType()));
+        resultConsumer.add(storeArrayItem(array, index, rightValue, leftValue.getType()));
     }
 
-    protected abstract WasmExpression storeArrayItem(WasmExpression array, WasmExpression index, WasmExpression value,
+    protected abstract WasmExpression storeArrayItem(WasmExpression array, WasmExpression index, Expr value,
             ArrayType type);
 
     @Override
@@ -1081,9 +1079,9 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
                 block.getBody());
 
         for (int i = 0; i < expr.getData().size(); ++i) {
-            expr.getData().get(i).acceptVisitor(this);
             var arrayData = unwrapArray(new WasmGetLocal(array));
-            block.getBody().add(storeArrayItem(arrayData, new WasmInt32Constant(i), result, arrayType));
+            block.getBody().add(storeArrayItem(arrayData, new WasmInt32Constant(i), expr.getData().get(i),
+                    arrayType));
         }
 
         block.getBody().add(new WasmGetLocal(array));

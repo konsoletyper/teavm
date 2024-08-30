@@ -562,7 +562,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     private WasmFunction generateArrayGetPrimitiveFunction(PrimitiveType type) {
         var function = new WasmFunction(getArrayGetType());
-        arrayGetObjectFunction.setName(names.topLevel("Array<" + names.suggestForType(ValueType.primitive(type))
+        function.setName(names.topLevel("Array<" + names.suggestForType(ValueType.primitive(type))
                 + ">::get"));
         module.functions.add(function);
         function.setReferenced(true);

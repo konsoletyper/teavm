@@ -34,6 +34,8 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         fillClass();
         fillSystem();
         fillLongAndInteger();
+        fillFloat();
+        fillDouble();
         fillArray();
     }
 
@@ -76,6 +78,8 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
     private void fillSystem() {
         intrinsics.put(new MethodReference(System.class, "arraycopy", Object.class, int.class, Object.class,
                 int.class, int.class, void.class), new SystemArrayCopyIntrinsic());
+        intrinsics.put(new MethodReference(System.class, "currentTimeMillis", long.class),
+                new SystemIntrinsic());
     }
 
     private void fillLongAndInteger() {
@@ -91,6 +95,26 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
                 intrinsic);
         intrinsics.put(new MethodReference(wrapperClass, "compareUnsigned", javaClass, javaClass, int.class),
                 intrinsic);
+    }
+
+    private void fillFloat() {
+        var intrinsic = new FloatIntrinsic();
+        intrinsics.put(new MethodReference(Float.class, "getNaN", float.class), intrinsic);
+        intrinsics.put(new MethodReference(Float.class, "isNaN", float.class, boolean.class), intrinsic);
+        intrinsics.put(new MethodReference(Float.class, "isInfinite", float.class, boolean.class), intrinsic);
+        intrinsics.put(new MethodReference(Float.class, "isFinite", float.class, boolean.class), intrinsic);
+        intrinsics.put(new MethodReference(Float.class, "floatToRawIntBits", float.class, int.class), intrinsic);
+        intrinsics.put(new MethodReference(Float.class, "intBitsToFloat", int.class, float.class), intrinsic);
+    }
+
+    private void fillDouble() {
+        var intrinsic = new DoubleIntrinsic();
+        intrinsics.put(new MethodReference(Double.class, "getNaN", double.class), intrinsic);
+        intrinsics.put(new MethodReference(Double.class, "isNaN", double.class, boolean.class), intrinsic);
+        intrinsics.put(new MethodReference(Double.class, "isInfinite", double.class, boolean.class), intrinsic);
+        intrinsics.put(new MethodReference(Double.class, "isFinite", double.class, boolean.class), intrinsic);
+        intrinsics.put(new MethodReference(Double.class, "doubleToRawLongBits", double.class, long.class), intrinsic);
+        intrinsics.put(new MethodReference(Double.class, "longBitsToDouble", long.class, double.class), intrinsic);
     }
 
     private void fillArray() {

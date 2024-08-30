@@ -263,9 +263,11 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression storeArrayItem(WasmExpression array, WasmExpression index, WasmExpression value,
+    protected WasmExpression storeArrayItem(WasmExpression array, WasmExpression index, Expr value,
             ArrayType type) {
-        return storeArrayItem(getArrayElementPointer(array, index, type), value, type);
+        accept(value);
+        var wasmValue = result;
+        return storeArrayItem(getArrayElementPointer(array, index, type), wasmValue, type);
     }
 
     private static WasmExpression storeArrayItem(WasmExpression array, WasmExpression value, ArrayType type) {
