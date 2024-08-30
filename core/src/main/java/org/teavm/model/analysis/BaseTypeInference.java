@@ -30,6 +30,7 @@ import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BinaryOperation;
 import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CastIntegerInstruction;
@@ -365,6 +366,10 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(BinaryInstruction insn) {
+            if (insn.getOperation() == BinaryOperation.COMPARE) {
+                type(insn.getReceiver(), ValueType.INTEGER);
+                return;
+            }
             type(insn.getReceiver(), insn.getOperandType());
         }
 
