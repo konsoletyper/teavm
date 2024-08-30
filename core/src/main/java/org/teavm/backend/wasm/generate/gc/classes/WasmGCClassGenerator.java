@@ -390,8 +390,10 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             if (cls != null && cls.getMethod(CLINIT_METHOD_DESC) != null) {
                 var clinitType = functionTypes.of(null);
                 var wasmName = names.topLevel(names.suggestForClass(name) + "@initializer");
-                classInfo.initializerPointer = new WasmGlobal(wasmName, clinitType.getReference(),
-                        new WasmNullConstant(clinitType.getReference()));
+                var initFunction = functionProvider.forStaticMethod(new MethodReference(name, CLINIT_METHOD_DESC));
+                initFunction.setReferenced(true);
+                var ref = new WasmFunctionReference(initFunction);
+                classInfo.initializerPointer = new WasmGlobal(wasmName, clinitType.getReference(), ref);
                 module.globals.add(classInfo.initializerPointer);
             }
         }
@@ -417,12 +419,6 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             }
             if (virtualTable != null && virtualTable.isConcrete()) {
                 fillVirtualTableMethods(target, classStructure, classInfo.pointer, virtualTable);
-            }
-            if (classInfo.initializerPointer != null) {
-                var initFunction = functionProvider.forStaticMethod(new MethodReference(name,
-                        CLINIT_METHOD_DESC));
-                initFunction.setReferenced(true);
-                target.add(new WasmSetGlobal(classInfo.initializerPointer, new WasmFunctionReference(initFunction)));
             }
         };
     }
