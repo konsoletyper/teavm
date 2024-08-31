@@ -219,7 +219,7 @@ public class WasmBinaryRenderer {
         section.writeLEB(module.globals.size());
         for (var global : module.globals) {
             section.writeType(global.getType(), module);
-            section.writeByte(1); // mutable
+            section.writeByte(global.isImmutable() ? 0 : 1); // mutable
             global.getInitialValue().acceptVisitor(visitor);
             section.writeByte(0x0b);
         }

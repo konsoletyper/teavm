@@ -33,7 +33,7 @@ public class DisassemblyGlobalSectionListener extends BaseDisassemblyListener im
         writer.startLinkTarget("g" + index).write("(; ").write(String.valueOf(index)).write(" ;)");
         var name = nameProvider.global(index);
         if (name != null) {
-            writer.write("$").write(name);
+            writer.write(" $").write(name);
         }
         writer.endLinkTarget().write(" ");
         if (mutable) {

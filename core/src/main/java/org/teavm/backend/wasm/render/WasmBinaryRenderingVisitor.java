@@ -1075,7 +1075,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         pushLocation(expression);
         expression.getValue().acceptVisitor(this);
         writer.writeByte(0xfb);
-        writer.writeByte(expression.isNullable() ? 23 : 22);
+        writer.writeByte(expression.getTargetType().isNullable() ? 23 : 22);
         writer.writeHeapType(expression.getTargetType(), module);
         popLocation();
     }
@@ -1085,7 +1085,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         pushLocation(expression);
         expression.getValue().acceptVisitor(this);
         writer.writeByte(0xfb);
-        writer.writeByte(expression.isNullable() ? 21 : 20);
+        writer.writeByte(expression.getTestType().isNullable() ? 21 : 20);
         writer.writeHeapType(expression.getTestType(), module);
         popLocation();
     }

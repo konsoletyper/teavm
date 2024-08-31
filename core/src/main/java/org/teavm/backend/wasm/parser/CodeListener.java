@@ -135,10 +135,10 @@ public interface CodeListener {
     default void nullConstant(WasmHollowType.Reference type) {
     }
 
-    default void cast(WasmHollowType.Reference type, boolean nullable) {
+    default void cast(WasmHollowType.Reference type) {
     }
 
-    default void test(WasmHollowType.Reference type, boolean nullable) {
+    default void test(WasmHollowType.Reference type) {
     }
 
     default void structNew(int typeIndex) {

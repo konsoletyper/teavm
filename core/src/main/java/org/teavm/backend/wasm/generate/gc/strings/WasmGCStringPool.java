@@ -86,9 +86,10 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
             var brief = string.length() > 16 ? string.substring(0, 16) : string;
             var globalName = names.topLevel("teavm@string<" + stringMap.size() + ">"
                     + WasmGCNameProvider.sanitize(brief));
-            var globalType = standardClasses.stringClass().getType();
+            var globalType = standardClasses.stringClass().getStructure().getNonNullReference();
             var global = new WasmGlobal(globalName, globalType,
                     new WasmStructNewDefault(standardClasses.stringClass().getStructure()));
+            global.setImmutable(true);
             module.globals.add(global);
             return new WasmGCStringConstant(stringMap.size(), global);
         });

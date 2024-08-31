@@ -279,7 +279,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         var index = context.classInfoProvider().getVirtualMethodsOffset() + entry.getIndex();
         var expectedInstanceClassInfo = context.classInfoProvider().getClassInfo(vtable.getClassName());
         var vtableStruct = expectedInstanceClassInfo.getVirtualTableStructure();
-        classRef = new WasmCast(classRef, vtableStruct.getReference());
+        classRef = new WasmCast(classRef, vtableStruct.getNonNullReference());
 
         var functionRef = new WasmStructGet(vtableStruct, classRef, index);
         var functionTypeRef = (WasmType.CompositeReference) vtableStruct.getFields().get(index).getUnpackedType();
@@ -288,7 +288,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         var instanceType = (WasmType.CompositeReference) instance.getType();
         var instanceStruct = (WasmStructure) instanceType.composite;
         if (!expectedInstanceClassInfo.getStructure().isSupertypeOf(instanceStruct)) {
-            instanceRef = new WasmCast(instanceRef, expectedInstanceClassInfo.getType());
+            instanceRef = new WasmCast(instanceRef, expectedInstanceClassInfo.getStructure().getNonNullReference());
         }
 
         invoke.getArguments().add(instanceRef);
@@ -381,7 +381,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             WasmExpression exception = new WasmGetGlobal(context.exceptionGlobal());
             if (exceptionClass != null && !exceptionClass.equals("java.lang.Throwable")) {
                 exception = new WasmCast(exception, context.classInfoProvider().getClassInfo(exceptionClass)
-                        .getStructure().getReference());
+                        .getStructure().getNonNullReference());
             }
             var save = new WasmSetLocal(local, exception);
             save.setLocation(location);

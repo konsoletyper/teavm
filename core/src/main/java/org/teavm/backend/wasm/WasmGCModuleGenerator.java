@@ -180,7 +180,7 @@ public class WasmGCModuleGenerator {
         initializer = new WasmFunction(functionType);
         initializer.setReferenced(true);
         declarationsGenerator.module.functions.add(initializer);
-        initializerRef = new WasmGlobal("teavm@initializer", functionType.getReference(),
+        initializerRef = new WasmGlobal("teavm@initializer", functionType.getNonNullReference(),
                 new WasmFunctionReference(initializer));
         declarationsGenerator.module.globals.add(initializerRef);
         initializer.getBody().add(new WasmSetGlobal(initializerRef,

@@ -59,7 +59,7 @@ public class ArrayIntrinsic implements WasmGCIntrinsic {
         var object = context.exprCache().create(originalObject, objectStruct.getReference(),
                 invocation.getLocation(), block.getBody());
         var classRef = new WasmStructGet(objectStruct, object.expr(), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-        var vt = new WasmCast(classRef, vtStruct.getReference());
+        var vt = new WasmCast(classRef, vtStruct.getNonNullReference());
         var function = new WasmStructGet(vtStruct, vt, offset);
         var call = new WasmCallReference(function, functionType);
         call.getArguments().add(object.expr());

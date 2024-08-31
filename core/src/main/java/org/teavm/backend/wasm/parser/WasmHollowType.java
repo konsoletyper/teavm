@@ -17,7 +17,6 @@ package org.teavm.backend.wasm.parser;
 
 import java.util.Objects;
 import org.teavm.backend.wasm.model.WasmNumType;
-import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmType;
 
 public class WasmHollowType {
@@ -25,8 +24,6 @@ public class WasmHollowType {
     public static final Number INT64 = new Number(WasmNumType.INT64);
     public static final Number FLOAT32 = new Number(WasmNumType.FLOAT32);
     public static final Number FLOAT64 = new Number(WasmNumType.FLOAT64);
-
-    private WasmStorageType.Regular storageType;
 
     private WasmHollowType() {
     }
@@ -56,18 +53,45 @@ public class WasmHollowType {
 
 
     public static abstract class Reference extends WasmHollowType {
-        public static final SpecialReference FUNC = new SpecialReference(WasmType.SpecialReferenceKind.FUNC);
-        public static final SpecialReference ANY = new SpecialReference(WasmType.SpecialReferenceKind.ANY);
-        public static final SpecialReference EXTERN = new SpecialReference(WasmType.SpecialReferenceKind.EXTERN);
-        public static final SpecialReference STRUCT = new SpecialReference(WasmType.SpecialReferenceKind.STRUCT);
-        public static final SpecialReference ARRAY = new SpecialReference(WasmType.SpecialReferenceKind.ARRAY);
-        public static final SpecialReference I31 = new SpecialReference(WasmType.SpecialReferenceKind.I31);
+        private static final SpecialReference[] references = new SpecialReference[
+                WasmType.SpecialReferenceKind.values().length];
+        private static final SpecialReference[] nonNullReferences = new SpecialReference[
+                WasmType.SpecialReferenceKind.values().length];
+
+        private final boolean nullable;
+
+        public Reference(boolean nullable) {
+            this.nullable = nullable;
+        }
+
+        public boolean isNullable() {
+            return nullable;
+        }
+
+        public static SpecialReference special(WasmType.SpecialReferenceKind kind) {
+            var result = references[kind.ordinal()];
+            if (result == null) {
+                result = new SpecialReference(kind, true);
+                references[kind.ordinal()] = result;
+            }
+            return result;
+        }
+
+        public static SpecialReference nonNullSpecial(WasmType.SpecialReferenceKind kind) {
+            var result = nonNullReferences[kind.ordinal()];
+            if (result == null) {
+                result = new SpecialReference(kind, false);
+                nonNullReferences[kind.ordinal()] = result;
+            }
+            return result;
+        }
     }
 
     public static final class CompositeReference extends WasmHollowType.Reference {
         public final int index;
 
-        public CompositeReference(int index) {
+        public CompositeReference(int index, boolean nullable) {
+            super(nullable);
             this.index = index;
         }
 
@@ -80,19 +104,20 @@ public class WasmHollowType {
                 return false;
             }
             CompositeReference that = (CompositeReference) o;
-            return index == that.index;
+            return index == that.index && isNullable() == that.isNullable();
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(index);
+            return Objects.hash(index, isNullable());
         }
     }
 
     public static final class SpecialReference extends WasmHollowType.Reference {
         public final WasmType.SpecialReferenceKind kind;
 
-        SpecialReference(WasmType.SpecialReferenceKind kind) {
+        SpecialReference(WasmType.SpecialReferenceKind kind, boolean nullable) {
+            super(nullable);
             this.kind = kind;
         }
     }

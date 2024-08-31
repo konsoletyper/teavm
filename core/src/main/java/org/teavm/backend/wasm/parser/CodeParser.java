@@ -589,7 +589,7 @@ public class CodeParser extends BaseSectionParser {
                 break;
 
             case 0xD0:
-                codeListener.nullConstant(reader.readHeapType());
+                codeListener.nullConstant(reader.readHeapType(true));
                 break;
 
             case 0xD2:
@@ -684,19 +684,19 @@ public class CodeParser extends BaseSectionParser {
                 return true;
 
             case 20:
-                codeListener.test(reader.readHeapType(), false);
+                codeListener.test(reader.readHeapType(false));
                 return true;
 
             case 21:
-                codeListener.test(reader.readHeapType(), true);
+                codeListener.test(reader.readHeapType(true));
                 return true;
 
             case 22:
-                codeListener.cast(reader.readHeapType(), false);
+                codeListener.cast(reader.readHeapType(false));
                 return true;
 
             case 23:
-                codeListener.cast(reader.readHeapType(), true);
+                codeListener.cast(reader.readHeapType(true));
                 return true;
 
             case 28:

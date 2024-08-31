@@ -63,12 +63,23 @@ public abstract class WasmType {
         public static final SpecialReference STRUCT = SpecialReferenceKind.STRUCT.asType();
         public static final SpecialReference ARRAY = SpecialReferenceKind.ARRAY.asType();
         public static final SpecialReference I31 = SpecialReferenceKind.I31.asType();
+
+        private final boolean nullable;
+
+        public Reference(boolean nullable) {
+            this.nullable = nullable;
+        }
+
+        public boolean isNullable() {
+            return nullable;
+        }
     }
 
     public static final class CompositeReference extends Reference {
         public final WasmCompositeType composite;
 
-        CompositeReference(WasmCompositeType composite) {
+        CompositeReference(WasmCompositeType composite, boolean nullable) {
+            super(nullable);
             this.composite = composite;
         }
     }
@@ -76,7 +87,8 @@ public abstract class WasmType {
     public static final class SpecialReference extends Reference {
         public final SpecialReferenceKind kind;
 
-        private SpecialReference(SpecialReferenceKind kind) {
+        private SpecialReference(SpecialReferenceKind kind, boolean nullable) {
+            super(nullable);
             this.kind = kind;
         }
     }
@@ -90,12 +102,20 @@ public abstract class WasmType {
         I31;
 
         private SpecialReference type;
+        private SpecialReference nonNullType;
 
-        final SpecialReference asType() {
+        public final SpecialReference asType() {
             if (type == null) {
-                type = new SpecialReference(this);
+                type = new SpecialReference(this, true);
             }
             return type;
+        }
+
+        public final SpecialReference asNonNullType() {
+            if (nonNullType == null) {
+                nonNullType = new SpecialReference(this, false);
+            }
+            return nonNullType;
         }
     }
 }

@@ -66,8 +66,10 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
     }
 
     private WasmExpression generateGetMonitor(InvocationExpr invocation, WasmGCIntrinsicContext context) {
-        var monitorType = context.classInfoProvider().getClassInfo(ValueType.object("java.lang.Object$Monitor"))
-                .getStructure().getReference();
+        var monitorStruct = context.classInfoProvider().getClassInfo(ValueType.object("java.lang.Object$Monitor"))
+                .getStructure();
+        var monitorType = monitorStruct.getReference();
+        var monitorNotNullType = monitorStruct.getNonNullReference();
         var objectStruct = context.classInfoProvider().getClassInfo(ValueType.object("java.lang.Object"))
                 .getStructure();
         var block = new WasmBlock(false);
@@ -77,13 +79,13 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
         block.getBody().add(new WasmSetLocal(tmpVar, new WasmStructGet(objectStruct, instance,
                 WasmGCClassInfoProvider.MONITOR_FIELD_OFFSET)));
 
-        WasmExpression test = new WasmTest(new WasmGetLocal(tmpVar), monitorType, false);
+        WasmExpression test = new WasmTest(new WasmGetLocal(tmpVar), monitorNotNullType);
         test = new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ, test);
         var branch = new WasmBranch(test, block);
         branch.setResult(new WasmNullConstant(monitorType));
         block.getBody().add(new WasmDrop(branch));
 
-        block.getBody().add(new WasmCast(new WasmGetLocal(tmpVar), monitorType));
+        block.getBody().add(new WasmCast(new WasmGetLocal(tmpVar), monitorNotNullType));
         context.tempVars().release(tmpVar);
         return block;
     }
@@ -106,13 +108,14 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
         block.getBody().add(new WasmSetLocal(tmpVar, new WasmStructGet(objectStruct, instance,
                 WasmGCClassInfoProvider.MONITOR_FIELD_OFFSET)));
 
-        WasmExpression test = new WasmTest(new WasmGetLocal(tmpVar), WasmType.Reference.I31, false);
+        WasmExpression test = new WasmTest(new WasmGetLocal(tmpVar),
+                WasmType.SpecialReferenceKind.I31.asNonNullType());
         test = new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ, test);
         var branch = new WasmBranch(test, block);
         branch.setResult(new WasmInt32Constant(-1));
         block.getBody().add(new WasmDrop(branch));
 
-        var i31ref = new WasmCast(new WasmGetLocal(tmpVar), WasmType.Reference.I31);
+        var i31ref = new WasmCast(new WasmGetLocal(tmpVar), WasmType.SpecialReferenceKind.I31.asNonNullType());
         block.getBody().add(new WasmInt31Get(i31ref, WasmSignedType.UNSIGNED));
         context.tempVars().release(tmpVar);
         return block;

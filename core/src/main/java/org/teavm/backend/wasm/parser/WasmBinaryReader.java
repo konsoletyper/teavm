@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.parser;
 
 import java.nio.charset.StandardCharsets;
+import org.teavm.backend.wasm.model.WasmType;
 
 public class WasmBinaryReader {
     private final AddressListener addressListener;
@@ -63,41 +64,49 @@ public class WasmBinaryReader {
             case 0x7C:
                 return WasmHollowType.FLOAT64;
             case 0x63:
-                return readHeapType();
+                return readHeapType(true);
+            case 0x64:
+                return readHeapType(false);
             case 0x40:
                 return null;
             default:
-                return readAbsHeapType(typeId);
+                return readAbsHeapType(typeId, true);
         }
     }
 
-    public WasmHollowType.Reference readHeapType() {
+    public WasmHollowType.Reference readHeapType(boolean nullable) {
         var typeId = data[ptr];
         if ((typeId & 0xC0) == 0x40) {
-            var result = readAbsHeapType(typeId);
+            var result = readAbsHeapType(typeId, nullable);
             ++ptr;
             return result;
         }
-        return new WasmHollowType.CompositeReference(readLEB());
+        return new WasmHollowType.CompositeReference(readLEB(), nullable);
     }
 
-    public WasmHollowType.SpecialReference readAbsHeapType(int typeId) {
+    public WasmHollowType.SpecialReference readAbsHeapType(int typeId, boolean nullable) {
         switch (typeId) {
             case 0x70:
-                return WasmHollowType.Reference.FUNC;
+                return special(WasmType.SpecialReferenceKind.FUNC, nullable);
             case 0x6F:
-                return WasmHollowType.Reference.EXTERN;
+                return special(WasmType.SpecialReferenceKind.EXTERN, nullable);
             case 0x6E:
-                return WasmHollowType.Reference.ANY;
+                return special(WasmType.SpecialReferenceKind.ANY, nullable);
             case 0x6C:
-                return WasmHollowType.Reference.I31;
+                return special(WasmType.SpecialReferenceKind.I31, nullable);
             case 0x6B:
-                return WasmHollowType.Reference.STRUCT;
+                return special(WasmType.SpecialReferenceKind.STRUCT, nullable);
             case 0x6A:
-                return WasmHollowType.Reference.ARRAY;
+                return special(WasmType.SpecialReferenceKind.ARRAY, nullable);
             default:
                 throw new ParseException("Unknown type", ptr);
         }
+    }
+
+    private static WasmHollowType.SpecialReference special(WasmType.SpecialReferenceKind kind, boolean nullable) {
+        return nullable
+                ? WasmHollowType.Reference.special(kind)
+                : WasmHollowType.SpecialReference.nonNullSpecial(kind);
     }
 
     public int readSignedLEB() {

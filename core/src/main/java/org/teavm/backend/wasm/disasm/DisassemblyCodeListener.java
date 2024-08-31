@@ -755,23 +755,17 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
     }
 
     @Override
-    public void cast(WasmHollowType.Reference type, boolean nullable) {
+    public void cast(WasmHollowType.Reference type) {
         writer.address().write("ref.cast (ref ");
-        if (!nullable) {
-            writer.write("null ");
-        }
         writeType(type);
-        writer.write(")").eol();
+        writer.eol();
     }
 
     @Override
-    public void test(WasmHollowType.Reference type, boolean nullable) {
-        writer.address().write("ref.test (ref ");
-        if (!nullable) {
-            writer.write("null ");
-        }
+    public void test(WasmHollowType.Reference type) {
+        writer.address().write("ref.test ");
         writeType(type);
-        writer.write(")").eol();
+        writer.eol();
     }
 
     @Override

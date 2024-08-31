@@ -69,31 +69,62 @@ public abstract class BaseDisassemblyListener  {
                         break;
                 }
             } else if (type instanceof WasmHollowType.SpecialReference) {
-                switch (((WasmHollowType.SpecialReference) type).kind) {
-                    case ANY:
-                        writer.write("anyref");
-                        return;
-                    case FUNC:
-                        writer.write("funcref");
-                        return;
-                    case ARRAY:
-                        writer.write("arrayref");
-                        return;
-                    case EXTERN:
-                        writer.write("externref");
-                        return;
-                    case STRUCT:
-                        writer.write("structref");
-                        return;
-                    case I31:
-                        writer.write("i31ref");
-                        return;
-                    default:
-                        throw new IllegalArgumentException();
+                var refType = (WasmHollowType.SpecialReference) type;
+                if (refType.isNullable()) {
+                    switch (refType.kind) {
+                        case ANY:
+                            writer.write("anyref");
+                            return;
+                        case FUNC:
+                            writer.write("funcref");
+                            return;
+                        case ARRAY:
+                            writer.write("arrayref");
+                            return;
+                        case EXTERN:
+                            writer.write("externref");
+                            return;
+                        case STRUCT:
+                            writer.write("structref");
+                            return;
+                        case I31:
+                            writer.write("i31ref");
+                            return;
+                        default:
+                            throw new IllegalArgumentException();
+                    }
+                } else {
+                    writer.write("(ref ");
+                    switch (refType.kind) {
+                        case ANY:
+                            writer.write("any");
+                            return;
+                        case FUNC:
+                            writer.write("func");
+                            return;
+                        case ARRAY:
+                            writer.write("array");
+                            return;
+                        case EXTERN:
+                            writer.write("extern");
+                            return;
+                        case STRUCT:
+                            writer.write("struct");
+                            return;
+                        case I31:
+                            writer.write("i31");
+                            return;
+                        default:
+                            throw new IllegalArgumentException();
+                    }
                 }
             } else if (type instanceof WasmHollowType.CompositeReference) {
-                writer.write("(ref null ");
-                writeTypeRef(((WasmHollowType.CompositeReference) type).index);
+                var refType = (WasmHollowType.CompositeReference) type;
+                writer.write("(ref ");
+                if (refType.isNullable()) {
+                    writer.write("null");
+                }
+                writeTypeRef(refType.index);
                 writer.write(")");
                 return;
             }

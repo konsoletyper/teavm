@@ -37,11 +37,15 @@ public class WasmBinaryWriter {
         if (type instanceof WasmType.Number) {
             writeType(((WasmType.Number) type).number);
         } else if (type instanceof WasmType.SpecialReference) {
-            writeSpecialHeapType(((WasmType.SpecialReference) type).kind);
+            var refType = (WasmType.SpecialReference) type;
+            if (!refType.isNullable()) {
+                writeByte(0x64);
+            }
+            writeSpecialHeapType(refType.kind);
         } else if (type instanceof WasmType.CompositeReference) {
-            writeByte(0x63);
-            var composite = ((WasmType.CompositeReference) type).composite;
-            var index = module.types.indexOf(composite);
+            var refType = (WasmType.CompositeReference) type;
+            writeByte(refType.isNullable() ? 0x63 : 0x64);
+            var index = module.types.indexOf(refType.composite);
             writeSignedLEB(index);
         }
     }

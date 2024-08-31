@@ -21,16 +21,10 @@ import org.teavm.backend.wasm.model.WasmType;
 public class WasmTest extends WasmExpression {
     private WasmExpression value;
     private WasmType.Reference testType;
-    private boolean nullable;
 
     public WasmTest(WasmExpression value, WasmType.Reference testType) {
-        this(value, testType, true);
-    }
-
-    public WasmTest(WasmExpression value, WasmType.Reference testType, boolean nullable) {
         this.value = Objects.requireNonNull(value);
         this.testType = Objects.requireNonNull(testType);
-        this.nullable = nullable;
     }
 
     public WasmExpression getValue() {
@@ -49,13 +43,6 @@ public class WasmTest extends WasmExpression {
         this.testType = Objects.requireNonNull(testType);
     }
 
-    public boolean isNullable() {
-        return nullable;
-    }
-
-    public void setNullable(boolean nullable) {
-        this.nullable = nullable;
-    }
 
     @Override
     public void acceptVisitor(WasmExpressionVisitor visitor) {
