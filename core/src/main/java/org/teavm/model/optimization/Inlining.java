@@ -47,10 +47,12 @@ import org.teavm.model.Program;
 import org.teavm.model.ProgramReader;
 import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlock;
+import org.teavm.model.ValueType;
 import org.teavm.model.VariableReader;
 import org.teavm.model.analysis.ClassInference;
 import org.teavm.model.instructions.AbstractInstructionReader;
 import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
@@ -456,8 +458,20 @@ public class Inlining {
                 }
 
                 if (implementations.size() == 1) {
+                    var implementation = implementations.iterator().next();
                     invoke.setType(InvocationType.SPECIAL);
-                    invoke.setMethod(implementations.iterator().next());
+                    invoke.setMethod(implementation);
+
+                    if (!implementation.getName().equals(invoke.getMethod().getClassName())) {
+                        var cast = new CastInstruction();
+                        cast.setWeak(true);
+                        cast.setValue(invoke.getInstance());
+                        cast.setReceiver(program.createVariable());
+                        cast.setLocation(invoke.getLocation());
+                        cast.setTargetType(ValueType.object(implementation.getClassName()));
+                        invoke.insertPrevious(cast);
+                        invoke.setInstance(cast.getReceiver());
+                    }
                 }
             }
         }

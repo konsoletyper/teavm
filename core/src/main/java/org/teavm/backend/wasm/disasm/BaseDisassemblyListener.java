@@ -122,7 +122,7 @@ public abstract class BaseDisassemblyListener  {
                 var refType = (WasmHollowType.CompositeReference) type;
                 writer.write("(ref ");
                 if (refType.isNullable()) {
-                    writer.write("null");
+                    writer.write("null ");
                 }
                 writeTypeRef(refType.index);
                 writer.write(")");

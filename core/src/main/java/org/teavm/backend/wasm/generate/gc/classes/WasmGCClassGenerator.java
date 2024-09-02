@@ -64,6 +64,7 @@ import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
+import org.teavm.backend.wasm.model.expression.WasmSignedType;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
@@ -558,18 +559,22 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             case BOOLEAN:
                 primitiveType = boolean.class;
                 wrapperType = Boolean.class;
+                result.setSignedType(WasmSignedType.UNSIGNED);
                 break;
             case BYTE:
                 primitiveType = byte.class;
                 wrapperType = Byte.class;
+                result.setSignedType(WasmSignedType.SIGNED);
                 break;
             case SHORT:
                 primitiveType = short.class;
                 wrapperType = Short.class;
+                result.setSignedType(WasmSignedType.SIGNED);
                 break;
             case CHARACTER:
                 primitiveType = char.class;
                 wrapperType = Character.class;
+                result.setSignedType(WasmSignedType.UNSIGNED);
                 break;
             case INTEGER:
                 primitiveType = int.class;
