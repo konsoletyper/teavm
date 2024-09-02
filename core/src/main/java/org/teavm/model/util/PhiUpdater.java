@@ -101,6 +101,7 @@ public class PhiUpdater {
     private Sigma[][] sigmas;
     private Predicate<Instruction> sigmaPredicate = instruction -> false;
     private int[][][] frontierVariableCache;
+    private Variable[][] pendingVariableMap;
 
     public int getSourceVariable(int var) {
         if (var >= variableToSourceMap.size()) {
@@ -139,8 +140,8 @@ public class PhiUpdater {
         phisByReceiver.clear();
         cfg = ProgramUtils.buildControlFlowGraph(program);
         domTree = GraphUtils.buildDominatorTree(cfg);
-        domFrontiers = new int[cfg.size()][];
         domGraph = GraphUtils.buildDominatorGraph(domTree, program.basicBlockCount());
+        pendingVariableMap = new Variable[program.basicBlockCount()][];
 
         variableMap = new Variable[program.variableCount()];
         usedDefinitions = new boolean[program.variableCount()];
@@ -207,11 +208,7 @@ public class PhiUpdater {
                 Sigma sigma = new Sigma(block, variables[j]);
                 sigmasInBlock[j] = sigma;
                 for (BasicBlock target : targets) {
-                    Variable outgoingVar = program.createVariable();
-                    variableToSourceMap.add(sigma.getValue().getIndex());
-                    outgoingVar.setDebugName(sigma.getValue().getDebugName());
-                    outgoingVar.setLabel(sigma.getValue().getLabel());
-                    Outgoing outgoing = new Outgoing(outgoingVar, target);
+                    Outgoing outgoing = new Outgoing(variables[j], target);
                     sigma.getOutgoings().add(outgoing);
                 }
             }
@@ -231,42 +228,28 @@ public class PhiUpdater {
             int i = stack.removeLast();
             currentBlock = program.basicBlockAt(i);
 
-            for (int predecessor : cfg.incomingEdges(i)) {
-                if (sigmas[predecessor] == null) {
-                    continue;
-                }
-                if (domTree.immediateDominatorOf(i) != predecessor) {
-                    continue;
-                }
-                for (Sigma sigma : sigmas[predecessor]) {
-                    for (Outgoing outgoing : sigma.getOutgoings()) {
-                        if (outgoing.getTarget() == currentBlock) {
-                            markAssignment(sigma.getValue());
-                            break;
-                        }
-                    }
-                }
-            }
-
             if (currentBlock.getExceptionVariable() != null) {
-                markAssignment(currentBlock.getExceptionVariable());
+                markAssignment(currentBlock.getExceptionVariable(), currentBlock);
             }
 
             for (Phi phi : currentBlock.getPhis()) {
-                markAssignment(phi.getReceiver());
+                markAssignment(phi.getReceiver(), currentBlock);
             }
 
             for (Instruction insn : currentBlock) {
                 currentBlock = program.basicBlockAt(i);
                 insn.acceptVisitor(definitionExtractor);
                 for (Variable var : definitionExtractor.getDefinedVariables()) {
-                    markAssignment(var);
+                    markAssignment(var, currentBlock);
                 }
             }
 
-            if (sigmas[i] != null) {
-                for (Sigma sigma : sigmas[i]) {
-                    markAssignment(sigma.getValue());
+            var sigmasAtBlock = sigmas[i];
+            if (sigmasAtBlock != null) {
+                for (var sigma : sigmasAtBlock) {
+                    for (var outgoing : sigma.getOutgoings()) {
+                        markAssignment(outgoing.getValue(), outgoing.getTarget());
+                    }
                 }
             }
 
@@ -292,7 +275,6 @@ public class PhiUpdater {
             var sigmas = getSigmasAt(block.getIndex());
             if (sigmas != null) {
                 for (var sigma : sigmas) {
-                    increaseDefinitionCount(sigma.getValue());
                     for (var i = 0; i < sigma.getOutgoings().size(); ++i) {
                         increaseDefinitionCount(sigma.getValue());
                     }
@@ -307,31 +289,22 @@ public class PhiUpdater {
         }
     }
 
-    private static class Task {
-        Variable[] variables;
-        BasicBlock block;
-    }
-
     private void renameVariables() {
-        Deque<Task> stack = new ArrayDeque<>();
+        Deque<BasicBlock> stack = new ArrayDeque<>();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             if (domGraph.incomingEdgesCount(i) == 0) {
-                Task task = new Task();
-                task.block = program.basicBlockAt(i);
-                task.variables = variableMap.clone();
-                stack.push(task);
+                stack.push(program.basicBlockAt(i));
+                pendingVariableMap[i] = variableMap.clone();
             }
         }
 
-        List<List<Incoming>> phiOutputs = ProgramUtils.getPhiOutputs(program);
-
         while (!stack.isEmpty()) {
             Collections.fill(definedVersions, null);
-            Task task = stack.pop();
 
-            currentBlock = task.block;
+            currentBlock = stack.pop();
             int index = currentBlock.getIndex();
-            variableMap = task.variables.clone();
+            variableMap = pendingVariableMap[index];
+            pendingVariableMap[index] = null;
 
             if (currentBlock.getExceptionVariable() != null) {
                 currentBlock.setExceptionVariable(define(currentBlock.getExceptionVariable()));
@@ -355,30 +328,20 @@ public class PhiUpdater {
 
             int[] successors = domGraph.outgoingEdges(index);
 
-            for (Incoming output : phiOutputs.get(index)) {
-                Variable var = output.getValue();
-                Variable sigmaVar = applySigmaRename(output.getPhi().getBasicBlock(), var);
-                var = sigmaVar != var ? sigmaVar : use(var);
-                output.setValue(var);
+            Sigma[] nextSigmas = sigmas[index];
+            if (nextSigmas != null) {
+                for (Sigma sigma : sigmas[index]) {
+                    sigma.setValue(use(sigma.getValue()));
+                }
             }
 
-            Sigma[] nextSigmas = sigmas[index];
+            var oldVariableMap = variableMap;
             for (int j = successors.length - 1; j >= 0; --j) {
                 int successor = successors[j];
-                Task next = new Task();
-                next.variables = variableMap.clone();
-                next.block = program.basicBlockAt(successor);
-                if (nextSigmas != null) {
-                    for (Sigma sigma : nextSigmas) {
-                        for (Outgoing outgoing : sigma.getOutgoings()) {
-                            if (outgoing.getTarget().getIndex() == successor) {
-                                next.variables[sigma.getValue().getIndex()] = outgoing.getValue();
-                                break;
-                            }
-                        }
-                    }
-                }
-                stack.push(next);
+                var variables = oldVariableMap.clone();
+                pendingVariableMap[successor] = variables;
+                stack.push(program.basicBlockAt(successor));
+                variableMap = variables;
             }
 
             IntSet exceptionHandlingSuccessors = new IntHashSet();
@@ -387,13 +350,19 @@ public class PhiUpdater {
             }
 
             for (int successor : cfg.outgoingEdges(index)) {
-                renameOutgoingPhis(successor, exceptionHandlingSuccessors.contains(successor));
-            }
-
-            if (sigmas[index] != null) {
-                for (Sigma sigma : sigmas[index]) {
-                    sigma.setValue(use(sigma.getValue()));
+                variableMap = domTree.immediateDominatorOf(successor) == currentBlock.getIndex()
+                        ? pendingVariableMap[successor]
+                        : oldVariableMap.clone();
+                if (nextSigmas != null) {
+                    for (var sigma : nextSigmas) {
+                        for (var outgoing : sigma.getOutgoings()) {
+                            if (outgoing.getTarget().getIndex() == successor) {
+                                outgoing.setValue(define(outgoing.getValue()));
+                            }
+                        }
+                    }
                 }
+                renameOutgoingPhis(successor, exceptionHandlingSuccessors.contains(successor));
             }
         }
     }
@@ -445,7 +414,6 @@ public class PhiUpdater {
 
         for (int j = 0; j < phis.size(); ++j) {
             Phi phi = phis.get(j);
-            Variable originalVar = program.variableAt(phiIndexes[j]);
             Variable var = variableMap[phiIndexes[j]];
             if (var != null) {
                 List<Variable> versions = definedVersions.get(phiIndexes[j]);
@@ -458,42 +426,38 @@ public class PhiUpdater {
                     }
                 }
 
-                Variable sigmaVar = applySigmaRename(program.basicBlockAt(successor), originalVar);
                 Incoming incoming = new Incoming();
                 incoming.setSource(currentBlock);
-                incoming.setValue(sigmaVar != originalVar ? sigmaVar : var);
+                incoming.setValue(var);
                 phi.getIncomings().add(incoming);
                 phi.getReceiver().setDebugName(var.getDebugName());
             }
         }
-    }
 
-    private Variable applySigmaRename(BasicBlock target, Variable var) {
-        Sigma[] blockSigmas = sigmas[currentBlock.getIndex()];
-        if (blockSigmas == null) {
-            return var;
-        }
-        for (Sigma sigma : blockSigmas) {
-            if (sigma.getValue() != var) {
-                continue;
-            }
-            for (Outgoing outgoing : sigma.getOutgoings()) {
-                if (outgoing.getTarget() == target) {
-                    return outgoing.getValue();
+        for (var phi : program.basicBlockAt(successor).getPhis()) {
+            for (var incoming : phi.getIncomings()) {
+                if (incoming.getSource() == currentBlock) {
+                    var value = variableMap[incoming.getValue().getIndex()];
+                    if (value != null) {
+                        incoming.setValue(value);
+                        usedPhis.set(value.getIndex());
+                    } else {
+                        usedPhis.set(incoming.getValue().getIndex());
+                    }
                 }
             }
         }
-        return var;
     }
 
-    private void markAssignment(Variable var) {
+    private void markAssignment(Variable var, BasicBlock targetBlock) {
         if (variableDefinitionCount[var.getIndex()] < 2) {
             variableDefined[var.getIndex()] = true;
             return;
         }
 
         Deque<BasicBlock> worklist = new ArrayDeque<>();
-        worklist.push(currentBlock);
+        worklist.push(targetBlock);
+        var isCurrentlyFrontier = currentBlock != targetBlock && cfg.incomingEdgesCount(targetBlock.getIndex()) > 1;
 
         if (variableDefined[var.getIndex()]) {
             for (TryCatchBlock tryCatch : currentBlock.getTryCatchBlocks()) {
@@ -505,7 +469,8 @@ public class PhiUpdater {
 
         while (!worklist.isEmpty()) {
             BasicBlock block = worklist.pop();
-            int[] frontiers = domFrontiers[block.getIndex()];
+            var frontiers = isCurrentlyFrontier ? new int[] { block.getIndex() } : domFrontiers[block.getIndex()];
+            isCurrentlyFrontier = false;
 
             if (frontiers != null) {
                 for (int frontier : frontiers) {

@@ -76,7 +76,6 @@ import java.time.temporal.TemporalQueries;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.AbstractDateTimeTest;
 import org.teavm.junit.SkipPlatform;
@@ -332,8 +331,6 @@ public class TestYear extends AbstractDateTimeTest {
     // isLeap()
     //-----------------------------------------------------------------------
     @Test
-    @Ignore
-    // Fails due to bug in nullness analysis
     public void test_isLeap() {
         assertEquals(Year.of(1999).isLeap(), false);
         assertEquals(Year.of(2000).isLeap(), true);

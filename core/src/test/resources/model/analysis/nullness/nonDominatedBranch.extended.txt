@@ -7,11 +7,11 @@ $ifNonNull
     @b := invokeStatic `Foo.g()LBar;`
     if @b !== null then goto $joint else goto $ifNull
 $ifNull
-    return @a_2
+    return @a_1
 $joint
-    @c := phi @a_1 from $start, @b_1 from $ifNonNull
+    @c := phi @a_2 from $start, @b_2 from $ifNonNull
     return @c
 
 // NULLABLE c
-// NULL a_1
-// NOT_NULL a_2
+// NULL a_2
+// NOT_NULL a_1

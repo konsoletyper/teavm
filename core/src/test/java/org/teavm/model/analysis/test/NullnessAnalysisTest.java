@@ -29,7 +29,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -86,9 +85,6 @@ public class NullnessAnalysisTest {
     }
 
     @Test
-    @Ignore
-    // Fix this issue and un-ignore
-    // Also, un-ignore TestYear.test_isLeap
     public void nonDominatedBranch2() {
         test();
     }
