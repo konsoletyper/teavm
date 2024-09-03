@@ -127,7 +127,7 @@ public class TemplatingAstWriter extends AstWriter {
         if (classInitializerInfo == null || classInitializerInfo.isDynamicInitializer(className)) {
             writer.appendClassInit(className);
         } else {
-            writer.append("(()").ws().append("=>").ws().append("{})");
+            writer.append("(()").sameLineWs().append("=>").ws().append("{})");
         }
         return true;
     }
