@@ -64,7 +64,7 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
 
         writer.startVariableDeclaration().appendFunction("$rt_jso_marker")
                 .appendGlobal("Symbol").append("('jsoClass')").endDeclaration();
-        writer.append("(()").ws().append("=>").ws().append("{").softNewLine().indent();
+        writer.append("(()").sameLineWs().append("=>").ws().append("{").softNewLine().indent();
         writer.append("let c;").softNewLine();
         var exportedNamesByClass = new HashMap<String, String>();
         for (var className : classSource.getClassNames()) {
