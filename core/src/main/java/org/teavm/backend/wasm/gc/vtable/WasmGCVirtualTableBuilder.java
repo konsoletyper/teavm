@@ -162,19 +162,7 @@ class WasmGCVirtualTableBuilder {
                 indexes.put(entry.method, entry.index);
             }
             table.currentImplementors.putAll(parent.currentImplementors);
-        }
-
-        var group = groupedMethodsAtCallSites.get(table.cls.getName());
-        if (group != null) {
-            table.used = true;
-            for (var method : group) {
-                if (indexes.getOrDefault(method, -1) < 0) {
-                    var entry = new Entry(method, table, table.entries.size());
-                    table.entries.add(entry);
-                    indexes.put(method, entry.index);
-                    table.implementors.add(table.currentImplementors.get(method));
-                }
-            }
+            table.interfaces.addAll(parent.interfaces);
         }
 
         for (var method : table.cls.getMethods()) {
@@ -185,12 +173,55 @@ class WasmGCVirtualTableBuilder {
                 if (!isVirtual.test(method.getReference())) {
                     continue;
                 }
-                var index = indexes.getOrDefault(method.getDescriptor(), -1);
-                if (index >= 0) {
-                    table.implementors.set(index, method.getReference());
-                }
                 table.currentImplementors.put(method.getDescriptor(), method.getReference());
             }
+        }
+
+        for (var itfName : table.cls.getInterfaces()) {
+            fillFromInterfaces(itfName, table);
+        }
+
+        var group = groupedMethodsAtCallSites.get(table.cls.getName());
+        if (group != null) {
+            table.used = true;
+            for (var method : group) {
+                if (indexes.getOrDefault(method, -1) < 0) {
+                    var entry = new Entry(method, table, table.entries.size());
+                    table.entries.add(entry);
+                    indexes.put(method, entry.index);
+                    table.implementors.add(null);
+                }
+            }
+        }
+        for (var entry : indexes) {
+            var implementor = table.currentImplementors.get(entry.key);
+            table.implementors.set(entry.value, implementor);
+        }
+    }
+
+    private void fillFromInterfaces(String itfName, Table table) {
+        if (!table.interfaces.add(itfName)) {
+            return;
+        }
+        var cls = classes.get(itfName);
+        if (cls == null) {
+            return;
+        }
+        for (var method : cls.getMethods()) {
+            if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)) {
+                if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
+                    continue;
+                }
+                if (!isVirtual.test(method.getReference())) {
+                    continue;
+                }
+                if (table.currentImplementors.get(method.getDescriptor()) == null) {
+                    table.currentImplementors.put(method.getDescriptor(), method.getReference());
+                }
+            }
+        }
+        for (var superItf : cls.getInterfaces()) {
+            fillFromInterfaces(superItf, table);
         }
     }
 
@@ -215,6 +246,7 @@ class WasmGCVirtualTableBuilder {
         List<Entry> entries = new ArrayList<>();
         List<MethodReference> implementors = new ArrayList<>();
         Map<MethodDescriptor, MethodReference> currentImplementors = new HashMap<>();
+        Set<String> interfaces = new HashSet<>();
         private WasmGCVirtualTable buildResult;
 
         Table(ClassReader cls, int index) {
