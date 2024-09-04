@@ -243,6 +243,13 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                 }
             }
         }
+        for (var i = 0; i < method.getProgram().variableCount(); ++i) {
+            var variable = method.getProgram().variableAt(i);
+            var varNodeIndex = variable.getRegister() >= 0 ? originalIndexToIndex[variable.getRegister()] : -1;
+            if (varNodeIndex >= 0 && variableRepresentatives[varNodeIndex] < 0) {
+                variableRepresentatives[varNodeIndex] = variable.getIndex();
+            }
+        }
 
         for (var i = firstVar; i < ast.getVariables().size(); ++i) {
             var localVar = ast.getVariables().get(i);

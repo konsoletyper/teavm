@@ -54,6 +54,7 @@ import org.teavm.model.instructions.NegateInstruction;
 import org.teavm.model.instructions.NullCheckInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.NumericOperandType;
+import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
@@ -64,6 +65,7 @@ public abstract class BaseTypeInference<T> {
     private Object[] types;
     private Graph graph;
     private Graph arrayGraph;
+    private Graph backArrayGraph;
     private Graph arrayUnwrapGraph;
     private boolean phisSkipped;
     private boolean backPropagation;
@@ -112,6 +114,7 @@ public abstract class BaseTypeInference<T> {
         }
         graph = visitor.graphBuilder.build();
         arrayGraph = visitor.arrayGraphBuilder.build();
+        backArrayGraph = visitor.backArrayGraphBuilder.build();
         arrayUnwrapGraph = visitor.arrayUnwrapGraphBuilder.build();
     }
 
@@ -191,6 +194,12 @@ public abstract class BaseTypeInference<T> {
                         stack.push(i);
                     }
                 }
+                for (var j : backArrayGraph.incomingEdges(i)) {
+                    if (!nullTypes[j]) {
+                        typeStack.push(elementType((T) types[j]));
+                        stack.push(i);
+                    }
+                }
             }
         }
 
@@ -225,6 +234,15 @@ public abstract class BaseTypeInference<T> {
                     if (nullTypes[pred] && !Objects.equals(types[pred], arrayType)) {
                         stack.push(pred);
                         typeStack.push(arrayType);
+                    }
+                }
+            }
+            if (backArrayGraph.outgoingEdgesCount(variable) > 0) {
+                var elementType = elementType(type);
+                for (var succ : backArrayGraph.outgoingEdges(variable)) {
+                    if (!Objects.equals(types[succ], elementType)) {
+                        stack.push(succ);
+                        typeStack.push(elementType);
                     }
                 }
             }
@@ -282,11 +300,13 @@ public abstract class BaseTypeInference<T> {
     private class InitialTypeVisitor extends AbstractInstructionVisitor {
         private GraphBuilder graphBuilder;
         private GraphBuilder arrayGraphBuilder;
+        private GraphBuilder backArrayGraphBuilder;
         private GraphBuilder arrayUnwrapGraphBuilder;
 
         InitialTypeVisitor(int size) {
             graphBuilder = new GraphBuilder(size);
             arrayGraphBuilder = new GraphBuilder(size);
+            backArrayGraphBuilder = new GraphBuilder(size);
             arrayUnwrapGraphBuilder = new GraphBuilder(size);
         }
 
@@ -426,6 +446,11 @@ public abstract class BaseTypeInference<T> {
         @Override
         public void visit(GetElementInstruction insn) {
             arrayGraphBuilder.addEdge(insn.getArray().getIndex(), insn.getReceiver().getIndex());
+        }
+
+        @Override
+        public void visit(PutElementInstruction insn) {
+            backArrayGraphBuilder.addEdge(insn.getArray().getIndex(), insn.getValue().getIndex());
         }
 
         @Override
