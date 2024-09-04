@@ -25,6 +25,7 @@ import java.util.Set;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.gc.PreciseTypeInference;
 import org.teavm.backend.wasm.gc.WasmGCVariableCategoryProvider;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
@@ -220,7 +221,10 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         allocator.allocateRegisters(method.getReference(), method.getProgram(), friendlyToDebugger);
         var ast = decompiler.decompileRegular(method);
         var firstVar = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;
-        var typeInference = categoryProvider.getTypeInference();
+        var typeInference = new PreciseTypeInference(method.getProgram(), method.getReference(), hierarchy);
+        typeInference.setPhisSkipped(true);
+        typeInference.setBackPropagation(true);
+        typeInference.ensure();
 
         var registerCount = 0;
         for (var i = 0; i < method.getProgram().variableCount(); ++i) {

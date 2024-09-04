@@ -547,6 +547,11 @@ public abstract class BaseTypeInference<T> {
             push(insn.getValue(), insn.getFieldType());
         }
 
+        @Override
+        public void visit(CastInstruction insn) {
+            push(insn.getValue(), insn.getTargetType());
+        }
+
         private void push(Variable variable, ValueType type) {
             if (nullTypes[variable.getIndex()]) {
                 stack.push(variable.getIndex());
