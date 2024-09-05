@@ -21,8 +21,11 @@ public final class DoubleSynthesizer {
 
     public static double synthesizeDouble(long mantissa, int exp, boolean negative) {
         var indexInTable = DoubleAnalyzer.MAX_ABS_DEC_EXP + exp;
-        if (mantissa == 0 || indexInTable > mantissa10Table.length || indexInTable < 0) {
+        if (mantissa == 0 || indexInTable < 0) {
             return Double.longBitsToDouble(negative ? (1L << 63) : 0);
+        }
+        if (indexInTable >= mantissa10Table.length) {
+            return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
 
         var binMantissa = DoubleAnalyzer.mulAndShiftRight(mantissa, mantissa10Table[indexInTable], 0);
