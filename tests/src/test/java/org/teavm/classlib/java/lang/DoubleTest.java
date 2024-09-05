@@ -57,6 +57,7 @@ public class DoubleTest {
 
         assertEquals(4499999999999888888888888.0, Double.parseDouble("4499999999999888888888888"), 1E9);
         assertEquals(0.4499999999999888888888888, Double.parseDouble("0.4499999999999888888888888"), 1E-15);
+        assertEquals(Double.POSITIVE_INFINITY, Double.parseDouble("1e330"), 1E-15);
     }
 
     @Test
