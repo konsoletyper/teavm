@@ -22,6 +22,7 @@ public class WasmField {
     int index;
     private String name;
     private WasmStorageType type;
+    private boolean immutable;
 
     public WasmField(WasmStorageType type, String name) {
         this(type);
@@ -54,6 +55,14 @@ public class WasmField {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isImmutable() {
+        return immutable;
+    }
+
+    public void setImmutable(boolean immutable) {
+        this.immutable = immutable;
     }
 
     public int getIndex() {

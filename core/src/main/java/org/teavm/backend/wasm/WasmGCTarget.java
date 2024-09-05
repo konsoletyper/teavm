@@ -16,10 +16,17 @@
 package org.teavm.backend.wasm;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
 import org.teavm.backend.wasm.gc.WasmGCDependencies;
 import org.teavm.backend.wasm.generate.gc.WasmGCDeclarationsGenerator;
+import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapperFactory;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerators;
+import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
+import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicFactory;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsics;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.render.WasmBinaryRenderer;
@@ -33,6 +40,7 @@ import org.teavm.interop.Platforms;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.NullCheckFilter;
@@ -43,14 +51,32 @@ import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.TeaVMTargetController;
 import org.teavm.vm.spi.TeaVMHostExtension;
 
-public class WasmGCTarget implements TeaVMTarget {
+public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private TeaVMTargetController controller;
     private NullCheckInsertion nullCheckInsertion;
     private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
     private boolean obfuscated;
+    private List<WasmGCIntrinsicFactory> intrinsicFactories = new ArrayList<>();
+    private Map<MethodReference, WasmGCIntrinsic> customIntrinsics = new HashMap<>();
+    private List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories = new ArrayList<>();
 
     public void setObfuscated(boolean obfuscated) {
         this.obfuscated = obfuscated;
+    }
+
+    @Override
+    public void addIntrinsicFactory(WasmGCIntrinsicFactory intrinsicFactory) {
+        intrinsicFactories.add(intrinsicFactory);
+    }
+
+    @Override
+    public void addIntrinsic(MethodReference method, WasmGCIntrinsic intrinsic) {
+        customIntrinsics.put(method, intrinsic);
+    }
+
+    @Override
+    public void addCustomTypeMapperFactory(WasmGCCustomTypeMapperFactory customTypeMapperFactory) {
+        customTypeMapperFactories.add(customTypeMapperFactory);
     }
 
     @Override
@@ -85,7 +111,7 @@ public class WasmGCTarget implements TeaVMTarget {
 
     @Override
     public List<TeaVMHostExtension> getHostExtensions() {
-        return List.of();
+        return List.of(this);
     }
 
     @Override
@@ -114,15 +140,17 @@ public class WasmGCTarget implements TeaVMTarget {
     public void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException {
         var module = new WasmModule();
         var customGenerators = new WasmGCCustomGenerators();
-        var intrinsics = new WasmGCIntrinsics();
+        var intrinsics = new WasmGCIntrinsics(classes, intrinsicFactories, customIntrinsics);
         var declarationsGenerator = new WasmGCDeclarationsGenerator(
                 module,
                 classes,
+                controller.getClassLoader(),
                 controller.getClassInitializerInfo(),
                 controller.getDependencyInfo(),
                 controller.getDiagnostics(),
                 customGenerators,
                 intrinsics,
+                customTypeMapperFactories,
                 controller::isVirtual
         );
         declarationsGenerator.setFriendlyToDebugger(controller.isFriendlyToDebugger());

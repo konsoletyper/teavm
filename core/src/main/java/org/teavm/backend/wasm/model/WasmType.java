@@ -59,6 +59,7 @@ public abstract class WasmType {
     public static abstract class Reference extends WasmType {
         public static final SpecialReference FUNC = SpecialReferenceKind.FUNC.asType();
         public static final SpecialReference ANY = SpecialReferenceKind.ANY.asType();
+        public static final SpecialReference EQ = SpecialReferenceKind.EQ.asType();
         public static final SpecialReference EXTERN = SpecialReferenceKind.EXTERN.asType();
         public static final SpecialReference STRUCT = SpecialReferenceKind.STRUCT.asType();
         public static final SpecialReference ARRAY = SpecialReferenceKind.ARRAY.asType();
@@ -96,6 +97,7 @@ public abstract class WasmType {
     public enum SpecialReferenceKind {
         FUNC,
         ANY,
+        EQ,
         EXTERN,
         STRUCT,
         ARRAY,

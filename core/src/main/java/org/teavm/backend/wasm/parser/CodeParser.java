@@ -660,6 +660,9 @@ public class CodeParser extends BaseSectionParser {
             case 7:
                 codeListener.arrayNewDefault(readLEB());
                 return true;
+            case 8:
+                codeListener.arrayNewFixed(readLEB(), readLEB());
+                return true;
 
             case 11:
                 codeListener.arrayGet(null, readLEB());

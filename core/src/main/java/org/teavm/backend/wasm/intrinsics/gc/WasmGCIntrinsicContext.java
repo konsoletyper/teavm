@@ -21,8 +21,10 @@ import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.PreciseTypeInference;
 import org.teavm.backend.wasm.generate.ExpressionCache;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
+import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
+import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.model.ClassHierarchy;
@@ -47,4 +49,10 @@ public interface WasmGCIntrinsicContext {
     TemporaryVariablePool tempVars();
 
     ExpressionCache exprCache();
+
+    WasmGCNameProvider names();
+
+    WasmGCStringProvider strings();
+
+    ClassLoader classLoader();
 }

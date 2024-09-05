@@ -60,6 +60,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private WasmModule module;
     private ClassHierarchy hierarchy;
     private ListableClassHolderSource classes;
+    private ClassLoader classLoader;
     private WasmGCVirtualTableProvider virtualTables;
     private ClassInitializerInfo classInitInfo;
     private WasmFunctionTypes functionTypes;
@@ -84,6 +85,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             WasmModule module,
             ClassHierarchy hierarchy,
             ListableClassHolderSource classes,
+            ClassLoader classLoader,
             WasmGCVirtualTableProvider virtualTables,
             ClassInitializerInfo classInitInfo,
             WasmFunctionTypes functionTypes,
@@ -95,6 +97,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         this.module = module;
         this.hierarchy = hierarchy;
         this.classes = classes;
+        this.classLoader = classLoader;
         this.virtualTables = virtualTables;
         this.classInitInfo = classInitInfo;
         this.functionTypes = functionTypes;
@@ -310,6 +313,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                     typeMapper,
                     functionTypes,
                     classes,
+                    classLoader,
                     hierarchy,
                     this,
                     supertypeFunctions,

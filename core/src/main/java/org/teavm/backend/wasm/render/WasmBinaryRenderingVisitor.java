@@ -31,6 +31,7 @@ import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
+import org.teavm.backend.wasm.model.expression.WasmArrayNewFixed;
 import org.teavm.backend.wasm.model.expression.WasmArraySet;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
@@ -1152,6 +1153,19 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         writer.writeByte(0xfb);
         writer.writeByte(7);
         writer.writeLEB(module.types.indexOf(expression.getType()));
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmArrayNewFixed expression) {
+        pushLocation(expression);
+        for (var element : expression.getElements()) {
+            element.acceptVisitor(this);
+        }
+        writer.writeByte(0xfb);
+        writer.writeByte(8);
+        writer.writeLEB(module.types.indexOf(expression.getType()));
+        writer.writeLEB(expression.getElements().size());
         popLocation();
     }
 

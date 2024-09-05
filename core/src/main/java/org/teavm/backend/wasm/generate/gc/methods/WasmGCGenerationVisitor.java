@@ -30,8 +30,10 @@ import org.teavm.backend.wasm.gc.PreciseTypeInference;
 import org.teavm.backend.wasm.generate.ExpressionCache;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationVisitor;
+import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
+import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -586,6 +588,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         }
 
         @Override
+        public ClassLoader classLoader() {
+            return context.classLoader();
+        }
+
+        @Override
         public WasmModule module() {
             return context.module();
         }
@@ -628,6 +635,16 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         @Override
         public ExpressionCache exprCache() {
             return exprCache;
+        }
+
+        @Override
+        public WasmGCNameProvider names() {
+            return context.names();
+        }
+
+        @Override
+        public WasmGCStringProvider strings() {
+            return context.strings();
         }
     };
 }

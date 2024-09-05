@@ -15,7 +15,9 @@
  */
 package org.teavm.backend.wasm.generate.gc.classes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmModule;
@@ -31,6 +33,8 @@ public class WasmGCTypeMapper {
     private WasmGCClassInfoProvider classInfoProvider;
     private WasmFunctionTypes functionTypes;
     private WasmModule module;
+    private List<WasmGCCustomTypeMapper> customTypeMappers;
+    private Map<String, WasmType> typeCache = new HashMap<>();
 
     WasmGCTypeMapper(ClassReaderSource classes, WasmGCClassInfoProvider classInfoProvider,
             WasmFunctionTypes functionTypes, WasmModule module) {
@@ -38,6 +42,10 @@ public class WasmGCTypeMapper {
         this.classInfoProvider = classInfoProvider;
         this.functionTypes = functionTypes;
         this.module = module;
+    }
+
+    void setCustomTypeMappers(List<WasmGCCustomTypeMapper> customTypeMappers) {
+        this.customTypeMappers = List.copyOf(customTypeMappers);
     }
 
     public WasmStorageType mapStorageType(ValueType type) {
@@ -61,7 +69,7 @@ public class WasmGCTypeMapper {
                     throw new IllegalArgumentException();
             }
         } else {
-            return classInfoProvider.getClassInfo(type).getType().asStorage();
+            return mapType(type).asStorage();
         }
     }
 
@@ -86,12 +94,7 @@ public class WasmGCTypeMapper {
         } else if (type instanceof ValueType.Void) {
             return null;
         } else if (type instanceof ValueType.Object) {
-            var className = ((ValueType.Object) type).getClassName();
-            var cls = classes.get(className);
-            if (cls == null) {
-                className = "java.lang.Object";
-            }
-            return classInfoProvider.getClassInfo(className).getType();
+            return mapClassType(((ValueType.Object) type).getClassName());
         } else if (type instanceof ValueType.Array) {
             var degree = 0;
             while (type instanceof ValueType.Array) {
@@ -112,6 +115,27 @@ public class WasmGCTypeMapper {
         } else {
             throw new IllegalArgumentException();
         }
+    }
+
+    private WasmType mapClassType(String className) {
+        var result = typeCache.get(className);
+        if (result == null) {
+            for (var customMapper : customTypeMappers) {
+                result = customMapper.map(className);
+                if (result != null) {
+                    break;
+                }
+            }
+            if (result == null) {
+                var cls = classes.get(className);
+                if (cls == null) {
+                    className = "java.lang.Object";
+                }
+                result = classInfoProvider.getClassInfo(className).getType();
+                typeCache.put(className, result);
+            }
+        }
+        return result;
     }
 
     public WasmFunctionType getFunctionType(WasmType receiverType, MethodDescriptor methodDesc, boolean fresh) {

@@ -156,6 +156,9 @@ public interface CodeListener {
     default void arrayNewDefault(int typeIndex) {
     }
 
+    default void arrayNewFixed(int typeIndex, int size) {
+    }
+
     default void arrayGet(WasmSignedType signedType, int typeIndex) {
     }
 

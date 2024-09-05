@@ -108,6 +108,8 @@ public interface WasmExpressionVisitor {
 
     void visit(WasmArrayNewDefault expression);
 
+    void visit(WasmArrayNewFixed expression);
+
     void visit(WasmArrayGet expression);
 
     void visit(WasmArraySet expression);

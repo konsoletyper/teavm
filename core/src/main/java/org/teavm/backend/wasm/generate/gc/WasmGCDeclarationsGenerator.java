@@ -22,6 +22,7 @@ import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassGenerator;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapperFactory;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCSupertypeFunctionProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCCustomGeneratorProvider;
@@ -49,11 +50,13 @@ public class WasmGCDeclarationsGenerator {
     public WasmGCDeclarationsGenerator(
             WasmModule module,
             ListableClassHolderSource classes,
+            ClassLoader classLoader,
             ClassInitializerInfo classInitializerInfo,
             DependencyInfo dependencyInfo,
             Diagnostics diagnostics,
             WasmGCCustomGeneratorProvider customGenerators,
             WasmGCIntrinsicProvider intrinsics,
+            List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories,
             Predicate<MethodReference> isVirtual
     ) {
         this.module = module;
@@ -65,6 +68,7 @@ public class WasmGCDeclarationsGenerator {
                 module,
                 hierarchy,
                 classes,
+                classLoader,
                 virtualTables,
                 classInitializerInfo,
                 functionTypes,
@@ -84,7 +88,8 @@ public class WasmGCDeclarationsGenerator {
                 virtualTables,
                 methodGenerator,
                 names,
-                classInitializerInfo
+                classInitializerInfo,
+                customTypeMapperFactories
         );
         methodGenerator.setClassInfoProvider(classGenerator);
         methodGenerator.setStrings(classGenerator.strings);

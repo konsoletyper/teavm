@@ -65,6 +65,9 @@ public class WasmBinaryWriter {
             case ANY:
                 writeByte(0x6e);
                 break;
+            case EQ:
+                writeByte(0x6d);
+                break;
             case EXTERN:
                 writeByte(0x6f);
                 break;

@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 
 public class WasmArray extends WasmCompositeType {
     private WasmStorageType elementType;
+    private boolean immutable;
     private Supplier<WasmStorageType> elementTypeSupplier;
 
     public WasmArray(String name, WasmStorageType elementType) {
@@ -38,6 +39,14 @@ public class WasmArray extends WasmCompositeType {
             elementTypeSupplier = null;
         }
         return elementType;
+    }
+
+    public boolean isImmutable() {
+        return immutable;
+    }
+
+    public void setImmutable(boolean immutable) {
+        this.immutable = immutable;
     }
 
     @Override

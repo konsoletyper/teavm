@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTable;
@@ -137,7 +138,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             WasmFunctionTypes functionTypes, TagRegistry tagRegistry,
             ClassMetadataRequirements metadataRequirements, WasmGCVirtualTableProvider virtualTables,
             BaseWasmFunctionRepository functionProvider, WasmGCNameProvider names,
-            ClassInitializerInfo classInitializerInfo) {
+            ClassInitializerInfo classInitializerInfo,
+            List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories) {
         this.module = module;
         this.classSource = classSource;
         this.functionTypes = functionTypes;
@@ -152,6 +154,39 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         supertypeGenerator = new WasmGCSupertypeFunctionGenerator(module, this, names, tagRegistry, functionTypes);
         newArrayGenerator = new WasmGCNewArrayFunctionGenerator(module, functionTypes, this, names);
         typeMapper = new WasmGCTypeMapper(classSource, this, functionTypes, module);
+        var customTypeMapperFactoryContext = customTypeMapperFactoryContext();
+        typeMapper.setCustomTypeMappers(customTypeMapperFactories.stream()
+                .map(factory -> factory.createTypeMapper(customTypeMapperFactoryContext))
+                .collect(Collectors.toList()));
+    }
+
+    private WasmGCCustomTypeMapperFactoryContext customTypeMapperFactoryContext() {
+        return new WasmGCCustomTypeMapperFactoryContext() {
+            @Override
+            public ClassReaderSource classes() {
+                return classSource;
+            }
+
+            @Override
+            public WasmModule module() {
+                return module;
+            }
+
+            @Override
+            public WasmGCClassInfoProvider classInfoProvider() {
+                return WasmGCClassGenerator.this;
+            }
+
+            @Override
+            public WasmGCNameProvider names() {
+                return names;
+            }
+
+            @Override
+            public WasmGCTypeMapper typeMapper() {
+                return typeMapper;
+            }
+        };
     }
 
     public WasmGCSupertypeFunctionProvider getSupertypeProvider() {

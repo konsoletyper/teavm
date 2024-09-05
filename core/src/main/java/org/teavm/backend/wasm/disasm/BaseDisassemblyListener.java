@@ -75,6 +75,9 @@ public abstract class BaseDisassemblyListener  {
                         case ANY:
                             writer.write("anyref");
                             return;
+                        case EQ:
+                            writer.write("eqref");
+                            return;
                         case FUNC:
                             writer.write("funcref");
                             return;
@@ -98,6 +101,9 @@ public abstract class BaseDisassemblyListener  {
                     switch (refType.kind) {
                         case ANY:
                             writer.write("any");
+                            return;
+                        case EQ:
+                            writer.write("eq");
                             return;
                         case FUNC:
                             writer.write("func");

@@ -52,6 +52,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmGCTypeMapper typeMapper;
     private WasmFunctionTypes functionTypes;
     private ListableClassReaderSource classes;
+    private ClassLoader classLoader;
     private ClassHierarchy hierarchy;
     private BaseWasmFunctionRepository functions;
     private WasmGCSupertypeFunctionProvider supertypeFunctions;
@@ -67,7 +68,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
 
     public WasmGCGenerationContext(WasmModule module, WasmGCVirtualTableProvider virtualTables,
             WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes, ListableClassReaderSource classes,
-            ClassHierarchy hierarchy, BaseWasmFunctionRepository functions,
+            ClassLoader classLoader, ClassHierarchy hierarchy, BaseWasmFunctionRepository functions,
             WasmGCSupertypeFunctionProvider supertypeFunctions, WasmGCClassInfoProvider classInfoProvider,
             WasmGCStandardClasses standardClasses, WasmGCStringProvider strings,
             WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics,
@@ -77,6 +78,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         this.typeMapper = typeMapper;
         this.functionTypes = functionTypes;
         this.classes = classes;
+        this.classLoader = classLoader;
         this.hierarchy = hierarchy;
         this.functions = functions;
         this.supertypeFunctions = supertypeFunctions;
@@ -90,6 +92,10 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
 
     public WasmGCClassInfoProvider classInfoProvider() {
         return classInfoProvider;
+    }
+
+    public WasmGCNameProvider names() {
+        return names;
     }
 
     public WasmGCStandardClasses standardClasses() {
@@ -135,6 +141,10 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     @Override
     public ClassReaderSource classes() {
         return classes;
+    }
+
+    public ClassLoader classLoader() {
+        return classLoader;
     }
 
     public ClassHierarchy hierarchy() {

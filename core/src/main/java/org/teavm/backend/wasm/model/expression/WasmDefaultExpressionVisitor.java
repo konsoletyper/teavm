@@ -284,6 +284,13 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmArrayNewFixed expression) {
+        for (var element : expression.getElements()) {
+            element.acceptVisitor(this);
+        }
+    }
+
+    @Override
     public void visit(WasmArrayGet expression) {
         expression.getInstance().acceptVisitor(this);
         expression.getIndex().acceptVisitor(this);

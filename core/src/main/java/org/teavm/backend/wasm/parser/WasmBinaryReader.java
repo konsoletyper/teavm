@@ -92,6 +92,8 @@ public class WasmBinaryReader {
                 return special(WasmType.SpecialReferenceKind.EXTERN, nullable);
             case 0x6E:
                 return special(WasmType.SpecialReferenceKind.ANY, nullable);
+            case 0x6D:
+                return special(WasmType.SpecialReferenceKind.EQ, nullable);
             case 0x6C:
                 return special(WasmType.SpecialReferenceKind.I31, nullable);
             case 0x6B:

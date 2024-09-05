@@ -816,6 +816,13 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
     }
 
     @Override
+    public void arrayNewFixed(int typeIndex, int size) {
+        writer.address().write("array.new_fixed ");
+        writeTypeRef(typeIndex);
+        writer.write(" ").write(Integer.toString(size)).eol();
+    }
+
+    @Override
     public void arrayGet(WasmSignedType signedType, int typeIndex) {
         writer.address();
         if (signedType == null) {

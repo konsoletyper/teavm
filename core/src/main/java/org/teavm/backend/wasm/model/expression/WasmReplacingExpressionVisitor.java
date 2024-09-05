@@ -337,6 +337,11 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmArrayNewFixed expression) {
+        replaceExpressions(expression.getElements());
+    }
+
+    @Override
     public void visit(WasmArrayGet expression) {
         expression.getInstance().acceptVisitor(this);
         expression.setInstance(mapper.apply(expression.getInstance()));

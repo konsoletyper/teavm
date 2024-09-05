@@ -27,6 +27,7 @@ import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
+import org.teavm.backend.wasm.model.expression.WasmArrayNewFixed;
 import org.teavm.backend.wasm.model.expression.WasmArraySet;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
@@ -762,6 +763,17 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         open().append("array.new_default");
         append(" ").append(typeName(expression.getType()));
         line(expression.getLength());
+        close();
+    }
+
+    @Override
+    public void visit(WasmArrayNewFixed expression) {
+        open().append("array.new_fixed");
+        append(" ").append(typeName(expression.getType()));
+        append(" ").append(Integer.toString(expression.getElements().size()));
+        for (var element : expression.getElements()) {
+            line(element);
+        }
         close();
     }
 
