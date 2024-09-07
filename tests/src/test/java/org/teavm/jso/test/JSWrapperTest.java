@@ -32,6 +32,7 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.core.JSString;
+import org.teavm.jso.core.JSSymbol;
 import org.teavm.jso.core.JSUndefined;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
@@ -329,6 +330,28 @@ public class JSWrapperTest {
 
         Object b = createWithToString("bar");
         assertEquals("bar", b.toString());
+    }
+
+    @Test
+    public void jsSymbol() {
+
+        var stringSymbol = JSSymbol.create("customString");
+        var o1 = JSObjects.create();
+
+        assertFalse(stringSymbol.has(o1));
+        stringSymbol.set(o1, "foo");
+        assertTrue(stringSymbol.has(o1));
+        assertEquals("foo", stringSymbol.get(o1));
+        stringSymbol.set(o1, "bar");
+        assertEquals("bar", stringSymbol.get(o1));
+
+        var javaListSymbol = JSSymbol.create("customJavaList");
+
+        assertFalse(javaListSymbol.has(o1));
+        javaListSymbol.set(o1, new ArrayList<>());
+        assertTrue(javaListSymbol.has(o1));
+
+        assertTrue(javaListSymbol.get(o1) instanceof ArrayList);
     }
 
     private void callSetProperty(Object instance, Object o) {
