@@ -40,9 +40,13 @@ public interface WasmGCClassInfoProvider {
 
     int getClassSupertypeFunctionOffset();
 
+    int getClassEnclosingClassOffset();
+
     int getNewArrayFunctionOffset();
 
     int getClassNameOffset();
+
+    int getClassSimpleNameOffset();
 
     int getArrayGetOffset();
 

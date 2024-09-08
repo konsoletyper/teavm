@@ -77,6 +77,9 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
                 switch (method.getName()) {
                     case "getComponentType":
                     case "isInstance":
+                    case "getEnclosingClass":
+                    case "getSimpleNameCache":
+                    case "setSimpleNameCache":
                         method.setProgram(null);
                         method.getModifiers().add(ElementModifier.NATIVE);
                         break;

@@ -164,12 +164,16 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
             if (isArray()) {
                 simpleName = getComponentType().getSimpleName() + "[]";
             } else if (getEnclosingClass() != null) {
-                simpleName = Platform.getSimpleName(platformClass);
+                simpleName = PlatformDetector.isWebAssemblyGC()
+                    ? getSimpleNameCache(this)
+                    : Platform.getSimpleName(platformClass);
                 if (simpleName == null) {
                     simpleName = "";
                 }
             } else {
-                String name = Platform.getName(platformClass);
+                var name = PlatformDetector.isWebAssemblyGC()
+                        ? getName()
+                        : Platform.getName(platformClass);
                 int lastDollar = name.lastIndexOf('$');
                 if (lastDollar != -1) {
                     name = name.substring(lastDollar + 1);

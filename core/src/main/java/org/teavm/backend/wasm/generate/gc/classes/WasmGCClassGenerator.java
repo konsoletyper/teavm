@@ -119,11 +119,13 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private int classTagOffset;
     private int classFlagsOffset;
     private int classNameOffset;
+    private int classSimpleNameOffset;
     private int classParentOffset;
     private int classArrayOffset;
     private int classArrayItemOffset;
     private int classNewArrayOffset;
     private int classSupertypeFunctionOffset;
+    private int classEnclosingClassOffset;
     private int virtualTableFieldOffset;
     private int arrayLengthOffset = -1;
     private int arrayGetOffset = -1;
@@ -352,9 +354,21 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     @Override
+    public int getClassEnclosingClassOffset() {
+        standardClasses.classClass().getStructure().init();
+        return classEnclosingClassOffset;
+    }
+
+    @Override
     public int getClassNameOffset() {
         standardClasses.classClass().getStructure().init();
         return classNameOffset;
+    }
+
+    @Override
+    public int getClassSimpleNameOffset() {
+        standardClasses.classClass().getStructure().init();
+        return classSimpleNameOffset;
     }
 
     @Override
@@ -445,11 +459,15 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             if (cls != null) {
                 if (metadataReq.simpleName() && cls.getSimpleName() != null) {
                     var namePtr = strings.getStringConstant(cls.getSimpleName()).global;
-                    target.add(setClassField(classInfo, classNameOffset, new WasmGetGlobal(namePtr)));
+                    target.add(setClassField(classInfo, classSimpleNameOffset, new WasmGetGlobal(namePtr)));
                 }
                 if (cls.getParent() != null && metadataReq.superclass()) {
                     var parent = getClassInfo(cls.getParent());
                     target.add(setClassField(classInfo, classParentOffset, new WasmGetGlobal(parent.pointer)));
+                }
+                if (cls.getOwnerName() != null && metadataReq.superclass()) {
+                    var owner = getClassInfo(cls.getOwnerName());
+                    target.add(setClassField(classInfo, classEnclosingClassOffset, new WasmGetGlobal(owner.pointer)));
                 }
             }
             if (virtualTable != null && virtualTable.isConcrete()) {
@@ -960,8 +978,12 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             classNewArrayOffset = fields.size();
             fields.add(createClassField(newArrayGenerator.getNewArrayFunctionType().getReference().asStorage(),
                     "createArrayInstance"));
+            classEnclosingClassOffset = fields.size();
+            fields.add(createClassField(standardClasses.stringClass().getType().asStorage(), "enclosingClass"));
             classNameOffset = fields.size();
             fields.add(createClassField(standardClasses.stringClass().getType().asStorage(), "name"));
+            classSimpleNameOffset = fields.size();
+            fields.add(createClassField(standardClasses.stringClass().getType().asStorage(), "simpleNAme"));
             virtualTableFieldOffset = fields.size();
         }
     }
