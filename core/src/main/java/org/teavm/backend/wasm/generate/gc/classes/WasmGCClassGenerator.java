@@ -152,7 +152,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         this.names = names;
         this.classInitializerInfo = classInitializerInfo;
         standardClasses = new WasmGCStandardClasses(this);
-        strings = new WasmGCStringPool(standardClasses, module, functionProvider, names);
+        strings = new WasmGCStringPool(standardClasses, module, functionProvider, names, functionTypes);
         supertypeGenerator = new WasmGCSupertypeFunctionGenerator(module, this, names, tagRegistry, functionTypes);
         newArrayGenerator = new WasmGCNewArrayFunctionGenerator(module, functionTypes, this, names);
         typeMapper = new WasmGCTypeMapper(classSource, this, functionTypes, module);

@@ -19,16 +19,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
+import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.gc.WasmGCInitializerContributor;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
+import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
+import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
@@ -41,15 +44,18 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
     private WasmBinaryWriter binaryWriter = new WasmBinaryWriter();
     private Map<String, WasmGCStringConstant> stringMap = new LinkedHashMap<>();
     private BaseWasmFunctionRepository functionProvider;
-    private WasmFunction nextCharArrayFunction;
+    private WasmFunction initNextStringFunction;
     private WasmGCNameProvider names;
+    private WasmFunctionTypes functionTypes;
 
     public WasmGCStringPool(WasmGCStandardClasses standardClasses, WasmModule module,
-            BaseWasmFunctionRepository functionProvider, WasmGCNameProvider names) {
+            BaseWasmFunctionRepository functionProvider, WasmGCNameProvider names,
+            WasmFunctionTypes functionTypes) {
         this.standardClasses = standardClasses;
         this.module = module;
         this.functionProvider = functionProvider;
         this.names = names;
+        this.functionTypes = functionTypes;
     }
 
     @Override
@@ -61,25 +67,20 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
 
     @Override
     public void contributeToInitializer(WasmFunction function) {
-        if (nextCharArrayFunction == null) {
+        if (initNextStringFunction == null) {
             return;
         }
         var stringStruct = standardClasses.stringClass().getStructure();
         for (var str : stringMap.values()) {
-            var value = new WasmCall(nextCharArrayFunction);
-            function.getBody().add(new WasmStructSet(stringStruct, new WasmGetGlobal(str.global),
-                    WasmGCClassInfoProvider.CUSTOM_FIELD_OFFSETS, value));
-            function.getBody().add(new WasmStructSet(stringStruct, new WasmGetGlobal(str.global),
-                    WasmGCClassInfoProvider.CLASS_FIELD_OFFSET,
-                    new WasmGetGlobal(standardClasses.stringClass().getPointer())));
+            function.getBody().add(new WasmCall(initNextStringFunction, new WasmGetGlobal(str.global)));
         }
     }
 
     @Override
     public WasmGCStringConstant getStringConstant(String string) {
         return stringMap.computeIfAbsent(string, s -> {
-            if (nextCharArrayFunction == null) {
-                initNextCharArrayFunction();
+            if (initNextStringFunction == null) {
+                createInitNextStringFunction();
             }
             binaryWriter.writeLEB(string.length());
             binaryWriter.writeBytes(string.getBytes(StandardCharsets.UTF_8));
@@ -95,8 +96,23 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
         });
     }
 
-    private void initNextCharArrayFunction() {
-        nextCharArrayFunction = functionProvider.forStaticMethod(new MethodReference(WasmGCSupport.class,
+    private void createInitNextStringFunction() {
+        var stringTypeInfo = standardClasses.stringClass();
+        var nextCharArrayFunction = functionProvider.forStaticMethod(new MethodReference(WasmGCSupport.class,
                 "nextCharArray", char[].class));
+        var function = new WasmFunction(functionTypes.of(null, stringTypeInfo.getType()));
+        function.setName(names.topLevel("teavm@initNextString"));
+
+        var stringLocal = new WasmLocal(stringTypeInfo.getType());
+        function.add(stringLocal);
+
+        var value = new WasmCall(nextCharArrayFunction);
+        function.getBody().add(new WasmStructSet(stringTypeInfo.getStructure(),
+                new WasmGetLocal(stringLocal), WasmGCClassInfoProvider.CUSTOM_FIELD_OFFSETS, value));
+        function.getBody().add(new WasmStructSet(stringTypeInfo.getStructure(), new WasmGetLocal(stringLocal),
+                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET,
+                new WasmGetGlobal(stringTypeInfo.getPointer())));
+        module.functions.add(function);
+        initNextStringFunction = function;
     }
 }
