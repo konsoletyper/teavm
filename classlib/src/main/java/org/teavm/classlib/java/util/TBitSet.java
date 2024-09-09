@@ -64,7 +64,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
 
     public static TBitSet valueOf(byte[] bytes) {
         int[] ints = new int[(bytes.length + 3) / 4];
-        int fullInts = bytes.length / 4;
+        int fullInts = bytes.length / TInteger.BYTES;
         for (int i = 0; i < fullInts; ++i) {
             ints[i] = (bytes[i * 4] & 0xFF) | ((bytes[i * 4 + 1] & 0xFF) << 8) | ((bytes[i * 4 + 2] & 0xFF) << 16)
                     | ((bytes[i * 4 + 3] & 0xFF) << 24);
@@ -95,7 +95,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
 
     public byte[] toByteArray() {
         byte[] bytes = new byte[(length + 7) / 8];
-        int fullInts = bytes.length / 4;
+        int fullInts = bytes.length / TInteger.BYTES;
         int j = 0;
         int i = 0;
         for (; i < fullInts; i++) {
