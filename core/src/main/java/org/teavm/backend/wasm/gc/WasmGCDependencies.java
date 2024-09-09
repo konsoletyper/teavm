@@ -98,8 +98,8 @@ public class WasmGCDependencies {
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "aiiobe", ArrayIndexOutOfBoundsException.class))
                 .use();
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "cce", ClassCastException.class)).use();
-        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "throwCloneNotSupportedException",
-                void.class)).use();
+        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "defaultClone", Object.class,
+                Object.class)).use();
     }
 
     private void contributeInitializerUtils() {

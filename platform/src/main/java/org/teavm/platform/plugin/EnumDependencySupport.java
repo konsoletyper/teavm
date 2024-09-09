@@ -46,7 +46,7 @@ public class EnumDependencySupport extends AbstractDependencyListener {
 
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
-        if (method.getReference().getClassName().equals(Platform.class.getName())
+        if (isEnumSupportClass(method.getMethod().getOwnerName())
                 && method.getReference().getName().equals("getEnumConstants")) {
             allEnums.connect(method.getResult().getArrayItem());
             final MethodReference ref = method.getReference();
@@ -65,5 +65,10 @@ public class EnumDependencySupport extends AbstractDependencyListener {
                 classReached(agent, cls);
             }
         }
+    }
+
+    private boolean isEnumSupportClass(String className) {
+        return className.equals(Platform.class.getName())
+                || className.endsWith("org.teavm.classlib.impl.reflection.ClassSupport");
     }
 }

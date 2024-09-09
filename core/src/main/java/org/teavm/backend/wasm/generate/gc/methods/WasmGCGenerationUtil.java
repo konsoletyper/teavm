@@ -16,12 +16,14 @@
 package org.teavm.backend.wasm.generate.gc.methods;
 
 import java.util.List;
+import java.util.function.Function;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
+import org.teavm.backend.wasm.model.expression.WasmArrayNewFixed;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
@@ -43,6 +45,20 @@ public class WasmGCGenerationUtil {
 
     public void allocateArray(ValueType itemType, WasmExpression length, TextLocation location, WasmLocal local,
             List<WasmExpression> target) {
+        allocateArray(itemType, location, local, target, arrayType -> new WasmArrayNewDefault(arrayType, length));
+    }
+
+    public void allocateArray(ValueType itemType, List<? extends WasmExpression> data, TextLocation location,
+            WasmLocal local, List<WasmExpression> target) {
+        allocateArray(itemType, location, local, target, arrayType -> {
+            var expr = new WasmArrayNewFixed(arrayType);
+            expr.getElements().addAll(data);
+            return expr;
+        });
+    }
+
+    public void allocateArray(ValueType itemType, TextLocation location,
+            WasmLocal local, List<WasmExpression> target, Function<WasmArray, WasmExpression> data) {
         var classInfo = classInfoProvider.getClassInfo(ValueType.arrayOf(itemType));
         var block = new WasmBlock(false);
         block.setType(classInfo.getType());
@@ -68,7 +84,7 @@ public class WasmGCGenerationUtil {
                 classInfo.getStructure(),
                 new WasmGetLocal(targetVar),
                 WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET,
-                new WasmArrayNewDefault(wasmArray, length)
+                data.apply(wasmArray)
         );
         initArrayField.setLocation(location);
         target.add(initArrayField);

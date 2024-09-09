@@ -35,7 +35,7 @@ public class WasmGCSupport {
         return new ClassCastException();
     }
 
-    public static void throwCloneNotSupportedException() throws CloneNotSupportedException {
+    public static Object defaultClone(Object value) throws CloneNotSupportedException {
         throw new CloneNotSupportedException();
     }
 

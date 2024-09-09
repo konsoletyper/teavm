@@ -39,6 +39,7 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         fillWasmRuntime();
         fillObject();
         fillClass();
+        fillClassSupport();
         fillSystem();
         fillLongAndInteger();
         fillFloat();
@@ -87,6 +88,13 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         add(new MethodReference(Class.class, "getSuperclass", Class.class), intrinsic);
         add(new MethodReference(Class.class, "getSimpleNameCache", Class.class, String.class), intrinsic);
         add(new MethodReference(Class.class, "setSimpleNameCache", Class.class, String.class, void.class), intrinsic);
+    }
+
+    private void fillClassSupport() {
+        var intrinsic = new ClassSupportIntrinsic();
+        add(new MethodReference("org.teavm.classlib.impl.reflection.ClassSupport",
+                "getEnumConstants", ValueType.object("java.lang.Class"),
+                ValueType.arrayOf(ValueType.object("java.lang.Enum"))), intrinsic);
     }
 
     private void fillSystem() {

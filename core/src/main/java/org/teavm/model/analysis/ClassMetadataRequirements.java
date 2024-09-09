@@ -16,6 +16,7 @@
 package org.teavm.model.analysis;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.teavm.dependency.DependencyInfo;
@@ -45,6 +46,7 @@ public class ClassMetadataRequirements {
     private Map<ValueType, ClassInfo> requirements = new HashMap<>();
     private boolean hasArrayGet;
     private boolean hasArrayLength;
+    private boolean hasEnumConstants;
 
     public ClassMetadataRequirements(DependencyInfo dependencyInfo) {
         MethodDependencyInfo getNameMethod = dependencyInfo.getMethod(GET_NAME_METHOD);
@@ -128,6 +130,22 @@ public class ClassMetadataRequirements {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).cloneMethod = true;
             }
         }
+
+        var enumConstants = Arrays.asList(
+            dependencyInfo.getMethod(new MethodReference("org.teavm.platform.Platform", "getEnumConstants",
+                    ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Enum[].class))),
+            dependencyInfo.getMethod(new MethodReference("org.teavm.classlib.impl.reflection.ClassSupport",
+                    "getEnumConstants", ValueType.parse(Class.class), ValueType.parse(Enum[].class)))
+        );
+        for (var enumConstantsDep : enumConstants) {
+            if (enumConstantsDep != null) {
+                hasEnumConstants = true;
+                var classNames = enumConstantsDep.getVariable(1).getClassValueNode().getTypes();
+                for (var className : classNames) {
+                    requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).enumConstants = true;
+                }
+            }
+        }
     }
 
     public Info getInfo(String className) {
@@ -148,6 +166,10 @@ public class ClassMetadataRequirements {
 
     public boolean hasArrayLength() {
         return hasArrayLength;
+    }
+
+    public boolean hasEnumConstants() {
+        return hasEnumConstants;
     }
 
     private void addClassesRequiringName(Map<ValueType, ClassInfo> target, String[] source) {
@@ -177,6 +199,7 @@ public class ClassMetadataRequirements {
         boolean arrayLength;
         boolean arrayGet;
         boolean cloneMethod;
+        boolean enumConstants;
 
         @Override
         public boolean name() {
@@ -227,6 +250,11 @@ public class ClassMetadataRequirements {
         public boolean cloneMethod() {
             return cloneMethod;
         }
+
+        @Override
+        public boolean enumConstants() {
+            return enumConstants;
+        }
     }
 
     public interface Info {
@@ -249,5 +277,7 @@ public class ClassMetadataRequirements {
         boolean arrayGet();
 
         boolean cloneMethod();
+
+        boolean enumConstants();
     }
 }

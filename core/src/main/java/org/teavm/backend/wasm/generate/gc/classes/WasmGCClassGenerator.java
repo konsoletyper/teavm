@@ -31,8 +31,10 @@ import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTable;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableEntry;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
+import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.gc.WasmGCInitializerContributor;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
+import org.teavm.backend.wasm.generate.gc.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringPool;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmField;
@@ -48,7 +50,9 @@ import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
+import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmFloat32Constant;
@@ -72,6 +76,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
@@ -131,6 +136,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private int classSupertypeFunctionOffset;
     private int classEnclosingClassOffset;
     private int virtualTableFieldOffset;
+    private int enumConstantsFunctionOffset;
     private int arrayLengthOffset = -1;
     private int arrayGetOffset = -1;
     private int cloneOffset = -1;
@@ -140,6 +146,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private WasmFunctionType arrayGetType;
     private WasmFunctionType arrayLengthType;
     private List<WasmStructure> nonInitializedStructures = new ArrayList<>();
+    private WasmArray objectArrayType;
+    private WasmArray enumConstantArray;
 
     public WasmGCClassGenerator(WasmModule module, ClassReaderSource classSource,
             ClassHierarchy hierarchy,
@@ -494,10 +502,14 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                         cloneFunction = generateCloneFunction(classInfo, name);
                     } else {
                         cloneFunction = functionProvider.forStaticMethod(new MethodReference(
-                                WasmGCSupport.class, "throwCloneNotSupportedException", void.class));
+                                WasmGCSupport.class, "defaultClone", Object.class, Object.class));
                     }
                     cloneFunction.setReferenced(true);
                     target.add(setClassField(classInfo, cloneOffset, new WasmFunctionReference(cloneFunction)));
+                }
+                if (metadataReq.enumConstants() && cls.hasModifier(ElementModifier.ENUM)) {
+                    target.add(setClassField(classInfo, enumConstantsFunctionOffset,
+                            new WasmFunctionReference(createEnumConstantsFunction(classInfo, cls))));
                 }
             }
             if (virtualTable != null && virtualTable.isConcrete()) {
@@ -881,6 +893,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         return arrayGetOffset;
     }
 
+    @Override
+    public int getEnumConstantsFunctionOffset() {
+        return enumConstantsFunctionOffset;
+    }
+
     private void initArrayClass(WasmGCClassInfo classInfo, ValueType.Array type) {
         classInfo.initializer = target -> {
             var itemTypeInfo = getClassInfo(type.getItemType());
@@ -1047,6 +1064,13 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             cloneOffset = fields.size();
             fields.add(createClassField(functionTypes.of(standardClasses.objectClass().getType(),
                     standardClasses.objectClass().getType()).getReference().asStorage(), "clone"));
+            fields.add(createClassField(WasmType.INT32.asStorage(), "enumConstantCount"));
+            if (metadataRequirements.hasEnumConstants()) {
+                enumConstantsFunctionOffset = fields.size();
+                var enumArrayType = getClassInfo(ValueType.arrayOf(ValueType.object("java.lang.Enum"))).getType();
+                var enumConstantsType = functionTypes.of(enumArrayType);
+                fields.add(createClassField(enumConstantsType.getReference().asStorage(), "getEnumConstants"));
+            }
             virtualTableFieldOffset = fields.size();
         }
     }
@@ -1057,6 +1081,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     private void fillArrayFields(WasmGCClassInfo classInfo, ValueType elementType) {
         WasmStorageType wasmElementType;
+        WasmArray wasmArray;
         if (elementType instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) elementType).getKind()) {
                 case BOOLEAN:
@@ -1082,12 +1107,21 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 default:
                     throw new IllegalArgumentException();
             }
+            var wasmArrayName = names.topLevel(names.suggestForType(classInfo.getValueType()) + "$Data");
+            wasmArray = new WasmArray(wasmArrayName, wasmElementType);
+            module.types.add(wasmArray);
         } else {
             wasmElementType = standardClasses.objectClass().getType().asStorage();
+            wasmArray = objectArrayType;
+            if (wasmArray == null) {
+                var wasmArrayName = names.topLevel(names.suggestForType(ValueType.arrayOf(
+                        ValueType.object("java.lang.Object"))) + "$Data");
+                wasmArray = new WasmArray(wasmArrayName, wasmElementType);
+                module.types.add(wasmArray);
+                objectArrayType = wasmArray;
+            }
         }
-        var wasmArrayName = names.topLevel(names.suggestForType(classInfo.getValueType()) + "$Data");
-        var wasmArray = new WasmArray(wasmArrayName, wasmElementType);
-        module.types.add(wasmArray);
+
         classInfo.structure.getFields().add(new WasmField(wasmArray.getReference().asStorage(),
                 arrayDataFieldName()));
     }
@@ -1214,6 +1248,35 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         return function;
     }
 
+    private WasmFunction createEnumConstantsFunction(WasmGCClassInfo classInfo, ClassReader cls) {
+        var enumArrayStruct = getClassInfo(ValueType.parse(Enum[].class)).structure;
+        var function = new WasmFunction(functionTypes.of(enumArrayStruct.getReference()));
+        function.setName(names.topLevel(cls.getName() + "@constants"));
+        module.functions.add(function);
+        function.setReferenced(true);
+
+        var fields = cls.getFields().stream()
+                .filter(field -> field.hasModifier(ElementModifier.ENUM))
+                .filter(field -> field.hasModifier(ElementModifier.STATIC))
+                .map(field -> new WasmGetGlobal(getStaticFieldLocation(field.getReference())))
+                .collect(Collectors.toList());
+
+        if (classInfo.getInitializerPointer() != null) {
+            function.getBody().add(new WasmCallReference(new WasmGetGlobal(classInfo.getInitializerPointer()),
+                    functionTypes.of(null)));
+        }
+
+        var tempVars = new TemporaryVariablePool(function);
+        var util = new WasmGCGenerationUtil(this, tempVars);
+        var local = tempVars.acquire(enumArrayStruct.getReference());
+        var block = new WasmBlock(false);
+        block.setType(enumArrayStruct.getReference());
+        util.allocateArray(ValueType.parse(Enum.class), fields, null, null, block.getBody());
+        function.getBody().add(new WasmReturn(block));
+        tempVars.release(local);
+
+        return function;
+    }
 
     private WasmExpression setClassField(WasmGCClassInfo classInfo, int fieldIndex, WasmExpression value) {
         return new WasmStructSet(

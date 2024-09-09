@@ -29,6 +29,7 @@ import java.util.Set;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.classlib.impl.reflection.ClassSupport;
 import org.teavm.classlib.impl.reflection.Flags;
 import org.teavm.classlib.impl.reflection.JSClass;
 import org.teavm.classlib.impl.reflection.JSField;
@@ -692,8 +693,12 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
         if (!isEnum()) {
             return null;
         }
-        Platform.initClass(platformClass);
-        return (T[]) Platform.getEnumConstants(platformClass).clone();
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return (T[]) ClassSupport.getEnumConstants((Class<?>) (Object) this);
+        } else {
+            Platform.initClass(platformClass);
+            return (T[]) Platform.getEnumConstants(platformClass).clone();
+        }
     }
 
     @SuppressWarnings("unchecked")
