@@ -120,6 +120,14 @@ public class ClassMetadataRequirements {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).arrayLength = true;
             }
         }
+
+        var clone = dependencyInfo.getMethod(new MethodReference(Object.class, "cloneObject", Object.class));
+        if (clone != null) {
+            var classNames = clone.getVariable(0).getTypes();
+            for (var className : classNames) {
+                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).cloneMethod = true;
+            }
+        }
     }
 
     public Info getInfo(String className) {
@@ -168,6 +176,7 @@ public class ClassMetadataRequirements {
         boolean newArray;
         boolean arrayLength;
         boolean arrayGet;
+        boolean cloneMethod;
 
         @Override
         public boolean name() {
@@ -213,6 +222,11 @@ public class ClassMetadataRequirements {
         public boolean arrayGet() {
             return arrayGet;
         }
+
+        @Override
+        public boolean cloneMethod() {
+            return cloneMethod;
+        }
     }
 
     public interface Info {
@@ -233,5 +247,7 @@ public class ClassMetadataRequirements {
         boolean arrayLength();
 
         boolean arrayGet();
+
+        boolean cloneMethod();
     }
 }

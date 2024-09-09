@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.wasm.transformation.gc;
 
-import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.interop.Import;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
@@ -29,7 +28,6 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
-import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
@@ -51,11 +49,6 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
                         method.setProgram(null);
                         method.getModifiers().add(ElementModifier.NATIVE);
                         break;
-                    case "clone": {
-                        var em = ProgramEmitter.create(method, context.getHierarchy());
-                        em.invoke(WasmGCSupport.class, "cnse", CloneNotSupportedException.class).raise();
-                        break;
-                    }
                     default:
                         if (method.getProgram() != null) {
                             transformMonitorFieldAccess(method.getProgram());
@@ -80,6 +73,7 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
                     case "getEnclosingClass":
                     case "getSimpleNameCache":
                     case "setSimpleNameCache":
+                    case "getSuperclass":
                         method.setProgram(null);
                         method.getModifiers().add(ElementModifier.NATIVE);
                         break;

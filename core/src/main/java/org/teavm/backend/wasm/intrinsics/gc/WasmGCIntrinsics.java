@@ -68,6 +68,7 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
     private void fillObject() {
         var intrinsic = new ObjectIntrinsic();
         add(new MethodReference(Object.class, "getClass", Class.class), intrinsic);
+        add(new MethodReference(Object.class, "cloneObject", Object.class), intrinsic);
         add(new MethodReference(Object.class.getName(), "getMonitor",
                 ValueType.object("java.lang.Object$Monitor")), intrinsic);
         add(new MethodReference(Object.class.getName(), "setMonitor",
@@ -83,6 +84,7 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         add(new MethodReference(Class.class, "getNameImpl", String.class), intrinsic);
         add(new MethodReference(Class.class, "setNameImpl", String.class, void.class), intrinsic);
         add(new MethodReference(Class.class, "getEnclosingClass", Class.class), intrinsic);
+        add(new MethodReference(Class.class, "getSuperclass", Class.class), intrinsic);
         add(new MethodReference(Class.class, "getSimpleNameCache", Class.class, String.class), intrinsic);
         add(new MethodReference(Class.class, "setSimpleNameCache", Class.class, String.class, void.class), intrinsic);
     }

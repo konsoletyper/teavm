@@ -20,6 +20,7 @@ import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
+import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
@@ -52,6 +53,8 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
                 return generateGetIdentity(invocation, context);
             case "setWasmGCIdentity":
                 return generateSetIdentity(invocation, context);
+            case "cloneObject":
+                return generateClone(invocation, context);
             default:
                 throw new IllegalArgumentException();
         }
@@ -129,5 +132,24 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
         var identityWrapper = new WasmInt31Reference(identity);
         return new WasmStructSet(objectStruct, instance, WasmGCClassInfoProvider.MONITOR_FIELD_OFFSET,
                 identityWrapper);
+    }
+
+    private WasmExpression generateClone(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var objectStruct = context.classInfoProvider().getClassInfo("java.lang.Object").getStructure();
+        var classStruct = context.classInfoProvider().getClassInfo("java.lang.Class").getStructure();
+
+        var block = new WasmBlock(false);
+        block.setType(objectStruct.getReference());
+        var obj = context.exprCache().create(context.generate(invocation.getArguments().get(0)),
+                objectStruct.getReference(), invocation.getLocation(), block.getBody());
+        var cls = new WasmStructGet(objectStruct, obj.expr(), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
+        var functionRef = new WasmStructGet(classStruct, cls, context.classInfoProvider().getCloneOffset());
+        var call = new WasmCallReference(functionRef, context.functionTypes().of(
+                objectStruct.getReference(), objectStruct.getReference()));
+        call.getArguments().add(obj.expr());
+        block.getBody().add(call);
+
+        obj.release();
+        return block;
     }
 }

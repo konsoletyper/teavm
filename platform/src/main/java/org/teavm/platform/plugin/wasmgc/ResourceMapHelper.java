@@ -28,7 +28,7 @@ public final class ResourceMapHelper {
 
     public static Resource get(ResourceMap<?> map, String key) {
         var count = entryCount(map);
-        var initialIndex = Math.abs(key.hashCode()) % count;
+        var initialIndex = Integer.remainderUnsigned(key.hashCode(), count);
         for (var i = initialIndex; i < count; ++i) {
             var entry = entry(map, i);
             if (entry == null) {

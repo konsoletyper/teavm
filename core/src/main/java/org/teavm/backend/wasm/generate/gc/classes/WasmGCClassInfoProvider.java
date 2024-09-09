@@ -42,6 +42,8 @@ public interface WasmGCClassInfoProvider {
 
     int getClassEnclosingClassOffset();
 
+    int getClassParentOffset();
+
     int getNewArrayFunctionOffset();
 
     int getClassNameOffset();
@@ -51,6 +53,8 @@ public interface WasmGCClassInfoProvider {
     int getArrayGetOffset();
 
     int getArrayLengthOffset();
+
+    int getCloneOffset();
 
     default WasmGCClassInfo getClassInfo(String name) {
         return getClassInfo(ValueType.object(name));

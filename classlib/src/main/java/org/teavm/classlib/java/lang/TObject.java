@@ -344,7 +344,7 @@ public class TObject {
     @PluggableDependency(ObjectDependencyPlugin.class)
     protected Object clone() throws TCloneNotSupportedException {
         if (PlatformDetector.isWebAssemblyGC()) {
-            throw new TCloneNotSupportedException();
+            return cloneObject();
         }
         if (!(this instanceof TCloneable) && Platform.getPlatformObject(this)
                 .getPlatformClass().getMetadata().getArrayItem() == null) {
@@ -354,6 +354,8 @@ public class TObject {
         Platform.getPlatformObject(result).setId(Platform.nextObjectId());
         return result;
     }
+
+    private native TObject cloneObject();
 
     @SuppressWarnings("unused")
     private static RuntimeObject cloneLowLevel(RuntimeObject self) {

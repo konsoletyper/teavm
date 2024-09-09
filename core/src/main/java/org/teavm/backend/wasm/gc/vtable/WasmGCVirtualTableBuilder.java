@@ -34,6 +34,7 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 class WasmGCVirtualTableBuilder {
+    private static final MethodReference CLONE_METHOD = new MethodReference(Object.class, "clone", Object.class);
     ListableClassReaderSource classes;
     Collection<MethodReference> methodsAtCallSites;
     Predicate<MethodReference> isVirtual;
@@ -170,7 +171,7 @@ class WasmGCVirtualTableBuilder {
                 if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
                     continue;
                 }
-                if (!isVirtual.test(method.getReference())) {
+                if (!isVirtual.test(method.getReference()) && !method.getReference().equals(CLONE_METHOD)) {
                     continue;
                 }
                 table.currentImplementors.put(method.getDescriptor(), method.getReference());

@@ -82,6 +82,7 @@ public class WasmGCDeclarationsGenerator {
         classGenerator = new WasmGCClassGenerator(
                 module,
                 classes,
+                hierarchy,
                 functionTypes,
                 tags,
                 metadataRequirements,

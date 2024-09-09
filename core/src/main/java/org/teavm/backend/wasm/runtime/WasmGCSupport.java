@@ -35,8 +35,8 @@ public class WasmGCSupport {
         return new ClassCastException();
     }
 
-    public static CloneNotSupportedException cnse() {
-        return new CloneNotSupportedException();
+    public static void throwCloneNotSupportedException() throws CloneNotSupportedException {
+        throw new CloneNotSupportedException();
     }
 
     public static int nextObjectId() {
