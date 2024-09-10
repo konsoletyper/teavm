@@ -97,6 +97,7 @@ import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmTry;
+import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.backend.wasm.render.WasmTypeInference;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
@@ -450,11 +451,14 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         block.setLocation(location);
 
         accept(value);
+        if (result instanceof WasmUnreachable) {
+            return result;
+        }
         result.acceptVisitor(typeInference);
         block.setType(typeInference.getResult());
         var cachedValue = exprCache.create(result, typeInference.getResult(), location, block.getBody());
 
-        var check = new WasmBranch(cachedValue.expr(), block);
+        var check = new WasmBranch(negate(genIsNull(cachedValue.expr())), block);
         check.setResult(cachedValue.expr());
         block.getBody().add(new WasmDrop(check));
 
@@ -945,7 +949,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             List<WasmExpression> arguments
     );
 
-    private boolean needsCallSiteId() {
+    protected boolean needsCallSiteId() {
         return isManaged();
     }
 

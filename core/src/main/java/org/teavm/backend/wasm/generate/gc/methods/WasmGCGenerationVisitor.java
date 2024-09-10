@@ -105,6 +105,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected boolean isManaged() {
+        return true;
+    }
+
+    @Override
+    protected boolean needsCallSiteId() {
         return false;
     }
 

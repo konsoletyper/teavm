@@ -161,7 +161,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
 
     public WasmFunction aaiobeMethod() {
         if (aaiobeMethod == null) {
-            aaiobeMethod = functions().forStaticMethod(new MethodReference(WasmGCSupport.class, "aaiobe",
+            aaiobeMethod = functions().forStaticMethod(new MethodReference(WasmGCSupport.class, "aiiobe",
                     ArrayIndexOutOfBoundsException.class));
         }
         return aaiobeMethod;

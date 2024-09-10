@@ -68,6 +68,7 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
         Supplier<WasmGCTarget> targetSupplier = () -> {
             var target = new WasmGCTarget();
             target.setObfuscated(false);
+            target.setStrict(true);
             var sourceDirs = System.getProperty(SOURCE_DIRS);
             if (sourceDirs != null) {
                 var dirs = new ArrayList<File>();

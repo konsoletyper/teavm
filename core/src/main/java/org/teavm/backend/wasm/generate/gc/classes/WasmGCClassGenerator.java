@@ -363,6 +363,12 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     @Override
+    public int getClassFlagsOffset() {
+        standardClasses.classClass().getStructure().init();
+        return classFlagsOffset;
+    }
+
+    @Override
     public int getClassSupertypeFunctionOffset() {
         standardClasses.classClass().getStructure().init();
         return classSupertypeFunctionOffset;

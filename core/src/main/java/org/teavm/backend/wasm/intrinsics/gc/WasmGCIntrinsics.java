@@ -82,6 +82,7 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
     private void fillClass() {
         var intrinsic = new ClassIntrinsic();
         add(new MethodReference(Class.class, "getComponentType", Class.class), intrinsic);
+        add(new MethodReference(Class.class, "getWasmGCFlags", int.class), intrinsic);
         add(new MethodReference(Class.class, "getNameImpl", String.class), intrinsic);
         add(new MethodReference(Class.class, "setNameImpl", String.class, void.class), intrinsic);
         add(new MethodReference(Class.class, "getEnclosingClass", Class.class), intrinsic);

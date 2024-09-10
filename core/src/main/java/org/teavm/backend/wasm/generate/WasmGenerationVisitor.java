@@ -594,10 +594,6 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
         return lastTryBlock != null ? lastTryBlock : rethrowBlock();
     }
 
-    private boolean needsCallSiteId() {
-        return managed;
-    }
-
     private void generateAllocStack(Expr sizeExpr) {
         if (stackVariable != null) {
             throw new IllegalStateException("Call to ShadowStack.allocStack must be done only once");

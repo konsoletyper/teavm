@@ -53,8 +53,9 @@ import org.teavm.vm.spi.TeaVMHostExtension;
 
 public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private TeaVMTargetController controller;
-    private NullCheckInsertion nullCheckInsertion;
+    private NullCheckInsertion nullCheckInsertion = new NullCheckInsertion(NullCheckFilter.EMPTY);
     private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
+    private boolean strict;
     private boolean obfuscated;
     private List<WasmGCIntrinsicFactory> intrinsicFactories = new ArrayList<>();
     private Map<MethodReference, WasmGCIntrinsic> customIntrinsics = new HashMap<>();
@@ -62,6 +63,10 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
 
     public void setObfuscated(boolean obfuscated) {
         this.obfuscated = obfuscated;
+    }
+
+    public void setStrict(boolean strict) {
+        this.strict = strict;
     }
 
     @Override
@@ -82,7 +87,6 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     @Override
     public void setController(TeaVMTargetController controller) {
         this.controller = controller;
-        nullCheckInsertion = new NullCheckInsertion(NullCheckFilter.EMPTY);
     }
 
     @Override
@@ -116,10 +120,10 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
 
     @Override
     public void beforeOptimizations(Program program, MethodReader method) {
-        /*
-        nullCheckInsertion.transformProgram(program, method.getReference());
-        boundCheckInsertion.transformProgram(program, method.getReference());
-        */
+        if (strict) {
+            nullCheckInsertion.transformProgram(program, method.getReference());
+            boundCheckInsertion.transformProgram(program, method.getReference());
+        }
     }
 
     @Override

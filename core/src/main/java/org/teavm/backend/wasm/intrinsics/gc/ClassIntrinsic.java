@@ -24,6 +24,13 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         switch (invocation.getMethod().getName()) {
+            case "getWasmGCFlags": {
+                var cls = context.generate(invocation.getArguments().get(0));
+                var clsStruct = context.classInfoProvider().getClassInfo("java.lang.Class").getStructure();
+                var result = new WasmStructGet(clsStruct, cls, context.classInfoProvider().getClassFlagsOffset());
+                result.setLocation(invocation.getLocation());
+                return result;
+            }
             case "getComponentType": {
                 var cls = context.generate(invocation.getArguments().get(0));
                 var clsStruct = context.classInfoProvider().getClassInfo("java.lang.Class").getStructure();
@@ -43,7 +50,8 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
             case "getSuperclass": {
                 var cls = context.generate(invocation.getArguments().get(0));
                 var clsStruct = context.classInfoProvider().getClassInfo("java.lang.Class").getStructure();
-                var result = new WasmStructGet(clsStruct, cls, context.classInfoProvider().getClassParentOffset());
+                var result = new WasmStructGet(clsStruct, cls,
+                        context.classInfoProvider().getClassParentOffset());
                 result.setLocation(invocation.getLocation());
                 return result;
             }

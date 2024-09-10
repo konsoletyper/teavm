@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassFlags;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.reflection.ClassSupport;
 import org.teavm.classlib.impl.reflection.Flags;
@@ -292,6 +293,9 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
     }
 
     public boolean isPrimitive() {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return (getWasmGCFlags() & WasmGCClassFlags.PRIMITIVE) != 0;
+        }
         return Platform.isPrimitive(platformClass);
     }
 
@@ -303,21 +307,32 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
     }
 
     public boolean isEnum() {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return (getWasmGCFlags() & WasmGCClassFlags.ENUM) != 0;
+        }
         return Platform.isEnum(platformClass);
     }
 
     public boolean isInterface() {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return (getWasmGCFlags() & WasmGCClassFlags.INTERFACE) != 0;
+        }
         return (platformClass.getMetadata().getFlags() & Flags.INTERFACE) != 0;
+
     }
 
     public boolean isLocalClass() {
-        return (platformClass.getMetadata().getFlags() & Flags.SYNTHETIC) != 0
-                && getEnclosingClass() != null;
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return (getWasmGCFlags() & WasmGCClassFlags.SYNTHETIC) != 0 && getEnclosingClass() != null;
+        }
+        return (platformClass.getMetadata().getFlags() & Flags.SYNTHETIC) != 0 && getEnclosingClass() != null;
     }
 
     public boolean isMemberClass() {
         return getDeclaringClass() != null;
     }
+
+    private native int getWasmGCFlags();
 
     @PluggableDependency(ClassGenerator.class)
     public TClass<?> getComponentType() {
