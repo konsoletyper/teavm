@@ -477,7 +477,8 @@ class DependencyGraphBuilder {
                 if (cls != null && cls.getParent() != null) {
                     receiverNode.getClassValueNode().propagate(dependencyAnalyzer.getType(cls.getParent()));
                 }
-                methodDep.getVariable(0).propagate(type);
+                methodDep.getVariable(0).getClassValueNode().propagate(type);
+                methodDep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.Class"));
             });
         }
 

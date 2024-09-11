@@ -46,7 +46,9 @@ import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.NoSideEffects;
+import org.teavm.interop.Platforms;
 import org.teavm.interop.Unmanaged;
+import org.teavm.interop.UnsupportedOn;
 import org.teavm.jso.core.JSArray;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
@@ -99,6 +101,7 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
     }
 
     @DelegateTo("isInstanceLowLevel")
+    @UnsupportedOn(Platforms.WEBASSEMBLY_GC)
     public boolean isInstance(TObject obj) {
         return Platform.isInstance(Platform.getPlatformObject(obj), platformClass);
     }
@@ -109,6 +112,7 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
     }
 
     @DelegateTo("isAssignableFromLowLevel")
+    @UnsupportedOn(Platforms.WEBASSEMBLY_GC)
     public boolean isAssignableFrom(TClass<?> obj) {
         return Platform.isAssignable(obj.getPlatformClass(), platformClass);
     }

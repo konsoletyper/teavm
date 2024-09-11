@@ -919,6 +919,10 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 cloneFunction.setReferenced(true);
                 target.add(setClassField(classInfo, cloneOffset, new WasmFunctionReference(cloneFunction)));
             }
+            if (metadataReq.name() && type.getItemType() instanceof ValueType.Primitive) {
+                var name = strings.getStringConstant(type.toString());
+                target.add(setClassField(classInfo, classNameOffset, new WasmGetGlobal(name.global)));
+            }
         };
     }
 
@@ -1062,7 +1066,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             fields.add(createClassField(newArrayGenerator.getNewArrayFunctionType().getReference().asStorage(),
                     "createArrayInstance"));
             classEnclosingClassOffset = fields.size();
-            fields.add(createClassField(standardClasses.stringClass().getType().asStorage(), "enclosingClass"));
+            fields.add(createClassField(standardClasses.classClass().getType().asStorage(), "enclosingClass"));
             classNameOffset = fields.size();
             fields.add(createClassField(standardClasses.stringClass().getType().asStorage(), "name"));
             classSimpleNameOffset = fields.size();

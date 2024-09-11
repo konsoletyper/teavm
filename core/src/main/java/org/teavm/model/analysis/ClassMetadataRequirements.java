@@ -69,7 +69,7 @@ public class ClassMetadataRequirements {
         if (getSuperclassMethod != null) {
             var classNames = getSuperclassMethod.getVariable(0).getClassValueNode().getTypes();
             for (var className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).declaringClass = true;
+                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).superclass = true;
             }
         }
 

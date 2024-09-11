@@ -50,7 +50,7 @@ public class ClassGenerators implements WasmGCCustomGenerator {
         function.add(objectVar);
 
         var conditional = new WasmConditional(new WasmReferencesEqual(new WasmGetLocal(objectVar),
-                new WasmNullConstant(WasmType.Reference.ANY)));
+                new WasmNullConstant(WasmType.Reference.STRUCT)));
         conditional.setType(WasmType.INT32);
         conditional.getThenBlock().getBody().add(new WasmInt32Constant(0));
 

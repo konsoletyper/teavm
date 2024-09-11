@@ -23,6 +23,7 @@
   <body>
     <script type="text/javascript" src="${SCRIPT}-runtime.js"></script>
     <script type="text/javascript">
+        let instance;
         TeaVM.wasm.load("${SCRIPT}", {
             installImports(o) {
                 o.teavmTest = {
@@ -43,7 +44,10 @@
                     }
                 };
             }
-        }).then(teavm => teavm.main(["${IDENTIFIER}"]));
+        }).then(teavm => {
+            instance = teavm.instance;
+            teavm.main(["${IDENTIFIER}"])
+        });
     </script>
   </body>
 </html>
