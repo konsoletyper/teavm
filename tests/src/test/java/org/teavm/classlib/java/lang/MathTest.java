@@ -291,4 +291,24 @@ public class MathTest {
             });
         });
     }
+
+    @Test
+    public void ceilFloorModDiv() {
+        assertEquals(-2, Math.ceilMod(+4, +3));
+        assertEquals(+2, Math.ceilMod(-4, -3));
+        assertEquals(+1, Math.ceilMod(+4, -3));
+        assertEquals(-1, Math.ceilMod(-4, +3));
+        assertEquals(+1, Math.floorMod(+4, +3));
+        assertEquals(-1, Math.floorMod(-4, -3));
+        assertEquals(-2, Math.floorMod(+4, -3));
+        assertEquals(+2, Math.floorMod(-4, +3));
+        assertEquals(+2, Math.ceilDiv(5, 3));
+        assertEquals(+2, Math.ceilDiv(6, 3));
+        assertEquals(-1, Math.ceilDiv(-5, 3));
+        assertEquals(-2, Math.ceilDiv(-6, 3));
+        assertEquals(+1, Math.floorDiv(5, 3));
+        assertEquals(+2, Math.floorDiv(6, 3));
+        assertEquals(-2, Math.floorDiv(-5, 3));
+        assertEquals(-2, Math.floorDiv(-6, 3));
+    }
 }
