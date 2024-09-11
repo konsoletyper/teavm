@@ -34,7 +34,8 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
 
     private void fillClass() {
         var classGenerators = new ClassGenerators();
-        generators.put(new MethodReference(Class.class, "isInstance", Object.class, boolean.class), classGenerators);
+        generators.put(new MethodReference(Class.class, "isAssignableFrom", Class.class, boolean.class),
+                classGenerators);
     }
 
     private void fillStringPool() {

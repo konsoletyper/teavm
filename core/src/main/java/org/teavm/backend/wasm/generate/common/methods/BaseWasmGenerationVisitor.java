@@ -92,6 +92,8 @@ import org.teavm.backend.wasm.model.expression.WasmInt64Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.expression.WasmIntUnary;
+import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
@@ -1446,7 +1448,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             }
         }
 
-        var result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, expr, new WasmInt32Constant(0));
+        var result = new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ, expr);
         result.setLocation(expr.getLocation());
         return result;
     }

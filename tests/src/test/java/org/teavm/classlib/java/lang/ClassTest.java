@@ -103,14 +103,12 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void castingAppropriateObject() {
         Object obj = 23;
         assertEquals(Integer.valueOf(23), Integer.class.cast(obj));
     }
 
     @Test(expected = ClassCastException.class)
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void inappropriateObjectCastingFails() {
         Object obj = 23;
         Float.class.cast(obj);
@@ -150,7 +148,6 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void classProperties() {
         class B {
         }

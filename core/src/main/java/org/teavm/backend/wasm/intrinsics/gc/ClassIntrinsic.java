@@ -47,11 +47,18 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
                 result.setLocation(invocation.getLocation());
                 return result;
             }
-            case "getSuperclass": {
+            case "getDeclaringClass": {
                 var cls = context.generate(invocation.getArguments().get(0));
                 var clsStruct = context.classInfoProvider().getClassInfo("java.lang.Class").getStructure();
                 var result = new WasmStructGet(clsStruct, cls,
-                        context.classInfoProvider().getClassParentOffset());
+                        context.classInfoProvider().getClassDeclaringClassOffset());
+                result.setLocation(invocation.getLocation());
+                return result;
+            }
+            case "getSuperclass": {
+                var cls = context.generate(invocation.getArguments().get(0));
+                var clsStruct = context.classInfoProvider().getClassInfo("java.lang.Class").getStructure();
+                var result = new WasmStructGet(clsStruct, cls, context.classInfoProvider().getClassParentOffset());
                 result.setLocation(invocation.getLocation());
                 return result;
             }
@@ -63,6 +70,10 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
                 return generateGetSimpleName(invocation, context);
             case "setSimpleNameCache":
                 return generateSetSimpleName(invocation, context);
+            case "getCanonicalNameCache":
+                return generateGetCanonicalName(invocation, context);
+            case "setCanonicalNameCache":
+                return generateSetCanonicalName(invocation, context);
             default:
                 throw new IllegalArgumentException("Unsupported invocation method: " + invocation.getMethod());
         }
@@ -94,5 +105,20 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
         var value = context.generate(invocation.getArguments().get(1));
         return new WasmStructSet(classCls.getStructure(), arg,
                 context.classInfoProvider().getClassSimpleNameOffset(), value);
+    }
+
+    private WasmExpression generateGetCanonicalName(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var classCls = context.classInfoProvider().getClassInfo("java.lang.Class");
+        var arg = context.generate(invocation.getArguments().get(0));
+        return new WasmStructGet(classCls.getStructure(), arg,
+                context.classInfoProvider().getClassCanonicalNameOffset());
+    }
+
+    private WasmExpression generateSetCanonicalName(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var classCls = context.classInfoProvider().getClassInfo("java.lang.Class");
+        var arg = context.generate(invocation.getArguments().get(0));
+        var value = context.generate(invocation.getArguments().get(1));
+        return new WasmStructSet(classCls.getStructure(), arg,
+                context.classInfoProvider().getClassCanonicalNameOffset(), value);
     }
 }

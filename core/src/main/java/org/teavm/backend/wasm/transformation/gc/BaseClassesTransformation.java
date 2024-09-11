@@ -69,8 +69,9 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
             for (var method : cls.getMethods()) {
                 switch (method.getName()) {
                     case "getComponentType":
-                    case "isInstance":
+                    case "isAssignableFrom":
                     case "getEnclosingClass":
+                    case "getDeclaringClass":
                     case "getSimpleNameCache":
                     case "setSimpleNameCache":
                     case "getSuperclass":

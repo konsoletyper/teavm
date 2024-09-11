@@ -15,55 +15,55 @@
  */
 package org.teavm.backend.wasm.generators.gc;
 
-import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
+import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.expression.WasmThrow;
+import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.model.MethodReference;
 
 public class ClassGenerators implements WasmGCCustomGenerator {
     @Override
     public void apply(MethodReference method, WasmFunction function, WasmGCCustomGeneratorContext context) {
         switch (method.getName()) {
-            case "isInstance":
-                generateIsInstance(function, context);
+            case "isAssignableFrom":
+                generateIsAssignable(function, context);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported method: " + method);
         }
     }
 
-    private void generateIsInstance(WasmFunction function, WasmGCCustomGeneratorContext context) {
+    private void generateIsAssignable(WasmFunction function, WasmGCCustomGeneratorContext context) {
         var classCls = context.classInfoProvider().getClassInfo("java.lang.Class");
-        var objectCls = context.classInfoProvider().getClassInfo("java.lang.Object");
         var thisVar = new WasmLocal(classCls.getType());
-        var objectVar = new WasmLocal(objectCls.getType());
+        var otherClassVar = new WasmLocal(classCls.getType());
         function.add(thisVar);
-        function.add(objectVar);
+        function.add(otherClassVar);
 
-        var conditional = new WasmConditional(new WasmReferencesEqual(new WasmGetLocal(objectVar),
+        var conditional = new WasmConditional(new WasmReferencesEqual(new WasmGetLocal(otherClassVar),
                 new WasmNullConstant(WasmType.Reference.STRUCT)));
-        conditional.setType(WasmType.INT32);
-        conditional.getThenBlock().getBody().add(new WasmInt32Constant(0));
+        function.getBody().add(conditional);
+        var npe = new WasmCall(context.functions().forStaticMethod(new MethodReference(WasmGCSupport.class, "npe",
+                NullPointerException.class)));
+        conditional.getThenBlock().getBody().add(new WasmSetGlobal(context.exceptionGlobal(), npe));
+        conditional.getThenBlock().getBody().add(new WasmThrow(context.exceptionTag()));
 
-        var objectClass = new WasmStructGet(objectCls.getStructure(), new WasmGetLocal(objectVar),
-                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
         var functionRef = new WasmStructGet(classCls.getStructure(), new WasmGetLocal(thisVar),
                 context.classInfoProvider().getClassSupertypeFunctionOffset());
         var call = new WasmCallReference(functionRef,
                 context.functionTypes().of(WasmType.INT32, classCls.getType()));
-        call.getArguments().add(objectClass);
-        conditional.getElseBlock().getBody().add(call);
+        call.getArguments().add(new WasmGetLocal(otherClassVar));
 
-        function.getBody().add(new WasmReturn(conditional));
+        function.getBody().add(new WasmReturn(call));
     }
-
 }
