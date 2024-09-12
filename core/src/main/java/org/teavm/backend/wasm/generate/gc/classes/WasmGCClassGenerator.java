@@ -88,6 +88,7 @@ import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.util.ReflectionUtil;
+import org.teavm.runtime.RuntimeClass;
 
 public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInitializerContributor {
     private static final MethodDescriptor CLINIT_METHOD_DESC = new MethodDescriptor("<clinit>", ValueType.VOID);
@@ -504,6 +505,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 target.add(setClassField(classInfo, classNameOffset, new WasmGetGlobal(namePtr)));
             }
             if (cls != null) {
+                target.add(setClassField(classInfo, classFlagsOffset, new WasmInt32Constant(getFlags(cls))));
                 if (metadataReq.simpleName() && cls.getSimpleName() != null) {
                     var namePtr = strings.getStringConstant(cls.getSimpleName()).global;
                     target.add(setClassField(classInfo, classSimpleNameOffset, new WasmGetGlobal(namePtr)));
@@ -545,6 +547,29 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 classInfo.initializerPointer.setInitialValue(new WasmFunctionReference(initFunction));
             }
         };
+    }
+
+    private int getFlags(ClassReader cls) {
+        var flags = 0;
+        if (cls.hasModifier(ElementModifier.ABSTRACT)) {
+            flags |= WasmGCClassFlags.ABSTRACT;
+        }
+        if (cls.hasModifier(ElementModifier.INTERFACE)) {
+            flags |= WasmGCClassFlags.INTERFACE;
+        }
+        if (cls.hasModifier(ElementModifier.FINAL)) {
+            flags |= WasmGCClassFlags.FINAL;
+        }
+        if (cls.hasModifier(ElementModifier.ANNOTATION)) {
+            flags |= WasmGCClassFlags.ANNOTATION;
+        }
+        if (cls.hasModifier(ElementModifier.SYNTHETIC)) {
+            flags |= WasmGCClassFlags.SYNTHETIC;
+        }
+        if (cls.hasModifier(ElementModifier.ENUM)) {
+            flags |= WasmGCClassFlags.ENUM;
+        }
+        return flags;
     }
 
     private WasmFunction generateCloneFunction(WasmGCClassInfo classInfo, String className) {
