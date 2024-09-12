@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
@@ -1025,9 +1026,10 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         var callSiteId = generateCallSiteId(expr.getLocation());
         callSiteId.generateRegister(block.getBody(), expr.getLocation());
 
-        accept(expr.getLength());
-        var length = result;
-        allocateArray(expr.getType(), length, expr.getLocation(), null, block.getBody());
+        allocateArray(expr.getType(), () -> {
+            accept(expr.getLength());
+            return result;
+        }, expr.getLocation(), null, block.getBody());
 
         if (block.getBody().size() == 1) {
             result = block.getBody().get(0);
@@ -1036,11 +1038,11 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         }
     }
 
-    protected abstract void allocateArray(ValueType itemType, WasmExpression length, TextLocation location,
+    protected abstract void allocateArray(ValueType itemType, Supplier<WasmExpression> length, TextLocation location,
             WasmLocal local, List<WasmExpression> target);
 
     protected abstract WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType itemType,
-            List<WasmExpression> dimensions, TextLocation location);
+            Supplier<List<WasmExpression>> dimensions, TextLocation location);
 
     @Override
     public void visit(ArrayFromDataExpr expr) {
@@ -1081,7 +1083,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         callSiteId.generateRegister(block.getBody(), expr.getLocation());
 
         var array = tempVars.acquire(wasmArrayType);
-        allocateArray(expr.getType(), new WasmInt32Constant(expr.getData().size()), expr.getLocation(), array,
+        allocateArray(expr.getType(), () -> new WasmInt32Constant(expr.getData().size()), expr.getLocation(), array,
                 block.getBody());
 
         for (int i = 0; i < expr.getData().size(); ++i) {
@@ -1104,15 +1106,19 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         var callSiteId = generateCallSiteId(expr.getLocation());
         callSiteId.generateRegister(block.getBody(), expr.getLocation());
 
-        var wasmDimensions = new ArrayList<WasmExpression>();
         var arrayType = expr.getType();
         for (var dimension : expr.getDimensions()) {
-            accept(dimension);
-            wasmDimensions.add(result);
             arrayType = ValueType.arrayOf(arrayType);
         }
         block.setType(mapType(arrayType));
-        var call = allocateMultiArray(block.getBody(), expr.getType(), wasmDimensions, expr.getLocation());
+        var call = allocateMultiArray(block.getBody(), expr.getType(), () -> {
+            var wasmDimensions = new ArrayList<WasmExpression>();
+            for (var dimension : expr.getDimensions()) {
+                accept(dimension);
+                wasmDimensions.add(result);
+            }
+            return wasmDimensions;
+        }, expr.getLocation());
         block.getBody().add(call);
 
         if (block.getBody().size() == 1) {

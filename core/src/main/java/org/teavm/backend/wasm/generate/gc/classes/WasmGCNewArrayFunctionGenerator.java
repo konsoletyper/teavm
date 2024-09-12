@@ -54,7 +54,7 @@ class WasmGCNewArrayFunctionGenerator {
         var targetVar = new WasmLocal(classInfoProvider.getClassInfo(ValueType.arrayOf(itemType)).getType(),
                 "result");
         function.add(targetVar);
-        genUtil.allocateArray(itemType, new WasmGetLocal(sizeLocal), null, targetVar, function.getBody());
+        genUtil.allocateArray(itemType, () -> new WasmGetLocal(sizeLocal), null, targetVar, function.getBody());
         function.getBody().add(new WasmReturn(new WasmGetLocal(targetVar)));
         return function;
     }

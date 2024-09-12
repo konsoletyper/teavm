@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.generate.gc.methods;
 
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmArray;
@@ -43,16 +44,16 @@ public class WasmGCGenerationUtil {
         this.tempVars = tempVars;
     }
 
-    public void allocateArray(ValueType itemType, WasmExpression length, TextLocation location, WasmLocal local,
-            List<WasmExpression> target) {
-        allocateArray(itemType, location, local, target, arrayType -> new WasmArrayNewDefault(arrayType, length));
+    public void allocateArray(ValueType itemType, Supplier<WasmExpression> length, TextLocation location,
+            WasmLocal local, List<WasmExpression> target) {
+        allocateArray(itemType, location, local, target, arrayType -> new WasmArrayNewDefault(arrayType, length.get()));
     }
 
-    public void allocateArray(ValueType itemType, List<? extends WasmExpression> data, TextLocation location,
-            WasmLocal local, List<WasmExpression> target) {
+    public void allocateArrayWithElements(ValueType itemType, Supplier<List<? extends WasmExpression>> data,
+            TextLocation location, WasmLocal local, List<WasmExpression> target) {
         allocateArray(itemType, location, local, target, arrayType -> {
             var expr = new WasmArrayNewFixed(arrayType);
-            expr.getElements().addAll(data);
+            expr.getElements().addAll(data.get());
             return expr;
         });
     }

@@ -19,6 +19,7 @@ import static org.teavm.model.lowlevel.ExceptionHandlingUtil.isManagedMethodCall
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.CastExpr;
 import org.teavm.ast.Expr;
@@ -782,14 +783,14 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected void allocateArray(ValueType itemType, WasmExpression length, TextLocation location, WasmLocal local,
-            List<WasmExpression> target) {
+    protected void allocateArray(ValueType itemType, Supplier<WasmExpression> length, TextLocation location,
+            WasmLocal local, List<WasmExpression> target) {
         int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(itemType));
         var allocFunction = context.functions().forStaticMethod(new MethodReference(Allocator.class, "allocateArray",
                 RuntimeClass.class, int.class, Address.class));
         var call = new WasmCall(allocFunction);
         call.getArguments().add(new WasmInt32Constant(classPointer));
-        call.getArguments().add(length);
+        call.getArguments().add(length.get());
         call.setLocation(location);
         if (local != null) {
             target.add(new WasmSetLocal(local, call));
@@ -800,9 +801,10 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType itemType,
-            List<WasmExpression> dimensions, TextLocation location) {
+            Supplier<List<WasmExpression>> dimensions, TextLocation location) {
         int dimensionList = -1;
-        for (var dimension : dimensions) {
+        var dimensionsValue = dimensions.get();
+        for (var dimension : dimensionsValue) {
             int dimensionAddress = binaryWriter.append(DataPrimitives.INT.createValue());
             if (dimensionList < 0) {
                 dimensionList = dimensionAddress;
@@ -817,7 +819,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
         var call = new WasmCall(allocFunction);
         call.getArguments().add(new WasmInt32Constant(classPointer));
         call.getArguments().add(new WasmInt32Constant(dimensionList));
-        call.getArguments().add(new WasmInt32Constant(dimensions.size()));
+        call.getArguments().add(new WasmInt32Constant(dimensionsValue.size()));
         call.setLocation(location);
         return call;
     }

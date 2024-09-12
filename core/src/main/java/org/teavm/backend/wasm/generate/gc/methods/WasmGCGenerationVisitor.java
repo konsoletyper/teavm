@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.generate.gc.methods;
 
 import java.util.List;
+import java.util.function.Supplier;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.ConditionalExpr;
@@ -332,14 +333,14 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected void allocateArray(ValueType itemType, WasmExpression length, TextLocation location, WasmLocal local,
-            List<WasmExpression> target) {
+    protected void allocateArray(ValueType itemType, Supplier<WasmExpression> length, TextLocation location,
+            WasmLocal local, List<WasmExpression> target) {
         generationUtil.allocateArray(itemType, length, location, local, target);
     }
 
     @Override
     protected WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType itemType,
-            List<WasmExpression> dimensions, TextLocation location) {
+            Supplier<List<WasmExpression>> dimensions, TextLocation location) {
         return null;
     }
 

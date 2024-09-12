@@ -1303,7 +1303,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         var local = tempVars.acquire(enumArrayStruct.getReference());
         var block = new WasmBlock(false);
         block.setType(enumArrayStruct.getReference());
-        util.allocateArray(ValueType.parse(Enum.class), fields, null, null, block.getBody());
+        util.allocateArrayWithElements(ValueType.parse(Enum.class), () -> fields, null, null, block.getBody());
         function.getBody().add(new WasmReturn(block));
         tempVars.release(local);
 
