@@ -373,7 +373,7 @@ public class TDate implements TComparable<TDate> {
     public String toString() {
         if (PlatformDetector.isC()) {
             return toStringC(value);
-        } else if (PlatformDetector.isWebAssembly()) {
+        } else if (PlatformDetector.isWebAssembly() || PlatformDetector.isWebAssemblyGC()) {
             return toStringWebAssembly(value);
         } else {
             return JSDate.create(value).stringValue();

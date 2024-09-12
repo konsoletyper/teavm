@@ -171,6 +171,16 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
+    protected WasmType mapCastSourceType(WasmType type) {
+        return type;
+    }
+
+    @Override
+    protected boolean validateCastTypes(WasmType sourceType, WasmType targetType, TextLocation location) {
+        return true;
+    }
+
+    @Override
     protected WasmExpression peekException() {
         return new WasmCall(context.functions().forStaticMethod(PEEK_EXCEPTION_METHOD));
     }

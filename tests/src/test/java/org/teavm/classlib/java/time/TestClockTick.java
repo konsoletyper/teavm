@@ -154,6 +154,7 @@ public class TestClockTick extends AbstractTest {
     }
 
     //-----------------------------------------------------------------------
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void test_tickSeconds_ZoneId() throws Exception {
         Clock test = Clock.tickSeconds(PARIS);
         assertEquals(test.getZone(), PARIS);

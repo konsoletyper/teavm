@@ -222,7 +222,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         }
         return new WasmNullConstant(type instanceof WasmType.Reference
                 ? (WasmType.Reference) type
-                : WasmType.Reference.STRUCT);
+                : context.classInfoProvider().getClassInfo("java.lang.Object").getType());
     }
 
     @Override
@@ -360,6 +360,39 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected WasmExpression generateCast(WasmExpression value, WasmType targetType) {
         return new WasmCast(value, (WasmType.Reference) targetType);
+    }
+
+    @Override
+    protected WasmType mapCastSourceType(WasmType type) {
+        if (!(type instanceof WasmType.CompositeReference)) {
+            return type;
+        }
+        var refType = (WasmType.CompositeReference) type;
+        return refType.isNullable() ? refType : refType.composite.getReference();
+    }
+
+    @Override
+    protected boolean validateCastTypes(WasmType sourceType, WasmType targetType, TextLocation location) {
+        if (!(sourceType instanceof WasmType.CompositeReference)
+                || !(targetType instanceof WasmType.CompositeReference)) {
+            return false;
+        }
+        var sourceRefType = (WasmType.CompositeReference) sourceType;
+        var targetRefType = (WasmType.CompositeReference) targetType;
+        if (sourceRefType.composite instanceof WasmStructure
+                && targetRefType.composite instanceof WasmStructure) {
+            var sourceStruct = (WasmStructure) sourceRefType.composite;
+            var targetStruct = (WasmStructure) targetRefType.composite;
+            if (targetStruct.isSupertypeOf(sourceStruct)) {
+                return false;
+            }
+            if (!sourceStruct.isSupertypeOf(targetStruct)) {
+                result = new WasmUnreachable();
+                result.setLocation(location);
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -516,6 +549,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
             target.acceptVisitor(typeInference);
             var type = (WasmType.CompositeReference) typeInference.getResult();
+            if (type == null) {
+                result = new WasmUnreachable();
+                result.setLocation(expr.getLocation());
+                return;
+            }
             var struct = (WasmStructure) type.composite;
             var fieldIndex = context.classInfoProvider().getFieldIndex(expr.getField());
             if (fieldIndex >= 0) {

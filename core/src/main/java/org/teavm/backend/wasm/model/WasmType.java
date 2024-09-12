@@ -67,7 +67,7 @@ public abstract class WasmType {
 
         private final boolean nullable;
 
-        public Reference(boolean nullable) {
+        Reference(boolean nullable) {
             this.nullable = nullable;
         }
 

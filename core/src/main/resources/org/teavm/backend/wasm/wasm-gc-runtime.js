@@ -19,6 +19,7 @@ TeaVM.wasm = function() {
     function defaults(imports) {
         let stderr = "";
         let stdout = "";
+        let exports;
         imports.teavm = {
             putcharStderr(c) {
                 if (c === 10) {
@@ -38,6 +39,9 @@ TeaVM.wasm = function() {
             },
             currentTimeMillis() {
                 return new Date().getTime();
+            },
+            dateToString(timestamp, controller) {
+                return stringToJava(new Date(timestamp).toString());
             }
         };
         imports.teavmMath = Math;
@@ -62,21 +66,25 @@ TeaVM.wasm = function() {
         }));
     }
 
+    function stringToJava(str) {
+        let sb = exports.createStringBuilder();
+        for (let i = 0; i < str.length; ++i) {
+            exports.appendChar(sb, str.charCodeAt(i));
+        }
+        return exports.buildString(sb);
+    }
+
     function createMain(instance) {
         return args => {
             if (typeof args === "undefined") {
                 args = [];
             }
             return new Promise((resolve, reject) => {
-                let exports = instance.exports;
+                exports = instance.exports;
                 let javaArgs = exports.createStringArray(args.length);
                 for (let i = 0; i < args.length; ++i) {
                     let arg = args[i];
-                    let javaArg = exports.createStringBuilder();
-                    for (let j = 0; j < arg.length; ++j) {
-                        exports.appendChar(javaArg, arg.charCodeAt(j));
-                    }
-                    exports.setToStringArray(javaArgs, i, exports.buildString(javaArg));
+                    exports.setToStringArray(javaArgs, i, stringToJava(args[i]));
                 }
                 try {
                     exports.main(javaArgs);

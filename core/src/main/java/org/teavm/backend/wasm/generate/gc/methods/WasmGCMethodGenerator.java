@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.wasm.generate.gc.methods;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -209,7 +211,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                 generateNativeMethodBody(method, function);
             }
         } catch (RuntimeException e) {
-            throw new RuntimeException("Failed generating method body: " + method.getReference(), e);
+            var buffer = new StringWriter();
+            var printWriter = new PrintWriter(buffer);
+            e.printStackTrace(printWriter);
+            diagnostics.error(new CallLocation(method.getReference()),
+                    "Failed generating method body due to internal exception: " + buffer.toString());
         }
     }
 

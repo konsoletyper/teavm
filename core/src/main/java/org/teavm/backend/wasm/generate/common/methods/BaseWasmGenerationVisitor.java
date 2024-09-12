@@ -1184,39 +1184,52 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
     @Override
     public void visit(CastExpr expr) {
-        if (expr.isWeak()) {
-            acceptWithType(expr.getValue(), expr.getTarget());
-            result = generateCast(result, mapType(expr.getTarget()));
-            return;
-        }
-        var block = new WasmBlock(false);
-        var wasmTargetType = mapType(expr.getTarget());
-        block.setType(wasmTargetType);
-        block.setLocation(expr.getLocation());
-
+        var wasmTargetType = (WasmType.CompositeReference) mapType(expr.getTarget());
         acceptWithType(expr.getValue(), expr.getTarget());
-        result.acceptVisitor(typeInference);
-        var wasmSourceType = typeInference.getResult();
-        var valueToCast = exprCache.create(result, wasmSourceType, expr.getLocation(), block.getBody());
+        if (!expr.isWeak()) {
+            result.acceptVisitor(typeInference);
+            var wasmSourceType = typeInference.getResult();
+            if (wasmSourceType == null) {
+                return;
+            }
 
-        var nullCheck = new WasmBranch(genIsNull(valueToCast.expr()), block);
-        nullCheck.setResult(nullLiteral(wasmTargetType));
-        block.getBody().add(new WasmDrop(nullCheck));
+            wasmSourceType = mapCastSourceType(wasmSourceType);
 
-        var supertypeCall = generateInstanceOf(valueToCast.expr(), expr.getTarget());
+            if (!validateCastTypes(wasmSourceType, wasmTargetType, expr.getLocation())) {
+                return;
+            }
 
-        var breakIfPassed = new WasmBranch(supertypeCall, block);
-        breakIfPassed.setResult(generateCast(valueToCast.expr(), wasmTargetType));
-        block.getBody().add(new WasmDrop(breakIfPassed));
+            var block = new WasmBlock(false);
+            block.setType(wasmSourceType);
+            block.setLocation(expr.getLocation());
+            acceptWithType(expr.getValue(), expr.getTarget());
+            var valueToCast = exprCache.create(result, wasmSourceType, expr.getLocation(), block.getBody());
 
-        var callSiteId = generateCallSiteId(expr.getLocation());
-        callSiteId.generateRegister(block.getBody(), expr.getLocation());
-        generateThrowCCE(expr.getLocation(), block.getBody());
-        callSiteId.generateThrow(block.getBody(), expr.getLocation());
+            var nullCheck = new WasmBranch(genIsNull(valueToCast.expr()), block);
+            nullCheck.setResult(nullLiteral(wasmTargetType));
+            block.getBody().add(new WasmDrop(nullCheck));
 
-        valueToCast.release();
-        result = block;
+            var supertypeCall = generateInstanceOf(valueToCast.expr(), expr.getTarget());
+
+            var breakIfPassed = new WasmBranch(supertypeCall, block);
+            breakIfPassed.setResult(valueToCast.expr());
+            block.getBody().add(new WasmDrop(breakIfPassed));
+
+            var callSiteId = generateCallSiteId(expr.getLocation());
+            callSiteId.generateRegister(block.getBody(), expr.getLocation());
+            generateThrowCCE(expr.getLocation(), block.getBody());
+            callSiteId.generateThrow(block.getBody(), expr.getLocation());
+
+            valueToCast.release();
+            result = block;
+        }
+        result = generateCast(result, wasmTargetType);
+        result.setLocation(expr.getLocation());
     }
+
+    protected abstract WasmType mapCastSourceType(WasmType type);
+
+    protected abstract boolean validateCastTypes(WasmType sourceType, WasmType targetType, TextLocation location);
 
     protected abstract WasmExpression generateCast(WasmExpression value, WasmType targetType);
 
