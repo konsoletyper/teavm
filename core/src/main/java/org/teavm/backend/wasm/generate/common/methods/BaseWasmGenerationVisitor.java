@@ -1184,7 +1184,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
     @Override
     public void visit(CastExpr expr) {
-        var wasmTargetType = (WasmType.CompositeReference) mapType(expr.getTarget());
+        var wasmTargetType = mapType(expr.getTarget());
         acceptWithType(expr.getValue(), expr.getTarget());
         if (!expr.isWeak()) {
             result.acceptVisitor(typeInference);
