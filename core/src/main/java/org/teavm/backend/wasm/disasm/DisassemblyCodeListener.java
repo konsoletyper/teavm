@@ -120,8 +120,31 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
             case BR_IF:
                 writer.write("br_if");
                 break;
+            case BR_ON_NULL:
+                writer.write("br_on_null");
+                break;
+            case BR_ON_NON_NULL:
+                writer.write("br_on_non_null");
+                break;
         }
         writer.endLink().write(" $label_" + target).eol();
+    }
+
+    @Override
+    public void castBranch(boolean success, int depth, int target, WasmHollowType.Reference sourceType,
+            WasmHollowType.Reference targetType) {
+        writer.address().startLink("start" + target);
+        if (success) {
+            writer.write("br_if_cast");
+        } else {
+            writer.write("br_if_cast_fail");
+        }
+        writer.endLink().write(" $label_" + target);
+        writer.write(" ");
+        writeType(sourceType);
+        writer.write(" ");
+        writeType(sourceType);
+        writer.eol();
     }
 
     @Override
@@ -161,6 +184,9 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
                 break;
             case ARRAY_LENGTH:
                 writer.write("array.length");
+                break;
+            case IS_NULL:
+                writer.write("ref.is_null");
                 break;
         }
         writer.eol();

@@ -35,6 +35,7 @@ import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
+import org.teavm.backend.wasm.model.expression.WasmCastBranch;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmCopy;
@@ -63,11 +64,13 @@ import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmIntUnary;
 import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmIsNull;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
+import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
@@ -104,6 +107,18 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         expression.acceptVisitor(new WasmDefaultExpressionVisitor() {
             @Override
             public void visit(WasmBranch expression) {
+                super.visit(expression);
+                register(expression.getTarget());
+            }
+
+            @Override
+            public void visit(WasmCastBranch expression) {
+                super.visit(expression);
+                register(expression.getTarget());
+            }
+
+            @Override
+            public void visit(WasmNullBranch expression) {
                 super.visit(expression);
                 register(expression.getTarget());
             }
@@ -220,6 +235,46 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmNullBranch expression) {
+        String id = blockIdentifiers.get(expression.getTarget());
+        open();
+        switch (expression.getCondition()) {
+            case NULL:
+                append("br_on_null");
+                break;
+            case NOT_NULL:
+                append("br_on_non_null");
+                break;
+        }
+        append(" $" + id);
+        if (expression.getResult() != null) {
+            line(expression.getResult());
+        }
+        close();
+    }
+
+    @Override
+    public void visit(WasmCastBranch expression) {
+        String id = blockIdentifiers.get(expression.getTarget());
+        open();
+        switch (expression.getCondition()) {
+            case SUCCESS:
+                append("br_on_cast");
+                break;
+            case FAILURE:
+                append("br_on_cast_fail");
+                break;
+        }
+        append(" $").append(id);
+        append(" ").append(type(expression.getSourceType()));
+        append(" ").append(type(expression.getType()));
+        if (expression.getResult() != null) {
+            line(expression.getResult());
+        }
+        close();
+    }
+
+    @Override
     public void visit(WasmBreak expression) {
         String id = blockIdentifiers.get(expression.getTarget());
         open().append("br $").append(id);
@@ -298,6 +353,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmNullConstant expression) {
         open().append("ref.null " + type(expression.getType())).close();
+    }
+
+    @Override
+    public void visit(WasmIsNull expression) {
+        open().append("ref.is_null").close();
     }
 
     @Override

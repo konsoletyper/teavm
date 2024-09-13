@@ -591,6 +591,9 @@ public class CodeParser extends BaseSectionParser {
             case 0xD0:
                 codeListener.nullConstant(reader.readHeapType(true));
                 break;
+            case 0xD1:
+                codeListener.opcode(Opcode.IS_NULL);
+                break;
 
             case 0xD2:
                 codeListener.functionReference(readLEB());
@@ -598,6 +601,13 @@ public class CodeParser extends BaseSectionParser {
 
             case 0xD3:
                 codeListener.opcode(Opcode.REF_EQ);
+                break;
+
+            case 0xD5:
+                parseBranch(BranchOpcode.BR_ON_NULL);
+                break;
+            case 0xD6:
+                parseBranch(BranchOpcode.BR_ON_NON_NULL);
                 break;
 
             case 0xFB:
@@ -702,6 +712,13 @@ public class CodeParser extends BaseSectionParser {
                 codeListener.cast(reader.readHeapType(true));
                 return true;
 
+            case 24:
+                parseCastBranch(true);
+                return true;
+            case 25:
+                parseCastBranch(false);
+                return true;
+
             case 28:
                 codeListener.int31Reference();
                 return true;
@@ -796,6 +813,15 @@ public class CodeParser extends BaseSectionParser {
         var depth = readLEB();
         var target = blockStack.get(blockStack.size() - depth - 1);
         codeListener.branch(opcode, depth, target.token);
+    }
+
+    private void parseCastBranch(boolean success) {
+        var depth = readLEB();
+        var target = blockStack.get(blockStack.size() - depth - 1);
+        var flags = reader.data[reader.ptr++];
+        var sourceType = reader.readHeapType((flags & 1) != 0);
+        var targetType = reader.readHeapType((flags & 2) != 0);
+        codeListener.castBranch(success, depth, target.token, sourceType, targetType);
     }
 
     private void parseTableBranch() {

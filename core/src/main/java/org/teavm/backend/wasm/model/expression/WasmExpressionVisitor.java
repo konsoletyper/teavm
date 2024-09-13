@@ -20,6 +20,10 @@ public interface WasmExpressionVisitor {
 
     void visit(WasmBranch expression);
 
+    void visit(WasmNullBranch expression);
+
+    void visit(WasmCastBranch expression);
+
     void visit(WasmBreak expression);
 
     void visit(WasmSwitch expression);
@@ -39,6 +43,8 @@ public interface WasmExpressionVisitor {
     void visit(WasmFloat64Constant expression);
 
     void visit(WasmNullConstant expression);
+
+    void visit(WasmIsNull expression);
 
     void visit(WasmGetLocal expression);
 

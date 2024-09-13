@@ -449,7 +449,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
     protected abstract boolean isManagedCall(MethodReference method);
 
-    private WasmExpression nullCheck(Expr value, TextLocation location) {
+    protected WasmExpression nullCheck(Expr value, TextLocation location) {
         var block = new WasmBlock(false);
         block.setLocation(location);
 

@@ -57,6 +57,9 @@ import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmIntUnary;
 import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmIsNull;
+import org.teavm.backend.wasm.model.expression.WasmNullBranch;
+import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
@@ -232,7 +235,32 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected WasmExpression genIsNull(WasmExpression value) {
-        return new WasmReferencesEqual(value, new WasmNullConstant(WasmType.Reference.STRUCT));
+        return new WasmIsNull(value);
+    }
+
+    protected WasmExpression nullCheck(Expr value, TextLocation location) {
+        var block = new WasmBlock(false);
+        block.setLocation(location);
+
+        accept(value);
+        if (result instanceof WasmUnreachable) {
+            return result;
+        }
+        result.acceptVisitor(typeInference);
+        block.setType(typeInference.getResult());
+        var cachedValue = exprCache.create(result, typeInference.getResult(), location, block.getBody());
+
+        var check = new WasmNullBranch(WasmNullCondition.NOT_NULL, cachedValue.expr(), block);
+        check.setResult(cachedValue.expr());
+        block.getBody().add(new WasmDrop(check));
+
+        var callSiteId = generateCallSiteId(location);
+        callSiteId.generateRegister(block.getBody(), location);
+        generateThrowNPE(location, block.getBody());
+        callSiteId.generateThrow(block.getBody(), location);
+
+        cachedValue.release();
+        return block;
     }
 
     @Override

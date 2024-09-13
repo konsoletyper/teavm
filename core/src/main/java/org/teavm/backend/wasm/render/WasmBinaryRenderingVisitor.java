@@ -39,6 +39,7 @@ import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
+import org.teavm.backend.wasm.model.expression.WasmCastBranch;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmCopy;
@@ -61,11 +62,13 @@ import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt64Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntUnary;
+import org.teavm.backend.wasm.model.expression.WasmIsNull;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
+import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
@@ -118,6 +121,18 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.acceptVisitor(new WasmDefaultExpressionVisitor() {
             @Override
             public void visit(WasmBranch expression) {
+                super.visit(expression);
+                register(expression.getTarget());
+            }
+
+            @Override
+            public void visit(WasmNullBranch expression) {
+                super.visit(expression);
+                register(expression.getTarget());
+            }
+
+            @Override
+            public void visit(WasmCastBranch expression) {
                 super.visit(expression);
                 register(expression.getTarget());
             }
@@ -183,6 +198,55 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.getCondition().acceptVisitor(this);
         writer.writeByte(0x0D);
         writeLabel(expression.getTarget());
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmNullBranch expression) {
+        pushLocation(expression);
+        if (expression.getResult() != null) {
+            expression.getResult().acceptVisitor(this);
+        }
+        expression.getValue().acceptVisitor(this);
+        switch (expression.getCondition()) {
+            case NULL:
+                writer.writeByte(0xD5);
+                break;
+            case NOT_NULL:
+                writer.writeByte(0xD6);
+                break;
+        }
+        writeLabel(expression.getTarget());
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmCastBranch expression) {
+        pushLocation(expression);
+        if (expression.getResult() != null) {
+            expression.getResult().acceptVisitor(this);
+        }
+        expression.getValue().acceptVisitor(this);
+        writer.writeByte(0xFB);
+        switch (expression.getCondition()) {
+            case SUCCESS:
+                writer.writeByte(24);
+                break;
+            case FAILURE:
+                writer.writeByte(25);
+                break;
+        }
+        writeLabel(expression.getTarget());
+        var flags = 0;
+        if (expression.getSourceType().isNullable()) {
+            flags |= 1;
+        }
+        if (expression.getType().isNullable()) {
+            flags |= 2;
+        }
+        writer.writeByte(flags);
+        writer.writeHeapType(expression.getSourceType(), module);
+        writer.writeHeapType(expression.getType(), module);
         popLocation();
     }
 
@@ -301,6 +365,14 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         pushLocation(expression);
         writer.writeByte(0xD0);
         writer.writeHeapType(expression.getType(), module);
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmIsNull expression) {
+        pushLocation(expression);
+        expression.getValue().acceptVisitor(this);
+        writer.writeByte(0xD1);
         popLocation();
     }
 

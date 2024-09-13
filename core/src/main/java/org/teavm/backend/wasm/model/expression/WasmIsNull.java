@@ -1,5 +1,5 @@
 /*
- *  Copyright 2022 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,11 +13,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.parser;
+package org.teavm.backend.wasm.model.expression;
 
-public enum BranchOpcode {
-    BR,
-    BR_IF,
-    BR_ON_NULL,
-    BR_ON_NON_NULL
+import java.util.Objects;
+
+public class WasmIsNull extends WasmExpression {
+    private WasmExpression value;
+
+    public WasmIsNull(WasmExpression value) {
+        this.value = Objects.requireNonNull(value);
+    }
+
+    public WasmExpression getValue() {
+        return value;
+    }
+
+    public void setValue(WasmExpression value) {
+        this.value = value;
+    }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

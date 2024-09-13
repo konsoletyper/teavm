@@ -21,5 +21,6 @@ public enum Opcode {
     RETURN,
     DROP,
     REF_EQ,
-    ARRAY_LENGTH
+    ARRAY_LENGTH,
+    IS_NULL
 }

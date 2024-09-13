@@ -35,7 +35,7 @@ import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmIsNull;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
@@ -156,8 +156,7 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
         var itemExpression = getClassField(new WasmGetLocal(subtypeVar), itemOffset);
         body.add(new WasmSetLocal(subtypeVar, itemExpression));
 
-        var itemTest = new WasmConditional(new WasmReferencesEqual(new WasmGetLocal(subtypeVar),
-                new WasmNullConstant(WasmType.Reference.STRUCT)));
+        var itemTest = new WasmConditional(new WasmIsNull(new WasmGetLocal(subtypeVar)));
         itemTest.setType(WasmType.INT32);
         itemTest.getThenBlock().getBody().add(new WasmInt32Constant(0));
 

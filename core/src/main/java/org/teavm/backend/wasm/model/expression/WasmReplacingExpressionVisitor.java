@@ -56,6 +56,26 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmNullBranch expression) {
+        expression.getValue().acceptVisitor(this);
+        expression.setValue(mapper.apply(expression.getValue()));
+        if (expression.getResult() != null) {
+            expression.getResult().acceptVisitor(this);
+            expression.setResult(mapper.apply(expression.getResult()));
+        }
+    }
+
+    @Override
+    public void visit(WasmCastBranch expression) {
+        expression.getValue().acceptVisitor(this);
+        expression.setValue(mapper.apply(expression.getValue()));
+        if (expression.getResult() != null) {
+            expression.getResult().acceptVisitor(this);
+            expression.setResult(mapper.apply(expression.getResult()));
+        }
+    }
+
+    @Override
     public void visit(WasmBreak expression) {
         if (expression.getResult() != null) {
             expression.getResult().acceptVisitor(this);
@@ -107,6 +127,12 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmNullConstant expression) {
+    }
+
+    @Override
+    public void visit(WasmIsNull expression) {
+        expression.getValue().acceptVisitor(this);
+        expression.setValue(mapper.apply(expression.getValue()));
     }
 
     @Override

@@ -39,6 +39,7 @@ import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
+import org.teavm.backend.wasm.model.expression.WasmCastBranch;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmCopy;
@@ -62,11 +63,13 @@ import org.teavm.backend.wasm.model.expression.WasmInt64Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmIntUnary;
+import org.teavm.backend.wasm.model.expression.WasmIsNull;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
+import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
@@ -185,6 +188,16 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         result.getLines().add(new CSingleLine("}"));
 
         value = result;
+    }
+
+    @Override
+    public void visit(WasmNullBranch expression) {
+        unsupported();
+    }
+
+    @Override
+    public void visit(WasmCastBranch expression) {
+        unsupported();
     }
 
     @Override
@@ -357,6 +370,11 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmNullConstant expression) {
         value = CExpression.relocatable("/* can't produce ref.null */");
+    }
+
+    @Override
+    public void visit(WasmIsNull expression) {
+        unsupported();
     }
 
     @Override

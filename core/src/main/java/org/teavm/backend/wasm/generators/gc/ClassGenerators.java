@@ -22,8 +22,7 @@ import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmNullConstant;
-import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
+import org.teavm.backend.wasm.model.expression.WasmIsNull;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
@@ -50,8 +49,7 @@ public class ClassGenerators implements WasmGCCustomGenerator {
         function.add(thisVar);
         function.add(otherClassVar);
 
-        var conditional = new WasmConditional(new WasmReferencesEqual(new WasmGetLocal(otherClassVar),
-                new WasmNullConstant(WasmType.Reference.STRUCT)));
+        var conditional = new WasmConditional(new WasmIsNull(new WasmGetLocal(otherClassVar)));
         function.getBody().add(conditional);
         var npe = new WasmCall(context.functions().forStaticMethod(new MethodReference(WasmGCSupport.class, "npe",
                 NullPointerException.class)));
