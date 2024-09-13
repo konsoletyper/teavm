@@ -88,7 +88,6 @@ import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.util.ReflectionUtil;
-import org.teavm.runtime.RuntimeClass;
 
 public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInitializerContributor {
     private static final MethodDescriptor CLINIT_METHOD_DESC = new MethodDescriptor("<clinit>", ValueType.VOID);
