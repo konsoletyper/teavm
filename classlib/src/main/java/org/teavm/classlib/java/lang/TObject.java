@@ -257,7 +257,7 @@ public class TObject {
                     }
                     return monitor.id;
                 } else {
-                    identity = WasmGCSupport.nextObjectId();
+                    identity = WasmGCSupport.nextObjectId() & 0x7ffffff;
                     setWasmGCIdentity(identity);
                 }
             }
