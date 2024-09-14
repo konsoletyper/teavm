@@ -236,7 +236,6 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                 writer.writeByte(25);
                 break;
         }
-        writeLabel(expression.getTarget());
         var flags = 0;
         if (expression.getSourceType().isNullable()) {
             flags |= 1;
@@ -245,6 +244,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
             flags |= 2;
         }
         writer.writeByte(flags);
+        writeLabel(expression.getTarget());
         writer.writeHeapType(expression.getSourceType(), module);
         writer.writeHeapType(expression.getType(), module);
         popLocation();

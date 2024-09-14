@@ -143,7 +143,7 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
         writer.write(" ");
         writeType(sourceType);
         writer.write(" ");
-        writeType(sourceType);
+        writeType(targetType);
         writer.eol();
     }
 

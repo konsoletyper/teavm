@@ -1300,12 +1300,16 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         for (int i = tryCatchStatements.size() - 1; i >= 0; --i) {
             var tryCatch = tryCatchStatements.get(i);
             var catchBlock = catchBlocks.get(i);
+            var blockType = mapType(tryCatch.getExceptionType() != null
+                    ? ValueType.object(tryCatch.getExceptionType())
+                    : ValueType.object("java.lang.Throwable"));
+            currentBlock.setType(blockType);
             if (tryCatch.getExceptionType() != null && !tryCatch.getExceptionType().equals(Throwable.class.getName())) {
-                var exceptionType = ValueType.object(tryCatch.getExceptionType());
-                var isMatched = generateInstanceOf(new WasmGetLocal(exceptionVar), exceptionType);
-                innerCatchBlock.getBody().add(new WasmBranch(isMatched, currentBlock));
+                checkExceptionType(tryCatch, exceptionVar, innerCatchBlock.getBody(), currentBlock);
             } else {
-                innerCatchBlock.getBody().add(new WasmBreak(currentBlock));
+                var br = new WasmBreak(currentBlock);
+                br.setResult(new WasmGetLocal(exceptionVar));
+                innerCatchBlock.getBody().add(br);
                 catchesAll = true;
             }
             currentBlock = catchBlock;
@@ -1320,12 +1324,16 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         for (int i = tryCatchStatements.size() - 1; i >= 0; --i) {
             var tryCatch = tryCatchStatements.get(i);
             var catchBlock = catchBlocks.get(i);
-            catchBlock.getBody().add(currentBlock);
 
             var catchLocal = tryCatch.getExceptionVariable() != null
                     ? localVar(tryCatch.getExceptionVariable())
                     : null;
-            catchException(null, catchBlock.getBody(), catchLocal, tryCatch.getExceptionType(), exceptionVar);
+            if (catchLocal != null) {
+                var save = new WasmSetLocal(localVar(tryCatch.getExceptionVariable()), currentBlock);
+                catchBlock.getBody().add(save);
+            } else {
+                catchBlock.getBody().add(new WasmDrop(currentBlock));
+            }
             visitMany(tryCatch.getHandler(), catchBlock.getBody());
             if (!catchBlock.isTerminating() && catchBlock != outerCatchBlock) {
                 catchBlock.getBody().add(new WasmBreak(outerCatchBlock));
@@ -1337,8 +1345,12 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         tempVars.release(exceptionVar);
     }
 
-    protected abstract void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local,
-            String exceptionClass, WasmLocal exceptionVar);
+    protected void checkExceptionType(TryCatchStatement tryCatch, WasmLocal exceptionVar, List<WasmExpression> target,
+            WasmBlock targetBlock) {
+        var exceptionType = ValueType.object(tryCatch.getExceptionType());
+        var isMatched = generateInstanceOf(new WasmGetLocal(exceptionVar), exceptionType);
+        target.add(new WasmBranch(isMatched, targetBlock));
+    }
 
     private void visitMany(List<Statement> statements, List<WasmExpression> target) {
         var oldTarget = resultConsumer;

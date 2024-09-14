@@ -180,16 +180,6 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local,
-            String exceptionClass, WasmLocal exceptionVar) {
-        if (local != null) {
-            var save = new WasmSetLocal(local, new WasmGetLocal(exceptionVar));
-            save.setLocation(location);
-            target.add(save);
-        }
-    }
-
-    @Override
     protected WasmType mapType(ValueType type) {
         return WasmGeneratorUtil.mapType(type);
     }

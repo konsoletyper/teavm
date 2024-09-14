@@ -19,12 +19,15 @@ import java.util.List;
 import java.util.function.Supplier;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.BinaryExpr;
+import org.teavm.ast.CastExpr;
 import org.teavm.ast.ConditionalExpr;
 import org.teavm.ast.Expr;
+import org.teavm.ast.InstanceOfExpr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.InvocationType;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.SubscriptExpr;
+import org.teavm.ast.TryCatchStatement;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.PreciseTypeInference;
@@ -50,6 +53,8 @@ import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
+import org.teavm.backend.wasm.model.expression.WasmCastBranch;
+import org.teavm.backend.wasm.model.expression.WasmCastCondition;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
@@ -68,9 +73,11 @@ import org.teavm.backend.wasm.model.expression.WasmSignedType;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
+import org.teavm.backend.wasm.model.expression.WasmTest;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
@@ -245,18 +252,14 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         }
         result.acceptVisitor(typeInference);
         block.setType(typeInference.getResult());
-        var cachedValue = exprCache.create(result, typeInference.getResult(), location, block.getBody());
-
-        var check = new WasmNullBranch(WasmNullCondition.NOT_NULL, cachedValue.expr(), block);
-        check.setResult(cachedValue.expr());
-        block.getBody().add(new WasmDrop(check));
+        var check = new WasmNullBranch(WasmNullCondition.NOT_NULL, result, block);
+        block.getBody().add(check);
 
         var callSiteId = generateCallSiteId(location);
         callSiteId.generateRegister(block.getBody(), location);
         generateThrowNPE(location, block.getBody());
         callSiteId.generateThrow(block.getBody(), location);
 
-        cachedValue.release();
         return block;
     }
 
@@ -383,6 +386,59 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
+    public void visit(InstanceOfExpr expr) {
+        var type = expr.getType();
+        if (canCastNatively(type)) {
+            var wasmType = context.classInfoProvider().getClassInfo(type).getStructure().getNonNullReference();
+            acceptWithType(expr.getExpr(), type);
+            var wasmValue = result;
+            result.acceptVisitor(typeInference);
+
+            result = new WasmTest(wasmValue, wasmType);
+            result.setLocation(expr.getLocation());
+        } else {
+            super.visit(expr);
+        }
+    }
+
+    @Override
+    public void visit(CastExpr expr) {
+        var type = expr.getTarget();
+        if (!expr.isWeak() && canCastNatively(type)) {
+            var wasmType = context.classInfoProvider().getClassInfo(type).getType();
+            var block = new WasmBlock(false);
+            acceptWithType(expr.getValue(), type);
+            var wasmValue = result;
+            result.acceptVisitor(typeInference);
+            var sourceWasmType = (WasmType.Reference) typeInference.getResult();
+            if (sourceWasmType == null || !validateCastTypes(sourceWasmType, wasmType, expr.getLocation())) {
+                return;
+            }
+
+            block.setType(wasmType);
+            block.setLocation(expr.getLocation());
+            block.getBody().add(new WasmCastBranch(WasmCastCondition.SUCCESS, wasmValue, sourceWasmType,
+                    wasmType, block));
+            generateThrowCCE(expr.getLocation(), block.getBody());
+            result = block;
+        } else {
+            super.visit(expr);
+        }
+    }
+
+    private boolean canCastNatively(ValueType type) {
+        if (type instanceof ValueType.Array) {
+            return true;
+        }
+        var className = ((ValueType.Object) type).getClassName();
+        var cls = context.classes().get(className);
+        if (cls == null) {
+            return false;
+        }
+        return !cls.hasModifier(ElementModifier.INTERFACE);
+    }
+
+    @Override
     protected WasmExpression generateCast(WasmExpression value, WasmType targetType) {
         return new WasmCast(value, (WasmType.Reference) targetType);
     }
@@ -435,18 +491,13 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local,
-            String exceptionClass, WasmLocal exceptionVar) {
-        if (local != null) {
-            WasmExpression exception = new WasmGetLocal(exceptionVar);
-            if (exceptionClass != null && !exceptionClass.equals("java.lang.Throwable")) {
-                exception = new WasmCast(exception, context.classInfoProvider().getClassInfo(exceptionClass)
-                        .getStructure().getNonNullReference());
-            }
-            var save = new WasmSetLocal(local, exception);
-            save.setLocation(location);
-            target.add(save);
-        }
+    protected void checkExceptionType(TryCatchStatement tryCatch, WasmLocal exceptionVar, List<WasmExpression> target,
+            WasmBlock targetBlock) {
+        var wasmType = context.classInfoProvider().getClassInfo(tryCatch.getExceptionType()).getType();
+        var wasmSourceType = context.classInfoProvider().getClassInfo("java.lang.Throwable").getType();
+        var br = new WasmCastBranch(WasmCastCondition.SUCCESS, new WasmGetLocal(exceptionVar),
+                wasmSourceType, wasmType, targetBlock);
+        target.add(br);
     }
 
     @Override

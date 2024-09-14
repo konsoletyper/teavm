@@ -30,6 +30,7 @@ public class WasmCastBranch extends WasmExpression {
             WasmType.Reference type, WasmBlock target) {
         this.condition = Objects.requireNonNull(condition);
         this.value = Objects.requireNonNull(value);
+        this.sourceType = Objects.requireNonNull(sourceType);
         this.type = Objects.requireNonNull(type);
         this.target = Objects.requireNonNull(target);
     }

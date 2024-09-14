@@ -816,9 +816,9 @@ public class CodeParser extends BaseSectionParser {
     }
 
     private void parseCastBranch(boolean success) {
+        var flags = reader.data[reader.ptr++];
         var depth = readLEB();
         var target = blockStack.get(blockStack.size() - depth - 1);
-        var flags = reader.data[reader.ptr++];
         var sourceType = reader.readHeapType((flags & 1) != 0);
         var targetType = reader.readHeapType((flags & 2) != 0);
         codeListener.castBranch(success, depth, target.token, sourceType, targetType);
