@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generate.gc.classes;
 
+import java.util.List;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
@@ -44,15 +45,19 @@ class WasmGCNewArrayFunctionGenerator {
     }
 
     WasmFunction generateNewArrayFunction(ValueType itemType) {
-        var function = new WasmFunction(getNewArrayFunctionType());
+        var classInfo = classInfoProvider.getClassInfo(ValueType.arrayOf(itemType));
+        var functionType = new WasmFunctionType(null, classInfo.getType(), List.of(WasmType.INT32));
+        module.types.add(functionType);
+        functionType.setFinal(true);
+        functionType.getSupertypes().add(getNewArrayFunctionType());
+        var function = new WasmFunction(functionType);
         function.setName(names.topLevel("Array<" + names.suggestForType(itemType) + ">@new"));
         module.functions.add(function);
         var sizeLocal = new WasmLocal(WasmType.INT32, "length");
         function.add(sizeLocal);
         var tempVars = new TemporaryVariablePool(function);
         var genUtil = new WasmGCGenerationUtil(classInfoProvider, tempVars);
-        var targetVar = new WasmLocal(classInfoProvider.getClassInfo(ValueType.arrayOf(itemType)).getType(),
-                "result");
+        var targetVar = new WasmLocal(classInfo.getType(), "result");
         function.add(targetVar);
         genUtil.allocateArray(itemType, () -> new WasmGetLocal(sizeLocal), null, targetVar, function.getBody());
         function.getBody().add(new WasmReturn(new WasmGetLocal(targetVar)));
@@ -63,6 +68,7 @@ class WasmGCNewArrayFunctionGenerator {
         if (newArrayFunctionType == null) {
             newArrayFunctionType = functionTypes.of(classInfoProvider.getClassInfo("java.lang.Object").getType(),
                     WasmType.INT32);
+            newArrayFunctionType.setFinal(false);
         }
         return newArrayFunctionType;
     }

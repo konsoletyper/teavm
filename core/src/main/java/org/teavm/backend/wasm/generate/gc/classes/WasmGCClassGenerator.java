@@ -254,7 +254,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                             new WasmFunctionReference(supertypeFunction)));
                 }
                 if (req.newArray()) {
-                    var newArrayFunction = newArrayGenerator.generateNewArrayFunction(classInfo.getValueType());
+                    var newArrayFunction = getArrayConstructor(ValueType.arrayOf(classInfo.getValueType()));
                     newArrayFunction.setReferenced(true);
                     function.getBody().add(setClassField(classInfo, classNewArrayOffset,
                             new WasmFunctionReference(newArrayFunction)));
@@ -348,6 +348,15 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             }
         }
         return classInfo;
+    }
+
+    @Override
+    public WasmFunction getArrayConstructor(ValueType.Array type) {
+        var arrayInfo = getClassInfo(type);
+        if (arrayInfo.newArrayFunction == null) {
+            arrayInfo.newArrayFunction = newArrayGenerator.generateNewArrayFunction(type.getItemType());
+        }
+        return arrayInfo.newArrayFunction;
     }
 
     public int getClassTagOffset() {

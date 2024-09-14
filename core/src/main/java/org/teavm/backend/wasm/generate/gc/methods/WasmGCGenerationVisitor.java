@@ -15,8 +15,10 @@
  */
 package org.teavm.backend.wasm.generate.gc.methods;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.CastExpr;
@@ -25,6 +27,7 @@ import org.teavm.ast.Expr;
 import org.teavm.ast.InstanceOfExpr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.InvocationType;
+import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.SubscriptExpr;
 import org.teavm.ast.TryCatchStatement;
@@ -242,6 +245,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         return new WasmIsNull(value);
     }
 
+    @Override
     protected WasmExpression nullCheck(Expr value, TextLocation location) {
         var block = new WasmBlock(false);
         block.setLocation(location);
@@ -358,6 +362,42 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             target.add(getLocal);
             tempVars.release(targetVar);
         }
+    }
+
+    @Override
+    public void visit(ArrayFromDataExpr expr) {
+        var wasmArrayType = (WasmType.CompositeReference) mapType(ValueType.arrayOf(expr.getType()));
+        var block = new WasmBlock(false);
+        block.setType(wasmArrayType);
+        var wasmArrayStruct = (WasmStructure) wasmArrayType.composite;
+        var wasmArrayDataType = (WasmType.CompositeReference) wasmArrayStruct.getFields()
+                .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
+        var wasmArray = (WasmArray) wasmArrayDataType.composite;
+        var array = tempVars.acquire(wasmArrayType);
+
+        generationUtil.allocateArrayWithElements(expr.getType(), () -> {
+            var items = new ArrayList<WasmExpression>();
+            for (int i = 0; i < expr.getData().size(); ++i) {
+                accept(expr.getData().get(i), wasmArray.getElementType().asUnpackedType());
+                items.add(result);
+            }
+            return items;
+        }, expr.getLocation(), array, block.getBody());
+
+        block.getBody().add(new WasmGetLocal(array));
+        block.setLocation(expr.getLocation());
+        tempVars.release(array);
+
+        result = block;
+    }
+
+    @Override
+    public void visit(NewArrayExpr expr) {
+        accept(expr.getLength(), WasmType.INT32);
+        var function = context.classInfoProvider().getArrayConstructor(ValueType.arrayOf(expr.getType()));
+        var call = new WasmCall(function, result);
+        call.setLocation(expr.getLocation());
+        result = call;
     }
 
     @Override

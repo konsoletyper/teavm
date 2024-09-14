@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.generate.gc.classes;
 import java.util.List;
 import java.util.function.Consumer;
 import org.teavm.backend.wasm.model.WasmArray;
+import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
@@ -31,6 +32,7 @@ public class WasmGCClassInfo {
     WasmGlobal pointer;
     WasmGlobal initializerPointer;
     Consumer<List<WasmExpression>> initializer;
+    WasmFunction newArrayFunction;
 
     WasmGCClassInfo(ValueType valueType) {
         this.valueType = valueType;
