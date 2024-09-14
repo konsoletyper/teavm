@@ -47,15 +47,24 @@ public class ClassMetadataRequirements {
     private boolean hasArrayGet;
     private boolean hasArrayLength;
     private boolean hasEnumConstants;
+    private boolean hasSuperclass;
+    private boolean hasIsAssignable;
+    private boolean hasNewInstance;
+    private boolean hasEnclosingClass;
+    private boolean hasDeclaringClass;
+    private boolean hasSimpleName;
+    private boolean hasName;
 
     public ClassMetadataRequirements(DependencyInfo dependencyInfo) {
         MethodDependencyInfo getNameMethod = dependencyInfo.getMethod(GET_NAME_METHOD);
         if (getNameMethod != null) {
+            hasName = true;
             addClassesRequiringName(requirements, getNameMethod.getVariable(0).getClassValueNode().getTypes());
         }
 
         MethodDependencyInfo getSimpleNameMethod = dependencyInfo.getMethod(GET_SIMPLE_NAME_METHOD);
         if (getSimpleNameMethod != null) {
+            hasSimpleName = true;
             String[] classNames = getSimpleNameMethod.getVariable(0).getClassValueNode().getTypes();
             addClassesRequiringName(requirements, classNames);
             for (String className : classNames) {
@@ -67,6 +76,7 @@ public class ClassMetadataRequirements {
 
         var getSuperclassMethod = dependencyInfo.getMethod(GET_SUPERCLASS_METHOD);
         if (getSuperclassMethod != null) {
+            hasSuperclass = true;
             var classNames = getSuperclassMethod.getVariable(0).getClassValueNode().getTypes();
             for (var className : classNames) {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).superclass = true;
@@ -75,6 +85,7 @@ public class ClassMetadataRequirements {
 
         var isAssignableMethod = dependencyInfo.getMethod(IS_ASSIGNABLE_METHOD);
         if (isAssignableMethod != null) {
+            hasIsAssignable = true;
             var classNames = isAssignableMethod.getVariable(0).getClassValueNode().getTypes();
             for (var className : classNames) {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).isAssignable = true;
@@ -83,6 +94,7 @@ public class ClassMetadataRequirements {
 
         MethodDependencyInfo getDeclaringClassMethod = dependencyInfo.getMethod(GET_DECLARING_CLASS_METHOD);
         if (getDeclaringClassMethod != null) {
+            hasDeclaringClass = true;
             String[] classNames = getDeclaringClassMethod.getVariable(0).getClassValueNode().getTypes();
             for (String className : classNames) {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).declaringClass = true;
@@ -91,6 +103,7 @@ public class ClassMetadataRequirements {
 
         MethodDependencyInfo getEnclosingClassMethod = dependencyInfo.getMethod(GET_ENCLOSING_CLASS_METHOD);
         if (getEnclosingClassMethod != null) {
+            hasEnclosingClass = true;
             String[] classNames = getEnclosingClassMethod.getVariable(0).getClassValueNode().getTypes();
             for (String className : classNames) {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).enclosingClass = true;
@@ -99,6 +112,7 @@ public class ClassMetadataRequirements {
 
         var newArrayMethod = dependencyInfo.getMethod(NEW_ARRAY);
         if (newArrayMethod != null) {
+            hasNewInstance = true;
             var classNames = newArrayMethod.getVariable(1).getClassValueNode().getTypes();
             for (var className : classNames) {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).newArray = true;
@@ -170,6 +184,34 @@ public class ClassMetadataRequirements {
 
     public boolean hasEnumConstants() {
         return hasEnumConstants;
+    }
+
+    public boolean hasSuperclass() {
+        return hasSuperclass;
+    }
+
+    public boolean hasIsAssignable() {
+        return hasIsAssignable;
+    }
+
+    public boolean hasArrayNewInstance() {
+        return hasNewInstance;
+    }
+
+    public boolean hasEnclosingClass() {
+        return hasEnclosingClass;
+    }
+
+    public boolean hasDeclaringClass() {
+        return hasDeclaringClass;
+    }
+
+    public boolean hasSimpleName() {
+        return hasSimpleName;
+    }
+
+    public boolean hasName() {
+        return hasName;
     }
 
     private void addClassesRequiringName(Map<ValueType, ClassInfo> target, String[] source) {

@@ -174,7 +174,6 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
         return functionType;
     }
 
-
     private WasmExpression getClassField(WasmExpression instance, int fieldIndex) {
         return new WasmStructGet(
                 classGenerator.standardClasses.classClass().getStructure(),
