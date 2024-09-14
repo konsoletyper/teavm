@@ -139,11 +139,8 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected void generateThrow(WasmExpression expression, TextLocation location, List<WasmExpression> target) {
-        var setThrowable = new WasmSetGlobal(context.exceptionGlobal(), expression);
-        setThrowable.setLocation(location);
-        target.add(setThrowable);
-
         var result = new WasmThrow(context.getExceptionTag());
+        result.getArguments().add(expression);
         result.setLocation(location);
         target.add(result);
     }
@@ -438,16 +435,10 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression peekException() {
-        return new WasmGetGlobal(context.exceptionGlobal());
-    }
-
-    @Override
     protected void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local,
-            String exceptionClass) {
-        var type = context.classInfoProvider().getClassInfo("java.lang.Throwable").getType();
+            String exceptionClass, WasmLocal exceptionVar) {
         if (local != null) {
-            WasmExpression exception = new WasmGetGlobal(context.exceptionGlobal());
+            WasmExpression exception = new WasmGetLocal(exceptionVar);
             if (exceptionClass != null && !exceptionClass.equals("java.lang.Throwable")) {
                 exception = new WasmCast(exception, context.classInfoProvider().getClassInfo(exceptionClass)
                         .getStructure().getNonNullReference());
@@ -456,10 +447,6 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             save.setLocation(location);
             target.add(save);
         }
-
-        var erase = new WasmSetGlobal(context.exceptionGlobal(), new WasmNullConstant(type));
-        erase.setLocation(location);
-        target.add(erase);
     }
 
     @Override

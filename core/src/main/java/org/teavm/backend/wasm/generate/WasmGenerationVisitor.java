@@ -71,6 +71,7 @@ import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
+import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
@@ -93,8 +94,6 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     private static final FieldReference MONITOR_FIELD = new FieldReference("java.lang.Object", "monitor");
     private static final MethodReference CATCH_METHOD = new MethodReference(ExceptionHandling.class,
             "catchException", Throwable.class);
-    private static final MethodReference PEEK_EXCEPTION_METHOD = new MethodReference(ExceptionHandling.class,
-            "peekException", Throwable.class);
     private static final MethodReference THROW_METHOD = new MethodReference(ExceptionHandling.class,
             "throwException", Throwable.class, void.class);
     private static final MethodReference THROW_CCE_METHOD = new MethodReference(ExceptionHandling.class,
@@ -181,22 +180,12 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression peekException() {
-        return new WasmCall(context.functions().forStaticMethod(PEEK_EXCEPTION_METHOD));
-    }
-
-    @Override
     protected void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local,
-            String exceptionClass) {
-        var call = new WasmCall(context.functions().forStaticMethod(CATCH_METHOD));
+            String exceptionClass, WasmLocal exceptionVar) {
         if (local != null) {
-            var save = new WasmSetLocal(local, call);
+            var save = new WasmSetLocal(local, new WasmGetLocal(exceptionVar));
             save.setLocation(location);
             target.add(save);
-        } else {
-            var drop = new WasmDrop(call);
-            drop.setLocation(location);
-            target.add(drop);
         }
     }
 
@@ -529,9 +518,16 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected void generateThrow(WasmExpression expression, TextLocation location, List<WasmExpression> target) {
-        var call = new WasmCall(context.functions().forStaticMethod(THROW_METHOD), result);
-        call.setLocation(location);
-        target.add(call);
+        if (context.getExceptionTag() == null) {
+            var call = new WasmCall(context.functions().forStaticMethod(THROW_METHOD), result);
+            call.setLocation(location);
+            target.add(call);
+        } else {
+            var result = new WasmThrow(context.getExceptionTag());
+            result.getArguments().add(expression);
+            result.setLocation(location);
+            target.add(result);
+        }
     }
 
     private class CallSiteIdentifierImpl extends CallSiteIdentifier
@@ -544,6 +540,9 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
 
         @Override
         public void generateRegister(List<WasmExpression> consumer, TextLocation location) {
+            if (!managed) {
+                return;
+            }
             var result = new WasmStoreInt32(4, new WasmGetLocal(stackVariable), new WasmInt32Constant(id),
                     WasmInt32Subtype.INT32);
             result.setLocation(location);

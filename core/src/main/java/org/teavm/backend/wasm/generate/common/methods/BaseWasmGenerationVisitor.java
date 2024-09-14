@@ -1275,6 +1275,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     }
 
     protected void generateTry(List<TryCatchStatement> tryCatchStatements, List<Statement> protectedBody) {
+        var throwableType = mapType(ValueType.object("java.lang.Throwable"));
         var innerCatchBlock = new WasmBlock(false);
 
         var catchBlocks = new ArrayList<WasmBlock>();
@@ -1292,8 +1293,8 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         tryBlock.getCatches().add(catchClause);
         innerCatchBlock.getBody().add(tryBlock);
 
-        var throwableType = mapType(ValueType.object("java.lang.Throwable"));
-        var obj = exprCache.create(peekException(), throwableType, null, innerCatchBlock.getBody());
+        var exceptionVar = tempVars.acquire(throwableType);
+        catchClause.getCatchVariables().add(exceptionVar);
         var currentBlock = innerCatchBlock;
         boolean catchesAll = false;
         for (int i = tryCatchStatements.size() - 1; i >= 0; --i) {
@@ -1301,7 +1302,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             var catchBlock = catchBlocks.get(i);
             if (tryCatch.getExceptionType() != null && !tryCatch.getExceptionType().equals(Throwable.class.getName())) {
                 var exceptionType = ValueType.object(tryCatch.getExceptionType());
-                var isMatched = generateInstanceOf(obj.expr(), exceptionType);
+                var isMatched = generateInstanceOf(new WasmGetLocal(exceptionVar), exceptionType);
                 innerCatchBlock.getBody().add(new WasmBranch(isMatched, currentBlock));
             } else {
                 innerCatchBlock.getBody().add(new WasmBreak(currentBlock));
@@ -1310,9 +1311,10 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             currentBlock = catchBlock;
         }
         if (!catchesAll) {
-            innerCatchBlock.getBody().add(new WasmThrow(context.getExceptionTag()));
+            var rethrowExpr = new WasmThrow(context.getExceptionTag());
+            rethrowExpr.getArguments().add(new WasmGetLocal(exceptionVar));
+            innerCatchBlock.getBody().add(rethrowExpr);
         }
-        obj.release();
 
         currentBlock = innerCatchBlock;
         for (int i = tryCatchStatements.size() - 1; i >= 0; --i) {
@@ -1323,7 +1325,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             var catchLocal = tryCatch.getExceptionVariable() != null
                     ? localVar(tryCatch.getExceptionVariable())
                     : null;
-            catchException(null, catchBlock.getBody(), catchLocal, tryCatch.getExceptionType());
+            catchException(null, catchBlock.getBody(), catchLocal, tryCatch.getExceptionType(), exceptionVar);
             visitMany(tryCatch.getHandler(), catchBlock.getBody());
             if (!catchBlock.isTerminating() && catchBlock != outerCatchBlock) {
                 catchBlock.getBody().add(new WasmBreak(outerCatchBlock));
@@ -1332,12 +1334,11 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         }
 
         resultConsumer.add(outerCatchBlock);
+        tempVars.release(exceptionVar);
     }
 
-    protected abstract WasmExpression peekException();
-
     protected abstract void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local,
-            String exceptionClass);
+            String exceptionClass, WasmLocal exceptionVar);
 
     private void visitMany(List<Statement> statements, List<WasmExpression> target) {
         var oldTarget = resultConsumer;

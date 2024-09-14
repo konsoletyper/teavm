@@ -35,7 +35,6 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
-import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
@@ -131,7 +130,8 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     @Override
     public WasmTag getExceptionTag() {
         if (exceptionTag == null) {
-            exceptionTag = new WasmTag(functionTypes.of(null));
+            exceptionTag = new WasmTag(functionTypes.of(null,
+                    classInfoProvider.getClassInfo("java.lang.Throwable").getStructure().getReference()));
             exceptionTag.setExportName("javaException");
             module.tags.add(exceptionTag);
         }
@@ -173,16 +173,6 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
                     ClassCastException.class));
         }
         return cceMethod;
-    }
-
-    public WasmGlobal exceptionGlobal() {
-        if (exceptionGlobal == null) {
-            var type = classInfoProvider.getClassInfo("java.lang.Throwable").getType();
-            exceptionGlobal = new WasmGlobal(names.topLevel("teavm@thrownException"), type,
-                    new WasmNullConstant(type));
-            module.globals.add(exceptionGlobal);
-        }
-        return exceptionGlobal;
     }
 
     public WasmModule module() {

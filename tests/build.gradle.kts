@@ -58,6 +58,8 @@ tasks.test {
 
     systemProperty("teavm.junit.wasm", providers.gradleProperty("teavm.tests.wasm").orElse("true").get())
     systemProperty("teavm.junit.wasm.runner", browser)
+    systemProperty("teavm.junit.wasm.disasm", providers.gradleProperty("teavm.tests.wasm.disasm")
+        .orElse("false").get())
 
     systemProperty("teavm.junit.wasm-gc", providers.gradleProperty("teavm.tests.wasm-gc").orElse("false").get())
     systemProperty("teavm.junit.wasm-gc.runner", browser)

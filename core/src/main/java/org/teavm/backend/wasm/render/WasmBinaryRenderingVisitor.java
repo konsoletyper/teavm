@@ -1115,6 +1115,14 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         for (var catchClause : expression.getCatches()) {
             writer.writeByte(0x07);
             writer.writeLEB(catchClause.getTag().getIndex());
+            for (var catchVar : catchClause.getCatchVariables()) {
+                if (catchVar == null) {
+                    writer.writeByte(0x1A);
+                } else {
+                    writer.writeByte(0x21);
+                    writer.writeLEB(catchVar.getIndex());
+                }
+            }
             for (var part : catchClause.getBody()) {
                 part.acceptVisitor(this);
             }
@@ -1125,10 +1133,10 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmThrow expression) {
+        pushLocation(expression);
         for (var arg : expression.getArguments()) {
             arg.acceptVisitor(this);
         }
-        pushLocation(expression);
         writer.writeByte(0x8);
         writer.writeLEB(expression.getTag().getIndex());
         popLocation();

@@ -20,7 +20,6 @@ import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
-import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 
@@ -34,8 +33,6 @@ public interface WasmGCCustomGeneratorContext {
     WasmGCClassInfoProvider classInfoProvider();
 
     WasmGCNameProvider names();
-
-    WasmGlobal exceptionGlobal();
 
     BaseWasmFunctionRepository functions();
 
