@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.generate.gc.classes;
 
 import java.util.List;
+import java.util.Queue;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
@@ -35,13 +36,16 @@ class WasmGCNewArrayFunctionGenerator {
     private WasmGCClassInfoProvider classInfoProvider;
     private WasmFunctionType newArrayFunctionType;
     private WasmGCNameProvider names;
+    private Queue<Runnable> queue;
 
     WasmGCNewArrayFunctionGenerator(WasmModule module, WasmFunctionTypes functionTypes,
-            WasmGCClassInfoProvider classInfoProvider, WasmGCNameProvider names) {
+            WasmGCClassInfoProvider classInfoProvider, WasmGCNameProvider names,
+            Queue<Runnable> queue) {
         this.module = module;
         this.functionTypes = functionTypes;
         this.classInfoProvider = classInfoProvider;
         this.names = names;
+        this.queue = queue;
     }
 
     WasmFunction generateNewArrayFunction(ValueType itemType) {
@@ -53,14 +57,17 @@ class WasmGCNewArrayFunctionGenerator {
         var function = new WasmFunction(functionType);
         function.setName(names.topLevel("Array<" + names.suggestForType(itemType) + ">@new"));
         module.functions.add(function);
-        var sizeLocal = new WasmLocal(WasmType.INT32, "length");
-        function.add(sizeLocal);
-        var tempVars = new TemporaryVariablePool(function);
-        var genUtil = new WasmGCGenerationUtil(classInfoProvider, tempVars);
-        var targetVar = new WasmLocal(classInfo.getType(), "result");
-        function.add(targetVar);
-        genUtil.allocateArray(itemType, () -> new WasmGetLocal(sizeLocal), null, targetVar, function.getBody());
-        function.getBody().add(new WasmReturn(new WasmGetLocal(targetVar)));
+
+        queue.add(() -> {
+            var sizeLocal = new WasmLocal(WasmType.INT32, "length");
+            function.add(sizeLocal);
+            var tempVars = new TemporaryVariablePool(function);
+            var genUtil = new WasmGCGenerationUtil(classInfoProvider, tempVars);
+            var targetVar = new WasmLocal(classInfo.getType(), "result");
+            function.add(targetVar);
+            genUtil.allocateArray(itemType, () -> new WasmGetLocal(sizeLocal), null, targetVar, function.getBody());
+            function.getBody().add(new WasmReturn(new WasmGetLocal(targetVar)));
+        });
         return function;
     }
 

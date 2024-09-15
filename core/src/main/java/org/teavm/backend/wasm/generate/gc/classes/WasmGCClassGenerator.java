@@ -108,7 +108,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private WasmGCVirtualTableProvider virtualTables;
     private BaseWasmFunctionRepository functionProvider;
     private Map<ValueType, WasmGCClassInfo> classInfoMap = new LinkedHashMap<>();
-    private Queue<WasmGCClassInfo> classInfoQueue = new ArrayDeque<>();
+    private Queue<Runnable> queue = new ArrayDeque<>();
     private ObjectIntMap<FieldReference> fieldIndexes = new ObjectIntHashMap<>();
     private Map<FieldReference, WasmGlobal> staticFieldLocations = new HashMap<>();
     private List<Consumer<WasmFunction>> staticFieldInitializers = new ArrayList<>();
@@ -171,7 +171,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         standardClasses = new WasmGCStandardClasses(this);
         strings = new WasmGCStringPool(standardClasses, module, functionProvider, names, functionTypes);
         supertypeGenerator = new WasmGCSupertypeFunctionGenerator(module, this, names, tagRegistry, functionTypes);
-        newArrayGenerator = new WasmGCNewArrayFunctionGenerator(module, functionTypes, this, names);
+        newArrayGenerator = new WasmGCNewArrayFunctionGenerator(module, functionTypes, this, names, queue);
         typeMapper = new WasmGCTypeMapper(classSource, this, functionTypes, module);
         var customTypeMapperFactoryContext = customTypeMapperFactoryContext();
         typeMapper.setCustomTypeMappers(customTypeMapperFactories.stream()
@@ -213,13 +213,12 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     public boolean process() {
-        if (classInfoQueue.isEmpty()) {
+        if (queue.isEmpty()) {
             return false;
         }
-        while (!classInfoQueue.isEmpty()) {
-            var classInfo = classInfoQueue.remove();
-            classInfo.initializer.accept(initializerFunctionStatements);
-            classInfo.initializer = null;
+        while (!queue.isEmpty()) {
+            var action = queue.remove();
+            action.run();
             initStructures();
         }
         return true;
@@ -245,20 +244,13 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         function.getBody().addAll(initializerFunctionStatements);
         initializerFunctionStatements.clear();
         for (var classInfo : classInfoMap.values()) {
-            var req = metadataRequirements.getInfo(classInfo.getValueType());
-            if (req != null) {
-                if (req.isAssignable()) {
-                    var supertypeFunction = supertypeGenerator.getIsSupertypeFunction(classInfo.getValueType());
-                    supertypeFunction.setReferenced(true);
-                    function.getBody().add(setClassField(classInfo, classSupertypeFunctionOffset,
-                            new WasmFunctionReference(supertypeFunction)));
-                }
-                if (req.newArray()) {
-                    var newArrayFunction = getArrayConstructor(ValueType.arrayOf(classInfo.getValueType()));
-                    newArrayFunction.setReferenced(true);
-                    function.getBody().add(setClassField(classInfo, classNewArrayOffset,
-                            new WasmFunctionReference(newArrayFunction)));
-                }
+            if (classInfo.supertypeFunction != null) {
+                function.getBody().add(setClassField(classInfo, classSupertypeFunctionOffset,
+                        new WasmFunctionReference(classInfo.supertypeFunction)));
+            }
+            if (classInfo.initArrayFunction != null) {
+                function.getBody().add(setClassField(classInfo, classNewArrayOffset,
+                        new WasmFunctionReference(classInfo.initArrayFunction)));
             }
         }
         for (var consumer : staticFieldInitializers) {
@@ -271,7 +263,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         var classInfo = classInfoMap.get(type);
         if (classInfo == null) {
             classInfo = new WasmGCClassInfo(type);
-            classInfoQueue.add(classInfo);
+            var finalClassInfo = classInfo;
+            queue.add(() -> {
+                finalClassInfo.initializer.accept(initializerFunctionStatements);
+                finalClassInfo.initializer = null;
+            });
             classInfoMap.put(type, classInfo);
             WasmGCVirtualTable virtualTable = null;
             if (!(type instanceof ValueType.Primitive)) {
@@ -284,7 +280,6 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     isInterface = true;
                     classInfo.structure = standardClasses.objectClass().structure;
                 } else {
-                    var finalClassInfo = classInfo;
                     if (type instanceof ValueType.Array) {
                         var itemType = ((ValueType.Array) type).getItemType();
                         if (!(itemType instanceof ValueType.Primitive) && !itemType.equals(OBJECT_TYPE)) {
@@ -345,6 +340,18 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 initArrayClass(classInfo, (ValueType.Array) type);
             } else if (type instanceof ValueType.Object) {
                 initRegularClass(classInfo, virtualTable, classStructure, ((ValueType.Object) type).getClassName());
+            }
+            var req = metadataRequirements.getInfo(type);
+            if (req != null) {
+                if (req.newArray()) {
+                    classInfo.initArrayFunction = getArrayConstructor(ValueType.arrayOf(classInfo.getValueType()));
+                    classInfo.initArrayFunction.setReferenced(true);
+                }
+                if (req.isAssignable()) {
+                    var supertypeFunction = supertypeGenerator.getIsSupertypeFunction(classInfo.getValueType());
+                    supertypeFunction.setReferenced(true);
+                    classInfo.supertypeFunction = supertypeFunction;
+                }
             }
         }
         return classInfo;
@@ -490,6 +497,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private void initRegularClass(WasmGCClassInfo classInfo, WasmGCVirtualTable virtualTable,
             WasmStructure classStructure, String name) {
         var cls = classSource.get(name);
+
         if (classInitializerInfo.isDynamicInitializer(name)) {
             if (cls != null && cls.getMethod(CLINIT_METHOD_DESC) != null) {
                 var clinitType = functionTypes.of(null);

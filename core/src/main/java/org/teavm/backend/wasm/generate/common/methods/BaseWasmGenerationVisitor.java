@@ -1186,16 +1186,10 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     public void visit(CastExpr expr) {
         var wasmTargetType = mapType(expr.getTarget());
         acceptWithType(expr.getValue(), expr.getTarget());
+        result.acceptVisitor(typeInference);
+        var wasmSourceType = typeInference.getResult();
         if (!expr.isWeak()) {
-            result.acceptVisitor(typeInference);
-            var wasmSourceType = typeInference.getResult();
             if (wasmSourceType == null) {
-                return;
-            }
-
-            wasmSourceType = mapCastSourceType(wasmSourceType);
-
-            if (!validateCastTypes(wasmSourceType, wasmTargetType, expr.getLocation())) {
                 return;
             }
 
@@ -1223,15 +1217,8 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             valueToCast.release();
             result = block;
         }
-        result = generateCast(result, wasmTargetType);
         result.setLocation(expr.getLocation());
     }
-
-    protected abstract WasmType mapCastSourceType(WasmType type);
-
-    protected abstract boolean validateCastTypes(WasmType sourceType, WasmType targetType, TextLocation location);
-
-    protected abstract WasmExpression generateCast(WasmExpression value, WasmType targetType);
 
     @Override
     public void visit(InitClassStatement statement) {

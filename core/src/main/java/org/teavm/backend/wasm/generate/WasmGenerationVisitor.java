@@ -165,21 +165,6 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression generateCast(WasmExpression value, WasmType targetType) {
-        return value;
-    }
-
-    @Override
-    protected WasmType mapCastSourceType(WasmType type) {
-        return type;
-    }
-
-    @Override
-    protected boolean validateCastTypes(WasmType sourceType, WasmType targetType, TextLocation location) {
-        return true;
-    }
-
-    @Override
     protected WasmType mapType(ValueType type) {
         return WasmGeneratorUtil.mapType(type);
     }

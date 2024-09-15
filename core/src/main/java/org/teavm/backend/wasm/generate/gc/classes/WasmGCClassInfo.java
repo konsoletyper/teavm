@@ -33,6 +33,8 @@ public class WasmGCClassInfo {
     WasmGlobal initializerPointer;
     Consumer<List<WasmExpression>> initializer;
     WasmFunction newArrayFunction;
+    WasmFunction initArrayFunction;
+    WasmFunction supertypeFunction;
 
     WasmGCClassInfo(ValueType valueType) {
         this.valueType = valueType;

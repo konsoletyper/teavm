@@ -782,7 +782,7 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
 
     @Override
     public void cast(WasmHollowType.Reference type) {
-        writer.address().write("ref.cast (ref ");
+        writer.address().write("ref.cast ");
         writeType(type);
         writer.eol();
     }

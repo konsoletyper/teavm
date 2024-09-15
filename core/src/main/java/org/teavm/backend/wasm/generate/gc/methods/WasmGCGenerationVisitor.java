@@ -53,6 +53,7 @@ import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmArraySet;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
+import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
@@ -443,26 +444,76 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     public void visit(CastExpr expr) {
-        var type = expr.getTarget();
-        if (!expr.isWeak() && canCastNatively(type)) {
-            var wasmType = context.classInfoProvider().getClassInfo(type).getType();
-            var block = new WasmBlock(false);
-            acceptWithType(expr.getValue(), type);
-            var wasmValue = result;
-            result.acceptVisitor(typeInference);
-            var sourceWasmType = (WasmType.Reference) typeInference.getResult();
-            if (sourceWasmType == null || !validateCastTypes(sourceWasmType, wasmType, expr.getLocation())) {
+        var needsCast = true;
+        acceptWithType(expr.getValue(), expr.getTarget());
+        result.acceptVisitor(typeInference);
+        var sourceType = (WasmType.Reference) typeInference.getResult();
+        if (sourceType == null) {
+            return;
+        }
+
+        var targetType = (WasmType.Reference) context.typeMapper().mapType(expr.getTarget());
+        WasmStructure targetStruct = null;
+        if (targetType instanceof WasmType.CompositeReference) {
+            var targetComposite = ((WasmType.CompositeReference) targetType).composite;
+            if (targetComposite instanceof WasmStructure) {
+                targetStruct = (WasmStructure) targetComposite;
+            }
+        }
+
+        var canInsertCast = true;
+        if (targetStruct != null && sourceType instanceof WasmType.CompositeReference) {
+            var sourceComposite = (WasmType.CompositeReference) sourceType;
+            if (!sourceType.isNullable()) {
+                sourceType = sourceComposite.composite.getReference();
+            }
+            var sourceStruct = (WasmStructure) sourceComposite.composite;
+            if (targetStruct.isSupertypeOf(sourceStruct)) {
+                canInsertCast = false;
+            } else if (!sourceStruct.isSupertypeOf(targetStruct)) {
+                var block = new WasmBlock(false);
+                block.setLocation(expr.getLocation());
+                block.getBody().add(result);
+                block.getBody().add(new WasmUnreachable());
+                result = block;
                 return;
             }
+        }
 
-            block.setType(wasmType);
+        if (!expr.isWeak()) {
+            result.acceptVisitor(typeInference);
+
+            var block = new WasmBlock(false);
             block.setLocation(expr.getLocation());
-            block.getBody().add(new WasmCastBranch(WasmCastCondition.SUCCESS, wasmValue, sourceWasmType,
-                    wasmType, block));
+            block.setType(targetType);
+            if (canCastNatively(expr.getTarget())) {
+                if (!canInsertCast) {
+                    return;
+                }
+                block.getBody().add(new WasmCastBranch(WasmCastCondition.SUCCESS, result, sourceType,
+                        targetType, block));
+                result = block;
+            } else {
+                var nonNullValue = new WasmNullBranch(WasmNullCondition.NULL, result, block);
+                nonNullValue.setResult(new WasmNullConstant(sourceType));
+                var valueToCast = exprCache.create(nonNullValue, sourceType, expr.getLocation(), block.getBody());
+
+                var supertypeCall = generateInstanceOf(valueToCast.expr(), expr.getTarget());
+                var breakIfPassed = new WasmBranch(supertypeCall, block);
+                breakIfPassed.setResult(valueToCast.expr());
+                block.getBody().add(new WasmDrop(breakIfPassed));
+
+                result = block;
+                if (canInsertCast) {
+                    var cast = new WasmCast(result, targetType);
+                    cast.setLocation(expr.getLocation());
+                    result = cast;
+                }
+            }
             generateThrowCCE(expr.getLocation(), block.getBody());
-            result = block;
-        } else {
-            super.visit(expr);
+        } else if (canInsertCast) {
+            result = new WasmCast(result, targetType);
+            result.setLocation(expr.getLocation());
         }
     }
 
@@ -476,44 +527,6 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             return false;
         }
         return !cls.hasModifier(ElementModifier.INTERFACE);
-    }
-
-    @Override
-    protected WasmExpression generateCast(WasmExpression value, WasmType targetType) {
-        return new WasmCast(value, (WasmType.Reference) targetType);
-    }
-
-    @Override
-    protected WasmType mapCastSourceType(WasmType type) {
-        if (!(type instanceof WasmType.CompositeReference)) {
-            return type;
-        }
-        var refType = (WasmType.CompositeReference) type;
-        return refType.isNullable() ? refType : refType.composite.getReference();
-    }
-
-    @Override
-    protected boolean validateCastTypes(WasmType sourceType, WasmType targetType, TextLocation location) {
-        if (!(sourceType instanceof WasmType.CompositeReference)
-                || !(targetType instanceof WasmType.CompositeReference)) {
-            return false;
-        }
-        var sourceRefType = (WasmType.CompositeReference) sourceType;
-        var targetRefType = (WasmType.CompositeReference) targetType;
-        if (sourceRefType.composite instanceof WasmStructure
-                && targetRefType.composite instanceof WasmStructure) {
-            var sourceStruct = (WasmStructure) sourceRefType.composite;
-            var targetStruct = (WasmStructure) targetRefType.composite;
-            if (targetStruct.isSupertypeOf(sourceStruct)) {
-                return false;
-            }
-            if (!sourceStruct.isSupertypeOf(targetStruct)) {
-                result = new WasmUnreachable();
-                result.setLocation(location);
-                return false;
-            }
-        }
-        return true;
     }
 
     @Override

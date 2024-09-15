@@ -121,9 +121,15 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     }
 
     @Override
-    public void beforeOptimizations(Program program, MethodReader method) {
+    public void beforeInlining(Program program, MethodReader method) {
         if (strict) {
             nullCheckInsertion.transformProgram(program, method.getReference());
+        }
+    }
+
+    @Override
+    public void beforeOptimizations(Program program, MethodReader method) {
+        if (strict) {
             boundCheckInsertion.transformProgram(program, method.getReference());
         }
     }
