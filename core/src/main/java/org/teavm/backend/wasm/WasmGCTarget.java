@@ -17,6 +17,7 @@ package org.teavm.backend.wasm;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicFactory;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsics;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.optimization.WasmUsageCounter;
 import org.teavm.backend.wasm.render.WasmBinaryRenderer;
 import org.teavm.backend.wasm.render.WasmBinaryStatsCollector;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
@@ -209,6 +211,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         var binaryWriter = new WasmBinaryWriter();
         var binaryRenderer = new WasmBinaryRenderer(binaryWriter, WasmBinaryVersion.V_0x1, obfuscated,
                 null, null, null, null, WasmBinaryStatsCollector.EMPTY);
+        optimizeIndexes(module);
         module.prepareForRendering();
         binaryRenderer.render(module);
         var data = binaryWriter.getData();
@@ -218,6 +221,14 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         try (var output = buildTarget.createResource(outputName)) {
             output.write(data);
         }
+    }
+
+    private void optimizeIndexes(WasmModule module) {
+        var usageCounter = new WasmUsageCounter();
+        usageCounter.applyToModule(module);
+        module.functions.sort(Comparator.comparingInt(f -> -usageCounter.usages(f)));
+        module.globals.sort(Comparator.comparingInt(g -> -usageCounter.usages(g)));
+        module.types.sort(Comparator.comparingInt(t -> -usageCounter.usages(t)));
     }
 
     @Override

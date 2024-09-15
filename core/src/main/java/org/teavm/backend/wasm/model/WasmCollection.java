@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
@@ -103,5 +104,10 @@ public class WasmCollection<T extends WasmEntity> implements Iterable<T> {
 
     public Stream<T> stream() {
         return readonlyItems.stream();
+    }
+
+    public void sort(Comparator<T> comparator) {
+        items.sort(comparator);
+        indexesInvalid = true;
     }
 }

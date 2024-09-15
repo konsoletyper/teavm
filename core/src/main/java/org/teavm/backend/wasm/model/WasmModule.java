@@ -17,9 +17,13 @@ package org.teavm.backend.wasm.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import org.teavm.backend.wasm.model.expression.WasmDefaultExpressionVisitor;
+import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
 
@@ -94,7 +98,42 @@ public class WasmModule {
     }
 
     public void prepareForRendering() {
+        prepareGlobals();
         prepareTypes();
+    }
+
+    private void prepareGlobals() {
+        var sorting = new GlobalSorting();
+        sorting.sort(globals);
+        globals.clear();
+        for (var global : sorting.sorted) {
+            globals.add(global);
+        }
+    }
+
+    private static class GlobalSorting extends WasmDefaultExpressionVisitor {
+        List<WasmGlobal> sorted = new ArrayList<>();
+        private Set<WasmGlobal> visited = new HashSet<>();
+
+        void sort(Iterable<WasmGlobal> globals) {
+            for (var global : globals) {
+                add(global);
+            }
+        }
+
+        private void add(WasmGlobal global) {
+            if (!visited.add(global)) {
+                return;
+            }
+            global.getInitialValue().acceptVisitor(this);
+            sorted.add(global);
+        }
+
+        @Override
+        public void visit(WasmGetGlobal expression) {
+            super.visit(expression);
+            add(expression.getGlobal());
+        }
     }
 
     private void prepareTypes() {
