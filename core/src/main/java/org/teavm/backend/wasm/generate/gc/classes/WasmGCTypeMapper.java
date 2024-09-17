@@ -56,7 +56,7 @@ public class WasmGCTypeMapper {
                     return WasmStorageType.packed(WasmPackedType.INT8);
                 case SHORT:
                 case CHARACTER:
-                    return WasmStorageType.packed(WasmPackedType.INT8);
+                    return WasmStorageType.packed(WasmPackedType.INT16);
                 case INTEGER:
                     return WasmType.INT32.asStorage();
                 case LONG:

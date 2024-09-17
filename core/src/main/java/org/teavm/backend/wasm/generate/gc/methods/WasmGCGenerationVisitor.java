@@ -81,7 +81,6 @@ import org.teavm.backend.wasm.model.expression.WasmTest;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.ClassHierarchy;
-import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
@@ -444,7 +443,6 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     public void visit(CastExpr expr) {
-        var needsCast = true;
         acceptWithType(expr.getValue(), expr.getTarget());
         result.acceptVisitor(typeInference);
         var sourceType = (WasmType.Reference) typeInference.getResult();
@@ -485,8 +483,8 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
             var block = new WasmBlock(false);
             block.setLocation(expr.getLocation());
-            block.setType(targetType);
             if (canCastNatively(expr.getTarget())) {
+                block.setType(targetType);
                 if (!canInsertCast) {
                     return;
                 }
@@ -494,6 +492,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
                         targetType, block));
                 result = block;
             } else {
+                block.setType(sourceType);
                 var nonNullValue = new WasmNullBranch(WasmNullCondition.NULL, result, block);
                 nonNullValue.setResult(new WasmNullConstant(sourceType));
                 var valueToCast = exprCache.create(nonNullValue, sourceType, expr.getLocation(), block.getBody());
@@ -518,7 +517,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     private boolean canCastNatively(ValueType type) {
-        if (type instanceof ValueType.Array) {
+        /*if (type instanceof ValueType.Array) {
             return true;
         }
         var className = ((ValueType.Object) type).getClassName();
@@ -526,7 +525,8 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         if (cls == null) {
             return false;
         }
-        return !cls.hasModifier(ElementModifier.INTERFACE);
+        return !cls.hasModifier(ElementModifier.INTERFACE);*/
+        return false;
     }
 
     @Override
