@@ -83,6 +83,7 @@ public class WasmGCDeclarationsGenerator {
                 module,
                 classes,
                 hierarchy,
+                dependencyInfo,
                 functionTypes,
                 tags,
                 metadataRequirements,

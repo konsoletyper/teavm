@@ -22,6 +22,7 @@ import java.util.Map;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCIntrinsicProvider;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -30,10 +31,12 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
     private Map<MethodReference, IntrinsicContainer> intrinsics = new HashMap<>();
     private List<WasmGCIntrinsicFactory> factories;
     private ClassReaderSource classes;
+    private ServiceRepository services;
 
-    public WasmGCIntrinsics(ClassReaderSource classes, List<WasmGCIntrinsicFactory> factories,
-            Map<MethodReference, WasmGCIntrinsic> customIntrinsics) {
+    public WasmGCIntrinsics(ClassReaderSource classes, ServiceRepository services,
+            List<WasmGCIntrinsicFactory> factories, Map<MethodReference, WasmGCIntrinsic> customIntrinsics) {
         this.classes = classes;
+        this.services = services;
         this.factories = List.copyOf(factories);
         factories = List.copyOf(factories);
         fillWasmRuntime();
@@ -178,6 +181,11 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         @Override
         public ClassReaderSource classes() {
             return classes;
+        }
+
+        @Override
+        public ServiceRepository services() {
+            return services;
         }
     };
 }

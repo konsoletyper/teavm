@@ -16,6 +16,8 @@
 package org.teavm.backend.wasm.gc;
 
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapperFactory;
+import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerator;
+import org.teavm.backend.wasm.generators.gc.WasmGCCustomGeneratorFactory;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicFactory;
 import org.teavm.model.MethodReference;
@@ -25,6 +27,10 @@ public interface TeaVMWasmGCHost extends TeaVMHostExtension {
     void addIntrinsicFactory(WasmGCIntrinsicFactory intrinsicFactory);
 
     void addIntrinsic(MethodReference method, WasmGCIntrinsic intrinsic);
+
+    void addGeneratorFactory(WasmGCCustomGeneratorFactory factory);
+
+    void addGenerator(MethodReference method, WasmGCCustomGenerator generator);
 
     void addCustomTypeMapperFactory(WasmGCCustomTypeMapperFactory customTypeMapperFactory);
 }

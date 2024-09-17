@@ -13,13 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.intrinsics.gc;
+package org.teavm.backend.wasm.generators.gc;
 
-import org.teavm.common.ServiceRepository;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.MethodReference;
 
-public interface WasmGCIntrinsicFactoryContext {
-    ClassReaderSource classes();
-
-    ServiceRepository services();
+public interface WasmGCCustomGeneratorFactory {
+    WasmGCCustomGenerator createGenerator(MethodReference methodRef, WasmGCCustomGeneratorFactoryContext context);
 }

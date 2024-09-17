@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
@@ -75,6 +76,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructNew;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -143,6 +145,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private int arrayLengthOffset = -1;
     private int arrayGetOffset = -1;
     private int cloneOffset = -1;
+    private int servicesOffset = -1;
     private WasmStructure arrayVirtualTableStruct;
     private WasmFunction arrayGetObjectFunction;
     private WasmFunction arrayLengthObjectFunction;
@@ -150,9 +153,10 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private WasmFunctionType arrayLengthType;
     private List<WasmStructure> nonInitializedStructures = new ArrayList<>();
     private WasmArray objectArrayType;
+    private boolean hasLoadServices;
 
     public WasmGCClassGenerator(WasmModule module, ClassReaderSource classSource,
-            ClassHierarchy hierarchy,
+            ClassHierarchy hierarchy, DependencyInfo dependencyInfo,
             WasmFunctionTypes functionTypes, TagRegistry tagRegistry,
             ClassMetadataRequirements metadataRequirements, WasmGCVirtualTableProvider virtualTables,
             BaseWasmFunctionRepository functionProvider, WasmGCNameProvider names,
@@ -177,6 +181,12 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         typeMapper.setCustomTypeMappers(customTypeMapperFactories.stream()
                 .map(factory -> factory.createTypeMapper(customTypeMapperFactoryContext))
                 .collect(Collectors.toList()));
+
+        var loadServicesMethod = dependencyInfo.getMethod(new MethodReference(ServiceLoader.class, "loadServices",
+                Class.class, Object[].class));
+        if (loadServicesMethod != null && loadServicesMethod.isUsed()) {
+            hasLoadServices = true;
+        }
     }
 
     private WasmGCCustomTypeMapperFactoryContext customTypeMapperFactoryContext() {
@@ -441,6 +451,12 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     public int getCloneOffset() {
         standardClasses.classClass().getStructure().init();
         return cloneOffset;
+    }
+
+    @Override
+    public int getServicesOffset() {
+        standardClasses.classClass().getStructure().init();
+        return servicesOffset;
     }
 
     private void initPrimitiveClass(WasmGCClassInfo classInfo, ValueType.Primitive type) {
@@ -1152,6 +1168,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             cloneOffset = fields.size();
             fields.add(createClassField(functionTypes.of(standardClasses.objectClass().getType(),
                     standardClasses.objectClass().getType()).getReference().asStorage(), "clone"));
+            if (hasLoadServices) {
+                servicesOffset = fields.size();
+                var serviceFunctionType = functionTypes.of(getClassInfo(ValueType.parse(Object[].class)).getType());
+                fields.add(createClassField(serviceFunctionType.getReference().asStorage(), "services"));
+            }
             if (metadataRequirements.hasEnumConstants()) {
                 enumConstantsFunctionOffset = fields.size();
                 var enumArrayType = getClassInfo(ValueType.arrayOf(ValueType.object("java.lang.Enum"))).getType();

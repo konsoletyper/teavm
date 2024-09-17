@@ -67,6 +67,8 @@ public interface WasmGCClassInfoProvider {
 
     int getCloneOffset();
 
+    int getServicesOffset();
+
     default WasmGCClassInfo getClassInfo(String name) {
         return getClassInfo(ValueType.object(name));
     }

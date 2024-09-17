@@ -25,6 +25,8 @@ import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
 import org.teavm.backend.wasm.gc.WasmGCDependencies;
 import org.teavm.backend.wasm.generate.gc.WasmGCDeclarationsGenerator;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapperFactory;
+import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerator;
+import org.teavm.backend.wasm.generators.gc.WasmGCCustomGeneratorFactory;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerators;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicFactory;
@@ -62,6 +64,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private List<WasmGCIntrinsicFactory> intrinsicFactories = new ArrayList<>();
     private Map<MethodReference, WasmGCIntrinsic> customIntrinsics = new HashMap<>();
     private List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories = new ArrayList<>();
+    private Map<MethodReference, WasmGCCustomGenerator> customCustomGenerators = new HashMap<>();
+    private List<WasmGCCustomGeneratorFactory> customGeneratorFactories = new ArrayList<>();
 
     public void setObfuscated(boolean obfuscated) {
         this.obfuscated = obfuscated;
@@ -79,6 +83,16 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     @Override
     public void addIntrinsic(MethodReference method, WasmGCIntrinsic intrinsic) {
         customIntrinsics.put(method, intrinsic);
+    }
+
+    @Override
+    public void addGeneratorFactory(WasmGCCustomGeneratorFactory factory) {
+        customGeneratorFactories.add(factory);
+    }
+
+    @Override
+    public void addGenerator(MethodReference method, WasmGCCustomGenerator generator) {
+        customCustomGenerators.put(method, generator);
     }
 
     @Override
@@ -151,8 +165,9 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     @Override
     public void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException {
         var module = new WasmModule();
-        var customGenerators = new WasmGCCustomGenerators();
-        var intrinsics = new WasmGCIntrinsics(classes, intrinsicFactories, customIntrinsics);
+        var customGenerators = new WasmGCCustomGenerators(classes, controller.getServices(),
+                customGeneratorFactories, customCustomGenerators);
+        var intrinsics = new WasmGCIntrinsics(classes, controller.getServices(), intrinsicFactories, customIntrinsics);
         var declarationsGenerator = new WasmGCDeclarationsGenerator(
                 module,
                 classes,

@@ -28,6 +28,7 @@ import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.PreciseTypeInference;
+import org.teavm.backend.wasm.gc.PreciseValueType;
 import org.teavm.backend.wasm.gc.WasmGCVariableCategoryProvider;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
@@ -269,6 +270,9 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             var localVar = ast.getVariables().get(i);
             var representative = method.getProgram().variableAt(variableRepresentatives[i]);
             var inferredType = typeInference.typeOf(representative);
+            if (inferredType == null) {
+                inferredType = new PreciseValueType(ValueType.object("java.lang.Object"), false);
+            }
             var type = !inferredType.isArrayUnwrap
                     ? typeMapper.mapType(inferredType.valueType)
                     : classInfoProvider.getClassInfo(inferredType.valueType).getArray().getReference();

@@ -22,6 +22,7 @@ import java.util.ServiceLoader;
 import org.teavm.backend.c.TeaVMCHost;
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
 import org.teavm.backend.wasm.TeaVMWasmHost;
+import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
 import org.teavm.classlib.ReflectionSupplier;
 import org.teavm.classlib.impl.currency.CountriesGenerator;
 import org.teavm.classlib.impl.currency.CurrenciesGenerator;
@@ -93,6 +94,11 @@ public class JCLPlugin implements TeaVMPlugin {
             var wasmHost = host.getExtension(TeaVMWasmHost.class);
             if (wasmHost != null) {
                 wasmHost.add(new ServiceLoaderWasmSupport());
+            }
+
+            var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
+            if (wasmGCHost != null) {
+                wasmGCHost.addGeneratorFactory(new ServiceLoaderWasmGCSupport());
             }
         }
 

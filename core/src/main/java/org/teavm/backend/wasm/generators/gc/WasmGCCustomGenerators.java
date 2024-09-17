@@ -17,36 +17,46 @@ package org.teavm.backend.wasm.generators.gc;
 
 import java.lang.reflect.Array;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCCustomGeneratorProvider;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.common.ServiceRepository;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 
 public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
-    private Map<MethodReference, WasmGCCustomGenerator> generators = new HashMap<>();
+    private List<WasmGCCustomGeneratorFactory> factories;
+    private Map<MethodReference, Container> generators = new HashMap<>();
+    private ClassReaderSource classes;
+    private ServiceRepository services;
 
-    public WasmGCCustomGenerators() {
+    public WasmGCCustomGenerators(ClassReaderSource classes, ServiceRepository services,
+            List<WasmGCCustomGeneratorFactory> factories,
+            Map<MethodReference, WasmGCCustomGenerator> generators) {
+        this.factories = List.copyOf(factories);
+        this.classes = classes;
+        this.services = services;
         fillClass();
         fillStringPool();
         fillSystem();
         fillArray();
+        for (var entry : generators.entrySet()) {
+            add(entry.getKey(), entry.getValue());
+        }
     }
 
     private void fillClass() {
         var classGenerators = new ClassGenerators();
-        generators.put(new MethodReference(Class.class, "isAssignableFrom", Class.class, boolean.class),
-                classGenerators);
+        add(new MethodReference(Class.class, "isAssignableFrom", Class.class, boolean.class), classGenerators);
     }
 
     private void fillStringPool() {
-        generators.put(
-                new MethodReference(WasmGCSupport.class, "nextByte", byte.class),
-                new WasmGCStringPoolGenerator()
-        );
+        add(new MethodReference(WasmGCSupport.class, "nextByte", byte.class), new WasmGCStringPoolGenerator());
     }
 
     private void fillSystem() {
-        generators.put(
+        add(
                 new MethodReference(System.class, "doArrayCopy", Object.class, int.class, Object.class,
                         int.class, int.class, void.class),
                 new SystemDoArrayCopyGenerator()
@@ -55,12 +65,44 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
 
     private void fillArray() {
         var arrayGenerator = new ArrayGenerator();
-        generators.put(new MethodReference(Array.class, "newInstanceImpl", Class.class, int.class, Object.class),
-                arrayGenerator);
+        add(new MethodReference(Array.class, "newInstanceImpl", Class.class, int.class, Object.class), arrayGenerator);
     }
 
     @Override
     public WasmGCCustomGenerator get(MethodReference method) {
-        return generators.get(method);
+        var result = generators.get(method);
+        if (result == null) {
+            WasmGCCustomGenerator generator = null;
+            for (var factory : factories) {
+                generator = factory.createGenerator(method, factoryContext);
+            }
+            result = new Container(generator);
+            generators.put(method, result);
+        }
+        return result.generator;
     }
+
+    private void add(MethodReference method, WasmGCCustomGenerator generator) {
+        generators.put(method, new Container(generator));
+    }
+
+    private static class Container {
+        final WasmGCCustomGenerator generator;
+
+        Container(WasmGCCustomGenerator generator) {
+            this.generator = generator;
+        }
+    }
+
+    private WasmGCCustomGeneratorFactoryContext factoryContext = new WasmGCCustomGeneratorFactoryContext() {
+        @Override
+        public ClassReaderSource classes() {
+            return classes;
+        }
+
+        @Override
+        public ServiceRepository services() {
+            return services;
+        }
+    };
 }
