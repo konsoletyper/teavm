@@ -784,7 +784,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType itemType,
+    protected WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType arrayType,
             Supplier<List<WasmExpression>> dimensions, TextLocation location) {
         int dimensionList = -1;
         var dimensionsValue = dimensions.get();
@@ -797,7 +797,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
                     WasmInt32Subtype.INT32));
         }
 
-        int classPointer = classGenerator.getClassPointer(itemType);
+        int classPointer = classGenerator.getClassPointer(arrayType);
         var allocFunction = context.functions().forStaticMethod(new MethodReference(Allocator.class,
                 "allocateMultiArray", RuntimeClass.class, Address.class, int.class, RuntimeArray.class));
         var call = new WasmCall(allocFunction);

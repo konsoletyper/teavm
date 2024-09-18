@@ -358,9 +358,6 @@ public abstract class BaseTypeInference<T> {
         @Override
         public void visit(ConstructMultiArrayInstruction insn) {
             var type = insn.getItemType();
-            for (var i = 0; i < insn.getDimensions().size(); ++i) {
-                type = ValueType.arrayOf(type);
-            }
             type(insn.getReceiver(), type);
         }
 

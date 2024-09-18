@@ -23,7 +23,6 @@ import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIsNull;
-import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
@@ -62,6 +61,6 @@ public class ClassGenerators implements WasmGCCustomGenerator {
                 context.functionTypes().of(WasmType.INT32, classCls.getType()));
         call.getArguments().add(new WasmGetLocal(otherClassVar));
 
-        function.getBody().add(new WasmReturn(call));
+        function.getBody().add(call);
     }
 }

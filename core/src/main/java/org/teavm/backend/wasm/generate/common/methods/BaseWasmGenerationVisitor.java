@@ -1041,7 +1041,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     protected abstract void allocateArray(ValueType itemType, Supplier<WasmExpression> length, TextLocation location,
             WasmLocal local, List<WasmExpression> target);
 
-    protected abstract WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType itemType,
+    protected abstract WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType arrayType,
             Supplier<List<WasmExpression>> dimensions, TextLocation location);
 
     @Override
@@ -1107,9 +1107,6 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         callSiteId.generateRegister(block.getBody(), expr.getLocation());
 
         var arrayType = expr.getType();
-        for (var dimension : expr.getDimensions()) {
-            arrayType = ValueType.arrayOf(arrayType);
-        }
         block.setType(mapType(arrayType));
         var call = allocateMultiArray(block.getBody(), expr.getType(), () -> {
             var wasmDimensions = new ArrayList<WasmExpression>();

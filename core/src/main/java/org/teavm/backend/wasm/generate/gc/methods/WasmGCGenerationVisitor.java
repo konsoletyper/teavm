@@ -395,7 +395,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     public void visit(NewArrayExpr expr) {
         accept(expr.getLength(), WasmType.INT32);
-        var function = context.classInfoProvider().getArrayConstructor(ValueType.arrayOf(expr.getType()));
+        var function = context.classInfoProvider().getArrayConstructor(expr.getType(), 1);
         var call = new WasmCall(function, result);
         call.setLocation(expr.getLocation());
         result = call;
@@ -408,9 +408,17 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType itemType,
+    protected WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType arrayType,
             Supplier<List<WasmExpression>> dimensions, TextLocation location) {
-        return null;
+        var dimensionsValue = dimensions.get();
+        var itemType = arrayType;
+        for (var i = 0; i < dimensionsValue.size(); ++i) {
+            itemType = ((ValueType.Array) itemType).getItemType();
+        }
+        var function = context.classInfoProvider().getArrayConstructor(itemType, dimensionsValue.size());
+        var call = new WasmCall(function, dimensionsValue.toArray(new WasmExpression[0]));
+        call.setLocation(location);
+        return call;
     }
 
     @Override

@@ -32,7 +32,7 @@ public class WasmGCClassInfo {
     WasmGlobal pointer;
     WasmGlobal initializerPointer;
     Consumer<List<WasmExpression>> initializer;
-    WasmFunction newArrayFunction;
+    List<WasmFunction> newArrayFunctions;
     WasmFunction initArrayFunction;
     WasmFunction supertypeFunction;
 

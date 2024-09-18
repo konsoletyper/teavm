@@ -27,7 +27,6 @@ import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.model.MethodReference;
@@ -51,7 +50,6 @@ public class WasmGCModuleGenerator {
 
     private void fillInitializer() {
         declarationsGenerator.contributeToInitializer(initializer);
-        initializer.getBody().add(new WasmReturn());
     }
 
     public WasmFunction generateMainFunction(String entryPoint) {
@@ -66,7 +64,6 @@ public class WasmGCModuleGenerator {
 
         var callToMainFunction = new WasmCall(mainFunction, new WasmGetLocal(argsLocal));
         mainFunctionCaller.getBody().add(callToMainFunction);
-        mainFunctionCaller.getBody().add(new WasmReturn());
 
         return mainFunctionCaller;
     }
@@ -76,7 +73,7 @@ public class WasmGCModuleGenerator {
                 WasmGCSupport.class, "createStringBuilder", StringBuilder.class));
         var caller = new WasmFunction(function.getType());
         caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmReturn(new WasmCall(function)));
+        caller.getBody().add(new WasmCall(function));
         declarationsGenerator.module.functions.add(caller);
         return caller;
     }
@@ -88,7 +85,7 @@ public class WasmGCModuleGenerator {
         var sizeLocal = new WasmLocal(WasmType.INT32, "length");
         caller.add(sizeLocal);
         caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmReturn(new WasmCall(function, new WasmGetLocal(sizeLocal))));
+        caller.getBody().add(new WasmCall(function, new WasmGetLocal(sizeLocal)));
         declarationsGenerator.module.functions.add(caller);
         return caller;
     }
@@ -105,7 +102,6 @@ public class WasmGCModuleGenerator {
         caller.getBody().add(callInitializer());
         caller.getBody().add(new WasmDrop(new WasmCall(function, new WasmGetLocal(stringBuilderLocal),
                 new WasmGetLocal(codeLocal))));
-        caller.getBody().add(new WasmReturn());
         declarationsGenerator.module.functions.add(caller);
         return caller;
     }
@@ -119,7 +115,7 @@ public class WasmGCModuleGenerator {
         var stringBuilderLocal = new WasmLocal(stringBuilderType, "stringBuilder");
         caller.add(stringBuilderLocal);
         caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmReturn(new WasmCall(function, new WasmGetLocal(stringBuilderLocal))));
+        caller.getBody().add(new WasmCall(function, new WasmGetLocal(stringBuilderLocal)));
         declarationsGenerator.module.functions.add(caller);
         return caller;
     }
@@ -137,8 +133,8 @@ public class WasmGCModuleGenerator {
         caller.add(indexLocal);
         caller.add(valueLocal);
         caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmReturn(new WasmCall(function, new WasmGetLocal(arrayLocal),
-                new WasmGetLocal(indexLocal), new WasmGetLocal(valueLocal))));
+        caller.getBody().add(new WasmCall(function, new WasmGetLocal(arrayLocal),
+                new WasmGetLocal(indexLocal), new WasmGetLocal(valueLocal)));
         declarationsGenerator.module.functions.add(caller);
         return caller;
     }
@@ -151,7 +147,7 @@ public class WasmGCModuleGenerator {
         var stringLocal = new WasmLocal(stringType, "string");
         caller.add(stringLocal);
         caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmReturn(new WasmCall(function, new WasmGetLocal(stringLocal))));
+        caller.getBody().add(new WasmCall(function, new WasmGetLocal(stringLocal)));
         declarationsGenerator.module.functions.add(caller);
         return caller;
     }
@@ -166,8 +162,8 @@ public class WasmGCModuleGenerator {
         caller.add(stringLocal);
         caller.add(indexLocal);
         caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmReturn(new WasmCall(function, new WasmGetLocal(stringLocal),
-                new WasmGetLocal(indexLocal))));
+        caller.getBody().add(new WasmCall(function, new WasmGetLocal(stringLocal),
+                new WasmGetLocal(indexLocal)));
         declarationsGenerator.module.functions.add(caller);
         return caller;
     }

@@ -45,7 +45,6 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
-import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Import;
@@ -342,7 +341,6 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     public WasmFunction getDummyInitializer() {
         if (dummyInitializer == null) {
             dummyInitializer = new WasmFunction(functionTypes.of(null));
-            dummyInitializer.getBody().add(new WasmReturn());
             dummyInitializer.setName(names.topLevel("teavm@dummyInitializer"));
             dummyInitializer.setReferenced(true);
             module.functions.add(dummyInitializer);

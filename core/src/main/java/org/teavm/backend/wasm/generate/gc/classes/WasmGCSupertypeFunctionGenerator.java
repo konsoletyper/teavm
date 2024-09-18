@@ -92,7 +92,7 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
         } else {
             var expected = classGenerator.getClassInfo(type).pointer;
             var condition = new WasmReferencesEqual(new WasmGetLocal(subtypeVar), new WasmGetGlobal(expected));
-            function.getBody().add(new WasmReturn(condition));
+            function.getBody().add(condition);
         }
 
         return function;
@@ -102,7 +102,7 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
         var body = function.getBody();
         var ranges = tagRegistry.getRanges(className);
         if (ranges.isEmpty()) {
-            body.add(new WasmReturn(new WasmInt32Constant(0)));
+            body.add(new WasmInt32Constant(0));
             return;
         }
 
@@ -147,7 +147,7 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
             testLower.getThenBlock().getBody().add(testUpper);
         }
 
-        body.add(new WasmReturn(new WasmInt32Constant(1)));
+        body.add(new WasmInt32Constant(1));
     }
 
     private void generateIsArray(WasmLocal subtypeVar, ValueType itemType, List<WasmExpression> body) {
@@ -164,7 +164,7 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
         delegateToItem.getArguments().add(new WasmGetLocal(subtypeVar));
         itemTest.getElseBlock().getBody().add(delegateToItem);
 
-        body.add(new WasmReturn(itemTest));
+        body.add(itemTest);
     }
 
     public WasmFunctionType getFunctionType() {

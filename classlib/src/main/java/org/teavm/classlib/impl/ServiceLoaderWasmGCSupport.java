@@ -172,7 +172,6 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
             function.setReferenced(true);
             function.setName(context.names().topLevel("teavm@emptyServicesInitializer"));
             context.module().functions.add(function);
-            function.getBody().add(new WasmReturn());
             return function;
         }
     }

@@ -35,7 +35,7 @@ public interface WasmGCClassInfoProvider {
 
     WasmGlobal getStaticFieldLocation(FieldReference fieldRef);
 
-    WasmFunction getArrayConstructor(ValueType.Array type);
+    WasmFunction getArrayConstructor(ValueType type, int depth);
 
     int getVirtualMethodsOffset();
 
