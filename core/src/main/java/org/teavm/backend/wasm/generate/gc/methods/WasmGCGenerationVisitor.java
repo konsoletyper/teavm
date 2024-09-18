@@ -81,6 +81,7 @@ import org.teavm.backend.wasm.model.expression.WasmTest;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
@@ -517,7 +518,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     private boolean canCastNatively(ValueType type) {
-        /*if (type instanceof ValueType.Array) {
+        if (type instanceof ValueType.Array) {
             return true;
         }
         var className = ((ValueType.Object) type).getClassName();
@@ -525,8 +526,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         if (cls == null) {
             return false;
         }
-        return !cls.hasModifier(ElementModifier.INTERFACE);*/
-        return false;
+        return !cls.hasModifier(ElementModifier.INTERFACE);
     }
 
     @Override

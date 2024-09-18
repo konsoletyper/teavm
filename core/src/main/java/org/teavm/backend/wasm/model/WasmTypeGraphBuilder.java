@@ -15,6 +15,9 @@
  */
 package org.teavm.backend.wasm.model;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
 
@@ -29,7 +32,61 @@ final class WasmTypeGraphBuilder {
             visitor.currentIndex = module.types.indexOf(type);
             type.acceptVisitor(visitor);
         }
+
+        addNominalStructures(module, types, graphBuilder);
+
         return graphBuilder.build();
+    }
+
+    private static void addNominalStructures(WasmModule module, Iterable<WasmCompositeType> types,
+            GraphBuilder graphBuilder) {
+        var subStructures = new HashMap<WasmStructure, List<WasmStructure>>();
+        var topLevelStructures = new ArrayList<WasmStructure>();
+        for (var type : types) {
+            if (type instanceof WasmStructure) {
+                var structure = (WasmStructure) type;
+                if (structure.isNominal()) {
+                    if (structure.getSupertype() != null) {
+                        subStructures.computeIfAbsent(structure.getSupertype(), k -> new ArrayList<>()).add(structure);
+                    } else {
+                        topLevelStructures.add(structure);
+                    }
+                }
+            }
+        }
+        mergeNominalStructures(module, topLevelStructures, 0, graphBuilder);
+        for (var entry : subStructures.entrySet()) {
+            mergeNominalStructures(module, entry.getValue(), entry.getKey().getFields().size(), graphBuilder);
+        }
+    }
+
+    private static void mergeNominalStructures(WasmModule module, List<WasmStructure> structures, int parentFieldCount,
+            GraphBuilder graphBuilder) {
+        outer: for (var i = 0; i < structures.size(); i++) {
+            for (var j = i + 1; j < structures.size(); j++) {
+                var a = structures.get(i);
+                var b = structures.get(j);
+                if (areSameStructures(parentFieldCount, a, b)) {
+                    var p = module.types.indexOf(a);
+                    var q = module.types.indexOf(b);
+                    graphBuilder.addEdge(p, q);
+                    graphBuilder.addEdge(q, p);
+                    continue outer;
+                }
+            }
+        }
+    }
+
+    private static boolean areSameStructures(int start, WasmStructure a, WasmStructure b) {
+        if (a.getFields().size() != b.getFields().size()) {
+            return false;
+        }
+        for (var i = start; i < a.getFields().size(); i++) {
+            if (a.getFields().get(i).getType() != b.getFields().get(i).getType()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static class GraphBuilderVisitor implements WasmCompositeTypeVisitor {

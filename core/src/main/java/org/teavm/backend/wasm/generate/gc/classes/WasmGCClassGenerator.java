@@ -300,6 +300,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                         var structName = names.topLevel(names.suggestForType(type));
                         classInfo.structure = new WasmStructure(structName,
                                 fields -> fillFields(finalClassInfo, fields, type));
+                        classInfo.structure.setNominal(true);
                         module.types.add(classInfo.structure);
                         nonInitializedStructures.add(classInfo.structure);
                     }

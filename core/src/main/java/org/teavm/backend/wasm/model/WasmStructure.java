@@ -25,6 +25,7 @@ public class WasmStructure extends WasmCompositeType {
     private List<WasmField> fieldsStorage = new ArrayList<>();
     private WasmStructure supertype;
     private boolean indexesValid = true;
+    private boolean nominal;
 
     public WasmStructure(String name) {
         super(name);
@@ -55,6 +56,14 @@ public class WasmStructure extends WasmCompositeType {
             subtype = subtype.getSupertype();
         }
         return false;
+    }
+
+    public boolean isNominal() {
+        return nominal;
+    }
+
+    public void setNominal(boolean nominal) {
+        this.nominal = nominal;
     }
 
     void ensureIndexes() {
