@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.wasm.generate.gc.strings;
 
-import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
@@ -83,7 +82,7 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
                 createInitNextStringFunction();
             }
             binaryWriter.writeLEB(string.length());
-            binaryWriter.writeBytes(string.getBytes(StandardCharsets.UTF_8));
+            writeWTF8(string, binaryWriter);
             var brief = string.length() > 16 ? string.substring(0, 16) : string;
             var globalName = names.topLevel("teavm@string<" + stringMap.size() + ">"
                     + WasmGCNameProvider.sanitize(brief));
@@ -94,6 +93,22 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
             module.globals.add(global);
             return new WasmGCStringConstant(stringMap.size(), global);
         });
+    }
+
+    private void writeWTF8(String s, WasmBinaryWriter writer) {
+        for (var i = 0; i < s.length(); ++i) {
+            var c = (int) s.charAt(i);
+            if (c < 0x80) {
+                writer.writeByte(c);
+            } else if (c < 0x800) {
+                writer.writeByte(0xC0 | ((c >> 6) & 0x1F));
+                writer.writeByte(0x80 | (c & 0x3F));
+            } else if (c < 0x10000) {
+                writer.writeByte(0xE0 | ((c >> 12) & 0x1F));
+                writer.writeByte(0x80 | ((c >> 6) & 0x3F));
+                writer.writeByte(0x80 | (c & 0x3F));
+            }
+        }
     }
 
     private void createInitNextStringFunction() {
