@@ -1012,15 +1012,15 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     private WasmExpression fillPrimitiveClass(WasmGlobal global, String name, int kind) {
-        var str = name != null
-                ? new WasmGetGlobal(strings.getStringConstant(name).global)
-                : new WasmNullConstant(standardClasses.stringClass().getType());
-        return new WasmCall(
-                getCreatePrimitiveClassFunction(),
-                new WasmGetGlobal(global),
-                str,
-                new WasmInt32Constant(kind)
-        );
+        var call = new WasmCall(getCreatePrimitiveClassFunction());
+        call.getArguments().add(new WasmGetGlobal(global));
+        if (metadataRequirements.hasName()) {
+            call.getArguments().add(name != null
+                    ? new WasmGetGlobal(strings.getStringConstant(name).global)
+                    : new WasmNullConstant(standardClasses.stringClass().getType()));
+        }
+        call.getArguments().add(new WasmInt32Constant(kind));
+        return call;
     }
 
     @Override
@@ -1261,21 +1261,27 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     private WasmFunction createCreatePrimitiveClassFunction() {
-        var functionType = functionTypes.of(
-                null,
-                standardClasses.classClass().getType(),
-                standardClasses.stringClass().getType(),
-                WasmType.INT32
-        );
+        var params = new ArrayList<WasmType>();
+        params.add(standardClasses.classClass().getType());
+        if (metadataRequirements.hasName()) {
+            params.add(standardClasses.stringClass().getType());
+        }
+        params.add(WasmType.INT32);
+        var functionType = functionTypes.of(null, params.toArray(new WasmType[0]));
         var function = new WasmFunction(functionType);
-        function.setName(names.topLevel("teavm@fill_primitive_class"));
+        function.setName(names.topLevel("teavm@fillPrimitiveClass"));
         module.functions.add(function);
 
         var targetVar = new WasmLocal(standardClasses.classClass().getType(), "target");
-        var nameVar = new WasmLocal(standardClasses.stringClass().getType(), "name");
-        var kindVar = new WasmLocal(WasmType.INT32, "kind");
         function.add(targetVar);
-        function.add(nameVar);
+        WasmLocal nameVar;
+        if (metadataRequirements.hasName()) {
+            nameVar = new WasmLocal(standardClasses.stringClass().getType(), "name");
+            function.add(nameVar);
+        } else {
+            nameVar = null;
+        }
+        var kindVar = new WasmLocal(WasmType.INT32, "kind");
         function.add(kindVar);
 
         standardClasses.classClass().getStructure().init();
@@ -1303,12 +1309,14 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 classFlagsOffset,
                 flagsExpr
         ));
-        function.getBody().add(new WasmStructSet(
-                standardClasses.classClass().getStructure(),
-                new WasmGetLocal(targetVar),
-                classNameOffset,
-                new WasmGetLocal(nameVar)
-        ));
+        if (nameVar != null) {
+            function.getBody().add(new WasmStructSet(
+                    standardClasses.classClass().getStructure(),
+                    new WasmGetLocal(targetVar),
+                    classNameOffset,
+                    new WasmGetLocal(nameVar)
+            ));
+        }
         function.getBody().add(new WasmStructSet(
                 standardClasses.classClass().getStructure(),
                 new WasmGetLocal(targetVar),
