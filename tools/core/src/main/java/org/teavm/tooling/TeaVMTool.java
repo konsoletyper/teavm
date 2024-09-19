@@ -38,6 +38,7 @@ import org.teavm.backend.c.generate.ShorteningFileNameProvider;
 import org.teavm.backend.c.generate.SimpleFileNameProvider;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.javascript.JavaScriptTarget;
+import org.teavm.backend.wasm.WasmGCTarget;
 import org.teavm.backend.wasm.WasmRuntimeType;
 import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
@@ -336,6 +337,8 @@ public class TeaVMTool {
                 return prepareWebAssemblyDefaultTarget();
             case WEBASSEMBLY_WASI:
                 return prepareWebAssemblyWasiTarget();
+            case WEBASSEMBLY_GC:
+                return prepareWebAssemblyGCTarget();
             case C:
                 return prepareCTarget();
         }
@@ -378,6 +381,13 @@ public class TeaVMTool {
     private WasmTarget prepareWebAssemblyWasiTarget() {
         WasmTarget target = prepareWebAssemblyTarget();
         target.setRuntimeType(WasmRuntimeType.WASI);
+        return target;
+    }
+
+    private WasmGCTarget prepareWebAssemblyGCTarget() {
+        var target = new WasmGCTarget();
+        target.setObfuscated(obfuscated);
+        target.setStrict(strict);
         return target;
     }
 
@@ -529,6 +539,7 @@ public class TeaVMTool {
                     return "classes.js";
                 case WEBASSEMBLY:
                 case WEBASSEMBLY_WASI:
+                case WEBASSEMBLY_GC:
                     return "classes.wasm";
                 case C:
                     return "classes.c";

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,12 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.tooling;
+package org.teavm.gradle.api;
 
-public enum TeaVMTargetType {
-    JAVASCRIPT,
-    WEBASSEMBLY,
-    WEBASSEMBLY_WASI,
-    WEBASSEMBLY_GC,
-    C
+import org.gradle.api.provider.Property;
+
+public interface TeaVMWasmGCConfiguration extends TeaVMCommonConfiguration, TeaVMWebConfiguration {
+    Property<Boolean> getObfuscated();
+
+    Property<Boolean> getStrict();
+
+    Property<String> getTargetFileName();
 }
