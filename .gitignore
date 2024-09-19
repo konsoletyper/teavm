@@ -9,6 +9,7 @@ build
 /relocated
 /samples/.gradle
 local.properties
+teavm-local.properties
 
 # KDE
 .directory
