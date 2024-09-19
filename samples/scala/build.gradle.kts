@@ -22,7 +22,7 @@ plugins {
 
 dependencies {
     teavm(teavm.libs.jsoApis)
-    teavm("org.scala-lang:scala-library:2.13.10")
+    teavm("org.scala-lang:scala-library:2.13.14")
 }
 
 teavm.js {

@@ -24,7 +24,6 @@ public final class PiCalculator {
     }
 
     public static void main(String[] args) {
-        System.out.println("hello1");
         var start = System.currentTimeMillis();
         int n = Integer.parseInt(args[0]);
         int j = 0;

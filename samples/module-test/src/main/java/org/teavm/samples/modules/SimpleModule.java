@@ -17,7 +17,10 @@ package org.teavm.samples.modules;
 
 import org.teavm.jso.JSExport;
 
-public class SimpleModule {
+public final class SimpleModule {
+    private SimpleModule() {
+    }
+
     static {
         System.out.println("Module initialized");
     }
