@@ -57,7 +57,8 @@ public class WasmGCDeclarationsGenerator {
             WasmGCCustomGeneratorProvider customGenerators,
             WasmGCIntrinsicProvider intrinsics,
             List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories,
-            Predicate<MethodReference> isVirtual
+            Predicate<MethodReference> isVirtual,
+            boolean strict
     ) {
         this.module = module;
         hierarchy = new ClassHierarchy(classes);
@@ -75,7 +76,8 @@ public class WasmGCDeclarationsGenerator {
                 names,
                 diagnostics,
                 customGenerators,
-                intrinsics
+                intrinsics,
+                strict
         );
         var tags = new TagRegistry(classes, hierarchy);
         var metadataRequirements = new ClassMetadataRequirements(dependencyInfo);

@@ -32,7 +32,6 @@ import org.teavm.backend.wasm.generate.gc.classes.WasmGCSupertypeFunctionProvide
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
-import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
@@ -60,10 +59,10 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmFunction npeMethod;
     private WasmFunction aaiobeMethod;
     private WasmFunction cceMethod;
-    private WasmGlobal exceptionGlobal;
     private WasmTag exceptionTag;
     private Map<String, Set<String>> interfaceImplementors;
     private WasmGCNameProvider names;
+    private boolean strict;
 
     public WasmGCGenerationContext(WasmModule module, WasmGCVirtualTableProvider virtualTables,
             WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes, ListableClassReaderSource classes,
@@ -71,7 +70,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
             WasmGCSupertypeFunctionProvider supertypeFunctions, WasmGCClassInfoProvider classInfoProvider,
             WasmGCStandardClasses standardClasses, WasmGCStringProvider strings,
             WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics,
-            WasmGCNameProvider names) {
+            WasmGCNameProvider names, boolean strict) {
         this.module = module;
         this.virtualTables = virtualTables;
         this.typeMapper = typeMapper;
@@ -87,6 +86,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         this.customGenerators = customGenerators;
         this.intrinsics = intrinsics;
         this.names = names;
+        this.strict = strict;
     }
 
     public WasmGCClassInfoProvider classInfoProvider() {
@@ -141,6 +141,10 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     @Override
     public ClassReaderSource classes() {
         return classes;
+    }
+
+    public boolean isStrict() {
+        return strict;
     }
 
     public ClassLoader classLoader() {

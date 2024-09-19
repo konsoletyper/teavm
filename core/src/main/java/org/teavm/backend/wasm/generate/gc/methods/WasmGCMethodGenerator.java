@@ -83,6 +83,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private WasmGCClassInfoProvider classInfoProvider;
     private WasmGCStandardClasses standardClasses;
     private WasmGCStringProvider strings;
+    private boolean strict;
 
     public WasmGCMethodGenerator(
             WasmModule module,
@@ -95,7 +96,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             WasmGCNameProvider names,
             Diagnostics diagnostics,
             WasmGCCustomGeneratorProvider customGenerators,
-            WasmGCIntrinsicProvider intrinsics
+            WasmGCIntrinsicProvider intrinsics,
+            boolean strict
     ) {
         this.module = module;
         this.hierarchy = hierarchy;
@@ -108,6 +110,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         this.diagnostics = diagnostics;
         this.customGenerators = customGenerators;
         this.intrinsics = intrinsics;
+        this.strict = strict;
     }
 
     public void setTypeMapper(WasmGCTypeMapper typeMapper) {
@@ -332,7 +335,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                     strings,
                     customGenerators,
                     intrinsics,
-                    names
+                    names,
+                    strict
             );
         }
         return context;

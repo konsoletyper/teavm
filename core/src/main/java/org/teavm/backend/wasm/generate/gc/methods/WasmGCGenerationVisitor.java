@@ -487,7 +487,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             }
         }
 
-        if (!expr.isWeak()) {
+        if (!expr.isWeak() && context.isStrict()) {
             result.acceptVisitor(typeInference);
 
             var block = new WasmBlock(false);

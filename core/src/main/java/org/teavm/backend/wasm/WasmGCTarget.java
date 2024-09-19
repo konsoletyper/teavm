@@ -178,7 +178,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
                 customGenerators,
                 intrinsics,
                 customTypeMapperFactories,
-                controller::isVirtual
+                controller::isVirtual,
+                strict
         );
         declarationsGenerator.setFriendlyToDebugger(controller.isFriendlyToDebugger());
         var moduleGenerator = new WasmGCModuleGenerator(declarationsGenerator);
