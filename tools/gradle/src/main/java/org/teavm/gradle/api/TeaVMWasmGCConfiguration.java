@@ -22,5 +22,9 @@ public interface TeaVMWasmGCConfiguration extends TeaVMCommonConfiguration, TeaV
 
     Property<Boolean> getStrict();
 
+    Property<Boolean> getCopyRuntime();
+
+    Property<Boolean> getDisassembly();
+
     Property<String> getTargetFileName();
 }

@@ -21,8 +21,6 @@ import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.builder.BuildStrategy;
 
 public abstract class GenerateWasmGCTask extends TeaVMTask {
-    private static final int MB = 1024 * 1024;
-
     public GenerateWasmGCTask() {
         getStrict().convention(true);
         getObfuscated().convention(true);

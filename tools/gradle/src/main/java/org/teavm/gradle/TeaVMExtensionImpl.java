@@ -108,7 +108,9 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         wasmGC.getAddedToWebApp().convention(property("wasm-gc.addedToWebApp")
                 .map(Boolean::parseBoolean).orElse(false));
         wasmGC.getStrict().convention(property("wasm-gc.strict").map(Boolean::parseBoolean).orElse(true));
+        wasmGC.getCopyRuntime().convention(property("wasm-gc.copyRuntime").map(Boolean::parseBoolean).orElse(true));
         wasmGC.getObfuscated().convention(property("wasm-gc.obfuscated").map(Boolean::parseBoolean).orElse(true));
+        wasmGC.getDisassembly().convention(property("wasm-gc.disassembly").map(Boolean::parseBoolean).orElse(false));
     }
 
     private void setupWasiDefaults() {
