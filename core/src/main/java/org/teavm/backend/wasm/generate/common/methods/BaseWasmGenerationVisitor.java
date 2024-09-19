@@ -1333,7 +1333,9 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             WasmBlock targetBlock) {
         var exceptionType = ValueType.object(tryCatch.getExceptionType());
         var isMatched = generateInstanceOf(new WasmGetLocal(exceptionVar), exceptionType);
-        target.add(new WasmBranch(isMatched, targetBlock));
+        var br = new WasmBranch(isMatched, targetBlock);
+        br.setResult(new WasmGetLocal(exceptionVar));
+        target.add(new WasmDrop(br));
     }
 
     private void visitMany(List<Statement> statements, List<WasmExpression> target) {
