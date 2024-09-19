@@ -37,8 +37,9 @@
                         let memory = new Int8Array(instance.exports.memory.buffer);
                         let string = "";
                         for (let i = 0; i < count; ++i) {
-                            string += $rt_putStdoutCustom(memory[address++]);
+                            string += String.fromCharCode(memory[address++]);
                         }
+                        $rt_putStdoutCustom(string);
                     }
                     o.teavm.putwcharsOut = putwchars;
                     o.teavm.putwcharsErr = putwchars;
