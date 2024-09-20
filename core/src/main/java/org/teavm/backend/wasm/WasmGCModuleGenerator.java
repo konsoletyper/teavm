@@ -28,6 +28,7 @@ import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
+import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -164,6 +165,23 @@ public class WasmGCModuleGenerator {
         caller.getBody().add(callInitializer());
         caller.getBody().add(new WasmCall(function, new WasmGetLocal(stringLocal),
                 new WasmGetLocal(indexLocal)));
+        declarationsGenerator.module.functions.add(caller);
+        return caller;
+    }
+
+    public WasmFunction generateReportGarbageCollectedStringFunction() {
+        var entryType = ValueType.object(StringInternPool.class.getName() + "$Entry");
+        var function = declarationsGenerator.functions().forStaticMethod(new MethodReference(
+                StringInternPool.class.getName(),
+                "remove",
+                entryType,
+                ValueType.VOID
+        ));
+        var caller = new WasmFunction(function.getType());
+        var entryLocal = new WasmLocal(declarationsGenerator.typeMapper().mapType(entryType));
+        caller.add(entryLocal);
+        caller.getBody().add(callInitializer());
+        caller.getBody().add(new WasmCall(function, new WasmGetLocal(entryLocal)));
         declarationsGenerator.module.functions.add(caller);
         return caller;
     }

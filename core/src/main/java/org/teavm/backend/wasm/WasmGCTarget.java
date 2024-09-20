@@ -37,6 +37,7 @@ import org.teavm.backend.wasm.render.WasmBinaryRenderer;
 import org.teavm.backend.wasm.render.WasmBinaryStatsCollector;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
+import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.transformation.gc.BaseClassesTransformation;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
@@ -209,6 +210,13 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         var charAtFunction = moduleGenerator.generateCharAtFunction();
         charAtFunction.setExportName("charAt");
 
+        var internMethod = controller.getDependencyInfo().getMethod(new MethodReference(String.class,
+                "intern", String.class));
+        if (internMethod != null && internMethod.isUsed()) {
+            var removeStringEntryFunction = moduleGenerator.generateReportGarbageCollectedStringFunction();
+            removeStringEntryFunction.setExportName("reportGarbageCollectedString");
+        }
+
         moduleGenerator.generate();
         adjustModuleMemory(module);
 
@@ -256,5 +264,13 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     @Override
     public boolean needsSystemArrayCopyOptimization() {
         return false;
+    }
+
+    @Override
+    public boolean filterClassInitializer(String initializer) {
+        if (initializer.equals(StringInternPool.class.getName())) {
+            return false;
+        }
+        return true;
     }
 }

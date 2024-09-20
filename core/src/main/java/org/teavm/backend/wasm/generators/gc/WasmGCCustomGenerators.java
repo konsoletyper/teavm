@@ -44,6 +44,7 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
         fillSystem();
         fillArray();
         fillWeakReference();
+        fillString();
         for (var entry : generators.entrySet()) {
             add(entry.getKey(), entry.getValue());
         }
@@ -77,6 +78,11 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
                 void.class), generator);
         add(new MethodReference(WeakReference.class, "get", Object.class), generator);
         add(new MethodReference(WeakReference.class, "clear", void.class), generator);
+    }
+
+    private void fillString() {
+        var generator = new StringGenerator();
+        add(new MethodReference(String.class, "intern", String.class), generator);
     }
 
     @Override

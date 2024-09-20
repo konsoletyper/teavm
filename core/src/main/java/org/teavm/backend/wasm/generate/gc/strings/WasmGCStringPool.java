@@ -29,12 +29,15 @@ import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
+import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.MethodReference;
 
 public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializerContributor {
@@ -46,15 +49,17 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
     private WasmFunction initNextStringFunction;
     private WasmGCNameProvider names;
     private WasmFunctionTypes functionTypes;
+    private DependencyInfo dependencyInfo;
 
     public WasmGCStringPool(WasmGCStandardClasses standardClasses, WasmModule module,
             BaseWasmFunctionRepository functionProvider, WasmGCNameProvider names,
-            WasmFunctionTypes functionTypes) {
+            WasmFunctionTypes functionTypes, DependencyInfo dependencyInfo) {
         this.standardClasses = standardClasses;
         this.module = module;
         this.functionProvider = functionProvider;
         this.names = names;
         this.functionTypes = functionTypes;
+        this.dependencyInfo = dependencyInfo;
     }
 
     @Override
@@ -69,7 +74,11 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
         if (initNextStringFunction == null) {
             return;
         }
-        var stringStruct = standardClasses.stringClass().getStructure();
+        if (hasIntern()) {
+            var internInit = functionProvider.forStaticMethod(new MethodReference(StringInternPool.class, "<clinit>",
+                    void.class));
+            function.getBody().add(new WasmCall(internInit));
+        }
         for (var str : stringMap.values()) {
             function.getBody().add(new WasmCall(initNextStringFunction, new WasmGetGlobal(str.global)));
         }
@@ -127,7 +136,19 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
         function.getBody().add(new WasmStructSet(stringTypeInfo.getStructure(), new WasmGetLocal(stringLocal),
                 WasmGCClassInfoProvider.CLASS_FIELD_OFFSET,
                 new WasmGetGlobal(stringTypeInfo.getPointer())));
+        if (hasIntern()) {
+            var queryFunction = functionProvider.forStaticMethod(new MethodReference(StringInternPool.class,
+                    "query", String.class, String.class));
+            function.getBody().add(new WasmDrop(new WasmCall(queryFunction, new WasmGetLocal(stringLocal))));
+            functionProvider.forStaticMethod(new MethodReference(StringInternPool.class, "<clinit>",
+                    void.class));
+        }
         module.functions.add(function);
         initNextStringFunction = function;
+    }
+
+    private boolean hasIntern() {
+        var intern = dependencyInfo.getMethod(new MethodReference(String.class, "intern", String.class));
+        return intern != null && intern.isUsed();
     }
 }

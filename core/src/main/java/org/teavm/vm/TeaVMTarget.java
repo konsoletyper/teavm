@@ -70,4 +70,8 @@ public interface TeaVMTarget {
     default boolean needsSystemArrayCopyOptimization() {
         return true;
     }
+
+    default boolean filterClassInitializer(String initializer) {
+        return true;
+    }
 }

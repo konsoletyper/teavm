@@ -574,9 +574,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         BasicBlock block = program.basicBlockAt(0);
         Instruction first = block.getFirstInstruction();
         for (String className : classInitializerInfo.getInitializationOrder()) {
-            var invoke = new InvokeInstruction();
-            invoke.setMethod(new MethodReference(className, CLINIT_DESC));
-            first.insertPrevious(invoke);
+            if (target.filterClassInitializer(className)) {
+                var invoke = new InvokeInstruction();
+                invoke.setMethod(new MethodReference(className, CLINIT_DESC));
+                first.insertPrevious(invoke);
+            }
         }
     }
 

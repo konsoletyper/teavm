@@ -75,6 +75,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNew;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
+import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.ClassHierarchy;
@@ -173,7 +174,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         this.names = names;
         this.classInitializerInfo = classInitializerInfo;
         standardClasses = new WasmGCStandardClasses(this);
-        strings = new WasmGCStringPool(standardClasses, module, functionProvider, names, functionTypes);
+        strings = new WasmGCStringPool(standardClasses, module, functionProvider, names, functionTypes,
+                dependencyInfo);
         supertypeGenerator = new WasmGCSupertypeFunctionGenerator(module, this, names, tagRegistry, functionTypes);
         newArrayGenerator = new WasmGCNewArrayFunctionGenerator(module, functionTypes, this, names, queue);
         typeMapper = new WasmGCTypeMapper(classSource, this, functionTypes, module);
@@ -1137,6 +1139,10 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                         names.forMemberField(field.getReference()));
                 fields.add(wasmField);
             }
+        }
+        if (className.equals(StringInternPool.class.getName() + "$Entry")) {
+            var field = new WasmField(WasmType.Reference.EXTERN.asStorage(), "nativeRef");
+            fields.add(field);
         }
         if (className.equals("java.lang.Class")) {
             var cls = classSource.get("java.lang.Class");

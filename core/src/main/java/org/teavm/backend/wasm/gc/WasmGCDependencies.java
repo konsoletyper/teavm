@@ -35,6 +35,7 @@ public class WasmGCDependencies {
         contributeMathUtils();
         contributeExceptionUtils();
         contributeInitializerUtils();
+        contributeString();
         analyzer.addDependencyListener(new WasmGCReferenceQueueDependency());
     }
 
@@ -106,5 +107,9 @@ public class WasmGCDependencies {
 
     private void contributeInitializerUtils() {
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "nextCharArray", char[].class)).use();
+    }
+
+    private void contributeString() {
+        analyzer.addDependencyListener(new StringInternDependencySupport());
     }
 }

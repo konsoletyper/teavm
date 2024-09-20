@@ -22,6 +22,7 @@ import java.util.Map;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCIntrinsicProvider;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
@@ -38,7 +39,6 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         this.classes = classes;
         this.services = services;
         this.factories = List.copyOf(factories);
-        factories = List.copyOf(factories);
         fillWasmRuntime();
         fillObject();
         fillClass();
@@ -48,6 +48,7 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         fillFloat();
         fillDouble();
         fillArray();
+        fillString();
         for (var entry : customIntrinsics.entrySet()) {
             add(entry.getKey(), entry.getValue());
         }
@@ -146,6 +147,13 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         var intrinsic = new ArrayIntrinsic();
         add(new MethodReference(Array.class, "getLength", Object.class, int.class), intrinsic);
         add(new MethodReference(Array.class, "getImpl", Object.class, int.class, Object.class), intrinsic);
+    }
+
+    private void fillString() {
+        var intrinsic = new StringInternPoolIntrinsic();
+        var className = StringInternPool.class.getName() + "$Entry";
+        add(new MethodReference(className, "getValue", ValueType.parse(String.class)), intrinsic);
+        add(new MethodReference(className, "setValue", ValueType.parse(String.class), ValueType.VOID), intrinsic);
     }
 
     private void add(MethodReference methodRef, WasmGCIntrinsic intrinsic) {

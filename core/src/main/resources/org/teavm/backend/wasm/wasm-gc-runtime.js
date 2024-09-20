@@ -25,6 +25,9 @@ TeaVM.wasm = function() {
                 exports.reportGarbageCollectedValue(heldValue)
             }
         });
+        let stringFinalizationRegistry = new FinalizationRegistry(heldValue => {
+            exports.reportGarbageCollectedString(heldValue);
+        });
         imports.teavm = {
             putcharStderr(c) {
                 if (c === 10) {
@@ -56,6 +59,14 @@ TeaVM.wasm = function() {
                 return weakRef;
             },
             deref(weakRef) {
+                return weakRef.deref();
+            },
+            createStringWeakRef(value, heldValue) {
+                let weakRef = new WeakRef(value);
+                stringFinalizationRegistry.register(value, heldValue)
+                return weakRef;
+            },
+            stringDeref(weakRef) {
                 return weakRef.deref();
             }
         };

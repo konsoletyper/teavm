@@ -217,7 +217,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             var printWriter = new PrintWriter(buffer);
             e.printStackTrace(printWriter);
             diagnostics.error(new CallLocation(method.getReference()),
-                    "Failed generating method body due to internal exception: " + buffer.toString());
+                    "Failed generating method body due to internal exception: " + buffer);
         }
     }
 
