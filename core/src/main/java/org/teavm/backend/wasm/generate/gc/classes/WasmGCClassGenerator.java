@@ -1118,20 +1118,25 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         if (classReader.getParent() != null) {
             fillClassFields(fields, classReader.getParent());
         }
-        for (var field : classReader.getFields()) {
-            if (className.equals("java.lang.Object") && field.getName().equals("monitor")) {
-                continue;
+        if (className.equals("java.lang.ref.WeakReference")) {
+            var field = new WasmField(WasmType.Reference.EXTERN.asStorage(), "nativeRef");
+            fields.add(field);
+        } else {
+            for (var field : classReader.getFields()) {
+                if (className.equals("java.lang.Object") && field.getName().equals("monitor")) {
+                    continue;
+                }
+                if (className.equals("java.lang.Class") && field.getName().equals("platformClass")) {
+                    continue;
+                }
+                if (field.hasModifier(ElementModifier.STATIC)) {
+                    continue;
+                }
+                fieldIndexes.putIfAbsent(field.getReference(), fields.size());
+                var wasmField = new WasmField(typeMapper.mapStorageType(field.getType()),
+                        names.forMemberField(field.getReference()));
+                fields.add(wasmField);
             }
-            if (className.equals("java.lang.Class") && field.getName().equals("platformClass")) {
-                continue;
-            }
-            if (field.hasModifier(ElementModifier.STATIC)) {
-                continue;
-            }
-            fieldIndexes.putIfAbsent(field.getReference(), fields.size());
-            var wasmField = new WasmField(typeMapper.mapStorageType(field.getType()),
-                    names.forMemberField(field.getReference()));
-            fields.add(wasmField);
         }
         if (className.equals("java.lang.Class")) {
             var cls = classSource.get("java.lang.Class");

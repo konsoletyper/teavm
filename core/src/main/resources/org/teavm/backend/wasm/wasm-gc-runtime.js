@@ -16,10 +16,15 @@
 
 var TeaVM = TeaVM || {};
 TeaVM.wasm = function() {
+    let exports;
     function defaults(imports) {
         let stderr = "";
         let stdout = "";
-        let exports;
+        let finalizationRegistry = new FinalizationRegistry(heldValue => {
+            if (typeof exports.reportGarbageCollectedValue === "function") {
+                exports.reportGarbageCollectedValue(heldValue)
+            }
+        });
         imports.teavm = {
             putcharStderr(c) {
                 if (c === 10) {
@@ -40,8 +45,18 @@ TeaVM.wasm = function() {
             currentTimeMillis() {
                 return new Date().getTime();
             },
-            dateToString(timestamp, controller) {
+            dateToString(timestamp) {
                 return stringToJava(new Date(timestamp).toString());
+            },
+            createWeakRef(value, heldValue) {
+                let weakRef = new WeakRef(value);
+                if (heldValue !== null) {
+                    finalizationRegistry.register(value, heldValue)
+                }
+                return weakRef;
+            },
+            deref(weakRef) {
+                return weakRef.deref();
             }
         };
         imports.teavmMath = Math;
@@ -83,7 +98,6 @@ TeaVM.wasm = function() {
                 exports = instance.exports;
                 let javaArgs = exports.createStringArray(args.length);
                 for (let i = 0; i < args.length; ++i) {
-                    let arg = args[i];
                     exports.setToStringArray(javaArgs, i, stringToJava(args[i]));
                 }
                 try {

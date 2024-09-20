@@ -35,6 +35,7 @@ public class WasmGCDependencies {
         contributeMathUtils();
         contributeExceptionUtils();
         contributeInitializerUtils();
+        analyzer.addDependencyListener(new WasmGCReferenceQueueDependency());
     }
 
     public void contributeStandardExports() {

@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.transformation.gc;
 
+import java.lang.ref.ReferenceQueue;
 import org.teavm.interop.Import;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
@@ -24,6 +25,7 @@ import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
@@ -95,6 +97,19 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
                     }
                 }
             }
+        } else if (cls.getName().equals("java.lang.ref.WeakReference")) {
+            var constructor = cls.getMethod(new MethodDescriptor("<init>", Object.class, ReferenceQueue.class,
+                    void.class));
+            constructor.getModifiers().add(ElementModifier.NATIVE);
+            constructor.setProgram(null);
+
+            var get = cls.getMethod(new MethodDescriptor("get", Object.class));
+            get.getModifiers().add(ElementModifier.NATIVE);
+            get.setProgram(null);
+
+            var clear = cls.getMethod(new MethodDescriptor("clear", void.class));
+            clear.getModifiers().add(ElementModifier.NATIVE);
+            clear.setProgram(null);
         }
     }
 

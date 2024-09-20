@@ -26,6 +26,7 @@ public interface WasmGCClassInfoProvider {
     int MONITOR_FIELD_OFFSET = 1;
     int CUSTOM_FIELD_OFFSETS = 2;
     int ARRAY_DATA_FIELD_OFFSET = 2;
+    int WEAK_REFERENCE_OFFSET = 2;
 
     WasmGCClassInfo getClassInfo(ValueType type);
 

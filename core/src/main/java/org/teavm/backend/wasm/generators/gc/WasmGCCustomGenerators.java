@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.wasm.generators.gc;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +43,7 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
         fillStringPool();
         fillSystem();
         fillArray();
+        fillWeakReference();
         for (var entry : generators.entrySet()) {
             add(entry.getKey(), entry.getValue());
         }
@@ -66,6 +69,14 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
     private void fillArray() {
         var arrayGenerator = new ArrayGenerator();
         add(new MethodReference(Array.class, "newInstanceImpl", Class.class, int.class, Object.class), arrayGenerator);
+    }
+
+    private void fillWeakReference() {
+        var generator = new WeakReferenceGenerator();
+        add(new MethodReference(WeakReference.class, "<init>", Object.class, ReferenceQueue.class,
+                void.class), generator);
+        add(new MethodReference(WeakReference.class, "get", Object.class), generator);
+        add(new MethodReference(WeakReference.class, "clear", void.class), generator);
     }
 
     @Override
