@@ -143,6 +143,13 @@ public final class TMath extends TObject {
         return (a ^ b) < 0 && div * b != a ? div - 1 : div;
     }
 
+    public static int floorDivExact(int a, int b) {
+        if (a == Integer.MIN_VALUE && b == -1) {
+            throw new ArithmeticException();
+        }
+        return floorDiv(a, b);
+    }
+
     public static long floorDiv(long a, int b) {
         return floorDiv(a, (long) b);
     }
@@ -152,16 +159,67 @@ public final class TMath extends TObject {
         return (a ^ b) < 0 && div * b != a ? div - 1 : div;
     }
 
+    public static long floorDivExact(long a, long b) {
+        if (a == Long.MIN_VALUE && b == -1) {
+            throw new ArithmeticException();
+        }
+        return floorDiv(a, b);
+    }
+
+    public static int ceilDiv(int a, int b) {
+        int div = a / b;
+        return (a ^ b) >= 0 && div * b != a ? div + 1 : div;
+    }
+
+    public static int ceilDivExact(int a, int b) {
+        if (a == Integer.MIN_VALUE && b == -1) {
+            throw new ArithmeticException();
+        }
+        return ceilDiv(a, b);
+    }
+
+    public static long ceilDiv(long a, int b) {
+        return ceilDiv(a, (long) b);
+    }
+
+    public static long ceilDiv(long a, long b) {
+        long div = a / b;
+        return (a ^ b) >= 0 && div * b != a ? div + 1 : div;
+    }
+
+    public static long ceilDivExact(long a, long b) {
+        if (a == Long.MIN_VALUE && b == -1) {
+            throw new ArithmeticException();
+        }
+        return ceilDiv(a, b);
+    }
+
     public static int floorMod(int a, int b) {
-        return a - floorDiv(a, b) * b;
+        int mod = a % b;
+        return (a ^ b) < 0 && mod != 0 ? mod + b : mod;
     }
 
     public static int floorMod(long a, int b) {
-        return (int) (a - floorDiv(a, b) * b);
+        return (int) floorMod(a, (long) b);
     }
 
     public static long floorMod(long a, long b) {
-        return a - floorDiv(a, b) * b;
+        long mod = a % b;
+        return (a ^ b) < 0 && mod != 0 ? mod + b : mod;
+    }
+
+    public static int ceilMod(int a, int b) {
+        int mod = a % b;
+        return (a ^ b) >= 0 && mod != 0 ? mod - b : mod;
+    }
+
+    public static int ceilMod(long a, int b) {
+        return (int) ceilMod(a, (long) b);
+    }
+
+    public static long ceilMod(long a, long b) {
+        long mod = a % b;
+        return (a ^ b) >= 0 && mod != 0 ? mod - b : mod;
     }
 
     public static int incrementExact(int a) {
@@ -419,8 +477,24 @@ public final class TMath extends TObject {
         return n >= 0 ? n : -n;
     }
 
+    public static int absExact(int n) {
+        if (n == Integer.MIN_VALUE) {
+            throw new ArithmeticException();
+        } else {
+            return abs(n);
+        }
+    }
+
     public static long abs(long n) {
         return n >= 0 ? n : -n;
+    }
+
+    public static long absExact(long n) {
+        if (n == Long.MIN_VALUE) {
+            throw new ArithmeticException();
+        } else {
+            return abs(n);
+        }
     }
 
     @GeneratedBy(MathNativeGenerator.class)
