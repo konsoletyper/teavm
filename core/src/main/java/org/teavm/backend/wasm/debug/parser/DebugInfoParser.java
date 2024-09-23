@@ -72,8 +72,8 @@ public class DebugInfoParser extends ModuleParser {
 
     private void parseCode(byte[] data) {
         var builder = new ControlFlowParser();
-        var codeParser = new CodeSectionParser(builder, builder);
-        codeParser.parse(data);
+        var codeParser = new CodeSectionParser(builder);
+        codeParser.parse(builder, data);
         controlFlow = builder.build();
     }
 

@@ -23,34 +23,34 @@ import java.util.Map;
 import java.util.Set;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationContext;
+import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCSupertypeFunctionProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
-import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
-import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
-import org.teavm.model.classes.VirtualTableProvider;
 
 public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmModule module;
     private WasmGCClassInfoProvider classInfoProvider;
     private WasmGCStandardClasses standardClasses;
     private WasmGCStringProvider strings;
-    private VirtualTableProvider virtualTables;
+    private WasmGCVirtualTableProvider virtualTables;
     private WasmGCTypeMapper typeMapper;
     private WasmFunctionTypes functionTypes;
     private ListableClassReaderSource classes;
+    private ClassLoader classLoader;
     private ClassHierarchy hierarchy;
     private BaseWasmFunctionRepository functions;
     private WasmGCSupertypeFunctionProvider supertypeFunctions;
@@ -59,21 +59,24 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmFunction npeMethod;
     private WasmFunction aaiobeMethod;
     private WasmFunction cceMethod;
-    private WasmGlobal exceptionGlobal;
     private WasmTag exceptionTag;
     private Map<String, Set<String>> interfaceImplementors;
+    private WasmGCNameProvider names;
+    private boolean strict;
 
-    public WasmGCGenerationContext(WasmModule module, VirtualTableProvider virtualTables,
+    public WasmGCGenerationContext(WasmModule module, WasmGCVirtualTableProvider virtualTables,
             WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes, ListableClassReaderSource classes,
-            ClassHierarchy hierarchy, BaseWasmFunctionRepository functions,
+            ClassLoader classLoader, ClassHierarchy hierarchy, BaseWasmFunctionRepository functions,
             WasmGCSupertypeFunctionProvider supertypeFunctions, WasmGCClassInfoProvider classInfoProvider,
             WasmGCStandardClasses standardClasses, WasmGCStringProvider strings,
-            WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics) {
+            WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics,
+            WasmGCNameProvider names, boolean strict) {
         this.module = module;
         this.virtualTables = virtualTables;
         this.typeMapper = typeMapper;
         this.functionTypes = functionTypes;
         this.classes = classes;
+        this.classLoader = classLoader;
         this.hierarchy = hierarchy;
         this.functions = functions;
         this.supertypeFunctions = supertypeFunctions;
@@ -82,10 +85,16 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         this.strings = strings;
         this.customGenerators = customGenerators;
         this.intrinsics = intrinsics;
+        this.names = names;
+        this.strict = strict;
     }
 
     public WasmGCClassInfoProvider classInfoProvider() {
         return classInfoProvider;
+    }
+
+    public WasmGCNameProvider names() {
+        return names;
     }
 
     public WasmGCStandardClasses standardClasses() {
@@ -96,7 +105,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         return strings;
     }
 
-    public VirtualTableProvider virtualTables() {
+    public WasmGCVirtualTableProvider virtualTables() {
         return virtualTables;
     }
 
@@ -121,7 +130,8 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     @Override
     public WasmTag getExceptionTag() {
         if (exceptionTag == null) {
-            exceptionTag = new WasmTag(functionTypes.of(null));
+            exceptionTag = new WasmTag(functionTypes.of(null,
+                    classInfoProvider.getClassInfo("java.lang.Throwable").getStructure().getReference()));
             exceptionTag.setExportName("javaException");
             module.tags.add(exceptionTag);
         }
@@ -131,6 +141,14 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     @Override
     public ClassReaderSource classes() {
         return classes;
+    }
+
+    public boolean isStrict() {
+        return strict;
+    }
+
+    public ClassLoader classLoader() {
+        return classLoader;
     }
 
     public ClassHierarchy hierarchy() {
@@ -147,7 +165,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
 
     public WasmFunction aaiobeMethod() {
         if (aaiobeMethod == null) {
-            aaiobeMethod = functions().forStaticMethod(new MethodReference(WasmGCSupport.class, "aaiobe",
+            aaiobeMethod = functions().forStaticMethod(new MethodReference(WasmGCSupport.class, "aiiobe",
                     ArrayIndexOutOfBoundsException.class));
         }
         return aaiobeMethod;
@@ -159,15 +177,6 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
                     ClassCastException.class));
         }
         return cceMethod;
-    }
-
-    public WasmGlobal exceptionGlobal() {
-        if (exceptionGlobal == null) {
-            var type = classInfoProvider.getClassInfo("java.lang.Throwable").getType();
-            exceptionGlobal = new WasmGlobal("teavm_thrown_exception", type, new WasmNullConstant(type));
-            module.globals.add(exceptionGlobal);
-        }
-        return exceptionGlobal;
     }
 
     public WasmModule module() {

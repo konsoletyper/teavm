@@ -85,6 +85,11 @@ public class NullnessAnalysisTest {
     }
 
     @Test
+    public void nonDominatedBranch2() {
+        test();
+    }
+
+    @Test
     public void exception() {
         test();
     }

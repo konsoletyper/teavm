@@ -18,10 +18,12 @@ package org.teavm.backend.wasm.model.expression;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmTag;
 
 public class WasmCatch {
     private WasmTag tag;
+    private List<WasmLocal> catchVariables = new ArrayList<>();
     private List<WasmExpression> body = new ArrayList<>();
 
     public WasmCatch(WasmTag tag) {
@@ -35,6 +37,10 @@ public class WasmCatch {
 
     public void setTag(WasmTag tag) {
         this.tag = tag;
+    }
+
+    public List<WasmLocal> getCatchVariables() {
+        return catchVariables;
     }
 
     public List<WasmExpression> getBody() {

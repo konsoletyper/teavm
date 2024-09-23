@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.*;
 import org.teavm.platform.PlatformClass;
 
@@ -45,7 +46,9 @@ public final class TServiceLoader<S> extends TObject implements TIterable<S> {
     }
 
     public static <S> TServiceLoader<S> load(TClass<S> service) {
-        return new TServiceLoader<>(doLoadServices(service.getPlatformClass()));
+        return new TServiceLoader<>(PlatformDetector.isWebAssemblyGC()
+                ? doLoadServices(service)
+                : doLoadServices(service.getPlatformClass()));
     }
 
     public static <S> TServiceLoader<S> load(TClass<S> service, @SuppressWarnings("unused") TClassLoader loader) {
@@ -65,6 +68,16 @@ public final class TServiceLoader<S> extends TObject implements TIterable<S> {
     }
 
     private static native Object[] loadServices(PlatformClass cls);
+
+    private static Object[] doLoadServices(TClass<?> cls) {
+        Object[] result = loadServices(cls);
+        if (result == null) {
+            result = new Object[0];
+        }
+        return result;
+    }
+
+    private static native Object[] loadServices(TClass<?> cls);
 
     public void reload() {
         // Do nothing, services are bound at build time

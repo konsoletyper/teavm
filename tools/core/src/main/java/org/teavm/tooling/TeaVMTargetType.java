@@ -19,5 +19,6 @@ public enum TeaVMTargetType {
     JAVASCRIPT,
     WEBASSEMBLY,
     WEBASSEMBLY_WASI,
+    WEBASSEMBLY_GC,
     C
 }

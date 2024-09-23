@@ -51,7 +51,7 @@ import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
-@SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+@SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC})
 public class WeakHashMapTest {
     static class MockMap<K, V> extends AbstractMap<K, V> {
         @Override

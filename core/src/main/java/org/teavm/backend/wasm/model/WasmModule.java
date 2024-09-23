@@ -17,9 +17,13 @@ package org.teavm.backend.wasm.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import org.teavm.backend.wasm.model.expression.WasmDefaultExpressionVisitor;
+import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
 
@@ -94,11 +98,46 @@ public class WasmModule {
     }
 
     public void prepareForRendering() {
+        prepareGlobals();
         prepareTypes();
     }
 
+    private void prepareGlobals() {
+        var sorting = new GlobalSorting();
+        sorting.sort(globals);
+        globals.clear();
+        for (var global : sorting.sorted) {
+            globals.add(global);
+        }
+    }
+
+    private static class GlobalSorting extends WasmDefaultExpressionVisitor {
+        List<WasmGlobal> sorted = new ArrayList<>();
+        private Set<WasmGlobal> visited = new HashSet<>();
+
+        void sort(Iterable<WasmGlobal> globals) {
+            for (var global : globals) {
+                add(global);
+            }
+        }
+
+        private void add(WasmGlobal global) {
+            if (!visited.add(global)) {
+                return;
+            }
+            global.getInitialValue().acceptVisitor(this);
+            sorted.add(global);
+        }
+
+        @Override
+        public void visit(WasmGetGlobal expression) {
+            super.visit(expression);
+            add(expression.getGlobal());
+        }
+    }
+
     private void prepareTypes() {
-        var typeGraph = WasmTypeGraphBuilder.buildTypeGraph(types, types.size());
+        var typeGraph = WasmTypeGraphBuilder.buildTypeGraph(this, types, types.size());
         var sccs = GraphUtils.findStronglyConnectedComponents(typeGraph);
         var sccStartNode = new int[types.size()];
         for (var i = 0; i < sccStartNode.length; ++i) {
@@ -107,12 +146,7 @@ public class WasmModule {
         var sccsByIndex = new int[types.size()][];
         for (var scc : sccs) {
             sccsByIndex[scc[0]] = scc;
-            var firstType = types.get(scc[0]);
-            firstType.recursiveTypeCount = scc.length;
             for (var i = 0; i < scc.length; i++) {
-                var index = scc[i];
-                var type = types.get(index);
-                type.indexInRecursiveType = i;
                 sccStartNode[scc[i]] = sccStartNode[scc[0]];
             }
         }
@@ -162,9 +196,11 @@ public class WasmModule {
                         visit(outgoing);
                     }
                 }
+                var indexOfFirst = sorted.size();
                 for (var index : scc) {
                     visitScc(index, typeIndex);
                 }
+                sorted.get(indexOfFirst).recursiveTypeCount = scc.length;
             }
         }
 

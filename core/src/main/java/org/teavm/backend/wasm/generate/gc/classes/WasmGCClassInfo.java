@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.generate.gc.classes;
 import java.util.List;
 import java.util.function.Consumer;
 import org.teavm.backend.wasm.model.WasmArray;
+import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
@@ -27,12 +28,13 @@ import org.teavm.model.ValueType;
 public class WasmGCClassInfo {
     private ValueType valueType;
     WasmStructure structure;
-    WasmArray array;
-    boolean hasOwnVirtualTable;
     WasmStructure virtualTableStructure;
     WasmGlobal pointer;
     WasmGlobal initializerPointer;
     Consumer<List<WasmExpression>> initializer;
+    List<WasmFunction> newArrayFunctions;
+    WasmFunction initArrayFunction;
+    WasmFunction supertypeFunction;
 
     WasmGCClassInfo(ValueType valueType) {
         this.valueType = valueType;
@@ -47,7 +49,9 @@ public class WasmGCClassInfo {
     }
 
     public WasmArray getArray() {
-        return array;
+        var field = structure.getFields().get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
+        var type = (WasmType.CompositeReference) field.getUnpackedType();
+        return (WasmArray) type.composite;
     }
 
     public WasmStructure getVirtualTableStructure() {

@@ -29,6 +29,7 @@ import org.teavm.backend.wasm.model.WasmCustomSection;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
 
 public class WasmBinaryRenderer {
@@ -218,7 +219,7 @@ public class WasmBinaryRenderer {
         section.writeLEB(module.globals.size());
         for (var global : module.globals) {
             section.writeType(global.getType(), module);
-            section.writeByte(1); // mutable
+            section.writeByte(global.isImmutable() ? 0 : 1); // mutable
             global.getInitialValue().acceptVisitor(visitor);
             section.writeByte(0x0b);
         }
@@ -475,6 +476,30 @@ public class WasmBinaryRenderer {
         section.writeLEB(payload.length);
         section.writeBytes(payload);
 
+        var functionsWithLocalNames = module.functions.stream()
+                .filter(fn -> fn.getLocalVariables().stream().anyMatch(v -> v.getName() != null))
+                .collect(Collectors.toList());
+        if (!functionsWithLocalNames.isEmpty()) {
+            var subsection = new WasmBinaryWriter();
+            subsection.writeLEB(functionsWithLocalNames.size());
+            for (var function : functionsWithLocalNames) {
+                subsection.writeLEB(module.functions.indexOf(function));
+                var locals = function.getLocalVariables().stream()
+                        .filter(t -> t.getName() != null)
+                        .collect(Collectors.toList());
+                subsection.writeLEB(locals.size());
+                for (var local : locals) {
+                    subsection.writeLEB(local.getIndex());
+                    subsection.writeAsciiString(local.getName());
+                }
+            }
+
+            payload = subsection.getData();
+            section.writeLEB(2);
+            section.writeLEB(payload.length);
+            section.writeBytes(payload);
+        }
+
         var types = module.types.stream()
                 .filter(t -> t.getName() != null)
                 .collect(Collectors.toList());
@@ -505,6 +530,31 @@ public class WasmBinaryRenderer {
 
             payload = globalsSubsection.getData();
             section.writeLEB(7);
+            section.writeLEB(payload.length);
+            section.writeBytes(payload);
+        }
+
+        var typesWithNamedFields = module.types.stream()
+                .filter(t -> t instanceof WasmStructure)
+                .filter(t -> ((WasmStructure) t).getFields().stream().anyMatch(f -> f.getName() != null))
+                .collect(Collectors.toList());
+        if (!typesWithNamedFields.isEmpty()) {
+            var subsection = new WasmBinaryWriter();
+            subsection.writeLEB(typesWithNamedFields.size());
+            for (var type : typesWithNamedFields) {
+                subsection.writeLEB(module.types.indexOf(type));
+                var fields = ((WasmStructure) type).getFields().stream()
+                        .filter(t -> t.getName() != null)
+                        .collect(Collectors.toList());
+                subsection.writeLEB(fields.size());
+                for (var field : fields) {
+                    subsection.writeLEB(field.getIndex());
+                    subsection.writeAsciiString(field.getName());
+                }
+            }
+
+            payload = subsection.getData();
+            section.writeLEB(10);
             section.writeLEB(payload.length);
             section.writeBytes(payload);
         }

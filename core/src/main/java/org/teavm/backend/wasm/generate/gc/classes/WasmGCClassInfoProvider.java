@@ -15,7 +15,9 @@
  */
 package org.teavm.backend.wasm.generate.gc.classes;
 
+import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
+import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.model.FieldReference;
 import org.teavm.model.ValueType;
 
@@ -24,22 +26,49 @@ public interface WasmGCClassInfoProvider {
     int MONITOR_FIELD_OFFSET = 1;
     int CUSTOM_FIELD_OFFSETS = 2;
     int ARRAY_DATA_FIELD_OFFSET = 2;
+    int WEAK_REFERENCE_OFFSET = 2;
 
     WasmGCClassInfo getClassInfo(ValueType type);
+
+    WasmStructure getArrayVirtualTableStructure();
 
     int getFieldIndex(FieldReference fieldRef);
 
     WasmGlobal getStaticFieldLocation(FieldReference fieldRef);
 
+    WasmFunction getArrayConstructor(ValueType type, int depth);
+
     int getVirtualMethodsOffset();
 
     int getClassArrayItemOffset();
 
+    int getClassFlagsOffset();
+
     int getClassSupertypeFunctionOffset();
+
+    int getClassEnclosingClassOffset();
+
+    int getClassDeclaringClassOffset();
+
+    int getClassParentOffset();
 
     int getNewArrayFunctionOffset();
 
     int getClassNameOffset();
+
+    int getClassSimpleNameOffset();
+
+    int getClassCanonicalNameOffset();
+
+    int getArrayGetOffset();
+
+    int getArrayLengthOffset();
+
+    int getEnumConstantsFunctionOffset();
+
+    int getCloneOffset();
+
+    int getServicesOffset();
 
     default WasmGCClassInfo getClassInfo(String name) {
         return getClassInfo(ValueType.object(name));

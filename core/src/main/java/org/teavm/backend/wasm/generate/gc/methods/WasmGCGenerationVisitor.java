@@ -15,20 +15,32 @@
  */
 package org.teavm.backend.wasm.generate.gc.methods;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
+import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.BinaryExpr;
+import org.teavm.ast.CastExpr;
+import org.teavm.ast.ConditionalExpr;
 import org.teavm.ast.Expr;
+import org.teavm.ast.InstanceOfExpr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.InvocationType;
+import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.SubscriptExpr;
+import org.teavm.ast.TryCatchStatement;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.PreciseTypeInference;
+import org.teavm.backend.wasm.generate.ExpressionCache;
+import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationVisitor;
+import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
+import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -41,9 +53,12 @@ import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmArraySet;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
+import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
+import org.teavm.backend.wasm.model.expression.WasmCastBranch;
+import org.teavm.backend.wasm.model.expression.WasmCastCondition;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
@@ -51,6 +66,9 @@ import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmIntUnary;
 import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmIsNull;
+import org.teavm.backend.wasm.model.expression.WasmNullBranch;
+import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
@@ -59,16 +77,15 @@ import org.teavm.backend.wasm.model.expression.WasmSignedType;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
+import org.teavm.backend.wasm.model.expression.WasmTest;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
-import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
-import org.teavm.model.classes.VirtualTable;
 
 public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     private WasmGCGenerationContext context;
@@ -103,6 +120,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected boolean isManaged() {
+        return true;
+    }
+
+    @Override
+    protected boolean needsCallSiteId() {
         return false;
     }
 
@@ -128,11 +150,8 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected void generateThrow(WasmExpression expression, TextLocation location, List<WasmExpression> target) {
-        var setThrowable = new WasmSetGlobal(context.exceptionGlobal(), expression);
-        setThrowable.setLocation(location);
-        target.add(setThrowable);
-
         var result = new WasmThrow(context.getExceptionTag());
+        result.getArguments().add(expression);
         result.setLocation(location);
         target.add(result);
     }
@@ -151,12 +170,14 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression storeArrayItem(WasmExpression array, WasmExpression index, WasmExpression value,
+    protected WasmExpression storeArrayItem(WasmExpression array, WasmExpression index, Expr value,
             ArrayType type) {
         array.acceptVisitor(typeInference);
         var arrayRefType = (WasmType.CompositeReference) typeInference.getResult();
         var arrayType = (WasmArray) arrayRefType.composite;
-        return new WasmArraySet(arrayType, array, index, value);
+        accept(value, arrayType.getElementType().asUnpackedType());
+        var wasmValue = result;
+        return new WasmArraySet(arrayType, array, index, wasmValue);
     }
 
     @Override
@@ -175,13 +196,17 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             var type = (WasmType.CompositeReference) typeInference.getResult();
             var struct = (WasmStructure) type.composite;
             var fieldIndex = context.classInfoProvider().getFieldIndex(field);
+            if (fieldIndex >= 0) {
+                accept(value, struct.getFields().get(fieldIndex).getUnpackedType());
+                var wasmValue = result;
 
-            accept(value, struct.getFields().get(fieldIndex).asUnpackedType());
-            var wasmValue = result;
-
-            var expr = new WasmStructSet(struct, target, fieldIndex, wasmValue);
-            expr.setLocation(location);
-            resultConsumer.add(expr);
+                var expr = new WasmStructSet(struct, target, fieldIndex, wasmValue);
+                expr.setLocation(location);
+                resultConsumer.add(expr);
+            } else {
+                accept(value);
+                resultConsumer.add(result);
+            }
         }
     }
 
@@ -208,7 +233,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         }
         return new WasmNullConstant(type instanceof WasmType.Reference
                 ? (WasmType.Reference) type
-                : WasmType.Reference.STRUCT);
+                : context.classInfoProvider().getClassInfo("java.lang.Object").getType());
     }
 
     @Override
@@ -218,7 +243,29 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected WasmExpression genIsNull(WasmExpression value) {
-        return new WasmReferencesEqual(value, new WasmNullConstant(WasmType.Reference.STRUCT));
+        return new WasmIsNull(value);
+    }
+
+    @Override
+    protected WasmExpression nullCheck(Expr value, TextLocation location) {
+        var block = new WasmBlock(false);
+        block.setLocation(location);
+
+        accept(value);
+        if (result instanceof WasmUnreachable) {
+            return result;
+        }
+        result.acceptVisitor(typeInference);
+        block.setType(typeInference.getResult());
+        var check = new WasmNullBranch(WasmNullCondition.NOT_NULL, result, block);
+        block.getBody().add(check);
+
+        var callSiteId = generateCallSiteId(location);
+        callSiteId.generateRegister(block.getBody(), location);
+        generateThrowNPE(location, block.getBody());
+        callSiteId.generateThrow(block.getBody(), location);
+
+        return block;
     }
 
     @Override
@@ -259,58 +306,35 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     protected WasmExpression generateVirtualCall(WasmLocal instance, MethodReference method,
             List<WasmExpression> arguments) {
         var vtable = context.virtualTables().lookup(method.getClassName());
-        if (vtable != null) {
-            vtable = vtable.findMethodContainer(method.getDescriptor());
-        }
         if (vtable == null) {
             return new WasmUnreachable();
         }
-        var cls = context.classes().get(method.getClassName());
-        assert cls != null : "Virtual table can't be generated for absent class";
 
-        if (cls.hasModifier(ElementModifier.INTERFACE)) {
-            vtable = pickVirtualTableForInterfaceCall(vtable, method.getDescriptor());
+        var entry = vtable.entry(method.getDescriptor());
+        if (entry == null) {
+            return new WasmUnreachable();
         }
 
-        int vtableIndex = vtable.getMethods().indexOf(method.getDescriptor());
-        if (vtable.getParent() != null) {
-            vtableIndex += vtable.getParent().size();
-        }
-        var instanceStruct = context.classInfoProvider().getClassInfo(vtable.getClassName()).getStructure();
-
-        var actualInstanceType = (WasmType.CompositeReference) instance.getType();
-        var actualInstanceStruct = (WasmStructure) actualInstanceType.composite;
-        var actualVtableType = (WasmType.CompositeReference) actualInstanceStruct.getFields().get(0).asUnpackedType();
-        var actualVtableStruct = (WasmStructure) actualVtableType.composite;
-
-        WasmExpression classRef = new WasmStructGet(instanceStruct, new WasmGetLocal(instance),
-                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-        var index = context.classInfoProvider().getVirtualMethodsOffset() + vtableIndex;
-        var vtableStruct = context.classInfoProvider().getClassInfo(vtable.getClassName())
-                .getVirtualTableStructure();
-        if (!vtableStruct.isSupertypeOf(actualVtableStruct)) {
-            classRef = new WasmCast(classRef, vtableStruct.getReference());
-        }
+        WasmExpression classRef = new WasmStructGet(context.standardClasses().objectClass().getStructure(),
+                new WasmGetLocal(instance), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
+        var index = context.classInfoProvider().getVirtualMethodsOffset() + entry.getIndex();
+        var expectedInstanceClassInfo = context.classInfoProvider().getClassInfo(vtable.getClassName());
+        var vtableStruct = expectedInstanceClassInfo.getVirtualTableStructure();
+        classRef = new WasmCast(classRef, vtableStruct.getNonNullReference());
 
         var functionRef = new WasmStructGet(vtableStruct, classRef, index);
-        var functionTypeRef = (WasmType.CompositeReference) vtableStruct.getFields().get(index).asUnpackedType();
+        var functionTypeRef = (WasmType.CompositeReference) vtableStruct.getFields().get(index).getUnpackedType();
         var invoke = new WasmCallReference(functionRef, (WasmFunctionType) functionTypeRef.composite);
-        invoke.getArguments().addAll(arguments);
-        return invoke;
-    }
-
-    private VirtualTable pickVirtualTableForInterfaceCall(VirtualTable virtualTable, MethodDescriptor descriptor) {
-        var implementors = context.getInterfaceImplementors(virtualTable.getClassName());
-        for (var implementor : implementors) {
-            var implementorVtable = context.virtualTables().lookup(implementor);
-            if (implementorVtable != null && implementorVtable.hasMethod(descriptor)) {
-                while (implementorVtable.getParent() != null && implementorVtable.getParent().hasMethod(descriptor)) {
-                    implementorVtable = implementorVtable.getParent();
-                }
-                return implementorVtable;
-            }
+        WasmExpression instanceRef = new WasmGetLocal(instance);
+        var instanceType = (WasmType.CompositeReference) instance.getType();
+        var instanceStruct = (WasmStructure) instanceType.composite;
+        if (!expectedInstanceClassInfo.getStructure().isSupertypeOf(instanceStruct)) {
+            instanceRef = new WasmCast(instanceRef, expectedInstanceClassInfo.getStructure().getNonNullReference());
         }
-        throw new IllegalStateException();
+
+        invoke.getArguments().add(instanceRef);
+        invoke.getArguments().addAll(arguments.subList(1, arguments.size()));
+        return invoke;
     }
 
     @Override
@@ -342,15 +366,59 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected void allocateArray(ValueType itemType, WasmExpression length, TextLocation location, WasmLocal local,
-            List<WasmExpression> target) {
+    public void visit(ArrayFromDataExpr expr) {
+        var wasmArrayType = (WasmType.CompositeReference) mapType(ValueType.arrayOf(expr.getType()));
+        var block = new WasmBlock(false);
+        block.setType(wasmArrayType);
+        var wasmArrayStruct = (WasmStructure) wasmArrayType.composite;
+        var wasmArrayDataType = (WasmType.CompositeReference) wasmArrayStruct.getFields()
+                .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
+        var wasmArray = (WasmArray) wasmArrayDataType.composite;
+        var array = tempVars.acquire(wasmArrayType);
+
+        generationUtil.allocateArrayWithElements(expr.getType(), () -> {
+            var items = new ArrayList<WasmExpression>();
+            for (int i = 0; i < expr.getData().size(); ++i) {
+                accept(expr.getData().get(i), wasmArray.getElementType().asUnpackedType());
+                items.add(result);
+            }
+            return items;
+        }, expr.getLocation(), array, block.getBody());
+
+        block.getBody().add(new WasmGetLocal(array));
+        block.setLocation(expr.getLocation());
+        tempVars.release(array);
+
+        result = block;
+    }
+
+    @Override
+    public void visit(NewArrayExpr expr) {
+        accept(expr.getLength(), WasmType.INT32);
+        var function = context.classInfoProvider().getArrayConstructor(expr.getType(), 1);
+        var call = new WasmCall(function, result);
+        call.setLocation(expr.getLocation());
+        result = call;
+    }
+
+    @Override
+    protected void allocateArray(ValueType itemType, Supplier<WasmExpression> length, TextLocation location,
+            WasmLocal local, List<WasmExpression> target) {
         generationUtil.allocateArray(itemType, length, location, local, target);
     }
 
     @Override
-    protected WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType itemType,
-            List<WasmExpression> dimensions, TextLocation location) {
-        return null;
+    protected WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType arrayType,
+            Supplier<List<WasmExpression>> dimensions, TextLocation location) {
+        var dimensionsValue = dimensions.get();
+        var itemType = arrayType;
+        for (var i = 0; i < dimensionsValue.size(); ++i) {
+            itemType = ((ValueType.Array) itemType).getItemType();
+        }
+        var function = context.classInfoProvider().getArrayConstructor(itemType, dimensionsValue.size());
+        var call = new WasmCall(function, dimensionsValue.toArray(new WasmExpression[0]));
+        call.setLocation(location);
+        return call;
     }
 
     @Override
@@ -367,8 +435,106 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression generateCast(WasmExpression value, WasmType targetType) {
-        return new WasmCast(value, (WasmType.Reference) targetType);
+    public void visit(InstanceOfExpr expr) {
+        var type = expr.getType();
+        if (canCastNatively(type)) {
+            var wasmType = context.classInfoProvider().getClassInfo(type).getStructure().getNonNullReference();
+            acceptWithType(expr.getExpr(), type);
+            var wasmValue = result;
+            result.acceptVisitor(typeInference);
+
+            result = new WasmTest(wasmValue, wasmType);
+            result.setLocation(expr.getLocation());
+        } else {
+            super.visit(expr);
+        }
+    }
+
+    @Override
+    public void visit(CastExpr expr) {
+        acceptWithType(expr.getValue(), expr.getTarget());
+        result.acceptVisitor(typeInference);
+        var sourceType = (WasmType.Reference) typeInference.getResult();
+        if (sourceType == null) {
+            return;
+        }
+
+        var targetType = (WasmType.Reference) context.typeMapper().mapType(expr.getTarget());
+        WasmStructure targetStruct = null;
+        if (targetType instanceof WasmType.CompositeReference) {
+            var targetComposite = ((WasmType.CompositeReference) targetType).composite;
+            if (targetComposite instanceof WasmStructure) {
+                targetStruct = (WasmStructure) targetComposite;
+            }
+        }
+
+        var canInsertCast = true;
+        if (targetStruct != null && sourceType instanceof WasmType.CompositeReference) {
+            var sourceComposite = (WasmType.CompositeReference) sourceType;
+            if (!sourceType.isNullable()) {
+                sourceType = sourceComposite.composite.getReference();
+            }
+            var sourceStruct = (WasmStructure) sourceComposite.composite;
+            if (targetStruct.isSupertypeOf(sourceStruct)) {
+                canInsertCast = false;
+            } else if (!sourceStruct.isSupertypeOf(targetStruct)) {
+                var block = new WasmBlock(false);
+                block.setLocation(expr.getLocation());
+                block.getBody().add(result);
+                block.getBody().add(new WasmUnreachable());
+                result = block;
+                return;
+            }
+        }
+
+        if (!expr.isWeak() && context.isStrict()) {
+            result.acceptVisitor(typeInference);
+
+            var block = new WasmBlock(false);
+            block.setLocation(expr.getLocation());
+            if (canCastNatively(expr.getTarget())) {
+                block.setType(targetType);
+                if (!canInsertCast) {
+                    return;
+                }
+                block.getBody().add(new WasmCastBranch(WasmCastCondition.SUCCESS, result, sourceType,
+                        targetType, block));
+                result = block;
+            } else {
+                block.setType(sourceType);
+                var nonNullValue = new WasmNullBranch(WasmNullCondition.NULL, result, block);
+                nonNullValue.setResult(new WasmNullConstant(sourceType));
+                var valueToCast = exprCache.create(nonNullValue, sourceType, expr.getLocation(), block.getBody());
+
+                var supertypeCall = generateInstanceOf(valueToCast.expr(), expr.getTarget());
+                var breakIfPassed = new WasmBranch(supertypeCall, block);
+                breakIfPassed.setResult(valueToCast.expr());
+                block.getBody().add(new WasmDrop(breakIfPassed));
+
+                result = block;
+                if (canInsertCast) {
+                    var cast = new WasmCast(result, targetType);
+                    cast.setLocation(expr.getLocation());
+                    result = cast;
+                }
+            }
+            generateThrowCCE(expr.getLocation(), block.getBody());
+        } else if (canInsertCast) {
+            result = new WasmCast(result, targetType);
+            result.setLocation(expr.getLocation());
+        }
+    }
+
+    private boolean canCastNatively(ValueType type) {
+        if (type instanceof ValueType.Array) {
+            return true;
+        }
+        var className = ((ValueType.Object) type).getClassName();
+        var cls = context.classes().get(className);
+        if (cls == null) {
+            return false;
+        }
+        return !cls.hasModifier(ElementModifier.INTERFACE);
     }
 
     @Override
@@ -386,22 +552,13 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression peekException() {
-        return new WasmGetGlobal(context.exceptionGlobal());
-    }
-
-    @Override
-    protected void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local) {
-        var type = context.classInfoProvider().getClassInfo("java.lang.Throwable").getType();
-        if (local != null) {
-            var save = new WasmSetLocal(local, new WasmGetGlobal(context.exceptionGlobal()));
-            save.setLocation(location);
-            target.add(save);
-        }
-
-        var erase = new WasmSetGlobal(context.exceptionGlobal(), new WasmNullConstant(type));
-        erase.setLocation(location);
-        target.add(erase);
+    protected void checkExceptionType(TryCatchStatement tryCatch, WasmLocal exceptionVar, List<WasmExpression> target,
+            WasmBlock targetBlock) {
+        var wasmType = context.classInfoProvider().getClassInfo(tryCatch.getExceptionType()).getType();
+        var wasmSourceType = context.classInfoProvider().getClassInfo("java.lang.Throwable").getType();
+        var br = new WasmCastBranch(WasmCastCondition.SUCCESS, new WasmGetLocal(exceptionVar),
+                wasmSourceType, wasmType, targetBlock);
+        target.add(br);
     }
 
     @Override
@@ -519,34 +676,65 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
             target.acceptVisitor(typeInference);
             var type = (WasmType.CompositeReference) typeInference.getResult();
+            if (type == null) {
+                result = new WasmUnreachable();
+                result.setLocation(expr.getLocation());
+                return;
+            }
             var struct = (WasmStructure) type.composite;
             var fieldIndex = context.classInfoProvider().getFieldIndex(expr.getField());
-            var structGet = new WasmStructGet(struct, target, fieldIndex);
-            var cls = context.classes().get(expr.getField().getClassName());
-            if (cls != null) {
-                var field = cls.getField(expr.getField().getFieldName());
-                if (field != null) {
-                    var fieldType = field.getType();
-                    if (fieldType instanceof ValueType.Primitive) {
-                        switch (((ValueType.Primitive) fieldType).getKind()) {
-                            case BYTE:
-                                structGet.setSignedType(WasmSignedType.SIGNED);
-                                break;
-                            case SHORT:
-                                structGet.setSignedType(WasmSignedType.SIGNED);
-                                break;
-                            case CHARACTER:
-                                structGet.setSignedType(WasmSignedType.UNSIGNED);
-                                break;
-                            default:
-                                break;
+            if (fieldIndex >= 0) {
+                var structGet = new WasmStructGet(struct, target, fieldIndex);
+                var cls = context.classes().get(expr.getField().getClassName());
+                if (cls != null) {
+                    var field = cls.getField(expr.getField().getFieldName());
+                    if (field != null) {
+                        var fieldType = field.getType();
+                        if (fieldType instanceof ValueType.Primitive) {
+                            switch (((ValueType.Primitive) fieldType).getKind()) {
+                                case BOOLEAN:
+                                    structGet.setSignedType(WasmSignedType.UNSIGNED);
+                                    break;
+                                case BYTE:
+                                    structGet.setSignedType(WasmSignedType.SIGNED);
+                                    break;
+                                case SHORT:
+                                    structGet.setSignedType(WasmSignedType.SIGNED);
+                                    break;
+                                case CHARACTER:
+                                    structGet.setSignedType(WasmSignedType.UNSIGNED);
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
                     }
                 }
+                structGet.setLocation(expr.getLocation());
+                result = structGet;
+            } else {
+                result = new WasmUnreachable();
+                result.setLocation(expr.getLocation());
             }
-            structGet.setLocation(expr.getLocation());
-            result = structGet;
         }
+    }
+
+    @Override
+    protected WasmType condBlockType(WasmType thenType, WasmType elseType, ConditionalExpr conditional) {
+        if (conditional.getVariableIndex() >= 0) {
+            var javaType = types.typeOf(conditional.getVariableIndex());
+            if (javaType != null) {
+                return mapType(javaType.valueType);
+            }
+        }
+        if (conditional.getConsequent().getVariableIndex() >= 0
+                && conditional.getConsequent().getVariableIndex() == conditional.getAlternative().getVariableIndex()) {
+            var javaType = types.typeOf(conditional.getConsequent().getVariableIndex());
+            if (javaType != null) {
+                return mapType(javaType.valueType);
+            }
+        }
+        return super.condBlockType(thenType, elseType, conditional);
     }
 
     private class SimpleCallSite extends CallSiteIdentifier {
@@ -568,6 +756,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         public WasmExpression generate(Expr expr) {
             accept(expr);
             return result;
+        }
+
+        @Override
+        public ClassLoader classLoader() {
+            return context.classLoader();
         }
 
         @Override
@@ -603,6 +796,26 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         @Override
         public WasmGCClassInfoProvider classInfoProvider() {
             return context.classInfoProvider();
+        }
+
+        @Override
+        public TemporaryVariablePool tempVars() {
+            return tempVars;
+        }
+
+        @Override
+        public ExpressionCache exprCache() {
+            return exprCache;
+        }
+
+        @Override
+        public WasmGCNameProvider names() {
+            return context.names();
+        }
+
+        @Override
+        public WasmGCStringProvider strings() {
+            return context.strings();
         }
     };
 }

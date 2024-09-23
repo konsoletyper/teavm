@@ -19,7 +19,6 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.MethodDescriptor;
-import org.teavm.model.MethodReference;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.runtime.ExceptionHandling;
 
@@ -34,8 +33,6 @@ public class WasmExceptionHandlingTransform implements ClassHolderTransformer {
     private void processClass(ClassHolder cls, ClassHolderTransformerContext context) {
         var method = cls.getMethod(new MethodDescriptor("throwException", Throwable.class, void.class));
         var pm = ProgramEmitter.create(method, context.getHierarchy());
-        pm.invoke(new MethodReference(ExceptionHandling.class, "throwExceptionPlatform", Throwable.class, void.class),
-                pm.var(1, Throwable.class));
-        pm.exit();
+        pm.var(1, Throwable.class).raise();
     }
 }

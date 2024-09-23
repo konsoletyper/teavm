@@ -30,6 +30,7 @@ import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BinaryOperation;
 import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CastIntegerInstruction;
@@ -53,6 +54,7 @@ import org.teavm.model.instructions.NegateInstruction;
 import org.teavm.model.instructions.NullCheckInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.NumericOperandType;
+import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
@@ -63,6 +65,7 @@ public abstract class BaseTypeInference<T> {
     private Object[] types;
     private Graph graph;
     private Graph arrayGraph;
+    private Graph backArrayGraph;
     private Graph arrayUnwrapGraph;
     private boolean phisSkipped;
     private boolean backPropagation;
@@ -111,6 +114,7 @@ public abstract class BaseTypeInference<T> {
         }
         graph = visitor.graphBuilder.build();
         arrayGraph = visitor.arrayGraphBuilder.build();
+        backArrayGraph = visitor.backArrayGraphBuilder.build();
         arrayUnwrapGraph = visitor.arrayUnwrapGraphBuilder.build();
     }
 
@@ -190,6 +194,12 @@ public abstract class BaseTypeInference<T> {
                         stack.push(i);
                     }
                 }
+                for (var j : backArrayGraph.incomingEdges(i)) {
+                    if (!nullTypes[j]) {
+                        typeStack.push(elementType((T) types[j]));
+                        stack.push(i);
+                    }
+                }
             }
         }
 
@@ -224,6 +234,15 @@ public abstract class BaseTypeInference<T> {
                     if (nullTypes[pred] && !Objects.equals(types[pred], arrayType)) {
                         stack.push(pred);
                         typeStack.push(arrayType);
+                    }
+                }
+            }
+            if (backArrayGraph.outgoingEdgesCount(variable) > 0) {
+                var elementType = elementType(type);
+                for (var succ : backArrayGraph.outgoingEdges(variable)) {
+                    if (!Objects.equals(types[succ], elementType)) {
+                        stack.push(succ);
+                        typeStack.push(elementType);
                     }
                 }
             }
@@ -281,17 +300,19 @@ public abstract class BaseTypeInference<T> {
     private class InitialTypeVisitor extends AbstractInstructionVisitor {
         private GraphBuilder graphBuilder;
         private GraphBuilder arrayGraphBuilder;
+        private GraphBuilder backArrayGraphBuilder;
         private GraphBuilder arrayUnwrapGraphBuilder;
 
         InitialTypeVisitor(int size) {
             graphBuilder = new GraphBuilder(size);
             arrayGraphBuilder = new GraphBuilder(size);
+            backArrayGraphBuilder = new GraphBuilder(size);
             arrayUnwrapGraphBuilder = new GraphBuilder(size);
         }
 
         @Override
         public void visit(NullConstantInstruction insn) {
-            types[insn.getReceiver().getIndex()] = nullType();
+            type(insn.getReceiver(), nullType());
         }
 
         @Override
@@ -316,12 +337,12 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(ClassConstantInstruction insn) {
-            type(insn.getReceiver(), ValueType.object("java/lang/Class"));
+            type(insn.getReceiver(), ValueType.object("java.lang.Class"));
         }
 
         @Override
         public void visit(StringConstantInstruction insn) {
-            type(insn.getReceiver(), ValueType.object("java/lang/String"));
+            type(insn.getReceiver(), ValueType.object("java.lang.String"));
         }
 
         @Override
@@ -337,9 +358,6 @@ public abstract class BaseTypeInference<T> {
         @Override
         public void visit(ConstructMultiArrayInstruction insn) {
             var type = insn.getItemType();
-            for (var i = 0; i < insn.getDimensions().size(); ++i) {
-                type = ValueType.arrayOf(type);
-            }
             type(insn.getReceiver(), type);
         }
 
@@ -365,6 +383,10 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(BinaryInstruction insn) {
+            if (insn.getOperation() == BinaryOperation.COMPARE) {
+                type(insn.getReceiver(), ValueType.INTEGER);
+                return;
+            }
             type(insn.getReceiver(), insn.getOperandType());
         }
 
@@ -424,6 +446,11 @@ public abstract class BaseTypeInference<T> {
         }
 
         @Override
+        public void visit(PutElementInstruction insn) {
+            backArrayGraphBuilder.addEdge(insn.getArray().getIndex(), insn.getValue().getIndex());
+        }
+
+        @Override
         public void visit(AssignInstruction insn) {
             graphBuilder.addEdge(insn.getAssignee().getIndex(), insn.getReceiver().getIndex());
         }
@@ -454,6 +481,10 @@ public abstract class BaseTypeInference<T> {
             if (target != null) {
                 var t = mapType(type);
                 if (t != null) {
+                    if (types[target.getIndex()] != null) {
+                        //noinspection unchecked
+                        t = merge((T) types[target.getIndex()], t);
+                    }
                     types[target.getIndex()] = t;
                 }
             }
@@ -461,6 +492,10 @@ public abstract class BaseTypeInference<T> {
 
         void type(Variable target, T type) {
             if (target != null && type != null) {
+                if (types[target.getIndex()] != null) {
+                    //noinspection unchecked
+                    type = merge((T) types[target.getIndex()], type);
+                }
                 types[target.getIndex()] = type;
             }
         }
@@ -507,6 +542,11 @@ public abstract class BaseTypeInference<T> {
                 push(insn.getInstance(), ValueType.object(insn.getField().getClassName()));
             }
             push(insn.getValue(), insn.getFieldType());
+        }
+
+        @Override
+        public void visit(CastInstruction insn) {
+            push(insn.getValue(), insn.getTargetType());
         }
 
         private void push(Variable variable, ValueType type) {

@@ -35,7 +35,7 @@ import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
-@SkipPlatform(TestPlatform.WASI)
+@SkipPlatform({TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC})
 public class ArrayBlockingQueueTest {
     @Test
     public void constructed() {

@@ -21,8 +21,11 @@ public final class FloatSynthesizer {
 
     public static float synthesizeFloat(int mantissa, int exp, boolean negative) {
         var indexInTable = FloatAnalyzer.MAX_ABS_DEC_EXP + exp;
-        if (mantissa == 0 || indexInTable > mantissa10Table.length || indexInTable < 0) {
+        if (mantissa == 0 || indexInTable < 0) {
             return Float.intBitsToFloat(negative ? (1 << 31) : 0);
+        }
+        if (indexInTable >= mantissa10Table.length) {
+            return negative ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
         }
 
         var binMantissa = FloatAnalyzer.mulAndShiftRight(mantissa, mantissa10Table[indexInTable], 0);

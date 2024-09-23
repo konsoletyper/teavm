@@ -30,7 +30,6 @@ import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
-import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
@@ -60,7 +59,6 @@ public class ExceptionHandlingIntrinsic implements WasmIntrinsic {
             case "jumpToFrame":
             case "abort":
             case "isObfuscated":
-            case "throwExceptionPlatformNative":
                 return true;
         }
         return false;
@@ -102,9 +100,6 @@ public class ExceptionHandlingIntrinsic implements WasmIntrinsic {
 
             case "abort":
                 return new WasmUnreachable();
-
-            case "throwExceptionPlatformNative":
-                return new WasmThrow(manager.getExceptionTag());
 
             default:
                 throw new IllegalArgumentException("Unknown method: " + invocation.getMethod());

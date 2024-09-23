@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
@@ -246,7 +247,22 @@ public class TObject {
     }
 
     final int identity() {
-        if (PlatformDetector.isLowLevel()) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            var identity = wasmGCIdentity();
+            if (identity < 0) {
+                var monitor = this.monitor;
+                if (monitor != null) {
+                    if (monitor.id < 0) {
+                        monitor.id = WasmGCSupport.nextObjectId() & 0x7ffffff;
+                    }
+                    return monitor.id;
+                } else {
+                    identity = WasmGCSupport.nextObjectId() & 0x7ffffff;
+                    setWasmGCIdentity(identity);
+                }
+            }
+            return identity;
+        } else if (PlatformDetector.isLowLevel()) {
             Monitor monitor = this.monitor;
             if (monitor == null) {
                 int hashCode = hashCodeLowLevel(this);
@@ -270,6 +286,10 @@ public class TObject {
         }
         return Platform.getPlatformObject(this).getId();
     }
+
+    private native int wasmGCIdentity();
+
+    private native void setWasmGCIdentity(int identity);
 
     @DelegateTo("hashCodeLowLevelImpl")
     @NoSideEffects
@@ -323,6 +343,9 @@ public class TObject {
     @DelegateTo("cloneLowLevel")
     @PluggableDependency(ObjectDependencyPlugin.class)
     protected Object clone() throws TCloneNotSupportedException {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return cloneObject();
+        }
         if (!(this instanceof TCloneable) && Platform.getPlatformObject(this)
                 .getPlatformClass().getMetadata().getArrayItem() == null) {
             throw new TCloneNotSupportedException();
@@ -331,6 +354,8 @@ public class TObject {
         Platform.getPlatformObject(result).setId(Platform.nextObjectId());
         return result;
     }
+
+    private native TObject cloneObject();
 
     @SuppressWarnings("unused")
     private static RuntimeObject cloneLowLevel(RuntimeObject self) {

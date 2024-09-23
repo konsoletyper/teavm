@@ -26,6 +26,7 @@ import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.interop.Platforms;
 import org.teavm.interop.Unmanaged;
+import org.teavm.interop.UnsupportedOn;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.browser.Window;
@@ -35,6 +36,7 @@ import org.teavm.platform.plugin.PlatformGenerator;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
+@UnsupportedOn(Platforms.WEBASSEMBLY_GC)
 public final class Platform {
     private Platform() {
     }

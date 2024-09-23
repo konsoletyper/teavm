@@ -82,7 +82,7 @@ public class Devirtualization {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block) {
                 if (insn instanceof InvokeInstruction) {
-                    applyToInvoke(methodDep, (InvokeInstruction) insn);
+                    applyToInvoke(methodDep, program, (InvokeInstruction) insn);
                 } else if (insn instanceof CastInstruction) {
                     applyToCast(methodDep, (CastInstruction) insn);
                 }
@@ -94,7 +94,7 @@ public class Devirtualization {
         }
     }
 
-    private void applyToInvoke(MethodDependencyInfo methodDep, InvokeInstruction invoke) {
+    private void applyToInvoke(MethodDependencyInfo methodDep, Program program, InvokeInstruction invoke) {
         if (invoke.getType() != InvocationType.VIRTUAL) {
             return;
         }
@@ -111,6 +111,16 @@ public class Devirtualization {
                             + invoke.getLocation().getLine());
                 }
                 System.out.println();
+            }
+            if (!resolvedImplementaiton.getClassName().equals(invoke.getMethod().getClassName())) {
+                var cast = new CastInstruction();
+                cast.setValue(invoke.getInstance());
+                cast.setTargetType(ValueType.object(resolvedImplementaiton.getClassName()));
+                cast.setWeak(true);
+                cast.setReceiver(program.createVariable());
+                cast.setLocation(invoke.getLocation());
+                invoke.insertPrevious(cast);
+                invoke.setInstance(cast.getReceiver());
             }
             invoke.setType(InvocationType.SPECIAL);
             invoke.setMethod(resolvedImplementaiton);

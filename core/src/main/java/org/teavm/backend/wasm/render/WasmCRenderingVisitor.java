@@ -31,6 +31,7 @@ import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
+import org.teavm.backend.wasm.model.expression.WasmArrayNewFixed;
 import org.teavm.backend.wasm.model.expression.WasmArraySet;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
@@ -38,6 +39,7 @@ import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
+import org.teavm.backend.wasm.model.expression.WasmCastBranch;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmCopy;
@@ -54,16 +56,20 @@ import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
+import org.teavm.backend.wasm.model.expression.WasmInt31Get;
+import org.teavm.backend.wasm.model.expression.WasmInt31Reference;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt64Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmIntUnary;
+import org.teavm.backend.wasm.model.expression.WasmIsNull;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
+import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
@@ -78,6 +84,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructNew;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
+import org.teavm.backend.wasm.model.expression.WasmTest;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmTry;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
@@ -181,6 +188,16 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         result.getLines().add(new CSingleLine("}"));
 
         value = result;
+    }
+
+    @Override
+    public void visit(WasmNullBranch expression) {
+        unsupported();
+    }
+
+    @Override
+    public void visit(WasmCastBranch expression) {
+        unsupported();
     }
 
     @Override
@@ -353,6 +370,11 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmNullConstant expression) {
         value = CExpression.relocatable("/* can't produce ref.null */");
+    }
+
+    @Override
+    public void visit(WasmIsNull expression) {
+        unsupported();
     }
 
     @Override
@@ -1171,6 +1193,11 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmTest expression) {
+        unsupported();
+    }
+
+    @Override
     public void visit(WasmStructNew expression) {
         unsupported();
     }
@@ -1196,6 +1223,11 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmArrayNewFixed expression) {
+        unsupported();
+    }
+
+    @Override
     public void visit(WasmArrayGet expression) {
         unsupported();
     }
@@ -1217,6 +1249,16 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmFunctionReference expression) {
+        unsupported();
+    }
+
+    @Override
+    public void visit(WasmInt31Reference expression) {
+        unsupported();
+    }
+
+    @Override
+    public void visit(WasmInt31Get expression) {
         unsupported();
     }
 

@@ -30,11 +30,13 @@ import org.teavm.gradle.api.TeaVMExtension;
 import org.teavm.gradle.api.TeaVMJSConfiguration;
 import org.teavm.gradle.api.TeaVMWasiConfiguration;
 import org.teavm.gradle.api.TeaVMWasmConfiguration;
+import org.teavm.gradle.api.TeaVMWasmGCConfiguration;
 
 class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtension {
     private TeaVMJSConfiguration js;
     private TeaVMWasmConfiguration wasm;
     private TeaVMWasiConfiguration wasi;
+    private TeaVMWasmGCConfiguration wasmGC;
     private TeaVMCConfiguration c;
     private TeaVMCommonConfiguration all;
 
@@ -43,11 +45,13 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         js = objectFactory.newInstance(JsConfigImpl.class);
         wasm = objectFactory.newInstance(TeaVMWasmConfiguration.class);
         wasi = objectFactory.newInstance(TeaVMWasiConfiguration.class);
+        wasmGC = objectFactory.newInstance(TeaVMWasmGCConfiguration.class);
         c = objectFactory.newInstance(TeaVMCConfiguration.class);
         all = objectFactory.newInstance(TeaVMCommonConfiguration.class);
         inherit(js, all);
         inherit(wasm, all);
         inherit(wasi, all);
+        inherit(wasmGC, all);
         inherit(c, all);
         setupDefaults();
     }
@@ -56,6 +60,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         setupJsDefaults();
         setupWasmDefaults();
         setupWasiDefaults();
+        setupWasmGCDefaults();
         setupCDefaults();
         setupAllDefaults();
     }
@@ -93,6 +98,19 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         wasm.getTargetFileName().convention(project.provider(() -> project.getName() + ".wasm"));
         wasm.getAddedToWebApp().convention(property("wasm.addedToWebApp").map(Boolean::parseBoolean).orElse(false));
         wasm.getExceptionsUsed().convention(property("wasm.exceptionsUsed").map(Boolean::parseBoolean).orElse(true));
+    }
+
+    private void setupWasmGCDefaults() {
+        wasmGC.getRelativePathInOutputDir().convention("wasm-gc");
+        wasmGC.getOptimization().convention(property("wasm-gc.optimization").map(OptimizationLevel::valueOf)
+                .orElse(OptimizationLevel.AGGRESSIVE));
+        wasmGC.getTargetFileName().convention(project.provider(() -> project.getName() + ".wasm"));
+        wasmGC.getAddedToWebApp().convention(property("wasm-gc.addedToWebApp")
+                .map(Boolean::parseBoolean).orElse(false));
+        wasmGC.getStrict().convention(property("wasm-gc.strict").map(Boolean::parseBoolean).orElse(true));
+        wasmGC.getCopyRuntime().convention(property("wasm-gc.copyRuntime").map(Boolean::parseBoolean).orElse(true));
+        wasmGC.getObfuscated().convention(property("wasm-gc.obfuscated").map(Boolean::parseBoolean).orElse(true));
+        wasmGC.getDisassembly().convention(property("wasm-gc.disassembly").map(Boolean::parseBoolean).orElse(false));
     }
 
     private void setupWasiDefaults() {
@@ -168,6 +186,21 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
     @Override
     public void wasi(Closure<?> action) {
         action.rehydrate(getWasi(), action.getOwner(), action.getThisObject()).call();
+    }
+
+    @Override
+    public TeaVMWasmGCConfiguration getWasmGC() {
+        return wasmGC;
+    }
+
+    @Override
+    public void wasmGC(Action<TeaVMWasmGCConfiguration> action) {
+        action.execute(getWasmGC());
+    }
+
+    @Override
+    public void wasmGC(Closure<?> action) {
+        action.rehydrate(getWasmGC(), action.getOwner(), action.getThisObject()).call();
     }
 
     @Override

@@ -16,9 +16,15 @@
 
 var TeaVM = TeaVM || {};
 TeaVM.wasm = function() {
+    let exports;
     function defaults(imports) {
         let stderr = "";
         let stdout = "";
+        let finalizationRegistry = new FinalizationRegistry(heldValue => {
+            if (typeof exports.reportGarbageCollectedValue === "function") {
+                exports.reportGarbageCollectedValue(heldValue)
+            }
+        });
         imports.teavm = {
             putcharStderr(c) {
                 if (c === 10) {
@@ -35,8 +41,25 @@ TeaVM.wasm = function() {
                 } else {
                     stdout += String.fromCharCode(c);
                 }
+            },
+            currentTimeMillis() {
+                return new Date().getTime();
+            },
+            dateToString(timestamp) {
+                return stringToJava(new Date(timestamp).toString());
+            },
+            createWeakRef(value, heldValue) {
+                let weakRef = new WeakRef(value);
+                if (heldValue !== null) {
+                    finalizationRegistry.register(value, heldValue)
+                }
+                return weakRef;
+            },
+            deref(weakRef) {
+                return weakRef.deref();
             }
         };
+        imports.teavmMath = Math;
     }
 
     function load(path, options) {
@@ -53,8 +76,17 @@ TeaVM.wasm = function() {
         return WebAssembly.instantiateStreaming(fetch(path), importObj).then((obj => {
             let teavm = {};
             teavm.main = createMain(obj.instance);
+            teavm.instance = obj.instance;
             return teavm;
         }));
+    }
+
+    function stringToJava(str) {
+        let sb = exports.createStringBuilder();
+        for (let i = 0; i < str.length; ++i) {
+            exports.appendChar(sb, str.charCodeAt(i));
+        }
+        return exports.buildString(sb);
     }
 
     function createMain(instance) {
@@ -63,15 +95,10 @@ TeaVM.wasm = function() {
                 args = [];
             }
             return new Promise((resolve, reject) => {
-                let exports = instance.exports;
+                exports = instance.exports;
                 let javaArgs = exports.createStringArray(args.length);
                 for (let i = 0; i < args.length; ++i) {
-                    let arg = args[i];
-                    let javaArg = exports.createStringBuilder();
-                    for (let j = 0; j < arg.length; ++j) {
-                        exports.appendChar(javaArg, arg.charCodeAt(j));
-                    }
-                    exports.setToStringArray(javaArgs, i, exports.buildString(javaArg));
+                    exports.setToStringArray(javaArgs, i, stringToJava(args[i]));
                 }
                 try {
                     exports.main(javaArgs);

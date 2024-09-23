@@ -60,7 +60,9 @@ public class WasmFunction extends WasmEntity {
 
     public void setImportName(String importName) {
         this.importName = importName;
-        collection.invalidateIndexes();
+        if (collection != null) {
+            collection.invalidateIndexes();
+        }
     }
 
     public String getImportModule() {

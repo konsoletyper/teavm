@@ -13,20 +13,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.intrinsics.gc;
+package org.teavm.platform.plugin.wasmgc;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
+import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
+import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.model.WasmStructure;
+import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.model.ValueType;
 
-public class ObjectIntrinsics implements WasmGCIntrinsic {
+class ResourceMethodIntrinsic implements WasmGCIntrinsic {
+    private int fieldIndex;
+
+    ResourceMethodIntrinsic(int fieldIndex) {
+        this.fieldIndex = fieldIndex;
+    }
+
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
-        var obj = context.generate(invocation.getArguments().get(0));
-        var objectStruct = context.classInfoProvider().getClassInfo("java.lang.Object").getStructure();
-        var result = new WasmStructGet(objectStruct, obj, WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-        result.setLocation(invocation.getLocation());
-        return result;
+        var structType = (WasmType.CompositeReference) context.typeMapper().mapType(
+                ValueType.object(invocation.getMethod().getClassName()));
+        var struct = (WasmStructure) structType.composite;
+        return new WasmStructGet(struct, context.generate(invocation.getArguments().get(0)), fieldIndex);
     }
 }

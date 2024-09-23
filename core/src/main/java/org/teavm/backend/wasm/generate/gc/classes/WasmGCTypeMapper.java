@@ -15,26 +15,37 @@
  */
 package org.teavm.backend.wasm.generate.gc.classes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmPackedType;
 import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.ValueType;
 
 public class WasmGCTypeMapper {
+    private ClassReaderSource classes;
     private WasmGCClassInfoProvider classInfoProvider;
     private WasmFunctionTypes functionTypes;
     private WasmModule module;
+    private List<WasmGCCustomTypeMapper> customTypeMappers;
+    private Map<String, WasmType> typeCache = new HashMap<>();
 
-    WasmGCTypeMapper(WasmGCClassInfoProvider classInfoProvider, WasmFunctionTypes functionTypes,
-            WasmModule module) {
+    WasmGCTypeMapper(ClassReaderSource classes, WasmGCClassInfoProvider classInfoProvider,
+            WasmFunctionTypes functionTypes, WasmModule module) {
+        this.classes = classes;
         this.classInfoProvider = classInfoProvider;
         this.functionTypes = functionTypes;
         this.module = module;
+    }
+
+    void setCustomTypeMappers(List<WasmGCCustomTypeMapper> customTypeMappers) {
+        this.customTypeMappers = List.copyOf(customTypeMappers);
     }
 
     public WasmStorageType mapStorageType(ValueType type) {
@@ -45,7 +56,7 @@ public class WasmGCTypeMapper {
                     return WasmStorageType.packed(WasmPackedType.INT8);
                 case SHORT:
                 case CHARACTER:
-                    return WasmStorageType.packed(WasmPackedType.INT8);
+                    return WasmStorageType.packed(WasmPackedType.INT16);
                 case INTEGER:
                     return WasmType.INT32.asStorage();
                 case LONG:
@@ -58,7 +69,7 @@ public class WasmGCTypeMapper {
                     throw new IllegalArgumentException();
             }
         } else {
-            return classInfoProvider.getClassInfo(type).getType().asStorage();
+            return mapType(type).asStorage();
         }
     }
 
@@ -82,16 +93,56 @@ public class WasmGCTypeMapper {
             }
         } else if (type instanceof ValueType.Void) {
             return null;
-        } else {
+        } else if (type instanceof ValueType.Object) {
+            return mapClassType(((ValueType.Object) type).getClassName());
+        } else if (type instanceof ValueType.Array) {
+            var degree = 0;
+            while (type instanceof ValueType.Array) {
+                type = ((ValueType.Array) type).getItemType();
+                ++degree;
+            }
+            if (type instanceof ValueType.Object) {
+                var className = ((ValueType.Object) type).getClassName();
+                var cls = classes.get(className);
+                if (cls != null) {
+                    className = "java.lang.Object";
+                }
+            }
+            while (degree-- > 0) {
+                type = ValueType.arrayOf(type);
+            }
             return classInfoProvider.getClassInfo(type).getType();
+        } else {
+            throw new IllegalArgumentException();
         }
     }
 
-    public WasmFunctionType getFunctionType(String className, MethodDescriptor methodDesc, boolean fresh) {
+    private WasmType mapClassType(String className) {
+        var result = typeCache.get(className);
+        if (result == null) {
+            for (var customMapper : customTypeMappers) {
+                result = customMapper.map(className);
+                if (result != null) {
+                    break;
+                }
+            }
+            if (result == null) {
+                var cls = classes.get(className);
+                if (cls == null) {
+                    className = "java.lang.Object";
+                }
+                result = classInfoProvider.getClassInfo(className).getType();
+                typeCache.put(className, result);
+            }
+        }
+        return result;
+    }
+
+    public WasmFunctionType getFunctionType(WasmType receiverType, MethodDescriptor methodDesc, boolean fresh) {
         var returnType = mapType(methodDesc.getResultType());
         var javaParamTypes = methodDesc.getParameterTypes();
         var paramTypes = new WasmType[javaParamTypes.length + 1];
-        paramTypes[0] = classInfoProvider.getClassInfo(className).getType();
+        paramTypes[0] = receiverType;
         for (var i = 0; i < javaParamTypes.length; ++i) {
             paramTypes[i + 1] = mapType(javaParamTypes[i]);
         }
@@ -102,5 +153,9 @@ public class WasmGCTypeMapper {
         } else {
             return functionTypes.of(returnType, paramTypes);
         }
+    }
+
+    public WasmFunctionType getFunctionType(String className, MethodDescriptor methodDesc, boolean fresh) {
+        return getFunctionType(classInfoProvider.getClassInfo(className).getType(), methodDesc, fresh);
     }
 }

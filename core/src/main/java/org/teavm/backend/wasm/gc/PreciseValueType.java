@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.gc;
 
+import java.util.Objects;
 import org.teavm.model.ValueType;
 
 public class PreciseValueType {
@@ -24,5 +25,23 @@ public class PreciseValueType {
     public PreciseValueType(ValueType valueType, boolean isArrayUnwrap) {
         this.valueType = valueType;
         this.isArrayUnwrap = isArrayUnwrap;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof PreciseValueType)) {
+            return false;
+        }
+
+        var that = (PreciseValueType) o;
+        return isArrayUnwrap == that.isArrayUnwrap && valueType.equals(that.valueType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(valueType, isArrayUnwrap);
     }
 }

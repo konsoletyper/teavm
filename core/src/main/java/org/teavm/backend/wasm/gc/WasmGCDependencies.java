@@ -30,10 +30,12 @@ public class WasmGCDependencies {
     }
 
     public void contribute() {
+        analyzer.linkClass("java.lang.Class");
         contributeWasmRuntime();
         contributeMathUtils();
         contributeExceptionUtils();
         contributeInitializerUtils();
+        analyzer.addDependencyListener(new WasmGCReferenceQueueDependency());
     }
 
     public void contributeStandardExports() {
@@ -51,6 +53,12 @@ public class WasmGCDependencies {
                 .use();
         analyzer.linkMethod(new MethodReference(StringBuilder.class, "toString", String.class))
                 .propagate(0, analyzer.getType("java.lang.StringBuilder"))
+                .use();
+        analyzer.linkMethod(new MethodReference(String.class, "length", int.class))
+                .propagate(0, analyzer.getType("java.lang.String"))
+                .use();
+        analyzer.linkMethod(new MethodReference(String.class, "charAt", int.class, char.class))
+                .propagate(0, analyzer.getType("java.lang.String"))
                 .use();
     }
 
@@ -91,7 +99,9 @@ public class WasmGCDependencies {
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "aiiobe", ArrayIndexOutOfBoundsException.class))
                 .use();
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "cce", ClassCastException.class)).use();
-        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "cnse", CloneNotSupportedException.class)).use();
+        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "throwCloneNotSupportedException",
+                void.class)).use();
+        analyzer.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class)).use();
     }
 
     private void contributeInitializerUtils() {

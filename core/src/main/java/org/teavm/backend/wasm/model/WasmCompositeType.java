@@ -18,7 +18,7 @@ package org.teavm.backend.wasm.model;
 public abstract class WasmCompositeType extends WasmEntity {
     private String name;
     private WasmType.CompositeReference reference;
-    int indexInRecursiveType = -1;
+    private WasmType.CompositeReference nonNullReference;
     int recursiveTypeCount = -1;
 
     WasmCompositeType(String name) {
@@ -31,13 +31,16 @@ public abstract class WasmCompositeType extends WasmEntity {
 
     public WasmType.CompositeReference getReference() {
         if (reference == null) {
-            reference = new WasmType.CompositeReference(this);
+            reference = new WasmType.CompositeReference(this, true);
         }
         return reference;
     }
 
-    public int getIndexInRecursiveType() {
-        return indexInRecursiveType;
+    public WasmType.CompositeReference getNonNullReference() {
+        if (nonNullReference == null) {
+            nonNullReference = new WasmType.CompositeReference(this, false);
+        }
+        return nonNullReference;
     }
 
     public int getRecursiveTypeCount() {

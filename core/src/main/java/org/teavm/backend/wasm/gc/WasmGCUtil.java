@@ -34,9 +34,9 @@ public final class WasmGCUtil {
         if (firstPath.get(0) != secondPath.get(0)) {
             return "java.lang.Object";
         }
-        var min = Math.min(firstPath.size(), secondPath.size());
-        var index = 1;
-        while (index < min && firstPath.get(index) == secondPath.get(index)) {
+        var min = Math.min(firstPath.size(), secondPath.size()) - 1;
+        var index = 0;
+        while (index < min && firstPath.get(index + 1) == secondPath.get(index + 1)) {
             ++index;
         }
         return index < firstPath.size() ? firstPath.get(index).getName() : secondPath.get(index).getName();

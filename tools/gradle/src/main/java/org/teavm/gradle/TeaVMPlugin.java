@@ -37,9 +37,12 @@ import org.gradle.api.tasks.bundling.War;
 import org.teavm.gradle.api.TeaVMConfiguration;
 import org.teavm.gradle.api.TeaVMExtension;
 import org.teavm.gradle.config.ArtifactCoordinates;
+import org.teavm.gradle.tasks.CopyWasmGCRuntimeTask;
+import org.teavm.gradle.tasks.DisasmWebAssemblyTask;
 import org.teavm.gradle.tasks.GenerateCTask;
 import org.teavm.gradle.tasks.GenerateJavaScriptTask;
 import org.teavm.gradle.tasks.GenerateWasiTask;
+import org.teavm.gradle.tasks.GenerateWasmGCTask;
 import org.teavm.gradle.tasks.GenerateWasmTask;
 import org.teavm.gradle.tasks.JavaScriptDevServerTask;
 import org.teavm.gradle.tasks.StopJavaScriptDevServerTask;
@@ -53,6 +56,9 @@ public class TeaVMPlugin implements Plugin<Project> {
     public static final String STOP_JS_DEV_SERVER_TASK_NAME = "stopJavaScriptDevServer";
     public static final String WASM_TASK_NAME = "generateWasm";
     public static final String WASI_TASK_NAME = "generateWasi";
+    public static final String WASM_GC_TASK_NAME = "generateWasmGC";
+    public static final String WASM_GC_COPY_RUNTIME_TASK_NAME = "copyWasmGCRuntime";
+    public static final String WASM_GC_DISASSEMBLY_TASK_NAME = "disasmWasmGC";
     public static final String C_TASK_NAME = "generateC";
     public static final String CONFIGURATION_NAME = "teavm";
     public static final String CLASSPATH_CONFIGURATION_NAME = "teavmClasspath";
@@ -118,6 +124,7 @@ public class TeaVMPlugin implements Plugin<Project> {
         registerStopJsDevServerTask(project);
         registerWasmTask(project, compilerConfig);
         registerWasiTask(project, compilerConfig);
+        registerWasmGCTask(project, compilerConfig);
         registerCTask(project, compilerConfig);
     }
 
@@ -210,6 +217,42 @@ public class TeaVMPlugin implements Plugin<Project> {
         });
     }
 
+    private void registerWasmGCTask(Project project, Configuration configuration) {
+        var extension = project.getExtensions().getByType(TeaVMExtension.class);
+        project.getTasks().create(WASM_GC_TASK_NAME, GenerateWasmGCTask.class, task -> {
+            var wasmGC = extension.getWasmGC();
+            applyToTask(wasmGC, task, configuration);
+            task.getTargetFileName().convention(wasmGC.getTargetFileName());
+            task.getObfuscated().convention(wasmGC.getObfuscated());
+            task.getStrict().convention(wasmGC.getStrict());
+        });
+        project.getTasks().create(WASM_GC_COPY_RUNTIME_TASK_NAME, CopyWasmGCRuntimeTask.class, task -> {
+            task.setGroup(TASK_GROUP);
+            task.onlyIf(t -> extension.getWasmGC().getCopyRuntime().getOrElse(false));
+            var fileName = extension.getWasmGC().getTargetFileName().map(x -> x + "-runtime.js");
+            task.getOutputFile().convention(extension.getWasmGC().getOutputDir()
+                    .flatMap(d -> d.dir(extension.getWasmGC().getRelativePathInOutputDir()))
+                    .flatMap(d -> d.file(fileName)));
+        });
+        project.getTasks().create(WASM_GC_DISASSEMBLY_TASK_NAME, DisasmWebAssemblyTask.class, task -> {
+            task.setGroup(TASK_GROUP);
+            var genTask = (GenerateWasmGCTask) project.getTasks().getByName(WASM_GC_TASK_NAME);
+            task.dependsOn(genTask);
+            task.onlyIf(t -> extension.getWasmGC().getDisassembly().getOrElse(false));
+            task.getHtml().set(true);
+            task.getInputFile().convention(project.getLayout().dir(genTask.getOutputDir())
+                    .flatMap(x -> x.file(genTask.getTargetFileName())));
+            var fileName = extension.getWasmGC().getTargetFileName().map(x -> {
+                if (x.endsWith(".wasm")) {
+                    x = x.substring(0, x.length() - 5);
+                }
+                return x + ".wast.html";
+            });
+            task.getOutputFile().convention(project.getLayout().dir(genTask.getOutputDir())
+                    .flatMap(d -> d.file(fileName)));
+        });
+    }
+
     private void registerCTask(Project project, Configuration configuration) {
         var extension = project.getExtensions().getByType(TeaVMExtension.class);
         project.getTasks().create(C_TASK_NAME, GenerateCTask.class, task -> {
@@ -236,6 +279,7 @@ public class TeaVMPlugin implements Plugin<Project> {
             if (task.getName().equals(WarPlugin.WAR_TASK_NAME)) {
                 var jsAddedToWebApp = extension.getJs().getAddedToWebApp().get();
                 var wasmAddedToWebApp = extension.getWasm().getAddedToWebApp().get();
+                var wasmGCAddedToWebApp = extension.getWasmGC().getAddedToWebApp().get();
                 if (jsAddedToWebApp) {
                     task.dependsOn(project.getTasks().named(JS_TASK_NAME));
                     var outDir = extension.getJs().getOutputDir();
@@ -250,6 +294,17 @@ public class TeaVMPlugin implements Plugin<Project> {
                     task.dependsOn(project.getTasks().named(WASM_TASK_NAME));
                     var outDir = extension.getWasm().getOutputDir();
                     var relPath = extension.getWasm().getRelativePathInOutputDir();
+                    task.with(project.copySpec(spec -> {
+                        spec.into(relPath);
+                        spec.from(project.files(outDir.map(dir -> new File(dir.getAsFile(), relPath.get()))));
+                    }));
+                }
+                if (wasmGCAddedToWebApp) {
+                    task.dependsOn(project.getTasks().named(WASM_GC_TASK_NAME));
+                    task.dependsOn(project.getTasks().named(WASM_GC_COPY_RUNTIME_TASK_NAME));
+                    task.dependsOn(project.getTasks().named(WASM_GC_DISASSEMBLY_TASK_NAME));
+                    var outDir = extension.getWasmGC().getOutputDir();
+                    var relPath = extension.getWasmGC().getRelativePathInOutputDir();
                     task.with(project.copySpec(spec -> {
                         spec.into(relPath);
                         spec.from(project.files(outDir.map(dir -> new File(dir.getAsFile(), relPath.get()))));

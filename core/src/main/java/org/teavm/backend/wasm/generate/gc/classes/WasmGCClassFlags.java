@@ -32,6 +32,7 @@ public final class WasmGCClassFlags {
     public static final int VARARGS = 1 << 13;
     public static final int VOLATILE = 1 << 14;
     public static final int PRIMITIVE = 1 << 15;
+    public static final int ARRAY = 1 << 16;
 
     public static final int PRIMITIVE_KIND_SHIFT = 16;
     public static final int PRIMITIVE_BOOLEAN = 0;

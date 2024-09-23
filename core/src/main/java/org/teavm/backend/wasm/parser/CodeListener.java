@@ -54,6 +54,10 @@ public interface CodeListener {
     default void branch(BranchOpcode opcode, int depth, int target) {
     }
 
+    default void castBranch(boolean success, int depth, int target, WasmHollowType.Reference sourceType,
+            WasmHollowType.Reference targetType) {
+    }
+
     default void tableBranch(int[] depths, int[] targets, int defaultDepth, int defaultTarget) {
     }
 
@@ -138,6 +142,9 @@ public interface CodeListener {
     default void cast(WasmHollowType.Reference type) {
     }
 
+    default void test(WasmHollowType.Reference type) {
+    }
+
     default void structNew(int typeIndex) {
     }
 
@@ -151,6 +158,9 @@ public interface CodeListener {
     }
 
     default void arrayNewDefault(int typeIndex) {
+    }
+
+    default void arrayNewFixed(int typeIndex, int size) {
     }
 
     default void arrayGet(WasmSignedType signedType, int typeIndex) {
@@ -173,4 +183,13 @@ public interface CodeListener {
 
     default void functionReference(int functionIndex) {
     }
+
+    default void int31Reference() {
+    }
+
+    default void int31Get(WasmSignedType signedType) {
+    }
+
+    CodeListener EMPTY = new CodeListener() {
+    };
 }

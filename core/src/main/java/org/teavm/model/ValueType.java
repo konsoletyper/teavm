@@ -240,7 +240,7 @@ public abstract class ValueType implements Serializable {
         return new Object(cls);
     }
 
-    public static ValueType arrayOf(ValueType type) {
+    public static ValueType.Array arrayOf(ValueType type) {
         return new Array(type);
     }
 

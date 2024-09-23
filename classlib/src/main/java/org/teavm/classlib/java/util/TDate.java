@@ -369,10 +369,11 @@ public class TDate implements TComparable<TDate> {
     }
 
     @Override
+    @UnsupportedOn(Platforms.WEBASSEMBLY_GC)
     public String toString() {
         if (PlatformDetector.isC()) {
             return toStringC(value);
-        } else if (PlatformDetector.isWebAssembly()) {
+        } else if (PlatformDetector.isWebAssembly() || PlatformDetector.isWebAssemblyGC()) {
             return toStringWebAssembly(value);
         } else {
             return JSDate.create(value).stringValue();

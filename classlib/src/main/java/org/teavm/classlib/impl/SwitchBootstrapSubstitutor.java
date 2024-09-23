@@ -89,14 +89,14 @@ public class SwitchBootstrapSubstitutor implements BootstrapMethodSubstitutor {
                 int val = label.getInt();
                 pe.when(() -> target.instanceOf(ValueType.object("java.lang.Number")).isTrue()
                         .and(() -> target.cast(Number.class)
-                                .invokeVirtual("intValue", int.class).isSame(pe.constant(val))))
+                                .invokeVirtual("intValue", int.class).isEqualTo(pe.constant(val))))
                         .thenDo(() -> {
                             pe.constant(idx).propagateTo(result);
                             pe.jump(exit);
                         });
                 pe.when(() -> target.instanceOf(ValueType.object("java.lang.Character")).isTrue()
                         .and(() -> target.cast(Character.class)
-                                .invokeSpecial("charValue", char.class).isSame(pe.constant(val))))
+                                .invokeSpecial("charValue", char.class).isEqualTo(pe.constant(val))))
                         .thenDo(() -> {
                                     pe.constant(idx).propagateTo(result);
                                     pe.jump(exit);
@@ -106,7 +106,8 @@ public class SwitchBootstrapSubstitutor implements BootstrapMethodSubstitutor {
                 String str = label.getString();
                 pe.when(enumType != null
                                 ? () -> pe.getField(enumType.getClassName(), str, enumType).isSame(target)
-                                : () -> pe.constant(str).isEqualTo(target))
+                                : () -> pe.constant(str).invokeVirtual("equals", boolean.class,
+                                        target.cast(Object.class)).isTrue())
                         .thenDo(() -> {
                             pe.constant(idx).propagateTo(result);
                             pe.jump(exit);

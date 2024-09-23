@@ -45,7 +45,7 @@ window.addEventListener("message", event => {
         case "WASM_GC": {
             const runtimeFile = request.file.path + "-runtime.js";
             appendFiles([{ path: runtimeFile, type: "regular" }], 0, () => {
-                launchWasmTest(request.file, request.argument, response => {
+                launchWasmGCTest(request.file, request.argument, response => {
                     event.source.postMessage(response, "*");
                 });
             }, error => {
@@ -174,6 +174,62 @@ function launchWasmTest(file, argument, callback) {
                 status: "failed",
                 errorMessage: err.message + '\n' + err.stack
             }));
+        }
+    }).then(teavm => {
+        instance = teavm.instance;
+        return teavm.main(argument ? [argument] : []);
+    }).catch(err => {
+        callback(wrapResponse({
+            status: "failed",
+            errorMessage: err.message + '\n' + err.stack
+        }));
+    })
+}
+
+function launchWasmGCTest(file, argument, callback) {
+    let outputBuffer = "";
+    let outputBufferStderr = "";
+
+    function putchar(charCode) {
+        if (charCode === 10) {
+            log.push({ message: outputBuffer, type: "stdout" });
+            outputBuffer = "";
+        } else {
+            outputBuffer += String.fromCharCode(charCode);
+        }
+    }
+
+    function putcharStderr(charCode) {
+        if (charCode === 10) {
+            log.push({ message: outputBufferStderr, type: "stderr" });
+            outputBufferStderr = "";
+        } else {
+            outputBufferStderr += String.fromCharCode(charCode);
+        }
+    }
+
+    let instance = null;
+
+    TeaVM.wasm.load(file.path, {
+        installImports: function(o) {
+            o.teavm.putcharStdout = putchar;
+            o.teavm.putcharStderr = putcharStderr;
+            o.teavmTest = {
+                success() {
+                    callback(wrapResponse({ status: "OK" }));
+                },
+                failure(javaString) {
+                    let jsString = "";
+                    let length = instance.exports.stringLength(javaString);
+                    for (let i = 0; i < length; ++i) {
+                        jsString += String.fromCharCode(instance.exports.charAt(javaString, i));
+                    }
+                    callback(wrapResponse({
+                        status: "failed",
+                        errorMessage: jsString
+                    }));
+                }
+            };
         }
     }).then(teavm => {
         instance = teavm.instance;

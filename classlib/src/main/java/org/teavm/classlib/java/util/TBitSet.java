@@ -18,6 +18,9 @@ package org.teavm.classlib.java.util;
 import java.util.function.IntPredicate;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
+import org.teavm.classlib.java.nio.TByteBuffer;
+import org.teavm.classlib.java.nio.TByteOrder;
+import org.teavm.classlib.java.nio.TLongBuffer;
 import org.teavm.classlib.java.util.stream.TIntStream;
 import org.teavm.classlib.java.util.stream.intimpl.TSimpleIntStreamImpl;
 import org.teavm.interop.Rename;
@@ -52,9 +55,16 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         return new TBitSet(ints);
     }
 
+    public static TBitSet valueOf(TLongBuffer buff) {
+        buff = buff.slice();
+        long[] words = new long[buff.remaining()];
+        buff.get(words);
+        return valueOf(words);
+    }
+
     public static TBitSet valueOf(byte[] bytes) {
         int[] ints = new int[(bytes.length + 3) / 4];
-        int fullInts = bytes.length / 4;
+        int fullInts = bytes.length / TInteger.BYTES;
         for (int i = 0; i < fullInts; ++i) {
             ints[i] = (bytes[i * 4] & 0xFF) | ((bytes[i * 4 + 1] & 0xFF) << 8) | ((bytes[i * 4 + 2] & 0xFF) << 16)
                     | ((bytes[i * 4 + 3] & 0xFF) << 24);
@@ -76,12 +86,19 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         return new TBitSet(ints);
     }
 
+    public static TBitSet valueOf(TByteBuffer buff) {
+        buff = buff.slice().order(TByteOrder.LITTLE_ENDIAN);
+        byte[] words = new byte[buff.remaining()];
+        buff.get(words);
+        return valueOf(words);
+    }
+
     public byte[] toByteArray() {
         byte[] bytes = new byte[(length + 7) / 8];
-        int fullInts = length / TInteger.SIZE;
+        int fullInts = bytes.length / TInteger.BYTES;
         int j = 0;
         int i = 0;
-        for (; i < fullInts; i += 4) {
+        for (; i < fullInts; i++) {
             bytes[j++] = (byte) data[i];
             bytes[j++] = (byte) (data[i] >>> 8);
             bytes[j++] = (byte) (data[i] >>> 16);
@@ -348,8 +365,12 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     public int previousSetBit(int fromIndex) {
-        if (fromIndex == -1) {
-            return -1;
+        if (fromIndex < 0) {
+            if (fromIndex == -1) {
+                return -1;
+            } else {
+                throw new IndexOutOfBoundsException();
+            }
         }
         if (fromIndex >= length) {
             fromIndex = length;
@@ -360,7 +381,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         if (val != 0) {
             return fromIndex - TInteger.numberOfLeadingZeros(val);
         }
-        for (int i = index - 1; i >= 0; ++i) {
+        for (int i = index - 1; i >= 0; --i) {
             if (data[i] != 0) {
                 return (i + 1) * 32 - TInteger.numberOfLeadingZeros(data[i]) - 1;
             }
@@ -369,8 +390,12 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     public int previousClearBit(int fromIndex) {
-        if (fromIndex == -1) {
-            return -1;
+        if (fromIndex < 0) {
+            if (fromIndex == -1) {
+                return -1;
+            } else {
+                throw new IndexOutOfBoundsException();
+            }
         }
         if (fromIndex >= length) {
             return fromIndex;
@@ -381,7 +406,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         if (val != 0) {
             return fromIndex - TInteger.numberOfLeadingZeros(val);
         }
-        for (int i = index - 1; i >= 0; ++i) {
+        for (int i = index - 1; i >= 0; --i) {
             if (data[i] != 0xFFFFFFFF) {
                 return (i + 1) * 32 - TInteger.numberOfLeadingZeros(~data[i]) - 1;
             }
@@ -425,7 +450,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
 
     public int cardinality() {
         int result = 0;
-        int sz = 1 + length / 32;
+        int sz = (length + 31) / 32;
         for (int i = 0; i < sz; ++i) {
             result += TInteger.bitCount(data[i]);
         }

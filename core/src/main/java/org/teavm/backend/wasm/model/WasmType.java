@@ -59,15 +59,28 @@ public abstract class WasmType {
     public static abstract class Reference extends WasmType {
         public static final SpecialReference FUNC = SpecialReferenceKind.FUNC.asType();
         public static final SpecialReference ANY = SpecialReferenceKind.ANY.asType();
+        public static final SpecialReference EQ = SpecialReferenceKind.EQ.asType();
         public static final SpecialReference EXTERN = SpecialReferenceKind.EXTERN.asType();
         public static final SpecialReference STRUCT = SpecialReferenceKind.STRUCT.asType();
         public static final SpecialReference ARRAY = SpecialReferenceKind.ARRAY.asType();
+        public static final SpecialReference I31 = SpecialReferenceKind.I31.asType();
+
+        private final boolean nullable;
+
+        Reference(boolean nullable) {
+            this.nullable = nullable;
+        }
+
+        public boolean isNullable() {
+            return nullable;
+        }
     }
 
     public static final class CompositeReference extends Reference {
         public final WasmCompositeType composite;
 
-        CompositeReference(WasmCompositeType composite) {
+        CompositeReference(WasmCompositeType composite, boolean nullable) {
+            super(nullable);
             this.composite = composite;
         }
     }
@@ -75,7 +88,8 @@ public abstract class WasmType {
     public static final class SpecialReference extends Reference {
         public final SpecialReferenceKind kind;
 
-        private SpecialReference(SpecialReferenceKind kind) {
+        private SpecialReference(SpecialReferenceKind kind, boolean nullable) {
+            super(nullable);
             this.kind = kind;
         }
     }
@@ -83,17 +97,27 @@ public abstract class WasmType {
     public enum SpecialReferenceKind {
         FUNC,
         ANY,
+        EQ,
         EXTERN,
         STRUCT,
-        ARRAY;
+        ARRAY,
+        I31;
 
         private SpecialReference type;
+        private SpecialReference nonNullType;
 
-        final SpecialReference asType() {
+        public final SpecialReference asType() {
             if (type == null) {
-                type = new SpecialReference(this);
+                type = new SpecialReference(this, true);
             }
             return type;
+        }
+
+        public final SpecialReference asNonNullType() {
+            if (nonNullType == null) {
+                nonNullType = new SpecialReference(this, false);
+            }
+            return nonNullType;
         }
     }
 }

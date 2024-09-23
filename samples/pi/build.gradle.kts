@@ -39,6 +39,9 @@ teavm {
         outputDir = layout.buildDirectory.dir("libs/wasi").get().asFile
         relativePathInOutputDir = ""
     }
+    wasmGC {
+        addedToWebApp = true
+    }
     all {
         mainClass = "org.teavm.samples.pi.PiCalculator"
     }

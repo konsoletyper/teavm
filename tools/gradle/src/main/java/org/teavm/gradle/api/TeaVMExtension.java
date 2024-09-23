@@ -38,6 +38,12 @@ public interface TeaVMExtension extends TeaVMBaseExtension {
 
     void wasi(@DelegatesTo(TeaVMWasiConfiguration.class) Closure<?> action);
 
+    TeaVMWasmGCConfiguration getWasmGC();
+
+    void wasmGC(Action<TeaVMWasmGCConfiguration> action);
+
+    void wasmGC(@DelegatesTo(TeaVMWasmGCConfiguration.class) Closure<?> action);
+
     TeaVMCConfiguration getC();
 
     void c(Action<TeaVMCConfiguration> action);

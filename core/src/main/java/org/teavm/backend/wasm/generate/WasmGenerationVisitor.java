@@ -19,6 +19,7 @@ import static org.teavm.model.lowlevel.ExceptionHandlingUtil.isManagedMethodCall
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.CastExpr;
 import org.teavm.ast.Expr;
@@ -70,6 +71,7 @@ import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
+import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
@@ -92,8 +94,6 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     private static final FieldReference MONITOR_FIELD = new FieldReference("java.lang.Object", "monitor");
     private static final MethodReference CATCH_METHOD = new MethodReference(ExceptionHandling.class,
             "catchException", Throwable.class);
-    private static final MethodReference PEEK_EXCEPTION_METHOD = new MethodReference(ExceptionHandling.class,
-            "peekException", Throwable.class);
     private static final MethodReference THROW_METHOD = new MethodReference(ExceptionHandling.class,
             "throwException", Throwable.class, void.class);
     private static final MethodReference THROW_CCE_METHOD = new MethodReference(ExceptionHandling.class,
@@ -162,30 +162,6 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
             }
         }
         super.visit(expr);
-    }
-
-    @Override
-    protected WasmExpression generateCast(WasmExpression value, WasmType targetType) {
-        return value;
-    }
-
-    @Override
-    protected WasmExpression peekException() {
-        return new WasmCall(context.functions().forStaticMethod(PEEK_EXCEPTION_METHOD));
-    }
-
-    @Override
-    protected void catchException(TextLocation location, List<WasmExpression> target, WasmLocal local) {
-        var call = new WasmCall(context.functions().forStaticMethod(CATCH_METHOD));
-        if (local != null) {
-            var save = new WasmSetLocal(local, call);
-            save.setLocation(location);
-            target.add(save);
-        } else {
-            var drop = new WasmDrop(call);
-            drop.setLocation(location);
-            target.add(drop);
-        }
     }
 
     @Override
@@ -262,9 +238,11 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression storeArrayItem(WasmExpression array, WasmExpression index, WasmExpression value,
+    protected WasmExpression storeArrayItem(WasmExpression array, WasmExpression index, Expr value,
             ArrayType type) {
-        return storeArrayItem(getArrayElementPointer(array, index, type), value, type);
+        accept(value);
+        var wasmValue = result;
+        return storeArrayItem(getArrayElementPointer(array, index, type), wasmValue, type);
     }
 
     private static WasmExpression storeArrayItem(WasmExpression array, WasmExpression value, ArrayType type) {
@@ -515,9 +493,16 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected void generateThrow(WasmExpression expression, TextLocation location, List<WasmExpression> target) {
-        var call = new WasmCall(context.functions().forStaticMethod(THROW_METHOD), result);
-        call.setLocation(location);
-        target.add(call);
+        if (context.getExceptionTag() == null) {
+            var call = new WasmCall(context.functions().forStaticMethod(THROW_METHOD), result);
+            call.setLocation(location);
+            target.add(call);
+        } else {
+            var result = new WasmThrow(context.getExceptionTag());
+            result.getArguments().add(expression);
+            result.setLocation(location);
+            target.add(result);
+        }
     }
 
     private class CallSiteIdentifierImpl extends CallSiteIdentifier
@@ -530,6 +515,9 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
 
         @Override
         public void generateRegister(List<WasmExpression> consumer, TextLocation location) {
+            if (!managed) {
+                return;
+            }
             var result = new WasmStoreInt32(4, new WasmGetLocal(stackVariable), new WasmInt32Constant(id),
                     WasmInt32Subtype.INT32);
             result.setLocation(location);
@@ -589,10 +577,6 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
 
     private WasmBlock throwJumpTarget() {
         return lastTryBlock != null ? lastTryBlock : rethrowBlock();
-    }
-
-    private boolean needsCallSiteId() {
-        return managed;
     }
 
     private void generateAllocStack(Expr sizeExpr) {
@@ -783,14 +767,14 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected void allocateArray(ValueType itemType, WasmExpression length, TextLocation location, WasmLocal local,
-            List<WasmExpression> target) {
+    protected void allocateArray(ValueType itemType, Supplier<WasmExpression> length, TextLocation location,
+            WasmLocal local, List<WasmExpression> target) {
         int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(itemType));
         var allocFunction = context.functions().forStaticMethod(new MethodReference(Allocator.class, "allocateArray",
                 RuntimeClass.class, int.class, Address.class));
         var call = new WasmCall(allocFunction);
         call.getArguments().add(new WasmInt32Constant(classPointer));
-        call.getArguments().add(length);
+        call.getArguments().add(length.get());
         call.setLocation(location);
         if (local != null) {
             target.add(new WasmSetLocal(local, call));
@@ -800,10 +784,11 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     @Override
-    protected WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType itemType,
-            List<WasmExpression> dimensions, TextLocation location) {
+    protected WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType arrayType,
+            Supplier<List<WasmExpression>> dimensions, TextLocation location) {
         int dimensionList = -1;
-        for (var dimension : dimensions) {
+        var dimensionsValue = dimensions.get();
+        for (var dimension : dimensionsValue) {
             int dimensionAddress = binaryWriter.append(DataPrimitives.INT.createValue());
             if (dimensionList < 0) {
                 dimensionList = dimensionAddress;
@@ -812,13 +797,13 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
                     WasmInt32Subtype.INT32));
         }
 
-        int classPointer = classGenerator.getClassPointer(itemType);
+        int classPointer = classGenerator.getClassPointer(arrayType);
         var allocFunction = context.functions().forStaticMethod(new MethodReference(Allocator.class,
                 "allocateMultiArray", RuntimeClass.class, Address.class, int.class, RuntimeArray.class));
         var call = new WasmCall(allocFunction);
         call.getArguments().add(new WasmInt32Constant(classPointer));
         call.getArguments().add(new WasmInt32Constant(dimensionList));
-        call.getArguments().add(new WasmInt32Constant(dimensions.size()));
+        call.getArguments().add(new WasmInt32Constant(dimensionsValue.size()));
         call.setLocation(location);
         return call;
     }

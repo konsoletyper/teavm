@@ -1097,6 +1097,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             conditionalExpr.setConsequent(firstAssignment.getRightValue());
             conditionalExpr.setAlternative(secondAssignment.getRightValue());
             conditionalExpr.setLocation(statement.getCondition().getLocation());
+            conditionalExpr.setVariableIndex(firstAssignment.getLeftValue().getVariableIndex());
             AssignmentStatement assignment = new AssignmentStatement();
             assignment.setLocation(conditionalExpr.getLocation());
             VariableExpr lhs = new VariableExpr();

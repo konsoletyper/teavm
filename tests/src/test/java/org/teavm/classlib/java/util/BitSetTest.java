@@ -98,6 +98,16 @@ public class BitSetTest {
     }
 
     @Test
+    public void toByteArray() throws Exception {
+        assertEquals("[]", Arrays.toString(BitSet.valueOf(new long[0]).toByteArray()));
+        assertEquals("[1]", Arrays.toString(BitSet.valueOf(new long[] { 1 }).toByteArray()));
+        assertEquals("[-17, -51, -85, -112, 120, 86, 52, 18]",
+                Arrays.toString(BitSet.valueOf(new long[] { 0x1234567890abcdefL }).toByteArray()));
+        assertEquals("[1, 0, 0, 0, 0, 0, 0, 0, 2]",
+                Arrays.toString(BitSet.valueOf(new long[] { 1, 2 }).toByteArray()));
+    }
+
+    @Test
     public void constructFromLongs() {
         BitSet bs = BitSet.valueOf(new long[] { 7, 2, 5, 1L << 36 });
         assertTrue(bs.get(0) && bs.get(1) && bs.get(2) && bs.get(Long.SIZE + 1)
@@ -1225,6 +1235,10 @@ public class BitSetTest {
 
         bs.set(0, 500);
         assertEquals("cardinality() returned wrong value", 500, bs.cardinality());
+
+        bs = new BitSet();
+        bs.set(31);
+        assertEquals(1, bs.cardinality());
     }
 
     @Test
@@ -1251,6 +1265,20 @@ public class BitSetTest {
         assertEquals(2, bs.previousSetBit(2));
         assertEquals(-1, bs.previousSetBit(1));
         assertEquals(-1, bs.previousSetBit(0));
+        bs = new BitSet();
+        bs.set(0);
+        bs.set(1);
+        bs.set(32);
+        bs.set(192);
+        bs.set(666);
+        assertEquals(666, bs.previousSetBit(999));
+        assertEquals(666, bs.previousSetBit(667));
+        assertEquals(666, bs.previousSetBit(666));
+        assertEquals(192, bs.previousSetBit(665));
+        assertEquals(32, bs.previousSetBit(191));
+        assertEquals(1, bs.previousSetBit(31));
+        assertEquals(0, bs.previousSetBit(0));
+        assertEquals(-1, bs.previousSetBit(-1));
     }
 
     @Test

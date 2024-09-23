@@ -15,10 +15,10 @@
  */
 package org.teavm.classlib.impl.console;
 
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
@@ -30,7 +30,7 @@ public abstract class JsConsolePrintStream extends PrintStream {
     private Runnable flushAction;
 
     public JsConsolePrintStream() {
-        super((OutputStream) null);
+        super(null, false, (Charset) null);
     }
 
     @Override

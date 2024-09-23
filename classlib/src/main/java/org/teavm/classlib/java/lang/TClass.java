@@ -28,7 +28,9 @@ import java.util.Objects;
 import java.util.Set;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassFlags;
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.classlib.impl.reflection.ClassSupport;
 import org.teavm.classlib.impl.reflection.Flags;
 import org.teavm.classlib.impl.reflection.JSClass;
 import org.teavm.classlib.impl.reflection.JSField;
@@ -98,6 +100,9 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
 
     @DelegateTo("isInstanceLowLevel")
     public boolean isInstance(TObject obj) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return obj != null && isAssignableFrom((TClass<?>) (Object) obj.getClass());
+        }
         return Platform.isInstance(Platform.getPlatformObject(obj), platformClass);
     }
 
@@ -164,12 +169,16 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
             if (isArray()) {
                 simpleName = getComponentType().getSimpleName() + "[]";
             } else if (getEnclosingClass() != null) {
-                simpleName = Platform.getSimpleName(platformClass);
+                simpleName = PlatformDetector.isWebAssemblyGC()
+                    ? getSimpleNameCache(this)
+                    : Platform.getSimpleName(platformClass);
                 if (simpleName == null) {
                     simpleName = "";
                 }
             } else {
-                String name = Platform.getName(platformClass);
+                var name = PlatformDetector.isWebAssemblyGC()
+                        ? getName()
+                        : Platform.getName(platformClass);
                 int lastDollar = name.lastIndexOf('$');
                 if (lastDollar != -1) {
                     name = name.substring(lastDollar + 1);
@@ -258,7 +267,9 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
     }
 
     private boolean isSynthetic() {
-        if (PlatformDetector.isJavaScript()) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return (getWasmGCFlags() & WasmGCClassFlags.SYNTHETIC) != 0;
+        } else if (PlatformDetector.isJavaScript()) {
             return (platformClass.getMetadata().getAccessLevel() & Flags.SYNTHETIC) != 0;
         } else {
             return (RuntimeClass.getClass(Address.ofObject(this).toStructure()).flags & RuntimeClass.SYNTHETIC) != 0;
@@ -287,6 +298,9 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
     }
 
     public boolean isPrimitive() {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return (getWasmGCFlags() & WasmGCClassFlags.PRIMITIVE) != 0;
+        }
         return Platform.isPrimitive(platformClass);
     }
 
@@ -298,21 +312,32 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
     }
 
     public boolean isEnum() {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return (getWasmGCFlags() & WasmGCClassFlags.ENUM) != 0;
+        }
         return Platform.isEnum(platformClass);
     }
 
     public boolean isInterface() {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return (getWasmGCFlags() & WasmGCClassFlags.INTERFACE) != 0;
+        }
         return (platformClass.getMetadata().getFlags() & Flags.INTERFACE) != 0;
+
     }
 
     public boolean isLocalClass() {
-        return (platformClass.getMetadata().getFlags() & Flags.SYNTHETIC) != 0
-                && getEnclosingClass() != null;
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return (getWasmGCFlags() & WasmGCClassFlags.SYNTHETIC) != 0 && getEnclosingClass() != null;
+        }
+        return (platformClass.getMetadata().getFlags() & Flags.SYNTHETIC) != 0 && getEnclosingClass() != null;
     }
 
     public boolean isMemberClass() {
         return getDeclaringClass() != null;
     }
+
+    private native int getWasmGCFlags();
 
     @PluggableDependency(ClassGenerator.class)
     public TClass<?> getComponentType() {
@@ -688,8 +713,12 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
         if (!isEnum()) {
             return null;
         }
-        Platform.initClass(platformClass);
-        return (T[]) Platform.getEnumConstants(platformClass).clone();
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return (T[]) ClassSupport.getEnumConstants((Class<?>) (Object) this);
+        } else {
+            Platform.initClass(platformClass);
+            return (T[]) Platform.getEnumConstants(platformClass).clone();
+        }
     }
 
     @SuppressWarnings("unchecked")

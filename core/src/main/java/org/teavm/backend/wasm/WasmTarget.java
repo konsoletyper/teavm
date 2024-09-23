@@ -383,8 +383,10 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
         dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class)).use();
 
-        dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwException",
-                Throwable.class, void.class)).use();
+        if (exceptionsUsed) {
+            dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwException",
+                    Throwable.class, void.class)).use();
+        }
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwNullPointerException",
                 void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwClassCastException",
@@ -497,7 +499,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         var stringPool = classGenerator.getStringPool();
         WasmTag exceptionTag = null;
         if (exceptionsUsed) {
-            exceptionTag = new WasmTag(functionTypes.of(null));
+            exceptionTag = new WasmTag(functionTypes.of(null, WasmType.INT32));
             module.tags.add(exceptionTag);
         }
         var context = new WasmGenerationContext(classes, module, functionTypes, functions, controller.getDiagnostics(),

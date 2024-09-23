@@ -32,6 +32,22 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmNullBranch expression) {
+        expression.getValue().acceptVisitor(this);
+        if (expression.getResult() != null) {
+            expression.getResult().acceptVisitor(this);
+        }
+    }
+
+    @Override
+    public void visit(WasmCastBranch expression) {
+        expression.getValue().acceptVisitor(this);
+        if (expression.getResult() != null) {
+            expression.getResult().acceptVisitor(this);
+        }
+    }
+
+    @Override
     public void visit(WasmBreak expression) {
         if (expression.getResult() != null) {
             expression.getResult().acceptVisitor(this);
@@ -83,6 +99,11 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmNullConstant expression) {
+    }
+
+    @Override
+    public void visit(WasmIsNull expression) {
+        expression.getValue().acceptVisitor(this);
     }
 
     @Override
@@ -252,6 +273,11 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmTest expression) {
+        expression.getValue().acceptVisitor(this);
+    }
+
+    @Override
     public void visit(WasmStructNew expression) {
         for (var initializer : expression.getInitializers()) {
             initializer.acceptVisitor(this);
@@ -276,6 +302,13 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmArrayNewDefault expression) {
         expression.getLength().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(WasmArrayNewFixed expression) {
+        for (var element : expression.getElements()) {
+            element.acceptVisitor(this);
+        }
     }
 
     @Override
@@ -307,5 +340,15 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmFunctionReference expression) {
+    }
+
+    @Override
+    public void visit(WasmInt31Reference expression) {
+        expression.getValue().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(WasmInt31Get expression) {
+        expression.getValue().acceptVisitor(this);
     }
 }

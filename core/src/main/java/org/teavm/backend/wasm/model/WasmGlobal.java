@@ -22,6 +22,7 @@ public class WasmGlobal extends WasmEntity {
     private String name;
     private WasmType type;
     private WasmExpression initialValue;
+    private boolean immutable;
 
     public WasmGlobal(String name, WasmType type, WasmExpression initialValue) {
         this.name = name;
@@ -47,5 +48,13 @@ public class WasmGlobal extends WasmEntity {
 
     public void setInitialValue(WasmExpression initialValue) {
         this.initialValue = Objects.requireNonNull(initialValue);
+    }
+
+    public boolean isImmutable() {
+        return immutable;
+    }
+
+    public void setImmutable(boolean immutable) {
+        this.immutable = immutable;
     }
 }

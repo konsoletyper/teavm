@@ -25,7 +25,7 @@ public class LCATree {
         pathsToRoot = new int[capacity][];
         sz = 1;
         depths[0] = 0;
-        pathsToRoot[0] = new int[0];
+        pathsToRoot[0] = new int[] { 0 };
     }
 
     public int size() {

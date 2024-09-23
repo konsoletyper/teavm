@@ -20,7 +20,6 @@ import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.model.MethodReference;
 
@@ -40,6 +39,6 @@ public class ArrayGenerator implements WasmGCCustomGenerator {
         );
         var result = new WasmCallReference(constructorRef, functionType);
         result.getArguments().add(new WasmGetLocal(sizeLocal));
-        function.getBody().add(new WasmReturn(result));
+        function.getBody().add(result);
     }
 }

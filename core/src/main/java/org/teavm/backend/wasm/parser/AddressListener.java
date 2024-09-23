@@ -16,5 +16,9 @@
 package org.teavm.backend.wasm.parser;
 
 public interface AddressListener {
-    void address(int address);
+    default void address(int address) {
+    }
+
+    AddressListener EMPTY = new AddressListener() {
+    };
 }

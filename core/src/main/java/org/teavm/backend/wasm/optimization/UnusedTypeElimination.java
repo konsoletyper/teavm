@@ -41,6 +41,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNew;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
+import org.teavm.backend.wasm.model.expression.WasmTest;
 
 public class UnusedTypeElimination {
     private WasmModule module;
@@ -103,6 +104,11 @@ public class UnusedTypeElimination {
             use(expression.getTargetType());
         }
 
+        @Override
+        public void visit(WasmTest expression) {
+            super.visit(expression);
+            use(expression.getTestType());
+        }
 
         @Override
         public void visit(WasmArrayGet expression) {
@@ -170,7 +176,7 @@ public class UnusedTypeElimination {
         @Override
         public void visit(WasmStructure type) {
             for (var field : type.getFields()) {
-                visit(field);
+                visit(field.getType());
             }
         }
 

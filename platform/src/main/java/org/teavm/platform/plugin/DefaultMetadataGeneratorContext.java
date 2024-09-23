@@ -26,14 +26,14 @@ import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
 import org.teavm.platform.metadata.StaticFieldResource;
 
-class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
+public class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     private ClassReaderSource classSource;
     private ClassLoader classLoader;
     private Properties properties;
     private BuildTimeResourceProxyBuilder proxyBuilder;
     private ServiceRepository services;
 
-    DefaultMetadataGeneratorContext(ClassReaderSource classSource, ClassLoader classLoader,
+    public DefaultMetadataGeneratorContext(ClassReaderSource classSource, ClassLoader classLoader,
             Properties properties, ServiceRepository services) {
         this.classSource = classSource;
         this.classLoader = classLoader;
