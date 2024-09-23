@@ -134,7 +134,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private int classNameOffset;
     private int classSimpleNameOffset;
     private int classCanonicalNameOffset;
-    private int classParentOffset;
+    private int classParentOffset = -1;
     private int classArrayOffset;
     private int classArrayItemOffset;
     private int classNewArrayOffset;
@@ -1438,12 +1438,14 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 classTagOffset,
                 new WasmInt32Constant(0)
         ));
-        function.getBody().add(new WasmStructSet(
-                standardClasses.classClass().getStructure(),
-                new WasmGetLocal(targetVar),
-                classParentOffset,
-                new WasmGetGlobal(standardClasses.objectClass().pointer)
-        ));
+        if (classParentOffset >= 0) {
+            function.getBody().add(new WasmStructSet(
+                    standardClasses.classClass().getStructure(),
+                    new WasmGetLocal(targetVar),
+                    classParentOffset,
+                    new WasmGetGlobal(standardClasses.objectClass().pointer)
+            ));
+        }
         return function;
     }
 

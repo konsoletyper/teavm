@@ -878,7 +878,15 @@ public class CompositeMethodGenerator {
                 case "get": {
                     Variable var = program.createVariable();
                     GetFieldInstruction insn = new GetFieldInstruction();
-                    insn.setInstance(!field.field.hasModifier(ElementModifier.STATIC) ? var(arguments.get(0)) : null);
+                    if (!field.field.hasModifier(ElementModifier.STATIC)) {
+                        var cast = new CastInstruction();
+                        cast.setReceiver(program.createVariable());
+                        cast.setValue(var(arguments.get(0)));
+                        cast.setWeak(true);
+                        cast.setTargetType(ValueType.object(field.field.getOwnerName()));
+                        add(cast);
+                        insn.setInstance(cast.getReceiver());
+                    }
                     insn.setReceiver(var);
                     insn.setField(field.getBackingField().getReference());
                     insn.setFieldType(field.getBackingField().getType());
@@ -895,7 +903,15 @@ public class CompositeMethodGenerator {
                 }
                 case "set": {
                     PutFieldInstruction insn = new PutFieldInstruction();
-                    insn.setInstance(!field.field.hasModifier(ElementModifier.STATIC) ? var(arguments.get(0)) : null);
+                    if (!field.field.hasModifier(ElementModifier.STATIC)) {
+                        var cast = new CastInstruction();
+                        cast.setReceiver(program.createVariable());
+                        cast.setValue(var(arguments.get(0)));
+                        cast.setWeak(true);
+                        cast.setTargetType(ValueType.object(field.field.getOwnerName()));
+                        add(cast);
+                        insn.setInstance(cast.getReceiver());
+                    }
                     insn.setValue(unbox(var(arguments.get(1)), field.getBackingField().getType()));
                     insn.setField(field.getBackingField().getReference());
                     insn.setFieldType(field.getBackingField().getType());
@@ -930,7 +946,15 @@ public class CompositeMethodGenerator {
             switch (method.getName()) {
                 case "invoke": {
                     InvokeInstruction insn = new InvokeInstruction();
-                    insn.setInstance(!Modifier.isStatic(reflectMethod.getModifiers()) ? var(arguments.get(0)) : null);
+                    if (!Modifier.isStatic(reflectMethod.getModifiers())) {
+                        var cast = new CastInstruction();
+                        cast.setReceiver(program.createVariable());
+                        cast.setValue(var(arguments.get(0)));
+                        cast.setWeak(true);
+                        cast.setTargetType(ValueType.object(reflectMethod.method.getOwnerName()));
+                        add(cast);
+                        insn.setInstance(cast.getReceiver());
+                    }
                     insn.setType(Modifier.isStatic(reflectMethod.getModifiers()) ? InvocationType.SPECIAL
                             : InvocationType.VIRTUAL);
                     insn.setMethod(reflectMethod.method.getReference());

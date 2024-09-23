@@ -480,9 +480,10 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
                 canInsertCast = false;
             } else if (!sourceStruct.isSupertypeOf(targetStruct)) {
                 var block = new WasmBlock(false);
+                block.setType(targetType);
                 block.setLocation(expr.getLocation());
-                block.getBody().add(result);
-                block.getBody().add(new WasmUnreachable());
+                block.getBody().add(new WasmDrop(result));
+                block.getBody().add(new WasmNullConstant(targetType));
                 result = block;
                 return;
             }
