@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;

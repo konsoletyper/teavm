@@ -23,6 +23,7 @@ import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCIntrinsicProvider;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.runtime.StringInternPool;
+import org.teavm.backend.wasm.runtime.gc.WasmGCResources;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
@@ -49,6 +50,7 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         fillDouble();
         fillArray();
         fillString();
+        fillResources();
         for (var entry : customIntrinsics.entrySet()) {
             add(entry.getKey(), entry.getValue());
         }
@@ -154,6 +156,11 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         var className = StringInternPool.class.getName() + "$Entry";
         add(new MethodReference(className, "getValue", ValueType.parse(String.class)), intrinsic);
         add(new MethodReference(className, "setValue", ValueType.parse(String.class), ValueType.VOID), intrinsic);
+    }
+
+    private void fillResources() {
+        var intrinsic = new WasmGCResourcesIntrinsic();
+        add(new MethodReference(WasmGCResources.class, "readSingleByte", int.class, int.class), intrinsic);
     }
 
     private void add(MethodReference methodRef, WasmGCIntrinsic intrinsic) {

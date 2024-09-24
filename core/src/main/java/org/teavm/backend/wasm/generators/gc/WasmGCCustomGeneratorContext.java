@@ -20,10 +20,17 @@ import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
+import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
+import org.teavm.diagnostics.Diagnostics;
+import org.teavm.model.ListableClassReaderSource;
 
 public interface WasmGCCustomGeneratorContext {
+    ClassLoader classLoader();
+
+    ListableClassReaderSource classes();
+
     WasmModule module();
 
     WasmFunctionTypes functionTypes();
@@ -37,4 +44,8 @@ public interface WasmGCCustomGeneratorContext {
     BaseWasmFunctionRepository functions();
 
     WasmTag exceptionTag();
+
+    Diagnostics diagnostics();
+
+    WasmGCStringProvider strings();
 }

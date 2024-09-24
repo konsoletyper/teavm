@@ -18,7 +18,7 @@ package org.teavm.backend.wasm.gc;
 import java.util.Arrays;
 import java.util.List;
 import org.teavm.backend.wasm.WasmRuntime;
-import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.model.MethodReference;
 
@@ -37,6 +37,7 @@ public class WasmGCDependencies {
         contributeInitializerUtils();
         contributeString();
         analyzer.addDependencyListener(new WasmGCReferenceQueueDependency());
+        analyzer.addDependencyListener(new WasmGCResourceDependency());
     }
 
     public void contributeStandardExports() {

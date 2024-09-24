@@ -36,7 +36,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
 import org.teavm.backend.wasm.runtime.StringInternPool;
-import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.MethodReference;
 

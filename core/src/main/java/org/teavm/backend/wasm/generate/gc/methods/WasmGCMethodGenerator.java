@@ -52,6 +52,7 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassHolderSource;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -354,6 +355,16 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
 
     private WasmGCCustomGeneratorContext customGeneratorContext = new WasmGCCustomGeneratorContext() {
         @Override
+        public ClassLoader classLoader() {
+            return classLoader;
+        }
+
+        @Override
+        public ListableClassReaderSource classes() {
+            return classes;
+        }
+
+        @Override
         public WasmModule module() {
             return module;
         }
@@ -386,6 +397,16 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         @Override
         public BaseWasmFunctionRepository functions() {
             return WasmGCMethodGenerator.this;
+        }
+
+        @Override
+        public Diagnostics diagnostics() {
+            return diagnostics;
+        }
+
+        @Override
+        public WasmGCStringProvider strings() {
+            return context.strings();
         }
     };
 }

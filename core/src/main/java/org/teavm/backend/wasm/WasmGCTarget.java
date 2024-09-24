@@ -39,6 +39,7 @@ import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.transformation.gc.BaseClassesTransformation;
+import org.teavm.backend.wasm.transformation.gc.ClassLoaderResourceTransformation;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.interop.Platforms;
@@ -119,7 +120,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     @Override
     public List<ClassHolderTransformer> getTransformers() {
         return List.of(
-                new BaseClassesTransformation()
+                new BaseClassesTransformation(),
+                new ClassLoaderResourceTransformation()
         );
     }
 
@@ -167,7 +169,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     public void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException {
         var module = new WasmModule();
         var customGenerators = new WasmGCCustomGenerators(classes, controller.getServices(),
-                customGeneratorFactories, customCustomGenerators);
+                customGeneratorFactories, customCustomGenerators,
+                controller.getProperties());
         var intrinsics = new WasmGCIntrinsics(classes, controller.getServices(), intrinsicFactories, customIntrinsics);
         var declarationsGenerator = new WasmGCDeclarationsGenerator(
                 module,
@@ -218,6 +221,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         }
 
         moduleGenerator.generate();
+        customGenerators.contributeToModule(module);
         adjustModuleMemory(module);
 
         emitWasmFile(module, buildTarget, outputName);

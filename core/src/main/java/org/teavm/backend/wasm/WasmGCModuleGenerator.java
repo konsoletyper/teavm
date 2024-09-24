@@ -29,7 +29,7 @@ import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.runtime.StringInternPool;
-import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 

@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.impl.console;
 
-import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.jso.JSBody;
 
