@@ -48,6 +48,7 @@ import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
@@ -821,6 +822,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         @Override
         public WasmGCStringProvider strings() {
             return context.strings();
+        }
+
+        @Override
+        public WasmTag exceptionTag() {
+            return context.getExceptionTag();
         }
     };
 }

@@ -65,6 +65,8 @@ public interface WasmGCClassInfoProvider {
 
     int getArrayLengthOffset();
 
+    int getArrayCopyOffset();
+
     int getEnumConstantsFunctionOffset();
 
     int getCloneOffset();

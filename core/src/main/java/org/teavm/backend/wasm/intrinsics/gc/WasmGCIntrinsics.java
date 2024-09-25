@@ -108,8 +108,11 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
     }
 
     private void fillSystem() {
+        var arrayCopyIntrinsic = new SystemArrayCopyIntrinsic();
         add(new MethodReference(System.class, "arraycopy", Object.class, int.class, Object.class,
-                int.class, int.class, void.class), new SystemArrayCopyIntrinsic());
+                int.class, int.class, void.class), arrayCopyIntrinsic);
+        add(new MethodReference(System.class, "doArrayCopy", Object.class, int.class, Object.class,
+                int.class, int.class, void.class), arrayCopyIntrinsic);
         add(new MethodReference(System.class, "currentTimeMillis", long.class), new SystemIntrinsic());
     }
 

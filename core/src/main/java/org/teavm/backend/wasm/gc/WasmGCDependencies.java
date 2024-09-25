@@ -38,6 +38,7 @@ public class WasmGCDependencies {
         contributeString();
         analyzer.addDependencyListener(new WasmGCReferenceQueueDependency());
         analyzer.addDependencyListener(new WasmGCResourceDependency());
+        analyzer.addDependencyListener(new SystemArrayCopyDependencySupport());
     }
 
     public void contributeStandardExports() {

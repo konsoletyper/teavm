@@ -83,11 +83,15 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
                 }
             }
         } else if (cls.getName().equals("java.lang.System")) {
+            Program arrayCopyProgram = null;
+            MethodDescriptor arrayCopyDescriptor = null;
             for (var method : cls.getMethods()) {
                 switch (method.getName()) {
                     case "arraycopy":
+                        arrayCopyProgram = method.getProgram();
                         method.setProgram(null);
                         method.getModifiers().add(ElementModifier.NATIVE);
+                        arrayCopyDescriptor = method.getDescriptor();
                         break;
                     case "currentTimeMillis": {
                         var annotation = new AnnotationHolder(Import.class.getName());
@@ -96,6 +100,13 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
                         method.getAnnotations().add(annotation);
                     }
                 }
+            }
+            if (arrayCopyProgram != null) {
+                var arrayCopyImpl = new MethodHolder(new MethodDescriptor("arrayCopyImpl",
+                        arrayCopyDescriptor.getSignature()));
+                arrayCopyImpl.setProgram(arrayCopyProgram);
+                arrayCopyImpl.getModifiers().add(ElementModifier.STATIC);
+                cls.addMethod(arrayCopyImpl);
             }
         } else if (cls.getName().equals("java.lang.ref.WeakReference")) {
             var constructor = cls.getMethod(new MethodDescriptor("<init>", Object.class, ReferenceQueue.class,

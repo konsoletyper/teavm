@@ -26,6 +26,7 @@ import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.model.ClassHierarchy;
 
@@ -55,4 +56,6 @@ public interface WasmGCIntrinsicContext {
     WasmGCStringProvider strings();
 
     ClassLoader classLoader();
+
+    WasmTag exceptionTag();
 }

@@ -871,6 +871,15 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
     }
 
     @Override
+    public void arrayCopy(int targetTypeIndex, int sourceTypeIndex) {
+        writer.address().write("array.copy ");
+        writeTypeRef(targetTypeIndex);
+        writer.write(" ");
+        writeTypeRef(sourceTypeIndex);
+        writer.eol();
+    }
+
+    @Override
     public void functionReference(int functionIndex) {
         writer.address().write("ref.func ");
         writeFunctionRef(functionIndex);
