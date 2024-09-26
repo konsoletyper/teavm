@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
@@ -269,16 +270,29 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             }
         }
 
+        var nonNullableVars = new boolean[ast.getVariables().size()];
+        var preciseTypes = new PreciseValueType[ast.getVariables().size()];
         for (var i = firstVar; i < ast.getVariables().size(); ++i) {
-            var localVar = ast.getVariables().get(i);
             var representative = method.getProgram().variableAt(variableRepresentatives[i]);
             var inferredType = typeInference.typeOf(representative);
             if (inferredType == null) {
                 inferredType = new PreciseValueType(ValueType.object("java.lang.Object"), false);
             }
-            var type = !inferredType.isArrayUnwrap
-                    ? typeMapper.mapType(inferredType.valueType)
-                    : classInfoProvider.getClassInfo(inferredType.valueType).getArray().getReference();
+            preciseTypes[i] = inferredType;
+            nonNullableVars[i] = inferredType.isArrayUnwrap;
+        }
+        calculateNonNullableVars(nonNullableVars, ast);
+
+        for (var i = firstVar; i < ast.getVariables().size(); ++i) {
+            var localVar = ast.getVariables().get(i);
+            var inferredType = preciseTypes[i];
+            WasmType type;
+            if (!inferredType.isArrayUnwrap) {
+                type = typeMapper.mapType(inferredType.valueType);
+            } else {
+                var arrayType = classInfoProvider.getClassInfo(inferredType.valueType).getArray();
+                type = nonNullableVars[i] ? arrayType.getNonNullReference() : arrayType.getReference();
+            }
             var wasmLocal = new WasmLocal(type, localVar.getName());
             function.add(wasmLocal);
         }
@@ -287,6 +301,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         var visitor = new WasmGCGenerationVisitor(getGenerationContext(), method.getReference(),
                 function, firstVar, false, typeInference);
         visitor.generate(ast.getBody(), function.getBody());
+    }
+
+    private void calculateNonNullableVars(boolean[] nonNullVars, RegularMethodNode ast) {
+        var calculator = new NonNullVarsCalculator(nonNullVars);
+        ast.getBody().acceptVisitor(calculator);
     }
 
     private void generateNativeMethodBody(MethodHolder method, WasmFunction function) {

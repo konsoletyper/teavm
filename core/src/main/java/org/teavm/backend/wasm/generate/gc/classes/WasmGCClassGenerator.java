@@ -937,38 +937,34 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         module.functions.add(function);
         var instanceLocal = new WasmLocal(standardClasses.objectClass().getType(), "instance");
         var originalLocal = new WasmLocal(objectStructure.getReference(), "original");
-        var resultLocal = new WasmLocal(objectStructure.getReference(), "result");
-        var originalDataLocal = new WasmLocal(arrayType.getReference(), "originalData");
-        var dataCopyLocal = new WasmLocal(arrayType.getReference(), "resultData");
+        var originalDataLocal = new WasmLocal(arrayType.getNonNullReference(), "originalData");
+        var dataCopyLocal = new WasmLocal(arrayType.getNonNullReference(), "resultData");
         function.add(instanceLocal);
         function.add(originalLocal);
-        function.add(resultLocal);
         function.add(originalDataLocal);
         function.add(dataCopyLocal);
 
+        var newExpr = new WasmStructNew(objectStructure);
         function.getBody().add(new WasmSetLocal(originalLocal,
                 new WasmCast(new WasmGetLocal(instanceLocal), objectStructure.getNonNullReference())));
-        function.getBody().add(new WasmSetLocal(resultLocal, new WasmStructNewDefault(objectStructure)));
 
         var classValue = new WasmStructGet(objectStructure, new WasmGetLocal(originalLocal),
                 WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-        function.getBody().add(new WasmStructSet(objectStructure, new WasmGetLocal(resultLocal),
-                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET, classValue));
+        newExpr.getInitializers().add(classValue);
+        newExpr.getInitializers().add(new WasmNullConstant(WasmType.Reference.EQ));
 
         var originalDataValue = new WasmStructGet(objectStructure, new WasmGetLocal(originalLocal),
                 WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
         function.getBody().add(new WasmSetLocal(originalDataLocal, originalDataValue));
         var originalLength = new WasmArrayLength(new WasmGetLocal(originalDataLocal));
         function.getBody().add(new WasmSetLocal(dataCopyLocal, new WasmArrayNewDefault(arrayType, originalLength)));
-        function.getBody().add(new WasmStructSet(objectStructure, new WasmGetLocal(resultLocal),
-                WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET, new WasmGetLocal(dataCopyLocal)));
+        newExpr.getInitializers().add(new WasmGetLocal(dataCopyLocal));
 
         function.getBody().add(new WasmArrayCopy(arrayType, new WasmGetLocal(dataCopyLocal),
                 new WasmInt32Constant(0), arrayType, new WasmGetLocal(originalDataLocal),
                 new WasmInt32Constant(0), new WasmArrayLength(new WasmGetLocal(originalDataLocal))));
 
-        function.getBody().add(new WasmGetLocal(resultLocal));
-
+        function.getBody().add(newExpr);
         return function;
     }
 
@@ -1327,7 +1323,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             }
         }
 
-        classInfo.structure.getFields().add(new WasmField(wasmArray.getReference().asStorage(),
+        classInfo.structure.getFields().add(new WasmField(wasmArray.getNonNullReference().asStorage(),
                 arrayDataFieldName()));
     }
 

@@ -88,6 +88,7 @@ import org.teavm.model.optimization.MethodOptimization;
 import org.teavm.model.optimization.MethodOptimizationContext;
 import org.teavm.model.optimization.RedundantJumpElimination;
 import org.teavm.model.optimization.RedundantNullCheckElimination;
+import org.teavm.model.optimization.RedundantPhiElimination;
 import org.teavm.model.optimization.RepeatedFieldReadElimination;
 import org.teavm.model.optimization.ScalarReplacement;
 import org.teavm.model.optimization.SystemArrayCopyOptimization;
@@ -830,6 +831,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (target.needsSystemArrayCopyOptimization()) {
             optimizations.add(new SystemArrayCopyOptimization());
         }
+        optimizations.add(new RedundantPhiElimination());
         return optimizations;
     }
 
