@@ -61,7 +61,7 @@ tasks.test {
     systemProperty("teavm.junit.wasm.disasm", providers.gradleProperty("teavm.tests.wasm.disasm")
         .orElse("false").get())
 
-    systemProperty("teavm.junit.wasm-gc", providers.gradleProperty("teavm.tests.wasm-gc").orElse("false").get())
+    systemProperty("teavm.junit.wasm-gc", providers.gradleProperty("teavm.tests.wasm-gc").orElse("true").get())
     systemProperty("teavm.junit.wasm-gc.runner", browser)
     systemProperty("teavm.junit.wasm-gc.disasm", providers.gradleProperty("teavm.tests.wasm-gc.disasm")
         .orElse("false").get())
