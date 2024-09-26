@@ -28,7 +28,45 @@ TeaVM.wasm = function() {
         let stringFinalizationRegistry = new FinalizationRegistry(heldValue => {
             exports.reportGarbageCollectedString(heldValue);
         });
-        imports.teavm = {
+        imports.teavmDate = {
+            currentTimeMillis() {
+                return new Date().getTime();
+            },
+            dateToString(timestamp) {
+                return stringToJava(new Date(timestamp).toString());
+            },
+            getYear(timestamp) {
+                return new Date(timestamp).getFullYear();
+            },
+            setYear(timestamp, year) {
+                let date = new Date(timestamp);
+                date.setFullYear(year);
+                return date.getTime();
+            },
+            getMonth(timestamp) {
+                return new Date(timestamp).getMonth();
+            },
+            setMonth(timestamp, month) {
+                let date = new Date(timestamp);
+                date.setMonth(month);
+                return date.getTime();
+            },
+            getDate(timestamp) {
+                return new Date(timestamp).getDate();
+            },
+            setDate(timestamp, value) {
+                let date = new Date(timestamp);
+                date.setDate(value);
+                return date.getTime();
+            },
+            create(year, month, date, hrs, min, sec) {
+                return new Date(year, month, date, hrs, min, sec).getTime();
+            },
+            createFromUTC(year, month, date, hrs, min, sec) {
+                return Date.UTC(year, month, date, hrs, min, sec);
+            }
+        };
+        imports.teavmConsole = {
             putcharStderr(c) {
                 if (c === 10) {
                     console.error(stderr);
@@ -45,12 +83,8 @@ TeaVM.wasm = function() {
                     stdout += String.fromCharCode(c);
                 }
             },
-            currentTimeMillis() {
-                return new Date().getTime();
-            },
-            dateToString(timestamp) {
-                return stringToJava(new Date(timestamp).toString());
-            },
+        };
+        imports.teavm = {
             createWeakRef(value, heldValue) {
                 let weakRef = new WeakRef(value);
                 if (heldValue !== null) {

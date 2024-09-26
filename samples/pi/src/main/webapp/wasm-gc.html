@@ -35,8 +35,8 @@
                     function putwchar(ch) {
                         $rt_putStdoutCustom(String.fromCharCode(ch));
                     }
-                    o.teavm.putcharStderr = putwchar;
-                    o.teavm.putcharStdout = putwchar;
+                    o.teavmConsole.putcharStderr = putwchar;
+                    o.teavmConsole.putcharStdout = putwchar;
                 },
             }).then(teavm => {
                 this.instance = teavm.instance;

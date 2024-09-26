@@ -212,8 +212,8 @@ function launchWasmGCTest(file, argument, callback) {
 
     TeaVM.wasm.load(file.path, {
         installImports: function(o) {
-            o.teavm.putcharStdout = putchar;
-            o.teavm.putcharStderr = putcharStderr;
+            o.teavmConsole.putcharStdout = putchar;
+            o.teavmConsole.putcharStderr = putcharStderr;
             o.teavmTest = {
                 success() {
                     callback(wrapResponse({ status: "OK" }));

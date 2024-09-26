@@ -48,10 +48,10 @@ public class WasmGCSupport {
         return x;
     }
 
-    @Import(name = "putcharStdout")
+    @Import(name = "putcharStdout", module = "teavmConsole")
     public static native void putCharStdout(char c);
 
-    @Import(name = "putcharStderr")
+    @Import(name = "putcharStderr", module = "teavmConsole")
     public static native void putCharStderr(char c);
 
     public static char[] nextCharArray() {
