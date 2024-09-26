@@ -100,7 +100,7 @@ public class GlobalValueNumbering implements MethodOptimization {
         boolean affected = false;
         this.program = program;
         knownValues.clear();
-        Graph cfg = ProgramUtils.buildControlFlowGraph(program);
+        Graph cfg = ProgramUtils.buildControlFlowGraph2(program);
         domTree = GraphUtils.buildDominatorTree(cfg);
         Graph dom = GraphUtils.buildDominatorGraph(domTree, cfg.size());
         map = new int[program.variableCount()];
@@ -123,52 +123,55 @@ public class GlobalValueNumbering implements MethodOptimization {
         }
         while (top > 0) {
             int v = stack[--top];
-            currentBlockIndex = v;
-            BasicBlock block = program.basicBlockAt(v);
+            if (v % 2 == 0) {
+                var blockIndex = v / 2;
+                currentBlockIndex = blockIndex;
+                BasicBlock block = program.basicBlockAt(blockIndex);
 
-            if (block.getExceptionVariable() != null) {
-                int var = map[block.getExceptionVariable().getIndex()];
-                block.setExceptionVariable(program.variableAt(var));
-            }
+                if (block.getExceptionVariable() != null) {
+                    int var = map[block.getExceptionVariable().getIndex()];
+                    block.setExceptionVariable(program.variableAt(var));
+                }
 
-            for (Instruction currentInsn : block) {
-                evaluatedConstant = null;
-                currentInsn.acceptVisitor(optimizer);
-                if (eliminate) {
-                    affected = true;
-                    currentInsn.delete();
-                    eliminate = false;
-                } else if (evaluatedConstant != null) {
-                    if (evaluatedConstant instanceof Integer) {
-                        IntegerConstantInstruction newInsn = new IntegerConstantInstruction();
-                        newInsn.setConstant((Integer) evaluatedConstant);
-                        newInsn.setReceiver(program.variableAt(receiver));
-                        newInsn.setLocation(currentInsn.getLocation());
-                        currentInsn.replace(newInsn);
-                    } else if (evaluatedConstant instanceof Long) {
-                        LongConstantInstruction newInsn = new LongConstantInstruction();
-                        newInsn.setConstant((Long) evaluatedConstant);
-                        newInsn.setReceiver(program.variableAt(receiver));
-                        newInsn.setLocation(currentInsn.getLocation());
-                        currentInsn.replace(newInsn);
-                    } else if (evaluatedConstant instanceof Float) {
-                        FloatConstantInstruction newInsn = new FloatConstantInstruction();
-                        newInsn.setConstant((Float) evaluatedConstant);
-                        newInsn.setReceiver(program.variableAt(receiver));
-                        newInsn.setLocation(currentInsn.getLocation());
-                        currentInsn.replace(newInsn);
-                    } else if (evaluatedConstant instanceof Double) {
-                        DoubleConstantInstruction newInsn = new DoubleConstantInstruction();
-                        newInsn.setConstant((Double) evaluatedConstant);
-                        newInsn.setReceiver(program.variableAt(receiver));
-                        newInsn.setLocation(currentInsn.getLocation());
-                        currentInsn.replace(newInsn);
+                for (Instruction currentInsn : block) {
+                    evaluatedConstant = null;
+                    currentInsn.acceptVisitor(optimizer);
+                    if (eliminate) {
+                        affected = true;
+                        currentInsn.delete();
+                        eliminate = false;
+                    } else if (evaluatedConstant != null) {
+                        if (evaluatedConstant instanceof Integer) {
+                            IntegerConstantInstruction newInsn = new IntegerConstantInstruction();
+                            newInsn.setConstant((Integer) evaluatedConstant);
+                            newInsn.setReceiver(program.variableAt(receiver));
+                            newInsn.setLocation(currentInsn.getLocation());
+                            currentInsn.replace(newInsn);
+                        } else if (evaluatedConstant instanceof Long) {
+                            LongConstantInstruction newInsn = new LongConstantInstruction();
+                            newInsn.setConstant((Long) evaluatedConstant);
+                            newInsn.setReceiver(program.variableAt(receiver));
+                            newInsn.setLocation(currentInsn.getLocation());
+                            currentInsn.replace(newInsn);
+                        } else if (evaluatedConstant instanceof Float) {
+                            FloatConstantInstruction newInsn = new FloatConstantInstruction();
+                            newInsn.setConstant((Float) evaluatedConstant);
+                            newInsn.setReceiver(program.variableAt(receiver));
+                            newInsn.setLocation(currentInsn.getLocation());
+                            currentInsn.replace(newInsn);
+                        } else if (evaluatedConstant instanceof Double) {
+                            DoubleConstantInstruction newInsn = new DoubleConstantInstruction();
+                            newInsn.setConstant((Double) evaluatedConstant);
+                            newInsn.setReceiver(program.variableAt(receiver));
+                            newInsn.setLocation(currentInsn.getLocation());
+                            currentInsn.replace(newInsn);
+                        }
                     }
                 }
-            }
-            for (Incoming incoming : outgoings.get(v)) {
-                int value = replaceMap[incoming.getValue().getIndex()];
-                incoming.setValue(program.variableAt(value));
+                for (Incoming incoming : outgoings.get(blockIndex)) {
+                    int value = replaceMap[incoming.getValue().getIndex()];
+                    incoming.setValue(program.variableAt(value));
+                }
             }
 
             for (int succ : dom.outgoingEdges(v)) {
@@ -216,7 +219,7 @@ public class GlobalValueNumbering implements MethodOptimization {
             }
             namesCompatible = knownName.isEmpty() || name.isEmpty() || knownName.equals(name);
         }
-        if (known != null && domTree.dominates(known.location, currentBlockIndex) && known.value != var
+        if (known != null && domTree.dominates(known.location * 2 + 1, currentBlockIndex * 2) && known.value != var
                 && namesCompatible) {
             map[var] = known.value;
             if (!noReplace) {
