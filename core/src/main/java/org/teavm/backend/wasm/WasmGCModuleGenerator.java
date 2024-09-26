@@ -193,8 +193,9 @@ public class WasmGCModuleGenerator {
         var functionType = declarationsGenerator.functionTypes.of(null);
         initializer = new WasmFunction(functionType);
         initializer.setReferenced(true);
+        initializer.setName("teavm@initializer");
         declarationsGenerator.module.functions.add(initializer);
-        initializerRef = new WasmGlobal("teavm@initializer", functionType.getNonNullReference(),
+        initializerRef = new WasmGlobal("teavm@initializerRef", functionType.getNonNullReference(),
                 new WasmFunctionReference(initializer));
         declarationsGenerator.module.globals.add(initializerRef);
         initializer.getBody().add(new WasmSetGlobal(initializerRef,

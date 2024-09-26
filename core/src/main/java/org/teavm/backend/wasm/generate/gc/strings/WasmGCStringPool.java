@@ -23,15 +23,27 @@ import org.teavm.backend.wasm.generate.gc.WasmGCInitializerContributor;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
+import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmArrayGet;
+import org.teavm.backend.wasm.model.expression.WasmArrayLength;
+import org.teavm.backend.wasm.model.expression.WasmArrayNewFixed;
+import org.teavm.backend.wasm.model.expression.WasmBlock;
+import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
+import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
+import org.teavm.backend.wasm.model.expression.WasmIntBinary;
+import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
@@ -47,6 +59,8 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
     private Map<String, WasmGCStringConstant> stringMap = new LinkedHashMap<>();
     private BaseWasmFunctionRepository functionProvider;
     private WasmFunction initNextStringFunction;
+    private WasmFunction initStringsFunction;
+    private WasmArray stringsArray;
     private WasmGCNameProvider names;
     private WasmFunctionTypes functionTypes;
     private DependencyInfo dependencyInfo;
@@ -79,9 +93,11 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
                     void.class));
             function.getBody().add(new WasmCall(internInit));
         }
+        var array = new WasmArrayNewFixed(stringsArray);
         for (var str : stringMap.values()) {
-            function.getBody().add(new WasmCall(initNextStringFunction, new WasmGetGlobal(str.global)));
+            array.getElements().add(new WasmGetGlobal(str.global));
         }
+        function.getBody().add(new WasmCall(initStringsFunction, array));
     }
 
     @Override
@@ -89,6 +105,7 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
         return stringMap.computeIfAbsent(string, s -> {
             if (initNextStringFunction == null) {
                 createInitNextStringFunction();
+                createInitStringsFunction();
             }
             binaryWriter.writeLEB(string.length());
             writeWTF8(string, binaryWriter);
@@ -120,11 +137,44 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
         }
     }
 
+    private void createInitStringsFunction() {
+        stringsArray = new WasmArray(names.topLevel("teavm@stringArray"),
+                standardClasses.stringClass().getStructure().getNonNullReference().asStorage());
+        module.types.add(stringsArray);
+        var function = new WasmFunction(functionTypes.of(null, stringsArray.getNonNullReference()));
+        function.setName(names.topLevel("teavm@initStrings"));
+        module.functions.add(function);
+
+        var stringsLocal = new WasmLocal(stringsArray.getNonNullReference(), "strings");
+        var indexLocal = new WasmLocal(WasmType.INT32, "index");
+        var lengthLocal = new WasmLocal(WasmType.INT32, "length");
+        function.add(stringsLocal);
+        function.add(indexLocal);
+        function.add(lengthLocal);
+
+        var length = new WasmArrayLength(new WasmGetLocal(stringsLocal));
+        function.getBody().add(new WasmSetLocal(lengthLocal, length));
+        function.getBody().add(new WasmSetLocal(indexLocal, new WasmInt32Constant(0)));
+
+        var loop = new WasmBlock(true);
+        function.getBody().add(loop);
+        var get = new WasmArrayGet(stringsArray, new WasmGetLocal(stringsLocal), new WasmGetLocal(indexLocal));
+        loop.getBody().add(new WasmCall(initNextStringFunction, get));
+        var next = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, new WasmGetLocal(indexLocal),
+                new WasmInt32Constant(1));
+        loop.getBody().add(new WasmSetLocal(indexLocal, next));
+        var compare = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_UNSIGNED,
+                new WasmGetLocal(indexLocal), new WasmGetLocal(lengthLocal));
+        loop.getBody().add(new WasmBranch(compare, loop));
+
+        initStringsFunction = function;
+    }
+
     private void createInitNextStringFunction() {
         var stringTypeInfo = standardClasses.stringClass();
         var nextCharArrayFunction = functionProvider.forStaticMethod(new MethodReference(WasmGCSupport.class,
                 "nextCharArray", char[].class));
-        var function = new WasmFunction(functionTypes.of(null, stringTypeInfo.getType()));
+        var function = new WasmFunction(functionTypes.of(null, stringTypeInfo.getStructure().getNonNullReference()));
         function.setName(names.topLevel("teavm@initNextString"));
 
         var stringLocal = new WasmLocal(stringTypeInfo.getType());
