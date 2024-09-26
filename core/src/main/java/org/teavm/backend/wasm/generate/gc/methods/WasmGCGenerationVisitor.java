@@ -99,7 +99,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             WasmFunction function, int firstVariable, boolean async, PreciseTypeInference types) {
         super(context, currentMethod, function, firstVariable, async);
         this.context = context;
-        generationUtil = new WasmGCGenerationUtil(context.classInfoProvider(), tempVars);
+        generationUtil = new WasmGCGenerationUtil(context.classInfoProvider());
         this.types = types;
     }
 
@@ -370,28 +370,22 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     public void visit(ArrayFromDataExpr expr) {
         var wasmArrayType = (WasmType.CompositeReference) mapType(ValueType.arrayOf(expr.getType()));
-        var block = new WasmBlock(false);
-        block.setType(wasmArrayType);
         var wasmArrayStruct = (WasmStructure) wasmArrayType.composite;
         var wasmArrayDataType = (WasmType.CompositeReference) wasmArrayStruct.getFields()
                 .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
         var wasmArray = (WasmArray) wasmArrayDataType.composite;
-        var array = tempVars.acquire(wasmArrayType);
 
-        generationUtil.allocateArrayWithElements(expr.getType(), () -> {
+        var array = generationUtil.allocateArrayWithElements(expr.getType(), () -> {
             var items = new ArrayList<WasmExpression>();
             for (int i = 0; i < expr.getData().size(); ++i) {
                 accept(expr.getData().get(i), wasmArray.getElementType().asUnpackedType());
                 items.add(result);
             }
             return items;
-        }, expr.getLocation(), array, block.getBody());
+        });
+        array.setLocation(expr.getLocation());
 
-        block.getBody().add(new WasmGetLocal(array));
-        block.setLocation(expr.getLocation());
-        tempVars.release(array);
-
-        result = block;
+        result = array;
     }
 
     @Override
@@ -401,12 +395,6 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         var call = new WasmCall(function, result);
         call.setLocation(expr.getLocation());
         result = call;
-    }
-
-    @Override
-    protected void allocateArray(ValueType itemType, Supplier<WasmExpression> length, TextLocation location,
-            WasmLocal local, List<WasmExpression> target) {
-        generationUtil.allocateArray(itemType, length, location, local, target);
     }
 
     @Override

@@ -33,7 +33,6 @@ import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTable;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableEntry;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
-import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.gc.WasmGCInitializerContributor;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCGenerationUtil;
@@ -52,7 +51,6 @@ import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
-import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
@@ -1543,14 +1541,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     functionTypes.of(null)));
         }
 
-        var tempVars = new TemporaryVariablePool(function);
-        var util = new WasmGCGenerationUtil(this, tempVars);
-        var local = tempVars.acquire(enumArrayStruct.getReference());
-        var block = new WasmBlock(false);
-        block.setType(enumArrayStruct.getReference());
-        util.allocateArrayWithElements(ValueType.parse(Enum.class), () -> fields, null, null, block.getBody());
-        function.getBody().add(block);
-        tempVars.release(local);
+        var util = new WasmGCGenerationUtil(this);
+        function.getBody().add(util.allocateArrayWithElements(ValueType.parse(Enum.class), () -> fields));
 
         return function;
     }

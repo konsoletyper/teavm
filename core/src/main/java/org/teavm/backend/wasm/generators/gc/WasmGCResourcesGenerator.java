@@ -23,18 +23,15 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.ServiceLoader;
-import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
-import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
@@ -105,13 +102,11 @@ public class WasmGCResourcesGenerator implements WasmGCCustomGenerator {
                     WasmType.INT32, new WasmInt32Constant(0));
             context.module().globals.add(baseGlobal);
 
-            var genUtil = new WasmGCGenerationUtil(context.classInfoProvider(), new TemporaryVariablePool(function));
-            var local = new WasmLocal(context.typeMapper().mapType(ValueType.parse(WasmGCResources.Resource[].class)));
-            function.add(local);
+            var genUtil = new WasmGCGenerationUtil(context.classInfoProvider());
             var constructor = context.functions().forStaticMethod(new MethodReference(WasmGCResources.class,
                     "create", String.class, int.class, int.class, WasmGCResources.Resource.class));
 
-            genUtil.allocateArrayWithElements(
+            function.getBody().add(genUtil.allocateArrayWithElements(
                     ValueType.parse(WasmGCResources.Resource.class),
                     () -> {
                         var items = new ArrayList<WasmExpression>();
@@ -123,12 +118,8 @@ public class WasmGCResourcesGenerator implements WasmGCCustomGenerator {
                             items.add(new WasmCall(constructor, new WasmGetGlobal(name.global), offset, end));
                         }
                         return items;
-                    },
-                    null,
-                    local,
-                    function.getBody()
-            );
-            function.getBody().add(new WasmGetLocal(local));
+                    }
+            ));
         }
     }
 

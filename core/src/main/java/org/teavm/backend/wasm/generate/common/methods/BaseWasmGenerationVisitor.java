@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryExpr;
@@ -46,7 +45,6 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.InvocationType;
 import org.teavm.ast.MonitorEnterStatement;
 import org.teavm.ast.MonitorExitStatement;
-import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
 import org.teavm.ast.OperationType;
@@ -1018,86 +1016,8 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     protected abstract void allocateObject(String className, TextLocation location, WasmLocal local,
             List<WasmExpression> target);
 
-    @Override
-    public void visit(NewArrayExpr expr) {
-        var block = new WasmBlock(false);
-        block.setType(mapType(ValueType.arrayOf(expr.getType())));
-
-        var callSiteId = generateCallSiteId(expr.getLocation());
-        callSiteId.generateRegister(block.getBody(), expr.getLocation());
-
-        allocateArray(expr.getType(), () -> {
-            accept(expr.getLength());
-            return result;
-        }, expr.getLocation(), null, block.getBody());
-
-        if (block.getBody().size() == 1) {
-            result = block.getBody().get(0);
-        } else {
-            result = block;
-        }
-    }
-
-    protected abstract void allocateArray(ValueType itemType, Supplier<WasmExpression> length, TextLocation location,
-            WasmLocal local, List<WasmExpression> target);
-
     protected abstract WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType arrayType,
             Supplier<List<WasmExpression>> dimensions, TextLocation location);
-
-    @Override
-    public void visit(ArrayFromDataExpr expr) {
-        var type = expr.getType();
-
-        var arrayType = ArrayType.OBJECT;
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                case BYTE:
-                    arrayType = ArrayType.BYTE;
-                    break;
-                case SHORT:
-                    arrayType = ArrayType.SHORT;
-                    break;
-                case CHARACTER:
-                    arrayType = ArrayType.CHAR;
-                    break;
-                case INTEGER:
-                    arrayType = ArrayType.INT;
-                    break;
-                case LONG:
-                    arrayType = ArrayType.LONG;
-                    break;
-                case FLOAT:
-                    arrayType = ArrayType.FLOAT;
-                    break;
-                case DOUBLE:
-                    arrayType = ArrayType.DOUBLE;
-                    break;
-            }
-        }
-
-        var wasmArrayType = mapType(ValueType.arrayOf(expr.getType()));
-        var block = new WasmBlock(false);
-        block.setType(wasmArrayType);
-        var callSiteId = generateCallSiteId(expr.getLocation());
-        callSiteId.generateRegister(block.getBody(), expr.getLocation());
-
-        var array = tempVars.acquire(wasmArrayType);
-        allocateArray(expr.getType(), () -> new WasmInt32Constant(expr.getData().size()), expr.getLocation(), array,
-                block.getBody());
-
-        for (int i = 0; i < expr.getData().size(); ++i) {
-            var arrayData = unwrapArray(new WasmGetLocal(array));
-            block.getBody().add(storeArrayItem(arrayData, new WasmInt32Constant(i), expr.getData().get(i),
-                    arrayType));
-        }
-
-        block.getBody().add(new WasmGetLocal(array));
-        block.setLocation(expr.getLocation());
-        tempVars.release(array);
-
-        result = block;
-    }
 
     @Override
     public void visit(NewMultiArrayExpr expr) {

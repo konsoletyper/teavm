@@ -104,8 +104,8 @@ public class WasmGCTypeMapper {
             if (type instanceof ValueType.Object) {
                 var className = ((ValueType.Object) type).getClassName();
                 var cls = classes.get(className);
-                if (cls != null) {
-                    className = "java.lang.Object";
+                if (cls == null) {
+                    type = ValueType.object("java.lang.Object");
                 }
             }
             while (degree-- > 0) {

@@ -18,7 +18,6 @@ package org.teavm.classlib.impl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ServiceLoader;
-import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerator;
@@ -129,17 +128,14 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
             function.setName(context.names().topLevel(context.names().suggestForClass(interfaceName) + "@services"));
             function.setReferenced(true);
             context.module().functions.add(function);
-            var tempVars = new TemporaryVariablePool(function);
-            var util = new WasmGCGenerationUtil(context.classInfoProvider(), tempVars);
-            var block = new WasmBlock(false);
-            block.setType(context.typeMapper().mapType(ValueType.parse(Object[].class)));
-            util.allocateArrayWithElements(ValueType.parse(Object.class), () -> {
+            var util = new WasmGCGenerationUtil(context.classInfoProvider());
+            function.getBody().add(util.allocateArrayWithElements(ValueType.parse(Object.class), () -> {
                 var items = new ArrayList<WasmExpression>();
                 for (var implementationName : implementations) {
                     items.add(instantiateService(context, function, implementationName));
                 }
                 return items;
-            }, null, null, function.getBody());
+            }));
 
             return function;
         }
