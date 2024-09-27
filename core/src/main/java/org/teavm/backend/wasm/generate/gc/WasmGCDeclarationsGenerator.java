@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generate.gc;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
@@ -46,6 +47,7 @@ public class WasmGCDeclarationsGenerator {
     public final WasmFunctionTypes functionTypes;
     private final WasmGCClassGenerator classGenerator;
     private final WasmGCMethodGenerator methodGenerator;
+    private List<WasmGCInitializerContributor> initializerContributors = new ArrayList<>();
 
     public WasmGCDeclarationsGenerator(
             WasmModule module,
@@ -77,7 +79,8 @@ public class WasmGCDeclarationsGenerator {
                 diagnostics,
                 customGenerators,
                 intrinsics,
-                strict
+                strict,
+                initializerContributors::add
         );
         var tags = new TagRegistry(classes, hierarchy);
         var metadataRequirements = new ClassMetadataRequirements(dependencyInfo);
@@ -132,7 +135,8 @@ public class WasmGCDeclarationsGenerator {
     }
 
     public void contributeToInitializer(WasmFunction function) {
-        var contributors = List.of(classGenerator, classGenerator.strings);
+        var contributors = new ArrayList<>(List.of(classGenerator, classGenerator.strings));
+        contributors.addAll(initializerContributors);
         for (var contributor : contributors) {
             contributor.contributeToInitializerDefinitions(function);
         }

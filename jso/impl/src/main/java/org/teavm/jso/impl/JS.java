@@ -19,6 +19,7 @@ import java.lang.reflect.Array;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.dependency.PluggableDependency;
+import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
@@ -28,7 +29,7 @@ import org.teavm.jso.core.JSBoolean;
 import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.core.JSString;
 
-final class JS {
+public final class JS {
     private JS() {
     }
 
@@ -77,30 +78,37 @@ final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "wrapByte", module = "teavmJso")
     public static native JSObject wrap(byte value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "wrapShort", module = "teavmJso")
     public static native JSObject wrap(short value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "wrapInt", module = "teavmJso")
     public static native JSObject wrap(int value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "wrapChar", module = "teavmJso")
     public static native JSObject wrap(char value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "wrapFloat", module = "teavmJso")
     public static native JSObject wrap(float value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "wrapDouble", module = "teavmJso")
     public static native JSObject wrap(double value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "wrapBoolean", module = "teavmJso")
     public static native JSObject wrap(boolean value);
 
     @InjectedBy(JSNativeInjector.class)
@@ -109,30 +117,37 @@ final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "unwrapByte", module = "teavmJso")
     public static native byte unwrapByte(JSObject value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "unwrapChar", module = "teavmJso")
     public static native char unwrapCharacter(JSObject value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "unwrapShort", module = "teavmJso")
     public static native short unwrapShort(JSObject value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "unwrapInt", module = "teavmJso")
     public static native int unwrapInt(JSObject value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "unwrapFloat", module = "teavmJso")
     public static native float unwrapFloat(JSObject value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "unwrapDouble", module = "teavmJso")
     public static native double unwrapDouble(JSObject value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "unwrapBoolean", module = "teavmJso")
     public static native boolean unwrapBoolean(JSObject value);
 
     @InjectedBy(JSNativeInjector.class)
@@ -466,68 +481,82 @@ final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod0", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod1", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod2", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod3", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod4", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod5", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod6", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod7", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod8", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod9", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod10", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i, JSObject j);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod11", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod12", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k,
             JSObject l);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "callMethod13", module = "teavmJso")
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k,
             JSObject l, JSObject m);
@@ -608,85 +637,103 @@ final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct0", module = "teavmJso")
     public static native JSObject construct(JSObject cls);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct1", module = "teavmJso")
     public static native JSObject construct(JSObject cls, JSObject a);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct2", module = "teavmJso")
     public static native JSObject construct(JSObject cls, JSObject a, JSObject b);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct3", module = "teavmJso")
     public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct4", module = "teavmJso")
     public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct5", module = "teavmJso")
     public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct6", module = "teavmJso")
     public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
             JSObject f);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct7", module = "teavmJso")
     public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
             JSObject f, JSObject g);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct8", module = "teavmJso")
     public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
             JSObject f, JSObject g, JSObject h);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct9", module = "teavmJso")
     public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
             JSObject f, JSObject g, JSObject h, JSObject i);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct10", module = "teavmJso")
     public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
             JSObject f, JSObject g, JSObject h, JSObject i, JSObject j);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct11", module = "teavmJso")
     public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
             JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct12", module = "teavmJso")
     public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
             JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k, JSObject l);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "construct13", module = "teavmJso")
     public static native JSObject construct(JSObject cls, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e,
             JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k, JSObject l, JSObject m);
 
 
     @InjectedBy(JSNativeInjector.class)
     @JSBody(params = { "instance", "index" }, script = "return instance[index];")
+    @Import(name = "getProperty", module = "teavmJso")
     public static native JSObject get(JSObject instance, JSObject index);
 
     @InjectedBy(JSNativeInjector.class)
     @JSBody(params = { "instance", "index" }, script = "return instance[index];")
     @NoSideEffects
+    @Import(name = "getPropertyPure", module = "teavmJso")
     public static native JSObject getPure(JSObject instance, JSObject index);
 
     @InjectedBy(JSNativeInjector.class)
     @JSBody(params = { "instance", "index", "obj" }, script = "instance[index] = obj;")
+    @Import(name = "setProperty", module = "teavmJso")
     public static native void set(JSObject instance, JSObject index, JSObject obj);
 
     @InjectedBy(JSNativeInjector.class)
     @JSBody(params = { "instance", "index", "obj" }, script = "instance[index] = obj;")
     @NoSideEffects
+    @Import(name = "setPropertyPure", module = "teavmJso")
     public static native void setPure(JSObject instance, JSObject index, JSObject obj);
 
     @GeneratedBy(JSNativeGenerator.class)
@@ -699,6 +746,7 @@ final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "global", module = "teavmJso")
     public static native JSObject global(String name);
 
     @InjectedBy(JSNativeInjector.class)

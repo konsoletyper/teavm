@@ -17,6 +17,9 @@
 var TeaVM = TeaVM || {};
 TeaVM.wasm = function() {
     let exports;
+    let getGlobalName = function(name) {
+        return eval("return " + {name});
+    }
     function defaults(imports) {
         let stderr = "";
         let stdout = "";
@@ -92,18 +95,51 @@ TeaVM.wasm = function() {
                 }
                 return weakRef;
             },
-            deref(weakRef) {
-                return weakRef.deref();
-            },
+            deref: weakRef => weakRef.deref(),
             createStringWeakRef(value, heldValue) {
                 let weakRef = new WeakRef(value);
                 stringFinalizationRegistry.register(value, heldValue)
                 return weakRef;
             },
-            stringDeref(weakRef) {
-                return weakRef.deref();
-            }
+            stringDeref: weakRef => weakRef.deref()
         };
+        function identity(value) {
+            return value;
+        }
+        imports.teavmJso = {
+            emptyString: () => "",
+            stringFromCharCode: code => String.fromCharCode(code),
+            concatStrings: (a, b) => a + b,
+            stringLength: s => s.length,
+            charAt: (s, index) => s.charCodeAt(index),
+            emptyArray: () => [],
+            appendToArray: (array, e) => array.push(e),
+            unwrapBoolean: value => value ? 1 : 0,
+            wrapBoolean: value => !!value,
+            getProperty: (obj, prop) => obj[prop],
+            getPropertyPure: (obj, prop) => obj[prop],
+            setProperty: (obj, prop, value) => obj[prop] = value,
+            setPropertyPure: (obj, prop) => obj[prop] = value,
+            global: getGlobalName
+        };
+        for (let name of ["wrapByte", "wrapShort", "wrapChar", "wrapInt", "wrapFloat", "wrapDouble", "unwrapByte",
+                "unwrapShort", "unwrapChar", "unwrapInt", "unwrapFloat", "unwrapDouble"]) {
+            imports.teavmJso[name] = identity;
+        }
+        for (let i = 0; i < 32; ++i) {
+            imports.teavmJso["createFunction" + i] = function() {
+                return new Function(...arguments);
+            };
+            imports.teavmJso["callFunction" + i] = function(fn, ...args) {
+                return fn(...args);
+            };
+            imports.teavmJso["callMethod" + i] = function(instance, method, ...args) {
+                return instance[method](...args);
+            };
+            imports.teavmJso["construct" + i] = function(constructor, ...args) {
+                return new constructor(...args);
+            };
+        }
         imports.teavmMath = Math;
     }
 

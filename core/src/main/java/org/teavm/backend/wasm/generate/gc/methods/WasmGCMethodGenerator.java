@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Consumer;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
@@ -32,6 +33,7 @@ import org.teavm.backend.wasm.gc.PreciseTypeInference;
 import org.teavm.backend.wasm.gc.PreciseValueType;
 import org.teavm.backend.wasm.gc.WasmGCVariableCategoryProvider;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
+import org.teavm.backend.wasm.generate.gc.WasmGCInitializerContributor;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
@@ -86,6 +88,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private WasmGCStandardClasses standardClasses;
     private WasmGCStringProvider strings;
     private boolean strict;
+    private Consumer<WasmGCInitializerContributor> initializerContributors;
 
     public WasmGCMethodGenerator(
             WasmModule module,
@@ -99,7 +102,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             Diagnostics diagnostics,
             WasmGCCustomGeneratorProvider customGenerators,
             WasmGCIntrinsicProvider intrinsics,
-            boolean strict
+            boolean strict,
+            Consumer<WasmGCInitializerContributor> initializerContributors
     ) {
         this.module = module;
         this.hierarchy = hierarchy;
@@ -113,6 +117,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         this.customGenerators = customGenerators;
         this.intrinsics = intrinsics;
         this.strict = strict;
+        this.initializerContributors = initializerContributors;
     }
 
     public void setTypeMapper(WasmGCTypeMapper typeMapper) {
@@ -356,7 +361,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                     customGenerators,
                     intrinsics,
                     names,
-                    strict
+                    strict,
+                    initializerContributors
             );
         }
         return context;

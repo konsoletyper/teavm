@@ -227,7 +227,7 @@ class JSClassProcessor {
         for (int i = 0; i < signature.length; ++i) {
             staticSignature[i + 1] = signature[i];
         }
-        staticSignature[0] = ValueType.object(method.getClassName());
+        staticSignature[0] = ValueType.object(JSObject.class.getName());
         return staticSignature;
     }
 
@@ -1139,7 +1139,8 @@ class JSClassProcessor {
                 expr = body;
             }
             javaInvocationProcessor.process(location, expr);
-            var emitter = new JSBodyAstEmitter(isStatic, expr, rootNode, parameterNames, imports);
+            var emitter = new JSBodyAstEmitter(isStatic, methodToProcess.getReference(), expr, rootNode,
+                    parameterNames, imports);
             repository.emitters.put(proxyMethod, emitter);
         }
         if (imports.length > 0) {

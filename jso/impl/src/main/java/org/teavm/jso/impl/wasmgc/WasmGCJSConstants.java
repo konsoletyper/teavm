@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,21 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.impl;
+package org.teavm.jso.impl.wasmgc;
 
-import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.backend.javascript.spi.GeneratorContext;
-import org.teavm.backend.javascript.spi.InjectorContext;
+import org.teavm.jso.JSObject;
 import org.teavm.model.MethodReference;
 
-public interface JSBodyEmitter {
-    MethodReference method();
+final class WasmGCJSConstants {
+    private WasmGCJSConstants() {
+    }
 
-    void emit(InjectorContext context);
-
-    void emit(GeneratorContext context, SourceWriter writer, MethodReference methodRef);
-
-    String[] parameterNames();
-
-    boolean isStatic();
+    static final MethodReference STRING_TO_JS = new MethodReference(WasmGCJSRuntime.class,
+            "stringToJs", String.class, JSObject.class);
+    static final MethodReference JS_TO_STRING = new MethodReference(WasmGCJSRuntime.class,
+            "jsToString", JSObject.class, String.class);
 }

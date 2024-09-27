@@ -15,11 +15,11 @@
  */
 package org.teavm.jso.impl;
 
-class JsBodyImportInfo {
-    final String alias;
-    final String fromModule;
+public class JsBodyImportInfo {
+    public final String alias;
+    public final String fromModule;
 
-    JsBodyImportInfo(String alias, String fromModule) {
+    public JsBodyImportInfo(String alias, String fromModule) {
         this.alias = alias;
         this.fromModule = fromModule;
     }

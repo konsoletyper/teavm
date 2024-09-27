@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.generate.gc.methods;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.ArrayType;
@@ -815,6 +816,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         @Override
         public WasmTag exceptionTag() {
             return context.getExceptionTag();
+        }
+
+        @Override
+        public void addToInitializer(Consumer<WasmFunction> initializerContributor) {
+            context.addToInitializer(initializerContributor);
         }
     };
 }

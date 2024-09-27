@@ -26,20 +26,37 @@ import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
-class JSBodyAstEmitter implements JSBodyEmitter {
+public class JSBodyAstEmitter implements JSBodyEmitter {
     private boolean isStatic;
-    private AstNode ast;
-    private AstNode rootAst;
+    private final MethodReference method;
+    public final AstNode ast;
+    public final AstNode rootAst;
     private String[] parameterNames;
     private JsBodyImportInfo[] imports;
 
-    JSBodyAstEmitter(boolean isStatic, AstNode ast, AstNode rootAst, String[] parameterNames,
+    JSBodyAstEmitter(boolean isStatic, MethodReference method, AstNode ast, AstNode rootAst, String[] parameterNames,
             JsBodyImportInfo[] imports) {
         this.isStatic = isStatic;
+        this.method = method;
         this.ast = ast;
         this.rootAst = rootAst;
         this.parameterNames = parameterNames;
         this.imports = imports;
+    }
+
+    @Override
+    public MethodReference method() {
+        return method;
+    }
+
+    @Override
+    public boolean isStatic() {
+        return isStatic;
+    }
+
+    @Override
+    public String[] parameterNames() {
+        return parameterNames.clone();
     }
 
     @Override

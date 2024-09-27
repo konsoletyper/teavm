@@ -20,10 +20,10 @@ import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
-class JSBodyBloatedEmitter implements JSBodyEmitter {
+public class JSBodyBloatedEmitter implements JSBodyEmitter {
     private boolean isStatic;
     private MethodReference method;
-    private String script;
+    public final String script;
     private String[] parameterNames;
     private JsBodyImportInfo[] imports;
 
@@ -34,6 +34,21 @@ class JSBodyBloatedEmitter implements JSBodyEmitter {
         this.script = script;
         this.parameterNames = parameterNames;
         this.imports = imports;
+    }
+
+    @Override
+    public MethodReference method() {
+        return method;
+    }
+
+    @Override
+    public boolean isStatic() {
+        return isStatic;
+    }
+
+    @Override
+    public String[] parameterNames() {
+        return parameterNames.clone();
     }
 
     @Override

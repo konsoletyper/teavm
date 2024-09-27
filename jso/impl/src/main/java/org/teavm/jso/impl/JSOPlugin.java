@@ -16,8 +16,10 @@
 package org.teavm.jso.impl;
 
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
+import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
 import org.teavm.jso.JSExceptions;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.impl.wasmgc.WasmGCJso;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.plugin.PlatformPlugin;
 import org.teavm.vm.TeaVMPluginUtil;
@@ -29,19 +31,36 @@ import org.teavm.vm.spi.TeaVMPlugin;
 public class JSOPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
-        TeaVMJavaScriptHost jsHost = host.getExtension(TeaVMJavaScriptHost.class);
-        if (jsHost == null) {
-            return;
-        }
-
         JSBodyRepository repository = new JSBodyRepository();
         host.registerService(JSBodyRepository.class, repository);
         host.add(new JSObjectClassTransformer(repository));
         JSDependencyListener dependencyListener = new JSDependencyListener(repository);
-        JSAliasRenderer aliasRenderer = new JSAliasRenderer();
         host.add(dependencyListener);
         host.add(new JSExceptionsDependencyListener());
 
+        var wrapperDependency = new JSWrapperDependency();
+        host.add(new MethodReference(JSWrapper.class, "jsToWrapper", JSObject.class, JSWrapper.class),
+                wrapperDependency);
+        host.add(new MethodReference(JSWrapper.class, "dependencyJavaToJs", Object.class, JSObject.class),
+                wrapperDependency);
+        host.add(new MethodReference(JSWrapper.class, "dependencyJsToJava", JSObject.class, Object.class),
+                wrapperDependency);
+
+        TeaVMPluginUtil.handleNatives(host, JS.class);
+
+        var jsHost = host.getExtension(TeaVMJavaScriptHost.class);
+        if (jsHost != null) {
+            installForJS(jsHost);
+        }
+
+        var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
+        if (wasmGCHost != null) {
+            WasmGCJso.install(host, wasmGCHost, repository);
+        }
+    }
+
+    private void installForJS(TeaVMJavaScriptHost jsHost) {
+        var aliasRenderer = new JSAliasRenderer();
         jsHost.add(aliasRenderer);
         jsHost.addGeneratorProvider(new GeneratorAnnotationInstaller<>(new JSBodyGenerator(),
                 DynamicGenerator.class.getName()));
@@ -50,7 +69,7 @@ public class JSOPlugin implements TeaVMPlugin {
         jsHost.addVirtualMethods(aliasRenderer);
         jsHost.addForcedFunctionMethods(new JSExportedMethodAsFunction());
 
-        JSExceptionsGenerator exceptionsGenerator = new JSExceptionsGenerator();
+        var exceptionsGenerator = new JSExceptionsGenerator();
         jsHost.add(new MethodReference(JSExceptions.class, "getJavaException", JSObject.class, Throwable.class),
                 exceptionsGenerator);
         jsHost.add(new MethodReference(JSExceptions.class, "getJSException", Throwable.class, JSObject.class),
@@ -75,14 +94,5 @@ public class JSOPlugin implements TeaVMPlugin {
                 wrapperGenerator);
         jsHost.add(new MethodReference(JSWrapper.class, "isJSImplementation", Object.class, boolean.class),
                 wrapperGenerator);
-
-        host.add(new MethodReference(JSWrapper.class, "jsToWrapper", JSObject.class, JSWrapper.class),
-                wrapperGenerator);
-        host.add(new MethodReference(JSWrapper.class, "dependencyJavaToJs", Object.class, JSObject.class),
-                wrapperGenerator);
-        host.add(new MethodReference(JSWrapper.class, "dependencyJsToJava", JSObject.class, Object.class),
-                wrapperGenerator);
-
-        TeaVMPluginUtil.handleNatives(host, JS.class);
     }
 }

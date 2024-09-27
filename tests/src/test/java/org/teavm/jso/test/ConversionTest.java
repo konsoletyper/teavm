@@ -29,12 +29,13 @@ import org.teavm.jso.core.JSString;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
-@OnlyPlatform(TestPlatform.JAVASCRIPT)
+@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @EachTestCompiledSeparately
 public class ConversionTest {
     @Test
@@ -57,6 +58,7 @@ public class ConversionTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsPrimitiveArraysToJavaScript() {
         assertEquals("true:2:3:64:4:5.5:6.5:foo", combinePrimitiveArrays(new boolean[] { true }, new byte[] { 2 },
                 new short[] { 3 }, new char[] { '@' }, new int[] { 4 }, new float[] { 5.5F }, new double[] { 6.5 },
@@ -64,6 +66,7 @@ public class ConversionTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsPrimitiveArraysToJava() {
         PrimitiveArrays arrays = getPrimitiveArrays();
 
@@ -81,6 +84,7 @@ public class ConversionTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsPrimitiveArrays2ToJavaScript() {
         assertEquals("true:2:3:64:4:5.5:6.5:foo", combinePrimitiveArrays2(new boolean[][] {{ true }},
                 new byte[][] {{ 2 }}, new short[][] {{ 3 }}, new char[][] {{ '@' }}, new int[][] {{ 4 }},
@@ -88,6 +92,7 @@ public class ConversionTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsPrimitiveArrays2ToJava() {
         PrimitiveArrays2 arrays = getPrimitiveArrays2();
 
@@ -106,6 +111,7 @@ public class ConversionTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsPrimitiveArrays4ToJavaScript() {
         assertEquals("true:2:3:64:4:5.5:6.5:foo", combinePrimitiveArrays4(new boolean[][][][] {{{{ true }}}},
                 new byte[][][][] {{{{ 2 }}}}, new short[][][][] {{{{ 3 }}}}, new char[][][][] {{{{ '@' }}}},
@@ -114,6 +120,7 @@ public class ConversionTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsPrimitiveArrays4ToJava() {
         PrimitiveArrays4 arrays = getPrimitiveArrays4();
 
@@ -137,6 +144,7 @@ public class ConversionTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsArrayOfJSObject() {
         assertEquals("(foo)", surround(new JSString[] { JSString.valueOf("foo") })[0].stringValue());
         assertEquals("(foo)", surround(new JSString[][] {{ JSString.valueOf("foo") }})[0][0].stringValue());
@@ -145,6 +153,7 @@ public class ConversionTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void copiesArray() {
         int[] array = { 23 };
         assertEquals(24, mutate(array));
@@ -152,6 +161,7 @@ public class ConversionTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void passesArrayByRef() {
         int[] array = { 23, 42 };
 
@@ -165,6 +175,7 @@ public class ConversionTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void returnsArrayByRef() {
         int[] first = { 23, 42 };
         int[] second = rewrap(first);

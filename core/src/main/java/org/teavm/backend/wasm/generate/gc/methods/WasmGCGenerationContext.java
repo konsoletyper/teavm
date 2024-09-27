@@ -21,10 +21,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationContext;
+import org.teavm.backend.wasm.generate.gc.WasmGCInitializerContributor;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
@@ -63,6 +65,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private Map<String, Set<String>> interfaceImplementors;
     private WasmGCNameProvider names;
     private boolean strict;
+    private Consumer<WasmGCInitializerContributor> initializerContributors;
 
     public WasmGCGenerationContext(WasmModule module, WasmGCVirtualTableProvider virtualTables,
             WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes, ListableClassReaderSource classes,
@@ -70,7 +73,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
             WasmGCSupertypeFunctionProvider supertypeFunctions, WasmGCClassInfoProvider classInfoProvider,
             WasmGCStandardClasses standardClasses, WasmGCStringProvider strings,
             WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics,
-            WasmGCNameProvider names, boolean strict) {
+            WasmGCNameProvider names, boolean strict, Consumer<WasmGCInitializerContributor> initializerContributors) {
         this.module = module;
         this.virtualTables = virtualTables;
         this.typeMapper = typeMapper;
@@ -87,6 +90,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         this.intrinsics = intrinsics;
         this.names = names;
         this.strict = strict;
+        this.initializerContributors = initializerContributors;
     }
 
     public WasmGCClassInfoProvider classInfoProvider() {
@@ -221,5 +225,18 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
                 }
             }
         }
+    }
+
+    public void addToInitializer(Consumer<WasmFunction> initializer) {
+        initializerContributors.accept(new WasmGCInitializerContributor() {
+            @Override
+            public void contributeToInitializerDefinitions(WasmFunction function) {
+            }
+
+            @Override
+            public void contributeToInitializer(WasmFunction function) {
+                initializer.accept(function);
+            }
+        });
     }
 }
