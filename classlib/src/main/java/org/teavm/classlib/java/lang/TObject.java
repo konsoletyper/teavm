@@ -186,6 +186,10 @@ public class TObject {
         if (monitor == null) {
             return true;
         }
+        if (PlatformDetector.isWebAssemblyGC()) {
+            // TODO: fix Monitor implementation and remove this block
+            return monitor.owner == null;
+        }
         if (monitor.owner == null
                 && (monitor.enteringThreads == null || monitor.enteringThreads.isEmpty())
                 && (monitor.notifyListeners == null || monitor.notifyListeners.isEmpty())) {

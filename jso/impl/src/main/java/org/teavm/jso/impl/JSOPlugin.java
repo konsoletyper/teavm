@@ -31,6 +31,12 @@ import org.teavm.vm.spi.TeaVMPlugin;
 public class JSOPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
+        var jsHost = host.getExtension(TeaVMJavaScriptHost.class);
+        var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
+        if (jsHost == null && wasmGCHost == null) {
+            return;
+        }
+
         JSBodyRepository repository = new JSBodyRepository();
         host.registerService(JSBodyRepository.class, repository);
         host.add(new JSObjectClassTransformer(repository));
@@ -48,12 +54,10 @@ public class JSOPlugin implements TeaVMPlugin {
 
         TeaVMPluginUtil.handleNatives(host, JS.class);
 
-        var jsHost = host.getExtension(TeaVMJavaScriptHost.class);
         if (jsHost != null) {
             installForJS(jsHost);
         }
 
-        var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
         if (wasmGCHost != null) {
             WasmGCJso.install(host, wasmGCHost, repository);
         }
