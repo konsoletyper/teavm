@@ -29,7 +29,7 @@ class WasmGCJSFunctions {
         if (function == null) {
             var extern = WasmType.SpecialReferenceKind.EXTERN.asNonNullType();
             var constructorParamTypes = new WasmType[index + 1];
-            Arrays.fill(constructorParamTypes, extern);
+            Arrays.fill(constructorParamTypes, WasmType.Reference.EXTERN);
             var functionType = context.functionTypes().of(extern, constructorParamTypes);
             function = new WasmFunction(functionType);
             function.setName(context.names().topLevel("teavm.js:createFunction" + index));
@@ -44,11 +44,9 @@ class WasmGCJSFunctions {
     WasmFunction getFunctionCaller(WasmGCIntrinsicContext context, int index) {
         var function = callers[index];
         if (function == null) {
-            var extern = WasmType.SpecialReferenceKind.EXTERN.asNonNullType();
             var paramTypes = new WasmType[index + 1];
-            Arrays.fill(paramTypes, extern);
-            paramTypes[0] = WasmType.Reference.EXTERN;
-            var functionType = context.functionTypes().of(extern, paramTypes);
+            Arrays.fill(paramTypes, WasmType.Reference.EXTERN);
+            var functionType = context.functionTypes().of(WasmType.Reference.EXTERN, paramTypes);
             function = new WasmFunction(functionType);
             function.setName(context.names().topLevel("teavm.js:callFunction" + index));
             function.setImportModule("teavmJso");

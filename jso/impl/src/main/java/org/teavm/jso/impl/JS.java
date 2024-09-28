@@ -746,7 +746,6 @@ public final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
-    @Import(name = "global", module = "teavmJso")
     public static native JSObject global(String name);
 
     @InjectedBy(JSNativeInjector.class)

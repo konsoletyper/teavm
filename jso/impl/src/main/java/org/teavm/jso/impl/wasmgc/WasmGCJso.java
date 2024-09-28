@@ -35,5 +35,6 @@ public final class WasmGCJso {
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "wrap", String.class, JSObject.class), jsIntrinsic);
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "unwrapString", JSObject.class, String.class),
                 jsIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "global", String.class, JSObject.class), jsIntrinsic);
     }
 }

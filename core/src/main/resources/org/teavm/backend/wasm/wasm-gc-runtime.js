@@ -18,7 +18,7 @@ var TeaVM = TeaVM || {};
 TeaVM.wasm = function() {
     let exports;
     let getGlobalName = function(name) {
-        return eval("return " + {name});
+        return eval(name);
     }
     function defaults(imports) {
         let stderr = "";

@@ -58,7 +58,6 @@ public class ConversionTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsPrimitiveArraysToJavaScript() {
         assertEquals("true:2:3:64:4:5.5:6.5:foo", combinePrimitiveArrays(new boolean[] { true }, new byte[] { 2 },
                 new short[] { 3 }, new char[] { '@' }, new int[] { 4 }, new float[] { 5.5F }, new double[] { 6.5 },
@@ -84,7 +83,6 @@ public class ConversionTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsPrimitiveArrays2ToJavaScript() {
         assertEquals("true:2:3:64:4:5.5:6.5:foo", combinePrimitiveArrays2(new boolean[][] {{ true }},
                 new byte[][] {{ 2 }}, new short[][] {{ 3 }}, new char[][] {{ '@' }}, new int[][] {{ 4 }},
@@ -111,7 +109,6 @@ public class ConversionTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsPrimitiveArrays4ToJavaScript() {
         assertEquals("true:2:3:64:4:5.5:6.5:foo", combinePrimitiveArrays4(new boolean[][][][] {{{{ true }}}},
                 new byte[][][][] {{{{ 2 }}}}, new short[][][][] {{{{ 3 }}}}, new char[][][][] {{{{ '@' }}}},
@@ -153,7 +150,6 @@ public class ConversionTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void copiesArray() {
         int[] array = { 23 };
         assertEquals(24, mutate(array));

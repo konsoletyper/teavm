@@ -20,12 +20,14 @@ import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapperFactory;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapperFactoryContext;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.core.JSArray;
 
 class WasmGCJSTypeMapper implements WasmGCCustomTypeMapper, WasmGCCustomTypeMapperFactory {
     @Override
     public WasmType map(String className) {
-        if (className.equals(JSObject.class.getName())) {
-            return WasmType.SpecialReferenceKind.EXTERN.asNonNullType();
+        if (className.equals(JSObject.class.getName())
+                || className.equals(JSArray.class.getName())) {
+            return WasmType.Reference.EXTERN;
         }
         return null;
     }
