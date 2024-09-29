@@ -738,6 +738,7 @@ public final class JS {
 
     @GeneratedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "asFunction", module = "teavmJso")
     public static native JSObject function(JSObject instance, JSObject property);
 
     @GeneratedBy(JSNativeGenerator.class)

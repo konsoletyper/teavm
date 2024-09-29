@@ -19,14 +19,14 @@ import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapper;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapperFactory;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapperFactoryContext;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.jso.JSObject;
-import org.teavm.jso.core.JSArray;
+import org.teavm.jso.impl.JSTypeHelper;
 
 class WasmGCJSTypeMapper implements WasmGCCustomTypeMapper, WasmGCCustomTypeMapperFactory {
+    private JSTypeHelper typeHelper;
+
     @Override
     public WasmType map(String className) {
-        if (className.equals(JSObject.class.getName())
-                || className.equals(JSArray.class.getName())) {
+        if (typeHelper.isJavaScriptClass(className)) {
             return WasmType.Reference.EXTERN;
         }
         return null;
@@ -34,6 +34,7 @@ class WasmGCJSTypeMapper implements WasmGCCustomTypeMapper, WasmGCCustomTypeMapp
 
     @Override
     public WasmGCCustomTypeMapper createTypeMapper(WasmGCCustomTypeMapperFactoryContext context) {
+        this.typeHelper = new JSTypeHelper(context.originalClasses());
         return this;
     }
 }

@@ -20,35 +20,42 @@ import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.jso.impl.JSBodyEmitter;
+import org.teavm.model.ValueType;
 
 class WasmGCBodyIntrinsic implements WasmGCIntrinsic {
     private JSBodyEmitter emitter;
     private boolean inlined;
-    private WasmGCBodyGenerator bodyGenerator;
+    private WasmGCJsoCommonGenerator commonGen;
     private WasmGlobal global;
     private WasmGCJSFunctions jsFunctions;
 
-    WasmGCBodyIntrinsic(JSBodyEmitter emitter, boolean inlined, WasmGCBodyGenerator bodyGenerator,
+    WasmGCBodyIntrinsic(JSBodyEmitter emitter, boolean inlined, WasmGCJsoCommonGenerator commonGen,
             WasmGCJSFunctions jsFunctions) {
         this.emitter = emitter;
         this.inlined = inlined;
-        this.bodyGenerator = bodyGenerator;
+        this.commonGen = commonGen;
         this.jsFunctions = jsFunctions;
     }
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var jsoContext = WasmGCJsoContext.wrap(context);
         if (global == null) {
-            global = bodyGenerator.addBody(context, emitter, inlined);
+            global = commonGen.addJSBody(jsoContext, emitter, inlined);
         }
-        var call = new WasmCall(jsFunctions.getFunctionCaller(context, invocation.getArguments().size()));
+        var call = new WasmCall(jsFunctions.getFunctionCaller(jsoContext, invocation.getArguments().size()));
         call.getArguments().add(new WasmGetGlobal(global));
         for (var arg : invocation.getArguments()) {
             call.getArguments().add(context.generate(arg));
         }
-        return call;
+        WasmExpression result = call;
+        if (invocation.getMethod().getReturnType() == ValueType.VOID) {
+            result = new WasmDrop(result);
+        }
+        return result;
     }
 }

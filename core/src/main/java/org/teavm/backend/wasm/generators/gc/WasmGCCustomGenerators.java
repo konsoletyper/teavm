@@ -108,6 +108,9 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
             WasmGCCustomGenerator generator = null;
             for (var factory : factories) {
                 generator = factory.createGenerator(method, factoryContext);
+                if (generator != null) {
+                    break;
+                }
             }
             result = new Container(generator);
             generators.put(method, result);

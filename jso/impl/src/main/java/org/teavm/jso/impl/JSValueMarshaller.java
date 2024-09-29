@@ -87,6 +87,16 @@ class JSValueMarshaller {
             diagnostics.error(location, "Wrong functor: {{c0}}", type.getName());
             return var;
         }
+
+        var unwrapNative = new InvokeInstruction();
+        unwrapNative.setLocation(location.getSourceLocation());
+        unwrapNative.setType(InvocationType.SPECIAL);
+        unwrapNative.setMethod(JSMethods.UNWRAP);
+        unwrapNative.setArguments(var);
+        unwrapNative.setReceiver(program.createVariable());
+        replacement.add(unwrapNative);
+        var = unwrapNative.getReceiver();
+
         String name = type.getMethods().stream()
                 .filter(method -> method.hasModifier(ElementModifier.ABSTRACT))
                 .findFirst().get().getName();
@@ -137,6 +147,16 @@ class JSValueMarshaller {
                     unwrapNative.setType(InvocationType.SPECIAL);
                     unwrapNative.setMethod(new MethodReference(JSWrapper.class,
                             "dependencyJavaToJs", Object.class, JSObject.class));
+                    unwrapNative.setArguments(var);
+                    unwrapNative.setReceiver(program.createVariable());
+                    replacement.add(unwrapNative);
+                    return unwrapNative.getReceiver();
+                }
+                if (typeHelper.isJavaScriptClass(className) && jsType == JSType.JAVA) {
+                    var unwrapNative = new InvokeInstruction();
+                    unwrapNative.setLocation(location);
+                    unwrapNative.setType(InvocationType.SPECIAL);
+                    unwrapNative.setMethod(JSMethods.UNWRAP);
                     unwrapNative.setArguments(var);
                     unwrapNative.setReceiver(program.createVariable());
                     replacement.add(unwrapNative);

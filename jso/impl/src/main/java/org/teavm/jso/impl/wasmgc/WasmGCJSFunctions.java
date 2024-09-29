@@ -16,7 +16,6 @@
 package org.teavm.jso.impl.wasmgc;
 
 import java.util.Arrays;
-import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmType;
 
@@ -24,7 +23,7 @@ class WasmGCJSFunctions {
     private WasmFunction[] constructors = new WasmFunction[32];
     private WasmFunction[] callers = new WasmFunction[32];
 
-    WasmFunction getFunctionConstructor(WasmGCIntrinsicContext context, int index) {
+    WasmFunction getFunctionConstructor(WasmGCJsoContext context, int index) {
         var function = constructors[index];
         if (function == null) {
             var extern = WasmType.SpecialReferenceKind.EXTERN.asNonNullType();
@@ -41,7 +40,7 @@ class WasmGCJSFunctions {
         return function;
     }
 
-    WasmFunction getFunctionCaller(WasmGCIntrinsicContext context, int index) {
+    WasmFunction getFunctionCaller(WasmGCJsoContext context, int index) {
         var function = callers[index];
         if (function == null) {
             var paramTypes = new WasmType[index + 1];

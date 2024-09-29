@@ -24,12 +24,13 @@ import org.teavm.model.MethodReference;
 class WasmGCJSBodyRenderer implements WasmGCIntrinsicFactory {
     private JSBodyRepository repository;
     private WasmGCJSFunctions jsFunctions;
-    private WasmGCBodyGenerator bodyGenerator;
+    private WasmGCJsoCommonGenerator commonGen;
 
-    WasmGCJSBodyRenderer(JSBodyRepository repository) {
+    WasmGCJSBodyRenderer(JSBodyRepository repository, WasmGCJSFunctions jsFunctions,
+            WasmGCJsoCommonGenerator commonGen) {
         this.repository = repository;
-        jsFunctions = new WasmGCJSFunctions();
-        bodyGenerator = new WasmGCBodyGenerator(jsFunctions);
+        this.jsFunctions = jsFunctions;
+        this.commonGen = commonGen;
     }
 
     @Override
@@ -39,6 +40,6 @@ class WasmGCJSBodyRenderer implements WasmGCIntrinsicFactory {
             return null;
         }
         var inlined = repository.inlineMethods.contains(emitter.method());
-        return new WasmGCBodyIntrinsic(emitter, inlined, bodyGenerator, jsFunctions);
+        return new WasmGCBodyIntrinsic(emitter, inlined, commonGen, jsFunctions);
     }
 }

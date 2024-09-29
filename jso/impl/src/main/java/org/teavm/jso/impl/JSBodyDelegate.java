@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Alexey Andreev.
+ *  Copyright 2024 konsoletyper.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,22 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generate.gc.classes;
+package org.teavm.jso.impl;
 
-import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
-import org.teavm.backend.wasm.model.WasmModule;
-import org.teavm.model.ClassReaderSource;
-
-public interface WasmGCCustomTypeMapperFactoryContext {
-    ClassReaderSource classes();
-
-    ClassReaderSource originalClasses();
-
-    WasmModule module();
-
-    WasmGCClassInfoProvider classInfoProvider();
-
-    WasmGCTypeMapper typeMapper();
-
-    WasmGCNameProvider names();
+@interface JSBodyDelegate {
 }

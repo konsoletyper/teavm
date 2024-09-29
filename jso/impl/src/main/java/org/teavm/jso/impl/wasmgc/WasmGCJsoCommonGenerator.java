@@ -20,11 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import org.teavm.backend.javascript.rendering.AstWriter;
-import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
@@ -32,16 +32,16 @@ import org.teavm.jso.impl.JSBodyAstEmitter;
 import org.teavm.jso.impl.JSBodyBloatedEmitter;
 import org.teavm.jso.impl.JSBodyEmitter;
 
-class WasmGCBodyGenerator {
+class WasmGCJsoCommonGenerator {
     private WasmGCJSFunctions jsFunctions;
     private boolean initialized;
     private List<Consumer<WasmFunction>> initializerParts = new ArrayList<>();
 
-    WasmGCBodyGenerator(WasmGCJSFunctions jsFunctions) {
+    WasmGCJsoCommonGenerator(WasmGCJSFunctions jsFunctions) {
         this.jsFunctions = jsFunctions;
     }
 
-    private void initialize(WasmGCIntrinsicContext context) {
+    private void initialize(WasmGCJsoContext context) {
         if (initialized) {
             return;
         }
@@ -49,14 +49,17 @@ class WasmGCBodyGenerator {
         context.addToInitializer(this::writeToInitializer);
     }
 
-
     private void writeToInitializer(WasmFunction function) {
         for (var part : initializerParts) {
             part.accept(function);
         }
     }
 
-    WasmGlobal addBody(WasmGCIntrinsicContext context, JSBodyEmitter emitter, boolean inlined) {
+    void addInitializerPart(Consumer<WasmFunction> part) {
+        initializerParts.add(part);
+    }
+
+    WasmGlobal addJSBody(WasmGCJsoContext context, JSBodyEmitter emitter, boolean inlined) {
         initialize(context);
         var paramCount = emitter.method().parameterCount();
         if (!emitter.isStatic()) {
@@ -87,9 +90,7 @@ class WasmGCBodyGenerator {
             throw new IllegalArgumentException();
         }
 
-        var constructor = new WasmCall(jsFunctions.getFunctionConstructor(context,
-                paramCount));
-        var stringToJs = context.functions().forStaticMethod(STRING_TO_JS);
+        var constructor = new WasmCall(jsFunctions.getFunctionConstructor(context, paramCount));
         var paramNames = new ArrayList<String>();
         if (!emitter.isStatic()) {
             paramNames.add("__this__");
@@ -97,12 +98,20 @@ class WasmGCBodyGenerator {
         paramNames.addAll(List.of(emitter.parameterNames()));
         for (var parameter : paramNames) {
             var paramName = new WasmGetGlobal(context.strings().getStringConstant(parameter).global);
-            constructor.getArguments().add(new WasmCall(stringToJs, paramName));
+            constructor.getArguments().add(stringToJs(context, paramName));
         }
         var functionBody = new WasmGetGlobal(context.strings().getStringConstant(body).global);
-        constructor.getArguments().add(new WasmCall(stringToJs, functionBody));
+        constructor.getArguments().add(stringToJs(context, functionBody));
         initializerParts.add(initializer -> initializer.getBody().add(new WasmSetGlobal(global, constructor)));
 
         return global;
+    }
+
+    private WasmFunction stringToJsFunction(WasmGCJsoContext context) {
+        return context.functions().forStaticMethod(STRING_TO_JS);
+    }
+
+    WasmExpression stringToJs(WasmGCJsoContext context, WasmExpression str) {
+        return new WasmCall(stringToJsFunction(context), str);
     }
 }

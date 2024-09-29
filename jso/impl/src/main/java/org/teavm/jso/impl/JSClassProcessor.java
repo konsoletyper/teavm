@@ -80,20 +80,6 @@ import org.teavm.model.util.ProgramUtils;
 
 class JSClassProcessor {
     private static final String NO_SIDE_EFFECTS = NoSideEffects.class.getName();
-    private static final MethodReference WRAP = new MethodReference(JSWrapper.class, "wrap", Object.class,
-            Object.class);
-    private static final MethodReference MAYBE_WRAP = new MethodReference(JSWrapper.class, "maybeWrap", Object.class,
-            Object.class);
-    private static final MethodReference UNWRAP = new MethodReference(JSWrapper.class, "unwrap", Object.class,
-            JSObject.class);
-    private static final MethodReference MAYBE_UNWRAP = new MethodReference(JSWrapper.class, "maybeUnwrap",
-            Object.class, JSObject.class);
-    private static final MethodReference IS_JS = new MethodReference(JSWrapper.class, "isJs",
-            Object.class, boolean.class);
-    private static final MethodReference IS_PRIMITIVE = new MethodReference(JSWrapper.class, "isPrimitive",
-            Object.class, JSObject.class, boolean.class);
-    private static final MethodReference INSTANCE_OF = new MethodReference(JSWrapper.class, "instanceOf",
-            Object.class, JSObject.class, boolean.class);
     private final ClassReaderSource classSource;
     private final JSBodyRepository repository;
     private final JavaInvocationProcessor javaInvocationProcessor;
@@ -111,6 +97,7 @@ class JSClassProcessor {
     private JSImportAnnotationCache annotationCache;
     private ClassReader objectClass;
     private Predicate<String> classFilter = n -> true;
+    private boolean wasmGC;
 
     JSClassProcessor(ClassReaderSource classSource, JSTypeHelper typeHelper, JSBodyRepository repository,
             Diagnostics diagnostics, IncrementalDependencyRegistration incrementalCache, boolean strict) {
@@ -125,7 +112,11 @@ class JSClassProcessor {
         annotationCache = new JSImportAnnotationCache(classSource, diagnostics);
     }
 
-    public void setClassFilter(Predicate<String> classFilter) {
+    void setWasmGC(boolean wasmGC) {
+        this.wasmGC = wasmGC;
+    }
+
+    void setClassFilter(Predicate<String> classFilter) {
         this.classFilter = classFilter;
     }
 
@@ -286,8 +277,11 @@ class JSClassProcessor {
 
     void processProgram(MethodHolder methodToProcess) {
         setCurrentProgram(methodToProcess.getProgram());
-        types = new JSTypeInference(typeHelper, classSource, program, methodToProcess.getReference());
+        types = new JSTypeInference(typeHelper, classSource, program, methodToProcess.getReference(), wasmGC);
         types.ensure();
+        if (wasmGC) {
+            wrapJsPhis(methodToProcess.getReference());
+        }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             var block = program.basicBlockAt(i);
             for (var insn : block) {
@@ -355,6 +349,32 @@ class JSClassProcessor {
         }
     }
 
+    private void wrapJsPhis(MethodReference methodReference) {
+        var changed = false;
+        for (var block : program.getBasicBlocks()) {
+            for (var phi : block.getPhis()) {
+                if (types.typeOf(phi.getReceiver()) == JSType.MIXED) {
+                    for (var incoming : phi.getIncomings()) {
+                        if (types.typeOf(incoming.getValue()) == JSType.JS) {
+                            changed = true;
+                            var wrap = new InvokeInstruction();
+                            wrap.setType(InvocationType.SPECIAL);
+                            wrap.setMethod(new MethodReference(JSWrapper.class, "wrap", JSObject.class, Object.class));
+                            wrap.setArguments(incoming.getValue());
+                            wrap.setReceiver(program.createVariable());
+                            incoming.getSource().getLastInstruction().insertPrevious(wrap);
+                            incoming.setValue(wrap.getReceiver());
+                        }
+                    }
+                }
+            }
+        }
+        if (changed) {
+            types = new JSTypeInference(typeHelper, classSource, program, methodReference, wasmGC);
+            types.ensure();
+        }
+    }
+
     private void processInvokeArgs(InvokeInstruction invoke, MethodReader methodToInvoke) {
         if (methodToInvoke != null && methodToInvoke.getAnnotations().get(JSBody.class.getName()) != null) {
             return;
@@ -402,7 +422,7 @@ class JSClassProcessor {
         if (type == JSType.JS || type == JSType.MIXED) {
             var unwrap = new InvokeInstruction();
             unwrap.setType(InvocationType.SPECIAL);
-            unwrap.setMethod(type == JSType.MIXED ? MAYBE_UNWRAP : UNWRAP);
+            unwrap.setMethod(type == JSType.MIXED ? JSMethods.MAYBE_UNWRAP : JSMethods.UNWRAP);
             unwrap.setArguments(program.createVariable());
             unwrap.setReceiver(insn.getReceiver());
             unwrap.setLocation(insn.getLocation());
@@ -420,7 +440,7 @@ class JSClassProcessor {
         if (type == JSType.JS || type == JSType.MIXED) {
             var wrap = new InvokeInstruction();
             wrap.setType(InvocationType.SPECIAL);
-            wrap.setMethod(type == JSType.MIXED ? MAYBE_WRAP : WRAP);
+            wrap.setMethod(type == JSType.MIXED ? JSMethods.MAYBE_WRAP : JSMethods.WRAP);
             wrap.setArguments(insn.getValue());
             wrap.setReceiver(program.createVariable());
             wrap.setLocation(insn.getLocation());
@@ -563,7 +583,7 @@ class JSClassProcessor {
             if (isTransparent(targetClassName)) {
                 var invoke = new InvokeInstruction();
                 invoke.setType(InvocationType.SPECIAL);
-                invoke.setMethod(IS_JS);
+                invoke.setMethod(JSMethods.IS_JS);
                 invoke.setArguments(value);
                 invoke.setReceiver(receiver);
                 invoke.setLocation(location);
@@ -572,7 +592,9 @@ class JSClassProcessor {
                 var primitiveType = getPrimitiveType(targetClassName);
                 var invoke = new InvokeInstruction();
                 invoke.setType(InvocationType.SPECIAL);
-                invoke.setMethod(primitiveType != null ? IS_PRIMITIVE : INSTANCE_OF);
+                invoke.setMethod(primitiveType != null
+                        ? JSMethods.WRAPPER_IS_PRIMITIVE
+                        : JSMethods.WRAPPER_INSTANCE_OF);
                 var secondArg = primitiveType != null
                         ? marshaller.addJsString(primitiveType, location)
                         : marshaller.classRef(targetClassName, location);
@@ -648,7 +670,7 @@ class JSClassProcessor {
         }
         var wrap = new InvokeInstruction();
         wrap.setType(InvocationType.SPECIAL);
-        wrap.setMethod(varType == JSType.JS ? WRAP : MAYBE_WRAP);
+        wrap.setMethod(varType == JSType.JS ? JSMethods.WRAP : JSMethods.MAYBE_WRAP);
         wrap.setArguments(var);
         wrap.setReceiver(program.createVariable());
         wrap.setLocation(instruction.getLocation());
@@ -663,7 +685,7 @@ class JSClassProcessor {
         }
         var unwrap = new InvokeInstruction();
         unwrap.setType(InvocationType.SPECIAL);
-        unwrap.setMethod(varType == JSType.JAVA ? UNWRAP : MAYBE_UNWRAP);
+        unwrap.setMethod(varType == JSType.JAVA ? JSMethods.UNWRAP : JSMethods.MAYBE_UNWRAP);
         unwrap.setArguments(var);
         unwrap.setReceiver(program.createVariable());
         unwrap.setLocation(instruction.getLocation());
@@ -1187,6 +1209,7 @@ class JSClassProcessor {
             if (method.getAnnotations().get(NoSideEffects.class.getName()) != null) {
                 proxyMethod.getAnnotations().add(new AnnotationHolder(NoSideEffects.class.getName()));
             }
+            proxyMethod.getAnnotations().add(new AnnotationHolder(JSBodyDelegate.class.getName()));
             boolean inline = repository.inlineMethods.contains(methodRef);
             AnnotationHolder generatorAnnot = new AnnotationHolder(inline
                     ? DynamicInjector.class.getName() : DynamicGenerator.class.getName());

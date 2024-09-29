@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.impl;
 
+import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSClass;
@@ -30,60 +31,61 @@ import org.teavm.jso.core.JSWeakMap;
 import org.teavm.jso.core.JSWeakRef;
 
 public final class JSWrapper {
-    private static final JSWeakMap<JSObject, JSTransparentInt> hashCodes = new JSWeakMap<>();
-    private static final JSWeakMap<JSObject, JSWeakRef<JSObject>> wrappers = JSWeakRef.isSupported()
-            ? new JSWeakMap<>() : null;
-    private static final JSMap<JSString, JSWeakRef<JSObject>> stringWrappers = JSWeakRef.isSupported()
-            ? new JSMap<>() : null;
-    private static final JSMap<JSNumber, JSWeakRef<JSObject>> numberWrappers = JSWeakRef.isSupported()
-            ? new JSMap<>() : null;
-    private static JSWeakRef<JSObject> undefinedWrapper;
-    private static final JSFinalizationRegistry stringFinalizationRegistry;
-    private static final JSFinalizationRegistry numberFinalizationRegistry;
-    private static int hashCodeGen;
+    private static class Helper {
+        private static final JSWeakMap<JSObject, JSTransparentInt> hashCodes = new JSWeakMap<>();
+        private static final JSWeakMap<JSObject, JSWeakRef<JSObject>> wrappers = JSWeakRef.isSupported()
+                ? new JSWeakMap<>() : null;
+        private static final JSMap<JSString, JSWeakRef<JSObject>> stringWrappers = JSWeakRef.isSupported()
+                ? new JSMap<>() : null;
+        private static final JSMap<JSNumber, JSWeakRef<JSObject>> numberWrappers = JSWeakRef.isSupported()
+                ? new JSMap<>() : null;
+        private static JSWeakRef<JSObject> undefinedWrapper;
+        private static JSFinalizationRegistry stringFinalizationRegistry;
+        private static JSFinalizationRegistry numberFinalizationRegistry;
+        private static int hashCodeGen;
+
+        static {
+            stringFinalizationRegistry = stringWrappers != null
+                    ? new JSFinalizationRegistry(token -> stringWrappers.delete((JSString) token))
+                    : null;
+            numberFinalizationRegistry = numberWrappers != null
+                    ? new JSFinalizationRegistry(token -> numberWrappers.delete((JSNumber) token))
+                    : null;
+        }
+    }
 
     public final JSObject js;
-
-    static {
-        stringFinalizationRegistry = stringWrappers != null
-                ? new JSFinalizationRegistry(token -> stringWrappers.delete((JSString) token))
-                : null;
-        numberFinalizationRegistry = numberWrappers != null
-                ? new JSFinalizationRegistry(token -> numberWrappers.delete((JSNumber) token))
-                : null;
-    }
 
     private JSWrapper(JSObject js) {
         this.js = js;
     }
 
-    public static Object wrap(Object o) {
+    public static Object wrap(JSObject o) {
         if (o == null) {
             return null;
         }
-        var js = directJavaToJs(o);
-        var type = JSObjects.typeOf(js);
+        var type = JSObjects.typeOf(o);
         var isObject = type.equals("object") || type.equals("function");
-        if (isObject && isJSImplementation(o)) {
-            return o;
-        }
+        var wrappers = Helper.wrappers;
         if (wrappers != null) {
             if (isObject) {
-                var existingRef = get(wrappers, js);
+                var existingRef = get(wrappers, o);
                 var existing = !isUndefined(existingRef) ? deref(existingRef) : JSUndefined.instance();
                 if (isUndefined(existing)) {
-                    var wrapper = new JSWrapper(js);
-                    set(wrappers, js, createWeakRef(wrapperToJs(wrapper)));
+                    var wrapper = new JSWrapper(o);
+                    set(wrappers, o, createWeakRef(wrapperToJs(wrapper)));
                     return wrapper;
                 } else {
                     return jsToWrapper(existing);
                 }
             } else if (type.equals("string")) {
-                var jsString = (JSString) js;
+                var jsString = (JSString) o;
+                var stringWrappers = Helper.stringWrappers;
+                var stringFinalizationRegistry = Helper.stringFinalizationRegistry;
                 var existingRef = get(stringWrappers, jsString);
                 var existing = !isUndefined(existingRef) ? deref(existingRef) : JSUndefined.instance();
                 if (isUndefined(existing)) {
-                    var wrapper = new JSWrapper(js);
+                    var wrapper = new JSWrapper(o);
                     var wrapperAsJs = wrapperToJs(wrapper);
                     set(stringWrappers, jsString, createWeakRef(wrapperAsJs));
                     register(stringFinalizationRegistry, wrapperAsJs, jsString);
@@ -92,11 +94,13 @@ public final class JSWrapper {
                     return jsToWrapper(existing);
                 }
             } else if (type.equals("number")) {
-                var jsNumber = (JSNumber) js;
+                var jsNumber = (JSNumber) o;
+                var numberWrappers = Helper.numberWrappers;
+                var numberFinalizationRegistry = Helper.numberFinalizationRegistry;
                 var existingRef = get(numberWrappers, jsNumber);
                 var existing = !isUndefined(existingRef) ? deref(existingRef) : JSUndefined.instance();
                 if (isUndefined(existing)) {
-                    var wrapper = new JSWrapper(js);
+                    var wrapper = new JSWrapper(o);
                     var wrapperAsJs = wrapperToJs(wrapper);
                     set(numberWrappers, jsNumber, createWeakRef(wrapperAsJs));
                     register(numberFinalizationRegistry, wrapperAsJs, jsNumber);
@@ -105,19 +109,19 @@ public final class JSWrapper {
                     return jsToWrapper(existing);
                 }
             } else if (type.equals("undefined")) {
-                var existingRef = undefinedWrapper;
+                var existingRef = Helper.undefinedWrapper;
                 var existing = existingRef != null ? deref(existingRef) : JSUndefined.instance();
                 if (isUndefined(existing)) {
-                    var wrapper = new JSWrapper(js);
+                    var wrapper = new JSWrapper(o);
                     var wrapperAsJs = wrapperToJs(wrapper);
-                    undefinedWrapper = createWeakRef(wrapperAsJs);
+                    Helper.undefinedWrapper = createWeakRef(wrapperAsJs);
                     return wrapper;
                 } else {
                     return jsToWrapper(existing);
                 }
             }
         }
-        return new JSWrapper(js);
+        return new JSWrapper(o);
     }
 
     @JSBody(params = "target", script = "return new WeakRef(target);")
@@ -152,14 +156,18 @@ public final class JSWrapper {
 
     @NoSideEffects
     public static Object maybeWrap(Object o) {
-        return o == null || isJava(o) ? o : wrap(o);
+        return o == null || isJava(o) ? o : wrap(directJavaToJs(o));
     }
 
     @NoSideEffects
     public static native JSObject directJavaToJs(Object obj);
 
     @NoSideEffects
-    public static native Object directJsToJava(JSObject obj);
+    public static native JSObject marshallJavaToJs(Object obj);
+
+    @NoSideEffects
+    @Import(name = "unwrapJavaObject", module = "teavmJso")
+    public static native Object unmarshallJavaFromJs(JSObject obj);
 
     @NoSideEffects
     public static native JSObject dependencyJavaToJs(Object obj);
@@ -186,14 +194,14 @@ public final class JSWrapper {
         if (o == null) {
             return null;
         }
-        return isJSImplementation(o) ? directJavaToJs(o) : ((JSWrapper) o).js;
+        return isJSImplementation(o) ? marshallJavaToJs(o) : ((JSWrapper) o).js;
     }
 
     public static JSObject maybeUnwrap(Object o) {
         if (o == null) {
             return null;
         }
-        return isJava(o) ? unwrap(o) : directJavaToJs(o);
+        return isJava(o) ? unwrap(o) : marshallJavaToJs(o);
     }
 
     public static JSObject javaToJs(Object o) {
@@ -207,7 +215,7 @@ public final class JSWrapper {
         if (o == null) {
             return null;
         }
-        return !isJava(o) ? wrap(directJsToJava(o)) : dependencyJsToJava(o);
+        return !isJava(o) ? wrap(o) : dependencyJsToJava(o);
     }
 
     public static boolean isJs(Object o) {
@@ -229,10 +237,10 @@ public final class JSWrapper {
     public int hashCode() {
         var type = JSObjects.typeOf(js);
         if (type.equals("object") || type.equals("symbol") || type.equals("function")) {
-            var code = hashCodes.get(js);
+            var code = Helper.hashCodes.get(js);
             if (isUndefined(code)) {
-                code = JSTransparentInt.valueOf(++hashCodeGen);
-                hashCodes.set(js, code);
+                code = JSTransparentInt.valueOf(++Helper.hashCodeGen);
+                Helper.hashCodes.set(js, code);
             }
             return code.intValue();
         } else if (type.equals("number")) {

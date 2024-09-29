@@ -15,9 +15,9 @@
  */
 package org.teavm.jso.impl;
 
+import static org.teavm.jso.impl.AliasCollector.collectMembers;
+import static org.teavm.jso.impl.AliasCollector.getPublicAlias;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Predicate;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.RenderingManager;
 import org.teavm.backend.javascript.spi.MethodContributor;
@@ -47,7 +47,7 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
     public void begin(RenderingManager context, BuildTarget buildTarget) {
         writer = context.getWriter();
         classSource = context.getClassSource();
-        typeHelper = new JSTypeHelper(context.getClassSource());
+        typeHelper = new JSTypeHelper(context.getOriginalClassSource());
         this.context = context;
     }
 
@@ -91,7 +91,7 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
     }
 
     private boolean exportClassInstanceMembers(ClassReader classReader) {
-        var members = collectMembers(classReader, method -> !method.hasModifier(ElementModifier.STATIC));
+        var members = collectMembers(classReader, AliasCollector::isInstanceMember);
 
         var isJsClassImpl = typeHelper.isJavaScriptImplementation(classReader.getName());
         if (members.methods.isEmpty() && members.properties.isEmpty() && !isJsClassImpl) {
@@ -106,23 +106,25 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
         }
 
         for (var aliasEntry : members.methods.entrySet()) {
-            if (classReader.getMethod(aliasEntry.getValue()) == null) {
+            if (classReader.getMethod(aliasEntry.getValue().getDescriptor()) == null) {
                 continue;
             }
             appendMethodAlias(aliasEntry.getKey());
-            writer.ws().append("=").ws().append("c.").appendVirtualMethod(aliasEntry.getValue())
-                    .append(";").softNewLine();
+            writer.ws().append("=").ws().appendFunction("$rt_callWithReceiver").append("(")
+                    .appendMethod(aliasEntry.getValue()).append(");").softNewLine();
         }
         for (var aliasEntry : members.properties.entrySet()) {
             var propInfo = aliasEntry.getValue();
-            if (propInfo.getter == null || classReader.getMethod(propInfo.getter) == null) {
+            if (propInfo.getter == null || classReader.getMethod(propInfo.getter.getDescriptor()) == null) {
                 continue;
             }
             appendPropertyAlias(aliasEntry.getKey());
-            writer.append("get:").ws().append("c.").appendVirtualMethod(propInfo.getter);
-            if (propInfo.setter != null && classReader.getMethod(propInfo.setter) != null) {
+            writer.append("get:").ws().appendFunction("$rt_callWithReceiver").append("(")
+                    .appendMethod(propInfo.getter).append(")");
+            if (propInfo.setter != null && classReader.getMethod(propInfo.setter.getDescriptor()) != null) {
                 writer.append(",").softNewLine();
-                writer.append("set:").ws().append("c.").appendVirtualMethod(propInfo.setter);
+                writer.append("set:").ws().appendFunction("$rt_callWithReceiver").append("(")
+                        .appendMethod(propInfo.setter).append(")");
             }
             writer.softNewLine().outdent().append("});").softNewLine();
         }
@@ -136,7 +138,7 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
     }
 
     private boolean exportClassStaticMembers(ClassReader classReader, String name) {
-        var members = collectMembers(classReader, c -> c.hasModifier(ElementModifier.STATIC));
+        var members = collectMembers(classReader, AliasCollector::isStaticMember);
 
         if (members.methods.isEmpty() && members.properties.isEmpty()) {
             return false;
@@ -146,7 +148,7 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
 
         for (var aliasEntry : members.methods.entrySet()) {
             appendMethodAlias(aliasEntry.getKey());
-            var fullRef = new MethodReference(classReader.getName(), aliasEntry.getValue());
+            var fullRef = aliasEntry.getValue();
             writer.ws().append("=").ws().appendMethod(fullRef).append(";").softNewLine();
         }
         for (var aliasEntry : members.properties.entrySet()) {
@@ -155,11 +157,11 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
                 continue;
             }
             appendPropertyAlias(aliasEntry.getKey());
-            var fullGetter = new MethodReference(classReader.getName(), propInfo.getter);
+            var fullGetter = propInfo.getter;
             writer.append("get:").ws().appendMethod(fullGetter);
             if (propInfo.setter != null) {
                 writer.append(",").softNewLine();
-                var fullSetter = new MethodReference(classReader.getName(), propInfo.setter);
+                var fullSetter = propInfo.setter;
                 writer.append("set:").ws().appendMethod(fullSetter);
             }
             writer.softNewLine().outdent().append("});").softNewLine();
@@ -182,39 +184,6 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
                 .ws().append("{").indent().softNewLine();
     }
 
-    private Members collectMembers(ClassReader classReader, Predicate<MethodReader> filter) {
-        var methods = new HashMap<String, MethodDescriptor>();
-        var properties = new HashMap<String, PropertyInfo>();
-        MethodDescriptor constructor = null;
-        for (var method : classReader.getMethods()) {
-            if (!filter.test(method)) {
-                continue;
-            }
-            var methodAlias = getPublicAlias(method);
-            if (methodAlias != null) {
-                switch (methodAlias.kind) {
-                    case METHOD:
-                        methods.put(methodAlias.name, method.getDescriptor());
-                        break;
-                    case GETTER: {
-                        var propInfo = properties.computeIfAbsent(methodAlias.name, k -> new PropertyInfo());
-                        propInfo.getter = method.getDescriptor();
-                        break;
-                    }
-                    case SETTER: {
-                        var propInfo = properties.computeIfAbsent(methodAlias.name, k -> new PropertyInfo());
-                        propInfo.setter = method.getDescriptor();
-                        break;
-                    }
-                    case CONSTRUCTOR:
-                        constructor = method.getDescriptor();
-                        break;
-                }
-            }
-        }
-        return new Members(methods, properties, constructor);
-    }
-
     private void exportModule() {
         var cls = classSource.get(context.getEntryPoint());
         for (var method : cls.getMethods()) {
@@ -222,7 +191,7 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
                 continue;
             }
             var methodAlias = getPublicAlias(method);
-            if (methodAlias != null && methodAlias.kind == AliasKind.METHOD) {
+            if (methodAlias != null && methodAlias.kind == AliasCollector.AliasKind.METHOD) {
                 context.exportMethod(method.getReference(), methodAlias.name);
             }
         }
@@ -230,7 +199,7 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
 
     private void exportClassFromModule(ClassReader cls, String functionName) {
         var name = getClassAliasName(cls);
-        var constructors = collectMembers(cls, method -> !method.hasModifier(ElementModifier.STATIC));
+        var constructors = collectMembers(cls, AliasCollector::isInstanceMember);
 
         var method = constructors.constructor;
         writer.append("function ").appendFunction(functionName).append("(");
@@ -245,7 +214,7 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
         writer.append(")").ws().appendBlockStart();
         if (method != null) {
             writer.appendClass(cls.getName()).append(".call(this);").softNewLine();
-            writer.appendMethod(new MethodReference(cls.getName(), method)).append("(this");
+            writer.appendMethod(method).append("(this");
             for (var i = 0; i < method.parameterCount(); ++i) {
                 writer.append(",").ws().append("p" + i);
             }
@@ -293,31 +262,6 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
         }
         return false;
     }
-
-    private Alias getPublicAlias(MethodReader method) {
-        var annot = method.getAnnotations().get(JSMethodToExpose.class.getName());
-        if (annot != null) {
-            return new Alias(annot.getValue("name").getString(), AliasKind.METHOD);
-        }
-
-        annot = method.getAnnotations().get(JSGetterToExpose.class.getName());
-        if (annot != null) {
-            return new Alias(annot.getValue("name").getString(), AliasKind.GETTER);
-        }
-
-        annot = method.getAnnotations().get(JSSetterToExpose.class.getName());
-        if (annot != null) {
-            return new Alias(annot.getValue("name").getString(), AliasKind.SETTER);
-        }
-
-        annot = method.getAnnotations().get(JSConstructorToExpose.class.getName());
-        if (annot != null) {
-            return new Alias(null, AliasKind.CONSTRUCTOR);
-        }
-
-        return null;
-    }
-
     private FieldReader getFunctorField(ClassReader cls) {
         return cls.getField("$$jso_functor$$");
     }
@@ -403,38 +347,5 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
         return methodReader != null && getPublicAlias(methodReader) != null;
     }
 
-    private static class Members {
-        final Map<String, MethodDescriptor> methods;
-        final Map<String, PropertyInfo> properties;
-        final MethodDescriptor constructor;
 
-        Members(Map<String, MethodDescriptor> methods, Map<String, PropertyInfo> properties,
-                MethodDescriptor constructor) {
-            this.methods = methods;
-            this.properties = properties;
-            this.constructor = constructor;
-        }
-    }
-
-    private static class PropertyInfo {
-        MethodDescriptor getter;
-        MethodDescriptor setter;
-    }
-
-    private static class Alias {
-        final String name;
-        final AliasKind kind;
-
-        Alias(String name, AliasKind kind) {
-            this.name = name;
-            this.kind = kind;
-        }
-    }
-
-    private enum AliasKind {
-        METHOD,
-        GETTER,
-        SETTER,
-        CONSTRUCTOR
-    }
 }

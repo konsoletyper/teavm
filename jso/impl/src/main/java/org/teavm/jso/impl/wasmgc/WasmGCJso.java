@@ -28,8 +28,12 @@ public final class WasmGCJso {
 
     public static void install(TeaVMHost host, TeaVMWasmGCHost wasmGCHost, JSBodyRepository jsBodyRepository) {
         host.add(new WasmGCJSDependencies());
+        host.add(new WasmGCJSWrapperTransformer());
+        var jsFunctions = new WasmGCJSFunctions();
+        var commonGen = new WasmGCJsoCommonGenerator(jsFunctions);
         wasmGCHost.addCustomTypeMapperFactory(new WasmGCJSTypeMapper());
-        wasmGCHost.addIntrinsicFactory(new WasmGCJSBodyRenderer(jsBodyRepository));
+        wasmGCHost.addIntrinsicFactory(new WasmGCJSBodyRenderer(jsBodyRepository, jsFunctions, commonGen));
+        wasmGCHost.addGeneratorFactory(new WasmGCMarshallMethodGeneratorFactory(commonGen));
 
         var jsIntrinsic = new WasmGCJSIntrinsic();
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "wrap", String.class, JSObject.class), jsIntrinsic);

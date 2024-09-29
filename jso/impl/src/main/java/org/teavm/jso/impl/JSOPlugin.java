@@ -46,12 +46,7 @@ public class JSOPlugin implements TeaVMPlugin {
         host.add(new JSExceptionsDependencyListener());
 
         var wrapperDependency = new JSWrapperDependency();
-        host.add(new MethodReference(JSWrapper.class, "jsToWrapper", JSObject.class, JSWrapper.class),
-                wrapperDependency);
-        host.add(new MethodReference(JSWrapper.class, "dependencyJavaToJs", Object.class, JSObject.class),
-                wrapperDependency);
-        host.add(new MethodReference(JSWrapper.class, "dependencyJsToJava", JSObject.class, Object.class),
-                wrapperDependency);
+        host.add(wrapperDependency);
 
         TeaVMPluginUtil.handleNatives(host, JS.class);
 
@@ -61,6 +56,7 @@ public class JSOPlugin implements TeaVMPlugin {
 
         if (wasmGCHost != null) {
             classTransformer.setClassFilter(n -> !n.startsWith("java."));
+            classTransformer.forWasmGC();
             WasmGCJso.install(host, wasmGCHost, repository);
         }
     }
@@ -89,6 +85,10 @@ public class JSOPlugin implements TeaVMPlugin {
         jsHost.add(new MethodReference(JSWrapper.class, "dependencyJavaToJs", Object.class, JSObject.class),
                 wrapperGenerator);
         jsHost.add(new MethodReference(JSWrapper.class, "dependencyJsToJava", JSObject.class, Object.class),
+                wrapperGenerator);
+        jsHost.add(new MethodReference(JSWrapper.class, "marshallJavaToJs", Object.class, JSObject.class),
+                wrapperGenerator);
+        jsHost.add(new MethodReference(JSWrapper.class, "unmarshallJavaFromJs", JSObject.class, Object.class),
                 wrapperGenerator);
         jsHost.add(new MethodReference(JSWrapper.class, "isJava", Object.class, boolean.class),
                 wrapperGenerator);

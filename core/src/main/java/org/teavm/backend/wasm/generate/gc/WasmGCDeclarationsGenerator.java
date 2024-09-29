@@ -34,6 +34,7 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.analysis.ClassInitializerInfo;
@@ -52,6 +53,7 @@ public class WasmGCDeclarationsGenerator {
     public WasmGCDeclarationsGenerator(
             WasmModule module,
             ListableClassHolderSource classes,
+            ClassReaderSource originalClasses,
             ClassLoader classLoader,
             ClassInitializerInfo classInitializerInfo,
             DependencyInfo dependencyInfo,
@@ -87,6 +89,7 @@ public class WasmGCDeclarationsGenerator {
         classGenerator = new WasmGCClassGenerator(
                 module,
                 classes,
+                originalClasses,
                 hierarchy,
                 dependencyInfo,
                 functionTypes,

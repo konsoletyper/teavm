@@ -15,33 +15,43 @@
  */
 package org.teavm.jso.impl;
 
+import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyNode;
-import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 
-public class JSWrapperDependency implements DependencyPlugin {
+public class JSWrapperDependency extends AbstractDependencyListener {
     private DependencyNode externalClassesNode;
 
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method) {
-        switch (method.getMethod().getName()) {
-            case "jsToWrapper":
-                method.getResult().propagate(agent.getType(JSWrapper.class.getName()));
-                break;
-            case "dependencyJavaToJs":
-                method.getVariable(1).connect(getExternalClassesNode(agent));
-                break;
-            case "dependencyJsToJava":
-                getExternalClassesNode(agent).connect(method.getResult());
-                break;
+    public void started(DependencyAgent agent) {
+        externalClassesNode = agent.createNode();
+    }
+
+    @Override
+    public void classReached(DependencyAgent agent, String className) {
+        var cls = agent.getClassSource().get(className);
+        if (cls.getAnnotations().get(JSClassToExpose.class.getName()) != null) {
+            externalClassesNode.propagate(agent.getType(className));
         }
     }
 
-    private DependencyNode getExternalClassesNode(DependencyAgent agent) {
-        if (externalClassesNode == null) {
-            externalClassesNode = agent.createNode();
+    @Override
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
+        if (method.getMethod().getOwnerName().equals(JSWrapper.class.getName())) {
+            switch (method.getMethod().getName()) {
+                case "jsToWrapper":
+                    method.getResult().propagate(agent.getType(JSWrapper.class.getName()));
+                    break;
+                case "dependencyJavaToJs":
+                case "marshallJavaToJs":
+                    method.getVariable(1).connect(externalClassesNode);
+                    break;
+                case "dependencyJsToJava":
+                case "unmarshallJavaFromJs":
+                    externalClassesNode.connect(method.getResult());
+                    break;
+            }
         }
-        return externalClassesNode;
     }
 }

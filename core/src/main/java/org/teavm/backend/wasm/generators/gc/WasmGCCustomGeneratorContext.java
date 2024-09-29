@@ -15,12 +15,14 @@
  */
 package org.teavm.backend.wasm.generators.gc;
 
+import java.util.function.Consumer;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
+import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.diagnostics.Diagnostics;
@@ -48,4 +50,6 @@ public interface WasmGCCustomGeneratorContext {
     Diagnostics diagnostics();
 
     WasmGCStringProvider strings();
+
+    void addToInitializer(Consumer<WasmFunction> initializerContributor);
 }

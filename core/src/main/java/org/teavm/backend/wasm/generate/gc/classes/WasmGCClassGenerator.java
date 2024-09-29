@@ -102,6 +102,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     private final WasmModule module;
     private ClassReaderSource classSource;
+    private ClassReaderSource originalClassSource;
     private ClassHierarchy hierarchy;
     private WasmFunctionTypes functionTypes;
     private TagRegistry tagRegistry;
@@ -158,7 +159,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private boolean hasLoadServices;
 
     public WasmGCClassGenerator(WasmModule module, ClassReaderSource classSource,
-            ClassHierarchy hierarchy, DependencyInfo dependencyInfo,
+            ClassReaderSource originalClassSource, ClassHierarchy hierarchy, DependencyInfo dependencyInfo,
             WasmFunctionTypes functionTypes, TagRegistry tagRegistry,
             ClassMetadataRequirements metadataRequirements, WasmGCVirtualTableProvider virtualTables,
             BaseWasmFunctionRepository functionProvider, WasmGCNameProvider names,
@@ -166,6 +167,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories) {
         this.module = module;
         this.classSource = classSource;
+        this.originalClassSource = originalClassSource;
         this.hierarchy = hierarchy;
         this.functionTypes = functionTypes;
         this.tagRegistry = tagRegistry;
@@ -195,6 +197,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     private WasmGCCustomTypeMapperFactoryContext customTypeMapperFactoryContext() {
         return new WasmGCCustomTypeMapperFactoryContext() {
+            @Override
+            public ClassReaderSource originalClasses() {
+                return originalClassSource;
+            }
+
             @Override
             public ClassReaderSource classes() {
                 return classSource;

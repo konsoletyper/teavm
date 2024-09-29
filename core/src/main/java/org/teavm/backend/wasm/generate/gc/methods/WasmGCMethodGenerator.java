@@ -433,5 +433,10 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         public WasmGCStringProvider strings() {
             return context.strings();
         }
+
+        @Override
+        public void addToInitializer(Consumer<WasmFunction> initializerContributor) {
+            context.addToInitializer(initializerContributor);
+        }
     };
 }

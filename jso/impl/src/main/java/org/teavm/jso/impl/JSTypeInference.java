@@ -26,11 +26,14 @@ import org.teavm.model.instructions.InvocationType;
 class JSTypeInference extends BaseTypeInference<JSType> {
     private JSTypeHelper typeHelper;
     private ClassReaderSource classes;
+    private boolean wasmGC;
 
-    JSTypeInference(JSTypeHelper typeHelper, ClassReaderSource classes, Program program, MethodReference reference) {
+    JSTypeInference(JSTypeHelper typeHelper, ClassReaderSource classes, Program program, MethodReference reference,
+            boolean wasmGC) {
         super(program, reference);
         this.typeHelper = typeHelper;
         this.classes = classes;
+        this.wasmGC = wasmGC;
     }
 
     @Override
@@ -93,7 +96,7 @@ class JSTypeInference extends BaseTypeInference<JSType> {
         if (!methodRef.getReturnType().isObject(Object.class)) {
             return mapType(methodRef.getReturnType());
         }
-        return isJsMethod(methodRef) ? JSType.MIXED : JSType.JAVA;
+        return !wasmGC && isJsMethod(methodRef) ? JSType.MIXED : JSType.JAVA;
     }
 
     private boolean isJsMethod(MethodReference methodRef) {

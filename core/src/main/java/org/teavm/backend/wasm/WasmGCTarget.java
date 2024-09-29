@@ -175,6 +175,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         var declarationsGenerator = new WasmGCDeclarationsGenerator(
                 module,
                 classes,
+                controller.getUnprocessedClassSource(),
                 controller.getClassLoader(),
                 controller.getClassInitializerInfo(),
                 controller.getDependencyInfo(),

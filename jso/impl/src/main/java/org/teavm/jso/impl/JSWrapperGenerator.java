@@ -34,6 +34,8 @@ public class JSWrapperGenerator implements Injector, DependencyPlugin {
             case "directJsToJava":
             case "dependencyJavaToJs":
             case "dependencyJsToJava":
+            case "marshallJavaToJs":
+            case "unmarshallJavaFromJs":
             case "wrapperToJs":
             case "jsToWrapper":
                 context.writeExpr(context.getArgument(0), context.getPrecedence());

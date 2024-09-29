@@ -20,6 +20,9 @@ TeaVM.wasm = function() {
     let getGlobalName = function(name) {
         return eval(name);
     }
+    let javaObjectSymbol = Symbol("javaObject");
+    let functionsSymbol = Symbol("functions");
+    let javaWrappers = new WeakMap();
     function defaults(imports) {
         let stderr = "";
         let stdout = "";
@@ -32,42 +35,28 @@ TeaVM.wasm = function() {
             exports.reportGarbageCollectedString(heldValue);
         });
         imports.teavmDate = {
-            currentTimeMillis() {
-                return new Date().getTime();
-            },
-            dateToString(timestamp) {
-                return stringToJava(new Date(timestamp).toString());
-            },
-            getYear(timestamp) {
-                return new Date(timestamp).getFullYear();
-            },
+            currentTimeMillis: () => new Date().getTime(),
+            dateToString: timestamp => stringToJava(new Date(timestamp).toString()),
+            getYear: timestamp =>new Date(timestamp).getFullYear(),
             setYear(timestamp, year) {
                 let date = new Date(timestamp);
                 date.setFullYear(year);
                 return date.getTime();
             },
-            getMonth(timestamp) {
-                return new Date(timestamp).getMonth();
-            },
+            getMonth: timestamp =>new Date(timestamp).getMonth(),
             setMonth(timestamp, month) {
                 let date = new Date(timestamp);
                 date.setMonth(month);
                 return date.getTime();
             },
-            getDate(timestamp) {
-                return new Date(timestamp).getDate();
-            },
+            getDate: timestamp =>new Date(timestamp).getDate(),
             setDate(timestamp, value) {
                 let date = new Date(timestamp);
                 date.setDate(value);
                 return date.getTime();
             },
-            create(year, month, date, hrs, min, sec) {
-                return new Date(year, month, date, hrs, min, sec).getTime();
-            },
-            createFromUTC(year, month, date, hrs, min, sec) {
-                return Date.UTC(year, month, date, hrs, min, sec);
-            }
+            create: (year, month, date, hrs, min, sec) => new Date(year, month, date, hrs, min, sec).getTime(),
+            createFromUTC: (year, month, date, hrs, min, sec) => Date.UTC(year, month, date, hrs, min, sec)
         };
         imports.teavmConsole = {
             putcharStderr(c) {
@@ -106,6 +95,22 @@ TeaVM.wasm = function() {
         function identity(value) {
             return value;
         }
+        function sanitizeName(str) {
+            let result = "";
+            let firstChar = str.charAt(0);
+            result += isIdentifierStart(firstChar) ? firstChar : '_';
+            for (let i = 1; i < str.length; ++i) {
+                let c = str.charAt(i)
+                result += isIdentifierPart(c) ? c : '_';
+            }
+            return result;
+        }
+        function isIdentifierStart(s) {
+            return s >= 'A' && s <= 'Z' || s >= 'a' && s <= 'z' || s === '_' || s === '$';
+        }
+        function isIdentifierPart(s) {
+            return isIdentifierStart(s) || s >= '0' && s <= '9';
+        }
         imports.teavmJso = {
             emptyString: () => "",
             stringFromCharCode: code => String.fromCharCode(code),
@@ -120,25 +125,76 @@ TeaVM.wasm = function() {
             getPropertyPure: (obj, prop) => obj[prop],
             setProperty: (obj, prop, value) => obj[prop] = value,
             setPropertyPure: (obj, prop) => obj[prop] = value,
-            global: getGlobalName
+            global: getGlobalName,
+            createClass(name) {
+                let fn = new Function(
+                    "javaObjectSymbol",
+                    "functionsSymbol",
+                    `return function JavaClass_${sanitizeName(name)}(javaObject) {
+                        this[javaObjectSymbol] = javaObject;
+                        this[functionsSymbol] = null;
+                    };`
+                );
+                return fn(javaObjectSymbol, functionsSymbol);
+            },
+            defineMethod(cls, name, fn) {
+                cls.prototype[name] = function(...args) {
+                    return fn(this, ...args);
+                }
+            },
+            defineProperty(cls, name, getFn, setFn) {
+                let descriptor = {
+                    get() {
+                        return getFn(this);
+                    }
+                };
+                if (setFn !== null) {
+                    descriptor.set = function(value) {
+                        setFn(this, value);
+                    }
+                }
+                Object.defineProperty(cls.prototype, name, descriptor);
+            },
+            javaObjectToJS(instance, cls) {
+                let existing = javaWrappers.get(instance);
+                if (typeof existing != "undefined") {
+                    let result = existing.deref();
+                    if (typeof result !== "undefined") {
+                        return result;
+                    }
+                }
+                let obj = new cls(instance);
+                javaWrappers.set(instance, new WeakRef(obj));
+                return obj;
+            },
+            unwrapJavaObject(instance) {
+                return instance[javaObjectSymbol];
+            },
+            asFunction(instance, propertyName) {
+                let functions = instance[functionsSymbol];
+                if (functions === null) {
+                    functions = Object.create(null);
+                    instance[functionsSymbol] = functions;
+                }
+                let result = functions[propertyName];
+                if (typeof result !== 'function') {
+                    result = function() {
+                        return instance[propertyName].apply(instance, arguments);
+                    }
+                    functions[propertyName] = result;
+                }
+                return result;
+            }
         };
         for (let name of ["wrapByte", "wrapShort", "wrapChar", "wrapInt", "wrapFloat", "wrapDouble", "unwrapByte",
                 "unwrapShort", "unwrapChar", "unwrapInt", "unwrapFloat", "unwrapDouble"]) {
             imports.teavmJso[name] = identity;
         }
         for (let i = 0; i < 32; ++i) {
-            imports.teavmJso["createFunction" + i] = function() {
-                return new Function(...arguments);
-            };
-            imports.teavmJso["callFunction" + i] = function(fn, ...args) {
-                return fn(...args);
-            };
-            imports.teavmJso["callMethod" + i] = function(instance, method, ...args) {
-                return instance[method](...args);
-            };
-            imports.teavmJso["construct" + i] = function(constructor, ...args) {
-                return new constructor(...args);
-            };
+            imports.teavmJso["createFunction" + i] = (...args) => new Function(...args);
+            imports.teavmJso["callFunction" + i] = (fn, ...args) => fn(...args);
+            imports.teavmJso["callMethod" + i] = (instance, method, ...args) => instance[method](...args);
+            imports.teavmJso["construct" + i] = (constructor, ...args) => new constructor(...args);
         }
         imports.teavmMath = Math;
     }

@@ -24,12 +24,12 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ValueType;
 
-class JSTypeHelper {
+public class JSTypeHelper {
     private ClassReaderSource classSource;
     private Map<String, Boolean> knownJavaScriptClasses = new HashMap<>();
     private Map<String, Boolean> knownJavaScriptImplementations = new HashMap<>();
 
-    JSTypeHelper(ClassReaderSource classSource) {
+    public JSTypeHelper(ClassReaderSource classSource) {
         this.classSource = classSource;
         knownJavaScriptClasses.put(JSObject.class.getName(), true);
     }

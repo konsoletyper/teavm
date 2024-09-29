@@ -17,21 +17,27 @@ package org.teavm.jso.impl;
 
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.jso.JSExportClasses;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
-import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 class JSDependencyListener extends AbstractDependencyListener {
     private JSBodyRepository repository;
+    private DependencyNode exceptions;
 
     JSDependencyListener(JSBodyRepository repository) {
         this.repository = repository;
+    }
+
+    @Override
+    public void started(DependencyAgent agent) {
+        exceptions = agent.createNode();
     }
 
     @Override
@@ -41,6 +47,22 @@ class JSDependencyListener extends AbstractDependencyListener {
         if (callbackMethods != null) {
             for (MethodReference callbackMethod : callbackMethods) {
                 agent.linkMethod(callbackMethod).addLocation(new CallLocation(ref)).use();
+            }
+        }
+        if (method.getMethod().getAnnotations().get(JSBodyDelegate.class.getName()) != null) {
+            exceptions.connect(method.getThrown());
+        }
+        if (method.getMethod().getOwnerName().equals(JS.class.getName())) {
+            switch (method.getMethod().getName()) {
+                case "invoke":
+                case "construct":
+                case "apply":
+                case "get":
+                case "getPure":
+                case "set":
+                case "setPure":
+                    exceptions.connect(method.getThrown());
+                    break;
             }
         }
     }
@@ -62,10 +84,8 @@ class JSDependencyListener extends AbstractDependencyListener {
             if (exposeAnnot != null) {
                 MethodDependency methodDep = agent.linkMethod(method.getReference());
                 if (methodDep.getMethod() != null) {
-                    if (!methodDep.getMethod().hasModifier(ElementModifier.STATIC)) {
-                        methodDep.getVariable(0).propagate(agent.getType(className));
-                    }
                     methodDep.use();
+                    methodDep.getThrown().connect(exceptions);
                 }
             }
         }

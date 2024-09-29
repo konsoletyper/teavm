@@ -19,10 +19,11 @@ import java.util.Arrays;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSArrayReader;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-final class JSMethods {
+public final class JSMethods {
     public static final MethodReference GET = new MethodReference(JS.class, "get", JSObject.class,
             JSObject.class, JSObject.class);
     public static final MethodReference GET_PURE = new MethodReference(JS.class, "getPure", JSObject.class,
@@ -142,6 +143,25 @@ final class JSMethods {
     private static final MethodReference[] INVOKE_METHODS = new MethodReference[13];
     private static final MethodReference[] CONSTRUCT_METHODS = new MethodReference[13];
     private static final MethodReference[] ARRAY_OF_METHODS = new MethodReference[13];
+
+    public static final MethodReference WRAP = new MethodReference(JSWrapper.class, "wrap", JSObject.class,
+            Object.class);
+    public static final MethodReference MAYBE_WRAP = new MethodReference(JSWrapper.class, "maybeWrap", Object.class,
+            Object.class);
+    public static final MethodReference UNWRAP = new MethodReference(JSWrapper.class, "unwrap", Object.class,
+            JSObject.class);
+    public static final MethodReference MAYBE_UNWRAP = new MethodReference(JSWrapper.class, "maybeUnwrap",
+            Object.class, JSObject.class);
+    public static final MethodReference IS_JS = new MethodReference(JSWrapper.class, "isJs",
+            Object.class, boolean.class);
+    public static final MethodReference WRAPPER_IS_PRIMITIVE = new MethodReference(JSWrapper.class, "isPrimitive",
+            Object.class, JSObject.class, boolean.class);
+    public static final MethodReference WRAPPER_INSTANCE_OF = new MethodReference(JSWrapper.class, "instanceOf",
+            Object.class, JSObject.class, boolean.class);
+
+    public static final String JS_MARSHALLABLE = JSMarshallable.class.getName();
+    public static final MethodDescriptor MARSHALL_TO_JS = new MethodDescriptor("marshallToJs", JS_OBJECT);
+    public static final MethodReference MARSHALL_TO_JS_REF = new MethodReference(JS_MARSHALLABLE, MARSHALL_TO_JS);
 
     static {
         for (int i = 0; i < INVOKE_METHODS.length; ++i) {

@@ -77,6 +77,7 @@ public class Renderer implements RenderingManager {
 
     private final SourceWriter writer;
     private final ListableClassReaderSource classSource;
+    private final ClassReaderSource originalClassSource;
     private final ClassLoader classLoader;
     private final Properties properties = new Properties();
     private final ServiceRepository services;
@@ -103,6 +104,7 @@ public class Renderer implements RenderingManager {
             List<ExportedDeclaration> exports, String entryPoint) {
         this.writer = writer;
         this.classSource = context.getClassSource();
+        this.originalClassSource = context.getInitialClassSource();
         this.classLoader = context.getClassLoader();
         this.services = context.getServices();
         this.asyncMethods = new HashSet<>(asyncMethods);
@@ -150,6 +152,11 @@ public class Renderer implements RenderingManager {
     @Override
     public ListableClassReaderSource getClassSource() {
         return classSource;
+    }
+
+    @Override
+    public ClassReaderSource getOriginalClassSource() {
+        return originalClassSource;
     }
 
     @Override

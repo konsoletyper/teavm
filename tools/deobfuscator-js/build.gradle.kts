@@ -65,7 +65,7 @@ val generateLibJs by tasks.register<JavaExec>("generateLibJs") {
 }
 
 val zipWithJs by tasks.register<Jar>("zipWithJs") {
-    dependsOn(generateJs, generateLibJs)
+    //dependsOn(generateJs, generateLibJs)
     archiveClassifier = "js"
     from(layout.buildDirectory.dir("teavm"), layout.buildDirectory.dir("teavm-lib"))
     entryCompression = ZipEntryCompression.DEFLATED

@@ -13,22 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generate.gc.classes;
+package org.teavm.jso.impl;
 
-import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
-import org.teavm.backend.wasm.model.WasmModule;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.jso.JSObject;
 
-public interface WasmGCCustomTypeMapperFactoryContext {
-    ClassReaderSource classes();
-
-    ClassReaderSource originalClasses();
-
-    WasmModule module();
-
-    WasmGCClassInfoProvider classInfoProvider();
-
-    WasmGCTypeMapper typeMapper();
-
-    WasmGCNameProvider names();
+public interface JSMarshallable {
+    JSObject marshallToJs();
 }
