@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ast.AstRoot;
@@ -109,6 +110,7 @@ class JSClassProcessor {
     private IncrementalDependencyRegistration incrementalCache;
     private JSImportAnnotationCache annotationCache;
     private ClassReader objectClass;
+    private Predicate<String> classFilter = n -> true;
 
     JSClassProcessor(ClassReaderSource classSource, JSTypeHelper typeHelper, JSBodyRepository repository,
             Diagnostics diagnostics, IncrementalDependencyRegistration incrementalCache, boolean strict) {
@@ -121,6 +123,10 @@ class JSClassProcessor {
         javaInvocationProcessor = new JavaInvocationProcessor(typeHelper, repository, classSource, diagnostics);
 
         annotationCache = new JSImportAnnotationCache(classSource, diagnostics);
+    }
+
+    public void setClassFilter(Predicate<String> classFilter) {
+        this.classFilter = classFilter;
     }
 
     public ClassReaderSource getClassSource() {
@@ -760,6 +766,9 @@ class JSClassProcessor {
 
     private boolean processJSBodyInvocation(MethodReader method, CallLocation callLocation, InvokeInstruction invoke,
             MethodHolder methodToProcess) {
+        if (!classFilter.test(method.getOwnerName())) {
+            return false;
+        }
         boolean[] byRefParams = new boolean[method.parameterCount()];
         validateSignature(method, callLocation, byRefParams);
         if (invoke.getInstance() != null) {

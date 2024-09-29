@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSExport;
@@ -59,9 +60,14 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     private JSTypeHelper typeHelper;
     private ClassHierarchy hierarchy;
     private Map<String, ExposedClass> exposedClasses = new HashMap<>();
+    private Predicate<String> classFilter = n -> true;
 
     JSObjectClassTransformer(JSBodyRepository repository) {
         this.repository = repository;
+    }
+
+    void setClassFilter(Predicate<String> classFilter) {
+        this.classFilter = classFilter;
     }
 
     @Override
@@ -71,6 +77,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             typeHelper = new JSTypeHelper(hierarchy.getClassSource());
             processor = new JSClassProcessor(hierarchy.getClassSource(), typeHelper, repository,
                     context.getDiagnostics(), context.getIncrementalCache(), context.isStrict());
+            processor.setClassFilter(classFilter);
         }
         processor.processClass(cls);
         if (typeHelper.isJavaScriptClass(cls.getName())) {

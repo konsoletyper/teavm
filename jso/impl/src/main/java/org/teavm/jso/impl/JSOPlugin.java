@@ -39,7 +39,8 @@ public class JSOPlugin implements TeaVMPlugin {
 
         JSBodyRepository repository = new JSBodyRepository();
         host.registerService(JSBodyRepository.class, repository);
-        host.add(new JSObjectClassTransformer(repository));
+        var classTransformer = new JSObjectClassTransformer(repository);
+        host.add(classTransformer);
         JSDependencyListener dependencyListener = new JSDependencyListener(repository);
         host.add(dependencyListener);
         host.add(new JSExceptionsDependencyListener());
@@ -59,6 +60,7 @@ public class JSOPlugin implements TeaVMPlugin {
         }
 
         if (wasmGCHost != null) {
+            classTransformer.setClassFilter(n -> !n.startsWith("java."));
             WasmGCJso.install(host, wasmGCHost, repository);
         }
     }
