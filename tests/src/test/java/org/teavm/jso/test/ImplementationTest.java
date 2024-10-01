@@ -23,7 +23,6 @@ import org.teavm.jso.JSObject;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
@@ -45,7 +44,6 @@ public class ImplementationTest {
     static native int mul(int a, int b);
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void inliningUsageCounterWorksProperly() {
         ForInliningTest instance = ForInliningTest.create();
         wrongInlineCandidate(instance.foo());
