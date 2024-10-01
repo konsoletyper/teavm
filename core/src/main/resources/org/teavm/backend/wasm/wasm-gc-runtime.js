@@ -22,6 +22,7 @@ TeaVM.wasm = function() {
     }
     let javaObjectSymbol = Symbol("javaObject");
     let functionsSymbol = Symbol("functions");
+    let functionOriginSymbol = Symbol("functionOrigin");
     let javaWrappers = new WeakMap();
     function defaults(imports) {
         let stderr = "";
@@ -135,7 +136,7 @@ TeaVM.wasm = function() {
                         this[functionsSymbol] = null;
                     };`
                 );
-                return fn(javaObjectSymbol, functionsSymbol);
+                return fn(javaObjectSymbol, functionsSymbol, functionOriginSymbol);
             },
             defineMethod(cls, name, fn) {
                 cls.prototype[name] = function(...args) {
@@ -181,9 +182,20 @@ TeaVM.wasm = function() {
                     result = function() {
                         return instance[propertyName].apply(instance, arguments);
                     }
+                    result[functionOriginSymbol] = instance;
                     functions[propertyName] = result;
                 }
                 return result;
+            },
+            functionAsObject(fn, property) {
+                let origin = fn[functionOriginSymbol];
+                if (typeof origin !== 'undefined') {
+                    let functions = origin[functionsSymbol];
+                    if (functions !== void 0 && functions[property] === fn) {
+                        return origin;
+                    }
+                }
+                return { [property]: fn };
             }
         };
         for (let name of ["wrapByte", "wrapShort", "wrapChar", "wrapInt", "wrapFloat", "wrapDouble", "unwrapByte",

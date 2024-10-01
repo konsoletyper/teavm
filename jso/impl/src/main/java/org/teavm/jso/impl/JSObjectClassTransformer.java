@@ -87,7 +87,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             processor.setClassFilter(classFilter);
         }
         processor.processClass(cls);
-        if (typeHelper.isJavaScriptClass(cls.getName())) {
+        if (isJavaScriptClass(cls)) {
             processor.processMemberMethods(cls);
         }
 
@@ -122,17 +122,17 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         exposeMethods(cls, exposedClass, context.getDiagnostics(), functorMethod);
         exportStaticMethods(cls, context.getDiagnostics());
 
-        if (typeHelper.isJavaScriptImplementation(cls.getName()) || !exposedClass.methods.isEmpty()) {
+        if (isJavaScriptImplementation(cls) || !exposedClass.methods.isEmpty()) {
             cls.getAnnotations().add(new AnnotationHolder(JSClassToExpose.class.getName()));
         }
 
-        if (wasmGC && (!exposedClass.methods.isEmpty() || typeHelper.isJavaScriptClass(cls.getName()))) {
+        if (wasmGC && (!exposedClass.methods.isEmpty() || isJavaScriptClass(cls))) {
             var createWrapperMethod = new MethodHolder(JSMethods.MARSHALL_TO_JS);
             createWrapperMethod.setLevel(AccessLevel.PUBLIC);
             createWrapperMethod.getModifiers().add(ElementModifier.NATIVE);
             cls.addMethod(createWrapperMethod);
 
-            if (typeHelper.isJavaScriptImplementation(cls.getName())) {
+            if (isJavaScriptImplementation(cls)) {
                 cls.getInterfaces().add(JSMethods.JS_MARSHALLABLE);
             }
         }
@@ -385,6 +385,21 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             }
         }
         return false;
+    }
+
+    private boolean isJavaScriptImplementation(ClassReader cls) {
+        if (typeHelper.isJavaScriptImplementation(cls.getName())) {
+            return true;
+        }
+        if (cls.getAnnotations().get(JSClass.class.getName()) != null) {
+            return false;
+        }
+        if (cls.getParent() != null) {
+            if (typeHelper.isJavaScriptClass(cls.getParent())) {
+                return true;
+            }
+        }
+        return cls.getInterfaces().stream().anyMatch(typeHelper::isJavaScriptClass);
     }
 
     private boolean addInterfaces(ExposedClass exposedCls, ClassReader cls) {
