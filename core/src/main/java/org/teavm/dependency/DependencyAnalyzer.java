@@ -278,7 +278,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     public void addDependencyListener(DependencyListener listener) {
         listeners.add(listener);
-        listener.started(agent);
     }
 
     public void addClassTransformer(ClassHolderTransformer transformer) {
@@ -660,6 +659,12 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
                 }
                 transition.consume(typesToPropagate);
             }
+        }
+    }
+
+    public void initDependencies() {
+        for (var listener : listeners) {
+            listener.started(agent);
         }
     }
 

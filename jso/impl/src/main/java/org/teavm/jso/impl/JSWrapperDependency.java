@@ -51,6 +51,10 @@ public class JSWrapperDependency extends AbstractDependencyListener {
                 case "unmarshallJavaFromJs":
                     externalClassesNode.connect(method.getResult());
                     break;
+                case "wrap":
+                    method.getResult().propagate(agent.getType(JSWrapper.class.getName()));
+                    externalClassesNode.connect(method.getResult());
+                    break;
             }
         }
     }

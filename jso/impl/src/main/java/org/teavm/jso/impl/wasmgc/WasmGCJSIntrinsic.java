@@ -22,8 +22,13 @@ import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmBlock;
+import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.expression.WasmIsNull;
+import org.teavm.backend.wasm.model.expression.WasmThrow;
+import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.impl.JS;
 import org.teavm.model.MethodReference;
@@ -47,6 +52,10 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
                 var name = new WasmCall(stringToJs, context.generate(invocation.getArguments().get(0)));
                 return new WasmCall(getGlobalFunction(context), name);
             }
+            case "throwCCEIfFalse":
+                return throwCCEIfFalse(context, invocation);
+            case "isNull":
+                return new WasmIsNull(context.generate(invocation.getArguments().get(0)));
             default:
                 throw new IllegalArgumentException();
         }
@@ -63,5 +72,25 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
             context.module().functions.add(globalFunction);
         }
         return globalFunction;
+    }
+
+    private WasmExpression throwCCEIfFalse(WasmGCIntrinsicContext context, InvocationExpr invocation) {
+        var block = new WasmBlock(false);
+        block.setType(WasmType.Reference.EXTERN);
+
+        var innerBlock = new WasmBlock(false);
+        block.getBody().add(innerBlock);
+        var br = new WasmBranch(context.generate(invocation.getArguments().get(0)), innerBlock);
+        innerBlock.getBody().add(br);
+
+        var cceFunction = context.functions().forStaticMethod(new MethodReference(
+                WasmGCSupport.class, "cce", ClassCastException.class));
+        var cce = new WasmCall(cceFunction);
+        var throwExpr = new WasmThrow(context.exceptionTag());
+        throwExpr.getArguments().add(cce);
+        innerBlock.getBody().add(throwExpr);
+
+        block.getBody().add(context.generate(invocation.getArguments().get(1)));
+        return block;
     }
 }

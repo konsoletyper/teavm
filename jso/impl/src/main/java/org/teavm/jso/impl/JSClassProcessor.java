@@ -62,6 +62,9 @@ import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BinaryBranchingInstruction;
+import org.teavm.model.instructions.BranchingCondition;
+import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
@@ -333,6 +336,10 @@ class JSClassProcessor {
                     if (nativeConstructedObjects[index]) {
                         assign.delete();
                     }
+                } else if (insn instanceof BinaryBranchingInstruction) {
+                    processReferenceEquality((BinaryBranchingInstruction) insn);
+                } else if (insn instanceof BranchingInstruction) {
+                    processReferenceEquality((BranchingInstruction) insn);
                 }
             }
         }
@@ -461,6 +468,106 @@ class JSClassProcessor {
         if (nativeConstructedObjects[insn.getReceiver().getIndex()]) {
             insn.delete();
         }
+    }
+
+    private void processReferenceEquality(BinaryBranchingInstruction instruction) {
+        if (!wasmGC) {
+            return;
+        }
+
+        boolean equal;
+        switch (instruction.getCondition()) {
+            case REFERENCE_EQUAL:
+                equal = true;
+                break;
+            case REFERENCE_NOT_EQUAL:
+                equal = false;
+                break;
+            default:
+                return;
+        }
+
+        var first = types.typeOf(instruction.getFirstOperand());
+        var second = types.typeOf(instruction.getSecondOperand());
+        if (first == JSType.JS || second == JSType.JS) {
+            var call = new InvokeInstruction();
+            call.setType(InvocationType.SPECIAL);
+            call.setLocation(instruction.getLocation());
+            var conditionVar = program.createVariable();
+            if (first == JSType.NULL || second == JSType.NULL) {
+                call.setMethod(new MethodReference(JS.class, "isNull", JSObject.class, boolean.class));
+                call.setArguments(first == JSType.NULL
+                        ? instruction.getSecondOperand()
+                        : instruction.getFirstOperand());
+                call.setReceiver(conditionVar);
+                instruction.insertPrevious(call);
+            } else {
+                var firstOperand = instruction.getFirstOperand();
+                var secondOperand = instruction.getSecondOperand();
+                if (first != JSType.JS) {
+                    firstOperand = convertToJs(firstOperand, instruction);
+                }
+                if (second != JSType.JS) {
+                    secondOperand = convertToJs(secondOperand, instruction);
+                }
+                call.setMethod(new MethodReference(JS.class, "sameRef", JSObject.class, JSObject.class,
+                        boolean.class));
+                call.setArguments(firstOperand, secondOperand);
+                call.setReceiver(conditionVar);
+                instruction.insertPrevious(call);
+            }
+
+            var newCondition = new BranchingInstruction(equal
+                    ? BranchingCondition.NOT_EQUAL
+                    : BranchingCondition.EQUAL);
+            newCondition.setOperand(call.getReceiver());
+            newCondition.setConsequent(instruction.getConsequent());
+            newCondition.setAlternative(instruction.getAlternative());
+            newCondition.setLocation(instruction.getLocation());
+            instruction.replace(newCondition);
+        }
+    }
+
+    private void processReferenceEquality(BranchingInstruction instruction) {
+        if (!wasmGC) {
+            return;
+        }
+
+        boolean equal;
+        switch (instruction.getCondition()) {
+            case NULL:
+                equal = true;
+                break;
+            case NOT_NULL:
+                equal = false;
+                break;
+            default:
+                return;
+        }
+
+        var type = types.typeOf(instruction.getOperand());
+        if (type == JSType.JS) {
+            var call = new InvokeInstruction();
+            call.setType(InvocationType.SPECIAL);
+            call.setLocation(instruction.getLocation());
+            call.setMethod(new MethodReference(JS.class, "isNull", JSObject.class, boolean.class));
+            call.setArguments(instruction.getOperand());
+            call.setReceiver(program.createVariable());
+            instruction.insertPrevious(call);
+            instruction.setOperand(call.getReceiver());
+            instruction.setCondition(equal ? BranchingCondition.NOT_EQUAL : BranchingCondition.EQUAL);
+        }
+    }
+
+    private Variable convertToJs(Variable value, Instruction instruction) {
+        var call = new InvokeInstruction();
+        call.setType(InvocationType.SPECIAL);
+        call.setMethod(new MethodReference(JS.class, "directJavaToJs", Object.class, JSObject.class));
+        call.setArguments(value);
+        call.setReceiver(program.createVariable());
+        call.setLocation(instruction.getLocation());
+        instruction.insertPrevious(call);
+        return call.getReceiver();
     }
 
     private ValueType processType(ValueType type) {

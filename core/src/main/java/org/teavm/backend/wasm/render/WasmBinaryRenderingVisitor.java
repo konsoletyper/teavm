@@ -47,6 +47,7 @@ import org.teavm.backend.wasm.model.expression.WasmDefaultExpressionVisitor;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmExpressionVisitor;
+import org.teavm.backend.wasm.model.expression.WasmExternConversion;
 import org.teavm.backend.wasm.model.expression.WasmFill;
 import org.teavm.backend.wasm.model.expression.WasmFloat32Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloat64Constant;
@@ -1168,6 +1169,22 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         writer.writeByte(0xfb);
         writer.writeByte(expression.getTestType().isNullable() ? 21 : 20);
         writer.writeHeapType(expression.getTestType(), module);
+        popLocation();
+    }
+
+    @Override
+    public void visit(WasmExternConversion expression) {
+        pushLocation(expression);
+        expression.getValue().acceptVisitor(this);
+        writer.writeByte(0xfb);
+        switch (expression.getType()) {
+            case EXTERN_TO_ANY:
+                writer.writeByte(26);
+                break;
+            case ANY_TO_EXTERN:
+                writer.writeByte(27);
+                break;
+        }
         popLocation();
     }
 

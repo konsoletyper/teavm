@@ -16,6 +16,6 @@
 package org.teavm.backend.wasm.model.expression;
 
 public enum WasmExternConversionType {
-    EXTERN_TO_OBJECT,
-    OBJECT_TO_EXTERN
+    EXTERN_TO_ANY,
+    ANY_TO_EXTERN
 }

@@ -34,6 +34,7 @@ import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmCopy;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpressionVisitor;
+import org.teavm.backend.wasm.model.expression.WasmExternConversion;
 import org.teavm.backend.wasm.model.expression.WasmFill;
 import org.teavm.backend.wasm.model.expression.WasmFloat32Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloat64Constant;
@@ -315,6 +316,18 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     @Override
     public void visit(WasmTest expression) {
         result = WasmType.INT32;
+    }
+
+    @Override
+    public void visit(WasmExternConversion expression) {
+        switch (expression.getType()) {
+            case EXTERN_TO_ANY:
+                result = WasmType.Reference.ANY;
+                break;
+            case ANY_TO_EXTERN:
+                result = WasmType.Reference.EXTERN;
+                break;
+        }
     }
 
     @Override

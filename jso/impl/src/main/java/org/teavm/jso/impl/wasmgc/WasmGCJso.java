@@ -19,6 +19,7 @@ import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.impl.JS;
 import org.teavm.jso.impl.JSBodyRepository;
+import org.teavm.jso.impl.JSWrapper;
 import org.teavm.model.MethodReference;
 import org.teavm.vm.spi.TeaVMHost;
 
@@ -40,5 +41,22 @@ public final class WasmGCJso {
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "unwrapString", JSObject.class, String.class),
                 jsIntrinsic);
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "global", String.class, JSObject.class), jsIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "throwCCEIfFalse", boolean.class, JSObject.class,
+                JSObject.class), jsIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "isNull", JSObject.class, boolean.class), jsIntrinsic);
+
+        var wrapperIntrinsic = new WasmGCJSWrapperIntrinsic();
+        wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "wrap", JSObject.class, Object.class),
+                wrapperIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "dependencyJavaToJs", Object.class,
+                JSObject.class), wrapperIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "directJavaToJs", Object.class, JSObject.class),
+                wrapperIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "dependencyJsToJava", JSObject.class,
+                Object.class), wrapperIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "directJsToJava", JSObject.class, Object.class),
+                wrapperIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "isJava", JSObject.class, boolean.class),
+                wrapperIntrinsic);
     }
 }

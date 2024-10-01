@@ -41,6 +41,10 @@ public class BranchingInstruction extends Instruction {
         return condition;
     }
 
+    public void setCondition(BranchingCondition condition) {
+        this.condition = condition;
+    }
+
     public BasicBlock getConsequent() {
         return consequent;
     }

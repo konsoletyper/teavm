@@ -20,21 +20,16 @@ TeaVM.wasm = function() {
     let getGlobalName = function(name) {
         return eval(name);
     }
-    let javaObjectSymbol = Symbol("javaObject");
-    let functionsSymbol = Symbol("functions");
-    let functionOriginSymbol = Symbol("functionOrigin");
-    let javaWrappers = new WeakMap();
+
     function defaults(imports) {
-        let stderr = "";
-        let stdout = "";
-        let finalizationRegistry = new FinalizationRegistry(heldValue => {
-            if (typeof exports.reportGarbageCollectedValue === "function") {
-                exports.reportGarbageCollectedValue(heldValue)
-            }
-        });
-        let stringFinalizationRegistry = new FinalizationRegistry(heldValue => {
-            exports.reportGarbageCollectedString(heldValue);
-        });
+        dateImports(imports);
+        consoleImports(imports);
+        coreImports(imports);
+        jsoImports(imports);
+        imports.teavmMath = Math;
+    }
+
+    function dateImports(imports) {
         imports.teavmDate = {
             currentTimeMillis: () => new Date().getTime(),
             dateToString: timestamp => stringToJava(new Date(timestamp).toString()),
@@ -59,6 +54,11 @@ TeaVM.wasm = function() {
             create: (year, month, date, hrs, min, sec) => new Date(year, month, date, hrs, min, sec).getTime(),
             createFromUTC: (year, month, date, hrs, min, sec) => Date.UTC(year, month, date, hrs, min, sec)
         };
+    }
+
+    function consoleImports(imports) {
+        let stderr = "";
+        let stdout = "";
         imports.teavmConsole = {
             putcharStderr(c) {
                 if (c === 10) {
@@ -77,6 +77,9 @@ TeaVM.wasm = function() {
                 }
             },
         };
+    }
+
+    function coreImports(imports) {
         imports.teavm = {
             createWeakRef(value, heldValue) {
                 let weakRef = new WeakRef(value);
@@ -93,6 +96,37 @@ TeaVM.wasm = function() {
             },
             stringDeref: weakRef => weakRef.deref()
         };
+    }
+
+    function jsoImports(imports) {
+        new FinalizationRegistry(heldValue => {
+            if (typeof exports.reportGarbageCollectedValue === "function") {
+                exports.reportGarbageCollectedValue(heldValue)
+            }
+        });
+        new FinalizationRegistry(heldValue => {
+            exports.reportGarbageCollectedString(heldValue);
+        });
+
+        let javaObjectSymbol = Symbol("javaObject");
+        let functionsSymbol = Symbol("functions");
+        let functionOriginSymbol = Symbol("functionOrigin");
+
+        let jsWrappers = new WeakMap();
+        let javaWrappers = new WeakMap();
+        let primitiveWrappers = new Map();
+        let primitiveFinalization = new FinalizationRegistry(token => primitiveFinalization.delete(token));
+        let hashCodes = new WeakMap();
+        let lastHashCode = 2463534242;
+        let nextHashCode = () => {
+            let x = lastHashCode;
+            x ^= x << 13;
+            x ^= x >>> 17;
+            x ^= x << 5;
+            lastHashCode = x;
+            return x;
+        }
+
         function identity(value) {
             return value;
         }
@@ -157,7 +191,7 @@ TeaVM.wasm = function() {
                 Object.defineProperty(cls.prototype, name, descriptor);
             },
             javaObjectToJS(instance, cls) {
-                let existing = javaWrappers.get(instance);
+                let existing = jsWrappers.get(instance);
                 if (typeof existing != "undefined") {
                     let result = existing.deref();
                     if (typeof result !== "undefined") {
@@ -165,7 +199,7 @@ TeaVM.wasm = function() {
                     }
                 }
                 let obj = new cls(instance);
-                javaWrappers.set(instance, new WeakRef(obj));
+                jsWrappers.set(instance, new WeakRef(obj));
                 return obj;
             },
             unwrapJavaObject(instance) {
@@ -196,10 +230,64 @@ TeaVM.wasm = function() {
                     }
                 }
                 return { [property]: fn };
+            },
+            wrapObject(obj) {
+                if (obj === null) {
+                    return null;
+                }
+                if (typeof obj === "object" || typeof obj === "function" || typeof "obj" === "symbol") {
+                    let result = obj[javaObjectSymbol];
+                    if (typeof result === "object") {
+                        return result;
+                    }
+                    result = javaWrappers.get(obj);
+                    if (result !== void 0) {
+                        result = result.deref();
+                        if (result !== void 0) {
+                            return result;
+                        }
+                    }
+                    result = exports["teavm.jso.createWrapper"](obj);
+                    javaWrappers.set(obj, new WeakRef(result));
+                    return result;
+                } else {
+                    let result = primitiveWrappers.get(obj);
+                    if (result !== void 0) {
+                        result = result.deref();
+                        if (result !== void 0) {
+                            return result;
+                        }
+                    }
+                    result = exports["teavm.jso.createWrapper"](obj);
+                    primitiveWrappers.set(obj, new WeakRef(result));
+                    primitiveFinalization.register(result, obj);
+                    return result;
+                }
+            },
+            isPrimitive: (value, type) => typeof value === type,
+            sameRef: (a, b) => a === b,
+            hashCode: (obj) => {
+                if (typeof obj === "object" || typeof obj === "function" || typeof obj === "symbol") {
+                    let code = hashCodes.get(obj);
+                    if (typeof code === "number") {
+                        return code;
+                    }
+                    code = nextHashCode();
+                    hashCodes.set(obj, code);
+                    return code;
+                } else if (typeof obj === "number") {
+                    return obj | 0;
+                } else if (typeof obj === "bigint") {
+                    return BigInt.asIntN(obj, 32);
+                } else if (typeof obj === "boolean") {
+                    return obj ? 1 : 0;
+                } else {
+                    return 0;
+                }
             }
         };
         for (let name of ["wrapByte", "wrapShort", "wrapChar", "wrapInt", "wrapFloat", "wrapDouble", "unwrapByte",
-                "unwrapShort", "unwrapChar", "unwrapInt", "unwrapFloat", "unwrapDouble"]) {
+            "unwrapShort", "unwrapChar", "unwrapInt", "unwrapFloat", "unwrapDouble"]) {
             imports.teavmJso[name] = identity;
         }
         for (let i = 0; i < 32; ++i) {
@@ -208,7 +296,6 @@ TeaVM.wasm = function() {
             imports.teavmJso["callMethod" + i] = (instance, method, ...args) => instance[method](...args);
             imports.teavmJso["construct" + i] = (constructor, ...args) => new constructor(...args);
         }
-        imports.teavmMath = Math;
     }
 
     function load(path, options) {

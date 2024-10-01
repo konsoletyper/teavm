@@ -36,12 +36,13 @@ import org.teavm.jso.core.JSUndefined;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
-@OnlyPlatform(TestPlatform.JAVASCRIPT)
+@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @EachTestCompiledSeparately
 public class JSWrapperTest {
     private List<Object> list = new ArrayList<>();
@@ -294,6 +295,7 @@ public class JSWrapperTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void createArray() {
         var array = new J[] {
                 new JImpl(23),
@@ -305,6 +307,7 @@ public class JSWrapperTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void createArrayAndReturnToJS() {
         assertEquals("23,42", concatFoo(() -> new J[] {
                 new JImpl(23),

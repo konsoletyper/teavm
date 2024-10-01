@@ -46,7 +46,6 @@ public class FunctorTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void functorIdentityPreserved() {
         JSBiFunction javaFunction = (a, b) -> a + b;
         JSObject firstRef = getFunction(javaFunction);

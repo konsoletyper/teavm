@@ -764,6 +764,7 @@ public final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "isPrimitive", module = "teavmJso")
     public static native boolean isPrimitive(JSObject obj, JSObject primitive);
 
     @InjectedBy(JSNativeInjector.class)
@@ -773,4 +774,13 @@ public final class JS {
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native JSObject argumentsBeginningAt(int index);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    @Import(name = "sameRef", module = "teavmJso")
+    public static native boolean sameRef(JSObject a, JSObject b);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    public static native boolean isNull(JSObject o);
 }

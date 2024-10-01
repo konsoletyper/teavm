@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.impl;
 
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
@@ -226,15 +227,40 @@ public final class JSWrapper {
     }
 
     public static boolean isPrimitive(Object o, JSObject primitive) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            JSObject js;
+            if (o instanceof JSWrapper) {
+                js = ((JSWrapper) o).js;
+            } else if (o instanceof JSMarshallable) {
+                js = ((JSMarshallable) o).marshallToJs();
+            } else {
+                return false;
+            }
+            return JS.isPrimitive(js, primitive);
+        }
         return isJs(o) && JS.isPrimitive(maybeUnwrap(o), primitive);
     }
 
     public static boolean instanceOf(Object o, JSObject type) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            JSObject js;
+            if (o instanceof JSWrapper) {
+                js = ((JSWrapper) o).js;
+            } else if (o instanceof JSMarshallable) {
+                js = ((JSMarshallable) o).marshallToJs();
+            } else {
+                return false;
+            }
+            return JS.instanceOf(js, type);
+        }
         return isJs(o) && JS.instanceOf(maybeUnwrap(o), type);
     }
 
     @Override
     public int hashCode() {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return wasmGcHashCode(js);
+        }
         var type = JSObjects.typeOf(js);
         if (type.equals("object") || type.equals("symbol") || type.equals("function")) {
             var code = Helper.hashCodes.get(js);
@@ -260,6 +286,9 @@ public final class JSWrapper {
             return 0;
         }
     }
+
+    @Import(name = "hashCode", module = "teavmJso")
+    private static native int wasmGcHashCode(JSObject o);
 
     @JSBody(params = "bigint", script = "return BigInt.asIntN(bigint, 32);")
     @NoSideEffects

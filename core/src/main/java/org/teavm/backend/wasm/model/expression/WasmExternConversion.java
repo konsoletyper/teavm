@@ -15,5 +15,35 @@
  */
 package org.teavm.backend.wasm.model.expression;
 
-public class WasmExternConversion {
+import java.util.Objects;
+
+public class WasmExternConversion extends WasmExpression {
+    private WasmExternConversionType type;
+    private WasmExpression value;
+
+    public WasmExternConversion(WasmExternConversionType type, WasmExpression value) {
+        this.type = Objects.requireNonNull(type);
+        this.value = Objects.requireNonNull(value);
+    }
+
+    public WasmExternConversionType getType() {
+        return type;
+    }
+
+    public void setType(WasmExternConversionType type) {
+        this.type = Objects.requireNonNull(type);
+    }
+
+    public WasmExpression getValue() {
+        return value;
+    }
+
+    public void setValue(WasmExpression value) {
+        this.value = Objects.requireNonNull(value);
+    }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

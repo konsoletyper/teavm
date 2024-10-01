@@ -22,5 +22,7 @@ public enum Opcode {
     DROP,
     REF_EQ,
     ARRAY_LENGTH,
-    IS_NULL
+    IS_NULL,
+    ANY_TO_EXTERN,
+    EXTERN_TO_ANY
 }

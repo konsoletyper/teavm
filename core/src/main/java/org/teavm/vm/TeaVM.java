@@ -318,11 +318,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
 
-        var mainMethod = cls.getMethod(MAIN_METHOD_DESC) != null
-                ? dependencyAnalyzer.linkMethod(new MethodReference(entryPoint,
-                        "main", ValueType.parse(String[].class), ValueType.VOID))
-                : null;
         dependencyAnalyzer.defer(() -> {
+            var mainMethod = cls.getMethod(MAIN_METHOD_DESC) != null
+                    ? dependencyAnalyzer.linkMethod(new MethodReference(entryPoint,
+                    "main", ValueType.parse(String[].class), ValueType.VOID))
+                    : null;
             dependencyAnalyzer.linkClass(entryPoint).initClass(null);
             if (mainMethod != null) {
                 mainMethod.getVariable(1).propagate(dependencyAnalyzer.getType("[Ljava/lang/String;"));
@@ -388,6 +388,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             cancelled |= progressListener.progressReached(progress) != TeaVMProgressFeedback.CONTINUE;
             return !cancelled;
         });
+        dependencyAnalyzer.initDependencies();
         target.contributeDependencies(dependencyAnalyzer);
         if (target.needsSystemArrayCopyOptimization()) {
             dependencyAnalyzer.addDependencyListener(new StdlibDependencyListener());

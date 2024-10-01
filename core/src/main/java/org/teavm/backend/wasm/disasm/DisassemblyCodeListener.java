@@ -188,6 +188,12 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
             case IS_NULL:
                 writer.write("ref.is_null");
                 break;
+            case EXTERN_TO_ANY:
+                writer.write("any.convert_extern");
+                break;
+            case ANY_TO_EXTERN:
+                writer.write("extern.convert_any");
+                break;
         }
         writer.eol();
     }

@@ -719,6 +719,13 @@ public class CodeParser extends BaseSectionParser {
                 parseCastBranch(false);
                 return true;
 
+            case 26:
+                codeListener.opcode(Opcode.EXTERN_TO_ANY);
+                return true;
+            case 27:
+                codeListener.opcode(Opcode.ANY_TO_EXTERN);
+                return true;
+
             case 28:
                 codeListener.int31Reference();
                 return true;
