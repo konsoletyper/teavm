@@ -30,7 +30,7 @@ import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
-@OnlyPlatform(TestPlatform.JAVASCRIPT)
+@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @EachTestCompiledSeparately
 public class ImportClassTest {
     @Test
@@ -73,6 +73,13 @@ public class ImportClassTest {
 
         TopLevelDeclarations.setTopLevelProperty("update2");
         assertEquals("update2", ClassWithConstructor.getTopLevelProperty());
+    }
+
+    @Test
+    @AttachJavaScript("org/teavm/jso/test/classWithConstructor.js")
+    public void legacyCastMethod() {
+        SubclassWithConstructor o = ClassWithConstructor.createClass(true).cast();
+        assertEquals("subclass", o.baz());
     }
 
     @JSBody(script = "return {};")

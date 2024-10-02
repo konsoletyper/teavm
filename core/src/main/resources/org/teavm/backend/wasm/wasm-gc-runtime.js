@@ -20,6 +20,9 @@ TeaVM.wasm = function() {
     let getGlobalName = function(name) {
         return eval(name);
     }
+    let setGlobalName = function(name, value) {
+        new Function("value", name + " = value;")(value);
+    }
 
     function defaults(imports) {
         dateImports(imports);
@@ -146,6 +149,13 @@ TeaVM.wasm = function() {
         function isIdentifierPart(s) {
             return isIdentifierStart(s) || s >= '0' && s <= '9';
         }
+        function setProperty(obj, prop, value) {
+            if (obj === null) {
+                setGlobalName(prop, value);
+            } else {
+                obj[prop] = value;
+            }
+        }
         imports.teavmJso = {
             emptyString: () => "",
             stringFromCharCode: code => String.fromCharCode(code),
@@ -158,8 +168,8 @@ TeaVM.wasm = function() {
             wrapBoolean: value => !!value,
             getProperty: (obj, prop) => obj !== null ? obj[prop] : getGlobalName(prop),
             getPropertyPure: (obj, prop) => obj !== null ? obj[prop] : getGlobalName(prop),
-            setProperty: (obj, prop, value) => obj[prop] = value,
-            setPropertyPure: (obj, prop) => obj[prop] = value,
+            setProperty: setProperty,
+            setPropertyPure: setProperty,
             global: getGlobalName,
             createClass(name) {
                 let fn = new Function(

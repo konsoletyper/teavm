@@ -265,7 +265,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             dep.used = false;
             lock(dep, false);
             deferredTasks.add(() -> {
-                classSource.getReferenceResolver().use(dep.method.getReference(), diagnostics);
+                classSource.getReferenceResolver().use(dep.method.getReference());
                 processMethod(dep);
                 dep.used = true;
             });
@@ -476,9 +476,9 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     abstract DependencyNode createClassValueNode(int degree, DependencyNode parent);
 
     void scheduleMethodAnalysis(MethodDependency dep) {
-        classSource.getReferenceResolver().use(dep.getReference(), diagnostics);
+        classSource.getReferenceResolver().use(dep.getReference());
         deferredTasks.add(() -> {
-            classSource.getReferenceResolver().use(dep.getReference(), diagnostics);
+            classSource.getReferenceResolver().use(dep.getReference());
             processMethod(dep);
         });
     }

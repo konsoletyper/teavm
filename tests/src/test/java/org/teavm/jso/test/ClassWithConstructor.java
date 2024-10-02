@@ -45,4 +45,7 @@ public class ClassWithConstructor implements JSObject {
     @JSTopLevel
     @JSProperty
     public static native void setTopLevelProperty(String value);
+
+    @JSTopLevel
+    public static native JSObject createClass(boolean subclass);
 }

@@ -376,6 +376,9 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     }
 
     private boolean isJavaScriptClass(ClassReader cls) {
+        if (typeHelper.isJavaScriptClass(cls.getName())) {
+            return true;
+        }
         if (cls.getParent() != null && typeHelper.isJavaScriptClass(cls.getParent())) {
             return true;
         }

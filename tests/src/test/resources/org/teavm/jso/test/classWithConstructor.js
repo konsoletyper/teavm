@@ -32,6 +32,20 @@ class ClassWithConstructor {
     }
 }
 
+class SubclassWithConstructor extends ClassWithConstructor {
+    constructor(foo) {
+        super(foo);
+    }
+
+    baz() {
+        return "subclass";
+    }
+}
+
+function createClass(subclass) {
+    return subclass ? new SubclassWithConstructor(23) : new ClassWithConstructor(42);
+}
+
 function topLevelFunction() {
     return "top level";
 }

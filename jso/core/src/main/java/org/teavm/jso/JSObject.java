@@ -60,6 +60,7 @@ package org.teavm.jso;
  */
 public interface JSObject {
     @SuppressWarnings("unchecked")
+    @Deprecated
     default <T extends JSObject> T cast() {
         return (T) this;
     }

@@ -72,7 +72,7 @@ class DependencyClassSource implements ClassHolderSource {
         this.diagnostics = diagnostics;
         innerHierarchy = new ClassHierarchy(innerSource);
         this.dependencyRegistration = dependencyRegistration;
-        referenceResolver = new ReferenceResolver(this, platformTags);
+        referenceResolver = new ReferenceResolver(this, platformTags, diagnostics);
         classInitInsertion = new ClassInitInsertion(this);
     }
 
@@ -125,6 +125,9 @@ class DependencyClassSource implements ClassHolderSource {
             if (method.getProgram() != null) {
                 var program = method.getProgram();
                 method.setProgramSupplier(m -> {
+                    if (disposed) {
+                        return null;
+                    }
                     referenceResolver.resolve(m, program);
                     classInitInsertion.apply(m, program);
                     return program;

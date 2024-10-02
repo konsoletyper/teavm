@@ -44,7 +44,9 @@ window.addEventListener("message", event => {
 
         case "WASM_GC": {
             const runtimeFile = request.file.path + "-runtime.js";
-            appendFiles([{ path: runtimeFile, type: "regular" }], 0, () => {
+            const runtimeFileObj = { path: runtimeFile, type: "regular" };
+            const files = request.additionalFiles ? [...request.additionalFiles, runtimeFileObj] : [runtimeFileObj]
+            appendFiles(files, 0, () => {
                 launchWasmGCTest(request.file, request.argument, response => {
                     event.source.postMessage(response, "*");
                 });
