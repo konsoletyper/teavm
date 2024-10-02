@@ -34,6 +34,7 @@ import org.teavm.model.ReferenceCache;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
+import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
@@ -472,10 +473,18 @@ class JSValueMarshaller {
         insn = new InvokeInstruction();
         insn.setMethod(JSMethods.UNMAP_ARRAY);
         insn.setArguments(cls, var, function);
-        insn.setReceiver(var);
+        insn.setReceiver(program.createVariable());
         insn.setType(InvocationType.SPECIAL);
         insn.setLocation(location.getSourceLocation());
         replacement.add(insn);
+
+        var cast = new CastInstruction();
+        cast.setTargetType(ValueType.arrayOf(ValueType.arrayOf(type)));
+        cast.setWeak(true);
+        cast.setValue(insn.getReceiver());
+        cast.setReceiver(var);
+        cast.setLocation(location.getSourceLocation());
+        replacement.add(cast);
 
         return var;
     }

@@ -26,7 +26,6 @@ import org.teavm.jso.JSProperty;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
-import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
@@ -90,7 +89,6 @@ public class FunctorTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void castToFunctor() {
         JSBiFunction f = getBiFunctionAsObject().cast();
         assertEquals(23042, f.foo(23, 42));

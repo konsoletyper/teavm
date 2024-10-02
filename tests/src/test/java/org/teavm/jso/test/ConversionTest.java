@@ -65,7 +65,6 @@ public class ConversionTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsPrimitiveArraysToJava() {
         PrimitiveArrays arrays = getPrimitiveArrays();
 
@@ -90,7 +89,6 @@ public class ConversionTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsPrimitiveArrays2ToJava() {
         PrimitiveArrays2 arrays = getPrimitiveArrays2();
 
@@ -117,7 +115,6 @@ public class ConversionTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsPrimitiveArrays4ToJava() {
         PrimitiveArrays4 arrays = getPrimitiveArrays4();
 
