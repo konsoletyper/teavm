@@ -410,10 +410,12 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             reachedMethods.add(dep.getReference());
             dep.activated = true;
             if (!dep.isMissing()) {
-                for (DependencyListener listener : listeners) {
-                    listener.methodReached(agent, dep);
-                }
-                activateDependencyPlugin(dep);
+                defer(() -> {
+                    for (var listener : listeners) {
+                        listener.methodReached(agent, dep);
+                    }
+                    activateDependencyPlugin(dep);
+                });
             }
         }
         return dep;
