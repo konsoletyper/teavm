@@ -756,10 +756,12 @@ public final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "instanceOf", module = "teavmJso")
     public static native boolean instanceOf(JSObject obj, JSObject cls);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "instanceOfOrNull", module = "teavmJso")
     public static native boolean instanceOfOrNull(JSObject obj, JSObject cls);
 
     @InjectedBy(JSNativeInjector.class)

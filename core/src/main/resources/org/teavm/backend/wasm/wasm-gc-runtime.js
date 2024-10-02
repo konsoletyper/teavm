@@ -156,8 +156,8 @@ TeaVM.wasm = function() {
             appendToArray: (array, e) => array.push(e),
             unwrapBoolean: value => value ? 1 : 0,
             wrapBoolean: value => !!value,
-            getProperty: (obj, prop) => obj[prop],
-            getPropertyPure: (obj, prop) => obj[prop],
+            getProperty: (obj, prop) => obj !== null ? obj[prop] : getGlobalName(prop),
+            getPropertyPure: (obj, prop) => obj !== null ? obj[prop] : getGlobalName(prop),
             setProperty: (obj, prop, value) => obj[prop] = value,
             setPropertyPure: (obj, prop) => obj[prop] = value,
             global: getGlobalName,
@@ -265,6 +265,8 @@ TeaVM.wasm = function() {
                 }
             },
             isPrimitive: (value, type) => typeof value === type,
+            instanceOf: (value, type) => value instanceof type,
+            instanceOfOrNull: (value, type) => value === null || value instanceof type,
             sameRef: (a, b) => a === b,
             hashCode: (obj) => {
                 if (typeof obj === "object" || typeof obj === "function" || typeof obj === "symbol") {
@@ -293,7 +295,8 @@ TeaVM.wasm = function() {
         for (let i = 0; i < 32; ++i) {
             imports.teavmJso["createFunction" + i] = (...args) => new Function(...args);
             imports.teavmJso["callFunction" + i] = (fn, ...args) => fn(...args);
-            imports.teavmJso["callMethod" + i] = (instance, method, ...args) => instance[method](...args);
+            imports.teavmJso["callMethod" + i] = (instance, method, ...args) =>
+                instance !== null ? instance[method](...args) : getGlobalName(method)(...args);
             imports.teavmJso["construct" + i] = (constructor, ...args) => new constructor(...args);
         }
     }
