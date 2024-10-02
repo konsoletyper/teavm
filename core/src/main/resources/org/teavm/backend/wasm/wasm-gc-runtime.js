@@ -83,6 +83,14 @@ TeaVM.wasm = function() {
     }
 
     function coreImports(imports) {
+        let finalizationRegistry = new FinalizationRegistry(heldValue => {
+            if (typeof exports.reportGarbageCollectedValue === "function") {
+                exports.reportGarbageCollectedValue(heldValue)
+            }
+        });
+        let stringFinalizationRegistry = new FinalizationRegistry(heldValue => {
+            exports.reportGarbageCollectedString(heldValue);
+        });
         imports.teavm = {
             createWeakRef(value, heldValue) {
                 let weakRef = new WeakRef(value);
@@ -102,14 +110,6 @@ TeaVM.wasm = function() {
     }
 
     function jsoImports(imports) {
-        new FinalizationRegistry(heldValue => {
-            if (typeof exports.reportGarbageCollectedValue === "function") {
-                exports.reportGarbageCollectedValue(heldValue)
-            }
-        });
-        new FinalizationRegistry(heldValue => {
-            exports.reportGarbageCollectedString(heldValue);
-        });
 
         let javaObjectSymbol = Symbol("javaObject");
         let functionsSymbol = Symbol("functions");
