@@ -47,4 +47,10 @@ public final class Navigator implements JSObject {
 
     @JSBody(script = "return navigator.hardwareConcurrency")
     public static native int hardwareConcurrency();
+
+    public static native boolean sendBeacon(String url);
+
+    public static native boolean sendBeacon(String url, String data);
+
+    public static native boolean sendBeacon(String url, JSObject data);
 }
