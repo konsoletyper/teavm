@@ -219,8 +219,7 @@ public class GlobalValueNumbering implements MethodOptimization {
             }
             namesCompatible = knownName.isEmpty() || name.isEmpty() || knownName.equals(name);
         }
-        if (known != null && domTree.dominates(known.location * 2 + 1, currentBlockIndex * 2) && known.value != var
-                && namesCompatible) {
+        if (known != null && dominates(known.location, currentBlockIndex) && known.value != var && namesCompatible) {
             map[var] = known.value;
             if (!noReplace) {
                 replaceMap[var] = known.value;
@@ -240,6 +239,10 @@ public class GlobalValueNumbering implements MethodOptimization {
                 knownValues.put(":" + value, known);
             }
         }
+    }
+
+    private boolean dominates(int a, int b) {
+        return a == b || domTree.dominates(a * 2 + 1, b * 2);
     }
 
     private InstructionVisitor constantPreprocessor = new AbstractInstructionVisitor() {
