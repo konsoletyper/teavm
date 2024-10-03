@@ -591,9 +591,19 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         if (expr.getType() == ArrayType.OBJECT && expr.getVariableIndex() >= 0) {
             var targetType = types.typeOf(expr.getVariableIndex());
             if (targetType != null) {
-                result = new WasmCast(result, (WasmType.Reference) mapType(targetType.valueType));
+                var wasmTargetType = (WasmType.Reference) mapType(targetType.valueType);
+                if (!isExtern(wasmTargetType)) {
+                    result = new WasmCast(result, (WasmType.Reference) mapType(targetType.valueType));
+                }
             }
         }
+    }
+
+    private boolean isExtern(WasmType.Reference type) {
+        if (!(type instanceof WasmType.SpecialReference)) {
+            return false;
+        }
+        return ((WasmType.SpecialReference) type).kind == WasmType.SpecialReferenceKind.EXTERN;
     }
 
     @Override

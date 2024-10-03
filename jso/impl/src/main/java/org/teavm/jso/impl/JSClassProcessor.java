@@ -457,7 +457,8 @@ class JSClassProcessor {
     }
 
     private void processConstructArray(ConstructArrayInstruction insn) {
-        insn.setItemType(processType(insn.getItemType()));
+        var arrayType = processType(ValueType.arrayOf(insn.getItemType()));
+        insn.setItemType(((ValueType.Array) arrayType).getItemType());
     }
 
     private void processClassConstant(ClassConstantInstruction insn) {
@@ -590,7 +591,7 @@ class JSClassProcessor {
             return originalType;
         }
 
-        type = ValueType.object(JSWrapper.class.getName());
+        type = ValueType.object(degree > 0 ? Object.class.getName() : JSWrapper.class.getName());
         while (degree-- > 0) {
             type = ValueType.arrayOf(type);
         }
