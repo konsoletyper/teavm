@@ -1088,7 +1088,8 @@ class JSClassProcessor {
             var arg = invoke.getArguments().get(i);
             var byRef = byRefParams[i];
             if (vararg && i == invoke.getArguments().size() - 1
-                    && typeHelper.isSupportedByRefType(method.parameterType(i))) {
+                    && typeHelper.isSupportedByRefType(method.parameterType(i))
+                    && !wasmGC) {
                 byRef = true;
             }
             arg = marshaller.wrapArgument(callLocation, arg,

@@ -39,6 +39,7 @@ public final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "concatArray", module = "teavmJso")
     public static native JSObject concatArray(JSObject a, JSObject b);
 
     @InjectedBy(JSNativeInjector.class)
@@ -562,76 +563,90 @@ public final class JS {
             JSObject l, JSObject m);
 
     @InjectedBy(JSNativeInjector.class)
+    @Import(name = "apply", module = "teavmJso")
     public static native JSObject apply(JSObject instance, JSObject method, JSArray<JSObject> v);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "arrayOf1", module = "teavmJso")
     public static native JSObject arrayOf(JSObject a);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "arrayOf2", module = "teavmJso")
     public static native JSObject arrayOf(JSObject a, JSObject b);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "arrayOf3", module = "teavmJso")
     public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "arrayOf4", module = "teavmJso")
     public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "arrayOf5", module = "teavmJso")
     public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "arrayOf6", module = "teavmJso")
     public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "arrayOf7", module = "teavmJso")
     public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
             JSObject g);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "arrayOf8", module = "teavmJso")
     public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
             JSObject g, JSObject h);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
+    @Import(name = "arrayOf9", module = "teavmJso")
     public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
             JSObject g, JSObject h, JSObject i);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "arrayOf10", module = "teavmJso")
     public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
             JSObject g, JSObject h, JSObject i, JSObject j);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "arrayOf11", module = "teavmJso")
     public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
             JSObject g, JSObject h, JSObject i, JSObject j, JSObject k);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "arrayOf12", module = "teavmJso")
     public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
             JSObject g, JSObject h, JSObject i, JSObject j, JSObject k, JSObject l);
 
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    @Import(name = "arrayOf13", module = "teavmJso")
     public static native JSObject arrayOf(JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
             JSObject g, JSObject h, JSObject i, JSObject j, JSObject k, JSObject l, JSObject m);
 

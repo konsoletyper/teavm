@@ -296,7 +296,16 @@ TeaVM.wasm = function() {
                 } else {
                     return 0;
                 }
-            }
+            },
+            apply: (instance, method, args) => {
+                if (instance === null) {
+                    let fn = getGlobalName(method);
+                    return fn(...args);
+                } else {
+                    return instance[method](...args);
+                }
+            },
+            concatArray: (a, b) => a.concat(b)
         };
         for (let name of ["wrapByte", "wrapShort", "wrapChar", "wrapInt", "wrapFloat", "wrapDouble", "unwrapByte",
             "unwrapShort", "unwrapChar", "unwrapInt", "unwrapFloat", "unwrapDouble"]) {
@@ -308,6 +317,7 @@ TeaVM.wasm = function() {
             imports.teavmJso["callMethod" + i] = (instance, method, ...args) =>
                 instance !== null ? instance[method](...args) : getGlobalName(method)(...args);
             imports.teavmJso["construct" + i] = (constructor, ...args) => new constructor(...args);
+            imports.teavmJso["arrayOf" + i] = (...args) => args
         }
     }
 

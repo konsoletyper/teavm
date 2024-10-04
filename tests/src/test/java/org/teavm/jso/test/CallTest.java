@@ -31,7 +31,7 @@ import org.testng.annotations.Test;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
-@OnlyPlatform(TestPlatform.JAVASCRIPT)
+@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @EachTestCompiledSeparately
 public class CallTest {
     @Test
