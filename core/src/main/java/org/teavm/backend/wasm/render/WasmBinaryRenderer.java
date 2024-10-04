@@ -462,7 +462,7 @@ public class WasmBinaryRenderer {
 
         WasmBinaryWriter functionsSubsection = new WasmBinaryWriter();
         var functions = module.functions.stream()
-                .filter(f -> f.getName() != null && f.getImportName() == null)
+                .filter(f -> f.getName() != null)
                 .collect(Collectors.toList());
         functionsSubsection.writeLEB(functions.size());
 

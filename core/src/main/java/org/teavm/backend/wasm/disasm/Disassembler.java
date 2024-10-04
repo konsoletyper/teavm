@@ -27,7 +27,6 @@ import org.teavm.backend.wasm.parser.CodeSectionParser;
 import org.teavm.backend.wasm.parser.FunctionSectionListener;
 import org.teavm.backend.wasm.parser.FunctionSectionParser;
 import org.teavm.backend.wasm.parser.GlobalSectionParser;
-import org.teavm.backend.wasm.parser.ImportSectionListener;
 import org.teavm.backend.wasm.parser.ImportSectionParser;
 import org.teavm.backend.wasm.parser.ModuleParser;
 import org.teavm.backend.wasm.parser.NameSectionListener;
@@ -41,6 +40,7 @@ public final class Disassembler {
     private DisassemblyWriter writer;
     private WasmHollowFunctionType[] functionTypes;
     private int[] functionTypeRefs;
+    private int importFunctionCount;
 
     public Disassembler(DisassemblyWriter writer) {
         this.writer = writer;
@@ -91,17 +91,6 @@ public final class Disassembler {
         };
     }
 
-    ImportListenerImpl importListener = new ImportListenerImpl();
-
-    static class ImportListenerImpl implements ImportSectionListener {
-        int count;
-
-        @Override
-        public void function(int typeIndex) {
-            ++count;
-        }
-    }
-
     public Consumer<byte[]> getSectionConsumer(int code, int pos, NameProvider nameProvider) {
         if (code == 1) {
             return bytes -> {
@@ -115,13 +104,15 @@ public final class Disassembler {
             };
         } else if (code == 2) {
             return bytes -> {
+                var importListener = new DisassemblyImportSectionListener(writer, nameProvider, functionTypes);
                 var parser = new ImportSectionParser(importListener);
                 parser.parse(AddressListener.EMPTY, bytes);
+                importFunctionCount = importListener.functionCount();
             };
         } else if (code == 3) {
             return bytes -> {
                 var signatures = new IntArrayList();
-                for (var i = 0; i < importListener.count; ++i) {
+                for (var i = 0; i < importFunctionCount; ++i) {
                     signatures.add(0);
                 }
                 var parser = new FunctionSectionParser(new FunctionSectionListener() {
@@ -150,7 +141,7 @@ public final class Disassembler {
                 writer.setAddressOffset(pos);
                 writer.write("(; code section size: " + bytes.length + " ;)").eol();
                 var sectionParser = new CodeSectionParser(disassembler);
-                sectionParser.setFunctionIndexOffset(importListener.count);
+                sectionParser.setFunctionIndexOffset(importFunctionCount);
                 sectionParser.parse(writer.addressListener, bytes);
                 writer.flush();
             };
