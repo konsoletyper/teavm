@@ -435,6 +435,16 @@ class JSClassProcessor {
             unwrap.setLocation(insn.getLocation());
             insn.setReceiver(unwrap.getArguments().get(0));
             insn.insertNext(unwrap);
+
+            if (wasmGC) {
+                var invoke = new InvokeInstruction();
+                invoke.setType(InvocationType.SPECIAL);
+                invoke.setMethod(new MethodReference(JS.class, "jsArrayItem", Object.class, int.class, Object.class));
+                invoke.setReceiver(insn.getReceiver());
+                invoke.setArguments(insn.getArray(), insn.getIndex());
+                invoke.setLocation(insn.getLocation());
+                insn.replace(invoke);
+            }
         }
     }
 

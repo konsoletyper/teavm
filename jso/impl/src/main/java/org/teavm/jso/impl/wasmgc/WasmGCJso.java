@@ -44,6 +44,8 @@ public final class WasmGCJso {
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "throwCCEIfFalse", boolean.class, JSObject.class,
                 JSObject.class), jsIntrinsic);
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "isNull", JSObject.class, boolean.class), jsIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "jsArrayItem", Object.class, int.class, Object.class),
+                jsIntrinsic);
 
         var wrapperIntrinsic = new WasmGCJSWrapperIntrinsic();
         wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "wrap", JSObject.class, Object.class),

@@ -138,7 +138,6 @@ public class ConversionTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void convertsArrayOfJSObject() {
         assertEquals("(foo)", surround(new JSString[] { JSString.valueOf("foo") })[0].stringValue());
         assertEquals("(foo)", surround(new JSString[][] {{ JSString.valueOf("foo") }})[0][0].stringValue());

@@ -22,6 +22,7 @@ import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmCall;
@@ -32,6 +33,7 @@ import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.impl.JS;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 class WasmGCJSIntrinsic implements WasmGCIntrinsic {
     private WasmFunction globalFunction;
@@ -53,9 +55,11 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
                 return new WasmCall(getGlobalFunction(context), name);
             }
             case "throwCCEIfFalse":
-                return throwCCEIfFalse(context, invocation);
+                return throwCCEIfFalse(invocation, context);
             case "isNull":
                 return new WasmIsNull(context.generate(invocation.getArguments().get(0)));
+            case "jsArrayItem":
+                return arrayItem(invocation, context);
             default:
                 throw new IllegalArgumentException();
         }
@@ -74,7 +78,7 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
         return globalFunction;
     }
 
-    private WasmExpression throwCCEIfFalse(WasmGCIntrinsicContext context, InvocationExpr invocation) {
+    private WasmExpression throwCCEIfFalse(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         var block = new WasmBlock(false);
         block.setType(WasmType.Reference.EXTERN);
 
@@ -92,5 +96,11 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
 
         block.getBody().add(context.generate(invocation.getArguments().get(1)));
         return block;
+    }
+
+    private WasmExpression arrayItem(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var array = context.generate(invocation.getArguments().get(0));
+        var arrayType = context.classInfoProvider().getClassInfo(ValueType.parse(Object[].class)).getArray();
+        return new WasmArrayGet(arrayType, array, context.generate(invocation.getArguments().get(1)));
     }
 }

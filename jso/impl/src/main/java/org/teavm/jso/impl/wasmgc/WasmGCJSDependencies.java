@@ -19,7 +19,9 @@ import static org.teavm.jso.impl.wasmgc.WasmGCJSConstants.JS_TO_STRING;
 import static org.teavm.jso.impl.wasmgc.WasmGCJSConstants.STRING_TO_JS;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.impl.JS;
 import org.teavm.jso.impl.JSWrapper;
 import org.teavm.model.MethodReference;
 
@@ -36,5 +38,14 @@ class WasmGCJSDependencies extends AbstractDependencyListener {
 
         agent.linkMethod(new MethodReference(JSWrapper.class, "createWrapper", JSObject.class, Object.class))
                 .use();
+    }
+
+    @Override
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
+        if (method.getMethod().getOwnerName().equals(JS.class.getName())) {
+            if (method.getMethod().getName().equals("jsArrayItem")) {
+                method.getVariable(1).getArrayItem().connect(method.getResult());
+            }
+        }
     }
 }

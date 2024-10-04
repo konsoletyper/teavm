@@ -785,4 +785,7 @@ public final class JS {
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
     public static native boolean isNull(JSObject o);
+
+    @NoSideEffects
+    public static native Object jsArrayItem(Object array, int index);
 }
