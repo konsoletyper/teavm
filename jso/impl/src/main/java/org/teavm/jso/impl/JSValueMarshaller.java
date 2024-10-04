@@ -68,7 +68,7 @@ class JSValueMarshaller {
             String className = ((ValueType.Object) type).getClassName();
             ClassReader cls = classSource.get(className);
             if (cls != null && cls.getAnnotations().get(JSFunctor.class.getName()) != null) {
-                return wrapFunctor(location, var, cls);
+                return wrapFunctor(location, var, cls, jsType);
             }
         }
         return wrap(var, type, jsType, location.getSourceLocation(), byRef);
@@ -83,20 +83,22 @@ class JSValueMarshaller {
                 .count() == 1;
     }
 
-    private Variable wrapFunctor(CallLocation location, Variable var, ClassReader type) {
+    private Variable wrapFunctor(CallLocation location, Variable var, ClassReader type, JSType jsType) {
         if (!isProperFunctor(type)) {
             diagnostics.error(location, "Wrong functor: {{c0}}", type.getName());
             return var;
         }
 
-        var unwrapNative = new InvokeInstruction();
-        unwrapNative.setLocation(location.getSourceLocation());
-        unwrapNative.setType(InvocationType.SPECIAL);
-        unwrapNative.setMethod(JSMethods.UNWRAP);
-        unwrapNative.setArguments(var);
-        unwrapNative.setReceiver(program.createVariable());
-        replacement.add(unwrapNative);
-        var = unwrapNative.getReceiver();
+        if (jsType == JSType.JAVA) {
+            var unwrapNative = new InvokeInstruction();
+            unwrapNative.setLocation(location.getSourceLocation());
+            unwrapNative.setType(InvocationType.SPECIAL);
+            unwrapNative.setMethod(JSMethods.UNWRAP);
+            unwrapNative.setArguments(var);
+            unwrapNative.setReceiver(program.createVariable());
+            replacement.add(unwrapNative);
+            var = unwrapNative.getReceiver();
+        }
 
         String name = type.getMethods().stream()
                 .filter(method -> method.hasModifier(ElementModifier.ABSTRACT))

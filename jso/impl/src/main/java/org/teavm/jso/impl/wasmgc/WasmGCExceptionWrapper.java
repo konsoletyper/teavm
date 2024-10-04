@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Alexey Andreev.
+ *  Copyright 2024 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,30 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.jso.impl.wasmgc;
 
-plugins {
-    `java-library`
-    `teavm-publish`
-}
+import org.teavm.jso.JSObject;
+import org.teavm.jso.core.JSError;
 
-description = "Library that adds convenient interface for interaction between TeaVM and JavaScript code"
+class WasmGCExceptionWrapper extends RuntimeException {
+    final JSObject jsException;
 
-configurations {
-    val teavm = create("teavm")
-    teavm.extendsFrom(compileClasspath.get())
-}
+    WasmGCExceptionWrapper(JSObject jsException) {
+        this.jsException = jsException;
+    }
 
-dependencies {
-    "teavm"(project(":jso:impl"))
-    compileOnly(project(":interop:core"))
-}
-
-teavmPublish {
-    artifactId = "teavm-jso"
-}
-
-tasks.withType<Jar> {
-    manifest {
-        attributes["Automatic-Module-Name"] = "org.teavm.jso"
+    @Override
+    public String getMessage() {
+        var message = jsException instanceof JSError
+                ? ((JSError) jsException).getMessage()
+                : jsException.toString();
+        return "(JavaScript) Error: " + message;
     }
 }

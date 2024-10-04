@@ -22,20 +22,30 @@ import java.util.function.Consumer;
 import org.teavm.backend.javascript.rendering.AstWriter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
+import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.expression.WasmExternConversion;
+import org.teavm.backend.wasm.model.expression.WasmExternConversionType;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
+import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
+import org.teavm.backend.wasm.model.expression.WasmThrow;
+import org.teavm.jso.JSObject;
 import org.teavm.jso.impl.JSBodyAstEmitter;
 import org.teavm.jso.impl.JSBodyBloatedEmitter;
 import org.teavm.jso.impl.JSBodyEmitter;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 class WasmGCJsoCommonGenerator {
     private WasmGCJSFunctions jsFunctions;
     private boolean initialized;
     private List<Consumer<WasmFunction>> initializerParts = new ArrayList<>();
+    private boolean rethrowExported;
 
     WasmGCJsoCommonGenerator(WasmGCJSFunctions jsFunctions) {
         this.jsFunctions = jsFunctions;
@@ -47,6 +57,7 @@ class WasmGCJsoCommonGenerator {
         }
         initialized = true;
         context.addToInitializer(this::writeToInitializer);
+        exportRethrowException(context);
     }
 
     private void writeToInitializer(WasmFunction function) {
@@ -55,7 +66,8 @@ class WasmGCJsoCommonGenerator {
         }
     }
 
-    void addInitializerPart(Consumer<WasmFunction> part) {
+    void addInitializerPart(WasmGCJsoContext context, Consumer<WasmFunction> part) {
+        initialize(context);
         initializerParts.add(part);
     }
 
@@ -113,5 +125,38 @@ class WasmGCJsoCommonGenerator {
 
     WasmExpression stringToJs(WasmGCJsoContext context, WasmExpression str) {
         return new WasmCall(stringToJsFunction(context), str);
+    }
+
+    private void exportRethrowException(WasmGCJsoContext context) {
+        if (rethrowExported) {
+            return;
+        }
+        rethrowExported = true;
+        var fn = context.functions().forStaticMethod(new MethodReference(WasmGCJSRuntime.class, "wrapException",
+                JSObject.class, Throwable.class));
+        fn.setExportName("teavm.js.wrapException");
+
+        fn = context.functions().forStaticMethod(new MethodReference(WasmGCJSRuntime.class, "extractException",
+                Throwable.class, JSObject.class));
+        fn.setExportName("teavm.js.extractException");
+
+        createThrowExceptionFunction(context);
+    }
+
+    private void createThrowExceptionFunction(WasmGCJsoContext context) {
+        var fn = new WasmFunction(context.functionTypes().of(null, WasmType.Reference.EXTERN));
+        fn.setName(context.names().topLevel("teavm@throwException"));
+        fn.setExportName("teavm.js.throwException");
+        context.module().functions.add(fn);
+
+        var exceptionLocal = new WasmLocal(WasmType.Reference.EXTERN);
+        fn.add(exceptionLocal);
+
+        var asAny = new WasmExternConversion(WasmExternConversionType.EXTERN_TO_ANY, new WasmGetLocal(exceptionLocal));
+        var throwableType = (WasmType.Reference) context.typeMapper().mapType(ValueType.parse(Throwable.class));
+        var asThrowable = new WasmCast(asAny, throwableType);
+        var throwExpr = new WasmThrow(context.exceptionTag());
+        throwExpr.getArguments().add(asThrowable);
+        fn.getBody().add(throwExpr);
     }
 }

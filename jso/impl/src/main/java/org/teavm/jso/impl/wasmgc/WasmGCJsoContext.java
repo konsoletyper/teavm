@@ -19,11 +19,13 @@ import java.util.function.Consumer;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
+import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGeneratorContext;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmTag;
 
 interface WasmGCJsoContext {
     WasmModule module();
@@ -35,6 +37,10 @@ interface WasmGCJsoContext {
     WasmGCNameProvider names();
 
     WasmGCStringProvider strings();
+
+    WasmGCTypeMapper typeMapper();
+
+    WasmTag exceptionTag();
 
     void addToInitializer(Consumer<WasmFunction> initializerContributor);
 
@@ -63,6 +69,16 @@ interface WasmGCJsoContext {
             @Override
             public WasmGCStringProvider strings() {
                 return context.strings();
+            }
+
+            @Override
+            public WasmGCTypeMapper typeMapper() {
+                return context.typeMapper();
+            }
+
+            @Override
+            public WasmTag exceptionTag() {
+                return context.exceptionTag();
             }
 
             @Override
@@ -97,6 +113,16 @@ interface WasmGCJsoContext {
             @Override
             public WasmGCStringProvider strings() {
                 return context.strings();
+            }
+
+            @Override
+            public WasmGCTypeMapper typeMapper() {
+                return context.typeMapper();
+            }
+
+            @Override
+            public WasmTag exceptionTag() {
+                return context.exceptionTag();
             }
 
             @Override

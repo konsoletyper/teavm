@@ -110,16 +110,17 @@ TeaVM.wasm = function() {
     }
 
     function jsoImports(imports) {
-
         let javaObjectSymbol = Symbol("javaObject");
         let functionsSymbol = Symbol("functions");
         let functionOriginSymbol = Symbol("functionOrigin");
+        let javaExceptionSymbol = Symbol("javaException");
 
         let jsWrappers = new WeakMap();
         let javaWrappers = new WeakMap();
         let primitiveWrappers = new Map();
         let primitiveFinalization = new FinalizationRegistry(token => primitiveFinalization.delete(token));
         let hashCodes = new WeakMap();
+        let javaExceptionWrappers = new WeakMap();
         let lastHashCode = 2463534242;
         let nextHashCode = () => {
             let x = lastHashCode;
@@ -156,6 +157,53 @@ TeaVM.wasm = function() {
                 obj[prop] = value;
             }
         }
+        function javaExceptionToJs(e) {
+            if (e instanceof WebAssembly.Exception) {
+                let tag = exports["javaException"];
+                if (e.is(tag)) {
+                    let javaException = e.getArg(tag, 0);
+                    let extracted = extractException(javaException);
+                    if (extracted !== null) {
+                        return extracted;
+                    }
+                    let wrapperRef = javaExceptionWrappers.get(javaException);
+                    if (typeof wrapperRef != "undefined") {
+                        let wrapper = wrapperRef.deref();
+                        if (typeof wrapper !== "undefined") {
+                            return wrapper;
+                        }
+                    }
+                    let wrapper = new Error();
+                    javaExceptionWrappers.set(javaException, new WeakRef(wrapper));
+                    wrapper[javaExceptionSymbol] = javaException;
+                    return wrapper;
+                }
+            }
+            return e;
+        }
+        function jsExceptionAsJava(e) {
+            if (javaExceptionSymbol in e) {
+                return e[javaExceptionSymbol];
+            } else {
+                return exports["teavm.js.wrapException"](e);
+            }
+        }
+        function rethrowJsAsJava(e) {
+            exports["teavm.js.throwException"](jsExceptionAsJava(e));
+        }
+        function extractException(e) {
+            return exports["teavm.js.extractException"](e);
+        }
+        function rethrowJavaAsJs(e) {
+            throw javaExceptionToJs(e);
+        }
+        function getProperty(obj, prop) {
+            try {
+                return obj !== null ? obj[prop] : getGlobalName(prop)
+            } catch (e) {
+                rethrowJsAsJava(e);
+            }
+        }
         imports.teavmJso = {
             emptyString: () => "",
             stringFromCharCode: code => String.fromCharCode(code),
@@ -166,11 +214,17 @@ TeaVM.wasm = function() {
             appendToArray: (array, e) => array.push(e),
             unwrapBoolean: value => value ? 1 : 0,
             wrapBoolean: value => !!value,
-            getProperty: (obj, prop) => obj !== null ? obj[prop] : getGlobalName(prop),
-            getPropertyPure: (obj, prop) => obj !== null ? obj[prop] : getGlobalName(prop),
+            getProperty: getProperty,
+            getPropertyPure: getProperty,
             setProperty: setProperty,
             setPropertyPure: setProperty,
-            global: getGlobalName,
+            global(name) {
+                try {
+                    return getGlobalName(name);
+                } catch (e) {
+                    rethrowJsAsJava(e);
+                }
+            },
             createClass(name) {
                 let fn = new Function(
                     "javaObjectSymbol",
@@ -184,18 +238,30 @@ TeaVM.wasm = function() {
             },
             defineMethod(cls, name, fn) {
                 cls.prototype[name] = function(...args) {
-                    return fn(this, ...args);
+                    try {
+                        return fn(this, ...args);
+                    } catch (e) {
+                        rethrowJavaAsJs(e);
+                    }
                 }
             },
             defineProperty(cls, name, getFn, setFn) {
                 let descriptor = {
                     get() {
-                        return getFn(this);
+                        try {
+                            return getFn(this);
+                        } catch (e) {
+                            rethrowJavaAsJs(e);
+                        }
                     }
                 };
                 if (setFn !== null) {
                     descriptor.set = function(value) {
-                        setFn(this, value);
+                        try {
+                            setFn(this, value);
+                        } catch (e) {
+                            rethrowJavaAsJs(e);
+                        }
                     }
                 }
                 Object.defineProperty(cls.prototype, name, descriptor);
@@ -239,7 +305,15 @@ TeaVM.wasm = function() {
                         return origin;
                     }
                 }
-                return { [property]: fn };
+                return {
+                    [property]: function(...args) {
+                        try {
+                            return fn(...args);
+                        } catch (e) {
+                            rethrowJavaAsJs(e);
+                        }
+                    }
+                };
             },
             wrapObject(obj) {
                 if (obj === null) {
@@ -298,25 +372,47 @@ TeaVM.wasm = function() {
                 }
             },
             apply: (instance, method, args) => {
-                if (instance === null) {
-                    let fn = getGlobalName(method);
-                    return fn(...args);
-                } else {
-                    return instance[method](...args);
+                try {
+                    if (instance === null) {
+                        let fn = getGlobalName(method);
+                        return fn(...args);
+                    } else {
+                        return instance[method](...args);
+                    }
+                } catch (e) {
+                    rethrowJsAsJava(e);
                 }
             },
-            concatArray: (a, b) => a.concat(b)
+            concatArray: (a, b) => a.concat(b),
+            getJavaException: e => e[javaExceptionSymbol]
         };
         for (let name of ["wrapByte", "wrapShort", "wrapChar", "wrapInt", "wrapFloat", "wrapDouble", "unwrapByte",
-            "unwrapShort", "unwrapChar", "unwrapInt", "unwrapFloat", "unwrapDouble"]) {
+                "unwrapShort", "unwrapChar", "unwrapInt", "unwrapFloat", "unwrapDouble"]) {
             imports.teavmJso[name] = identity;
         }
         for (let i = 0; i < 32; ++i) {
             imports.teavmJso["createFunction" + i] = (...args) => new Function(...args);
-            imports.teavmJso["callFunction" + i] = (fn, ...args) => fn(...args);
-            imports.teavmJso["callMethod" + i] = (instance, method, ...args) =>
-                instance !== null ? instance[method](...args) : getGlobalName(method)(...args);
-            imports.teavmJso["construct" + i] = (constructor, ...args) => new constructor(...args);
+            imports.teavmJso["callFunction" + i] = (fn, ...args) => {
+                try {
+                    return fn(...args);
+                } catch (e) {
+                    rethrowJsAsJava(e);
+                }
+            };
+            imports.teavmJso["callMethod" + i] = (instance, method, ...args) => {
+                try {
+                    return instance !== null ? instance[method](...args) : getGlobalName(method)(...args);
+                } catch (e) {
+                    rethrowJsAsJava(e);
+                }
+            }
+            imports.teavmJso["construct" + i] = (constructor, ...args) => {
+                try {
+                    return new constructor(...args);
+                } catch (e) {
+                    rethrowJsAsJava(e);
+                }
+            }
             imports.teavmJso["arrayOf" + i] = (...args) => args
         }
     }

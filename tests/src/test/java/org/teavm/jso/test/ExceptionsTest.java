@@ -27,12 +27,13 @@ import org.teavm.jso.core.JSError;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
-@OnlyPlatform(TestPlatform.JAVASCRIPT)
+@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @EachTestCompiledSeparately
 public class ExceptionsTest {
     @Test
@@ -102,6 +103,7 @@ public class ExceptionsTest {
     }
 
     @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void catchNativeExceptionAsRuntimeException() {
         StringBuilder sb = new StringBuilder();
         try {

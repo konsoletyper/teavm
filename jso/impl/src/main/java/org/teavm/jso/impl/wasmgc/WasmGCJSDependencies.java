@@ -28,16 +28,7 @@ import org.teavm.model.MethodReference;
 class WasmGCJSDependencies extends AbstractDependencyListener {
     @Override
     public void started(DependencyAgent agent) {
-        agent.linkMethod(STRING_TO_JS)
-                .propagate(1, agent.getType("java.lang.String"))
-                .use();
-
-        var jsToString = agent.linkMethod(JS_TO_STRING);
-        jsToString.getResult().propagate(agent.getType("java.lang.String"));
-        jsToString.use();
-
-        agent.linkMethod(new MethodReference(JSWrapper.class, "createWrapper", JSObject.class, Object.class))
-                .use();
+        reachUtilities(agent);
     }
 
     @Override
@@ -46,6 +37,26 @@ class WasmGCJSDependencies extends AbstractDependencyListener {
             if (method.getMethod().getName().equals("jsArrayItem")) {
                 method.getVariable(1).getArrayItem().connect(method.getResult());
             }
+        } else if (method.getMethod().getOwnerName().equals(JSWrapper.class.getName())) {
+            if (method.getMethod().getName().equals("wrap")) {
+                agent.linkMethod(new MethodReference(JSWrapper.class, "createWrapper", JSObject.class, Object.class))
+                        .use();
+            }
         }
+    }
+
+    private void reachUtilities(DependencyAgent agent) {
+        agent.linkMethod(STRING_TO_JS)
+                .propagate(1, agent.getType("java.lang.String"))
+                .use();
+
+        var jsToString = agent.linkMethod(JS_TO_STRING);
+        jsToString.getResult().propagate(agent.getType("java.lang.String"));
+        jsToString.use();
+
+        agent.linkMethod(new MethodReference(WasmGCJSRuntime.class, "wrapException", JSObject.class, Throwable.class))
+                .use();
+        agent.linkMethod(new MethodReference(WasmGCJSRuntime.class, "extractException", Throwable.class,
+                JSObject.class)).use();
     }
 }
