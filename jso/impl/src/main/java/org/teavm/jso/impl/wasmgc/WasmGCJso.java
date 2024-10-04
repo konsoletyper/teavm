@@ -36,7 +36,7 @@ public final class WasmGCJso {
         wasmGCHost.addIntrinsicFactory(new WasmGCJSBodyRenderer(jsBodyRepository, jsFunctions, commonGen));
         wasmGCHost.addGeneratorFactory(new WasmGCMarshallMethodGeneratorFactory(commonGen));
 
-        var jsIntrinsic = new WasmGCJSIntrinsic();
+        var jsIntrinsic = new WasmGCJSIntrinsic(commonGen);
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "wrap", String.class, JSObject.class), jsIntrinsic);
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "unwrapString", JSObject.class, String.class),
                 jsIntrinsic);

@@ -17,9 +17,12 @@ package org.teavm.jso.impl.wasmgc;
 
 import static org.teavm.jso.impl.wasmgc.WasmGCJSConstants.STRING_TO_JS;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import org.teavm.backend.javascript.rendering.AstWriter;
+import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -46,6 +49,7 @@ class WasmGCJsoCommonGenerator {
     private boolean initialized;
     private List<Consumer<WasmFunction>> initializerParts = new ArrayList<>();
     private boolean rethrowExported;
+    private Map<String, WasmGlobal> stringsConstants = new HashMap<>();
 
     WasmGCJsoCommonGenerator(WasmGCJSFunctions jsFunctions) {
         this.jsFunctions = jsFunctions;
@@ -158,5 +162,25 @@ class WasmGCJsoCommonGenerator {
         var throwExpr = new WasmThrow(context.exceptionTag());
         throwExpr.getArguments().add(asThrowable);
         fn.getBody().add(throwExpr);
+    }
+
+    WasmExpression jsStringConstant(WasmGCJsoContext context, String str) {
+        var global = stringsConstants.computeIfAbsent(str, s -> {
+            var javaGlobal = context.strings().getStringConstant(s).global;
+            var function = context.functions().forStaticMethod(STRING_TO_JS);
+            var index = stringsConstants.size();
+            var brief = str.length() > 16 ? str.substring(0, 16) : str;
+            var name = context.names().topLevel("teavm.js.strings<" + index + ">:"
+                    + WasmGCNameProvider.sanitize(brief));
+            var jsGlobal = new WasmGlobal(name, WasmType.Reference.EXTERN,
+                    new WasmNullConstant(WasmType.Reference.EXTERN));
+            context.module().globals.add(jsGlobal);
+            addInitializerPart(context, initializer -> {
+                var call = new WasmCall(function, new WasmGetGlobal(javaGlobal));
+                initializer.getBody().add(new WasmSetGlobal(jsGlobal, call));
+            });
+            return jsGlobal;
+        });
+        return new WasmGetGlobal(global);
     }
 }

@@ -17,6 +17,8 @@ package org.teavm.jso.impl.wasmgc;
 
 import static org.teavm.jso.impl.wasmgc.WasmGCJSConstants.JS_TO_STRING;
 import static org.teavm.jso.impl.wasmgc.WasmGCJSConstants.STRING_TO_JS;
+import org.teavm.ast.ConstantExpr;
+import org.teavm.ast.Expr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
@@ -37,21 +39,23 @@ import org.teavm.model.ValueType;
 
 class WasmGCJSIntrinsic implements WasmGCIntrinsic {
     private WasmFunction globalFunction;
+    private WasmGCJsoCommonGenerator commonGen;
+
+    WasmGCJSIntrinsic(WasmGCJsoCommonGenerator commonGen) {
+        this.commonGen = commonGen;
+    }
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         switch (invocation.getMethod().getName()) {
-            case "wrap": {
-                var function = context.functions().forStaticMethod(STRING_TO_JS);
-                return new WasmCall(function, context.generate(invocation.getArguments().get(0)));
-            }
+            case "wrap":
+                return wrapString(invocation.getArguments().get(0), context);
             case "unwrapString": {
                 var function = context.functions().forStaticMethod(JS_TO_STRING);
                 return new WasmCall(function, context.generate(invocation.getArguments().get(0)));
             }
             case "global": {
-                var stringToJs = context.functions().forStaticMethod(STRING_TO_JS);
-                var name = new WasmCall(stringToJs, context.generate(invocation.getArguments().get(0)));
+                var name = wrapString(invocation.getArguments().get(0), context);
                 return new WasmCall(getGlobalFunction(context), name);
             }
             case "throwCCEIfFalse":
@@ -63,6 +67,17 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
             default:
                 throw new IllegalArgumentException();
         }
+    }
+
+    private WasmExpression wrapString(Expr stringExpr, WasmGCIntrinsicContext context) {
+        if (stringExpr instanceof ConstantExpr) {
+            var constantExpr = (ConstantExpr) stringExpr;
+            if (constantExpr.getValue() instanceof String) {
+                return commonGen.jsStringConstant(WasmGCJsoContext.wrap(context), (String) constantExpr.getValue());
+            }
+        }
+        var function = context.functions().forStaticMethod(STRING_TO_JS);
+        return new WasmCall(function, context.generate(stringExpr));
     }
 
     private WasmFunction getGlobalFunction(WasmGCIntrinsicContext context) {

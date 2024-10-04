@@ -17,8 +17,14 @@
 var TeaVM = TeaVM || {};
 TeaVM.wasm = function() {
     let exports;
+    let globalsCache = new Map();
     let getGlobalName = function(name) {
-        return eval(name);
+        let result = globalsCache.get(name);
+        if (typeof result === "undefined") {
+            result = new Function("return " + name + ";");
+            globalsCache.set(name, result);
+        }
+        return result();
     }
     let setGlobalName = function(name, value) {
         new Function("value", name + " = value;")(value);
@@ -237,13 +243,20 @@ TeaVM.wasm = function() {
                 return fn(javaObjectSymbol, functionsSymbol, functionOriginSymbol);
             },
             defineMethod(cls, name, fn) {
-                cls.prototype[name] = function(...args) {
-                    try {
-                        return fn(this, ...args);
-                    } catch (e) {
-                        rethrowJavaAsJs(e);
-                    }
+                let params = [];
+                for (let i = 1; i < fn.length; ++i) {
+                    params.push("p" + i);
                 }
+                let paramsAsString = params.length === 0 ? "" : params.join(", ");
+                cls.prototype[name] = new Function("rethrowJavaAsJs", "fn", `
+                    return function(${paramsAsString}) {
+                        try {
+                            return fn(${['this', params].join(", ")});
+                        } catch (e) {
+                            rethrowJavaAsJs(e);
+                        }
+                    };
+                `)(rethrowJavaAsJs, fn);
             },
             defineProperty(cls, name, getFn, setFn) {
                 let descriptor = {
@@ -390,30 +403,47 @@ TeaVM.wasm = function() {
                 "unwrapShort", "unwrapChar", "unwrapInt", "unwrapFloat", "unwrapDouble"]) {
             imports.teavmJso[name] = identity;
         }
+        function wrapCallFromJavaToJs(call) {
+            try {
+                return call();
+            } catch (e) {
+                rethrowJsAsJava(e);
+            }
+        }
+        let argumentList = [];
         for (let i = 0; i < 32; ++i) {
-            imports.teavmJso["createFunction" + i] = (...args) => new Function(...args);
-            imports.teavmJso["callFunction" + i] = (fn, ...args) => {
+            let args = argumentList.length === 0 ? "" : argumentList.join(", ");
+            let argsAndBody = [...argumentList, "body"].join(", ");
+            imports.teavmJso["createFunction" + i] = new Function("wrapCallFromJavaToJs", ...argumentList, "body", `
+                return new Function('wrapCallFromJavaToJs', ${argsAndBody}).bind(this, wrapCallFromJavaToJs);
+            `).bind(null, wrapCallFromJavaToJs);
+            imports.teavmJso["callFunction" + i] = new Function("rethrowJsAsJava", "fn", ...argumentList, `
                 try {
-                    return fn(...args);
+                    return fn(${args});
                 } catch (e) {
                     rethrowJsAsJava(e);
                 }
-            };
-            imports.teavmJso["callMethod" + i] = (instance, method, ...args) => {
+            `).bind(null, rethrowJsAsJava);
+            imports.teavmJso["callMethod" + i] = new Function("rethrowJsAsJava", "getGlobalName", "instance",
+                "method", ...argumentList, `
                 try {
-                    return instance !== null ? instance[method](...args) : getGlobalName(method)(...args);
+                    return instance !== null 
+                        ? instance[method](${args}) 
+                        : getGlobalName(method)(${args});
+                } catch (e) {
+                    rethrowJsAsJava(e);
+                }`).bind(null, rethrowJsAsJava, getGlobalName);
+            imports.teavmJso["construct" + i] = new Function("rethrowJsAsJava", "constructor", ...argumentList, `
+                try {
+                    return new constructor(${args});
                 } catch (e) {
                     rethrowJsAsJava(e);
                 }
-            }
-            imports.teavmJso["construct" + i] = (constructor, ...args) => {
-                try {
-                    return new constructor(...args);
-                } catch (e) {
-                    rethrowJsAsJava(e);
-                }
-            }
-            imports.teavmJso["arrayOf" + i] = (...args) => args
+            `).bind(null, rethrowJsAsJava);
+            imports.teavmJso["arrayOf" + i] = new Function(...argumentList, "return [" + args + "]");
+
+            let param = "p" + (i + 1);
+            argumentList.push(param);
         }
     }
 
