@@ -21,6 +21,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.teavm.backend.wasm.debug.DebugLines;
+import org.teavm.backend.wasm.debug.ExternalDebugFile;
+import org.teavm.backend.wasm.debug.GCDebugInfoBuilder;
 import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
 import org.teavm.backend.wasm.gc.WasmGCDependencies;
 import org.teavm.backend.wasm.generate.gc.WasmGCDeclarationsGenerator;
@@ -63,6 +66,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
     private boolean strict;
     private boolean obfuscated;
+    private WasmDebugInfoLocation debugLocation;
+    private WasmDebugInfoLevel debugLevel;
     private List<WasmGCIntrinsicFactory> intrinsicFactories = new ArrayList<>();
     private Map<MethodReference, WasmGCIntrinsic> customIntrinsics = new HashMap<>();
     private List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories = new ArrayList<>();
@@ -75,6 +80,14 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
 
     public void setStrict(boolean strict) {
         this.strict = strict;
+    }
+
+    public void setDebugLevel(WasmDebugInfoLevel debugLevel) {
+        this.debugLevel = debugLevel;
+    }
+
+    public void setDebugLocation(WasmDebugInfoLocation debugLocation) {
+        this.debugLocation = debugLocation;
     }
 
     @Override
@@ -172,6 +185,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
                 customGeneratorFactories, customCustomGenerators,
                 controller.getProperties());
         var intrinsics = new WasmGCIntrinsics(classes, controller.getServices(), intrinsicFactories, customIntrinsics);
+        var debugInfoBuilder = new GCDebugInfoBuilder();
         var declarationsGenerator = new WasmGCDeclarationsGenerator(
                 module,
                 classes,
@@ -231,7 +245,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         customGenerators.contributeToModule(module);
         adjustModuleMemory(module);
 
-        emitWasmFile(module, buildTarget, outputName);
+        emitWasmFile(module, buildTarget, outputName, debugInfoBuilder);
     }
 
     private void adjustModuleMemory(WasmModule module) {
@@ -248,19 +262,36 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         module.setMaxMemorySize(pages);
     }
 
-    private void emitWasmFile(WasmModule module, BuildTarget buildTarget, String outputName) throws IOException {
+    private void emitWasmFile(WasmModule module, BuildTarget buildTarget, String outputName,
+            GCDebugInfoBuilder debugInfoBuilder) throws IOException {
         var binaryWriter = new WasmBinaryWriter();
+        DebugLines debugLines = null;
+        if (debugLevel != WasmDebugInfoLevel.NONE) {
+            debugLines = debugInfoBuilder.lines();
+        }
         var binaryRenderer = new WasmBinaryRenderer(binaryWriter, WasmBinaryVersion.V_0x1, obfuscated,
-                null, null, null, null, WasmBinaryStatsCollector.EMPTY);
+                null, null, debugLines, null, WasmBinaryStatsCollector.EMPTY);
         optimizeIndexes(module);
         module.prepareForRendering();
-        binaryRenderer.render(module);
+        if (debugLocation == WasmDebugInfoLocation.EMBEDDED) {
+            binaryRenderer.render(module, debugInfoBuilder::build);
+        } else {
+            binaryRenderer.render(module);
+        }
         var data = binaryWriter.getData();
         if (!outputName.endsWith(".wasm")) {
             outputName += ".wasm";
         }
         try (var output = buildTarget.createResource(outputName)) {
             output.write(data);
+        }
+        if (debugLocation == WasmDebugInfoLocation.EXTERNAL) {
+            var debugInfoData = ExternalDebugFile.write(debugInfoBuilder.build());
+            if (debugInfoData != null) {
+                try (var output = buildTarget.createResource(outputName + ".tdbg")) {
+                    output.write(debugInfoData);
+                }
+            }
         }
     }
 

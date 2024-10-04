@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.teavm.backend.wasm.WasmDebugInfoLevel;
+import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.WasmGCTarget;
 import org.teavm.backend.wasm.disasm.Disassembler;
 import org.teavm.backend.wasm.disasm.DisassemblyHTMLWriter;
@@ -69,6 +71,8 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
             var target = new WasmGCTarget();
             target.setObfuscated(false);
             target.setStrict(true);
+            target.setDebugLevel(WasmDebugInfoLevel.DEOBFUSCATION);
+            target.setDebugLocation(WasmDebugInfoLocation.EMBEDDED);
             var sourceDirs = System.getProperty(SOURCE_DIRS);
             if (sourceDirs != null) {
                 var dirs = new ArrayList<File>();

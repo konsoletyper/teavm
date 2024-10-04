@@ -24,7 +24,11 @@ public class DisassemblyHTMLWriter extends DisassemblyWriter {
 
     @Override
     public DisassemblyWriter prologue() {
-        return writeExact("<html><body><pre>");
+        writeExact("<html>\n<head>");
+        writeExact("<style>\n");
+        writeExact("em { color: gray; }\n");
+        writeExact("</style></head>\n");
+        return writeExact("<body><pre>");
     }
 
     @Override
@@ -81,5 +85,15 @@ public class DisassemblyHTMLWriter extends DisassemblyWriter {
         }
         writeExact(s);
         return this;
+    }
+
+    @Override
+    protected void startAnnotation() {
+        writeExact("<em>");
+    }
+
+    @Override
+    protected void endAnnotation() {
+        writeExact("</em>");
     }
 }
