@@ -15,5 +15,5 @@
  */
 package org.teavm.jso.impl;
 
-@interface JSBodyDelegate {
+public @interface JSBodyDelegate {
 }

@@ -19,6 +19,8 @@ import java.util.Arrays;
 import java.util.List;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
+import org.teavm.dependency.AbstractDependencyListener;
+import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.model.MethodReference;
 
@@ -105,6 +107,17 @@ public class WasmGCDependencies {
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "throwCloneNotSupportedException",
                 void.class)).use();
         analyzer.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class)).use();
+
+        analyzer.addDependencyListener(new AbstractDependencyListener() {
+            @Override
+            public void classReached(DependencyAgent agent, String className) {
+                if (className.equals(Throwable.class.getName())) {
+                    agent.linkMethod(new MethodReference(Throwable.class, "getMessage", String.class))
+                            .propagate(0, Throwable.class)
+                            .use();
+                }
+            }
+        });
     }
 
     private void contributeInitializerUtils() {

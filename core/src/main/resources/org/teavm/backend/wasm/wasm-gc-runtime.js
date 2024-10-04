@@ -38,6 +38,24 @@ TeaVM.wasm = function() {
         imports.teavmMath = Math;
     }
 
+    let javaExceptionSymbol = Symbol("javaException");
+    class JavaError extends Error {
+        constructor(javaException) {
+            super();
+            this[javaExceptionSymbol] = javaException;
+        }
+        get message() {
+            let exceptionMessage = exports.exceptionMessage;
+            if (typeof exceptionMessage === "function") {
+                let message = exceptionMessage(this[javaExceptionSymbol]);
+                if (message != null) {
+                    return stringToJava(message);
+                }
+            }
+            return "(could not fetch message)";
+        }
+    }
+
     function dateImports(imports) {
         imports.teavmDate = {
             currentTimeMillis: () => new Date().getTime(),
@@ -119,7 +137,6 @@ TeaVM.wasm = function() {
         let javaObjectSymbol = Symbol("javaObject");
         let functionsSymbol = Symbol("functions");
         let functionOriginSymbol = Symbol("functionOrigin");
-        let javaExceptionSymbol = Symbol("javaException");
 
         let jsWrappers = new WeakMap();
         let javaWrappers = new WeakMap();
@@ -179,9 +196,8 @@ TeaVM.wasm = function() {
                             return wrapper;
                         }
                     }
-                    let wrapper = new Error();
+                    let wrapper = new JavaError(javaException);
                     javaExceptionWrappers.set(javaException, new WeakRef(wrapper));
-                    wrapper[javaExceptionSymbol] = javaException;
                     return wrapper;
                 }
             }

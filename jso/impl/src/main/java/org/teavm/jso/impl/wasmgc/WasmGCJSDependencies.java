@@ -22,6 +22,7 @@ import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.impl.JS;
+import org.teavm.jso.impl.JSBodyDelegate;
 import org.teavm.jso.impl.JSWrapper;
 import org.teavm.model.MethodReference;
 
@@ -33,15 +34,30 @@ class WasmGCJSDependencies extends AbstractDependencyListener {
 
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
-        if (method.getMethod().getOwnerName().equals(JS.class.getName())) {
-            if (method.getMethod().getName().equals("jsArrayItem")) {
-                method.getVariable(1).getArrayItem().connect(method.getResult());
+        var methodReader = method.getMethod();
+        if (methodReader.getOwnerName().equals(JS.class.getName())) {
+            switch (methodReader.getName()) {
+                case "jsArrayItem":
+                    method.getVariable(1).getArrayItem().connect(method.getResult());
+                    break;
+                case "invoke":
+                case "apply":
+                case "construct":
+                case "get":
+                case "getPure":
+                case "set":
+                case "setPure":
+                case "global":
+                    method.getThrown().propagate(agent.getType(WasmGCExceptionWrapper.class.getName()));
+                    break;
             }
-        } else if (method.getMethod().getOwnerName().equals(JSWrapper.class.getName())) {
-            if (method.getMethod().getName().equals("wrap")) {
+        } else if (methodReader.getOwnerName().equals(JSWrapper.class.getName())) {
+            if (methodReader.getName().equals("wrap")) {
                 agent.linkMethod(new MethodReference(JSWrapper.class, "createWrapper", JSObject.class, Object.class))
                         .use();
             }
+        } else if (methodReader.getAnnotations().get(JSBodyDelegate.class.getName()) != null) {
+            method.getThrown().propagate(agent.getType(WasmGCExceptionWrapper.class.getName()));
         }
     }
 
