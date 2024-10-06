@@ -1405,6 +1405,10 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         flushLocation();
         if (debugLines != null) {
             debugLines.advance(writer.getPosition() + addressOffset);
+            while (!methodStack.isEmpty()) {
+                methodStack.removeLast();
+                debugLines.end();
+            }
             debugLines.end();
         }
     }
@@ -1433,7 +1437,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
             var loc = textLocationToEmit;
             var inlining = loc != null ? loc.getInlining() : null;
             while (inlining != null) {
-                currentMethodStack.add(loc.getInlining().getMethod());
+                currentMethodStack.add(inlining.getMethod());
                 inlining = inlining.getParent();
             }
             Collections.reverse(currentMethodStack);

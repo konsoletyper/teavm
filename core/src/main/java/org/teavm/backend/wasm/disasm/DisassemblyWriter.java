@@ -104,16 +104,15 @@ public abstract class DisassemblyWriter {
         if (currentSequenceIndex >= debugLines.sequences().size()) {
             return;
         }
-        var force = false;
         if (currentCommandIndex < 0) {
             if (addressWithinSection < debugLines.sequences().get(currentSequenceIndex).startAddress()) {
                 return;
             }
             currentCommandIndex = 0;
-            force = true;
+            printSingleDebugAnnotation("start debug line sequence");
         } else {
             if (addressWithinSection >= debugLines.sequences().get(currentSequenceIndex).endAddress()) {
-                printSingleDebugAnnotation("<end debug line sequence>");
+                printSingleDebugAnnotation("end debug line sequence");
                 ++currentSequenceIndex;
                 currentCommandIndex = -1;
                 lineInfoIndent = 0;
@@ -122,45 +121,42 @@ public abstract class DisassemblyWriter {
         }
 
         var sequence = debugLines.sequences().get(currentSequenceIndex);
-        if (currentCommandIndex >= sequence.commands().size()) {
-            return;
-        }
-        var command = sequence.commands().get(currentCommandIndex);
-        if (!force) {
-            if (currentCommandIndex + 1 < sequence.commands().size()
-                    && addressWithinSection >= sequence.commands().get(currentCommandIndex + 1).address()) {
-                command = sequence.commands().get(++currentCommandIndex);
-            } else {
-                return;
-            }
-        }
-
-        command.acceptVisitor(new LineInfoCommandVisitor() {
-            @Override
-            public void visit(LineInfoEnterCommand command) {
-                printSingleDebugAnnotation(" at " + command.method().fullName());
-                ++lineInfoIndent;
+        while (currentCommandIndex < sequence.commands().size()) {
+            var command = sequence.commands().get(currentCommandIndex);
+            if (addressWithinSection < command.address()) {
+                break;
             }
 
-            @Override
-            public void visit(LineInfoExitCommand command) {
-                --lineInfoIndent;
-            }
-
-            @Override
-            public void visit(LineInfoFileCommand command) {
-                if (command.file() == null) {
-                    printSingleDebugAnnotation("at <unknown>:" + command.line());
-                } else {
-                    printSingleDebugAnnotation(" at " + command.file().name() + ":" + command.line());
+            command.acceptVisitor(new LineInfoCommandVisitor() {
+                @Override
+                public void visit(LineInfoEnterCommand command) {
+                    printSingleDebugAnnotation("enter inline " + command.method().cls().name() + "."
+                            + command.method().name());
+                    ++lineInfoIndent;
                 }
-            }
 
-            @Override
-            public void visit(LineInfoLineCommand command) {
-                printSingleDebugAnnotation(" at " + command.line());
-            }
-        });
+                @Override
+                public void visit(LineInfoExitCommand command) {
+                    --lineInfoIndent;
+                    printSingleDebugAnnotation("exit inline");
+                }
+
+                @Override
+                public void visit(LineInfoFileCommand command) {
+                    if (command.file() == null) {
+                        printSingleDebugAnnotation("at <unknown>:" + command.line());
+                    } else {
+                        printSingleDebugAnnotation("at " + command.file().name() + ":" + command.line());
+                    }
+                }
+
+                @Override
+                public void visit(LineInfoLineCommand command) {
+                    printSingleDebugAnnotation("at " + command.line());
+                }
+            });
+            ++currentCommandIndex;
+        }
     }
 
     private void printSingleDebugAnnotation(String text) {
@@ -172,7 +168,7 @@ public abstract class DisassemblyWriter {
             out.print("  ");
         }
         startAnnotation();
-        out.print("(;");
+        out.print("(; ");
         write(text);
         out.print(" ;)");
         endAnnotation();
