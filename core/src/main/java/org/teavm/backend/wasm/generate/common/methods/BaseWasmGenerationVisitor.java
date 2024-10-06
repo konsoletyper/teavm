@@ -132,6 +132,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     private boolean async;
     protected WasmExpression result;
     protected List<WasmExpression> resultConsumer;
+    protected int blockLevel;
 
     public BaseWasmGenerationVisitor(BaseWasmGenerationContext context, MethodReference currentMethod,
             WasmFunction function, int firstVariable, boolean async) {
@@ -591,9 +592,11 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     @Override
     public void visit(ConditionalStatement statement) {
         accept(statement.getCondition());
+        ++blockLevel;
         var conditional = new WasmConditional(forCondition(result));
         visitMany(statement.getConsequent(), conditional.getThenBlock().getBody());
         visitMany(statement.getAlternative(), conditional.getElseBlock().getBody());
+        --blockLevel;
         resultConsumer.add(conditional);
     }
 
@@ -616,6 +619,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
                 .max().orElse(0);
 
         var defaultBlock = new WasmBlock(false);
+        ++blockLevel;
         breakTargets.put(statement, defaultBlock);
         var oldBreakTarget = currentBreakTarget;
         currentBreakTarget = statement;
@@ -651,6 +655,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         breakTargets.remove(statement);
         currentBreakTarget = oldBreakTarget;
 
+        --blockLevel;
         resultConsumer.add(wrapper);
     }
 
@@ -738,6 +743,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         var wrapper = new WasmBlock(false);
         var loop = new WasmBlock(true);
 
+        ++blockLevel;
         continueTargets.put(statement, loop);
         breakTargets.put(statement, wrapper);
         var oldBreakTarget = currentBreakTarget;
@@ -765,6 +771,8 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         } else {
             resultConsumer.add(loop);
         }
+
+        --blockLevel;
     }
 
     protected WasmExpression invocation(InvocationExpr expr, List<WasmExpression> resultConsumer, boolean willDrop) {
@@ -957,6 +965,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     @Override
     public void visit(BlockStatement statement) {
         var block = new WasmBlock(false);
+        ++blockLevel;
 
         if (statement.getId() != null) {
             breakTargets.put(statement, block);
@@ -969,6 +978,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         }
 
         resultConsumer.add(block);
+        --blockLevel;
     }
 
 
@@ -1053,9 +1063,15 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         } else {
             result = null;
         }
-        var wasmStatement = new WasmReturn(result);
-        wasmStatement.setLocation(statement.getLocation());
-        resultConsumer.add(wasmStatement);
+        if (blockLevel == 0) {
+            if (result != null) {
+                resultConsumer.add(result);
+            }
+        } else {
+            var wasmStatement = new WasmReturn(result);
+            wasmStatement.setLocation(statement.getLocation());
+            resultConsumer.add(wasmStatement);
+        }
     }
 
     protected WasmExpression forceType(WasmExpression expression, ValueType type) {
@@ -1181,6 +1197,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     protected void generateTry(List<TryCatchStatement> tryCatchStatements, List<Statement> protectedBody) {
         var throwableType = mapType(ValueType.object("java.lang.Throwable"));
         var innerCatchBlock = new WasmBlock(false);
+        ++blockLevel;
 
         var catchBlocks = new ArrayList<WasmBlock>();
         for (int i = 0; i < tryCatchStatements.size(); ++i) {
@@ -1247,6 +1264,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
         resultConsumer.add(outerCatchBlock);
         tempVars.release(exceptionVar);
+        --blockLevel;
     }
 
     protected void checkExceptionType(TryCatchStatement tryCatch, WasmLocal exceptionVar, List<WasmExpression> target,

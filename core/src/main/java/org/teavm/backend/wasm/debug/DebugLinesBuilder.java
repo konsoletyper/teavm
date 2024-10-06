@@ -48,7 +48,6 @@ public class DebugLinesBuilder extends DebugSectionBuilder implements DebugLines
     public void location(String file, int line) {
         if (Objects.equals(file, this.file) && this.ptr != lastWrittenPtr && this.line != line) {
             if (this.ptr - lastWrittenPtr < 32 && Math.abs(line - this.line) <= 3) {
-                System.out.println(blob.ptr() + indent.toString() + "[user] ptr: " + this.ptr + ", line: " + line);
                 blob.writeByte(DebugConstants.LOC_USER + (this.ptr - lastWrittenPtr) + 32 * (line - this.line + 3));
                 this.line = line;
                 lastWrittenPtr = ptr;
@@ -59,12 +58,10 @@ public class DebugLinesBuilder extends DebugSectionBuilder implements DebugLines
             flushPtr();
             this.line = 1;
             this.file = file;
-            System.out.println(blob.ptr() + indent.toString() + "[file] " + file);
             blob.writeByte(DebugConstants.LOC_FILE).writeLEB(file != null ? files.filePtr(file) : 0);
         }
         if (this.line != line) {
             flushPtr();
-            System.out.println(blob.ptr() + indent.toString() + "[line] " + line);
             blob.writeByte(DebugConstants.LOC_LINE).writeSLEB(line - this.line);
             this.line = line;
         }
@@ -77,7 +74,6 @@ public class DebugLinesBuilder extends DebugSectionBuilder implements DebugLines
 
     private void flushPtr() {
         if (ptr != lastWrittenPtr) {
-            System.out.println(blob.ptr() + indent.toString() + "[ptr] " + ptr);
             blob.writeLEB(DebugConstants.LOC_PTR);
             blob.writeLEB(ptr - lastWrittenPtr);
             lastWrittenPtr = ptr;
@@ -87,7 +83,6 @@ public class DebugLinesBuilder extends DebugSectionBuilder implements DebugLines
     @Override
     public void start(MethodReference methodReference) {
         flushPtr();
-        System.out.println(blob.ptr() + indent.toString() + "[start] method: " + methodReference);
         indent.append(".");
         blob.writeLEB(DebugConstants.LOC_START);
         blob.writeLEB(methods.methodPtr(methodReference));
@@ -100,7 +95,6 @@ public class DebugLinesBuilder extends DebugSectionBuilder implements DebugLines
     public void end() {
         flushPtr();
         indent.setLength(indent.length() - 1);
-        System.out.println(blob.ptr() + indent.toString() + "[end]");
         blob.writeLEB(DebugConstants.LOC_END);
         if (!states.isEmpty()) {
             var state = states.pop();

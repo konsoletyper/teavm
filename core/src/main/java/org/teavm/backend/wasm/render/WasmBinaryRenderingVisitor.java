@@ -1406,7 +1406,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         if (debugLines != null) {
             debugLines.advance(writer.getPosition() + addressOffset);
             while (!methodStack.isEmpty()) {
-                methodStack.removeLast();
+                methodStack.remove(methodStack.size() - 1);
                 debugLines.end();
             }
             debugLines.end();

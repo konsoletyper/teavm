@@ -17,17 +17,6 @@ package org.teavm.backend.wasm;
 
 import org.teavm.backend.wasm.generate.gc.WasmGCDeclarationsGenerator;
 import org.teavm.backend.wasm.model.WasmFunction;
-import org.teavm.backend.wasm.model.WasmGlobal;
-import org.teavm.backend.wasm.model.WasmLocal;
-import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmCallReference;
-import org.teavm.backend.wasm.model.expression.WasmDrop;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
-import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
-import org.teavm.backend.wasm.model.expression.WasmGetLocal;
-import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.model.MethodReference;
@@ -35,8 +24,6 @@ import org.teavm.model.ValueType;
 
 public class WasmGCModuleGenerator {
     private WasmGCDeclarationsGenerator declarationsGenerator;
-    private WasmFunction initializer;
-    private WasmGlobal initializerRef;
 
     public WasmGCModuleGenerator(WasmGCDeclarationsGenerator declarationsGenerator) {
         this.declarationsGenerator = declarationsGenerator;
@@ -44,166 +31,66 @@ public class WasmGCModuleGenerator {
 
     public void generate() {
         declarationsGenerator.generate();
-        if (initializer != null) {
-            fillInitializer();
-        }
+        createInitializer();
     }
 
-    private void fillInitializer() {
-        declarationsGenerator.contributeToInitializer(initializer);
-    }
 
     public WasmFunction generateMainFunction(String entryPoint) {
-        var mainFunction = declarationsGenerator.functions().forStaticMethod(new MethodReference(entryPoint,
+        return declarationsGenerator.functions().forStaticMethod(new MethodReference(entryPoint,
                 "main", ValueType.parse(String[].class), ValueType.VOID));
-        var stringArrayType = declarationsGenerator.typeMapper()
-                .mapType(ValueType.parse(String[].class));
-        var mainFunctionCaller = new WasmFunction(declarationsGenerator.functionTypes.of(null, stringArrayType));
-        var argsLocal = new WasmLocal(stringArrayType, "args");
-        declarationsGenerator.module.functions.add(mainFunctionCaller);
-        mainFunctionCaller.getBody().add(callInitializer());
-
-        var callToMainFunction = new WasmCall(mainFunction, new WasmGetLocal(argsLocal));
-        mainFunctionCaller.getBody().add(callToMainFunction);
-
-        return mainFunctionCaller;
     }
 
     public WasmFunction generateCreateStringBuilderFunction() {
-        var function = declarationsGenerator.functions().forStaticMethod(new MethodReference(
+        return declarationsGenerator.functions().forStaticMethod(new MethodReference(
                 WasmGCSupport.class, "createStringBuilder", StringBuilder.class));
-        var caller = new WasmFunction(function.getType());
-        caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmCall(function));
-        declarationsGenerator.module.functions.add(caller);
-        return caller;
     }
 
     public WasmFunction generateCreateStringArrayFunction() {
-        var function = declarationsGenerator.functions().forStaticMethod(new MethodReference(
+        return declarationsGenerator.functions().forStaticMethod(new MethodReference(
                 WasmGCSupport.class, "createStringArray", int.class, String[].class));
-        var caller = new WasmFunction(function.getType());
-        var sizeLocal = new WasmLocal(WasmType.INT32, "length");
-        caller.add(sizeLocal);
-        caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmCall(function, new WasmGetLocal(sizeLocal)));
-        declarationsGenerator.module.functions.add(caller);
-        return caller;
     }
 
     public WasmFunction generateAppendCharFunction() {
-        var function = declarationsGenerator.functions().forInstanceMethod(new MethodReference(
+        return declarationsGenerator.functions().forInstanceMethod(new MethodReference(
                 StringBuilder.class, "append", char.class, StringBuilder.class));
-        var stringBuilderType = declarationsGenerator.typeMapper().mapType(ValueType.parse(StringBuilder.class));
-        var caller = new WasmFunction(declarationsGenerator.functionTypes.of(null, stringBuilderType, WasmType.INT32));
-        var stringBuilderLocal = new WasmLocal(stringBuilderType, "stringBuilder");
-        var codeLocal = new WasmLocal(WasmType.INT32, "charCode");
-        caller.add(stringBuilderLocal);
-        caller.add(codeLocal);
-        caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmDrop(new WasmCall(function, new WasmGetLocal(stringBuilderLocal),
-                new WasmGetLocal(codeLocal))));
-        declarationsGenerator.module.functions.add(caller);
-        return caller;
     }
 
     public WasmFunction generateBuildStringFunction() {
-        var function = declarationsGenerator.functions().forInstanceMethod(new MethodReference(
+        return declarationsGenerator.functions().forInstanceMethod(new MethodReference(
                 StringBuilder.class, "toString", String.class));
-        var stringBuilderType = declarationsGenerator.typeMapper().mapType(ValueType.parse(StringBuilder.class));
-        var stringType = declarationsGenerator.typeMapper().mapType(ValueType.parse(String.class));
-        var caller = new WasmFunction(declarationsGenerator.functionTypes.of(stringType, stringBuilderType));
-        var stringBuilderLocal = new WasmLocal(stringBuilderType, "stringBuilder");
-        caller.add(stringBuilderLocal);
-        caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmCall(function, new WasmGetLocal(stringBuilderLocal)));
-        declarationsGenerator.module.functions.add(caller);
-        return caller;
     }
 
     public WasmFunction generateSetToStringArrayFunction() {
-        var function = declarationsGenerator.functions().forStaticMethod(new MethodReference(
+        return declarationsGenerator.functions().forStaticMethod(new MethodReference(
                 WasmGCSupport.class, "setToStringArray", String[].class, int.class, String.class, void.class));
-        var stringArrayType = declarationsGenerator.typeMapper().mapType(ValueType.parse(String[].class));
-        var stringType = declarationsGenerator.typeMapper().mapType(ValueType.parse(String.class));
-        var caller = new WasmFunction(function.getType());
-        var arrayLocal = new WasmLocal(stringArrayType, "array");
-        var indexLocal = new WasmLocal(WasmType.INT32, "index");
-        var valueLocal = new WasmLocal(stringType, "string");
-        caller.add(arrayLocal);
-        caller.add(indexLocal);
-        caller.add(valueLocal);
-        caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmCall(function, new WasmGetLocal(arrayLocal),
-                new WasmGetLocal(indexLocal), new WasmGetLocal(valueLocal)));
-        declarationsGenerator.module.functions.add(caller);
-        return caller;
     }
 
     public WasmFunction generateStringLengthFunction() {
-        var function = declarationsGenerator.functions().forInstanceMethod(new MethodReference(
+        return declarationsGenerator.functions().forInstanceMethod(new MethodReference(
                 String.class, "length", int.class));
-        var stringType = declarationsGenerator.typeMapper().mapType(ValueType.parse(String.class));
-        var caller = new WasmFunction(function.getType());
-        var stringLocal = new WasmLocal(stringType, "string");
-        caller.add(stringLocal);
-        caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmCall(function, new WasmGetLocal(stringLocal)));
-        declarationsGenerator.module.functions.add(caller);
-        return caller;
     }
 
     public WasmFunction generateCharAtFunction() {
-        var function = declarationsGenerator.functions().forInstanceMethod(new MethodReference(
+        return declarationsGenerator.functions().forInstanceMethod(new MethodReference(
                 String.class, "charAt", int.class, char.class));
-        var stringType = declarationsGenerator.typeMapper().mapType(ValueType.parse(String.class));
-        var caller = new WasmFunction(function.getType());
-        var stringLocal = new WasmLocal(stringType, "string");
-        var indexLocal = new WasmLocal(WasmType.INT32, "index");
-        caller.add(stringLocal);
-        caller.add(indexLocal);
-        caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmCall(function, new WasmGetLocal(stringLocal),
-                new WasmGetLocal(indexLocal)));
-        declarationsGenerator.module.functions.add(caller);
-        return caller;
     }
 
     public WasmFunction generateReportGarbageCollectedStringFunction() {
         var entryType = ValueType.object(StringInternPool.class.getName() + "$Entry");
-        var function = declarationsGenerator.functions().forStaticMethod(new MethodReference(
+        return declarationsGenerator.functions().forStaticMethod(new MethodReference(
                 StringInternPool.class.getName(),
                 "remove",
                 entryType,
                 ValueType.VOID
         ));
-        var caller = new WasmFunction(function.getType());
-        var entryLocal = new WasmLocal(declarationsGenerator.typeMapper().mapType(entryType));
-        caller.add(entryLocal);
-        caller.getBody().add(callInitializer());
-        caller.getBody().add(new WasmCall(function, new WasmGetLocal(entryLocal)));
-        declarationsGenerator.module.functions.add(caller);
-        return caller;
     }
 
     private void createInitializer() {
-        if (initializer != null) {
-            return;
-        }
         var functionType = declarationsGenerator.functionTypes.of(null);
-        initializer = new WasmFunction(functionType);
-        initializer.setReferenced(true);
+        var initializer = new WasmFunction(functionType);
         initializer.setName("teavm@initializer");
         declarationsGenerator.module.functions.add(initializer);
-        initializerRef = new WasmGlobal("teavm@initializerRef", functionType.getNonNullReference(),
-                new WasmFunctionReference(initializer));
-        declarationsGenerator.module.globals.add(initializerRef);
-        initializer.getBody().add(new WasmSetGlobal(initializerRef,
-                new WasmFunctionReference(declarationsGenerator.dummyInitializer())));
-    }
-
-    private WasmExpression callInitializer() {
-        createInitializer();
-        return new WasmCallReference(new WasmGetGlobal(initializerRef), declarationsGenerator.functionTypes.of(null));
+        declarationsGenerator.module.setStartFunction(initializer);
+        declarationsGenerator.contributeToInitializer(initializer);
     }
 }

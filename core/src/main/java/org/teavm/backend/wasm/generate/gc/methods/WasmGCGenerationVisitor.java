@@ -24,6 +24,7 @@ import org.teavm.ast.ArrayType;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.CastExpr;
 import org.teavm.ast.ConditionalExpr;
+import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.Expr;
 import org.teavm.ast.InstanceOfExpr;
 import org.teavm.ast.InvocationExpr;
@@ -281,20 +282,12 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         if (expr.getType() == null) {
             switch (expr.getOperation()) {
                 case EQUALS: {
-                    accept(expr.getFirstOperand());
-                    var first = result;
-                    accept(expr.getSecondOperand());
-                    var second = result;
-                    result = new WasmReferencesEqual(first, second);
+                    isReferenceEq(expr);
                     result.setLocation(expr.getLocation());
                     return;
                 }
                 case NOT_EQUALS:
-                    accept(expr.getFirstOperand());
-                    var first = result;
-                    accept(expr.getSecondOperand());
-                    var second = result;
-                    result = new WasmReferencesEqual(first, second);
+                    isReferenceEq(expr);
                     result = new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ, result);
                     result.setLocation(expr.getLocation());
                     return;
@@ -303,6 +296,29 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             }
         }
         super.visit(expr);
+    }
+
+    private void isReferenceEq(BinaryExpr expr) {
+        if (isNull(expr.getFirstOperand())) {
+            accept(expr.getSecondOperand());
+            result = new WasmIsNull(result);
+        } else if (isNull(expr.getSecondOperand())) {
+            accept(expr.getFirstOperand());
+            result = new WasmIsNull(result);
+        } else {
+            accept(expr.getFirstOperand());
+            var first = result;
+            accept(expr.getSecondOperand());
+            var second = result;
+            result = new WasmReferencesEqual(first, second);
+        }
+    }
+
+    private boolean isNull(Expr expr) {
+        if (!(expr instanceof ConstantExpr)) {
+            return false;
+        }
+        return ((ConstantExpr) expr).getValue() == null;
     }
 
     @Override
