@@ -50,6 +50,7 @@ import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
@@ -120,10 +121,13 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         }
 
         exposeMethods(cls, exposedClass, context.getDiagnostics(), functorMethod);
-        exportStaticMethods(cls, context.getDiagnostics());
+        var hasStaticMethods = exportStaticMethods(cls, context.getDiagnostics());
 
         if (isJavaScriptImplementation(cls) || !exposedClass.methods.isEmpty()) {
             cls.getAnnotations().add(new AnnotationHolder(JSClassToExpose.class.getName()));
+        }
+        if (isJavaScriptImplementation(cls) || !exposedClass.methods.isEmpty() || hasStaticMethods) {
+            cls.getAnnotations().add(new AnnotationHolder(JSClassObjectToExpose.class.getName()));
         }
 
         if (wasmGC && (!exposedClass.methods.isEmpty() || isJavaScriptClass(cls))) {
@@ -132,7 +136,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             createWrapperMethod.getModifiers().add(ElementModifier.NATIVE);
             cls.addMethod(createWrapperMethod);
 
-            if (isJavaScriptImplementation(cls)) {
+            if (!isJavaScriptClass(cls) || isJavaScriptImplementation(cls)) {
                 cls.getInterfaces().add(JSMethods.JS_MARSHALLABLE);
             }
         }
@@ -147,13 +151,17 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             MethodReference methodRef = new MethodReference(classHolder.getName(), method);
             CallLocation callLocation = new CallLocation(methodRef);
 
+            var isConstructor = entry.getKey().getName().equals("<init>");
             var paramCount = method.parameterCount();
             if (export.vararg) {
                 --paramCount;
             }
+            if (isConstructor) {
+                --paramCount;
+            }
             var exportedMethodSignature = new ValueType[paramCount + 2];
             Arrays.fill(exportedMethodSignature, JSMethods.JS_OBJECT);
-            if (methodRef.getReturnType() == ValueType.VOID) {
+            if (methodRef.getReturnType() == ValueType.VOID && !isConstructor) {
                 exportedMethodSignature[exportedMethodSignature.length - 1] = ValueType.VOID;
             }
             MethodDescriptor exportedMethodDesc = new MethodDescriptor(method.getName() + "$exported$" + index++,
@@ -164,7 +172,9 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             Program program = new Program();
             exportedMethod.setProgram(program);
             program.createVariable();
-            program.createVariable();
+            if (!isConstructor) {
+                program.createVariable();
+            }
 
             BasicBlock basicBlock = program.createBasicBlock();
             List<Instruction> marshallInstructions = new ArrayList<>();
@@ -189,33 +199,52 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             basicBlock.addAll(marshallInstructions);
             marshallInstructions.clear();
 
-            var unmarshalledInstance = new InvokeInstruction();
-            unmarshalledInstance.setType(InvocationType.SPECIAL);
-            unmarshalledInstance.setReceiver(program.createVariable());
-            unmarshalledInstance.setArguments(program.variableAt(1));
-            unmarshalledInstance.setMethod(new MethodReference(JSWrapper.class,
-                    "unmarshallJavaFromJs", JSObject.class, Object.class));
-            basicBlock.add(unmarshalledInstance);
+            Variable receiverToPass;
+            if (isConstructor) {
+                var create = new ConstructInstruction();
+                create.setReceiver(program.createVariable());
+                create.setType(classHolder.getName());
+                basicBlock.add(create);
+                receiverToPass = create.getReceiver();
+            } else {
+                var unmarshalledInstance = new InvokeInstruction();
+                unmarshalledInstance.setType(InvocationType.SPECIAL);
+                unmarshalledInstance.setReceiver(program.createVariable());
+                unmarshalledInstance.setArguments(program.variableAt(1));
+                unmarshalledInstance.setMethod(new MethodReference(JSWrapper.class,
+                        "unmarshallJavaFromJs", JSObject.class, Object.class));
+                basicBlock.add(unmarshalledInstance);
 
-            var castInstance = new CastInstruction();
-            castInstance.setValue(unmarshalledInstance.getReceiver());
-            castInstance.setReceiver(program.createVariable());
-            castInstance.setWeak(true);
-            castInstance.setTargetType(ValueType.object(classHolder.getName()));
-            basicBlock.add(castInstance);
+                var castInstance = new CastInstruction();
+                castInstance.setValue(unmarshalledInstance.getReceiver());
+                castInstance.setReceiver(program.createVariable());
+                castInstance.setWeak(true);
+                castInstance.setTargetType(ValueType.object(classHolder.getName()));
+                basicBlock.add(castInstance);
+
+                receiverToPass = castInstance.getReceiver();
+            }
 
             InvokeInstruction invocation = new InvokeInstruction();
-            invocation.setType(method.getName().equals("<init>") ? InvocationType.SPECIAL : InvocationType.VIRTUAL);
-            invocation.setInstance(castInstance.getReceiver());
+            invocation.setType(isConstructor ? InvocationType.SPECIAL : InvocationType.VIRTUAL);
+            invocation.setInstance(receiverToPass);
             invocation.setMethod(methodRef);
             invocation.setArguments(variablesToPass);
             basicBlock.add(invocation);
 
             ExitInstruction exit = new ExitInstruction();
-            if (method.getResultType() != ValueType.VOID) {
-                invocation.setReceiver(program.createVariable());
-                exit.setValueToReturn(marshaller.wrapArgument(callLocation, invocation.getReceiver(),
-                        method.getResultType(), JSType.MIXED, false));
+            if (method.getResultType() != ValueType.VOID || isConstructor) {
+                Variable result;
+                ValueType resultType;
+                if (isConstructor) {
+                    result = receiverToPass;
+                    resultType = ValueType.object(classHolder.getName());
+                } else {
+                    result = program.createVariable();
+                    invocation.setReceiver(result);
+                    resultType = method.getResultType();
+                }
+                exit.setValueToReturn(marshaller.wrapArgument(callLocation, result, resultType, JSType.JAVA, false));
                 basicBlock.addAll(marshallInstructions);
                 marshallInstructions.clear();
             }
@@ -230,13 +259,15 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         }
     }
 
-    private void exportStaticMethods(ClassHolder classHolder, Diagnostics diagnostics) {
+    private boolean exportStaticMethods(ClassHolder classHolder, Diagnostics diagnostics) {
         int index = 0;
+        var hasMethods = false;
         for (var method : classHolder.getMethods().toArray(new MethodHolder[0])) {
             if (!method.hasModifier(ElementModifier.STATIC)
                     || method.getAnnotations().get(JSExport.class.getName()) == null) {
                 continue;
             }
+            hasMethods = true;
 
             var paramCount = method.parameterCount();
             var vararg = method.hasModifier(ElementModifier.VARARGS);
@@ -246,6 +277,9 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             var callLocation = new CallLocation(method.getReference());
             var exportedMethodSignature = new ValueType[paramCount + 1];
             Arrays.fill(exportedMethodSignature, JSMethods.JS_OBJECT);
+            if (method.getResultType() == ValueType.VOID) {
+                exportedMethodSignature[exportedMethodSignature.length - 1] = ValueType.VOID;
+            }
             var exportedMethodDesc = new MethodDescriptor(method.getName() + "$exported$" + index++,
                     exportedMethodSignature);
             var exportedMethod = new MethodHolder(exportedMethodDesc);
@@ -287,7 +321,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             if (method.getResultType() != ValueType.VOID) {
                 invocation.setReceiver(program.createVariable());
                 exit.setValueToReturn(marshaller.wrapArgument(callLocation, invocation.getReceiver(),
-                        method.getResultType(), JSType.MIXED, false));
+                        method.getResultType(), JSType.JAVA, false));
                 basicBlock.addAll(marshallInstructions);
                 marshallInstructions.clear();
             }
@@ -298,6 +332,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             var export = createMethodExport(method);
             exportedMethod.getAnnotations().add(createExportAnnotation(export));
         }
+        return hasMethods;
     }
 
     private void transformVarargParam(Variable[] variablesToPass, Program program,

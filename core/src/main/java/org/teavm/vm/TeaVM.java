@@ -381,7 +381,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
 
-        processEntryPoint();
+        target.setEntryPoint(entryPoint, entryPointName);
         dependencyAnalyzer.setAsyncSupported(target.isAsyncSupported());
         dependencyAnalyzer.setInterruptor(() -> {
             int progress = dependencyAnalyzer.getReachableClasses().size();
@@ -390,6 +390,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         });
         target.contributeDependencies(dependencyAnalyzer);
         dependencyAnalyzer.initDependencies();
+        processEntryPoint();
         if (target.needsSystemArrayCopyOptimization()) {
             dependencyAnalyzer.addDependencyListener(new StdlibDependencyListener());
         }

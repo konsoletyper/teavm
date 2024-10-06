@@ -18,7 +18,6 @@ package org.teavm.backend.wasm;
 import org.teavm.backend.wasm.generate.gc.WasmGCDeclarationsGenerator;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.runtime.StringInternPool;
-import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -32,47 +31,6 @@ public class WasmGCModuleGenerator {
     public void generate() {
         declarationsGenerator.generate();
         createInitializer();
-    }
-
-
-    public WasmFunction generateMainFunction(String entryPoint) {
-        return declarationsGenerator.functions().forStaticMethod(new MethodReference(entryPoint,
-                "main", ValueType.parse(String[].class), ValueType.VOID));
-    }
-
-    public WasmFunction generateCreateStringBuilderFunction() {
-        return declarationsGenerator.functions().forStaticMethod(new MethodReference(
-                WasmGCSupport.class, "createStringBuilder", StringBuilder.class));
-    }
-
-    public WasmFunction generateCreateStringArrayFunction() {
-        return declarationsGenerator.functions().forStaticMethod(new MethodReference(
-                WasmGCSupport.class, "createStringArray", int.class, String[].class));
-    }
-
-    public WasmFunction generateAppendCharFunction() {
-        return declarationsGenerator.functions().forInstanceMethod(new MethodReference(
-                StringBuilder.class, "append", char.class, StringBuilder.class));
-    }
-
-    public WasmFunction generateBuildStringFunction() {
-        return declarationsGenerator.functions().forInstanceMethod(new MethodReference(
-                StringBuilder.class, "toString", String.class));
-    }
-
-    public WasmFunction generateSetToStringArrayFunction() {
-        return declarationsGenerator.functions().forStaticMethod(new MethodReference(
-                WasmGCSupport.class, "setToStringArray", String[].class, int.class, String.class, void.class));
-    }
-
-    public WasmFunction generateStringLengthFunction() {
-        return declarationsGenerator.functions().forInstanceMethod(new MethodReference(
-                String.class, "length", int.class));
-    }
-
-    public WasmFunction generateCharAtFunction() {
-        return declarationsGenerator.functions().forInstanceMethod(new MethodReference(
-                String.class, "charAt", int.class, char.class));
     }
 
     public WasmFunction generateReportGarbageCollectedStringFunction() {

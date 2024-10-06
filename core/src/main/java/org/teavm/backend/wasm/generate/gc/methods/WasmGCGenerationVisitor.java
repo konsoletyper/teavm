@@ -845,6 +845,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         }
 
         @Override
+        public String entryPoint() {
+            return context.entryPoint();
+        }
+
+        @Override
         public void addToInitializer(Consumer<WasmFunction> initializerContributor) {
             context.addToInitializer(initializerContributor);
         }

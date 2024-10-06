@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.generate.gc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
@@ -29,8 +30,10 @@ import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCCustomGeneratorProvider;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCIntrinsicProvider;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCMethodGenerator;
+import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
@@ -62,7 +65,8 @@ public class WasmGCDeclarationsGenerator {
             WasmGCIntrinsicProvider intrinsics,
             List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories,
             Predicate<MethodReference> isVirtual,
-            boolean strict
+            boolean strict,
+            String entryPoint
     ) {
         this.module = module;
         hierarchy = new ClassHierarchy(classes);
@@ -82,6 +86,7 @@ public class WasmGCDeclarationsGenerator {
                 customGenerators,
                 intrinsics,
                 strict,
+                entryPoint,
                 initializerContributors::add
         );
         var tags = new TagRegistry(classes, hierarchy);
@@ -156,5 +161,21 @@ public class WasmGCDeclarationsGenerator {
 
     public WasmFunction dummyInitializer() {
         return methodGenerator.getDummyInitializer();
+    }
+
+    public WasmGCNameProvider names() {
+        return methodGenerator.names;
+    }
+
+    public WasmGCStringProvider strings() {
+        return classGenerator.strings;
+    }
+
+    public WasmTag exceptionTag() {
+        return methodGenerator.getGenerationContext().getExceptionTag();
+    }
+
+    public void addToInitializer(Consumer<WasmFunction> contributor) {
+        methodGenerator.getGenerationContext().addToInitializer(contributor);
     }
 }

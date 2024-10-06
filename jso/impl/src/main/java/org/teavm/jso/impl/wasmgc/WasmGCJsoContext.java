@@ -18,6 +18,7 @@ package org.teavm.jso.impl.wasmgc;
 import java.util.function.Consumer;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.gc.WasmGCClassConsumerContext;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
@@ -26,8 +27,11 @@ import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
+import org.teavm.model.ClassReaderSource;
 
 interface WasmGCJsoContext {
+    ClassReaderSource classes();
+
     WasmModule module();
 
     WasmFunctionTypes functionTypes();
@@ -42,10 +46,17 @@ interface WasmGCJsoContext {
 
     WasmTag exceptionTag();
 
+    String entryPoint();
+
     void addToInitializer(Consumer<WasmFunction> initializerContributor);
 
     static WasmGCJsoContext wrap(WasmGCIntrinsicContext context) {
         return new WasmGCJsoContext() {
+            @Override
+            public ClassReaderSource classes() {
+                return context.hierarchy().getClassSource();
+            }
+
             @Override
             public WasmModule module() {
                 return context.module();
@@ -79,6 +90,11 @@ interface WasmGCJsoContext {
             @Override
             public WasmTag exceptionTag() {
                 return context.exceptionTag();
+            }
+
+            @Override
+            public String entryPoint() {
+                return context.entryPoint();
             }
 
             @Override
@@ -91,6 +107,11 @@ interface WasmGCJsoContext {
     static WasmGCJsoContext wrap(WasmGCCustomGeneratorContext context) {
         return new WasmGCJsoContext() {
             @Override
+            public ClassReaderSource classes() {
+                return context.classes();
+            }
+
+            @Override
             public WasmModule module() {
                 return context.module();
             }
@@ -123,6 +144,65 @@ interface WasmGCJsoContext {
             @Override
             public WasmTag exceptionTag() {
                 return context.exceptionTag();
+            }
+
+            @Override
+            public String entryPoint() {
+                return context.entryPoint();
+            }
+
+            @Override
+            public void addToInitializer(Consumer<WasmFunction> initializerContributor) {
+                context.addToInitializer(initializerContributor);
+            }
+        };
+    }
+
+    static WasmGCJsoContext wrap(WasmGCClassConsumerContext context) {
+        return new WasmGCJsoContext() {
+            @Override
+            public ClassReaderSource classes() {
+                return context.classes();
+            }
+
+            @Override
+            public WasmModule module() {
+                return context.module();
+            }
+
+            @Override
+            public WasmFunctionTypes functionTypes() {
+                return context.functionTypes();
+            }
+
+            @Override
+            public BaseWasmFunctionRepository functions() {
+                return context.functions();
+            }
+
+            @Override
+            public WasmGCNameProvider names() {
+                return context.names();
+            }
+
+            @Override
+            public WasmGCStringProvider strings() {
+                return context.strings();
+            }
+
+            @Override
+            public WasmGCTypeMapper typeMapper() {
+                return context.typeMapper();
+            }
+
+            @Override
+            public WasmTag exceptionTag() {
+                return context.exceptionTag();
+            }
+
+            @Override
+            public String entryPoint() {
+                return context.entryPoint();
             }
 
             @Override

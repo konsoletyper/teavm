@@ -38,16 +38,7 @@ class JSTypeInference extends BaseTypeInference<JSType> {
 
     @Override
     protected JSType mapType(ValueType type) {
-        if (type instanceof ValueType.Object) {
-            var className = ((ValueType.Object) type).getClassName();
-            if (typeHelper.isJavaScriptClass(className)) {
-                return JSType.JS;
-            }
-        } else if (type instanceof ValueType.Array) {
-            var elementType = mapType(((ValueType.Array) type).getItemType());
-            return JSType.arrayOf(elementType);
-        }
-        return JSType.JAVA;
+        return typeHelper.mapType(type);
     }
 
     @Override

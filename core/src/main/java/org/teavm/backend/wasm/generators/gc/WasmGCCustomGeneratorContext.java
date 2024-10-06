@@ -51,5 +51,7 @@ public interface WasmGCCustomGeneratorContext {
 
     WasmGCStringProvider strings();
 
+    String entryPoint();
+
     void addToInitializer(Consumer<WasmFunction> initializerContributor);
 }

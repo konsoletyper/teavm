@@ -22,7 +22,7 @@
 </head>
 <script type="text/javascript">
   function launch() {
-      TeaVM.wasm.load("wasm-gc/benchmark.wasm").then(teavm => teavm.main());
+      TeaVM.wasmGC.load("wasm-gc/benchmark.wasm").then(teavm => teavm.exports.main([]));
   }
 </script>
 <body onload="launch()">

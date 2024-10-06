@@ -19,6 +19,7 @@ import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.impl.JS;
 import org.teavm.jso.impl.JSBodyRepository;
+import org.teavm.jso.impl.JSClassObjectToExpose;
 import org.teavm.jso.impl.JSWrapper;
 import org.teavm.model.MethodReference;
 import org.teavm.vm.spi.TeaVMHost;
@@ -35,6 +36,12 @@ public final class WasmGCJso {
         wasmGCHost.addCustomTypeMapperFactory(new WasmGCJSTypeMapper());
         wasmGCHost.addIntrinsicFactory(new WasmGCJSBodyRenderer(jsBodyRepository, jsFunctions, commonGen));
         wasmGCHost.addGeneratorFactory(new WasmGCMarshallMethodGeneratorFactory(commonGen));
+        wasmGCHost.addClassConsumer((context, className) -> {
+            var cls = context.classes().get(className);
+            if (cls != null && cls.getAnnotations().get(JSClassObjectToExpose.class.getName()) != null) {
+                commonGen.getDefinedClass(WasmGCJsoContext.wrap(context), className);
+            }
+        });
 
         var jsIntrinsic = new WasmGCJSIntrinsic(commonGen);
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "wrap", String.class, JSObject.class), jsIntrinsic);

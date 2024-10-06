@@ -72,7 +72,7 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
             var hasExportedMembers = false;
             hasExportedMembers |= exportClassInstanceMembers(classReader);
             if (!className.equals(context.getEntryPoint())) {
-                var name = "$rt_export_class_ " + getClassAliasName(classReader) + "_" + lastExportIndex++;
+                var name = "$rt_export_class_" + getClassAliasName(classReader) + "_" + lastExportIndex++;
                 hasExportedMembers |= exportClassStaticMembers(classReader, name);
                 if (hasExportedMembers) {
                     exportedNamesByClass.put(className, name);
@@ -213,10 +213,12 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
         }
         writer.append(")").ws().appendBlockStart();
         if (method != null) {
-            writer.appendClass(cls.getName()).append(".call(this);").softNewLine();
-            writer.appendMethod(method).append("(this");
+            writer.append("return ").appendMethod(method).append("(");
             for (var i = 0; i < method.parameterCount(); ++i) {
-                writer.append(",").ws().append("p" + i);
+                if (i > 0) {
+                    writer.append(",").ws();
+                }
+                writer.append("p" + i);
             }
             writer.append(");").softNewLine();
         } else {

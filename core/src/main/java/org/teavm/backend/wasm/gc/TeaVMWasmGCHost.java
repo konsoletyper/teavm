@@ -33,4 +33,6 @@ public interface TeaVMWasmGCHost extends TeaVMHostExtension {
     void addGenerator(MethodReference method, WasmGCCustomGenerator generator);
 
     void addCustomTypeMapperFactory(WasmGCCustomTypeMapperFactory customTypeMapperFactory);
+
+    void addClassConsumer(WasmGCClassConsumer consumer);
 }

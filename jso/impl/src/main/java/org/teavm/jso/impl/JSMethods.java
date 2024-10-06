@@ -161,7 +161,6 @@ public final class JSMethods {
 
     public static final String JS_MARSHALLABLE = JSMarshallable.class.getName();
     public static final MethodDescriptor MARSHALL_TO_JS = new MethodDescriptor("marshallToJs", JS_OBJECT);
-    public static final MethodReference MARSHALL_TO_JS_REF = new MethodReference(JS_MARSHALLABLE, MARSHALL_TO_JS);
 
     static {
         for (int i = 0; i < INVOKE_METHODS.length; ++i) {

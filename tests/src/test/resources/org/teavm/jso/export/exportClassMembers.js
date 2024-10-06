@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { createObject, consumeObject, C } from '/tests/exportClassMembers/test.js';
+const { createObject, consumeObject, C } = await (await import('/tests/exportClassMembers/provider.js')).default;
 
 export async function test() {
     let o = createObject("qwe");

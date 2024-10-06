@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { takeObject } from '/tests/importClassMembers/test.js';
+const { takeObject } = await (await import('/tests/importClassMembers/provider.js')).default;
 
 export async function test() {
     assertEquals("object taken: foo = 23, bar = qw", takeObject({

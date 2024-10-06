@@ -210,9 +210,7 @@ function launchWasmGCTest(file, argument, callback) {
         }
     }
 
-    let instance = null;
-
-    TeaVM.wasm.load(file.path, {
+    TeaVM.wasmGC.load(file.path, {
         installImports: function(o) {
             o.teavmConsole.putcharStdout = putchar;
             o.teavmConsole.putcharStderr = putcharStderr;
@@ -220,22 +218,16 @@ function launchWasmGCTest(file, argument, callback) {
                 success() {
                     callback(wrapResponse({ status: "OK" }));
                 },
-                failure(javaString) {
-                    let jsString = "";
-                    let length = instance.exports.stringLength(javaString);
-                    for (let i = 0; i < length; ++i) {
-                        jsString += String.fromCharCode(instance.exports.charAt(javaString, i));
-                    }
+                failure(message) {
                     callback(wrapResponse({
                         status: "failed",
-                        errorMessage: jsString
+                        errorMessage: message
                     }));
                 }
             };
         }
     }).then(teavm => {
-        instance = teavm.instance;
-        return teavm.main(argument ? [argument] : []);
+        return teavm.exports.main(argument ? [argument] : []);
     }).catch(err => {
         callback(wrapResponse({
             status: "failed",

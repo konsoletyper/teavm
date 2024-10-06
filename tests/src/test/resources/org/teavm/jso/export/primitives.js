@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import * as java from '/tests/primitives/test.js';
+const java = await (await import('/tests/primitives/provider.js')).default;
 
 function testReturnPrimitives() {
     assertEquals(true, java.boolResult());

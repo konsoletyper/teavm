@@ -21,20 +21,28 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import org.teavm.backend.wasm.debug.DebugLines;
 import org.teavm.backend.wasm.debug.ExternalDebugFile;
 import org.teavm.backend.wasm.debug.GCDebugInfoBuilder;
 import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
+import org.teavm.backend.wasm.gc.WasmGCClassConsumer;
+import org.teavm.backend.wasm.gc.WasmGCClassConsumerContext;
 import org.teavm.backend.wasm.gc.WasmGCDependencies;
 import org.teavm.backend.wasm.generate.gc.WasmGCDeclarationsGenerator;
+import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapperFactory;
+import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
+import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerator;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGeneratorFactory;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerators;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicFactory;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsics;
+import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.optimization.WasmUsageCounter;
 import org.teavm.backend.wasm.render.WasmBinaryRenderer;
 import org.teavm.backend.wasm.render.WasmBinaryStatsCollector;
@@ -43,10 +51,12 @@ import org.teavm.backend.wasm.render.WasmBinaryWriter;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.transformation.gc.BaseClassesTransformation;
 import org.teavm.backend.wasm.transformation.gc.ClassLoaderResourceTransformation;
+import org.teavm.backend.wasm.transformation.gc.EntryPointTransformation;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.interop.Platforms;
 import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -73,6 +83,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories = new ArrayList<>();
     private Map<MethodReference, WasmGCCustomGenerator> customCustomGenerators = new HashMap<>();
     private List<WasmGCCustomGeneratorFactory> customGeneratorFactories = new ArrayList<>();
+    private EntryPointTransformation entryPointTransformation = new EntryPointTransformation();
+    private List<WasmGCClassConsumer> classConsumers = new ArrayList<>();
 
     public void setObfuscated(boolean obfuscated) {
         this.obfuscated = obfuscated;
@@ -116,8 +128,19 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     }
 
     @Override
+    public void addClassConsumer(WasmGCClassConsumer consumer) {
+        classConsumers.add(consumer);
+    }
+
+    @Override
     public void setController(TeaVMTargetController controller) {
         this.controller = controller;
+    }
+
+    @Override
+    public void setEntryPoint(String entryPoint, String name) {
+        entryPointTransformation.setEntryPoint(entryPoint);
+        entryPointTransformation.setEntryPointName(name);
     }
 
     @Override
@@ -134,7 +157,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     public List<ClassHolderTransformer> getTransformers() {
         return List.of(
                 new BaseClassesTransformation(),
-                new ClassLoaderResourceTransformation()
+                new ClassLoaderResourceTransformation(),
+                entryPointTransformation
         );
     }
 
@@ -181,6 +205,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     @Override
     public void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException {
         var module = new WasmModule();
+        module.memoryExportName = "teavm.memory";
         var customGenerators = new WasmGCCustomGenerators(classes, controller.getServices(),
                 customGeneratorFactories, customCustomGenerators,
                 controller.getProperties());
@@ -198,47 +223,30 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
                 intrinsics,
                 customTypeMapperFactories,
                 controller::isVirtual,
-                strict
+                strict,
+                controller.getEntryPoint()
         );
         declarationsGenerator.setFriendlyToDebugger(controller.isFriendlyToDebugger());
         var moduleGenerator = new WasmGCModuleGenerator(declarationsGenerator);
 
-        var mainFunction = moduleGenerator.generateMainFunction(controller.getEntryPoint());
-        mainFunction.setExportName(controller.getEntryPointName());
-        mainFunction.setName(controller.getEntryPointName());
-
-        var stringBuilderFunction = moduleGenerator.generateCreateStringBuilderFunction();
-        stringBuilderFunction.setExportName("createStringBuilder");
-
-        var createStringArrayFunction = moduleGenerator.generateCreateStringArrayFunction();
-        createStringArrayFunction.setExportName("createStringArray");
-
-        var appendCharFunction = moduleGenerator.generateAppendCharFunction();
-        appendCharFunction.setExportName("appendChar");
-
-        var buildStringFunction = moduleGenerator.generateBuildStringFunction();
-        buildStringFunction.setExportName("buildString");
-
-        var setArrayFunction = moduleGenerator.generateSetToStringArrayFunction();
-        setArrayFunction.setExportName("setToStringArray");
-
-        var stringLengthFunction = moduleGenerator.generateStringLengthFunction();
-        stringLengthFunction.setExportName("stringLength");
-
-        var charAtFunction = moduleGenerator.generateCharAtFunction();
-        charAtFunction.setExportName("charAt");
+        var classConsumerContext = createClassConsumerContext(classes, declarationsGenerator);
+        for (var cls : classes.getClassNames()) {
+            for (var consumer : classConsumers) {
+                consumer.accept(classConsumerContext, cls);
+            }
+        }
 
         var internMethod = controller.getDependencyInfo().getMethod(new MethodReference(String.class,
                 "intern", String.class));
         if (internMethod != null && internMethod.isUsed()) {
             var removeStringEntryFunction = moduleGenerator.generateReportGarbageCollectedStringFunction();
-            removeStringEntryFunction.setExportName("reportGarbageCollectedString");
+            removeStringEntryFunction.setExportName("teavm.reportGarbageCollectedString");
         }
 
         var exceptionMessageRef = new MethodReference(Throwable.class, "getMessage", Throwable.class);
         if (controller.getDependencyInfo().getMethod(exceptionMessageRef) != null) {
             var exceptionMessageFunction = declarationsGenerator.functions().forInstanceMethod(exceptionMessageRef);
-            exceptionMessageFunction.setExportName("exceptionMessage");
+            exceptionMessageFunction.setExportName("teavm.exceptionMessage");
         }
 
         moduleGenerator.generate();
@@ -246,6 +254,63 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         adjustModuleMemory(module);
 
         emitWasmFile(module, buildTarget, outputName, debugInfoBuilder);
+    }
+
+    private WasmGCClassConsumerContext createClassConsumerContext(
+            ClassReaderSource classes,
+            WasmGCDeclarationsGenerator generator
+    ) {
+        return new WasmGCClassConsumerContext() {
+            @Override
+            public ClassReaderSource classes() {
+                return classes;
+            }
+
+            @Override
+            public WasmModule module() {
+                return generator.module;
+            }
+
+            @Override
+            public WasmFunctionTypes functionTypes() {
+                return generator.functionTypes;
+            }
+
+            @Override
+            public BaseWasmFunctionRepository functions() {
+                return generator.functions();
+            }
+
+            @Override
+            public WasmGCNameProvider names() {
+                return generator.names();
+            }
+
+            @Override
+            public WasmGCStringProvider strings() {
+                return generator.strings();
+            }
+
+            @Override
+            public WasmGCTypeMapper typeMapper() {
+                return generator.typeMapper();
+            }
+
+            @Override
+            public WasmTag exceptionTag() {
+                return generator.exceptionTag();
+            }
+
+            @Override
+            public String entryPoint() {
+                return controller.getEntryPoint();
+            }
+
+            @Override
+            public void addToInitializer(Consumer<WasmFunction> initializerContributor) {
+                generator.addToInitializer(initializerContributor);
+            }
+        };
     }
 
     private void adjustModuleMemory(WasmModule module) {

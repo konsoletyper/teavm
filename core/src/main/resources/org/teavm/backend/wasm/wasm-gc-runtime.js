@@ -15,9 +15,14 @@
  */
 
 var TeaVM = TeaVM || {};
-TeaVM.wasm = function() {
+if (window && window.TeaVM === undefined) {
+    window.TeaVM = TeaVM;
+}
+TeaVM.wasmGC = TeaVM.wasmGC || function() {
     let exports;
     let globalsCache = new Map();
+    let stackDeobfuscator = null;
+    let chromeExceptionRegex = / *at .+\.wasm:wasm-function\[[0-9]+]:0x([0-9a-f]+).*/;
     let getGlobalName = function(name) {
         let result = globalsCache.get(name);
         if (typeof result === "undefined") {
@@ -45,11 +50,11 @@ TeaVM.wasm = function() {
             this[javaExceptionSymbol] = javaException;
         }
         get message() {
-            let exceptionMessage = exports.exceptionMessage;
+            let exceptionMessage = exports["teavm.exceptionMessage"];
             if (typeof exceptionMessage === "function") {
                 let message = exceptionMessage(this[javaExceptionSymbol]);
                 if (message != null) {
-                    return stringToJava(message);
+                    return message;
                 }
             }
             return "(could not fetch message)";
@@ -59,8 +64,8 @@ TeaVM.wasm = function() {
     function dateImports(imports) {
         imports.teavmDate = {
             currentTimeMillis: () => new Date().getTime(),
-            dateToString: timestamp => stringToJava(new Date(timestamp).toString()),
-            getYear: timestamp =>new Date(timestamp).getFullYear(),
+            dateToString: timestamp => new Date(timestamp).toString(),
+            getYear: timestamp => new Date(timestamp).getFullYear(),
             setYear(timestamp, year) {
                 let date = new Date(timestamp);
                 date.setFullYear(year);
@@ -108,12 +113,16 @@ TeaVM.wasm = function() {
 
     function coreImports(imports) {
         let finalizationRegistry = new FinalizationRegistry(heldValue => {
-            if (typeof exports.reportGarbageCollectedValue === "function") {
-                exports.reportGarbageCollectedValue(heldValue)
+            let report = exports["teavm.reportGarbageCollectedValue"];
+            if (typeof report === "function") {
+                report(heldValue)
             }
         });
         let stringFinalizationRegistry = new FinalizationRegistry(heldValue => {
-            exports.reportGarbageCollectedString(heldValue);
+            let report = exports["teavm.reportGarbageCollectedString"];
+            if (typeof report === "function") {
+                report(heldValue);
+            }
         });
         imports.teavm = {
             createWeakRef(value, heldValue) {
@@ -129,7 +138,28 @@ TeaVM.wasm = function() {
                 stringFinalizationRegistry.register(value, heldValue)
                 return weakRef;
             },
-            stringDeref: weakRef => weakRef.deref()
+            stringDeref: weakRef => weakRef.deref(),
+            currentStackTrace() {
+                if (stackDeobfuscator) {
+                    return;
+                }
+                let reportCallFrame = exports["teavm.reportCallFrame"];
+                if (typeof reportCallFrame !== "function") {
+                    return;
+                }
+                let stack = new Error().stack;
+                for (let line in stack.split("\n")) {
+                    let match = chromeExceptionRegex.exec(line);
+                    if (match !== null) {
+                        let address = parseInt(match.groups[1], 16);
+                        let frames = stackDeobfuscator(address);
+                        for (let frame of frames) {
+                            let line = frame.line;
+                            reportCallFrame(file, method, cls, line);
+                        }
+                    }
+                }
+            }
         };
     }
 
@@ -137,6 +167,7 @@ TeaVM.wasm = function() {
         let javaObjectSymbol = Symbol("javaObject");
         let functionsSymbol = Symbol("functions");
         let functionOriginSymbol = Symbol("functionOrigin");
+        let wrapperCallMarkerSymbol = Symbol("wrapperCallMarker");
 
         let jsWrappers = new WeakMap();
         let javaWrappers = new WeakMap();
@@ -182,7 +213,7 @@ TeaVM.wasm = function() {
         }
         function javaExceptionToJs(e) {
             if (e instanceof WebAssembly.Exception) {
-                let tag = exports["javaException"];
+                let tag = exports["teavm.javaException"];
                 if (e.is(tag)) {
                     let javaException = e.getArg(tag, 0);
                     let extracted = extractException(javaException);
@@ -226,6 +257,22 @@ TeaVM.wasm = function() {
                 rethrowJsAsJava(e);
             }
         }
+        function defineFunction(fn) {
+            let params = [];
+            for (let i = 0; i < fn.length; ++i) {
+                params.push("p" + i);
+            }
+            let paramsAsString = params.length === 0 ? "" : params.join(", ");
+            return new Function("rethrowJavaAsJs", "fn", `
+                    return function(${paramsAsString}) {
+                        try {
+                            return fn(${paramsAsString});
+                        } catch (e) {
+                            rethrowJavaAsJs(e);
+                        }
+                    };
+                `)(rethrowJavaAsJs, fn);
+        }
         imports.teavmJso = {
             emptyString: () => "",
             stringFromCharCode: code => String.fromCharCode(code),
@@ -247,16 +294,68 @@ TeaVM.wasm = function() {
                     rethrowJsAsJava(e);
                 }
             },
-            createClass(name) {
-                let fn = new Function(
-                    "javaObjectSymbol",
-                    "functionsSymbol",
-                    `return function JavaClass_${sanitizeName(name)}(javaObject) {
-                        this[javaObjectSymbol] = javaObject;
-                        this[functionsSymbol] = null;
-                    };`
-                );
-                return fn(javaObjectSymbol, functionsSymbol, functionOriginSymbol);
+            createClass(name, parent, constructor) {
+                name = sanitizeName(name);
+                if (parent === null) {
+                    let fn = new Function(
+                        "javaObjectSymbol",
+                        "functionsSymbol",
+                        "wrapperCallMarker",
+                        "constructor",
+                        "rethrowJavaAsJs",
+                        `let fn;
+                        fn = function ${name}(marker, javaObject) {
+                            if (marker === wrapperCallMarker) {
+                                this[javaObjectSymbol] = javaObject;
+                                this[functionsSymbol] = null;
+                            } else if (constructor === null) {
+                                throw new Error("This class can't be instantiated directly");
+                            } else {
+                                try {
+                                    return fn(wrapperCallMarker, constructor(arguments));
+                                } catch (e) {
+                                    rethrowJavaAsJs(e);
+                                }
+                            }
+                        };
+                        let boundFn = function(javaObject) { return fn.call(this, wrapperCallMarker, javaObject); };
+                        boundFn[wrapperCallMarker] = fn;
+                        boundFn.prototype = fn.prototype;
+                        return boundFn;`
+                    );
+                    return fn(javaObjectSymbol, functionsSymbol, wrapperCallMarkerSymbol, constructor, rethrowJavaAsJs);
+                } else {
+                    let fn = new Function(
+                        "parent",
+                        "wrapperCallMarker",
+                        "constructor",
+                        "rethrowJavaAsJs",
+                        `let fn
+                        fn = function ${name}(marker, javaObject) {
+                            if (marker === wrapperCallMarker) {
+                                parent.call(this, javaObject);
+                            } else if (constructor === null) {
+                                throw new Error("This class can't be instantiated directly");
+                            } else {
+                                try {
+                                    return fn(wrapperCallMarker, constructor(arguments));
+                                } catch (e) {
+                                    rethrowJavaAsJs(e);
+                                }
+                            }
+                        };
+                        fn.prototype = Object.create(parent);
+                        fn.prototype.constructor = parent;
+                        let boundFn = function(javaObject) { return fn.call(this, wrapperCallMarker, javaObject); };
+                        boundFn[wrapperCallMarker] = fn;
+                        boundFn.prototype = fn.prototype;
+                        return fn;`
+                    );
+                    return fn(parent, wrapperCallMarkerSymbol, constructor, rethrowJavaAsJs);
+                }
+            },
+            exportClass(cls) {
+                return cls[wrapperCallMarkerSymbol];
             },
             defineMethod(cls, name, fn) {
                 let params = [];
@@ -274,6 +373,10 @@ TeaVM.wasm = function() {
                     };
                 `)(rethrowJavaAsJs, fn);
             },
+            defineStaticMethod(cls, name, fn) {
+                cls[name] = defineFunction(fn);
+            },
+            defineFunction: defineFunction,
             defineProperty(cls, name, getFn, setFn) {
                 let descriptor = {
                     get() {
@@ -294,6 +397,27 @@ TeaVM.wasm = function() {
                     }
                 }
                 Object.defineProperty(cls.prototype, name, descriptor);
+            },
+            defineStaticProperty(cls, name, getFn, setFn) {
+                let descriptor = {
+                    get() {
+                        try {
+                            return getFn();
+                        } catch (e) {
+                            rethrowJavaAsJs(e);
+                        }
+                    }
+                };
+                if (setFn !== null) {
+                    descriptor.set = function(value) {
+                        try {
+                            setFn(value);
+                        } catch (e) {
+                            rethrowJavaAsJs(e);
+                        }
+                    }
+                }
+                Object.defineProperty(cls, name, descriptor);
             },
             javaObjectToJS(instance, cls) {
                 let existing = jsWrappers.get(instance);
@@ -474,41 +598,26 @@ TeaVM.wasm = function() {
             options.installImports(importObj);
         }
 
-        return WebAssembly.instantiateStreaming(fetch(path), importObj).then((obj => {
-            let teavm = {};
-            teavm.main = createMain(obj.instance);
-            teavm.instance = obj.instance;
-            return teavm;
-        }));
-    }
-
-    function stringToJava(str) {
-        let sb = exports.createStringBuilder();
-        for (let i = 0; i < str.length; ++i) {
-            exports.appendChar(sb, str.charCodeAt(i));
-        }
-        return exports.buildString(sb);
-    }
-
-    function createMain(instance) {
-        return args => {
-            if (typeof args === "undefined") {
-                args = [];
-            }
-            return new Promise((resolve, reject) => {
-                exports = instance.exports;
-                let javaArgs = exports.createStringArray(args.length);
-                for (let i = 0; i < args.length; ++i) {
-                    exports.setToStringArray(javaArgs, i, stringToJava(args[i]));
+        return WebAssembly.instantiateStreaming(fetch(path), importObj)
+            .then(r => {
+                exports = r.instance.exports;
+                let userExports = {};
+                let teavm = {
+                    exports: userExports,
+                    instance: r.instance,
+                    module: r.module
+                };
+                for (let key in r.instance.exports) {
+                    let exportObj = r.instance.exports[key];
+                    if (exportObj instanceof WebAssembly.Global) {
+                        Object.defineProperty(userExports, key, {
+                            get: () => exportObj.value
+                        });
+                    }
                 }
-                try {
-                    exports.main(javaArgs);
-                } catch (e) {
-                    reject(e);
-                }
+                return teavm;
             });
-        }
     }
 
-    return { load };
+    return { load, defaults };
 }();

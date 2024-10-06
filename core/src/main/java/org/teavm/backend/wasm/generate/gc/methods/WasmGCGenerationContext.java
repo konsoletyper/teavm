@@ -65,6 +65,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private Map<String, Set<String>> interfaceImplementors;
     private WasmGCNameProvider names;
     private boolean strict;
+    private String entryPoint;
     private Consumer<WasmGCInitializerContributor> initializerContributors;
 
     public WasmGCGenerationContext(WasmModule module, WasmGCVirtualTableProvider virtualTables,
@@ -73,7 +74,8 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
             WasmGCSupertypeFunctionProvider supertypeFunctions, WasmGCClassInfoProvider classInfoProvider,
             WasmGCStandardClasses standardClasses, WasmGCStringProvider strings,
             WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics,
-            WasmGCNameProvider names, boolean strict, Consumer<WasmGCInitializerContributor> initializerContributors) {
+            WasmGCNameProvider names, boolean strict, String entryPoint,
+            Consumer<WasmGCInitializerContributor> initializerContributors) {
         this.module = module;
         this.virtualTables = virtualTables;
         this.typeMapper = typeMapper;
@@ -90,6 +92,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         this.intrinsics = intrinsics;
         this.names = names;
         this.strict = strict;
+        this.entryPoint = entryPoint;
         this.initializerContributors = initializerContributors;
     }
 
@@ -107,6 +110,10 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
 
     public WasmGCStringProvider strings() {
         return strings;
+    }
+
+    public String entryPoint() {
+        return entryPoint;
     }
 
     public WasmGCVirtualTableProvider virtualTables() {
@@ -136,7 +143,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         if (exceptionTag == null) {
             exceptionTag = new WasmTag(functionTypes.of(null,
                     classInfoProvider.getClassInfo("java.lang.Throwable").getStructure().getReference()));
-            exceptionTag.setExportName("javaException");
+            exceptionTag.setExportName("teavm.javaException");
             module.tags.add(exceptionTag);
         }
         return exceptionTag;

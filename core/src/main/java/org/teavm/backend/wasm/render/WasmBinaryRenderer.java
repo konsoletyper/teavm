@@ -49,6 +49,7 @@ public class WasmBinaryRenderer {
 
     private static final int EXTERNAL_KIND_FUNCTION = 0;
     private static final int EXTERNAL_KIND_MEMORY = 2;
+    private static final int EXTERNAL_KIND_GLOBAL = 3;
     private static final int EXTERNAL_KIND_TAG = 4;
 
     private WasmBinaryWriter output;
@@ -241,7 +242,11 @@ public class WasmBinaryRenderer {
                 .filter(tag -> tag.getExportName() != null)
                 .collect(Collectors.toList());
 
-        section.writeLEB(functions.size() + tags.size() + 1);
+        var globals = module.globals.stream()
+                .filter(global -> global.getExportName() != null)
+                .collect(Collectors.toList());
+
+        section.writeLEB(functions.size() + tags.size() + globals.size() + 1);
         for (var function : functions) {
             int functionIndex = module.functions.indexOf(function);
 
@@ -257,9 +262,16 @@ public class WasmBinaryRenderer {
             section.writeByte(EXTERNAL_KIND_TAG);
             section.writeLEB(tagIndex);
         }
+        for (var global : globals) {
+            var index = module.globals.indexOf(global);
+            section.writeAsciiString(global.getExportName());
+
+            section.writeByte(EXTERNAL_KIND_GLOBAL);
+            section.writeLEB(index);
+        }
 
         // We also need to export the memory to make it accessible
-        section.writeAsciiString("memory");
+        section.writeAsciiString(module.memoryExportName);
         section.writeByte(EXTERNAL_KIND_MEMORY);
         section.writeLEB(0);
 

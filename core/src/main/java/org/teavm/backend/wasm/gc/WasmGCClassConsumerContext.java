@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Alexey Andreev.
+ *  Copyright 2024 konsoletyper.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,51 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.intrinsics.gc;
+package org.teavm.backend.wasm.gc;
 
 import java.util.function.Consumer;
-import org.teavm.ast.Expr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
-import org.teavm.backend.wasm.gc.PreciseTypeInference;
-import org.teavm.backend.wasm.generate.ExpressionCache;
-import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
-import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ClassReaderSource;
 
-public interface WasmGCIntrinsicContext {
-    WasmExpression generate(Expr expr);
+public interface WasmGCClassConsumerContext {
+    ClassReaderSource classes();
 
     WasmModule module();
 
     WasmFunctionTypes functionTypes();
 
-    PreciseTypeInference types();
-
     BaseWasmFunctionRepository functions();
-
-    ClassHierarchy hierarchy();
-
-    WasmGCTypeMapper typeMapper();
-
-    WasmGCClassInfoProvider classInfoProvider();
-
-    TemporaryVariablePool tempVars();
-
-    ExpressionCache exprCache();
 
     WasmGCNameProvider names();
 
     WasmGCStringProvider strings();
 
-    ClassLoader classLoader();
+    WasmGCTypeMapper typeMapper();
 
     WasmTag exceptionTag();
 

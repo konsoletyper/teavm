@@ -34,6 +34,19 @@ public class JSTypeHelper {
         knownJavaScriptClasses.put(JSObject.class.getName(), true);
     }
 
+    public JSType mapType(ValueType type) {
+        if (type instanceof ValueType.Object) {
+            var className = ((ValueType.Object) type).getClassName();
+            if (isJavaScriptClass(className)) {
+                return JSType.JS;
+            }
+        } else if (type instanceof ValueType.Array) {
+            var elementType = mapType(((ValueType.Array) type).getItemType());
+            return JSType.arrayOf(elementType);
+        }
+        return JSType.JAVA;
+    }
+
     public boolean isJavaScriptClass(String className) {
         Boolean isJsClass = knownJavaScriptClasses.get(className);
         if (isJsClass == null) {

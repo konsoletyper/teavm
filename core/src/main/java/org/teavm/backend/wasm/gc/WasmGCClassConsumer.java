@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Alexey Andreev.
+ *  Copyright 2024 konsoletyper.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,13 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-const { foo, bar, getCount, getAnotherCount } = await (await import('/tests/initializer/provider.js')).default;
+package org.teavm.backend.wasm.gc;
 
-export async function test() {
-    assertEquals("foo", foo());
-    assertEquals(1, getAnotherCount());
-    assertEquals(10, getCount());
-    assertEquals("bar", bar());
-    assertEquals(1, getAnotherCount());
-    assertEquals(10, getCount());
+public interface WasmGCClassConsumer {
+    void accept(WasmGCClassConsumerContext context, String className);
 }

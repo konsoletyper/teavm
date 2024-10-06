@@ -25,7 +25,9 @@ import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Platforms;
 import org.teavm.interop.Unmanaged;
 import org.teavm.interop.UnsupportedOn;
+import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSDate;
+import org.teavm.jso.impl.JS;
 
 public class TDate implements TComparable<TDate> {
     private long value;
@@ -420,7 +422,7 @@ public class TDate implements TComparable<TDate> {
         } else if (PlatformDetector.isWebAssembly()) {
             return toStringWebAssembly(value);
         } else if (PlatformDetector.isWebAssemblyGC()) {
-            return toStringWebAssemblyGC(value);
+            return JS.unwrapString(toStringWebAssemblyGC(value));
         } else {
             return JSDate.create(value).stringValue();
         }
@@ -435,7 +437,7 @@ public class TDate implements TComparable<TDate> {
     private static native String toStringWebAssembly(double date);
 
     @Import(module = "teavmDate", name = "dateToString")
-    private static native String toStringWebAssemblyGC(double date);
+    private static native JSObject toStringWebAssemblyGC(double date);
 
     @Deprecated
     public String toLocaleString() {

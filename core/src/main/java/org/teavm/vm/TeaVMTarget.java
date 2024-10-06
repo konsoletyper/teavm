@@ -35,6 +35,9 @@ public interface TeaVMTarget {
 
     List<DependencyListener> getDependencyListeners();
 
+    default void setEntryPoint(String entryPoint, String name) {
+    }
+
     void setController(TeaVMTargetController controller);
 
     List<TeaVMHostExtension> getHostExtensions();

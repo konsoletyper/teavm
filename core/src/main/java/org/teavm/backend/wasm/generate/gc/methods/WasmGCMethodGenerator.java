@@ -72,7 +72,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private ClassInitializerInfo classInitInfo;
     private WasmFunctionTypes functionTypes;
     private WasmGCSupertypeFunctionProvider supertypeFunctions;
-    private WasmGCNameProvider names;
+    public final WasmGCNameProvider names;
     private Diagnostics diagnostics;
     private WasmGCTypeMapper typeMapper;
     private WasmGCCustomGeneratorProvider customGenerators;
@@ -88,6 +88,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private WasmGCStandardClasses standardClasses;
     private WasmGCStringProvider strings;
     private boolean strict;
+    private String entryPoint;
     private Consumer<WasmGCInitializerContributor> initializerContributors;
 
     public WasmGCMethodGenerator(
@@ -103,6 +104,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             WasmGCCustomGeneratorProvider customGenerators,
             WasmGCIntrinsicProvider intrinsics,
             boolean strict,
+            String entryPoint,
             Consumer<WasmGCInitializerContributor> initializerContributors
     ) {
         this.module = module;
@@ -117,6 +119,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         this.customGenerators = customGenerators;
         this.intrinsics = intrinsics;
         this.strict = strict;
+        this.entryPoint = entryPoint;
         this.initializerContributors = initializerContributors;
     }
 
@@ -343,7 +346,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         return decompiler;
     }
 
-    private WasmGCGenerationContext getGenerationContext() {
+    public WasmGCGenerationContext getGenerationContext() {
         if (context == null) {
             context = new WasmGCGenerationContext(
                     module,
@@ -362,6 +365,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                     intrinsics,
                     names,
                     strict,
+                    entryPoint,
                     initializerContributors
             );
         }
@@ -432,6 +436,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         @Override
         public WasmGCStringProvider strings() {
             return context.strings();
+        }
+
+        @Override
+        public String entryPoint() {
+            return context.entryPoint();
         }
 
         @Override

@@ -40,6 +40,7 @@ public class WasmModule {
     public final WasmCollection<WasmGlobal> globals = new WasmCollection<>();
     public final WasmCollection<WasmCompositeType> types = new WasmCollection<>();
     public final WasmCollection<WasmTag> tags = new WasmCollection<>();
+    public String memoryExportName = "memory";
 
     public void add(WasmCustomSection customSection) {
         if (customSections.containsKey(customSection.getName())) {

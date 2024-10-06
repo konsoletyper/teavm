@@ -13,16 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package org.teavm.jso.impl;
 
-const varargs = await (await import('/tests/varargs/provider.js')).default;
-
-export async function test() {
-    assertEquals("strings: a, b", varargs.strings("a", "b"));
-    assertEquals("strings(23): a, b", varargs.prefixStrings(23, "a", "b"));
-    assertEquals("ints: 23, 42", varargs.ints(23, 42));
-    assertEquals("ints(*): 23, 42", varargs.prefixInts("*", 23, 42));
-    assertEquals("objects: a, b", varargs.objects({ stringValue: "a" }, { stringValue: "b" }));
-
-    let obj = new varargs.A();
-    assertEquals("A.strings: a, b", obj.strings("a", "b"));
+public @interface JSClassObjectToExpose {
 }
