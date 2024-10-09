@@ -50,17 +50,6 @@ public class JSWrapperGenerator implements Injector, DependencyPlugin {
                     context.getWriter().append(")");
                 }
                 break;
-            case "isJSImplementation":
-                if (context.getPrecedence().ordinal() >= Precedence.EQUALITY.ordinal()) {
-                    context.getWriter().append("(");
-                }
-                context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
-                context.getWriter().append("[").appendFunction("$rt_jso_marker").append("]")
-                        .ws().append("===").ws().append("true");
-                if (context.getPrecedence().ordinal() >= Precedence.EQUALITY.ordinal()) {
-                    context.getWriter().append(")");
-                }
-                break;
         }
     }
 

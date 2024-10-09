@@ -84,7 +84,8 @@ public class JSTypeHelper {
             return false;
         }
         ClassReader cls = classSource.get(className);
-        if (cls == null || cls.getAnnotations().get(JSClass.class.getName()) != null) {
+        if (cls == null || cls.getAnnotations().get(JSClass.class.getName()) != null
+                || cls.hasModifier(ElementModifier.ABSTRACT)) {
             return false;
         }
         if (cls.getParent() != null) {

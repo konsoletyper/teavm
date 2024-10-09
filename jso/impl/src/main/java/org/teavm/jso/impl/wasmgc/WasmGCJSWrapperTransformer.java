@@ -25,7 +25,6 @@ import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
-import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 
 class WasmGCJSWrapperTransformer implements ClassHolderTransformer {
@@ -35,8 +34,6 @@ class WasmGCJSWrapperTransformer implements ClassHolderTransformer {
             transformMarshallMethod(cls.getMethod(new MethodDescriptor("marshallJavaToJs", Object.class,
                     JSObject.class)), context);
             transformWrapMethod(cls.getMethod(new MethodDescriptor("wrap", JSObject.class, Object.class)));
-            transformIsJsImplementation(cls.getMethod(new MethodDescriptor("isJSImplementation",
-                    Object.class, boolean.class)), context);
             transformIsJava(cls.getMethod(new MethodDescriptor("isJava", Object.class, boolean.class)), context);
             addCreateWrapperMethod(cls, context);
         }
@@ -52,13 +49,6 @@ class WasmGCJSWrapperTransformer implements ClassHolderTransformer {
     private void transformWrapMethod(MethodHolder method) {
         method.getModifiers().add(ElementModifier.NATIVE);
         method.setProgram(null);
-    }
-
-    private void transformIsJsImplementation(MethodHolder method, ClassHolderTransformerContext context) {
-        method.getModifiers().remove(ElementModifier.NATIVE);
-        var pe = ProgramEmitter.create(method, context.getHierarchy());
-        var obj = pe.var(1, JSObject.class);
-        obj.instanceOf(ValueType.parse(JSMarshallable.class)).returnValue();
     }
 
     private void addCreateWrapperMethod(ClassHolder cls, ClassHolderTransformerContext context) {

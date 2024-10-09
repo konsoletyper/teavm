@@ -93,17 +93,12 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
     private boolean exportClassInstanceMembers(ClassReader classReader) {
         var members = collectMembers(classReader, AliasCollector::isInstanceMember);
 
-        var isJsClassImpl = typeHelper.isJavaScriptImplementation(classReader.getName());
-        if (members.methods.isEmpty() && members.properties.isEmpty() && !isJsClassImpl) {
+        if (members.methods.isEmpty() && members.properties.isEmpty()) {
             return false;
         }
 
         writer.append("c").ws().append("=").ws().appendClass(classReader.getName()).append(".prototype;")
                 .softNewLine();
-        if (isJsClassImpl) {
-            writer.append("c[").appendFunction("$rt_jso_marker").append("]").ws().append("=").ws().append("true;")
-                    .softNewLine();
-        }
 
         for (var aliasEntry : members.methods.entrySet()) {
             if (classReader.getMethod(aliasEntry.getValue().getDescriptor()) == null) {
@@ -253,9 +248,6 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
     private boolean hasClassesToExpose() {
         for (String className : classSource.getClassNames()) {
             ClassReader cls = classSource.get(className);
-            if (typeHelper.isJavaScriptImplementation(className)) {
-                return true;
-            }
             for (var method : cls.getMethods()) {
                 if (getPublicAlias(method) != null) {
                     return true;
@@ -348,6 +340,4 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
         MethodReader methodReader = classReader.getMethod(methodRef.getDescriptor());
         return methodReader != null && getPublicAlias(methodReader) != null;
     }
-
-
 }

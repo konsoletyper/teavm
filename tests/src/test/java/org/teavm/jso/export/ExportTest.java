@@ -97,7 +97,7 @@ public class ExportTest {
 
     @Test
     public void exportClassMembers() {
-        testExport("exportClassMembers", ModuleWithExportedClassMembers.class, true);
+        testExport("exportClassMembers", ModuleWithExportedClassMembers.class);
     }
 
     @Test
@@ -107,23 +107,19 @@ public class ExportTest {
 
     @Test
     public void exportClasses() {
-        testExport("exportClasses", ModuleWithExportedClasses.class, true);
+        testExport("exportClasses", ModuleWithExportedClasses.class);
     }
 
     @Test
     public void varargs() {
-        testExport("varargs", ModuleWithVararg.class, true);
+        testExport("varargs", ModuleWithVararg.class);
     }
 
     private void testExport(String name, Class<?> moduleClass) {
-        testExport(name, moduleClass, false);
-    }
-
-    private void testExport(String name, Class<?> moduleClass, boolean skipWasm) {
         if (jsNeeded) {
             testExportJs(name, moduleClass);
         }
-        if (wasmGCNeeded && !skipWasm) {
+        if (wasmGCNeeded) {
             testExportWasmGC(name, moduleClass);
         }
     }

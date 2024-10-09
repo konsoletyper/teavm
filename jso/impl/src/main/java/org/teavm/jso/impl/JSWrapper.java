@@ -188,14 +188,11 @@ public final class JSWrapper {
     @NoSideEffects
     public static native boolean isJava(JSObject obj);
 
-    @NoSideEffects
-    private static native boolean isJSImplementation(Object obj);
-
     public static JSObject unwrap(Object o) {
         if (o == null) {
             return null;
         }
-        return isJSImplementation(o) ? marshallJavaToJs(o) : ((JSWrapper) o).js;
+        return (!(o instanceof JSWrapper)) ? marshallJavaToJs(o) : ((JSWrapper) o).js;
     }
 
     public static JSObject maybeUnwrap(Object o) {

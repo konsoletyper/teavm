@@ -88,7 +88,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             processor.setClassFilter(classFilter);
         }
         processor.processClass(cls);
-        if (isJavaScriptClass(cls)) {
+        if (isJavaScriptClass(cls) && !isJavaScriptImplementation(cls)) {
             processor.processMemberMethods(cls);
         }
 
@@ -99,44 +99,48 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         }
         processor.createJSMethods(cls);
 
-        if (cls.hasModifier(ElementModifier.ABSTRACT)
-                || cls.getAnnotations().get(JSClass.class.getName()) != null && isJavaScriptClass(cls)) {
+        if (isJavaScriptClass(cls) && !isJavaScriptImplementation(cls)) {
             return;
         }
 
-        MethodReference functorMethod = processor.isFunctor(cls.getName());
-        if (functorMethod != null) {
-            if (processor.isFunctor(cls.getParent()) != null) {
-                functorMethod = null;
+        var hasStaticMethods = false;
+        var hasMemberMethods = false;
+
+        if (!cls.hasModifier(ElementModifier.ABSTRACT)) {
+            MethodReference functorMethod = processor.isFunctor(cls.getName());
+            if (functorMethod != null) {
+                if (processor.isFunctor(cls.getParent()) != null) {
+                    functorMethod = null;
+                }
+            }
+
+            ClassReader originalClass = hierarchy.getClassSource().get(cls.getName());
+            ExposedClass exposedClass;
+            if (originalClass != null) {
+                exposedClass = getExposedClass(cls.getName());
+            } else {
+                exposedClass = new ExposedClass();
+                createExposedClass(cls, exposedClass);
+            }
+
+            exposeMethods(cls, exposedClass, context.getDiagnostics(), functorMethod);
+            if (!exposedClass.methods.isEmpty()) {
+                hasMemberMethods = true;
+                cls.getAnnotations().add(new AnnotationHolder(JSClassToExpose.class.getName()));
             }
         }
-
-        ClassReader originalClass = hierarchy.getClassSource().get(cls.getName());
-        ExposedClass exposedClass;
-        if (originalClass != null) {
-            exposedClass = getExposedClass(cls.getName());
-        } else {
-            exposedClass = new ExposedClass();
-            createExposedClass(cls, exposedClass);
-        }
-
-        exposeMethods(cls, exposedClass, context.getDiagnostics(), functorMethod);
-        var hasStaticMethods = exportStaticMethods(cls, context.getDiagnostics());
-
-        if (isJavaScriptImplementation(cls) || !exposedClass.methods.isEmpty()) {
-            cls.getAnnotations().add(new AnnotationHolder(JSClassToExpose.class.getName()));
-        }
-        if (isJavaScriptImplementation(cls) || !exposedClass.methods.isEmpty() || hasStaticMethods) {
+        hasStaticMethods = exportStaticMethods(cls, context.getDiagnostics());
+        if (hasMemberMethods || hasStaticMethods) {
             cls.getAnnotations().add(new AnnotationHolder(JSClassObjectToExpose.class.getName()));
         }
 
-        if (wasmGC && (!exposedClass.methods.isEmpty() || isJavaScriptClass(cls))) {
+        if (wasmGC && hasMemberMethods) {
             var createWrapperMethod = new MethodHolder(JSMethods.MARSHALL_TO_JS);
             createWrapperMethod.setLevel(AccessLevel.PUBLIC);
             createWrapperMethod.getModifiers().add(ElementModifier.NATIVE);
             cls.addMethod(createWrapperMethod);
 
-            if (!isJavaScriptClass(cls) || isJavaScriptImplementation(cls)) {
+            if (!isJavaScriptClass(cls)) {
                 cls.getInterfaces().add(JSMethods.JS_MARSHALLABLE);
             }
         }
@@ -429,7 +433,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         if (typeHelper.isJavaScriptImplementation(cls.getName())) {
             return true;
         }
-        if (cls.getAnnotations().get(JSClass.class.getName()) != null) {
+        if (cls.getAnnotations().get(JSClass.class.getName()) != null || cls.hasModifier(ElementModifier.ABSTRACT)) {
             return false;
         }
         if (cls.getParent() != null) {
