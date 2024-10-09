@@ -29,7 +29,7 @@ public abstract class CopyWasmGCRuntimeTask extends DefaultTask {
 
     @TaskAction
     public void copyRuntime() throws IOException {
-        var resourceName = "org/teavm/backend/wasm/wasm-gc-runtime.js";
+        var resourceName = "org/teavm/backend/wasm/wasm-gc-runtime.min.js";
         var classLoader = CopyWasmGCRuntimeTask.class.getClassLoader();
         var output = getOutputFile().get().getAsFile();
         try (var input = classLoader.getResourceAsStream(resourceName)) {
