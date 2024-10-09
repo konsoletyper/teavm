@@ -199,7 +199,7 @@ public class ExportTest {
             }
             var testProviderFile = new File(outputDir, "provider.js");
             try (var writer = new OutputStreamWriter(new FileOutputStream(testProviderFile), StandardCharsets.UTF_8)) {
-                writer.write("await import('/resources/org/teavm/backend/wasm/wasm-gc-runtime.js');\n");
+                writer.write("await import('/resources/org/teavm/backend/wasm/runtime.js');\n");
                 writer.write("let teavm = await TeaVM.wasmGC.load('/tests/" + name + "/test.wasm');\n");
                 writer.write("export default teavm.exports;\n");
             }
