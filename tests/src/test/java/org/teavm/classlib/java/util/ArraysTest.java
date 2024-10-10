@@ -17,9 +17,12 @@ package org.teavm.classlib.java.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -101,6 +104,14 @@ public class ArraysTest {
         for (int i = 0; i < doubleSpecials.length; i++) {
             int result = Arrays.binarySearch(doubleSpecials, doubleSpecials[i]);
             assertEquals(doubleSpecials[i] + " invalid: " + result, result, i);
+        }
+        Object[] objects = new MockComparable[] { new MockComparable() };
+        assertEquals(0, Arrays.binarySearch(objects, new Object()));
+    }
+
+    private static class MockComparable implements Comparable {
+        public int compareTo(Object o) {
+            return 0;
         }
     }
 
@@ -251,5 +262,179 @@ public class ArraysTest {
         // Slices
         assertEquals(-1, Arrays.mismatch(array, 0, 1, shorter, 0, 1));
         assertEquals(-1, Arrays.mismatch(array, 0, 1, different, 1, 2));
+    }
+
+    @Test
+    public void copyOf() {
+        int arraySize = 100;
+        Object[] objArray = new Object[arraySize];
+        for (int i = 0; i < objArray.length; i++) {
+            objArray[i] = i;
+        }
+        Object[] result = Arrays.copyOf(objArray, arraySize * 2, Object[].class);
+        int i = 0;
+        for (; i < arraySize; i++) {
+            assertEquals(objArray[i], result[i]);
+        }
+        for (; i < result.length; i++) {
+            assertNull(result[i]);
+        }
+        result = Arrays.copyOf(objArray, arraySize / 2, Object[].class);
+        i = 0;
+        for (; i < result.length; i++) {
+            assertEquals(objArray[i], result[i]);
+        }
+        result = Arrays.copyOf(objArray, arraySize / 2, Integer[].class);
+        i = 0;
+        for (; i < result.length; i++) {
+            assertEquals(objArray[i], result[i]);
+        }
+        try {
+            Arrays.copyOf(null, arraySize, LinkedList[].class);
+            fail("should throw NullPointerException");
+        } catch (NullPointerException e) {
+            // expected
+        }
+        try {
+            Arrays.copyOf(objArray, arraySize, LinkedList[].class);
+            fail("should throw ArrayStoreException ");
+        } catch (ArrayStoreException e) {
+            // expected
+        }
+        try {
+            Arrays.copyOf(null, arraySize, Object[].class);
+            fail("should throw NullPointerException");
+        } catch (NullPointerException e) {
+            // expected
+        }
+        try {
+            Arrays.copyOf(objArray, -1, Object[].class);
+            fail("should throw NegativeArraySizeException");
+        } catch (NegativeArraySizeException e) {
+            // expected
+        }
+        try {
+            Arrays.copyOf(null, -1, Object[].class);
+            fail("should throw NegativeArraySizeException");
+        } catch (NegativeArraySizeException e) {
+            // expected
+        }
+        try {
+            Arrays.copyOf(null, -1, LinkedList[].class);
+            fail("should throw NegativeArraySizeException");
+        } catch (NegativeArraySizeException e) {
+            // expected
+        }
+        try {
+            Arrays.copyOf(null, 0, LinkedList[].class);
+            fail("should throw NullPointerException");
+        } catch (NullPointerException e) {
+            // expected
+        }
+        assertEquals(0, Arrays.copyOf(objArray, 0, LinkedList[].class).length);
+    }
+
+    @Test
+    public void copyOfRange() {
+        int arraySize = 100;
+        Object[] objArray = new Object[arraySize];
+        for (int i = 0; i < objArray.length; i++) {
+            objArray[i] = i;
+        }
+        Object[] result = Arrays.copyOfRange(objArray, 0, arraySize * 2, Integer[].class);
+        int i = 0;
+        for (; i < arraySize; i++) {
+            assertEquals(objArray[i], result[i]);
+        }
+        for (; i < result.length; i++) {
+            assertNull(result[i]);
+        }
+        result = Arrays.copyOfRange(objArray, 1, 4, Integer[].class);
+        for (; i < result.length; i++) {
+            if (i >= 1 && i < 4) {
+                assertEquals(objArray[i], result[i]);
+            } else {
+                assertNull(result[i]);
+            }
+        }
+        result = Arrays.copyOfRange(objArray, 1, 4);
+        for (; i < result.length; i++) {
+            if (i >= 1 && i < 4) {
+                assertEquals(objArray[i], i - 1);
+            } else {
+                assertNull(result[i]);
+            }
+        }
+        result = Arrays.copyOfRange(objArray, 1, arraySize * 2);
+        for (; i < arraySize; i++) {
+            assertEquals(objArray[i], i - 1);
+        }
+        for (; i < result.length; i++) {
+            assertEquals(null, result[i]);
+        }
+        result = Arrays.copyOfRange(objArray, 0, arraySize / 2, Integer[].class);
+        i = 0;
+        for (; i < result.length; i++) {
+            assertEquals(objArray[i], result[i]);
+        }
+        result = Arrays.copyOfRange(objArray, 0, 0, Integer[].class);
+        assertEquals(0, result.length);
+        try {
+            Arrays.copyOfRange(null, 0, arraySize, Integer[].class);
+            fail("should throw NullPointerException");
+        } catch (NullPointerException e) {
+            // expected
+        }
+        try {
+            Arrays.copyOfRange(null, -1, arraySize, Integer[].class);
+            fail("should throw NullPointerException");
+        } catch (NullPointerException e) {
+            // expected
+        }
+        try {
+            Arrays.copyOfRange(null, 0, -1, Integer[].class);
+            fail("should throw IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+        try {
+            Arrays.copyOfRange(objArray, -1, arraySize, Integer[].class);
+            fail("should throw ArrayIndexOutOfBoundsException");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
+        }
+        try {
+            Arrays.copyOfRange(objArray, 0, -1, Integer[].class);
+            fail("should throw IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+        try {
+            Arrays.copyOfRange(objArray, 0, -1, LinkedList[].class);
+            fail("should throw IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+        try {
+            Arrays.copyOfRange(objArray, 0, 1, LinkedList[].class);
+            fail("should throw ArrayStoreException");
+        } catch (ArrayStoreException e) {
+            // expected
+        }
+        try {
+            Arrays.copyOfRange(null, 0, 1, LinkedList[].class);
+            fail("should throw NullPointerException");
+        } catch (NullPointerException e) {
+            // expected
+        }
+        try {
+            assertEquals(objArray.length + 1, Arrays.copyOfRange(objArray, 0,
+                    objArray.length + 1, LinkedList[].class).length);
+            fail("should throw ArrayStoreException");
+        } catch (ArrayStoreException e) {
+            // expected
+        }
+        assertEquals(0,
+                Arrays.copyOfRange(objArray, 0, 0, LinkedList[].class).length);
     }
 }
