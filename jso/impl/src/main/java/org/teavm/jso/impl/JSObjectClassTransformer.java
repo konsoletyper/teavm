@@ -139,10 +139,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             createWrapperMethod.setLevel(AccessLevel.PUBLIC);
             createWrapperMethod.getModifiers().add(ElementModifier.NATIVE);
             cls.addMethod(createWrapperMethod);
-
-            if (!isJavaScriptClass(cls)) {
-                cls.getInterfaces().add(JSMethods.JS_MARSHALLABLE);
-            }
+            cls.getInterfaces().add(JSMethods.JS_MARSHALLABLE);
         }
     }
 

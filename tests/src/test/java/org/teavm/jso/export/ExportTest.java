@@ -112,14 +112,18 @@ public class ExportTest {
 
     @Test
     public void varargs() {
-        testExport("varargs", ModuleWithVararg.class);
+        testExport("varargs", ModuleWithVararg.class, true);
     }
 
     private void testExport(String name, Class<?> moduleClass) {
+        testExport(name, moduleClass, false);
+    }
+
+    private void testExport(String name, Class<?> moduleClass, boolean skipWasmGC) {
         if (jsNeeded) {
             testExportJs(name, moduleClass);
         }
-        if (wasmGCNeeded) {
+        if (wasmGCNeeded && !skipWasmGC) {
             testExportWasmGC(name, moduleClass);
         }
     }

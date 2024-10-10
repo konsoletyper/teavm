@@ -19,7 +19,6 @@ import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerator;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGeneratorContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
-import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
@@ -28,7 +27,6 @@ import org.teavm.model.ValueType;
 
 class WasmGCMarshallMethodGenerator implements WasmGCCustomGenerator {
     private WasmGCJsoCommonGenerator commonGen;
-    private WasmFunction javaObjectToJSFunction;
 
     WasmGCMarshallMethodGenerator(WasmGCJsoCommonGenerator commonGen) {
         this.commonGen = commonGen;
@@ -42,21 +40,8 @@ class WasmGCMarshallMethodGenerator implements WasmGCCustomGenerator {
         function.add(thisLocal);
 
         var jsClassGlobal = commonGen.getDefinedClass(jsoContext, method.getClassName());
-        var wrapperFunction = javaObjectToJSFunction(context);
+        var wrapperFunction = commonGen.javaObjectToJSFunction(jsoContext);
         function.getBody().add(new WasmCall(wrapperFunction, new WasmGetLocal(thisLocal),
                 new WasmGetGlobal(jsClassGlobal)));
     }
-
-    private WasmFunction javaObjectToJSFunction(WasmGCCustomGeneratorContext context) {
-        if (javaObjectToJSFunction == null) {
-            javaObjectToJSFunction = new WasmFunction(context.functionTypes().of(WasmType.Reference.EXTERN,
-                    context.typeMapper().mapType(ValueType.parse(Object.class)), WasmType.Reference.EXTERN));
-            javaObjectToJSFunction.setName(context.names().topLevel("teavm.jso@javaObjectToJS"));
-            javaObjectToJSFunction.setImportName("javaObjectToJS");
-            javaObjectToJSFunction.setImportModule("teavmJso");
-            context.module().functions.add(javaObjectToJSFunction);
-        }
-        return javaObjectToJSFunction;
-    }
-
 }

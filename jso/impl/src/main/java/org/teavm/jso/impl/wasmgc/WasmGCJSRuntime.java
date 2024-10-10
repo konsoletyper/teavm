@@ -66,6 +66,8 @@ final class WasmGCJSRuntime {
     @Import(name = "charAt", module = "teavmJso")
     static native char charAt(JSObject str, int index);
 
+    static native JSObject wrapObject(Object obj);
+
     static Throwable wrapException(JSObject obj) {
         return new WasmGCExceptionWrapper(obj);
     }

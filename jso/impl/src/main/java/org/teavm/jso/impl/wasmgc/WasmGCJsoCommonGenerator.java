@@ -63,6 +63,8 @@ class WasmGCJsoCommonGenerator {
     private WasmFunction definePropertyFunction;
     private WasmFunction defineStaticPropertyFunction;
     private WasmFunction exportClassFunction;
+    private WasmFunction javaObjectToJSFunction;
+    private WasmGlobal defaultWrapperClass;
     private Map<String, WasmGlobal> definedClasses = new HashMap<>();
 
     WasmGCJsoCommonGenerator(WasmGCJSFunctions jsFunctions) {
@@ -198,6 +200,23 @@ class WasmGCJsoCommonGenerator {
         return new WasmGetGlobal(global);
     }
 
+    WasmGlobal getDefaultWrapperClass(WasmGCJsoContext context) {
+        if (defaultWrapperClass == null) {
+            var name = context.names().topLevel("teavm.js@defaultWrapperClass");
+            defaultWrapperClass = new WasmGlobal(name, WasmType.Reference.EXTERN,
+                    new WasmNullConstant(WasmType.Reference.EXTERN));
+            context.module().globals.add(defaultWrapperClass);
+            addInitializerPart(context, initializer -> {
+                var createClass = new WasmCall(createClassFunction(context),
+                        new WasmNullConstant(WasmType.Reference.EXTERN),
+                        new WasmNullConstant(WasmType.Reference.EXTERN),
+                        new WasmNullConstant(WasmType.Reference.FUNC));
+                initializer.getBody().add(new WasmSetGlobal(defaultWrapperClass, createClass));
+            });
+        }
+        return defaultWrapperClass;
+    }
+
     WasmGlobal getDefinedClass(WasmGCJsoContext context, String className) {
         return definedClasses.computeIfAbsent(className, n -> defineClass(context, n));
     }
@@ -216,8 +235,6 @@ class WasmGCJsoCommonGenerator {
         defineProperties(context, members, cls, global, expressions);
 
         var staticMembers = AliasCollector.collectMembers(cls, AliasCollector::isStaticMember);
-        defineStaticMethods(context, staticMembers, cls, global, expressions, isModule);
-        defineStaticProperties(context, staticMembers, cls, global, expressions);
 
         var simpleName = className.substring(className.lastIndexOf('.') + 1);
         var javaClassName = context.strings().getStringConstant(simpleName);
@@ -233,6 +250,7 @@ class WasmGCJsoCommonGenerator {
         WasmExpression constructor;
         if (members.constructor != null) {
             var function = context.functions().forStaticMethod(members.constructor);
+            function.setReferenced(true);
             constructor = new WasmFunctionReference(function);
             needsExport = true;
         } else {
@@ -240,9 +258,13 @@ class WasmGCJsoCommonGenerator {
         }
         var createClass = new WasmCall(createClassFunction(context), jsClassName, jsExportedParent, constructor);
         expressions.add(0, new WasmSetGlobal(global, createClass));
+        var globalForStatic = global;
         if (needsExport) {
-            exportClass(context, cls, global, expressions);
+            globalForStatic = exportClass(context, cls, global, expressions);
         }
+
+        defineStaticMethods(context, staticMembers, cls, globalForStatic, expressions, isModule);
+        defineStaticProperties(context, staticMembers, cls, globalForStatic, expressions);
 
         context.addToInitializer(f -> f.getBody().addAll(expressions));
         return global;
@@ -340,7 +362,7 @@ class WasmGCJsoCommonGenerator {
         }
     }
 
-    private void exportClass(WasmGCJsoContext context, ClassReader cls, WasmGlobal global,
+    private WasmGlobal exportClass(WasmGCJsoContext context, ClassReader cls, WasmGlobal global,
             List<WasmExpression> expressions) {
         var exportName = getClassAliasName(cls);
         var globalName = context.names().topLevel("teavm.js.export.class@" + exportName);
@@ -351,6 +373,8 @@ class WasmGCJsoCommonGenerator {
 
         var exported = new WasmCall(exportClassFunction(context), new WasmGetGlobal(global));
         expressions.add(new WasmSetGlobal(exportGlobal, exported));
+
+        return exportGlobal;
     }
 
     private String parentExportedClass(WasmGCJsoContext context, String className) {
@@ -451,6 +475,18 @@ class WasmGCJsoCommonGenerator {
             context.module().functions.add(exportClassFunction);
         }
         return exportClassFunction;
+    }
+
+    WasmFunction javaObjectToJSFunction(WasmGCJsoContext context) {
+        if (javaObjectToJSFunction == null) {
+            javaObjectToJSFunction = new WasmFunction(context.functionTypes().of(WasmType.Reference.EXTERN,
+                    context.typeMapper().mapType(ValueType.parse(Object.class)), WasmType.Reference.EXTERN));
+            javaObjectToJSFunction.setName(context.names().topLevel("teavm.jso@javaObjectToJS"));
+            javaObjectToJSFunction.setImportName("javaObjectToJS");
+            javaObjectToJSFunction.setImportModule("teavmJso");
+            context.module().functions.add(javaObjectToJSFunction);
+        }
+        return javaObjectToJSFunction;
     }
 
     private String getClassAliasName(ClassReader cls) {

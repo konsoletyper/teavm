@@ -57,15 +57,10 @@ public final class WasmGCJso {
         var wrapperIntrinsic = new WasmGCJSWrapperIntrinsic();
         wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "wrap", JSObject.class, Object.class),
                 wrapperIntrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "dependencyJavaToJs", Object.class,
-                JSObject.class), wrapperIntrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "directJavaToJs", Object.class, JSObject.class),
-                wrapperIntrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "dependencyJsToJava", JSObject.class,
-                Object.class), wrapperIntrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "directJsToJava", JSObject.class, Object.class),
-                wrapperIntrinsic);
         wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "isJava", JSObject.class, boolean.class),
                 wrapperIntrinsic);
+
+        wasmGCHost.addIntrinsic(new MethodReference(WasmGCJSRuntime.class, "wrapObject", Object.class,
+                JSObject.class), new WasmGCJSRuntimeIntrinsic(commonGen));
     }
 }

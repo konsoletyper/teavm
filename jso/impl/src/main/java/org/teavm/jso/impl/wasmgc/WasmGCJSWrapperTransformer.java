@@ -25,6 +25,7 @@ import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
+import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 
 class WasmGCJSWrapperTransformer implements ClassHolderTransformer {
@@ -33,6 +34,12 @@ class WasmGCJSWrapperTransformer implements ClassHolderTransformer {
         if (cls.getName().equals(JSWrapper.class.getName())) {
             transformMarshallMethod(cls.getMethod(new MethodDescriptor("marshallJavaToJs", Object.class,
                     JSObject.class)), context);
+            transformDirectJavaToJs(cls.getMethod(new MethodDescriptor("directJavaToJs", Object.class,
+                    JSObject.class)), context);
+            transformDirectJavaToJs(cls.getMethod(new MethodDescriptor("dependencyJavaToJs", Object.class,
+                    JSObject.class)), context);
+            transformDirectJsToJava(cls.getMethod(new MethodDescriptor("dependencyJsToJava", JSObject.class,
+                    Object.class)), context);
             transformWrapMethod(cls.getMethod(new MethodDescriptor("wrap", JSObject.class, Object.class)));
             transformIsJava(cls.getMethod(new MethodDescriptor("isJava", Object.class, boolean.class)), context);
             addCreateWrapperMethod(cls, context);
@@ -43,7 +50,24 @@ class WasmGCJSWrapperTransformer implements ClassHolderTransformer {
         method.getModifiers().remove(ElementModifier.NATIVE);
         var pe = ProgramEmitter.create(method, context.getHierarchy());
         var obj = pe.var(1, Object.class);
+        pe.when(obj.instanceOf(ValueType.parse(JSMarshallable.class)).isFalse()).thenDo(() -> {
+            pe.invoke(WasmGCJSRuntime.class, "wrapObject", JSObject.class, obj).returnValue();
+        });
         obj.cast(JSMarshallable.class).invokeVirtual("marshallToJs", JSObject.class).returnValue();
+    }
+
+    private void transformDirectJavaToJs(MethodHolder method, ClassHolderTransformerContext context) {
+        method.getModifiers().remove(ElementModifier.NATIVE);
+        var pe = ProgramEmitter.create(method, context.getHierarchy());
+        var obj = pe.var(1, Object.class);
+        pe.invoke(JSWrapper.class, "marshallJavaToJs", JSObject.class, obj).returnValue();
+    }
+
+    private void transformDirectJsToJava(MethodHolder method, ClassHolderTransformerContext context) {
+        method.getModifiers().remove(ElementModifier.NATIVE);
+        var pe = ProgramEmitter.create(method, context.getHierarchy());
+        var obj = pe.var(1, JSObject.class);
+        pe.invoke(JSWrapper.class, "unmarshallJavaFromJs", Object.class, obj).returnValue();
     }
 
     private void transformWrapMethod(MethodHolder method) {

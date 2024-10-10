@@ -263,15 +263,23 @@ TeaVM.wasmGC = TeaVM.wasmGC || function() {
                 params.push("p" + i);
             }
             let paramsAsString = params.length === 0 ? "" : params.join(", ");
-            return new Function("rethrowJavaAsJs", "fn", `
-                    return function(${paramsAsString}) {
-                        try {
-                            return fn(${paramsAsString});
-                        } catch (e) {
-                            rethrowJavaAsJs(e);
-                        }
-                    };
-                `)(rethrowJavaAsJs, fn);
+            return new Function("rethrowJavaAsJs", "fn",
+                    `return function(${paramsAsString}) {\n` +
+                    `    try {\n` +
+                    `        return fn(${paramsAsString});\n` +
+                    `    } catch (e) {\n` +
+                    `        rethrowJavaAsJs(e);\n` +
+                    `    }\n` +
+                    `};`
+                )(rethrowJavaAsJs, fn);
+        }
+        function renameConstructor(name, c) {
+            return new Function(
+                "constructor",
+                `return function ${name}(marker, javaObject) {\n` +
+                `    return constructor.call(this, marker, javaObject);\n` +
+                `}\n`
+            )(c);
         }
         imports.teavmJso = {
             emptyString: () => "",
@@ -295,64 +303,41 @@ TeaVM.wasmGC = TeaVM.wasmGC || function() {
                 }
             },
             createClass(name, parent, constructor) {
-                name = sanitizeName(name);
+                name = sanitizeName(name || "JavaObject");
+                let action;
                 if (parent === null) {
-                    let fn = new Function(
-                        "javaObjectSymbol",
-                        "functionsSymbol",
-                        "wrapperCallMarker",
-                        "constructor",
-                        "rethrowJavaAsJs",
-                        `let fn;
-                        fn = function ${name}(marker, javaObject) {
-                            if (marker === wrapperCallMarker) {
-                                this[javaObjectSymbol] = javaObject;
-                                this[functionsSymbol] = null;
-                            } else if (constructor === null) {
-                                throw new Error("This class can't be instantiated directly");
-                            } else {
-                                try {
-                                    return fn(wrapperCallMarker, constructor(arguments));
-                                } catch (e) {
-                                    rethrowJavaAsJs(e);
-                                }
-                            }
-                        };
-                        let boundFn = function(javaObject) { return fn.call(this, wrapperCallMarker, javaObject); };
-                        boundFn[wrapperCallMarker] = fn;
-                        boundFn.prototype = fn.prototype;
-                        return boundFn;`
-                    );
-                    return fn(javaObjectSymbol, functionsSymbol, wrapperCallMarkerSymbol, constructor, rethrowJavaAsJs);
+                    action = function (javaObject) {
+                        this[javaObjectSymbol] = javaObject;
+                        this[functionsSymbol] = null;
+                    };
                 } else {
-                    let fn = new Function(
-                        "parent",
-                        "wrapperCallMarker",
-                        "constructor",
-                        "rethrowJavaAsJs",
-                        `let fn
-                        fn = function ${name}(marker, javaObject) {
-                            if (marker === wrapperCallMarker) {
-                                parent.call(this, javaObject);
-                            } else if (constructor === null) {
-                                throw new Error("This class can't be instantiated directly");
-                            } else {
-                                try {
-                                    return fn(wrapperCallMarker, constructor(arguments));
-                                } catch (e) {
-                                    rethrowJavaAsJs(e);
-                                }
-                            }
-                        };
-                        fn.prototype = Object.create(parent);
-                        fn.prototype.constructor = parent;
-                        let boundFn = function(javaObject) { return fn.call(this, wrapperCallMarker, javaObject); };
-                        boundFn[wrapperCallMarker] = fn;
-                        boundFn.prototype = fn.prototype;
-                        return fn;`
-                    );
-                    return fn(parent, wrapperCallMarkerSymbol, constructor, rethrowJavaAsJs);
+                    action = function (javaObject) {
+                        parent.call(this, javaObject);
+                    };
+                    fn.prototype = Object.create(parent);
+                    fn.prototype.constructor = parent;
                 }
+                let fn = renameConstructor(name, function (marker, javaObject) {
+                    if (marker === wrapperCallMarkerSymbol) {
+                        action.call(this, javaObject);
+                    } else if (constructor === null) {
+                        throw new Error("This class can't be instantiated directly");
+                    } else {
+                        try {
+                            return constructor.apply(null, arguments);
+                        } catch (e) {
+                            rethrowJavaAsJs(e);
+                        }
+                    }
+                });
+                fn.prototype = Object.create(parent || Object.prototype);
+                fn.prototype.constructor = fn;
+                let boundFn = renameConstructor(name, function(javaObject) {
+                    return fn.call(this, wrapperCallMarkerSymbol, javaObject);
+                });
+                boundFn[wrapperCallMarkerSymbol] = fn;
+                boundFn.prototype = fn.prototype;
+                return boundFn;
             },
             exportClass(cls) {
                 return cls[wrapperCallMarkerSymbol];
@@ -363,15 +348,15 @@ TeaVM.wasmGC = TeaVM.wasmGC || function() {
                     params.push("p" + i);
                 }
                 let paramsAsString = params.length === 0 ? "" : params.join(", ");
-                cls.prototype[name] = new Function("rethrowJavaAsJs", "fn", `
-                    return function(${paramsAsString}) {
-                        try {
-                            return fn(${['this', params].join(", ")});
-                        } catch (e) {
-                            rethrowJavaAsJs(e);
-                        }
-                    };
-                `)(rethrowJavaAsJs, fn);
+                cls.prototype[name] = new Function("rethrowJavaAsJs", "fn",
+                    `return function(${paramsAsString}) {\n` +
+                    `    try {\n` +
+                    `        return fn(${['this', params].join(", ")});\n` +
+                    `    } catch (e) {\n` +
+                    `        rethrowJavaAsJs(e);\n` +
+                    `    }\n` +
+                    `};`
+                )(rethrowJavaAsJs, fn);
             },
             defineStaticMethod(cls, name, fn) {
                 cls[name] = defineFunction(fn);
@@ -554,32 +539,33 @@ TeaVM.wasmGC = TeaVM.wasmGC || function() {
         for (let i = 0; i < 32; ++i) {
             let args = argumentList.length === 0 ? "" : argumentList.join(", ");
             let argsAndBody = [...argumentList, "body"].join(", ");
-            imports.teavmJso["createFunction" + i] = new Function("wrapCallFromJavaToJs", ...argumentList, "body", `
-                return new Function('wrapCallFromJavaToJs', ${argsAndBody}).bind(this, wrapCallFromJavaToJs);
-            `).bind(null, wrapCallFromJavaToJs);
-            imports.teavmJso["callFunction" + i] = new Function("rethrowJsAsJava", "fn", ...argumentList, `
-                try {
-                    return fn(${args});
-                } catch (e) {
-                    rethrowJsAsJava(e);
-                }
-            `).bind(null, rethrowJsAsJava);
+            imports.teavmJso["createFunction" + i] = new Function("wrapCallFromJavaToJs", ...argumentList, "body",
+                `return new Function('wrapCallFromJavaToJs', ${argsAndBody}).bind(this, wrapCallFromJavaToJs);`
+            ).bind(null, wrapCallFromJavaToJs);
+            imports.teavmJso["callFunction" + i] = new Function("rethrowJsAsJava", "fn", ...argumentList,
+                `try {\n` +
+                `    return fn(${args});\n` +
+                `} catch (e) {\n` +
+                `    rethrowJsAsJava(e);\n` +
+                `}`
+            ).bind(null, rethrowJsAsJava);
             imports.teavmJso["callMethod" + i] = new Function("rethrowJsAsJava", "getGlobalName", "instance",
-                "method", ...argumentList, `
-                try {
-                    return instance !== null 
-                        ? instance[method](${args}) 
-                        : getGlobalName(method)(${args});
-                } catch (e) {
-                    rethrowJsAsJava(e);
-                }`).bind(null, rethrowJsAsJava, getGlobalName);
-            imports.teavmJso["construct" + i] = new Function("rethrowJsAsJava", "constructor", ...argumentList, `
-                try {
-                    return new constructor(${args});
-                } catch (e) {
-                    rethrowJsAsJava(e);
-                }
-            `).bind(null, rethrowJsAsJava);
+                "method", ...argumentList,
+                `try {\n`+
+                `    return instance !== null\n` +
+                `        ? instance[method](${args})\n` +
+                `        : getGlobalName(method)(${args});\n` +
+                `} catch (e) {\n` +
+                `    rethrowJsAsJava(e);\n` +
+                `}`
+            ).bind(null, rethrowJsAsJava, getGlobalName);
+            imports.teavmJso["construct" + i] = new Function("rethrowJsAsJava", "constructor", ...argumentList,
+                `try {\n` +
+                `    return new constructor(${args});\n` +
+                `} catch (e) {\n` +
+                `    rethrowJsAsJava(e);\n` +
+                `}`
+            ).bind(null, rethrowJsAsJava);
             imports.teavmJso["arrayOf" + i] = new Function(...argumentList, "return [" + args + "]");
 
             let param = "p" + (i + 1);

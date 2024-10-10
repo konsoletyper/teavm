@@ -21,7 +21,6 @@ import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmExternConversion;
 import org.teavm.backend.wasm.model.expression.WasmExternConversionType;
@@ -40,17 +39,6 @@ class WasmGCJSWrapperIntrinsic implements WasmGCIntrinsic {
             case "wrap": {
                 var function = getWrapFunction(context);
                 return new WasmCall(function, context.generate(invocation.getArguments().get(0)));
-            }
-            case "dependencyJavaToJs":
-            case "directJavaToJs":
-                return new WasmExternConversion(WasmExternConversionType.ANY_TO_EXTERN,
-                        context.generate(invocation.getArguments().get(0)));
-            case "dependencyJsToJava":
-            case "directJsToJava": {
-                var any = new WasmExternConversion(WasmExternConversionType.EXTERN_TO_ANY,
-                        context.generate(invocation.getArguments().get(0)));
-                var objectType = context.typeMapper().mapType(ValueType.parse(Object.class));
-                return new WasmCast(any, (WasmType.Reference) objectType);
             }
             case "isJava": {
                 var convert = new WasmExternConversion(WasmExternConversionType.EXTERN_TO_ANY,
