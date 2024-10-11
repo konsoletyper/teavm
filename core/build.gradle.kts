@@ -25,7 +25,10 @@ plugins {
 description = "Compiler, backends and runtime"
 
 node {
-    download = true
+    download = providers.gradleProperty("teavm.localNodeJS")
+        .map { it == "true" }
+        .map { !it }
+        .orElse(true)
 }
 
 dependencies {

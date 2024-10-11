@@ -21,6 +21,7 @@ jobs:
       with:
         java-version: 11
         distribution: adopt
+    - uses: actions/setup-node@v4
     - uses: gradle/gradle-build-action@v2
     - if: ${{ matrix.platform == 'wasi' }}
       uses: bytecodealliance/actions/wasmtime/setup@v1
@@ -38,6 +39,7 @@ jobs:
             args+=("-Pteavm.tests.${v}=false")
           fi
         done
+        args+=("-Pteavm.localNodeJS=true")
         echo "${args[@]}"
         ./gradlew "${args[@]}" test
     - uses: actions/upload-artifact@v3
@@ -56,4 +58,4 @@ jobs:
           distribution: adopt
       - uses: gradle/gradle-build-action@v2
       - run: |
-          ./gradlew build -x test
+          ./gradlew check -x test
