@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.debug.info;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +33,44 @@ public class LineInfo {
 
     public List<? extends LineInfoSequence> sequences() {
         return sequenceList;
+    }
+
+    public DeobfuscatedLocation[] deobfuscate(int[] addresses) {
+        var result = new ArrayList<DeobfuscatedLocation>();
+        for (var address : addresses) {
+            var part = deobfuscateSingle(address);
+            if (part != null) {
+                result.addAll(List.of(part));
+            }
+        }
+        return result.toArray(new DeobfuscatedLocation[0]);
+    }
+
+    public DeobfuscatedLocation[] deobfuscateSingle(int address) {
+        var sequence = find(address);
+        if (sequence == null) {
+            return null;
+        }
+        var instructionLoc = sequence.unpack().find(address);
+        if (instructionLoc == null) {
+            return null;
+        }
+        var location = instructionLoc.location();
+        if (location == null) {
+            return null;
+        }
+        var result = new DeobfuscatedLocation[location.depth()];
+        var method = sequence.method();
+        var i = 0;
+        while (true) {
+            result[i++] = new DeobfuscatedLocation(location.file(), method, location.line());
+            if (i >= result.length) {
+                break;
+            }
+            method = location.inlining().method();
+            location = location.inlining().location();
+        }
+        return result;
     }
 
     public LineInfoSequence find(int address) {

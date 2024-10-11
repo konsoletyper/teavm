@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.export;
 
+import java.util.Arrays;
 import org.teavm.jso.JSExport;
 
 public final class ModuleWithPrimitiveTypes {
@@ -124,5 +125,10 @@ public final class ModuleWithPrimitiveTypes {
     @JSExport
     public static String stringParam(String param) {
         return "string:" + param;
+    }
+
+    @JSExport
+    public static String intArrayParam(int[] param) {
+        return "intArray:" + Arrays.toString(param);
     }
 }

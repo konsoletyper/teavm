@@ -13,9 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-const { foo, bar } = await (await import('/tests/simple/provider.js')).default;
+package org.teavm.backend.wasm.debug.info;
 
-export async function test() {
-    assertEquals(23, foo());
-    assertEquals(["item0", "item1"], bar(2));
+public class DeobfuscatedLocation {
+    public final FileInfo file;
+    public final MethodInfo method;
+    public final int line;
+
+    public DeobfuscatedLocation(FileInfo file, MethodInfo method, int line) {
+        this.file = file;
+        this.method = method;
+        this.line = line;
+    }
 }

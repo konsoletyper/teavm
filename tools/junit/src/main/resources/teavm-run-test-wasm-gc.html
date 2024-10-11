@@ -25,6 +25,7 @@
     <script type="text/javascript">
         let instance;
         TeaVM.wasmGC.load("${SCRIPT}", {
+            attachStackDeobfuscator: true,
             installImports(o) {
                 o.teavmTest = {
                     success() {

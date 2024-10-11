@@ -54,7 +54,7 @@ public class LineInfoUnpackedSequence {
     }
 
     public int findIndex(int address) {
-        if (address < startAddress || address >= endAddress) {
+        if (address < startAddress || address >= endAddress || locations.isEmpty()) {
             return -1;
         }
         var index = CollectionUtil.binarySearch(locations, address, InstructionLocation::address);

@@ -126,8 +126,11 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
         htmlOutput(outputPath, outputPathForMethod, configuration, reference, "teavm-run-test-wasm-gc.html");
         var testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(),
                 getExtension() + "-runtime.js");
+        var testDeobfuscatorPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(),
+                getExtension() + "-deobfuscator.wasm");
         try {
             TestUtil.resourceToFile("org/teavm/backend/wasm/wasm-gc-runtime.js", testPath, Map.of());
+            TestUtil.resourceToFile("deobfuscator.wasm", testDeobfuscatorPath, Map.of());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -142,8 +145,11 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
         htmlSingleTestOutput(outputPathForMethod, configuration, "teavm-run-test-wasm-gc.html");
         var testPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(),
                 getExtension() + "-runtime.js");
+        var testDeobfuscatorPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(),
+                getExtension() + "-deobfuscator.wasm");
         try {
             TestUtil.resourceToFile("org/teavm/backend/wasm/wasm-gc-runtime.js", testPath, Map.of());
+            TestUtil.resourceToFile("deobfuscator.wasm", testDeobfuscatorPath, Map.of());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

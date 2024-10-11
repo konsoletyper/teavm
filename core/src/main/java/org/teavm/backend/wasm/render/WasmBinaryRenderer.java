@@ -336,8 +336,9 @@ public class WasmBinaryRenderer {
                 .collect(Collectors.toList());
 
         section.writeLEB(functions.size());
+        var sectionOffset = output.getPosition() + 4;
         for (var function : functions) {
-            var body = renderFunction(module, function, section.getPosition() + 4);
+            var body = renderFunction(module, function, section.getPosition() + 4, sectionOffset);
             var startPos = section.getPosition();
             section.writeLEB4(body.length);
             section.writeBytes(body);
@@ -351,10 +352,10 @@ public class WasmBinaryRenderer {
             dwarfGenerator.setCodeSize(section.getPosition());
         }
 
-        writeSection(SECTION_CODE, "code", section.getData());
+        writeSection(SECTION_CODE, "code", section.getData(), true);
     }
 
-    private byte[] renderFunction(WasmModule module, WasmFunction function, int offset) {
+    private byte[] renderFunction(WasmModule module, WasmFunction function, int offset, int sectionOffset) {
         var code = new WasmBinaryWriter();
 
         var dwarfSubprogram = dwarfClassGen != null ? dwarfClassGen.getSubprogram(function.getName()) : null;
@@ -393,7 +394,7 @@ public class WasmBinaryRenderer {
         }
 
         var visitor = new WasmBinaryRenderingVisitor(code, module, dwarfGenerator,
-                function.getJavaMethod() != null ? debugLines : null, offset);
+                function.getJavaMethod() != null ? debugLines : null, offset + sectionOffset);
         for (var part : function.getBody()) {
             visitor.preprocess(part);
         }
@@ -408,7 +409,7 @@ public class WasmBinaryRenderer {
             dwarfSubprogram.endOffset = code.getPosition() + offset;
         }
         if (debugVariables != null) {
-            writeDebugVariables(function, offset, code.getPosition());
+            writeDebugVariables(function, offset + sectionOffset, code.getPosition());
         }
 
         return code.getData();
@@ -600,13 +601,21 @@ public class WasmBinaryRenderer {
     }
 
     private void writeSection(int id, String name, byte[] data) {
+        writeSection(id, name, data, false);
+    }
+
+    private void writeSection(int id, String name, byte[] data, boolean constantSizeLength) {
         var start = output.getPosition();
         output.writeByte(id);
         int length = data.length;
         if (id == 0) {
             length += name.length() + 1;
         }
-        output.writeLEB(length);
+        if (constantSizeLength) {
+            output.writeLEB4(length);
+        } else {
+            output.writeLEB(length);
+        }
         if (id == 0) {
             output.writeAsciiString(name);
         }

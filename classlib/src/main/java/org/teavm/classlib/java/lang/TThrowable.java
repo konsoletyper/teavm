@@ -19,9 +19,13 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.util.TArrays;
+import org.teavm.interop.Import;
 import org.teavm.interop.Remove;
 import org.teavm.interop.Rename;
 import org.teavm.interop.Superclass;
+import org.teavm.jso.JSIndexer;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 import org.teavm.runtime.ExceptionHandling;
 
 @Superclass("java.lang.Object")
@@ -33,6 +37,7 @@ public class TThrowable extends RuntimeException {
     private boolean writableStackTrace;
     private TThrowable[] suppressed = new TThrowable[0];
     private TStackTraceElement[] stackTrace;
+    private LazyStackSupplier lazyStackTrace;
 
     @SuppressWarnings("unused")
     @Rename("fakeInit")
@@ -104,9 +109,34 @@ public class TThrowable extends RuntimeException {
     public Throwable fillInStackTrace() {
         if (PlatformDetector.isLowLevel()) {
             stackTrace = (TStackTraceElement[]) (Object) ExceptionHandling.fillStackTrace();
+        } else if (PlatformDetector.isWebAssemblyGC()) {
+            lazyStackTrace = takeWasmGCStack();
         }
         return this;
     }
+
+    private void ensureStackTrace() {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            if (lazyStackTrace != null) {
+                var supplier = lazyStackTrace;
+                lazyStackTrace = null;
+                var nativeStack = supplier.getStack();
+                if (nativeStack == null) {
+                    return;
+                }
+                var stack = new TStackTraceElement[nativeStack.getLength()];
+                for (var i = 0; i < nativeStack.getLength(); ++i) {
+                    var frame = nativeStack.get(i);
+                    stack[i] = new TStackTraceElement(frame.getClassName(), frame.getMethod(), frame.getFile(),
+                            frame.getLine());
+                }
+                stackTrace = stack;
+            }
+        }
+    }
+
+    @Import(name = "takeStackTrace")
+    private native LazyStackSupplier takeWasmGCStack();
 
     @Rename("getMessage")
     public String getMessage0() {
@@ -158,6 +188,7 @@ public class TThrowable extends RuntimeException {
             stream.print(": " + message);
         }
         stream.println();
+        ensureStackTrace();
         if (stackTrace != null) {
             for (TStackTraceElement element : stackTrace) {
                 stream.print("\tat ");
@@ -177,6 +208,7 @@ public class TThrowable extends RuntimeException {
             stream.print(": " + message);
         }
         stream.println();
+        ensureStackTrace();
         if (stackTrace != null) {
             for (TStackTraceElement element : stackTrace) {
                 stream.print("\tat ");
@@ -191,10 +223,14 @@ public class TThrowable extends RuntimeException {
 
     @Rename("getStackTrace")
     public TStackTraceElement[] getStackTrace0() {
+        ensureStackTrace();
         return stackTrace != null ? stackTrace.clone() : new TStackTraceElement[0];
     }
 
     public void setStackTrace(@SuppressWarnings("unused") TStackTraceElement[] stackTrace) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            lazyStackTrace = null;
+        }
         this.stackTrace = stackTrace.clone();
     }
 
@@ -209,5 +245,31 @@ public class TThrowable extends RuntimeException {
         }
         suppressed = TArrays.copyOf(suppressed, suppressed.length + 1);
         suppressed[suppressed.length - 1] = exception;
+    }
+
+    interface LazyStackSupplier extends JSObject {
+        StackFrames getStack();
+    }
+
+    interface StackFrames extends JSObject {
+        @JSProperty
+        int getLength();
+
+        @JSIndexer
+        StackFrame get(int index);
+    }
+
+    interface StackFrame extends JSObject {
+        @JSProperty
+        String getClassName();
+
+        @JSProperty
+        String getMethod();
+
+        @JSProperty
+        String getFile();
+
+        @JSProperty
+        int getLine();
     }
 }

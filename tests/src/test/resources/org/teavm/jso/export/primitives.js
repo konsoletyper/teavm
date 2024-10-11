@@ -45,8 +45,13 @@ function testConsumePrimitives() {
     assertEquals("string:q", java.stringParam("q"));
 }
 
+function testConsumePrimitiveArrays() {
+    assertEquals("intArray:[2, 3, 5]", java.intArrayParam([2, 3, 5]));
+}
+
 export async function test() {
     testReturnPrimitives();
     testReturnArrays();
     testConsumePrimitives();
+    testConsumePrimitiveArrays();
 }

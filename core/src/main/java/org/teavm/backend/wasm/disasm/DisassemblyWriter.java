@@ -28,7 +28,6 @@ public abstract class DisassemblyWriter {
     private PrintWriter out;
     private boolean withAddress;
     private int indentLevel;
-    private int addressWithinSection;
     private int address;
     private boolean hasAddress;
     private boolean lineStarted;
@@ -55,7 +54,6 @@ public abstract class DisassemblyWriter {
     }
 
     public void startSection() {
-        addressWithinSection = -1;
         currentSequenceIndex = 0;
     }
 
@@ -105,13 +103,13 @@ public abstract class DisassemblyWriter {
             return;
         }
         if (currentCommandIndex < 0) {
-            if (addressWithinSection < debugLines.sequences().get(currentSequenceIndex).startAddress()) {
+            if (address < debugLines.sequences().get(currentSequenceIndex).startAddress()) {
                 return;
             }
             currentCommandIndex = 0;
             printSingleDebugAnnotation("start debug line sequence");
         } else {
-            if (addressWithinSection >= debugLines.sequences().get(currentSequenceIndex).endAddress()) {
+            if (address >= debugLines.sequences().get(currentSequenceIndex).endAddress()) {
                 printSingleDebugAnnotation("end debug line sequence");
                 ++currentSequenceIndex;
                 currentCommandIndex = -1;
@@ -123,7 +121,7 @@ public abstract class DisassemblyWriter {
         var sequence = debugLines.sequences().get(currentSequenceIndex);
         while (currentCommandIndex < sequence.commands().size()) {
             var command = sequence.commands().get(currentCommandIndex);
-            if (addressWithinSection < command.address()) {
+            if (address < command.address()) {
                 break;
             }
 
@@ -219,7 +217,6 @@ public abstract class DisassemblyWriter {
     public final AddressListener addressListener = new AddressListener() {
         @Override
         public void address(int address) {
-            addressWithinSection = address;
             DisassemblyWriter.this.address = address + addressOffset;
         }
     };

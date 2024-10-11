@@ -23,6 +23,9 @@ final class WasmGCJSRuntime {
     }
 
     static JSObject stringToJs(String str) {
+        if (str == null) {
+            return null;
+        }
         if (str.isEmpty()) {
             return emptyString();
         }
@@ -34,6 +37,9 @@ final class WasmGCJSRuntime {
     }
 
     static String jsToString(JSObject obj) {
+        if (obj == null) {
+            return null;
+        }
         var length = stringLength(obj);
         if (length == 0) {
             return "";

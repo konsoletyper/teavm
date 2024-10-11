@@ -32,7 +32,6 @@ final class TestWasmGCEntryPoint {
             e.printStackTrace(out);
             reportFailure(JSString.valueOf(out.toString()));
         }
-        TestEntryPoint.run(args.length > 0 ? args[0] : null);
     }
 
     @Import(module = "teavmTest", name = "success")

@@ -245,7 +245,8 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
                     invocation.setReceiver(result);
                     resultType = method.getResultType();
                 }
-                exit.setValueToReturn(marshaller.wrapArgument(callLocation, result, resultType, JSType.JAVA, false));
+                exit.setValueToReturn(marshaller.wrapArgument(callLocation, result, resultType,
+                        typeHelper.mapType(method.getResultType()), false));
                 basicBlock.addAll(marshallInstructions);
                 marshallInstructions.clear();
             }
@@ -322,7 +323,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             if (method.getResultType() != ValueType.VOID) {
                 invocation.setReceiver(program.createVariable());
                 exit.setValueToReturn(marshaller.wrapArgument(callLocation, invocation.getReceiver(),
-                        method.getResultType(), JSType.JAVA, false));
+                        method.getResultType(), typeHelper.mapType(method.getResultType()), false));
                 basicBlock.addAll(marshallInstructions);
                 marshallInstructions.clear();
             }

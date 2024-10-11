@@ -32,7 +32,8 @@ let setGlobalName = function(name, value) {
 
 function defaults(imports) {
     let context = {
-        exports: null
+        exports: null,
+        stackDeobfuscator: null
     };
     dateImports(imports);
     consoleImports(imports, context);
@@ -41,7 +42,10 @@ function defaults(imports) {
     imports.teavmMath = Math;
     return {
         supplyExports(exports) {
-            context.exports = exports
+            context.exports = exports;
+        },
+        supplyStackDeobfuscator(deobfuscator) {
+            context.stackDeobfuscator = deobfuscator;
         }
     }
 }
@@ -142,26 +146,39 @@ function coreImports(imports, context) {
             return weakRef;
         },
         stringDeref: weakRef => weakRef.deref(),
-        currentStackTrace() {
-            if (stackDeobfuscator) {
-                return;
-            }
-            let reportCallFrame = context.exports["teavm.reportCallFrame"];
-            if (typeof reportCallFrame !== "function") {
-                return;
-            }
+        takeStackTrace() {
             let stack = new Error().stack;
-            for (let line in stack.split("\n")) {
+            let addresses = [];
+            for (let line of stack.split("\n")) {
                 let match = chromeExceptionRegex.exec(line);
-                if (match !== null) {
-                    let address = parseInt(match.groups[1], 16);
-                    let frames = stackDeobfuscator(address);
-                    for (let frame of frames) {
-                        let line = frame.line;
-                        reportCallFrame(file, method, cls, line);
-                    }
+                if (match !== null && match.length >= 2) {
+                    let address = parseInt(match[1], 16);
+                    addresses.push(address);
                 }
             }
+            return {
+                getStack() {
+                    let result;
+                    if (context.stackDeobfuscator) {
+                        try {
+                            result = context.stackDeobfuscator(addresses);
+                        } catch (e) {
+                            console.warn("Could not deobfuscate stack", e);
+                        }
+                    }
+                    if (!result) {
+                        result = addresses.map(address => {
+                            return {
+                                className: "java.lang.Throwable$FakeClass",
+                                method: "fakeMethod",
+                                file: "Throwable.java",
+                                line: address
+                            };
+                        });
+                    }
+                    return result;
+                }
+            };
         }
     };
 }
@@ -175,7 +192,7 @@ function jsoImports(imports, context) {
     let jsWrappers = new WeakMap();
     let javaWrappers = new WeakMap();
     let primitiveWrappers = new Map();
-    let primitiveFinalization = new FinalizationRegistry(token => primitiveFinalization.delete(token));
+    let primitiveFinalization = new FinalizationRegistry(token => primitiveWrappers.delete(token));
     let hashCodes = new WeakMap();
     let javaExceptionWrappers = new WeakMap();
     let lastHashCode = 2463534242;
@@ -576,34 +593,74 @@ function jsoImports(imports, context) {
     }
 }
 
-function load(path, options) {
+async function load(path, options) {
     if (!options) {
         options = {};
     }
 
     const importObj = {};
-    const defaultsResults = defaults(importObj);
+    const defaultsResult = defaults(importObj);
     if (typeof options.installImports !== "undefined") {
         options.installImports(importObj);
     }
 
-    return WebAssembly.instantiateStreaming(fetch(path), importObj)
-        .then(r => {
-            defaultsResults.supplyExports(r.instance.exports);
-            let userExports = {};
-            let teavm = {
-                exports: userExports,
-                instance: r.instance,
-                module: r.module
-            };
-            for (let key in r.instance.exports) {
-                let exportObj = r.instance.exports[key];
-                if (exportObj instanceof WebAssembly.Global) {
-                    Object.defineProperty(userExports, key, {
-                        get: () => exportObj.value
-                    });
-                }
+    let [deobfuscatorFactory, { module, instance }] = await Promise.all([
+        options.attachStackDeobfuscator ? getDeobfuscator(path, options) : Promise.resolve(null),
+        WebAssembly.instantiateStreaming(fetch(path), importObj)
+    ]);
+
+    defaultsResult.supplyExports(instance.exports);
+    if (deobfuscatorFactory) {
+        let deobfuscator = createDeobfuscator(module, deobfuscatorFactory);
+        if (deobfuscator !== null) {
+            defaultsResult.supplyStackDeobfuscator(deobfuscator);
+        }
+    }
+    let userExports = {};
+    let teavm = {
+        exports: userExports,
+        instance: instance,
+        module: module
+    };
+    for (let key in instance.exports) {
+        let exportObj = instance.exports[key];
+        if (exportObj instanceof WebAssembly.Global) {
+            Object.defineProperty(userExports, key, {
+                get: () => exportObj.value
+            });
+        }
+    }
+    return teavm;
+}
+
+async function getDeobfuscator(path, options) {
+    try {
+        const importObj = {};
+        const defaultsResult = defaults(importObj, {});
+        const { instance } = await WebAssembly.instantiateStreaming(fetch(path + "-deobfuscator.wasm"), importObj);
+        defaultsResult.supplyExports(instance.exports)
+        return instance;
+    } catch (e) {
+        console.warn("Could not load deobfuscator", e);
+        return null;
+    }
+}
+
+function createDeobfuscator(module, deobfuscatorFactory) {
+    let deobfuscator = null;
+    let deobfuscatorInitialized = false;
+    function ensureDeobfuscator() {
+        if (!deobfuscatorInitialized) {
+            deobfuscatorInitialized = true;
+            try {
+                deobfuscator = deobfuscatorFactory.exports.createForModule.value(module);
+            } catch (e) {
+                console.warn("Could not load create deobfuscator", e);
             }
-            return teavm;
-        });
+        }
+    }
+    return addresses => {
+        ensureDeobfuscator();
+        return deobfuscator !== null ? deobfuscator.deobfuscate(addresses) : [];
+    }
 }

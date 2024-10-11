@@ -16,6 +16,8 @@
 package org.teavm.jso.export;
 
 import org.teavm.jso.JSExport;
+import org.teavm.jso.core.JSArray;
+import org.teavm.jso.core.JSString;
 
 public final class SimpleModule {
     private SimpleModule() {
@@ -24,5 +26,14 @@ public final class SimpleModule {
     @JSExport
     public static int foo() {
         return 23;
+    }
+
+    @JSExport
+    public static JSArray<JSString> bar(int count) {
+        var array = new JSArray<JSString>();
+        for (var i = 0; i < count; ++i) {
+            array.push(JSString.valueOf("item" + i));
+        }
+        return array;
     }
 }

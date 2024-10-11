@@ -22,4 +22,5 @@ export async function test() {
     assertEquals("consumeObject:qwe:42", consumeObject(o));
     assertEquals(99, C.baz());
     assertEquals("I'm static", C.staticProp);
+    assertEquals("accepted int array: [2, 3, 5]", o.consumeIntArray([2, 3, 5]));
 }
