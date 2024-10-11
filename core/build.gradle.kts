@@ -52,6 +52,7 @@ val jsInput = jsInputDir.file("runtime.js")
 
 fun registerRuntimeTasks(taskName: String, wrapperType: String, outputName: String) {
     val generateTask by tasks.register<DefaultTask>("generate${taskName}Runtime") {
+        dependsOn(tasks.npmInstall)
         val wrapperFile = jsInputDir.file(wrapperType)
         val runtimeFile = jsInput
         val outputFile = jsOutputPackageDir.map { it.file("$outputName.js") }
@@ -70,6 +71,7 @@ fun registerRuntimeTasks(taskName: String, wrapperType: String, outputName: Stri
     }
 
     val optimizeTask = tasks.register<NpmTask>("optimize${taskName}Runtime") {
+        dependsOn(tasks.npmInstall)
         val inputFiles = generateTask.outputs.files
         val outputFile = jsOutputPackageDir.map { it.file("$outputName.min.js") }
         inputs.files(inputFiles)
