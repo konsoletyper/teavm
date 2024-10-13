@@ -15,6 +15,8 @@
  */
 package org.teavm.tooling.deobfuscate.wasmgc;
 
+import java.util.Arrays;
+import org.teavm.backend.wasm.debug.ExternalDebugFile;
 import org.teavm.backend.wasm.debug.parser.LinesDeobfuscationParser;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSExport;
@@ -42,9 +44,29 @@ public final class DeobfuscatorFactory {
             }
             return bytes;
         });
-        return new Deobfuscator(parser.getLineInfo());
+        var lineInfo = parser.getLineInfo();
+        return lineInfo != null ? new Deobfuscator(parser.getLineInfo()) : null;
     }
 
     @JSBody(params = { "module", "name"}, script = "return WebAssembly.Module.customSections(module, name);")
     private static native JSArrayReader<ArrayBuffer> getSection(JSObject module, String name);
+
+    @JSExport
+    public static Deobfuscator createFromExternalFile(byte[] data) {
+        var parser = new LinesDeobfuscationParser();
+        var success = ExternalDebugFile.read(data, sectionName -> {
+            if (!parser.canHandleSection(sectionName)) {
+                return null;
+            }
+            return (bytes, start, end) -> parser.applySection(sectionName, Arrays.copyOfRange(bytes, start, end));
+        });
+        if (!success) {
+            return null;
+        }
+        var lineInfo = parser.getLineInfo();
+        if (lineInfo == null) {
+            return null;
+        }
+        return new Deobfuscator(lineInfo);
+    }
 }

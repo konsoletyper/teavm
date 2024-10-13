@@ -17,6 +17,8 @@ package org.teavm.gradle.tasks;
 
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
+import org.teavm.gradle.api.WasmDebugInfoLevel;
+import org.teavm.gradle.api.WasmDebugInfoLocation;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.builder.BuildStrategy;
 
@@ -24,6 +26,9 @@ public abstract class GenerateWasmGCTask extends TeaVMTask {
     public GenerateWasmGCTask() {
         getStrict().convention(true);
         getObfuscated().convention(true);
+        getDebugInfo().convention(true);
+        getDebugInfoLevel().convention(WasmDebugInfoLevel.DEOBFUSCATION);
+        getDebugInfoLocation().convention(WasmDebugInfoLocation.EXTERNAL);
     }
 
     @Input
@@ -32,10 +37,36 @@ public abstract class GenerateWasmGCTask extends TeaVMTask {
     @Input
     public abstract Property<Boolean> getObfuscated();
 
+    @Input
+    public abstract Property<Boolean> getDebugInfo();
+
+    @Input
+    public abstract Property<WasmDebugInfoLevel> getDebugInfoLevel();
+
+    @Input
+    public abstract Property<WasmDebugInfoLocation> getDebugInfoLocation();
+
     @Override
     protected void setupBuilder(BuildStrategy builder) {
         builder.setStrict(getStrict().get());
         builder.setObfuscated(getObfuscated().get());
+        builder.setDebugInformationGenerated(getDebugInfo().get());
+        switch (getDebugInfoLevel().get()) {
+            case FULL:
+                builder.setWasmDebugInfoLevel(org.teavm.backend.wasm.WasmDebugInfoLevel.FULL);
+                break;
+            case DEOBFUSCATION:
+                builder.setWasmDebugInfoLevel(org.teavm.backend.wasm.WasmDebugInfoLevel.DEOBFUSCATION);
+                break;
+        }
+        switch (getDebugInfoLocation().get()) {
+            case EMBEDDED:
+                builder.setWasmDebugInfoLocation(org.teavm.backend.wasm.WasmDebugInfoLocation.EMBEDDED);
+                break;
+            case EXTERNAL:
+                builder.setWasmDebugInfoLocation(org.teavm.backend.wasm.WasmDebugInfoLocation.EXTERNAL);
+                break;
+        }
         builder.setTargetType(TeaVMTargetType.WEBASSEMBLY_GC);
     }
 }

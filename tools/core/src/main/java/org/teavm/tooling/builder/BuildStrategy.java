@@ -18,6 +18,8 @@ package org.teavm.tooling.builder;
 import java.util.List;
 import java.util.Properties;
 import org.teavm.backend.javascript.JSModuleType;
+import org.teavm.backend.wasm.WasmDebugInfoLevel;
+import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTargetType;
@@ -82,6 +84,10 @@ public interface BuildStrategy {
     void setWasmVersion(WasmBinaryVersion wasmVersion);
 
     void setWasmExceptionsUsed(boolean wasmExceptionsUsed);
+
+    void setWasmDebugInfoLevel(WasmDebugInfoLevel wasmDebugInfoLevel);
+
+    void setWasmDebugInfoLocation(WasmDebugInfoLocation wasmDebugInfoLocation);
 
     void setMinHeapSize(int minHeapSize);
 

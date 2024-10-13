@@ -38,6 +38,8 @@ import org.teavm.backend.c.generate.ShorteningFileNameProvider;
 import org.teavm.backend.c.generate.SimpleFileNameProvider;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.javascript.JavaScriptTarget;
+import org.teavm.backend.wasm.WasmDebugInfoLevel;
+import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.WasmGCTarget;
 import org.teavm.backend.wasm.WasmRuntimeType;
 import org.teavm.backend.wasm.WasmTarget;
@@ -108,6 +110,8 @@ public class TeaVMTool {
     private JavaScriptTarget javaScriptTarget;
     private WasmTarget webAssemblyTarget;
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
+    private WasmDebugInfoLocation wasmDebugInfoLocation = WasmDebugInfoLocation.EXTERNAL;
+    private WasmDebugInfoLevel wasmDebugInfoLevel = WasmDebugInfoLevel.DEOBFUSCATION;
     private boolean wasmExceptionsUsed;
     private CTarget cTarget;
     private Set<File> generatedFiles = new HashSet<>();
@@ -281,6 +285,14 @@ public class TeaVMTool {
         this.wasmExceptionsUsed = wasmExceptionsUsed;
     }
 
+    public void setWasmDebugInfoLocation(WasmDebugInfoLocation wasmDebugInfoLocation) {
+        this.wasmDebugInfoLocation = wasmDebugInfoLocation;
+    }
+
+    public void setWasmDebugInfoLevel(WasmDebugInfoLevel wasmDebugInfoLevel) {
+        this.wasmDebugInfoLevel = wasmDebugInfoLevel;
+    }
+
     public void setHeapDump(boolean heapDump) {
         this.heapDump = heapDump;
     }
@@ -388,6 +400,9 @@ public class TeaVMTool {
         var target = new WasmGCTarget();
         target.setObfuscated(obfuscated);
         target.setStrict(strict);
+        target.setDebugInfo(debugInformationGenerated);
+        target.setDebugInfoLevel(debugInformationGenerated ? WasmDebugInfoLevel.FULL : wasmDebugInfoLevel);
+        target.setDebugInfoLocation(wasmDebugInfoLocation);
         return target;
     }
 

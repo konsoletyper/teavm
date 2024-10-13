@@ -71,8 +71,9 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
             var target = new WasmGCTarget();
             target.setObfuscated(false);
             target.setStrict(true);
-            target.setDebugLevel(WasmDebugInfoLevel.DEOBFUSCATION);
-            target.setDebugLocation(WasmDebugInfoLocation.EMBEDDED);
+            target.setDebugInfo(true);
+            target.setDebugInfoLevel(WasmDebugInfoLevel.DEOBFUSCATION);
+            target.setDebugInfoLocation(WasmDebugInfoLocation.EMBEDDED);
             var sourceDirs = System.getProperty(SOURCE_DIRS);
             if (sourceDirs != null) {
                 var dirs = new ArrayList<File>();

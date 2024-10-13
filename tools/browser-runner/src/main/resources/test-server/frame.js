@@ -211,7 +211,9 @@ function launchWasmGCTest(file, argument, callback) {
     }
 
     TeaVM.wasmGC.load(file.path, {
-        attachStackDeobfuscator: true,
+        stackDeobfuscator: {
+            enabled: true
+        },
         installImports: function(o) {
             o.teavmConsole.putcharStdout = putchar;
             o.teavmConsole.putcharStderr = putcharStderr;

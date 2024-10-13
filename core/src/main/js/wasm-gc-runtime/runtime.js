@@ -425,6 +425,9 @@ function jsoImports(imports, context) {
             Object.defineProperty(cls, name, descriptor);
         },
         javaObjectToJS(instance, cls) {
+            if (instance === null) {
+                return null;
+            }
             let existing = jsWrappers.get(instance);
             if (typeof existing != "undefined") {
                 let result = existing.deref();
@@ -604,14 +607,18 @@ async function load(path, options) {
         options.installImports(importObj);
     }
 
-    let [deobfuscatorFactory, { module, instance }] = await Promise.all([
-        options.attachStackDeobfuscator ? getDeobfuscator(path, options) : Promise.resolve(null),
-        WebAssembly.instantiateStreaming(fetch(path), importObj)
+    let deobfuscatorOptions = options.stackDeobfuscator || {};
+    let debugInfoLocation = deobfuscatorOptions.infoLocation || "auto";
+    let [deobfuscatorFactory, { module, instance }, debugInfo] = await Promise.all([
+        deobfuscatorOptions.enabled ? getDeobfuscator(path, deobfuscatorOptions) : Promise.resolve(null),
+        WebAssembly.instantiateStreaming(fetch(path), importObj),
+        fetchExternalDebugInfo(path, debugInfoLocation, deobfuscatorOptions)
     ]);
 
     defaultsResult.supplyExports(instance.exports);
     if (deobfuscatorFactory) {
-        let deobfuscator = createDeobfuscator(module, deobfuscatorFactory);
+        let moduleToPass = debugInfoLocation === "auto" || debugInfoLocation === "embedded" ? module : null;
+        let deobfuscator = createDeobfuscator(moduleToPass, debugInfo, deobfuscatorFactory);
         if (deobfuscator !== null) {
             defaultsResult.supplyStackDeobfuscator(deobfuscator);
         }
@@ -637,7 +644,8 @@ async function getDeobfuscator(path, options) {
     try {
         const importObj = {};
         const defaultsResult = defaults(importObj, {});
-        const { instance } = await WebAssembly.instantiateStreaming(fetch(path + "-deobfuscator.wasm"), importObj);
+        const deobfuscatorPath = options.path || path + "-deobfuscator.wasm";
+        const { instance } = await WebAssembly.instantiateStreaming(fetch(deobfuscatorPath), importObj);
         defaultsResult.supplyExports(instance.exports)
         return instance;
     } catch (e) {
@@ -646,16 +654,25 @@ async function getDeobfuscator(path, options) {
     }
 }
 
-function createDeobfuscator(module, deobfuscatorFactory) {
+function createDeobfuscator(module, externalData, deobfuscatorFactory) {
     let deobfuscator = null;
     let deobfuscatorInitialized = false;
     function ensureDeobfuscator() {
         if (!deobfuscatorInitialized) {
             deobfuscatorInitialized = true;
-            try {
-                deobfuscator = deobfuscatorFactory.exports.createForModule.value(module);
-            } catch (e) {
-                console.warn("Could not load create deobfuscator", e);
+            if (externalData !== null) {
+                try {
+                    deobfuscator = deobfuscatorFactory.exports.createFromExternalFile.value(externalData);
+                } catch (e) {
+                    console.warn("Could not load create deobfuscator", e);
+                }
+            }
+            if (deobfuscator == null && module !== null) {
+                try {
+                    deobfuscator = deobfuscatorFactory.exports.createForModule.value(module);
+                } catch (e) {
+                    console.warn("Could not create deobfuscator from module data", e);
+                }
             }
         }
     }
@@ -663,4 +680,19 @@ function createDeobfuscator(module, deobfuscatorFactory) {
         ensureDeobfuscator();
         return deobfuscator !== null ? deobfuscator.deobfuscate(addresses) : [];
     }
+}
+
+async function fetchExternalDebugInfo(path, debugInfoLocation, options) {
+    if (!options.enabled) {
+        return null;
+    }
+    if (debugInfoLocation !== "auto" && debugInfoLocation !== "external") {
+        return null;
+    }
+    let location = options.externalInfoPath || path + ".teadbg";
+    let response = await fetch(location);
+    if (!response.ok) {
+        return null;
+    }
+    return new Int8Array(await response.arrayBuffer());
 }

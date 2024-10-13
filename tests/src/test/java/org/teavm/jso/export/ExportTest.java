@@ -171,8 +171,8 @@ public class ExportTest {
         try {
             var wasmGCTarget = new WasmGCTarget();
             wasmGCTarget.setObfuscated(false);
-            wasmGCTarget.setDebugLocation(WasmDebugInfoLocation.EMBEDDED);
-            wasmGCTarget.setDebugLevel(WasmDebugInfoLevel.DEOBFUSCATION);
+            wasmGCTarget.setDebugInfoLocation(WasmDebugInfoLocation.EMBEDDED);
+            wasmGCTarget.setDebugInfoLevel(WasmDebugInfoLevel.DEOBFUSCATION);
             var teavm = new TeaVMBuilder(wasmGCTarget).build();
             var outputDir = new File(wasmGCTargetFile, name);
             teavm.installPlugins();

@@ -13,9 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm;
+package org.teavm.gradle.api;
 
-public enum WasmDebugInfoLevel {
-    DEOBFUSCATION,
-    FULL
+public enum WasmDebugInfoLocation {
+    EMBEDDED,
+    EXTERNAL
 }

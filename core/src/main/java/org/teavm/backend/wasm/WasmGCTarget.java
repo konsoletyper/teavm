@@ -76,8 +76,9 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
     private boolean strict;
     private boolean obfuscated;
-    private WasmDebugInfoLocation debugLocation;
-    private WasmDebugInfoLevel debugLevel;
+    private boolean debugInfo;
+    private WasmDebugInfoLocation debugLocation = WasmDebugInfoLocation.EXTERNAL;
+    private WasmDebugInfoLevel debugLevel = WasmDebugInfoLevel.FULL;
     private List<WasmGCIntrinsicFactory> intrinsicFactories = new ArrayList<>();
     private Map<MethodReference, WasmGCIntrinsic> customIntrinsics = new HashMap<>();
     private List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories = new ArrayList<>();
@@ -94,11 +95,15 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         this.strict = strict;
     }
 
-    public void setDebugLevel(WasmDebugInfoLevel debugLevel) {
+    public void setDebugInfo(boolean debug) {
+        this.debugInfo = debug;
+    }
+
+    public void setDebugInfoLevel(WasmDebugInfoLevel debugLevel) {
         this.debugLevel = debugLevel;
     }
 
-    public void setDebugLocation(WasmDebugInfoLocation debugLocation) {
+    public void setDebugInfoLocation(WasmDebugInfoLocation debugLocation) {
         this.debugLocation = debugLocation;
     }
 
@@ -331,7 +336,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
             GCDebugInfoBuilder debugInfoBuilder) throws IOException {
         var binaryWriter = new WasmBinaryWriter();
         DebugLines debugLines = null;
-        if (debugLevel != WasmDebugInfoLevel.NONE) {
+        if (debugInfo) {
             debugLines = debugInfoBuilder.lines();
         }
         var binaryRenderer = new WasmBinaryRenderer(binaryWriter, WasmBinaryVersion.V_0x1, obfuscated,
@@ -353,7 +358,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         if (debugLocation == WasmDebugInfoLocation.EXTERNAL) {
             var debugInfoData = ExternalDebugFile.write(debugInfoBuilder.build());
             if (debugInfoData != null) {
-                try (var output = buildTarget.createResource(outputName + ".tdbg")) {
+                try (var output = buildTarget.createResource(outputName + ".teadbg")) {
                     output.write(debugInfoData);
                 }
             }

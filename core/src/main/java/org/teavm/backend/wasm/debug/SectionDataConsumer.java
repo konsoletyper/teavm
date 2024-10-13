@@ -13,9 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm;
+package org.teavm.backend.wasm.debug;
 
-public enum WasmDebugInfoLevel {
-    DEOBFUSCATION,
-    FULL
+public interface SectionDataConsumer {
+    void accept(byte[] data, int start, int end);
 }

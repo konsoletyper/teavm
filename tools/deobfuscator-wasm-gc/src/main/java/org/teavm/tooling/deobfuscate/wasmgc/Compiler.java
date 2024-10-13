@@ -43,6 +43,7 @@ public final class Compiler {
         tool.setTargetFileName(args[2]);
         tool.setObfuscated(true);
         tool.setOptimizationLevel(TeaVMOptimizationLevel.ADVANCED);
+        tool.setStrict(false);
 
         tool.generate();
         TeaVMProblemRenderer.describeProblems(tool.getDependencyInfo().getCallGraph(), tool.getProblemProvider(), log);

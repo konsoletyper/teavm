@@ -31,6 +31,8 @@ import org.teavm.gradle.api.TeaVMJSConfiguration;
 import org.teavm.gradle.api.TeaVMWasiConfiguration;
 import org.teavm.gradle.api.TeaVMWasmConfiguration;
 import org.teavm.gradle.api.TeaVMWasmGCConfiguration;
+import org.teavm.gradle.api.WasmDebugInfoLevel;
+import org.teavm.gradle.api.WasmDebugInfoLocation;
 
 class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtension {
     private TeaVMJSConfiguration js;
@@ -111,6 +113,12 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         wasmGC.getCopyRuntime().convention(property("wasm-gc.copyRuntime").map(Boolean::parseBoolean).orElse(true));
         wasmGC.getObfuscated().convention(property("wasm-gc.obfuscated").map(Boolean::parseBoolean).orElse(true));
         wasmGC.getDisassembly().convention(property("wasm-gc.disassembly").map(Boolean::parseBoolean).orElse(false));
+        wasmGC.getDebugInformation().convention(property("wasm-gc.debugInformation").map(Boolean::parseBoolean)
+                .orElse(false));
+        wasmGC.getDebugInfoLocation().convention(property("wasm-gc.debugInformation.location")
+                .map(v -> WasmDebugInfoLocation.valueOf(v.toUpperCase())).orElse(WasmDebugInfoLocation.EXTERNAL));
+        wasmGC.getDebugInfoLevel().convention(property("wasm-gc.debugInformation.level")
+                .map(v -> WasmDebugInfoLevel.valueOf(v.toUpperCase())).orElse(WasmDebugInfoLevel.DEOBFUSCATION));
     }
 
     private void setupWasiDefaults() {

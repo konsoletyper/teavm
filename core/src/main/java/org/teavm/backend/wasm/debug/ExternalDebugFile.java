@@ -16,10 +16,15 @@
 package org.teavm.backend.wasm.debug;
 
 import java.util.List;
+import java.util.function.Function;
 import org.teavm.backend.wasm.model.WasmCustomSection;
+import org.teavm.backend.wasm.parser.AddressListener;
+import org.teavm.backend.wasm.parser.WasmBinaryReader;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
 
 public final class ExternalDebugFile {
+    private static final int SIGNATURE = 0x67626474;
+
     private ExternalDebugFile() {
     }
 
@@ -28,8 +33,8 @@ public final class ExternalDebugFile {
             return null;
         }
         var writer = new WasmBinaryWriter();
-        writer.writeInt32(0x67626474);
-        writer.writeInt32(1);
+        writer.writeInt32(SIGNATURE);
+        writer.writeLEB(1);
         for (var section : sections) {
             var data = section.getData();
             writer.writeAsciiString(section.getName());
@@ -37,5 +42,30 @@ public final class ExternalDebugFile {
             writer.writeBytes(data);
         }
         return writer.getData();
+    }
+
+    public static boolean read(byte[] data, Function<String, SectionDataConsumer> consumer) {
+        if (data.length < 4) {
+            return false;
+        }
+        var reader = new WasmBinaryReader(AddressListener.EMPTY, data);
+        var header = reader.readInt32();
+        if (header != SIGNATURE) {
+            return false;
+        }
+        var version = reader.readLEB();
+        if (version != 1) {
+            return false;
+        }
+        while (reader.ptr < data.length) {
+            var name = reader.readString();
+            var length = reader.readLEB();
+            var sectionConsumer = consumer.apply(name);
+            if (sectionConsumer != null) {
+                sectionConsumer.accept(data, reader.ptr, reader.ptr + length);
+            }
+            reader.ptr += length;
+        }
+        return true;
     }
 }
