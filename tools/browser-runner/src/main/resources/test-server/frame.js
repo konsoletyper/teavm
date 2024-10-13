@@ -16,6 +16,8 @@
 
 "use strict";
 
+Error.stackTraceLimit = 250;
+
 window.addEventListener("message", event => {
     let request = event.data;
     switch (request.type) {

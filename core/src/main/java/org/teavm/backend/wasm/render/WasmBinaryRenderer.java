@@ -364,6 +364,7 @@ public class WasmBinaryRenderer {
             dwarfSubprogram.function = function;
         }
         if (debugLines != null && function.getJavaMethod() != null) {
+            debugLines.advance(offset + sectionOffset);
             debugLines.start(function.getJavaMethod());
         }
 
@@ -398,6 +399,7 @@ public class WasmBinaryRenderer {
         for (var part : function.getBody()) {
             visitor.preprocess(part);
         }
+        visitor.setPositionToEmit(code.getPosition());
         for (var part : function.getBody()) {
             part.acceptVisitor(visitor);
         }

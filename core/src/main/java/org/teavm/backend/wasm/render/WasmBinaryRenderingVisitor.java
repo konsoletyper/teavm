@@ -118,6 +118,10 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         this.debugLines = debugLines;
     }
 
+    public void setPositionToEmit(int positionToEmit) {
+        this.positionToEmit = positionToEmit;
+    }
+
     void preprocess(WasmExpression expression) {
         expression.acceptVisitor(new WasmDefaultExpressionVisitor() {
             @Override

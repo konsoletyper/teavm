@@ -33,7 +33,7 @@ public final class Deobfuscator {
         var frames = new JSArray<Frame>();
         for (var location : locations) {
             var frame = new Frame(location.method.cls().fullName(), location.method.name(),
-                    location.file != null ? location.file.fullName() : null, location.line);
+                    location.file != null ? location.file.name() : null, location.line);
             frames.push(frame);
         }
         return frames;

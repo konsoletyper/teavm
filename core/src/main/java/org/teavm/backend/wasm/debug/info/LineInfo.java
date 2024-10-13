@@ -53,24 +53,30 @@ public class LineInfo {
         }
         var instructionLoc = sequence.unpack().find(address);
         if (instructionLoc == null) {
-            return null;
+            return returnForSequence(sequence);
         }
         var location = instructionLoc.location();
         if (location == null) {
-            return null;
+            return returnForSequence(sequence);
         }
         var result = new DeobfuscatedLocation[location.depth()];
         var method = sequence.method();
-        var i = 0;
+        var i = result.length - 1;
         while (true) {
-            result[i++] = new DeobfuscatedLocation(location.file(), method, location.line());
-            if (i >= result.length) {
+            result[i--] = new DeobfuscatedLocation(location.file(), method, location.line());
+            if (i < 0) {
                 break;
             }
             method = location.inlining().method();
             location = location.inlining().location();
         }
         return result;
+    }
+
+    private DeobfuscatedLocation[] returnForSequence(LineInfoSequence sequence) {
+        return new DeobfuscatedLocation[] {
+                new DeobfuscatedLocation(null, sequence.method(), -1)
+        };
     }
 
     public LineInfoSequence find(int address) {

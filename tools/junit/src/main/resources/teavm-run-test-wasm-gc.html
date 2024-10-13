@@ -24,6 +24,7 @@
     <script type="text/javascript" src="${SCRIPT}-runtime.js"></script>
     <script type="text/javascript">
         let instance;
+        Error.stackTraceLimit = 250;
         TeaVM.wasmGC.load("${SCRIPT}", {
             stackDeobfuscator: {
                 enabled: true
@@ -31,7 +32,7 @@
             installImports(o) {
                 o.teavmTest = {
                     success() {
-                        var pre = document.createElement("pre");
+                        let pre = document.createElement("pre");
                         document.body.appendChild(pre);
                         pre.appendChild(document.createTextNode("OK"));
                     },
