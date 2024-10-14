@@ -42,7 +42,6 @@ public final class Navigator implements JSObject {
     @JSProperty
     public static native String[] getLanguages();
     
-    @JSProperty
     public static native Gamepad[] getGamepads();
 
     @JSBody(script = "return navigator.hardwareConcurrency")
