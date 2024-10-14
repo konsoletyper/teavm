@@ -17,7 +17,7 @@
 
 let globalsCache = new Map();
 let stackDeobfuscator = null;
-let chromeExceptionRegex = / *at .+\.wasm:wasm-function\[[0-9]+]:0x([0-9a-f]+).*/;
+let exceptionFrameRegex = /.+\.wasm:wasm-function\[[0-9]+]:0x([0-9a-f]+).*/;
 let getGlobalName = function(name) {
     let result = globalsCache.get(name);
     if (typeof result === "undefined") {
@@ -150,7 +150,7 @@ function coreImports(imports, context) {
             let stack = new Error().stack;
             let addresses = [];
             for (let line of stack.split("\n")) {
-                let match = chromeExceptionRegex.exec(line);
+                let match = exceptionFrameRegex.exec(line);
                 if (match !== null && match.length >= 2) {
                     let address = parseInt(match[1], 16);
                     addresses.push(address);
