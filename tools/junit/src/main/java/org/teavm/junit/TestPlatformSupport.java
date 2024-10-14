@@ -124,16 +124,18 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
     }
 
     protected final File getOutputFile(File path, String baseName, String suffix, String extension) {
+        return new File(path, getOutputSimpleNameFile(baseName, suffix, extension));
+    }
+
+
+    protected final String getOutputSimpleNameFile(String baseName, String suffix, String extension) {
         StringBuilder simpleName = new StringBuilder();
         simpleName.append(baseName);
         if (!suffix.isEmpty()) {
             simpleName.append('-').append(suffix);
         }
-        File outputFile;
         simpleName.append(extension);
-        outputFile = new File(path, simpleName.toString());
-
-        return outputFile;
+        return simpleName.toString();
     }
 
     private String buildErrorMessage(TeaVM vm) {

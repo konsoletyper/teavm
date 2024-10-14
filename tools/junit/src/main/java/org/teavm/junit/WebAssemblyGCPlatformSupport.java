@@ -15,6 +15,7 @@
  */
 package org.teavm.junit;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.teavm.junit.PropertyNames.OPTIMIZED;
 import static org.teavm.junit.PropertyNames.SOURCE_DIRS;
 import static org.teavm.junit.PropertyNames.WASM_GC_ENABLED;
@@ -35,20 +36,39 @@ import java.util.function.Supplier;
 import org.teavm.backend.wasm.WasmDebugInfoLevel;
 import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.WasmGCTarget;
+import org.teavm.backend.wasm.debug.sourcemap.SourceMapBuilder;
 import org.teavm.backend.wasm.disasm.Disassembler;
 import org.teavm.backend.wasm.disasm.DisassemblyHTMLWriter;
 import org.teavm.browserrunner.BrowserRunner;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ReferenceCache;
+import org.teavm.tooling.TeaVMSourceFilePolicy;
+import org.teavm.tooling.sources.DefaultSourceFileResolver;
+import org.teavm.tooling.sources.DirectorySourceFileProvider;
+import org.teavm.tooling.sources.JarSourceFileProvider;
+import org.teavm.tooling.sources.SourceFileProvider;
 import org.teavm.vm.TeaVM;
 
 class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
     private boolean disassembly;
+    private List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
 
     WebAssemblyGCPlatformSupport(ClassHolderSource classSource, ReferenceCache referenceCache, boolean disassembly) {
         super(classSource, referenceCache);
         this.disassembly = disassembly;
+        var sourceDirs = System.getProperty(SOURCE_DIRS);
+        if (sourceDirs != null) {
+            for (var tokenizer = new StringTokenizer(sourceDirs, Character.toString(File.pathSeparatorChar));
+                    tokenizer.hasMoreTokens();) {
+                var file = new File(tokenizer.nextToken());
+                if (file.isDirectory()) {
+                    sourceFileProviders.add(new DirectorySourceFileProvider(file));
+                } else if (file.isFile() && file.getName().endsWith(".jar")) {
+                    sourceFileProviders.add(new JarSourceFileProvider(file));
+                }
+            }
+        }
     }
 
     @Override
@@ -67,6 +87,8 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
     @Override
     CompileResult compile(Consumer<TeaVM> additionalProcessing, String baseName,
             TeaVMTestConfiguration<WasmGCTarget> configuration, File path, AnnotatedElement element) {
+        var sourceMapBuilder = new SourceMapBuilder();
+        var sourceMapFile = getOutputFile(path, baseName, configuration.getSuffix(), ".wasm.map");
         Supplier<WasmGCTarget> targetSupplier = () -> {
             var target = new WasmGCTarget();
             target.setObfuscated(false);
@@ -74,6 +96,8 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
             target.setDebugInfo(true);
             target.setDebugInfoLevel(WasmDebugInfoLevel.DEOBFUSCATION);
             target.setDebugInfoLocation(WasmDebugInfoLocation.EMBEDDED);
+            target.setSourceMapBuilder(sourceMapBuilder);
+            target.setSourceMapLocation(getOutputSimpleNameFile(baseName, configuration.getSuffix(), ".wasm.map"));
             var sourceDirs = System.getProperty(SOURCE_DIRS);
             if (sourceDirs != null) {
                 var dirs = new ArrayList<File>();
@@ -87,8 +111,22 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
             }
             return target;
         };
+        CompilePostProcessor postBuild = (vm, file) -> {
+            var resolver = new DefaultSourceFileResolver(new File(path, "src"), sourceFileProviders);
+            resolver.setSourceFilePolicy(TeaVMSourceFilePolicy.LINK_LOCAL_FILES);
+            sourceMapBuilder.addSourceResolver(resolver);
+            try {
+                resolver.open();
+                try (var sourceMapOut = new OutputStreamWriter(new FileOutputStream(sourceMapFile), UTF_8)) {
+                    sourceMapBuilder.writeSourceMap(sourceMapOut);
+                }
+                resolver.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
         return compile(configuration, targetSupplier, TestWasmGCEntryPoint.class.getName(), path,
-                ".wasm", null, additionalProcessing, baseName);
+                ".wasm", postBuild, additionalProcessing, baseName);
     }
 
     @Override

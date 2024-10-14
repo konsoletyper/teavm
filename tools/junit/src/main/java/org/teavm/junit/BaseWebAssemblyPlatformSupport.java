@@ -56,7 +56,7 @@ abstract class BaseWebAssemblyPlatformSupport extends TestPlatformSupport<WasmTa
             if (sourceDirs != null) {
                 var dirs = new ArrayList<File>();
                 for (var tokenizer = new StringTokenizer(sourceDirs, Character.toString(File.pathSeparatorChar));
-                     tokenizer.hasMoreTokens();) {
+                        tokenizer.hasMoreTokens();) {
                     var dir = new File(tokenizer.nextToken());
                     if (dir.isDirectory()) {
                         dirs.add(dir);

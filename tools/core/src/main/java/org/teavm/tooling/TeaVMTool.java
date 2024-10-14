@@ -43,6 +43,7 @@ import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.WasmGCTarget;
 import org.teavm.backend.wasm.WasmRuntimeType;
 import org.teavm.backend.wasm.WasmTarget;
+import org.teavm.backend.wasm.debug.sourcemap.SourceMapBuilder;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.cache.AlwaysStaleCacheStatus;
 import org.teavm.cache.CacheStatus;
@@ -65,6 +66,7 @@ import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.transformation.AssertionRemoval;
 import org.teavm.parsing.ClasspathClassHolderSource;
+import org.teavm.tooling.sources.DefaultSourceFileResolver;
 import org.teavm.tooling.sources.SourceFileProvider;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.DirectoryBuildTarget;
@@ -121,6 +123,7 @@ public class TeaVMTool {
     private boolean heapDump;
     private boolean shortFileNames;
     private boolean assertionsRemoved;
+    private SourceMapBuilder wasmSourceMapWriter;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -403,6 +406,10 @@ public class TeaVMTool {
         target.setDebugInfo(debugInformationGenerated);
         target.setDebugInfoLevel(debugInformationGenerated ? WasmDebugInfoLevel.FULL : wasmDebugInfoLevel);
         target.setDebugInfoLocation(wasmDebugInfoLocation);
+        if (sourceMapsFileGenerated) {
+            target.setSourceMapBuilder(wasmSourceMapWriter);
+            target.setSourceMapLocation(getResolvedTargetFileName() + ".map");
+        }
         return target;
     }
 
@@ -527,6 +534,8 @@ public class TeaVMTool {
                         Writer writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
                     additionalJavaScriptOutput(writer);
                 }
+            } else if (targetType == TeaVMTargetType.WEBASSEMBLY_GC) {
+                additionalWasmGCOutput();
             }
 
             if (incremental) {
@@ -591,42 +600,39 @@ public class TeaVMTool {
         }
     }
 
+    private void additionalWasmGCOutput() throws IOException {
+        if (sourceMapsFileGenerated) {
+            var targetDir = new File(targetDirectory, "src");
+            var resolver = new DefaultSourceFileResolver(targetDir, sourceFileProviders);
+            resolver.setSourceFilePolicy(sourceFilePolicy);
+            resolver.open();
+
+            if (sourceFilePolicy != TeaVMSourceFilePolicy.DO_NOTHING) {
+                wasmSourceMapWriter.addSourceResolver(resolver);
+            }
+            var file = new File(targetDirectory, getResolvedTargetFileName() + ".map");
+            try (var out = new FileOutputStream(file);
+                    var writer = new OutputStreamWriter(out, StandardCharsets.UTF_8)) {
+                wasmSourceMapWriter.writeSourceMap(writer);
+            }
+
+            resolver.close();
+        }
+    }
+
     private void writeSourceMaps(Writer out, DebugInformation debugInfo) throws IOException {
         var sourceMapWriter = new SourceMapsWriter(out);
-        for (var provider : sourceFileProviders) {
-            provider.open();
-        }
-
         var targetDir = new File(targetDirectory, "src");
+        var resolver = new DefaultSourceFileResolver(targetDir, sourceFileProviders);
+        resolver.setSourceFilePolicy(sourceFilePolicy);
+        resolver.open();
+
         if (sourceFilePolicy != TeaVMSourceFilePolicy.DO_NOTHING) {
-            sourceMapWriter.addSourceResolver(fileName -> {
-                for (var provider : sourceFileProviders) {
-                    var sourceFile = provider.getSourceFile(fileName);
-                    if (sourceFile != null) {
-                        if (sourceFilePolicy == TeaVMSourceFilePolicy.COPY || sourceFile.getFile() == null) {
-                            var outputFile = new File(targetDir, fileName);
-                            outputFile.getParentFile().mkdirs();
-                            try (var input = sourceFile.open();
-                                    var output = new FileOutputStream(outputFile)) {
-                                input.transferTo(output);
-                            }
-                            if (sourceFilePolicy == TeaVMSourceFilePolicy.LINK_LOCAL_FILES) {
-                                return "file://" + outputFile.getCanonicalPath();
-                            }
-                        } else {
-                            return "file://" + sourceFile.getFile().getCanonicalPath();
-                        }
-                        break;
-                    }
-                }
-                return null;
-            });
+            sourceMapWriter.addSourceResolver(resolver);
         }
         sourceMapWriter.write(getResolvedTargetFileName(), "src", debugInfo);
 
-        for (var provider : sourceFileProviders) {
-            provider.close();
-        }
+        resolver.close();
     }
 
     private void printStats() {

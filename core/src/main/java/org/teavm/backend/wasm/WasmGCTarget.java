@@ -22,9 +22,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.teavm.backend.wasm.debug.CompositeDebugLines;
 import org.teavm.backend.wasm.debug.DebugLines;
 import org.teavm.backend.wasm.debug.ExternalDebugFile;
 import org.teavm.backend.wasm.debug.GCDebugInfoBuilder;
+import org.teavm.backend.wasm.debug.sourcemap.SourceMapBuilder;
 import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
 import org.teavm.backend.wasm.gc.WasmGCClassConsumer;
 import org.teavm.backend.wasm.gc.WasmGCClassConsumerContext;
@@ -40,6 +42,7 @@ import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerators;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicFactory;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsics;
+import org.teavm.backend.wasm.model.WasmCustomSection;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
@@ -77,6 +80,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private boolean strict;
     private boolean obfuscated;
     private boolean debugInfo;
+    private SourceMapBuilder sourceMapBuilder;
+    private String sourceMapLocation;
     private WasmDebugInfoLocation debugLocation = WasmDebugInfoLocation.EXTERNAL;
     private WasmDebugInfoLevel debugLevel = WasmDebugInfoLevel.FULL;
     private List<WasmGCIntrinsicFactory> intrinsicFactories = new ArrayList<>();
@@ -105,6 +110,14 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
 
     public void setDebugInfoLocation(WasmDebugInfoLocation debugLocation) {
         this.debugLocation = debugLocation;
+    }
+
+    public void setSourceMapBuilder(SourceMapBuilder sourceMapBuilder) {
+        this.sourceMapBuilder = sourceMapBuilder;
+    }
+
+    public void setSourceMapLocation(String sourceMapLocation) {
+        this.sourceMapLocation = sourceMapLocation;
     }
 
     @Override
@@ -337,7 +350,22 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         var binaryWriter = new WasmBinaryWriter();
         DebugLines debugLines = null;
         if (debugInfo) {
-            debugLines = debugInfoBuilder.lines();
+            if (sourceMapBuilder != null) {
+                debugLines = new CompositeDebugLines(debugInfoBuilder.lines(), sourceMapBuilder);
+            } else {
+                debugLines = debugInfoBuilder.lines();
+            }
+        } else if (sourceMapBuilder != null) {
+            debugLines = sourceMapBuilder;
+        }
+        if (!outputName.endsWith(".wasm")) {
+            outputName += ".wasm";
+        }
+        if (sourceMapBuilder != null && sourceMapLocation != null) {
+            var sourceMapBinding = new WasmBinaryWriter();
+            sourceMapBinding.writeAsciiString(sourceMapLocation);
+            var sourceMapSection = new WasmCustomSection("sourceMappingURL", sourceMapBinding.getData());
+            module.add(sourceMapSection);
         }
         var binaryRenderer = new WasmBinaryRenderer(binaryWriter, WasmBinaryVersion.V_0x1, obfuscated,
                 null, null, debugLines, null, WasmBinaryStatsCollector.EMPTY);
@@ -349,9 +377,6 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
             binaryRenderer.render(module);
         }
         var data = binaryWriter.getData();
-        if (!outputName.endsWith(".wasm")) {
-            outputName += ".wasm";
-        }
         try (var output = buildTarget.createResource(outputName)) {
             output.write(data);
         }
