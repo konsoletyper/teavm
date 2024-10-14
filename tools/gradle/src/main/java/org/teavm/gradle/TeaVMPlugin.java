@@ -225,6 +225,7 @@ public class TeaVMPlugin implements Plugin<Project> {
             task.getTargetFileName().convention(wasmGC.getTargetFileName());
             task.getObfuscated().convention(wasmGC.getObfuscated());
             task.getStrict().convention(wasmGC.getStrict());
+            task.getSourceMap().convention(wasmGC.getSourceMap());
         });
         project.getTasks().create(WASM_GC_COPY_RUNTIME_TASK_NAME, CopyWasmGCRuntimeTask.class, task -> {
             task.setGroup(TASK_GROUP);

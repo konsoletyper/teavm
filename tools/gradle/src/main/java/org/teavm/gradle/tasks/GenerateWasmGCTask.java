@@ -29,6 +29,7 @@ public abstract class GenerateWasmGCTask extends TeaVMTask {
         getDebugInfo().convention(true);
         getDebugInfoLevel().convention(WasmDebugInfoLevel.DEOBFUSCATION);
         getDebugInfoLocation().convention(WasmDebugInfoLocation.EXTERNAL);
+        getSourceMap().convention(false);
     }
 
     @Input
@@ -46,11 +47,15 @@ public abstract class GenerateWasmGCTask extends TeaVMTask {
     @Input
     public abstract Property<WasmDebugInfoLocation> getDebugInfoLocation();
 
+    @Input
+    public abstract Property<Boolean> getSourceMap();
+
     @Override
     protected void setupBuilder(BuildStrategy builder) {
         builder.setStrict(getStrict().get());
         builder.setObfuscated(getObfuscated().get());
         builder.setDebugInformationGenerated(getDebugInfo().get());
+        builder.setSourceMapsFileGenerated(getSourceMap().get());
         switch (getDebugInfoLevel().get()) {
             case FULL:
                 builder.setWasmDebugInfoLevel(org.teavm.backend.wasm.WasmDebugInfoLevel.FULL);

@@ -119,6 +119,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
                 .map(v -> WasmDebugInfoLocation.valueOf(v.toUpperCase())).orElse(WasmDebugInfoLocation.EXTERNAL));
         wasmGC.getDebugInfoLevel().convention(property("wasm-gc.debugInformation.level")
                 .map(v -> WasmDebugInfoLevel.valueOf(v.toUpperCase())).orElse(WasmDebugInfoLevel.DEOBFUSCATION));
+        wasmGC.getSourceMap().convention(property("wasm-gc.sourceMap").map(Boolean::parseBoolean).orElse(false));
     }
 
     private void setupWasiDefaults() {

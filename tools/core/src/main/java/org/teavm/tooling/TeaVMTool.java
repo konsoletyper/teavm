@@ -407,6 +407,7 @@ public class TeaVMTool {
         target.setDebugInfoLevel(debugInformationGenerated ? WasmDebugInfoLevel.FULL : wasmDebugInfoLevel);
         target.setDebugInfoLocation(wasmDebugInfoLocation);
         if (sourceMapsFileGenerated) {
+            wasmSourceMapWriter = new SourceMapBuilder();
             target.setSourceMapBuilder(wasmSourceMapWriter);
             target.setSourceMapLocation(getResolvedTargetFileName() + ".map");
         }
