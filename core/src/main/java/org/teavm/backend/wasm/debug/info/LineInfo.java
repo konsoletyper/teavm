@@ -61,15 +61,13 @@ public class LineInfo {
         }
         var result = new DeobfuscatedLocation[location.depth()];
         var method = sequence.method();
-        var i = result.length - 1;
-        while (true) {
-            result[i--] = new DeobfuscatedLocation(location.file(), method, location.line());
-            if (i < 0) {
-                break;
-            }
-            method = location.inlining().method();
+        var i = 0;
+        while (i < result.length - 1) {
+            var inlining = location.inlining();
+            result[i++] = new DeobfuscatedLocation(location.file(), inlining.method(), location.line());
             location = location.inlining().location();
         }
+        result[i] = new DeobfuscatedLocation(location.file(), method, location.line());
         return result;
     }
 

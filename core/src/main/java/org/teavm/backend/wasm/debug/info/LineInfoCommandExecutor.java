@@ -36,6 +36,8 @@ public class LineInfoCommandExecutor implements LineInfoCommandVisitor {
     @Override
     public void visit(LineInfoExitCommand command) {
         address = command.address();
+        file = inliningLocation.location().file();
+        line = inliningLocation.location().line();
         inliningLocation = inliningLocation.location().inlining();
     }
 

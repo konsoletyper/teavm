@@ -25,4 +25,12 @@ public class DeobfuscatedLocation {
         this.method = method;
         this.line = line;
     }
+
+    @Override
+    public String toString() {
+        var sourceLocation = file == null || line < 0
+                ? "Unknow source"
+                : file.name() + ":" + line;
+        return "   at " + method.cls().name() + "." + method.name() + "(" + sourceLocation + ")";
+    }
 }

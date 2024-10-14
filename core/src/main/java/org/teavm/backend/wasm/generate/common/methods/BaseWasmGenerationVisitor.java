@@ -779,6 +779,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         var callSiteId = generateCallSiteId(expr.getLocation());
         if (needsCallSiteId() && isManagedCall(expr.getMethod())) {
             var invocation = generateInvocation(expr, callSiteId);
+            invocation.setLocation(expr.getLocation());
             var type = mapType(expr.getMethod().getReturnType());
 
             List<WasmExpression> targetList;
@@ -828,6 +829,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             return block;
         } else {
             var resultExpr = generateInvocation(expr, null);
+            resultExpr.setLocation(expr.getLocation());
             return trivialInvocation(resultExpr, resultConsumer, expr.getLocation(), willDrop);
         }
     }

@@ -89,7 +89,7 @@ import org.teavm.backend.wasm.model.expression.WasmTest;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmTry;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
-import org.teavm.model.MethodReference;
+import org.teavm.model.InliningInfo;
 import org.teavm.model.TextLocation;
 
 class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
@@ -100,8 +100,8 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     private int addressOffset;
     private int depth;
     private Map<WasmBlock, Integer> blockDepths = new HashMap<>();
-    private List<MethodReference> methodStack = new ArrayList<>();
-    private List<MethodReference> currentMethodStack = new ArrayList<>();
+    private List<InliningInfo> methodStack = new ArrayList<>();
+    private List<InliningInfo> currentMethodStack = new ArrayList<>();
     private TextLocation textLocationToEmit;
     private boolean deferTextLocationToEmit;
     private TextLocation lastEmittedLocation;
@@ -1441,13 +1441,13 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
             var loc = textLocationToEmit;
             var inlining = loc != null ? loc.getInlining() : null;
             while (inlining != null) {
-                currentMethodStack.add(inlining.getMethod());
+                currentMethodStack.add(inlining);
                 inlining = inlining.getParent();
             }
             Collections.reverse(currentMethodStack);
             var commonPart = 0;
             while (commonPart < currentMethodStack.size() && commonPart < methodStack.size()
-                    && currentMethodStack.get(commonPart).equals(methodStack.get(commonPart))) {
+                    && currentMethodStack.get(commonPart) == methodStack.get(commonPart)) {
                 ++commonPart;
             }
             while (methodStack.size() > commonPart) {
@@ -1457,7 +1457,8 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
             while (commonPart < currentMethodStack.size()) {
                 var method = currentMethodStack.get(commonPart++);
                 methodStack.add(method);
-                debugLines.start(method);
+                debugLines.location(method.getFileName(), method.getLine());
+                debugLines.start(method.getMethod());
             }
             currentMethodStack.clear();
             if (loc != null) {
