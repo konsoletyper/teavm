@@ -22,7 +22,6 @@ import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
 import org.teavm.gradle.api.JSModuleType;
 import org.teavm.gradle.api.SourceFilePolicy;
-import org.teavm.tooling.TeaVMSourceFilePolicy;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.builder.BuildStrategy;
 
@@ -32,7 +31,7 @@ public abstract class GenerateJavaScriptTask extends TeaVMTask {
         getStrict().convention(false);
         getModuleType().convention(JSModuleType.UMD);
         getSourceMap().convention(false);
-        getSourceFilePolicy().convention(SourceFilePolicy.DO_NOTHING);
+        getSourceFilePolicy().convention(SourceFilePolicy.LINK_LOCAL_FILES);
         getEntryPointName().convention("main");
     }
 
@@ -91,25 +90,7 @@ public abstract class GenerateJavaScriptTask extends TeaVMTask {
         }
         builder.setSourceMapsFileGenerated(getSourceMap().get());
         builder.setEntryPointName(getEntryPointName().get());
-        for (var file : getSourceFiles()) {
-            if (file.isFile()) {
-                if (file.getName().endsWith(".jar") || file.getName().endsWith(".zip")) {
-                    builder.addSourcesJar(file.getAbsolutePath());
-                }
-            } else if (file.isDirectory()) {
-                builder.addSourcesDirectory(file.getAbsolutePath());
-            }
-        }
-        switch (getSourceFilePolicy().get()) {
-            case DO_NOTHING:
-                builder.setSourceFilePolicy(TeaVMSourceFilePolicy.DO_NOTHING);
-                break;
-            case COPY:
-                builder.setSourceFilePolicy(TeaVMSourceFilePolicy.COPY);
-                break;
-            case LINK_LOCAL_FILES:
-                builder.setSourceFilePolicy(TeaVMSourceFilePolicy.LINK_LOCAL_FILES);
-                break;
-        }
+        TaskUtils.applySourceFiles(getSourceFiles(), builder);
+        TaskUtils.applySourceFilePolicy(getSourceFilePolicy(), builder);
     }
 }

@@ -20,20 +20,56 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
 public abstract class CopyWasmGCRuntimeTask extends DefaultTask {
+    public CopyWasmGCRuntimeTask() {
+        getModular().convention(false);
+        getObfuscated().convention(true);
+        getDeobfuscator().convention(false);
+    }
+
+    @Input
+    public abstract Property<Boolean> getModular();
+
+    @Input
+    public abstract Property<Boolean> getObfuscated();
+
     @OutputFile
     public abstract RegularFileProperty getOutputFile();
 
+    @Input
+    public abstract Property<Boolean> getDeobfuscator();
+
+    @OutputFile
+    public abstract RegularFileProperty getDeobfuscatorOutputFile();
+
     @TaskAction
     public void copyRuntime() throws IOException {
-        var resourceName = "org/teavm/backend/wasm/wasm-gc-runtime.min.js";
+        var name = new StringBuilder("wasm-gc");
+        if (getModular().get()) {
+            name.append("-modular");
+        }
+        name.append("-runtime");
+        if (getObfuscated().get()) {
+            name.append(".min");
+        }
+        var resourceName = "org/teavm/backend/wasm/" + name + ".js";
         var classLoader = CopyWasmGCRuntimeTask.class.getClassLoader();
         var output = getOutputFile().get().getAsFile();
         try (var input = classLoader.getResourceAsStream(resourceName)) {
             Files.copy(input, output.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        if (getDeobfuscator().get()) {
+            resourceName = "org/teavm/backend/wasm/deobfuscator.wasm";
+            output = getDeobfuscatorOutputFile().get().getAsFile();
+            try (var input = classLoader.getResourceAsStream(resourceName)) {
+                Files.copy(input, output.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
         }
     }
 }

@@ -80,7 +80,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
                 .orElse(OptimizationLevel.BALANCED));
         js.getSourceFilePolicy().convention(property("js.sourceFilePolicy")
                 .map(SourceFilePolicy::valueOf)
-                .orElse(SourceFilePolicy.DO_NOTHING));
+                .orElse(SourceFilePolicy.LINK_LOCAL_FILES));
         js.getDevServer().getStackDeobfuscated().convention(property("js.devServer.stackDeobfuscated")
                 .map(Boolean::parseBoolean));
         js.getDevServer().getIndicator().convention(property("js.devServer.indicator").map(Boolean::parseBoolean));
@@ -120,6 +120,11 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         wasmGC.getDebugInfoLevel().convention(property("wasm-gc.debugInformation.level")
                 .map(v -> WasmDebugInfoLevel.valueOf(v.toUpperCase())).orElse(WasmDebugInfoLevel.DEOBFUSCATION));
         wasmGC.getSourceMap().convention(property("wasm-gc.sourceMap").map(Boolean::parseBoolean).orElse(false));
+        wasmGC.getSourceFilePolicy().convention(property("wasm-gc.sourceFilePolicy")
+                .map(SourceFilePolicy::valueOf)
+                .orElse(SourceFilePolicy.LINK_LOCAL_FILES));
+        wasmGC.getModularRuntime().convention(property("wasm-gc.modularRuntime")
+                .map(Boolean::parseBoolean).orElse(false));
     }
 
     private void setupWasiDefaults() {

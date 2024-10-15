@@ -16,9 +16,10 @@
 
 plugins {
     `java-library`
+    `teavm-publish`
 }
 
-description = "JavaScript deobfuscator"
+description = "WebAssembly deobfuscator"
 
 configurations {
     val teavmCompile = create("teavmCompile")
@@ -42,21 +43,18 @@ val generateWasm by tasks.register<JavaExec>("generateWasm") {
     mainClass = "org.teavm.tooling.deobfuscate.wasmgc.Compiler"
     args(
         "org.teavm.tooling.deobfuscate.wasmgc.DeobfuscatorFactory",
-        layout.buildDirectory.dir("teavm").get().asFile.absolutePath,
+        layout.buildDirectory.dir("teavm/org/teavm/backend/wasm/").get().asFile.absolutePath,
         "deobfuscator.wasm"
     )
 }
 
-val zipWithWasm by tasks.register<Jar>("zipWithWasm") {
+tasks.withType<Jar> {
     dependsOn(generateWasm)
-    archiveClassifier = "wasm"
-    from(layout.buildDirectory.dir("teavm"), layout.buildDirectory.dir("teavm-lib"))
-    include("*.wasm")
-    entryCompression = ZipEntryCompression.DEFLATED
+    from(layout.buildDirectory.dir("teavm"))
+    include("**/*.wasm")
+    includeEmptyDirs = false
 }
 
-tasks.assemble.configure {
-    dependsOn(zipWithWasm)
+teavmPublish {
+    artifactId = "teavm-wasm-gc-deobfuscator"
 }
-
-artifacts.add("wasm", zipWithWasm)

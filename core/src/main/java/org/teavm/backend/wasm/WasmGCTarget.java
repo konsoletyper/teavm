@@ -371,7 +371,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
                 null, null, debugLines, null, WasmBinaryStatsCollector.EMPTY);
         optimizeIndexes(module);
         module.prepareForRendering();
-        if (debugLocation == WasmDebugInfoLocation.EMBEDDED) {
+        if (debugLocation == WasmDebugInfoLocation.EMBEDDED && debugInfo) {
             binaryRenderer.render(module, debugInfoBuilder::build);
         } else {
             binaryRenderer.render(module);
@@ -380,7 +380,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         try (var output = buildTarget.createResource(outputName)) {
             output.write(data);
         }
-        if (debugLocation == WasmDebugInfoLocation.EXTERNAL) {
+        if (debugLocation == WasmDebugInfoLocation.EXTERNAL && debugInfo) {
             var debugInfoData = ExternalDebugFile.write(debugInfoBuilder.build());
             if (debugInfoData != null) {
                 try (var output = buildTarget.createResource(outputName + ".teadbg")) {

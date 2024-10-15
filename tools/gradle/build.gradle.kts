@@ -26,6 +26,7 @@ description = "TeaVM Gradle plugin"
 dependencies {
     implementation(project(":core"))
     implementation(project(":tools:core"))
+    implementation(project(":tools:deobfuscator-wasm-gc"))
 }
 
 gradlePlugin {

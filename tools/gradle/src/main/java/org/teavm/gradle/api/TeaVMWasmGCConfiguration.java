@@ -33,4 +33,8 @@ public interface TeaVMWasmGCConfiguration extends TeaVMCommonConfiguration, TeaV
     Property<WasmDebugInfoLevel> getDebugInfoLevel();
 
     Property<Boolean> getSourceMap();
+
+    Property<SourceFilePolicy> getSourceFilePolicy();
+
+    Property<Boolean> getModularRuntime();
 }

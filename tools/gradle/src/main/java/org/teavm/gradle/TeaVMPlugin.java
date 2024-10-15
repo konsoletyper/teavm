@@ -57,6 +57,7 @@ public class TeaVMPlugin implements Plugin<Project> {
     public static final String WASM_TASK_NAME = "generateWasm";
     public static final String WASI_TASK_NAME = "generateWasi";
     public static final String WASM_GC_TASK_NAME = "generateWasmGC";
+    public static final String BUILD_WASM_GC_TASK_NAME = "buildWasmGC";
     public static final String WASM_GC_COPY_RUNTIME_TASK_NAME = "copyWasmGCRuntime";
     public static final String WASM_GC_DISASSEMBLY_TASK_NAME = "disasmWasmGC";
     public static final String C_TASK_NAME = "generateC";
@@ -219,6 +220,9 @@ public class TeaVMPlugin implements Plugin<Project> {
 
     private void registerWasmGCTask(Project project, Configuration configuration) {
         var extension = project.getExtensions().getByType(TeaVMExtension.class);
+        var buildTask = project.getTasks().create(BUILD_WASM_GC_TASK_NAME, task -> {
+            task.setGroup(TASK_GROUP);
+        });
         project.getTasks().create(WASM_GC_TASK_NAME, GenerateWasmGCTask.class, task -> {
             var wasmGC = extension.getWasmGC();
             applyToTask(wasmGC, task, configuration);
@@ -226,6 +230,9 @@ public class TeaVMPlugin implements Plugin<Project> {
             task.getObfuscated().convention(wasmGC.getObfuscated());
             task.getStrict().convention(wasmGC.getStrict());
             task.getSourceMap().convention(wasmGC.getSourceMap());
+            task.getSourceFilePolicy().convention(wasmGC.getSourceFilePolicy());
+            setupSources(task.getSourceFiles(), project);
+            buildTask.dependsOn(task);
         });
         project.getTasks().create(WASM_GC_COPY_RUNTIME_TASK_NAME, CopyWasmGCRuntimeTask.class, task -> {
             task.setGroup(TASK_GROUP);
@@ -234,6 +241,15 @@ public class TeaVMPlugin implements Plugin<Project> {
             task.getOutputFile().convention(extension.getWasmGC().getOutputDir()
                     .flatMap(d -> d.dir(extension.getWasmGC().getRelativePathInOutputDir()))
                     .flatMap(d -> d.file(fileName)));
+            task.getDeobfuscator().convention(extension.getWasmGC().getDebugInformation());
+            var deobfuscatorFileName = extension.getWasmGC().getTargetFileName()
+                    .map(x -> x + "-deobfuscator.wasm");
+            task.getDeobfuscatorOutputFile().convention(extension.getWasmGC().getOutputDir()
+                    .flatMap(d -> d.dir(extension.getWasmGC().getRelativePathInOutputDir()))
+                    .flatMap(d -> d.file(deobfuscatorFileName)));
+            task.getModular().convention(extension.getWasmGC().getModularRuntime());
+            task.getObfuscated().convention(extension.getWasmGC().getObfuscated());
+            buildTask.dependsOn(task);
         });
         project.getTasks().create(WASM_GC_DISASSEMBLY_TASK_NAME, DisasmWebAssemblyTask.class, task -> {
             task.setGroup(TASK_GROUP);
@@ -251,7 +267,9 @@ public class TeaVMPlugin implements Plugin<Project> {
             });
             task.getOutputFile().convention(project.getLayout().dir(genTask.getOutputDir())
                     .flatMap(d -> d.file(fileName)));
+            buildTask.dependsOn(task);
         });
+
     }
 
     private void registerCTask(Project project, Configuration configuration) {
@@ -301,9 +319,7 @@ public class TeaVMPlugin implements Plugin<Project> {
                     }));
                 }
                 if (wasmGCAddedToWebApp) {
-                    task.dependsOn(project.getTasks().named(WASM_GC_TASK_NAME));
-                    task.dependsOn(project.getTasks().named(WASM_GC_COPY_RUNTIME_TASK_NAME));
-                    task.dependsOn(project.getTasks().named(WASM_GC_DISASSEMBLY_TASK_NAME));
+                    task.dependsOn(project.getTasks().named(BUILD_WASM_GC_TASK_NAME));
                     var outDir = extension.getWasmGC().getOutputDir();
                     var relPath = extension.getWasmGC().getRelativePathInOutputDir();
                     task.with(project.copySpec(spec -> {

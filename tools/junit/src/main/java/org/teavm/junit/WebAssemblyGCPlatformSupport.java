@@ -169,7 +169,7 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
                 getExtension() + "-deobfuscator.wasm");
         try {
             TestUtil.resourceToFile("org/teavm/backend/wasm/wasm-gc-runtime.js", testPath, Map.of());
-            TestUtil.resourceToFile("deobfuscator.wasm", testDeobfuscatorPath, Map.of());
+            TestUtil.resourceToFile("org/teavm/backend/wasm/deobfuscator.wasm", testDeobfuscatorPath, Map.of());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

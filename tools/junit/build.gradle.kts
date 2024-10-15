@@ -31,7 +31,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":tools:core"))
     implementation(project(":tools:browser-runner"))
-    runtimeOnly(project(":tools:deobfuscator-wasm-gc", "wasm"))
+    runtimeOnly(project(":tools:deobfuscator-wasm-gc"))
 }
 
 teavmPublish {

@@ -54,7 +54,7 @@ teavm {
     wasmGC {
         addedToWebApp = true
         mainClass = "org.teavm.samples.benchmark.teavm.BenchmarkStarter"
-        sourceMap = true
+        debugInformation = true
     }
     wasm {
         addedToWebApp = true
