@@ -15,8 +15,12 @@
  */
 package org.teavm.gradle.tasks;
 
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Optional;
+import org.teavm.gradle.api.SourceFilePolicy;
 import org.teavm.gradle.api.WasmDebugInfoLevel;
 import org.teavm.gradle.api.WasmDebugInfoLocation;
 import org.teavm.tooling.TeaVMTargetType;
@@ -30,6 +34,7 @@ public abstract class GenerateWasmGCTask extends TeaVMTask {
         getDebugInfoLevel().convention(WasmDebugInfoLevel.DEOBFUSCATION);
         getDebugInfoLocation().convention(WasmDebugInfoLocation.EXTERNAL);
         getSourceMap().convention(false);
+        getSourceFilePolicy().convention(SourceFilePolicy.LINK_LOCAL_FILES);
     }
 
     @Input
@@ -49,6 +54,13 @@ public abstract class GenerateWasmGCTask extends TeaVMTask {
 
     @Input
     public abstract Property<Boolean> getSourceMap();
+
+    @InputFiles
+    public abstract ConfigurableFileCollection getSourceFiles();
+
+    @Input
+    @Optional
+    public abstract Property<SourceFilePolicy> getSourceFilePolicy();
 
     @Override
     protected void setupBuilder(BuildStrategy builder) {
@@ -73,5 +85,7 @@ public abstract class GenerateWasmGCTask extends TeaVMTask {
                 break;
         }
         builder.setTargetType(TeaVMTargetType.WEBASSEMBLY_GC);
+        TaskUtils.applySourceFiles(getSourceFiles(), builder);
+        TaskUtils.applySourceFilePolicy(getSourceFilePolicy(), builder);
     }
 }

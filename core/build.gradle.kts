@@ -50,7 +50,7 @@ val jsOutputPackageDir = jsOutputDir.map { it.dir("org/teavm/backend/wasm") }
 val jsInputDir = layout.projectDirectory.dir("src/main/js/wasm-gc-runtime")
 val jsInput = jsInputDir.file("runtime.js")
 
-fun registerRuntimeTasks(taskName: String, wrapperType: String, outputName: String) {
+fun registerRuntimeTasks(taskName: String, wrapperType: String, outputName: String, module: Boolean) {
     val generateTask by tasks.register<DefaultTask>("generate${taskName}Runtime") {
         dependsOn(tasks.npmInstall)
         val wrapperFile = jsInputDir.file(wrapperType)
@@ -80,7 +80,9 @@ fun registerRuntimeTasks(taskName: String, wrapperType: String, outputName: Stri
         args.addAll(provider {
             listOf(
                 "--",
-                "-m", "--module", "--toplevel",
+                "-m", "--toplevel",
+                *(if (module) arrayOf("--module") else emptyArray()),
+                "--mangle", "reserved=['TeaVM']",
                 inputFiles.singleFile.absolutePath,
                 "-o", outputFile.get().asFile.absolutePath
             )
@@ -93,8 +95,8 @@ fun registerRuntimeTasks(taskName: String, wrapperType: String, outputName: Stri
     }
 }
 
-registerRuntimeTasks("Simple", "simple-wrapper.js", "wasm-gc-runtime")
-registerRuntimeTasks("Module", "module-wrapper.js", "wasm-gc-module-runtime")
+registerRuntimeTasks("Simple", "simple-wrapper.js", "wasm-gc-runtime", module = false)
+registerRuntimeTasks("Module", "module-wrapper.js", "wasm-gc-module-runtime", module = true)
 
 teavmPublish {
     artifactId = "teavm-core"
