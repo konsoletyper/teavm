@@ -17,12 +17,14 @@ package org.teavm.backend.wasm.disasm;
 
 import org.teavm.backend.wasm.parser.ImportSectionListener;
 import org.teavm.backend.wasm.parser.WasmHollowFunctionType;
+import org.teavm.backend.wasm.parser.WasmHollowType;
 
 public class DisassemblyImportSectionListener extends BaseDisassemblyListener implements ImportSectionListener {
     private WasmHollowFunctionType[] functionTypes;
     private String currentModule;
     private String currentName;
     private int functionIndex;
+    private int globalIndex;
 
     public DisassemblyImportSectionListener(DisassemblyWriter writer, NameProvider nameProvider,
             WasmHollowFunctionType[] functionTypes) {
@@ -32,6 +34,10 @@ public class DisassemblyImportSectionListener extends BaseDisassemblyListener im
 
     public int functionCount() {
         return functionIndex;
+    }
+
+    public int globalCount() {
+        return globalIndex;
     }
 
     @Override
@@ -80,5 +86,22 @@ public class DisassemblyImportSectionListener extends BaseDisassemblyListener im
         writer.outdent().write("))").eol();
 
         functionIndex++;
+    }
+
+    @Override
+    public void global(WasmHollowType type) {
+        writer.address().write("(import \"").write(currentModule).write("\" \"")
+                .write(currentName).write("\" ");
+        writer.write("(global ");
+        writer.startLinkTarget("g" + globalIndex).write("(; " + globalIndex + " ;)");
+        var name = nameProvider.global(globalIndex);
+        if (name != null) {
+            writer.write(" $").write(name);
+        }
+        writer.endLinkTarget();
+        writer.write(" (type ");
+        writeType(type);
+        writer.write("))").eol();
+        ++globalIndex;
     }
 }

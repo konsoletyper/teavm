@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import org.teavm.backend.javascript.rendering.AstWriter;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
@@ -66,6 +67,7 @@ class WasmGCJsoCommonGenerator {
     private WasmFunction javaObjectToJSFunction;
     private WasmGlobal defaultWrapperClass;
     private Map<String, WasmGlobal> definedClasses = new HashMap<>();
+    private Map<ImportDecl, WasmGlobal> importGlobals = new HashMap<>();
 
     WasmGCJsoCommonGenerator(WasmGCJSFunctions jsFunctions) {
         this.jsFunctions = jsFunctions;
@@ -97,6 +99,9 @@ class WasmGCJsoCommonGenerator {
         if (!emitter.isStatic()) {
             paramCount++;
         }
+        var imports = emitter.imports();
+        paramCount += imports.length;
+
         var global = new WasmGlobal(context.names().suggestForMethod(emitter.method()),
                 WasmType.Reference.EXTERN, new WasmNullConstant(WasmType.Reference.EXTERN));
         context.module().globals.add(global);
@@ -124,6 +129,9 @@ class WasmGCJsoCommonGenerator {
 
         var constructor = new WasmCall(jsFunctions.getFunctionConstructor(context, paramCount));
         var paramNames = new ArrayList<String>();
+        for (var importDecl : imports) {
+            paramNames.add(importDecl.alias);
+        }
         if (!emitter.isStatic()) {
             paramNames.add("__this__");
         }
@@ -134,9 +142,33 @@ class WasmGCJsoCommonGenerator {
         }
         var functionBody = new WasmGetGlobal(context.strings().getStringConstant(body).global);
         constructor.getArguments().add(stringToJs(context, functionBody));
-        initializerParts.add(initializer -> initializer.getBody().add(new WasmSetGlobal(global, constructor)));
+        WasmExpression value = constructor;
+        if (imports.length > 0) {
+            var bind = new WasmCall(jsFunctions.getBind(context, imports.length));
+            bind.getArguments().add(value);
+            for (var importDecl : imports) {
+                var importGlobal = getImportGlobal(context, importDecl.fromModule, "__self__");
+                bind.getArguments().add(new WasmGetGlobal(importGlobal));
+            }
+            value = bind;
+        }
+        var result = value;
+        initializerParts.add(initializer -> initializer.getBody().add(new WasmSetGlobal(global, result)));
 
         return global;
+    }
+
+    WasmGlobal getImportGlobal(WasmGCJsoContext context, String module, String id) {
+        return importGlobals.computeIfAbsent(new ImportDecl(module, id), m -> {
+            var name = context.names().topLevel(WasmGCNameProvider.sanitize("teavm.js@imports:" + module + "#" + id));
+            var global = new WasmGlobal(name, WasmType.Reference.EXTERN,
+                    new WasmNullConstant(WasmType.Reference.EXTERN));
+            global.setImmutable(true);
+            context.module().globals.add(global);
+            global.setImportModule(module);
+            global.setImportName(id);
+            return global;
+        });
     }
 
     private WasmFunction stringToJsFunction(WasmGCJsoContext context) {
@@ -505,5 +537,32 @@ class WasmGCJsoCommonGenerator {
             }
         }
         return name;
+    }
+
+    private static class ImportDecl {
+        final String module;
+        final String name;
+
+        ImportDecl(String module, String name) {
+            this.module = module;
+            this.name = name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof ImportDecl)) {
+                return false;
+            }
+            var that = (ImportDecl) o;
+            return Objects.equals(module, that.module) && Objects.equals(name, that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(module, name);
+        }
     }
 }

@@ -29,5 +29,7 @@ public interface JSBodyEmitter {
 
     String[] parameterNames();
 
+    JsBodyImportInfo[] imports();
+
     boolean isStatic();
 }

@@ -27,6 +27,7 @@ import org.teavm.backend.wasm.generate.DwarfClassGenerator;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
 import org.teavm.backend.wasm.model.WasmCustomSection;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
@@ -138,20 +139,29 @@ public class WasmBinaryRenderer {
     }
 
     private void renderImports(WasmModule module) {
-        List<WasmFunction> functions = new ArrayList<>();
+        var functions = new ArrayList<WasmFunction>();
         for (var function : module.functions) {
             if (function.getImportName() == null) {
                 continue;
             }
             functions.add(function);
         }
-        if (functions.isEmpty()) {
+
+        var globals = new ArrayList<WasmGlobal>();
+        for (var global : module.globals) {
+            if (global.getImportName() == null) {
+                continue;
+            }
+            globals.add(global);
+        }
+
+        if (functions.isEmpty() && globals.isEmpty()) {
             return;
         }
 
         WasmBinaryWriter section = new WasmBinaryWriter();
 
-        section.writeLEB(functions.size());
+        section.writeLEB(functions.size() + globals.size());
         for (WasmFunction function : functions) {
             int signatureIndex = module.types.indexOf(function.getType());
             String moduleName = function.getImportModule();
@@ -159,11 +169,21 @@ public class WasmBinaryRenderer {
                 moduleName = "";
             }
             section.writeAsciiString(moduleName);
-
             section.writeAsciiString(function.getImportName());
 
             section.writeByte(EXTERNAL_KIND_FUNCTION);
             section.writeLEB(signatureIndex);
+        }
+        for (var global : globals) {
+            var moduleName = global.getImportModule();
+            if (moduleName == null) {
+                moduleName = "";
+            }
+            section.writeAsciiString(moduleName);
+            section.writeAsciiString(global.getImportName());
+            section.writeByte(EXTERNAL_KIND_GLOBAL);
+            section.writeType(global.getType(), module);
+            section.writeByte(global.isImmutable() ? 0 : 1);
         }
 
         writeSection(SECTION_IMPORT, "import", section.getData());
@@ -211,16 +231,19 @@ public class WasmBinaryRenderer {
     }
 
     private void renderGlobals(WasmModule module) {
-        if (module.globals.isEmpty()) {
+        var globals = module.globals.stream()
+                .filter(global -> global.getImportName() == null)
+                .collect(Collectors.toList());
+        if (globals.isEmpty()) {
             return;
         }
 
         var section = new WasmBinaryWriter();
         var visitor = new WasmBinaryRenderingVisitor(section, module, null, null, 0);
-        section.writeLEB(module.globals.size());
-        for (var global : module.globals) {
+        section.writeLEB(globals.size());
+        for (var global : globals) {
             section.writeType(global.getType(), module);
-            section.writeByte(global.isImmutable() ? 0 : 1); // mutable
+            section.writeByte(global.isImmutable() ? 0 : 1);
             global.getInitialValue().acceptVisitor(visitor);
             section.writeByte(0x0b);
         }

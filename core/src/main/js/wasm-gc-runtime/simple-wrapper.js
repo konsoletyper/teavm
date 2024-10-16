@@ -17,6 +17,6 @@
 var TeaVM = TeaVM || {};
 TeaVM.wasmGC = TeaVM.wasmGC || (() => {
     include();
-    return { load, defaults };
+    return { load, defaults, wrapImport };
 })();
 

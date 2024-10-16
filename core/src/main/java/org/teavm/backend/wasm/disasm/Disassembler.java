@@ -51,6 +51,7 @@ public final class Disassembler {
     private WasmHollowFunctionType[] functionTypes;
     private int[] functionTypeRefs;
     private int importFunctionCount;
+    private int importGlobalCount;
     private Map<String, DebugSectionParser> debugSectionParsers = new HashMap<>();
     private DebugLinesParser debugLines;
     private LineInfo lineInfo;
@@ -143,6 +144,7 @@ public final class Disassembler {
                 var parser = new ImportSectionParser(importListener);
                 parser.parse(AddressListener.EMPTY, bytes);
                 importFunctionCount = importListener.functionCount();
+                importGlobalCount = importListener.globalCount();
             };
         } else if (code == 3) {
             return bytes -> {
@@ -165,6 +167,7 @@ public final class Disassembler {
                 var globalWriter = new DisassemblyGlobalSectionListener(writer, nameProvider);
                 writer.setAddressOffset(pos);
                 var sectionParser = new GlobalSectionParser(globalWriter);
+                sectionParser.setGlobalIndexOffset(importGlobalCount);
                 sectionParser.parse(writer.addressListener, bytes);
                 writer.flush();
             };

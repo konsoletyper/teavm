@@ -60,6 +60,11 @@ public class JSBodyAstEmitter implements JSBodyEmitter {
     }
 
     @Override
+    public JsBodyImportInfo[] imports() {
+        return imports.clone();
+    }
+
+    @Override
     public void emit(InjectorContext context) {
         var astWriter = new AstWriter(context.getWriter(), new DefaultGlobalNameWriter());
         int paramIndex = 0;

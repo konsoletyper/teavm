@@ -15,4 +15,4 @@
  */
 
 include();
-export { load, defaults };
+export { load, defaults, wrapImport };

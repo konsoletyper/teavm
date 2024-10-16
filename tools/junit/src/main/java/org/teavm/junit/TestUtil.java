@@ -55,7 +55,7 @@ final class TestUtil {
         if (properties.isEmpty()) {
             try (InputStream input = TeaVMTestRunner.class.getClassLoader().getResourceAsStream(resource);
                     OutputStream output = new BufferedOutputStream(new FileOutputStream(file))) {
-                IOUtils.copy(input, output);
+                input.transferTo(output);
             }
         } else {
             String content;

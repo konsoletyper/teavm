@@ -731,13 +731,11 @@ public final class JS {
 
     @InjectedBy(JSNativeInjector.class)
     @JSBody(params = { "instance", "index" }, script = "return instance[index];")
-    @Import(name = "getProperty", module = "teavmJso")
     public static native JSObject get(JSObject instance, JSObject index);
 
     @InjectedBy(JSNativeInjector.class)
     @JSBody(params = { "instance", "index" }, script = "return instance[index];")
     @NoSideEffects
-    @Import(name = "getPropertyPure", module = "teavmJso")
     public static native JSObject getPure(JSObject instance, JSObject index);
 
     @InjectedBy(JSNativeInjector.class)

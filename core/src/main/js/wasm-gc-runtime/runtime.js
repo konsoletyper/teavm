@@ -52,12 +52,15 @@ function defaults(imports) {
 
 let javaExceptionSymbol = Symbol("javaException");
 class JavaError extends Error {
-    constructor(javaException) {
+    #context
+
+    constructor(context, javaException) {
         super();
+        this.#context = context;
         this[javaExceptionSymbol] = javaException;
     }
     get message() {
-        let exceptionMessage = exports["teavm.exceptionMessage"];
+        let exceptionMessage = this.#context.exports["teavm.exceptionMessage"];
         if (typeof exceptionMessage === "function") {
             let message = exceptionMessage(this[javaExceptionSymbol]);
             if (message != null) {
@@ -247,7 +250,7 @@ function jsoImports(imports, context) {
                         return wrapper;
                     }
                 }
-                let wrapper = new JavaError(javaException);
+                let wrapper = new JavaError(context, javaException);
                 javaExceptionWrappers.set(javaException, new WeakRef(wrapper));
                 return wrapper;
             }
@@ -312,7 +315,6 @@ function jsoImports(imports, context) {
         unwrapBoolean: value => value ? 1 : 0,
         wrapBoolean: value => !!value,
         getProperty: getProperty,
-        getPropertyPure: getProperty,
         setProperty: setProperty,
         setPropertyPure: setProperty,
         global(name) {
@@ -565,6 +567,7 @@ function jsoImports(imports, context) {
         imports.teavmJso["createFunction" + i] = new Function("wrapCallFromJavaToJs", ...argumentList, "body",
             `return new Function('wrapCallFromJavaToJs', ${argsAndBody}).bind(this, wrapCallFromJavaToJs);`
         ).bind(null, wrapCallFromJavaToJs);
+        imports.teavmJso["bindFunction" + i] = (f, ...args) => f.bind(null, ...args);
         imports.teavmJso["callFunction" + i] = new Function("rethrowJsAsJava", "fn", ...argumentList,
             `try {\n` +
             `    return fn(${args});\n` +
@@ -596,24 +599,70 @@ function jsoImports(imports, context) {
     }
 }
 
+function wrapImport(importObj) {
+    return new Proxy(importObj, {
+        get(target, prop) {
+            let result = target[prop];
+            return new WebAssembly.Global({ value: "externref", mutable: false }, result);
+        }
+    });
+}
+
+async function wrapImports(wasmModule, imports) {
+    let promises = [];
+    let propertiesToAdd = {};
+    for (let { module, name, kind } of WebAssembly.Module.imports(wasmModule)) {
+        if (kind !== "global" || module in imports) {
+            continue;
+        }
+        let names = propertiesToAdd[module];
+        if (names === void 0) {
+            let namesByModule = [];
+            names = namesByModule;
+            propertiesToAdd[name] = names;
+            promises.push((async () => {
+                let moduleInstance = await import(module);
+                let importsByModule = {};
+                for (let name of namesByModule) {
+                    let importedName = name === "__self__" ? moduleInstance : moduleInstance[name];
+                    importsByModule[name] = new WebAssembly.Global(
+                        { value: "externref", mutable: false },
+                        importedName
+                    );
+                }
+                imports[module] = importsByModule;
+            })());
+        }
+        names.push(name);
+    }
+    if (promises.length === 0) {
+        return;
+    }
+    await Promise.all(promises);
+}
+
 async function load(path, options) {
     if (!options) {
         options = {};
     }
+
+    let deobfuscatorOptions = options.stackDeobfuscator || {};
+    let debugInfoLocation = deobfuscatorOptions.infoLocation || "auto";
+    let [deobfuscatorFactory, module, debugInfo] = await Promise.all([
+        deobfuscatorOptions.enabled ? getDeobfuscator(path, deobfuscatorOptions) : Promise.resolve(null),
+        WebAssembly.compileStreaming(fetch(path)),
+        fetchExternalDebugInfo(path, debugInfoLocation, deobfuscatorOptions)
+    ]);
 
     const importObj = {};
     const defaultsResult = defaults(importObj);
     if (typeof options.installImports !== "undefined") {
         options.installImports(importObj);
     }
-
-    let deobfuscatorOptions = options.stackDeobfuscator || {};
-    let debugInfoLocation = deobfuscatorOptions.infoLocation || "auto";
-    let [deobfuscatorFactory, { module, instance }, debugInfo] = await Promise.all([
-        deobfuscatorOptions.enabled ? getDeobfuscator(path, deobfuscatorOptions) : Promise.resolve(null),
-        WebAssembly.instantiateStreaming(fetch(path), importObj),
-        fetchExternalDebugInfo(path, debugInfoLocation, deobfuscatorOptions)
-    ]);
+    if (!options.noAutoImports) {
+        await wrapImports(module, importObj);
+    }
+    let instance = new WebAssembly.Instance(module, importObj);
 
     defaultsResult.supplyExports(instance.exports);
     if (deobfuscatorFactory) {

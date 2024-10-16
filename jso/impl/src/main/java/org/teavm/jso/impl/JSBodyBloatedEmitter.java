@@ -52,6 +52,11 @@ public class JSBodyBloatedEmitter implements JSBodyEmitter {
     }
 
     @Override
+    public JsBodyImportInfo[] imports() {
+        return imports.clone();
+    }
+
+    @Override
     public void emit(InjectorContext context) {
         emit(context.getWriter(), new EmissionStrategy() {
             @Override

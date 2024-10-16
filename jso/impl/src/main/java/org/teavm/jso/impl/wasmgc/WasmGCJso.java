@@ -43,7 +43,7 @@ public final class WasmGCJso {
             }
         });
 
-        var jsIntrinsic = new WasmGCJSIntrinsic(commonGen);
+        var jsIntrinsic = new WasmGCJSIntrinsic(commonGen, jsFunctions);
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "wrap", String.class, JSObject.class), jsIntrinsic);
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "unwrapString", JSObject.class, String.class),
                 jsIntrinsic);
@@ -53,6 +53,10 @@ public final class WasmGCJso {
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "isNull", JSObject.class, boolean.class), jsIntrinsic);
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "jsArrayItem", Object.class, int.class, Object.class),
                 jsIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "get", JSObject.class, JSObject.class, JSObject.class),
+                jsIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "getPure", JSObject.class, JSObject.class,
+                JSObject.class), jsIntrinsic);
 
         var wrapperIntrinsic = new WasmGCJSWrapperIntrinsic();
         wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "wrap", JSObject.class, Object.class),

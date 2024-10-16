@@ -18,10 +18,15 @@ package org.teavm.backend.wasm.parser;
 public class GlobalSectionParser extends BaseSectionParser {
     private final GlobalSectionListener listener;
     private CodeParser codeParser;
+    private int globalIndexOffset;
 
     public GlobalSectionParser(GlobalSectionListener listener) {
         this.listener = listener;
         codeParser = new CodeParser();
+    }
+
+    public void setGlobalIndexOffset(int globalIndexOffset) {
+        this.globalIndexOffset = globalIndexOffset;
     }
 
     @Override
@@ -31,7 +36,7 @@ public class GlobalSectionParser extends BaseSectionParser {
             reportAddress();
             var type = reader.readType();
             var mutable = reader.data[reader.ptr++] != 0;
-            var codeListener = listener.startGlobal(i, type, mutable);
+            var codeListener = listener.startGlobal(i + globalIndexOffset, type, mutable);
             if (codeListener == null) {
                 codeListener = CodeListener.EMPTY;
             }

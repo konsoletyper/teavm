@@ -21,7 +21,9 @@ import org.teavm.backend.wasm.model.WasmType;
 
 class WasmGCJSFunctions {
     private WasmFunction[] constructors = new WasmFunction[32];
+    private WasmFunction[] binds = new WasmFunction[32];
     private WasmFunction[] callers = new WasmFunction[32];
+    private WasmFunction getFunction;
 
     WasmFunction getFunctionConstructor(WasmGCJsoContext context, int index) {
         var function = constructors[index];
@@ -36,6 +38,38 @@ class WasmGCJSFunctions {
             function.setImportName("createFunction" + index);
             context.module().functions.add(function);
             constructors[index] = function;
+        }
+        return function;
+    }
+
+    WasmFunction getBind(WasmGCJsoContext context, int index) {
+        var function = binds[index];
+        if (function == null) {
+            var extern = WasmType.SpecialReferenceKind.EXTERN.asNonNullType();
+            var constructorParamTypes = new WasmType[index + 1];
+            Arrays.fill(constructorParamTypes, WasmType.Reference.EXTERN);
+            var functionType = context.functionTypes().of(extern, constructorParamTypes);
+            function = new WasmFunction(functionType);
+            function.setName(context.names().topLevel("teavm.js:bindFunction" + index));
+            function.setImportModule("teavmJso");
+            function.setImportName("bindFunction" + index);
+            context.module().functions.add(function);
+            binds[index] = function;
+        }
+        return function;
+    }
+
+    WasmFunction getGet(WasmGCJsoContext context) {
+        var function = getFunction;
+        if (function == null) {
+            var functionType = context.functionTypes().of(WasmType.Reference.EXTERN, WasmType.Reference.EXTERN,
+                    WasmType.Reference.EXTERN);
+            function = new WasmFunction(functionType);
+            function.setName(context.names().topLevel("teavm.js:getProperty"));
+            function.setImportModule("teavmJso");
+            function.setImportName("getProperty");
+            context.module().functions.add(function);
+            getFunction = function;
         }
         return function;
     }

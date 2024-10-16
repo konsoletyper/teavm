@@ -40,13 +40,16 @@ import org.teavm.model.ValueType;
 class WasmGCJSIntrinsic implements WasmGCIntrinsic {
     private WasmFunction globalFunction;
     private WasmGCJsoCommonGenerator commonGen;
+    private WasmGCJSFunctions functions;
 
-    WasmGCJSIntrinsic(WasmGCJsoCommonGenerator commonGen) {
+    WasmGCJSIntrinsic(WasmGCJsoCommonGenerator commonGen, WasmGCJSFunctions functions) {
         this.commonGen = commonGen;
+        this.functions = functions;
     }
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var jsoContext = WasmGCJsoContext.wrap(context);
         switch (invocation.getMethod().getName()) {
             case "wrap":
                 return wrapString(invocation.getArguments().get(0), context);
@@ -64,6 +67,10 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
                 return new WasmIsNull(context.generate(invocation.getArguments().get(0)));
             case "jsArrayItem":
                 return arrayItem(invocation, context);
+            case "get":
+            case "getPure":
+                return new WasmCall(functions.getGet(jsoContext), context.generate(invocation.getArguments().get(0)),
+                        context.generate(invocation.getArguments().get(1)));
             default:
                 throw new IllegalArgumentException();
         }
