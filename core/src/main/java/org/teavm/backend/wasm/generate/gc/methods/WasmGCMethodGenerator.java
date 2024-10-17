@@ -366,7 +366,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                     names,
                     strict,
                     entryPoint,
-                    initializerContributors
+                    initializerContributors,
+                    diagnostics
             );
         }
         return context;

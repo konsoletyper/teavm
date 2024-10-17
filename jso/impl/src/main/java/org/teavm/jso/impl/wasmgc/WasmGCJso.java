@@ -57,6 +57,8 @@ public final class WasmGCJso {
                 jsIntrinsic);
         wasmGCHost.addIntrinsic(new MethodReference(JS.class, "getPure", JSObject.class, JSObject.class,
                 JSObject.class), jsIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "importModule", String.class, JSObject.class),
+                jsIntrinsic);
 
         var wrapperIntrinsic = new WasmGCJSWrapperIntrinsic();
         wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "wrap", JSObject.class, Object.class),

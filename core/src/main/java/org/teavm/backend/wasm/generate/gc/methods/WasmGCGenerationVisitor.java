@@ -84,6 +84,7 @@ import org.teavm.backend.wasm.model.expression.WasmTest;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.backend.wasm.runtime.StringInternPool;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
@@ -847,6 +848,16 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         @Override
         public String entryPoint() {
             return context.entryPoint();
+        }
+
+        @Override
+        public Diagnostics diagnostics() {
+            return context.diagnostics();
+        }
+
+        @Override
+        public MethodReference currentMethod() {
+            return currentMethod;
         }
 
         @Override

@@ -30,7 +30,9 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
+import org.teavm.model.MethodReference;
 
 public interface WasmGCIntrinsicContext {
     WasmExpression generate(Expr expr);
@@ -62,6 +64,10 @@ public interface WasmGCIntrinsicContext {
     WasmTag exceptionTag();
 
     String entryPoint();
+
+    Diagnostics diagnostics();
+
+    MethodReference currentMethod();
 
     void addToInitializer(Consumer<WasmFunction> initializerContributor);
 }

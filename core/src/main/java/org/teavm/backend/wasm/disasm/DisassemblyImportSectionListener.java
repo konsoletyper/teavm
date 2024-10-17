@@ -89,7 +89,7 @@ public class DisassemblyImportSectionListener extends BaseDisassemblyListener im
     }
 
     @Override
-    public void global(WasmHollowType type) {
+    public void global(WasmHollowType type, boolean mutable) {
         writer.address().write("(import \"").write(currentModule).write("\" \"")
                 .write(currentName).write("\" ");
         writer.write("(global ");
@@ -99,9 +99,15 @@ public class DisassemblyImportSectionListener extends BaseDisassemblyListener im
             writer.write(" $").write(name);
         }
         writer.endLinkTarget();
-        writer.write(" (type ");
+        writer.write(" ");
+        if (mutable) {
+            writer.write("(mut ");
+        }
         writeType(type);
-        writer.write("))").eol();
+        if (mutable) {
+            writer.write(")");
+        }
+        writer.write(")").eol();
         ++globalIndex;
     }
 }

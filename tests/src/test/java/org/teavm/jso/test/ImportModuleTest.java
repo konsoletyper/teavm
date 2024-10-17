@@ -26,6 +26,7 @@ import org.teavm.junit.JsModuleTest;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.ServeJS;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
@@ -39,14 +40,14 @@ public class ImportModuleTest {
             "org/teavm/jso/test/amd.js",
             "org/teavm/jso/test/amdModule.js"
     })
-    @OnlyPlatform(TestPlatform.JAVASCRIPT)
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void amd() {
         assertEquals(23, runTestFunction());
     }
 
     @Test
     @AttachJavaScript("org/teavm/jso/test/commonjs.js")
-    @OnlyPlatform(TestPlatform.JAVASCRIPT)
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void commonjs() {
         assertEquals(23, runTestFunction());
     }
@@ -54,7 +55,6 @@ public class ImportModuleTest {
     @Test
     @JsModuleTest
     @ServeJS(from = "org/teavm/jso/test/es2015.js", as = "testModule.js")
-    @OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
     public void es2015() {
         assertEquals(23, runTestFunction());
     }
@@ -62,7 +62,6 @@ public class ImportModuleTest {
     @Test
     @JsModuleTest
     @ServeJS(from = "org/teavm/jso/test/classWithConstructorInModule.js", as = "testModule.js")
-    @OnlyPlatform(TestPlatform.JAVASCRIPT)
     public void classConstructor() {
         var o = new ClassWithConstructorInModule();
         assertEquals(99, o.getFoo());
@@ -75,7 +74,6 @@ public class ImportModuleTest {
     @Test
     @JsModuleTest
     @ServeJS(from = "org/teavm/jso/test/classWithConstructorInModule.js", as = "testModule.js")
-    @OnlyPlatform(TestPlatform.JAVASCRIPT)
     public void topLevel() {
         assertEquals("top level", ClassWithConstructorInModule.topLevelFunction());
         assertEquals("top level prop", ClassWithConstructorInModule.getTopLevelProperty());

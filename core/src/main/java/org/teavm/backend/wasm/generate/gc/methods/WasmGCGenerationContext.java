@@ -37,6 +37,7 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
@@ -67,6 +68,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private boolean strict;
     private String entryPoint;
     private Consumer<WasmGCInitializerContributor> initializerContributors;
+    private Diagnostics diagnostics;
 
     public WasmGCGenerationContext(WasmModule module, WasmGCVirtualTableProvider virtualTables,
             WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes, ListableClassReaderSource classes,
@@ -75,7 +77,8 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
             WasmGCStandardClasses standardClasses, WasmGCStringProvider strings,
             WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics,
             WasmGCNameProvider names, boolean strict, String entryPoint,
-            Consumer<WasmGCInitializerContributor> initializerContributors) {
+            Consumer<WasmGCInitializerContributor> initializerContributors,
+            Diagnostics diagnostics) {
         this.module = module;
         this.virtualTables = virtualTables;
         this.typeMapper = typeMapper;
@@ -94,6 +97,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         this.strict = strict;
         this.entryPoint = entryPoint;
         this.initializerContributors = initializerContributors;
+        this.diagnostics = diagnostics;
     }
 
     public WasmGCClassInfoProvider classInfoProvider() {
@@ -200,6 +204,10 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
 
     public WasmGCIntrinsicProvider intrinsics() {
         return intrinsics;
+    }
+
+    public Diagnostics diagnostics() {
+        return diagnostics;
     }
 
     public Collection<String> getInterfaceImplementors(String className) {

@@ -29,11 +29,14 @@ import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmIsNull;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.impl.JS;
+import org.teavm.jso.impl.JSMethods;
+import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -49,7 +52,6 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
-        var jsoContext = WasmGCJsoContext.wrap(context);
         switch (invocation.getMethod().getName()) {
             case "wrap":
                 return wrapString(invocation.getArguments().get(0), context);
@@ -69,11 +71,77 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
                 return arrayItem(invocation, context);
             case "get":
             case "getPure":
-                return new WasmCall(functions.getGet(jsoContext), context.generate(invocation.getArguments().get(0)),
-                        context.generate(invocation.getArguments().get(1)));
+                return getProperty(invocation, context);
+            case "importModule":
+                return importModule(invocation, context);
             default:
                 throw new IllegalArgumentException();
         }
+    }
+
+    private WasmExpression getProperty(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var result = tryGetFromModule(invocation, context);
+        if (result != null) {
+            return result;
+        }
+        var jsoContext = WasmGCJsoContext.wrap(context);
+        return new WasmCall(functions.getGet(jsoContext), context.generate(invocation.getArguments().get(0)),
+                context.generate(invocation.getArguments().get(1)));
+    }
+
+    private WasmExpression tryGetFromModule(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var target = invocation.getArguments().get(0);
+        if (!(target instanceof InvocationExpr)) {
+            return null;
+        }
+        var targetCall = (InvocationExpr) target;
+        if (!targetCall.getMethod().equals(JSMethods.IMPORT_MODULE)) {
+            return null;
+        }
+        var moduleName = extractString(targetCall.getArguments().get(0));
+        if (moduleName == null) {
+            return null;
+        }
+
+        var property = invocation.getArguments().get(1);
+        if (!(property instanceof InvocationExpr)) {
+            return null;
+        }
+        var propertyCall = (InvocationExpr) property;
+        if (!propertyCall.getMethod().equals(JSMethods.WRAP_STRING)) {
+            return null;
+        }
+        var name = extractString(propertyCall.getArguments().get(0));
+        if (name == null) {
+            return null;
+        }
+
+        var jsoContext = WasmGCJsoContext.wrap(context);
+        var global = commonGen.getImportGlobal(jsoContext, moduleName, name);
+        return new WasmGetGlobal(global);
+    }
+
+    private WasmExpression importModule(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var jsoContext = WasmGCJsoContext.wrap(context);
+        var nameArg = invocation.getArguments().get(0);
+        var name = extractString(nameArg);
+        if (name == null) {
+            context.diagnostics().error(new CallLocation(context.currentMethod(), invocation.getLocation()),
+                    "Invalid JS module import call");
+        }
+        var global = commonGen.getImportGlobal(jsoContext, name, "__self__");
+        return new WasmGetGlobal(global);
+    }
+
+    private String extractString(Expr expr) {
+        if (!(expr instanceof ConstantExpr)) {
+            return null;
+        }
+        var constant = ((ConstantExpr) expr).getValue();
+        if (!(constant instanceof String)) {
+            return null;
+        }
+        return (String) constant;
     }
 
     private WasmExpression wrapString(Expr stringExpr, WasmGCIntrinsicContext context) {

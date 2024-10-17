@@ -619,7 +619,7 @@ async function wrapImports(wasmModule, imports) {
         if (names === void 0) {
             let namesByModule = [];
             names = namesByModule;
-            propertiesToAdd[name] = names;
+            propertiesToAdd[module] = names;
             promises.push((async () => {
                 let moduleInstance = await import(module);
                 let importsByModule = {};

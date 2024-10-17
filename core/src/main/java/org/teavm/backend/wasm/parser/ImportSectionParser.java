@@ -45,7 +45,7 @@ public class ImportSectionParser extends BaseSectionParser {
             }
             case 3: {
                 var valueType = reader.readType();
-                listener.global(valueType);
+                listener.global(valueType, reader.readLEB() != 0);
                 break;
             }
             default:
