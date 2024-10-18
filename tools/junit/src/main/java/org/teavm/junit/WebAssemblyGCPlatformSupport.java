@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -206,6 +207,29 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
             new Disassembler(disasmWriter).disassemble(Files.readAllBytes(binPath.toPath()));
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    void additionalOutputForAllConfigurations(File outputPath, Method method) {
+        var annotations = new ArrayList<ServeJS>();
+        var list = method.getAnnotation(ServeJSList.class);
+        if (list != null) {
+            annotations.addAll(List.of(list.value()));
+        }
+        var single = method.getAnnotation(ServeJS.class);
+        if (single != null) {
+            annotations.add(single);
+        }
+        var loader = WebAssemblyGCPlatformSupport.class.getClassLoader();
+        for (var item : annotations) {
+            var outputFile = new File(outputPath, item.as());
+            try (var input = loader.getResourceAsStream(item.from());
+                    var output = new FileOutputStream(outputFile)) {
+                input.transferTo(output);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }
