@@ -16,6 +16,8 @@
 package org.teavm.backend.wasm;
 
 import java.io.IOException;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -55,6 +57,7 @@ import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.transformation.gc.BaseClassesTransformation;
 import org.teavm.backend.wasm.transformation.gc.ClassLoaderResourceTransformation;
 import org.teavm.backend.wasm.transformation.gc.EntryPointTransformation;
+import org.teavm.backend.wasm.transformation.gc.ReferenceQueueTransformation;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.interop.Platforms;
@@ -176,6 +179,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         return List.of(
                 new BaseClassesTransformation(),
                 new ClassLoaderResourceTransformation(),
+                new ReferenceQueueTransformation(),
                 entryPointTransformation
         );
     }
@@ -265,6 +269,12 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
         if (controller.getDependencyInfo().getMethod(exceptionMessageRef) != null) {
             var exceptionMessageFunction = declarationsGenerator.functions().forInstanceMethod(exceptionMessageRef);
             exceptionMessageFunction.setExportName("teavm.exceptionMessage");
+        }
+
+        var refQueueSupplyRef = new MethodReference(ReferenceQueue.class, "supply", Reference.class, void.class);
+        if (controller.getDependencyInfo().getMethod(refQueueSupplyRef) != null) {
+            var refQueueSupplyFunction = declarationsGenerator.functions().forInstanceMethod(refQueueSupplyRef);
+            refQueueSupplyFunction.setExportName("teavm.reportGarbageCollectedValue");
         }
 
         moduleGenerator.generate();

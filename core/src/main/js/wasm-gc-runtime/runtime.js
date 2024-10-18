@@ -124,8 +124,8 @@ function consoleImports(imports) {
 function coreImports(imports, context) {
     let finalizationRegistry = new FinalizationRegistry(heldValue => {
         let report = context.exports["teavm.reportGarbageCollectedValue"];
-        if (typeof report === "function") {
-            report(heldValue)
+        if (typeof report !== "undefined") {
+            report(heldValue.queue, heldValue.ref);
         }
     });
     let stringFinalizationRegistry = new FinalizationRegistry(heldValue => {
@@ -135,18 +135,16 @@ function coreImports(imports, context) {
         }
     });
     imports.teavm = {
-        createWeakRef(value, heldValue) {
-            let weakRef = new WeakRef(value);
-            if (heldValue !== null) {
-                finalizationRegistry.register(value, heldValue)
+        createWeakRef(value, ref, queue) {
+            if (queue !== null) {
+                finalizationRegistry.register(value, { ref: ref, queue: queue });
             }
-            return weakRef;
+            return new WeakRef(value);
         },
         deref: weakRef => weakRef.deref(),
         createStringWeakRef(value, heldValue) {
-            let weakRef = new WeakRef(value);
             stringFinalizationRegistry.register(value, heldValue)
-            return weakRef;
+            return new WeakRef(value);
         },
         stringDeref: weakRef => weakRef.deref(),
         takeStackTrace() {

@@ -61,7 +61,8 @@ public class WeakReferenceGenerator implements WasmGCCustomGenerator {
         function.add(queueLocal);
 
         var weakRefConstructor = getCreateWeakReferenceFunction(context);
-        var weakRef = new WasmCall(weakRefConstructor, new WasmGetLocal(valueLocal), new WasmGetLocal(thisLocal));
+        var weakRef = new WasmCall(weakRefConstructor, new WasmGetLocal(valueLocal), new WasmGetLocal(thisLocal),
+                new WasmGetLocal(queueLocal));
         function.getBody().add(new WasmStructSet(weakRefStruct, new WasmGetLocal(thisLocal),
                 WasmGCClassInfoProvider.WEAK_REFERENCE_OFFSET, weakRef));
     }
@@ -97,7 +98,8 @@ public class WeakReferenceGenerator implements WasmGCCustomGenerator {
             var function = new WasmFunction(context.functionTypes().of(
                     WasmType.Reference.EXTERN,
                     context.typeMapper().mapType(ValueType.parse(Object.class)),
-                    context.typeMapper().mapType(ValueType.parse(WeakReference.class))
+                    context.typeMapper().mapType(ValueType.parse(WeakReference.class)),
+                    context.typeMapper().mapType(ValueType.parse(ReferenceQueue.class))
             ));
             function.setName(context.names().topLevel("teavm@createWeakReference"));
             function.setImportName("createWeakRef");
