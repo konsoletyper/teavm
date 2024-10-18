@@ -38,6 +38,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.teavm.backend.javascript.JSModuleType;
+import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMSourceFilePolicy;
@@ -95,6 +96,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
 
     @Parameter(property = "teavm.debugInformationGenerated", defaultValue = "false")
     private boolean debugInformationGenerated;
+
+    @Parameter(property = "teavm.debugInfoLocation", defaultValue = "EXTERNAL")
+    private WasmDebugInfoLocation wasmDebugInfoLocation = WasmDebugInfoLocation.EXTERNAL;
 
     @Parameter(property = "teavm.sourceMapsGenerated", defaultValue = "false")
     private boolean sourceMapsGenerated;
@@ -189,6 +193,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
             }
             builder.setIncremental(incremental);
             builder.setDebugInformationGenerated(debugInformationGenerated);
+            builder.setWasmDebugInfoLocation(wasmDebugInfoLocation);
             builder.setSourceMapsFileGenerated(sourceMapsGenerated);
             builder.setSourceFilePolicy(sourceFilesCopied
                     ? TeaVMSourceFilePolicy.COPY
