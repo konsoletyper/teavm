@@ -48,11 +48,6 @@ public class TInflater {
         impl = null;
     }
 
-    @Override
-    protected void finalize() {
-        end();
-    }
-
     public boolean finished() {
         return finished;
     }
@@ -108,10 +103,6 @@ public class TInflater {
 
         if (impl == null) {
             throw new IllegalStateException();
-        }
-
-        if (needsInput()) {
-            return 0;
         }
 
         long lastInSize = impl.total_in;
