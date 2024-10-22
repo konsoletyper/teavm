@@ -15,26 +15,10 @@
  */
 package org.teavm.gradle.api;
 
-import groovy.lang.Closure;
-import groovy.lang.DelegatesTo;
-import org.gradle.api.Action;
+import org.gradle.api.provider.Property;
 
-public interface TeaVMTests {
-    TeaVMJSTests getJs();
+public interface TeaVMWasmGCTests {
+    Property<Boolean> getEnabled();
 
-    void js(Action<TeaVMJSTests> config);
-
-    void js(@DelegatesTo(TeaVMJSTests.class) Closure<?> config);
-
-    TeaVMWasmTests getWasm();
-
-    void wasm(Action<TeaVMWasmTests> config);
-
-    void wasm(@DelegatesTo(TeaVMWasmTests.class) Closure<?> config);
-
-    TeaVMWasmTests getWasmGC();
-
-    void wasmGC(Action<TeaVMWasmTests> config);
-
-    void wasmGC(@DelegatesTo(TeaVMWasmTests.class) Closure<?> config);
+    Property<TeaVMWebTestRunner> getRunner();
 }
