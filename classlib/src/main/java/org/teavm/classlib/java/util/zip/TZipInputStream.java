@@ -20,6 +20,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
+import java.nio.charset.StandardCharsets;
 
 public class TZipInputStream extends TInflaterInputStream implements TZipConstants {
     static final int DEFLATED = 8;
@@ -204,7 +205,7 @@ public class TZipInputStream extends TInflaterInputStream implements TZipConstan
                 throw new EOFException();
             }
         }
-        currentEntry = createZipEntry(new String(nameBuf, 0, flen, "UTF-8"));
+        currentEntry = createZipEntry(new String(nameBuf, 0, flen, StandardCharsets.UTF_8));
         currentEntry.time = cetime;
         currentEntry.modDate = cemodDate;
         currentEntry.setMethod(cecompressionMethod);
@@ -255,7 +256,7 @@ public class TZipInputStream extends TInflaterInputStream implements TZipConstan
                 }
                 entryIn += len;
             }
-            int toRead = length > len - lastRead ? len - lastRead : length;
+            int toRead = Math.min(length, len - lastRead);
             if ((csize - inRead) < toRead) {
                 toRead = csize - inRead;
             }
