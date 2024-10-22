@@ -59,6 +59,7 @@ public class TeaVMCopyWebassemblyGCRuntimeMojo extends AbstractMojo {
             var resourceName = "org/teavm/backend/wasm/" + name + ".js";
             var classLoader = TeaVMCopyWebassemblyGCRuntimeMojo.class.getClassLoader();
             var output = new File(targetDirectory, runtimeFileName);
+            output.getParentFile().mkdirs();
             try (var input = classLoader.getResourceAsStream(resourceName)) {
                 Files.copy(input, output.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
@@ -66,6 +67,7 @@ public class TeaVMCopyWebassemblyGCRuntimeMojo extends AbstractMojo {
             if (deobfuscator) {
                 resourceName = "org/teavm/backend/wasm/deobfuscator.wasm";
                 output = new File(targetDirectory, deobfuscatorFileName);
+                output.getParentFile().mkdirs();
                 try (var input = classLoader.getResourceAsStream(resourceName)) {
                     Files.copy(input, output.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 }
