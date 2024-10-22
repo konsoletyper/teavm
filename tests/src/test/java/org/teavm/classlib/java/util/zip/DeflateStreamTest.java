@@ -17,6 +17,7 @@ package org.teavm.classlib.java.util.zip;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.teavm.classlib.java.util.zip.ZipTestUtil.readHex;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -58,9 +59,8 @@ public class DeflateStreamTest {
         ZipInputStream input = new ZipInputStream(new ByteArrayInputStream(data));
         ZipEntry entry = input.getNextEntry();
         assertEquals("test.txt", entry.getName());
-        byte[] uncompressed = new byte[500];
-        int length = readFully(input, uncompressed);
-        assertEquals("hello\n", new String(uncompressed, 0, length));
+        var uncompressed = input.readAllBytes();
+        assertEquals("hello\n", new String(uncompressed));
         assertNull(input.getNextEntry());
     }
 
@@ -76,9 +76,8 @@ public class DeflateStreamTest {
         ZipInputStream input = new ZipInputStream(new ByteArrayInputStream(data));
         ZipEntry entry = input.getNextEntry();
         assertEquals("test.txt", entry.getName());
-        byte[] uncompressed = new byte[5000];
-        int length = readFully(input, uncompressed);
-        assertEquals(longString, new String(uncompressed, 0, length, StandardCharsets.UTF_8));
+        var uncompressed = input.readAllBytes();
+        assertEquals(longString, new String(uncompressed, StandardCharsets.UTF_8));
         assertNull(input.getNextEntry());
     }
 
@@ -94,13 +93,4 @@ public class DeflateStreamTest {
         return offset;
     }
 
-    private static byte[] readHex(String hex) {
-        byte[] data = new byte[hex.length() / 2];
-        for (int i = 0; i < data.length; ++i) {
-            int h = Character.digit(hex.charAt(i * 2), 16);
-            int l = Character.digit(hex.charAt(i * 2 + 1), 16);
-            data[i] = (byte) ((h << 4) | l);
-        }
-        return data;
-    }
 }

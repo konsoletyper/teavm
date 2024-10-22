@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import org.teavm.classlib.java.util.zip.TZipEntry.LittleEndianReader;
 
@@ -62,11 +61,6 @@ public class TZipFile implements TZipConstants {
         this(new File(name), OPEN_READ);
     }
 
-    @Override
-    protected void finalize() throws IOException {
-        close();
-    }
-
     public void close() throws IOException {
         RandomAccessFile raf = mRaf;
 
@@ -89,9 +83,9 @@ public class TZipFile implements TZipConstants {
 
     public Enumeration<? extends TZipEntry> entries() {
         checkNotClosed();
-        final Iterator<TZipEntry> iterator = mEntries.values().iterator();
+        var iterator = mEntries.values().iterator();
 
-        return new Enumeration<TZipEntry>() {
+        return new Enumeration<>() {
             @Override
             public boolean hasMoreElements() {
                 checkNotClosed();
@@ -263,7 +257,7 @@ public class TZipFile implements TZipConstants {
         long mOffset;
         long mLength;
 
-        public RAFStream(RandomAccessFile raf, long pos) throws IOException {
+        RAFStream(RandomAccessFile raf, long pos) throws IOException {
             mSharedRaf = raf;
             mOffset = pos;
             mLength = raf.length();
@@ -321,7 +315,7 @@ public class TZipFile implements TZipConstants {
         TZipEntry entry;
         long bytesRead;
 
-        public ZipInflaterInputStream(InputStream is, TInflater inf, int bsize, TZipEntry entry) {
+        ZipInflaterInputStream(InputStream is, TInflater inf, int bsize, TZipEntry entry) {
             super(is, inf, bsize);
             this.entry = entry;
         }
