@@ -900,7 +900,8 @@ class JSClassProcessor {
                 Variable[] newArguments = new Variable[invoke.getArguments().size() + 1];
                 newArguments[0] = invoke.getInstance();
                 for (int i = 0; i < invoke.getArguments().size(); ++i) {
-                    newArguments[i + 1] = invoke.getArguments().get(i);
+                    newArguments[i + 1] = convertValue(invoke, invoke.getArguments().get(i),
+                            invoke.getMethod().parameterType(i + 1));
                 }
                 invoke.setArguments(newArguments);
                 invoke.setInstance(null);
