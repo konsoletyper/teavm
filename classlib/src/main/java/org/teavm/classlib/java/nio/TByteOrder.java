@@ -33,7 +33,7 @@ public final class TByteOrder {
 
     public static TByteOrder nativeOrder() {
         if (nativeOrder == null) {
-            if (PlatformDetector.isJavaScript()) {
+            if (PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) {
                 var buffer = new ArrayBuffer(2);
                 var shortArray = new Int16Array(buffer);
                 shortArray.set(0, (short) 1);
