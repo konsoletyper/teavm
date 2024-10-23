@@ -47,6 +47,16 @@ public class ExportClassTest {
         assertEquals("w", o.fooValue);
     }
 
+    @Test
+    public void simpleClassExportedViaStaticHelper() {
+        assertEquals("(OK)", callNativeJSMethod(new SimpleClass()));
+        assertEquals("[OK]", callNativeJSMethod(new DerivedSimpleClass()));
+    }
+
+    private static String callNativeJSMethod(I a) {
+        return callIFromJs(a);
+    }
+
     @JSBody(params = "a", script = "return a.foo('OK');")
     private static native String callIFromJs(I a);
 

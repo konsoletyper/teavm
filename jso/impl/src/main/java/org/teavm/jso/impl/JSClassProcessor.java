@@ -324,7 +324,7 @@ class JSClassProcessor {
                     processConstructArray((ConstructArrayInstruction) insn);
                 } else if (insn instanceof ExitInstruction) {
                     var exit = (ExitInstruction) insn;
-                    exit.setValueToReturn(wrapJsAsJava(insn, exit.getValueToReturn(),
+                    exit.setValueToReturn(convertValue(insn, exit.getValueToReturn(),
                             methodToProcess.getResultType()));
                 } else if (insn instanceof ClassConstantInstruction) {
                     processClassConstant((ClassConstantInstruction) insn);
@@ -399,7 +399,7 @@ class JSClassProcessor {
         for (var i = 0; i < invoke.getArguments().size(); ++i) {
             var type = invoke.getMethod().parameterType(i);
             var arg = invoke.getArguments().get(i);
-            var newArg = wrapJsAsJava(invoke, arg, type);
+            var newArg = convertValue(invoke, arg, type);
             if (newArg != arg) {
                 if (newArgs == null) {
                     newArgs = invoke.getArguments().toArray(new Variable[0]);
@@ -412,12 +412,12 @@ class JSClassProcessor {
         }
 
         if (invoke.getInstance() != null) {
-            invoke.setInstance(wrapJsAsJava(invoke, invoke.getInstance(), ValueType.object(className)));
+            invoke.setInstance(convertValue(invoke, invoke.getInstance(), ValueType.object(className)));
         }
     }
 
     private void processPutField(PutFieldInstruction putField) {
-        putField.setValue(wrapJsAsJava(putField, putField.getValue(), putField.getFieldType()));
+        putField.setValue(convertValue(putField, putField.getValue(), putField.getFieldType()));
     }
 
     private void processGetFromArray(GetElementInstruction insn) {
@@ -772,16 +772,20 @@ class JSClassProcessor {
         return null;
     }
 
-    private Variable wrapJsAsJava(Instruction instruction, Variable var, ValueType type) {
+    private Variable convertValue(Instruction instruction, Variable var, ValueType type) {
         if (!(type instanceof ValueType.Object)) {
             return var;
         }
 
         var cls = ((ValueType.Object) type).getClassName();
         if (typeHelper.isJavaScriptClass(cls)) {
-            return var;
+            return convertJavaValueToJs(instruction, var);
+        } else {
+            return convertJsValueToJava(instruction, var);
         }
+    }
 
+    private Variable convertJsValueToJava(Instruction instruction, Variable var) {
         var varType = types.typeOf(var);
         if (varType != JSType.JS && varType != JSType.MIXED) {
             return var;
@@ -789,6 +793,21 @@ class JSClassProcessor {
         var wrap = new InvokeInstruction();
         wrap.setType(InvocationType.SPECIAL);
         wrap.setMethod(varType == JSType.JS ? JSMethods.WRAP : JSMethods.MAYBE_WRAP);
+        wrap.setArguments(var);
+        wrap.setReceiver(program.createVariable());
+        wrap.setLocation(instruction.getLocation());
+        instruction.insertPrevious(wrap);
+        return wrap.getReceiver();
+    }
+
+    private Variable convertJavaValueToJs(Instruction instruction, Variable var) {
+        var varType = types.typeOf(var);
+        if (varType == JSType.JS || varType == JSType.MIXED || varType == JSType.NULL) {
+            return var;
+        }
+        var wrap = new InvokeInstruction();
+        wrap.setType(InvocationType.SPECIAL);
+        wrap.setMethod(JSMethods.UNWRAP);
         wrap.setArguments(var);
         wrap.setReceiver(program.createVariable());
         wrap.setLocation(instruction.getLocation());
