@@ -50,6 +50,7 @@ include("tools:idea")
 include("tools:maven:plugin")
 include("tools:maven:webapp")
 include("tools:classlib-comparison-gen")
+include("tools:wasm-disassembly")
 include("tests")
 include("extras-slf4j")
 
