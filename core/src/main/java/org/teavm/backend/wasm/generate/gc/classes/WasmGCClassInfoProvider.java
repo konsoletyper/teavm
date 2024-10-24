@@ -73,6 +73,8 @@ public interface WasmGCClassInfoProvider {
 
     int getServicesOffset();
 
+    int getThrowableNativeOffset();
+
     default WasmGCClassInfo getClassInfo(String name) {
         return getClassInfo(ValueType.object(name));
     }

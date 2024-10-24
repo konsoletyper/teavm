@@ -46,8 +46,13 @@ import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicFactory;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsics;
 import org.teavm.backend.wasm.model.WasmCustomSection;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
+import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmGetLocal;
+import org.teavm.backend.wasm.model.expression.WasmStructGet;
+import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.optimization.WasmUsageCounter;
 import org.teavm.backend.wasm.render.WasmBinaryRenderer;
 import org.teavm.backend.wasm.render.WasmBinaryStatsCollector;
@@ -279,9 +284,44 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
 
         moduleGenerator.generate();
         customGenerators.contributeToModule(module);
+        generateExceptionExports(declarationsGenerator);
         adjustModuleMemory(module);
 
         emitWasmFile(module, buildTarget, outputName, debugInfoBuilder);
+    }
+
+    private void generateExceptionExports(WasmGCDeclarationsGenerator declarationsGenerator) {
+        var nativeExceptionField = declarationsGenerator.classInfoProvider().getThrowableNativeOffset();
+        if (nativeExceptionField < 0) {
+            return;
+        }
+
+        var throwableType = declarationsGenerator.classInfoProvider().getClassInfo("java.lang.Throwable")
+                .getStructure();
+
+        var getFunction = new WasmFunction(declarationsGenerator.functionTypes.of(
+                WasmType.Reference.EXTERN, throwableType.getReference()
+        ));
+        getFunction.setName("teavm.getJsException");
+        getFunction.setExportName("teavm.getJsException");
+        var getParam = new WasmLocal(throwableType.getReference(), "javaException");
+        getFunction.add(getParam);
+        var getField = new WasmStructGet(throwableType, new WasmGetLocal(getParam), nativeExceptionField);
+        getFunction.getBody().add(getField);
+        declarationsGenerator.module.functions.add(getFunction);
+
+        var setFunction = new WasmFunction(declarationsGenerator.functionTypes.of(null, throwableType.getReference(),
+                WasmType.Reference.EXTERN));
+        setFunction.setName("teavm.setJsException");
+        setFunction.setExportName("teavm.setJsException");
+        var setParam = new WasmLocal(throwableType.getReference(), "javaException");
+        var setValue = new WasmLocal(WasmType.Reference.EXTERN, "jsException");
+        setFunction.add(setParam);
+        setFunction.add(setValue);
+        var setField = new WasmStructSet(throwableType, new WasmGetLocal(setParam),
+                nativeExceptionField, new WasmGetLocal(setValue));
+        setFunction.getBody().add(setField);
+        declarationsGenerator.module.functions.add(setFunction);
     }
 
     private WasmGCClassConsumerContext createClassConsumerContext(

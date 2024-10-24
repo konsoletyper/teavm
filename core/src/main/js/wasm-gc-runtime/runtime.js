@@ -58,6 +58,7 @@ class JavaError extends Error {
         super();
         this.#context = context;
         this[javaExceptionSymbol] = javaException;
+        context.exports["teavm.setJsException"](javaException, this);
     }
     get message() {
         let exceptionMessage = this.#context.exports["teavm.exceptionMessage"];
@@ -180,6 +181,9 @@ function coreImports(imports, context) {
                     return result;
                 }
             };
+        },
+        decorateException(javaException) {
+            new JavaError(context, javaException);
         }
     };
 }
@@ -195,7 +199,6 @@ function jsoImports(imports, context) {
     let primitiveWrappers = new Map();
     let primitiveFinalization = new FinalizationRegistry(token => primitiveWrappers.delete(token));
     let hashCodes = new WeakMap();
-    let javaExceptionWrappers = new WeakMap();
     let lastHashCode = 2463534242;
     let nextHashCode = () => {
         let x = lastHashCode;
@@ -235,21 +238,17 @@ function jsoImports(imports, context) {
     function javaExceptionToJs(e) {
         if (e instanceof WebAssembly.Exception) {
             let tag = context.exports["teavm.javaException"];
+            let getJsException = context.exports["teavm.getJsException"];
             if (e.is(tag)) {
                 let javaException = e.getArg(tag, 0);
                 let extracted = extractException(javaException);
                 if (extracted !== null) {
                     return extracted;
                 }
-                let wrapperRef = javaExceptionWrappers.get(javaException);
-                if (typeof wrapperRef != "undefined") {
-                    let wrapper = wrapperRef.deref();
-                    if (typeof wrapper !== "undefined") {
-                        return wrapper;
-                    }
+                let wrapper = getJsException(javaException);
+                if (typeof wrapper === "undefined") {
+                    wrapper = new JavaError(context, javaException);
                 }
-                let wrapper = new JavaError(context, javaException);
-                javaExceptionWrappers.set(javaException, new WeakRef(wrapper));
                 return wrapper;
             }
         }

@@ -147,6 +147,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private int arrayCopyOffset = -1;
     private int cloneOffset = -1;
     private int servicesOffset = -1;
+    private int throwableNativeOffset = -1;
     private WasmStructure arrayVirtualTableStruct;
     private WasmFunction arrayGetObjectFunction;
     private WasmFunction arrayLengthObjectFunction;
@@ -480,6 +481,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     public int getServicesOffset() {
         standardClasses.classClass().getStructure().init();
         return servicesOffset;
+    }
+
+    @Override
+    public int getThrowableNativeOffset() {
+        return throwableNativeOffset;
     }
 
     private void initPrimitiveClass(WasmGCClassInfo classInfo, ValueType.Primitive type) {
@@ -1218,6 +1224,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             }
         }
         if (className.equals(StringInternPool.class.getName() + "$Entry")) {
+            var field = new WasmField(WasmType.Reference.EXTERN.asStorage(), "nativeRef");
+            fields.add(field);
+        }
+        if (className.equals("java.lang.Throwable")) {
+            throwableNativeOffset = fields.size();
             var field = new WasmField(WasmType.Reference.EXTERN.asStorage(), "nativeRef");
             fields.add(field);
         }

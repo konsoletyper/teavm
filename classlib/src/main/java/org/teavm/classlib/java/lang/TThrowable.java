@@ -111,9 +111,13 @@ public class TThrowable extends RuntimeException {
             stackTrace = (TStackTraceElement[]) (Object) ExceptionHandling.fillStackTrace();
         } else if (PlatformDetector.isWebAssemblyGC()) {
             lazyStackTrace = takeWasmGCStack();
+            decorateException(this);
         }
         return this;
     }
+
+    @Import(name = "decorateException")
+    private static native void decorateException(Object obj);
 
     private void ensureStackTrace() {
         if (PlatformDetector.isWebAssemblyGC()) {
