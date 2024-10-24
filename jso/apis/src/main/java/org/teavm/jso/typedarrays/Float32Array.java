@@ -15,7 +15,10 @@
  */
 package org.teavm.jso.typedarrays;
 
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
 
@@ -61,4 +64,16 @@ public class Float32Array extends ArrayBufferView {
     @JSBody(params = { "buffer", "offset" }, script = "return new Float32Array(buffer, offset);")
     @Deprecated
     public static native Float32Array create(ArrayBuffer buffer, int offset);
+
+
+    @JSBody(script = "return this;")
+    @JSByRef
+    public native float[] asFloatArray();
+
+    @JSBody(params = "array", script = "return array;")
+    public static native Float32Array from(@JSByRef int[] array);
+
+    public static Float32Array from(@JSByRef FloatBuffer buffer) {
+        return from(buffer.array());
+    }
 }

@@ -15,7 +15,9 @@
  */
 package org.teavm.jso.typedarrays;
 
+import java.nio.ByteBuffer;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
 
@@ -61,4 +63,15 @@ public class Int8Array extends ArrayBufferView {
     @JSBody(params = { "buffer", "offset" }, script = "return new Int8Array(buffer, offset);")
     @Deprecated
     public static native Int8Array create(ArrayBuffer buffer, int offset);
+
+    @JSBody(script = "return this;")
+    @JSByRef
+    public native byte[] asByteArray();
+
+    @JSBody(params = "array", script = "return array;")
+    public static native Int8Array from(@JSByRef byte[] array);
+
+    public static Int8Array from(@JSByRef ByteBuffer buffer) {
+        return from(buffer.array());
+    }
 }
