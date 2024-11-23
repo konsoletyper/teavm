@@ -58,7 +58,7 @@
         <configuration>
           <webResources>
             <resource>
-              <directory>\${project.build.directory}/generated/js</directory>
+              <directory>\${project.build.directory}/generated/wasm</directory>
             </resource>
           </webResources>
         </configuration>
@@ -71,34 +71,48 @@
         <version>\${teavm.version}</version>
         <executions>
           <execution>
-            <id>web-client</id>
+            <id>web-client-wasm</id>
             <goals>
               <goal>compile</goal>
             </goals>
             <configuration>
               <!-- Directory where TeaVM should put generated files. This configuration conforms to the settings
                    of the WAR plugin -->
-              <targetDirectory>\${project.build.directory}/generated/js/teavm</targetDirectory>
+              <targetDirectory>\${project.build.directory}/generated/wasm/teavm</targetDirectory>
+
+              <targetType>WEBASSEMBLY_GC</targetType>
 
               <!-- Main class, containing static void main(String[]) -->
               <mainClass>\${package}.Client</mainClass>
 
-              <!-- Whether TeaVM should produce minified JavaScript. Can reduce JavaScript file size more than
-                   two times -->
+              <!-- Optimization level. Valid values are: SIMPLE, ADVANCED, FULL -->
+              <optimizationLevel>ADVANCED</optimizationLevel>
+
+              <!-- Whether TeaVM should produce Wasm file without `name` section. Reduces size
+                   of wasm file, but makes it much more difficult to debug.
+                   Disable during development, enable for production -->
               <minifying>true</minifying>
 
-              <!-- Whether TeaVM should produce debug information for its built-in debugger -->
+              <!-- Whether TeaVM should produce debug information for its built-in debugger.
+                   Disuble for production -->
               <debugInformationGenerated>true</debugInformationGenerated>
 
-              <!-- Whether TeaVM should produce source maps file -->
+              <!-- Whether TeaVM should produce source maps file.
+                   Disuble for production -->-->
               <sourceMapsGenerated>true</sourceMapsGenerated>
 
               <!-- Whether TeaVM should also put source files into output directory,
-                   for compatibility with source maps -->
+                   for compatibility with source maps. Disable for production. -->
               <sourceFilesCopied>true</sourceFilesCopied>
-
-              <!-- Optimization level. Valid values are: SIMPLE, ADVANCED, FULL -->
-              <optimizationLevel>ADVANCED</optimizationLevel>
+            </configuration>
+          </execution>
+          <execution>
+            <id>web-client-runtime</id>
+            <goals>
+              <goal>copy-webassembly-gc-runtime</goal>
+            </goals>
+            <configuration>
+              <targetDirectory>\${project.build.directory}/generated/wasm/teavm</targetDirectory>
             </configuration>
           </execution>
         </executions>

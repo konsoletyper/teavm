@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Main page</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <script type="text/javascript" charset="utf-8" src="teavm/classes.wasm-runtime.js"></script>
+    <script>
+        async function main() {
+            let teavm = await TeaVM.wasmGC.load("teavm/classes.wasm", {
+                stackDeobfuscator: {
+                    // set to true during development phase, as well as `debugInformationGenerated`
+                    // option in pom.xml to get clear stack traces. Don't forget
+                    // to disable for production.
+                    enabled: false
+                }
+            });
+            teavm.exports.main([]);
+        }
+    </script>
+  </head>
+  <body onload="main()">
+  <!-- TODO: add HTML content -->
+  </body>
+</html>
