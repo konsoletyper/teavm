@@ -51,6 +51,9 @@ public class JSError implements JSObject {
     @JSProperty
     public native String getName();
 
+    @JSProperty
+    public native JSError getCause();
+
     @JSFunctor
     public interface TryClause<T> extends JSObject {
         T run();
