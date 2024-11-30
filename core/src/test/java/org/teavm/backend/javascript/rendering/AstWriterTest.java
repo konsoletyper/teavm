@@ -256,6 +256,11 @@ public class AstWriterTest {
     }
 
     @Test
+    public void writesDebugger() throws IOException {
+        assertEquals("debugger;debugger;", transform("debugger;  debugger;"));
+    }
+
+    @Test
     public void writesGlobalRef() throws IOException {
         assertEquals(
                 "function(x){return x+globals.y;}",
