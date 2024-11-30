@@ -93,11 +93,17 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
                     void.class));
             function.getBody().add(new WasmCall(internInit));
         }
-        var array = new WasmArrayNewFixed(stringsArray);
-        for (var str : stringMap.values()) {
-            array.getElements().add(new WasmGetGlobal(str.global));
+        var stringIterator = stringMap.values().iterator();
+        while (stringIterator.hasNext()) {
+            var elementCount = 0;
+            var array = new WasmArrayNewFixed(stringsArray);
+            // WasmArrayNewFixed cannot be larger than 10000 elements
+            while (elementCount < 10000 && stringIterator.hasNext()) {
+                array.getElements().add(new WasmGetGlobal(stringIterator.next().global));
+                ++elementCount;
+            }
+            function.getBody().add(new WasmCall(initStringsFunction, array));
         }
-        function.getBody().add(new WasmCall(initStringsFunction, array));
     }
 
     @Override
