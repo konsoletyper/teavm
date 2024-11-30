@@ -641,7 +641,8 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
     }
 
     @Override
-    public void convert(WasmNumType sourceType, WasmNumType targetType, boolean signed, boolean reinterpret) {
+    public void convert(WasmNumType sourceType, WasmNumType targetType, boolean signed, boolean reinterpret,
+            boolean nonTrapping) {
         switch (targetType) {
             case INT32:
                 writer.write("i32.");
@@ -649,18 +650,20 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
                     case FLOAT32:
                         if (reinterpret) {
                             writer.write("reinterpret_f32");
-                        } else if (signed) {
-                            writer.write("trunc_f32_s");
                         } else {
-                            writer.write("trunc_f32_u");
+                            writer.write("trunc_");
+                            if (nonTrapping) {
+                                writer.write("sat_");
+                            }
+                            writer.write("f32_").write(signed ? "s" : "u");
                         }
                         break;
                     case FLOAT64:
-                        if (signed) {
-                            writer.write("trunc_f64_s");
-                        } else {
-                            writer.write("trunc_f64_u");
+                        writer.write("trunc_");
+                        if (nonTrapping) {
+                            writer.write("sat_");
                         }
+                        writer.write("f64_").write(signed ? "s" : "u");
                         break;
                     case INT64:
                         writer.write("wrap_i64");
@@ -674,19 +677,21 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
                 writer.write("i64.");
                 switch (sourceType) {
                     case FLOAT32:
-                        if (signed) {
-                            writer.write("trunc_f32_s");
-                        } else {
-                            writer.write("trunc_f32_u");
+                        writer.write("trunc_");
+                        if (nonTrapping) {
+                            writer.write("sat_");
                         }
+                        writer.write("f32_").write(signed ? "s" : "u");
                         break;
                     case FLOAT64:
                         if (reinterpret) {
                             writer.write("reinterpret_f64");
-                        } else if (signed) {
-                            writer.write("trunc_f64_s");
                         } else {
-                            writer.write("trunc_f64_u");
+                            writer.write("trunc_");
+                            if (nonTrapping) {
+                                writer.write("sat_");
+                            }
+                            writer.write("f64_").write(signed ? "s" : "u");
                         }
                         break;
                     case INT32:

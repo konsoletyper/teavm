@@ -839,12 +839,20 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                     case INT32:
                         if (expression.isReinterpret()) {
                             writer.writeByte(0xBC);
+                        } else if (expression.isNonTrapping()) {
+                            writer.writeByte(0xFC);
+                            writer.writeByte(expression.isSigned() ? 0 : 1);
                         } else {
                             writer.writeByte(expression.isSigned() ? 0xA8 : 0xA9);
                         }
                         break;
                     case INT64:
-                        writer.writeByte(expression.isSigned() ? 0xAE : 0xAF);
+                        if (expression.isNonTrapping()) {
+                            writer.writeByte(0xFC);
+                            writer.writeByte(expression.isSigned() ? 4 : 5);
+                        } else {
+                            writer.writeByte(expression.isSigned() ? 0xAE : 0xAF);
+                        }
                         break;
                     case FLOAT32:
                         break;
@@ -856,11 +864,19 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
             case FLOAT64:
                 switch (expression.getTargetType()) {
                     case INT32:
-                        writer.writeByte(expression.isSigned() ? 0xAA : 0xAB);
+                        if (expression.isNonTrapping()) {
+                            writer.writeByte(0xFC);
+                            writer.writeByte(expression.isSigned() ? 2 : 3);
+                        } else {
+                            writer.writeByte(expression.isSigned() ? 0xAA : 0xAB);
+                        }
                         break;
                     case INT64:
                         if (expression.isReinterpret()) {
                             writer.writeByte(0xBD);
+                        } else if (expression.isNonTrapping()) {
+                            writer.writeByte(0xFC);
+                            writer.writeByte(expression.isSigned() ? 6 : 7);
                         } else {
                             writer.writeByte(expression.isSigned() ? 0xB0 : 0xB1);
                         }

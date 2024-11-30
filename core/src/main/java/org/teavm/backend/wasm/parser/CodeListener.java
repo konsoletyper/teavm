@@ -112,7 +112,8 @@ public interface CodeListener {
     default void storeFloat64(int align, int offset) {
     }
 
-    default void convert(WasmNumType sourceType, WasmNumType targetType, boolean signed, boolean reinterpret) {
+    default void convert(WasmNumType sourceType, WasmNumType targetType, boolean signed, boolean reinterpret,
+            boolean nonTrapping) {
     }
 
     default void memoryGrow() {

@@ -1172,9 +1172,11 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     @Override
     public void visit(PrimitiveCastExpr expr) {
         accept(expr.getValue());
-        result = new WasmConversion(WasmGeneratorUtil.mapType(expr.getSource()),
+        var conversion = new WasmConversion(WasmGeneratorUtil.mapType(expr.getSource()),
                 WasmGeneratorUtil.mapType(expr.getTarget()), true, result);
-        result.setLocation(expr.getLocation());
+        conversion.setNonTrapping(true);
+        conversion.setLocation(expr.getLocation());
+        result = conversion;
     }
 
     @Override
