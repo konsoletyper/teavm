@@ -876,8 +876,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         var targetArrayData = new WasmStructGet(arrayStruct, targetArray, ARRAY_DATA_FIELD_OFFSET);
 
         function.getBody().add(new WasmArrayCopy(
-                arrayDataType, targetArrayData, new WasmGetLocal(sourceIndexLocal),
-                arrayDataType, sourceArrayData, new WasmGetLocal(targetIndexLocal),
+                arrayDataType, targetArrayData, new WasmGetLocal(targetIndexLocal),
+                arrayDataType, sourceArrayData, new WasmGetLocal(sourceIndexLocal),
                 new WasmGetLocal(countLocal)));
         return function;
     }
