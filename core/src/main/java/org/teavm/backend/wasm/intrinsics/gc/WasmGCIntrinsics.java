@@ -126,6 +126,9 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         add(new MethodReference(wrapperClass, "divideUnsigned", javaClass, javaClass, javaClass), intrinsic);
         add(new MethodReference(wrapperClass, "remainderUnsigned", javaClass, javaClass, javaClass), intrinsic);
         add(new MethodReference(wrapperClass, "compareUnsigned", javaClass, javaClass, int.class), intrinsic);
+        add(new MethodReference(wrapperClass, "numberOfLeadingZeros", javaClass, int.class), intrinsic);
+        add(new MethodReference(wrapperClass, "numberOfTrailingZeros", javaClass, int.class), intrinsic);
+        add(new MethodReference(wrapperClass, "bitCount", javaClass, int.class), intrinsic);
     }
 
     private void fillFloat() {

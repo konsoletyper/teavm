@@ -17,11 +17,15 @@ package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmRuntime;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.expression.WasmIntUnary;
+import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
 import org.teavm.model.MethodReference;
 
 public class LongIntrinsic implements WasmIntrinsic {
@@ -38,6 +42,9 @@ public class LongIntrinsic implements WasmIntrinsic {
             case "divideUnsigned":
             case "remainderUnsigned":
             case "compareUnsigned":
+            case "numberOfLeadingZeros":
+            case "numberOfTrailingZeros":
+            case "bitCount":
                 return true;
             default:
                 return false;
@@ -59,8 +66,21 @@ public class LongIntrinsic implements WasmIntrinsic {
                 return new WasmCall(manager.getFunctions().forStaticMethod(COMPARE_UNSIGNED),
                         manager.generate(invocation.getArguments().get(0)),
                         manager.generate(invocation.getArguments().get(1)));
+            case "numberOfLeadingZeros":
+                return castToInt(new WasmIntUnary(WasmIntType.INT64, WasmIntUnaryOperation.CLZ,
+                        manager.generate(invocation.getArguments().get(0))));
+            case "numberOfTrailingZeros":
+                return castToInt(new WasmIntUnary(WasmIntType.INT64, WasmIntUnaryOperation.CTZ,
+                        manager.generate(invocation.getArguments().get(0))));
+            case "bitCount":
+                return castToInt(new WasmIntUnary(WasmIntType.INT64, WasmIntUnaryOperation.POPCNT,
+                        manager.generate(invocation.getArguments().get(0))));
             default:
                 throw new AssertionError();
         }
+    }
+
+    private WasmExpression castToInt(WasmExpression expr) {
+        return new WasmConversion(WasmNumType.INT64, WasmNumType.INT32, false, expr);
     }
 }

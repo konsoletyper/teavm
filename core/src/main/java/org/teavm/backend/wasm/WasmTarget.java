@@ -115,6 +115,7 @@ import org.teavm.backend.wasm.render.WasmBinaryWriter;
 import org.teavm.backend.wasm.render.WasmCRenderer;
 import org.teavm.backend.wasm.render.WasmRenderer;
 import org.teavm.backend.wasm.runtime.WasmSupport;
+import org.teavm.backend.wasm.transformation.BaseClassesTransformation;
 import org.teavm.backend.wasm.transformation.IndirectCallTraceTransformation;
 import org.teavm.backend.wasm.transformation.MemoryAccessTraceTransformation;
 import org.teavm.backend.wasm.transformation.WasiFileSystemProviderTransformer;
@@ -241,6 +242,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     public List<ClassHolderTransformer> getTransformers() {
         List<ClassHolderTransformer> transformers = new ArrayList<>();
         transformers.add(new ClassPatch());
+        transformers.add(new BaseClassesTransformation());
         transformers.add(new WasmDependencyListener());
         if (runtimeType == WasmRuntimeType.WASI) {
             transformers.add(new WasiSupportClassTransformer());
