@@ -121,6 +121,17 @@ public class BaseClassesTransformation implements ClassHolderTransformer {
             var clear = cls.getMethod(new MethodDescriptor("clear", void.class));
             clear.getModifiers().add(ElementModifier.NATIVE);
             clear.setProgram(null);
+        } else if (cls.getName().equals("java.lang.Integer") || cls.getName().equals("java.lang.Long")) {
+            for (var method : cls.getMethods()) {
+                switch (method.getName()) {
+                case "numberOfLeadingZeros":
+                case "numberOfTrailingZeros":
+                case "bitCount":
+                    method.setProgram(null);
+                    method.getModifiers().add(ElementModifier.NATIVE);
+                    break;
+                }
+            }
         }
     }
 
