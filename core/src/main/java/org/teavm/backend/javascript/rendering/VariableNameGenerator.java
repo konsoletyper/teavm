@@ -30,7 +30,6 @@ public class VariableNameGenerator {
 
     public VariableNameGenerator(boolean minifying) {
         this.minifying = minifying;
-
     }
 
     public void setCurrentMethod(MethodNode currentMethod) {
@@ -64,15 +63,19 @@ public class VariableNameGenerator {
             }
             return name;
         } else {
-            while (index >= cachedVariableNames.size()) {
-                String name;
-                do {
-                    name = RenderingUtil.indexToId(cachedVariableNameLastIndex++);
-                } while (RenderingUtil.KEYWORDS.contains(name));
-                cachedVariableNames.add(name);
-            }
-            return cachedVariableNames.get(index);
+            return minifiedVariableName(index);
         }
+    }
+
+    public String minifiedVariableName(int index) {
+        while (index >= cachedVariableNames.size()) {
+            String name;
+            do {
+                name = RenderingUtil.indexToId(cachedVariableNameLastIndex++);
+            } while (RenderingUtil.KEYWORDS.contains(name));
+            cachedVariableNames.add(name);
+        }
+        return cachedVariableNames.get(index);
     }
 
     private String generateVariableName(int index) {

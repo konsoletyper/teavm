@@ -95,6 +95,7 @@ public class Renderer implements RenderingManager {
     private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
     private List<ExportedDeclaration> exports;
     private String entryPoint;
+    private VariableNameGenerator variableNameGenerator;
 
     public static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
 
@@ -109,8 +110,9 @@ public class Renderer implements RenderingManager {
         this.services = context.getServices();
         this.asyncMethods = new HashSet<>(asyncMethods);
         this.context = context;
+        variableNameGenerator = new VariableNameGenerator(context.isMinifying());
         methodBodyRenderer = new MethodBodyRenderer(context, diagnostics, context.isMinifying(), asyncMethods,
-                writer);
+                writer, variableNameGenerator);
         this.generators = generators;
         this.astCache = astCache;
         this.cacheStatus = cacheStatus;
@@ -758,7 +760,7 @@ public class Renderer implements RenderingManager {
     }
 
     private String variableNameForInitializer(int index) {
-        return context.isMinifying() ? RenderingUtil.indexToId(index) : "var_" + index;
+        return context.isMinifying() ? variableNameGenerator.minifiedVariableName(index) : "var_" + index;
     }
 
     private void renderVirtualDeclarations(Collection<MethodReference> methods) {
