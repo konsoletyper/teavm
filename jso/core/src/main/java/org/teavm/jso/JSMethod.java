@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
  * <p>Marks abstract member method as a JavaScript method. This is equivalent to the following:</p>
  *
  * <pre>
- * {@literal @}JSBody(params = ..., script = "return new this.methodName(...);")
+ * {@literal @}JSBody(params = ..., script = "return this.methodName(...);")
  * </pre>
  *
  * <p>where <code>methodName</code> is method's name by default or a name, directly specified by
