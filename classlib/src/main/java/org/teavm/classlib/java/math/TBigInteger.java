@@ -1150,7 +1150,7 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
      * Returns a new {@code BigInteger} whose value is the biggest integer
      * {@code n} such that {@code n * n <= this}.
      *
-     * @implNote This implementation follows the ideas in Henry S. Warren, Jr.,
+     * This implementation follows the ideas in Henry S. Warren, Jr.,
      * Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 279-282.
      *
      * @return {@code floor(sqrt(this))}

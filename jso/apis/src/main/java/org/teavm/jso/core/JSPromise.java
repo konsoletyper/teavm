@@ -104,7 +104,7 @@ public class JSPromise<T> implements JSObject {
     @JSMethod("finally")
     public native JSPromise<T> onSettled(JSSupplier<Object> onFinally);
 
-    /** Interface for the return values of {@ref #allSettled()}. */
+    /** Interface for the return values of {@link #allSettled(JsArrayReader)}. */
     public interface FulfillmentValue<T> extends JSObject {
         @JSProperty
         @NoSideEffects
