@@ -19,23 +19,21 @@ plugins {
     alias(libs.plugins.intellij)
 }
 
-repositories {
-    mavenCentral()
-    intellijPlatform {
-        defaultRepositories()
-    }
+intellij {
+    version = libs.versions.idea.asProvider().get()
+    type = "IC"
+    updateSinceUntilBuild = false
+
+    plugins = listOf(
+            "java",
+            "org.intellij.scala:${libs.versions.idea.scala.get()}",
+            "org.jetbrains.kotlin"
+    )
 }
 
 dependencies {
     compileOnly(project(":tools:ide-deps"))
     runtimeOnly(project(path = ":tools:ide-deps", configuration = "shadow").setTransitive(false))
-    intellijPlatform {
-        intellijIdeaCommunity(libs.versions.idea.asProvider())
-
-        bundledPlugin("com.intellij.java")
-        bundledPlugin("org.jetbrains.kotlin")
-        plugin("org.intellij.scala", libs.versions.idea.scala.get())
-    }
 }
 
 tasks {
