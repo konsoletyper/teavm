@@ -34,4 +34,4 @@ node_modules
 !.idea/inspectionProfies
 !.idea/codeStyles
 !.idea/copyright
-
+.intellijPlatform
