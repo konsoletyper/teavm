@@ -40,17 +40,6 @@ You most likely encounter Maven and IDEA plugins.
 Please, notice that these APIs for embedding are still unstable and may change between versions.
 
 
-## WebAssembly
-
-WebAssembly support is in experimental status. It may lack major features available in JavaScript backend. 
-There's no documentation yet, and you should do many things by hands 
-(like embedding generated `wasm` file into your page, importing JavaScript objects, etc).
-Look at [samples/benchmark](https://github.com/konsoletyper/teavm/blob/master/samples/benchmark/) module.
-You should first examine `pom.xml` file to learn how to build `wasm` file from Java.
-Then you may want to examine `index-teavm.html` and `index-teavm.js`
-to learn how to embed WebAssembly into your web page.
-
-
 ## License
  
 TeaVM is distributed under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
