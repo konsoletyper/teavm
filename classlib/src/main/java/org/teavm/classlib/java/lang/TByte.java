@@ -135,7 +135,7 @@ public class TByte extends TNumber implements TComparable<TByte> {
 
     public static TByte decode(String nm) throws TNumberFormatException {
         TInteger value = TInteger.decode(nm);
-        if (value.intValue() < MIN_VALUE || value.intValue() >= MAX_VALUE) {
+        if (value.intValue() < MIN_VALUE || value.intValue() > MAX_VALUE) {
             throw new TNumberFormatException();
         }
         return TByte.valueOf((byte) value.intValue());
