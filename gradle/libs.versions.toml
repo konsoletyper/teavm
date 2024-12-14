@@ -6,7 +6,7 @@ jetty = "9.4.56.v20240826"
 shadow = "8.3.5"
 checkstyle = "10.21.0"
 idea = "2022.3.1"
-idea-scala = "2023.3.1"
+idea-scala = "2022.3.1"
 maven = "3.5.4"
 maven-tools = "3.7.1"
 
