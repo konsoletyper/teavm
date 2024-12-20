@@ -268,6 +268,17 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     @Import(name = "teavm_reinterpretDoubleToLong")
     @NoSideEffects
     @Unmanaged
+    /**
+     * Platform dependent behaviour in the JS backend.
+     *
+     * The JavaScript engines in Firefox and Safari have special handling of NaN values.
+     *
+     * Except for V8 in chrome, most engines seem to canonicalize NaN values for internal
+     * bookkeeping (and using these NaN values as object pointers internally). This is not
+     * expected to change in the future.
+     *
+     * @see #longBitsToDouble(double)
+     */
     public static native long doubleToRawLongBits(double value);
 
     public static long doubleToLongBits(double value) {
@@ -281,6 +292,20 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     @Import(name = "teavm_reinterpretLongToDouble")
     @NoSideEffects
     @Unmanaged
+    /**
+     * Platform dependent behaviour in the JS backend.
+     *
+     * The JavaScript engines in Firefox and Safari have special handling of NaN values.
+     *
+     * Except for V8 in chrome, most engines seem to canonicalize NaN values for internal
+     * bookkeeping (and using these NaN values as object pointers internally). This is not
+     * expected to change in the future.
+     *
+     * As a result, application code intending to run with the JS backend should not depend
+     * on `long`s retaining their bits through the conversion of a `double`.
+     *
+     * See https://github.com/konsoletyper/teavm/issues/895
+     */
     public static native double longBitsToDouble(long bits);
 
     public static String toHexString(double d) {
