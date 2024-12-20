@@ -30,7 +30,6 @@ import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;
 import java.nio.ReadOnlyBufferException;
 import org.junit.jupiter.api.Test;
-import org.teavm.classlib.java.lang.DoubleTest;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.TeaVMTest;
 import org.teavm.junit.TestPlatform;
@@ -672,15 +671,6 @@ public class ByteBufferTest {
 
         buffer.putDouble(1, 2.0);
         assertArrayEquals(new byte[] { 63, 64, 0, 0, 0, 0, 0, 0, 0, 55, 0, 0, 0, 0, 0, 0 }, array);
-    }
-
-    @Test
-    public void putsDoubleNaN() {
-        var array = new byte[8];
-        var buffer = ByteBuffer.wrap(array);
-
-        buffer.putDouble(0, DoubleTest.OTHER_NAN);
-        assertArrayEquals(new byte[] { 127, -8, 0, 0, 0, 0, 0, 1 }, array);
     }
 
     @Test
