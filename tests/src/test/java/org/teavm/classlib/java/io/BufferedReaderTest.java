@@ -20,7 +20,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
+import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -72,7 +74,7 @@ public class BufferedReaderTest {
         }
         BufferedReader reader = new BufferedReader(new StringReader(sb.toString()), 101);
         char[] buffer = new char[500];
-        reader.read(buffer);
+        assertEquals(500, reader.read(buffer));
         assertEquals(0, buffer[0]);
         assertEquals(1, buffer[1]);
         assertEquals(499, buffer[499]);
@@ -106,5 +108,50 @@ public class BufferedReaderTest {
         reader = new BufferedReader(new StringReader("a\nb\n\n"));
         lines = reader.lines().filter(s -> !s.isEmpty()).map(s -> "*" + s).toArray(String[]::new);
         assertArrayEquals(new String[] { "*a", "*b" }, lines);
+    }
+
+    @Test
+    public void nonGreedyFill() throws IOException {
+        var in = new TestReader();
+        var reader = new BufferedReader(in);
+        var buffer = new char[10];
+
+        assertEquals(5, reader.read(buffer));
+        assertArrayEquals("ABCDE".toCharArray(), Arrays.copyOf(buffer, 5));
+        assertEquals(5, reader.read(buffer));
+        assertArrayEquals("FGHIJ".toCharArray(), Arrays.copyOf(buffer, 5));
+        assertEquals(5, reader.read(buffer));
+        assertArrayEquals("KLMNO".toCharArray(), Arrays.copyOf(buffer, 5));
+        assertEquals(5, reader.read(buffer));
+        assertArrayEquals("PABCD".toCharArray(), Arrays.copyOf(buffer, 5));
+    }
+
+    private static class TestReader extends Reader {
+        int reads;
+        private byte lastRead;
+
+        @Override
+        public int read() {
+            reads++;
+            return 'A' + (lastRead++ & 15);
+        }
+
+        @Override
+        public int read(char[] b, int off, int len) {
+            var readBytes = 0;
+            while (len-- > 0) {
+                reads++;
+                readBytes++;
+                b[off++] = (char) ('A' + (lastRead++ & 15));
+                if (reads % 5 == 0) {
+                    break;
+                }
+            }
+            return readBytes;
+        }
+
+        @Override
+        public void close() {
+        }
     }
 }

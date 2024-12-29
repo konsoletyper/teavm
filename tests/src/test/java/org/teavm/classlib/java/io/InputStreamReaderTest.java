@@ -15,12 +15,15 @@
  */
 package org.teavm.classlib.java.io;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -34,8 +37,8 @@ public class InputStreamReaderTest {
         for (int i = 0; i < str.length(); ++i) {
             bytes[i] = (byte) str.charAt(i);
         }
-        ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
-        InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
+        var stream = new ByteArrayInputStream(bytes);
+        var reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
         char[] chars = new char[100];
         int readChars = reader.read(chars);
         assertEquals(str.length(), readChars);
@@ -51,8 +54,8 @@ public class InputStreamReaderTest {
         for (int i = 0; i < str.length(); ++i) {
             bytes[i] = (byte) str.charAt(i);
         }
-        ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
-        InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
+        var stream = new ByteArrayInputStream(bytes);
+        var reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
         assertEquals('f', reader.read());
         assertEquals('o', reader.read());
         assertEquals('o', reader.read());
@@ -71,8 +74,8 @@ public class InputStreamReaderTest {
         for (int i = 0; i < str.length(); ++i) {
             bytes[i] = (byte) str.charAt(i);
         }
-        ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
-        InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
+        var stream = new ByteArrayInputStream(bytes);
+        var reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
         char[] chars = new char[12000];
         int readChars = reader.read(chars);
         assertEquals(chars.length, readChars);
@@ -97,5 +100,80 @@ public class InputStreamReaderTest {
             assertEquals(0xA2, reader.read());
         }
         assertEquals(-1, reader.read());
+    }
+
+    @Test
+    public void nonGreedyRead() throws IOException {
+        var in = new TestInputStream();
+        var reader = new InputStreamReader(in, StandardCharsets.UTF_8);
+        var testString = "ABCDEFGHIJKLMNOPABCD";
+        for (var i = 0; i < 5; ++i) {
+            assertEquals(testString.charAt(i), reader.read());
+            assertEquals(5, in.reads);
+        }
+        for (var i = 5; i < 10; ++i) {
+            assertEquals(testString.charAt(i), reader.read());
+            assertEquals(10, in.reads);
+        }
+        for (var i = 10; i < 15; ++i) {
+            assertEquals(testString.charAt(i), reader.read());
+            assertEquals(15, in.reads);
+        }
+        for (var i = 15; i < 20; ++i) {
+            assertEquals(testString.charAt(i), reader.read());
+            assertEquals(20, in.reads);
+        }
+        in.close();
+    }
+
+    @Test
+    public void nonGreedyReadToArray() throws IOException {
+        var in = new TestInputStream();
+        var reader = new InputStreamReader(in, StandardCharsets.UTF_8);
+        var buffer = new char[10];
+
+        assertEquals(2, reader.read(buffer, 0, 2));
+        assertArrayEquals("AB".toCharArray(), Arrays.copyOf(buffer, 2));
+        assertEquals(5, in.reads);
+        assertEquals(3, reader.read(buffer));
+        assertArrayEquals("CDE".toCharArray(), Arrays.copyOf(buffer, 3));
+        assertEquals(5, in.reads);
+
+        assertEquals(5, reader.read(buffer));
+        assertArrayEquals("FGHIJ".toCharArray(), Arrays.copyOf(buffer, 5));
+        assertEquals(10, in.reads);
+
+        assertEquals(5, reader.read(buffer));
+        assertArrayEquals("KLMNO".toCharArray(), Arrays.copyOf(buffer, 5));
+        assertEquals(15, in.reads);
+
+        assertEquals(5, reader.read(buffer));
+        assertArrayEquals("PABCD".toCharArray(), Arrays.copyOf(buffer, 5));
+        assertEquals(20, in.reads);
+    }
+
+    private static class TestInputStream extends InputStream {
+        int reads;
+        private byte lastRead;
+
+        @Override
+        public int read() {
+            reads++;
+            return 'A' + (lastRead++ & 15);
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) {
+            var readBytes = 0;
+            while (len-- > 0) {
+                reads++;
+                readBytes++;
+                b[off++] = (byte) ('A' + (lastRead++ & 15));
+                if (reads % 5 == 0) {
+                    break;
+                }
+            }
+            return readBytes;
+        }
     }
 }
