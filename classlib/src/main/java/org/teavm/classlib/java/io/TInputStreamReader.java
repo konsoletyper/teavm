@@ -85,43 +85,65 @@ public class TInputStreamReader extends TReader {
 
     @Override
     public int read(char[] cbuf, int off, int len) throws IOException {
-        if (eof && !outBuffer.hasRemaining()) {
-            return -1;
+        if (!outBuffer.hasRemaining()) {
+            if (eof) {
+                return -1;
+            }
+            if (len == 0) {
+                return 0;
+            }
+            ensureBufferHasData(true);
         }
         int bytesRead = 0;
-        while (len > 0) {
+        do {
             int sz = Math.min(len, outBuffer.remaining());
             outBuffer.get(cbuf, off + bytesRead, sz);
             len -= sz;
             bytesRead += sz;
-            if (!outBuffer.hasRemaining() && !fillBuffer()) {
-                break;
-            }
-        }
+        } while (len > 0 && ensureBufferHasData(false));
+
         return bytesRead;
     }
 
-    private boolean fillBuffer() throws IOException {
+    private boolean ensureBufferHasData(boolean force) throws IOException {
+        if (outBuffer.hasRemaining()) {
+            return true;
+        }
+        return fillBuffer(force);
+    }
+
+    private boolean fillBuffer(boolean force) throws IOException {
         if (eof) {
             return false;
         }
         outBuffer.compact();
+        var readSomething = false;
+        var hasAvailable = true;
         while (true) {
-            if (!inBuffer.hasRemaining() && !fillReadBuffer()) {
+            if (inBuffer.hasRemaining()) {
+                var posBefore = outBuffer.position();
+                var result = decoder.decode(inBuffer, outBuffer, streamEof);
+                readSomething |= outBuffer.position() > posBefore;
+                if (result.isOverflow()) {
+                    break;
+                } else if (!result.isUnderflow()) {
+                    continue;
+                }
+            }
+            if (stream.available() <= 0 && readSomething) {
+                hasAvailable = false;
                 break;
             }
-            var result = decoder.decode(inBuffer, outBuffer, streamEof);
-            if (result.isOverflow()) {
+            if (!fillReadBuffer()) {
                 break;
-            } else if (result.isUnderflow()) {
-                fillReadBuffer();
             }
         }
         if (!inBuffer.hasRemaining() && streamEof && decoder.flush(outBuffer).isUnderflow()) {
+            hasAvailable = false;
             eof = true;
         }
         outBuffer.flip();
-        return true;
+        return hasAvailable;
     }
 
     private boolean fillReadBuffer() throws IOException {
@@ -134,11 +156,9 @@ public class TInputStreamReader extends TReader {
             if (bytesRead == -1) {
                 streamEof = true;
                 break;
-            } else {
+            } else if (bytesRead > 0) {
                 inBuffer.position(inBuffer.position() + bytesRead);
-                if (bytesRead == 0) {
-                    break;
-                }
+                break;
             }
         }
         inBuffer.flip();
