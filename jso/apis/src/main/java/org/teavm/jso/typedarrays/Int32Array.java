@@ -68,4 +68,7 @@ public class Int32Array extends ArrayBufferView {
     @JSBody(params = { "buffer", "offset" }, script = "return new Int32Array(buffer, offset);")
     @Deprecated
     public static native Int32Array create(ArrayBuffer buffer, int offset);
+
+    @JSBody(params = "array", script = "return array;")
+    public static native Int32Array fromJavaArray(@JSByRef int[] array);
 }

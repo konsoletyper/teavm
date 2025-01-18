@@ -16,8 +16,8 @@
 package org.teavm.classlib.java.nio;
 
 abstract class TDoubleBufferImpl extends TDoubleBuffer {
-    public TDoubleBufferImpl(int capacity, int position, int limit) {
-        super(capacity, position, limit);
+    TDoubleBufferImpl(int position, int limit) {
+        super(position, limit);
     }
 
     @Override
@@ -27,12 +27,12 @@ abstract class TDoubleBufferImpl extends TDoubleBuffer {
 
     @Override
     public TDoubleBuffer duplicate() {
-        return duplicate(0, capacity, position, limit, isReadOnly());
+        return duplicate(0, capacity(), position, limit, isReadOnly());
     }
 
     @Override
     public TDoubleBuffer asReadOnlyBuffer() {
-        return duplicate(0, capacity, position, limit, true);
+        return duplicate(0, capacity(), position, limit, true);
     }
 
     abstract TDoubleBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly);
@@ -90,7 +90,7 @@ abstract class TDoubleBufferImpl extends TDoubleBuffer {
             }
         }
         position = sz;
-        limit = capacity;
+        limit = capacity();
         mark = -1;
         return this;
     }

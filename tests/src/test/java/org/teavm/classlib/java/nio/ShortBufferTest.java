@@ -17,10 +17,14 @@ package org.teavm.classlib.java.nio;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;
 import java.nio.ReadOnlyBufferException;
 import java.nio.ShortBuffer;
@@ -376,5 +380,190 @@ public class ShortBufferTest {
         ShortBuffer sb = ShortBuffer.allocate(0);
         sb.put(new short[0]);
         sb.get(new short[0]);
+    }
+
+    @Test
+    public void bulkPut() {
+        var buffer = ShortBuffer.allocate(100);
+        buffer.put(new short[] { 1, 2, 3 });
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer.put(1, new short[] { 4, 5, 6 });
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(4, buffer.get(1));
+        assertEquals(5, buffer.get(2));
+        assertEquals(6, buffer.get(3));
+
+        buffer.put(0, new short[] { 7, 8, 9, 10 }, 1, 2);
+        assertEquals(8, buffer.get(0));
+        assertEquals(9, buffer.get(1));
+        assertEquals(5, buffer.get(2));
+        assertEquals(6, buffer.get(3));
+    }
+
+    @Test
+    public void bulkPutWrapper() {
+        var byteBuffer = ByteBuffer.allocate(100);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
+        var buffer = byteBuffer.asShortBuffer();
+
+        buffer.put(new short[] { 1, 2, 3 });
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer.put(1, new short[] { 4, 5, 6 });
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(4, buffer.get(1));
+        assertEquals(5, buffer.get(2));
+        assertEquals(6, buffer.get(3));
+        assertEquals(0, byteBuffer.get(0));
+        assertEquals(1, byteBuffer.get(1));
+
+        buffer.put(0, new short[] { 7, 8, 9, 10 }, 1, 2);
+        assertEquals(8, buffer.get(0));
+        assertEquals(9, buffer.get(1));
+        assertEquals(5, buffer.get(2));
+        assertEquals(6, buffer.get(3));
+
+        byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer = byteBuffer.asShortBuffer();
+
+        buffer.put(new short[] { 1, 2, 3 });
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer.put(1, new short[] { 4, 5, 6 });
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(4, buffer.get(1));
+        assertEquals(5, buffer.get(2));
+        assertEquals(6, buffer.get(3));
+        assertEquals(1, byteBuffer.get(0));
+        assertEquals(0, byteBuffer.get(1));
+
+        buffer.put(0, new short[] { 7, 8, 9, 10 }, 1, 2);
+        assertEquals(8, buffer.get(0));
+        assertEquals(9, buffer.get(1));
+        assertEquals(5, buffer.get(2));
+        assertEquals(6, buffer.get(3));
+    }
+
+    @Test
+    public void bulkPutBuffer() {
+        var buffer = ShortBuffer.allocate(100);
+        buffer.put(ShortBuffer.wrap(new short[] { 1, 2, 3 }));
+
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer.put(1, ShortBuffer.wrap(new short[] { 4, 5, 6 }), 1, 2);
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(5, buffer.get(1));
+        assertEquals(6, buffer.get(2));
+    }
+
+    @Test
+    public void bulkPutBufferWrapper() {
+        var buffer = ByteBuffer.allocate(100).order(ByteOrder.BIG_ENDIAN).asShortBuffer();
+        buffer.put(ByteBuffer.wrap(new byte[] { 0, 1, 0, 2, 0, 3 })
+                .order(ByteOrder.BIG_ENDIAN)
+                .asShortBuffer());
+
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer = ByteBuffer.allocate(100).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+        buffer.put(ByteBuffer.wrap(new byte[] { 0, 1, 0, 2, 0, 3 })
+                .order(ByteOrder.BIG_ENDIAN)
+                .asShortBuffer());
+
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer = ByteBuffer.allocate(100).order(ByteOrder.BIG_ENDIAN).asShortBuffer();
+        buffer.put(ByteBuffer.wrap(new byte[] { 1, 0, 2, 0, 3, 0 })
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .asShortBuffer());
+
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer = ByteBuffer.allocate(100).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer();
+        buffer.put(ByteBuffer.wrap(new byte[] { 1, 0, 2, 0, 3, 0 })
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .asShortBuffer());
+
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+    }
+
+    @Test
+    public void bulkGet() {
+        var buffer = ShortBuffer.wrap(new short[] { 1, 2, 3, 4, 5, 6 });
+        var arr = new short[3];
+
+        buffer.get(arr);
+        assertArrayEquals(new short[] { 1, 2, 3 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer.get(1, arr);
+        assertArrayEquals(new short[] { 2, 3, 4 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer.get(4, arr, 1, 2);
+        assertArrayEquals(new short[] { 2, 5, 6 }, arr);
+        assertEquals(3, buffer.position());
+    }
+
+    @Test
+    public void bulkGetWrapper() {
+        var buffer = ByteBuffer.wrap(new byte[] { 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0 })
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .asShortBuffer();
+        var arr = new short[3];
+
+        buffer.get(arr);
+        assertArrayEquals(new short[] { 1, 2, 3 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer.get(1, arr);
+        assertArrayEquals(new short[] { 2, 3, 4 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer.get(4, arr, 1, 2);
+        assertArrayEquals(new short[] { 2, 5, 6 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer = ByteBuffer.wrap(new byte[] { 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6 })
+                .order(ByteOrder.BIG_ENDIAN)
+                .asShortBuffer();
+
+        buffer.get(arr);
+        assertArrayEquals(new short[] { 1, 2, 3 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer.get(1, arr);
+        assertArrayEquals(new short[] { 2, 3, 4 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer.get(4, arr, 1, 2);
+        assertArrayEquals(new short[] { 2, 5, 6 }, arr);
+        assertEquals(3, buffer.position());
     }
 }

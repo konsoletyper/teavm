@@ -17,12 +17,13 @@ package org.teavm.classlib.java.nio;
 
 import java.io.IOException;
 import java.util.Objects;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TReadable;
+import org.teavm.jso.typedarrays.Uint16Array;
 
 public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuffer>, Appendable,
         CharSequence, TReadable {
-    TCharBuffer(int capacity, int position, int limit) {
-        super(capacity);
+    TCharBuffer(int position, int limit) {
         this.position = position;
         this.limit = limit;
     }
@@ -35,10 +36,23 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
         if (capacity < 0) {
             throw new IllegalArgumentException("Capacity is negative: " + capacity);
         }
+        if (PlatformDetector.isJavaScript()) {
+            var array = new char[capacity];
+            return new TCharBufferOverTypedArray(0, capacity, false, Uint16Array.fromJavaArray(array), array);
+        }
         return new TCharBufferOverArray(capacity);
     }
 
     public static TCharBuffer wrap(char[] array, int offset, int length) {
+        if (length < 0 || offset < 0 || length + offset > array.length) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (PlatformDetector.isJavaScript()) {
+            var result = new TCharBufferOverTypedArray(0, array.length, false, Uint16Array.fromJavaArray(array), array);
+            result.position = offset;
+            result.limit = offset + length;
+            return result;
+        }
         return new TCharBufferOverArray(0, array.length, array, offset, offset + length, false);
     }
 
@@ -85,26 +99,30 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
     public abstract TCharBuffer put(int index, char c);
 
     public TCharBuffer get(char[] dst, int offset, int length) {
-        if (offset < 0 || offset > dst.length) {
-            throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
+        if (length < 0 || offset < 0 || offset + length > dst.length) {
+            throw new IndexOutOfBoundsException();
         }
-        if (offset + length > dst.length) {
-            throw new IndexOutOfBoundsException("The last char in dst " + (offset + length) + " is outside "
-                    + "of array of size " + dst.length);
-        }
-        if (remaining() < length) {
+        if (length > remaining()) {
             throw new TBufferUnderflowException();
         }
-        if (length < 0) {
-            throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
-        }
-        int pos = position;
-        for (int i = 0; i < length; ++i) {
-            dst[offset++] = getChar(pos++);
-        }
+        getImpl(position, dst, offset, length);
         position += length;
         return this;
     }
+
+    public TCharBuffer get(int index, char[] dst, int offset, int length) {
+        if (length < 0 || offset < 0 || offset + length > dst.length || index < 0 || index + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        getImpl(index, dst, offset, length);
+        return this;
+    }
+
+    public TCharBuffer get(int index, char[] dst) {
+        return get(index, dst, 0, dst.length);
+    }
+
+    abstract void getImpl(int index, char[] dst, int offset, int length);
 
     public TCharBuffer get(char[] dst) {
         return get(dst, 0, dst.length);
@@ -117,15 +135,23 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
         if (remaining() < src.remaining()) {
             throw new TBufferOverflowException();
         }
-        int length = src.remaining();
-        int pos = position;
-        int offset = src.position;
-        for (int i = 0; i < length; ++i) {
-            putChar(pos++, src.getChar(offset++));
-        }
-        position += length;
+        putImpl(position, src, src.position, src.remaining());
+        position += src.remaining();
         return this;
     }
+
+    public TCharBuffer put(int index, TCharBuffer src, int offset, int length) {
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (index < 0 || index > limit() || offset < 0 || offset + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        putImpl(index, src, offset, length);
+        return this;
+    }
+
+    abstract void putImpl(int index, TCharBuffer src, int offset, int length);
 
     public TCharBuffer put(char[] src, int offset, int length) {
         if (isReadOnly()) {
@@ -134,50 +160,48 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
         if (remaining() < length) {
             throw new TBufferOverflowException();
         }
-        if (offset < 0 || offset > src.length) {
-            throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + src.length + ")");
+        if (length < 0 || offset < 0 || offset + length > src.length) {
+            throw new IndexOutOfBoundsException();
         }
-        if (offset + length > src.length) {
-            throw new IndexOutOfBoundsException("The last char in src " + (offset + length) + " is outside "
-                    + "of array of size " + src.length);
-        }
-        if (length < 0) {
-            throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
-        }
-        int pos = position;
-        for (int i = 0; i < length; ++i) {
-            putChar(pos++, src[offset++]);
-        }
+        putImpl(position, src, offset, length);
         position += length;
         return this;
+    }
+
+    public TCharBuffer put(int index, char[] src, int offset, int length) {
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (length < 0 || offset < 0 || offset + length > src.length || index < 0 || index + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        putImpl(index, src, offset, length);
+        return this;
+    }
+
+    public TCharBuffer put(int index, char[] src) {
+        return put(index, src, 0, src.length);
     }
 
     public final TCharBuffer put(char[] src) {
         return put(src, 0, src.length);
     }
 
+    abstract void putImpl(int index, char[] src, int offset, int length);
+
     public TCharBuffer put(String src, int start, int end) {
         if (isReadOnly()) {
             throw new TReadOnlyBufferException();
+        }
+        if (end < start || start < 0 || end > src.length()) {
+            throw new IndexOutOfBoundsException();
         }
         int sz = end - start;
         if (remaining() < sz) {
             throw new TBufferOverflowException();
         }
-        if (start < 0 || start > src.length()) {
-            throw new IndexOutOfBoundsException("Start " + start + " is outside of range [0;" + src.length() + ")");
-        }
-        if (end > src.length()) {
-            throw new IndexOutOfBoundsException("The last char in src " + end + " is outside "
-                    + "of string of size " + src.length());
-        }
-        if (start > end) {
-            throw new IndexOutOfBoundsException("Start " + start + " must be before end " + end);
-        }
         int pos = position;
-        while (start < end) {
-            putChar(pos++, src.charAt(start++));
-        }
+        putImpl(pos, src, start, end);
         position += sz;
         return this;
     }
@@ -185,6 +209,8 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
     public final TCharBuffer put(String src) {
         return put(src, 0, src.length());
     }
+
+    abstract void putImpl(int index, String src, int offset, int length);
 
     @Override
     public final boolean hasArray() {

@@ -16,17 +16,19 @@
 package org.teavm.classlib.java.nio;
 
 class TCharBufferOverArray extends TCharBufferImpl {
-    boolean readOnly;
-    int start;
-    char[] array;
+    private boolean readOnly;
+    private int start;
+    private int capacity;
+    private char[] array;
 
-    public TCharBufferOverArray(int capacity) {
+    TCharBufferOverArray(int capacity) {
         this(0, capacity, new char[capacity], 0, capacity, false);
     }
 
-    public TCharBufferOverArray(int start, int capacity, char[] array, int position, int limit, boolean readOnly) {
-        super(capacity, position, limit);
+    TCharBufferOverArray(int start, int capacity, char[] array, int position, int limit, boolean readOnly) {
+        super(position, limit);
         this.start = start;
+        this.capacity = capacity;
         this.readOnly = readOnly;
         this.array = array;
     }
@@ -34,6 +36,11 @@ class TCharBufferOverArray extends TCharBufferImpl {
     @Override
     TCharBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
         return new TCharBufferOverArray(this.start + start, capacity, array, position, limit, readOnly);
+    }
+
+    @Override
+    int capacityImpl() {
+        return capacity;
     }
 
     @Override
@@ -68,6 +75,32 @@ class TCharBufferOverArray extends TCharBufferImpl {
 
     @Override
     public TByteOrder order() {
-        return TByteOrder.BIG_ENDIAN;
+        return TByteOrder.nativeOrder();
+    }
+
+    @Override
+    void getImpl(int index, char[] dst, int offset, int length) {
+        System.arraycopy(array, start + index, dst, offset, length);
+    }
+
+    @Override
+    void putImpl(int index, char[] src, int offset, int length) {
+        System.arraycopy(src, offset, array, start + index, length);
+    }
+
+    @Override
+    void putImpl(int index, TCharBuffer src, int offset, int length) {
+        if (src.hasArray()) {
+            System.arraycopy(src.array(), src.arrayOffset() + offset, array, start + index, length);
+        } else {
+            while (length-- > 0) {
+                src.put(offset++, getChar(index++));
+            }
+        }
+    }
+
+    @Override
+    void putImpl(int index, String src, int offset, int length) {
+        src.getChars(offset, offset + length, array, start + index);
     }
 }

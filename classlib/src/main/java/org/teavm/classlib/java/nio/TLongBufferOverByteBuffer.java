@@ -16,15 +16,17 @@
 package org.teavm.classlib.java.nio;
 
 abstract class TLongBufferOverByteBuffer extends TLongBufferImpl {
-    TByteBufferImpl byteByffer;
-    boolean readOnly;
+    TByteBufferImpl byteBuffer;
+    private boolean readOnly;
     int start;
+    private int capacity;
 
-    public TLongBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
+    TLongBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
             boolean readOnly) {
-        super(capacity, position, limit);
+        super(position, limit);
         this.start = start;
-        this.byteByffer = byteBuffer;
+        this.capacity = capacity;
+        this.byteBuffer = byteBuffer;
         this.readOnly = readOnly;
     }
 
@@ -46,5 +48,37 @@ abstract class TLongBufferOverByteBuffer extends TLongBufferImpl {
     @Override
     boolean readOnly() {
         return readOnly;
+    }
+
+    @Override
+    void getImpl(int index, long[] dst, int offset, int length) {
+        while (length-- > 0) {
+            dst[offset++] = getElement(index++);
+        }
+    }
+
+    @Override
+    void putImpl(int index, long[] src, int offset, int length) {
+        while (length-- > 0) {
+            putElement(index++, src[offset++]);
+        }
+    }
+
+    @Override
+    void putImpl(int index, TLongBuffer src, int offset, int length) {
+        if (src instanceof TLongBufferOverByteBuffer && src.order() == order()) {
+            var srcImpl = (TLongBufferOverByteBuffer) src;
+            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + index * 8,
+                    byteBuffer.array, start + offset * 8, length * 8);
+        } else {
+            while (length-- > 0) {
+                putElement(index++, src.getElement(offset++));
+            }
+        }
+    }
+
+    @Override
+    int capacityImpl() {
+        return capacity;
     }
 }

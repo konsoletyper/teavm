@@ -15,9 +15,11 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.classlib.PlatformDetector;
+import org.teavm.jso.typedarrays.BigInt64Array;
+
 public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuffer> {
-    TLongBuffer(int capacity, int position, int limit) {
-        super(capacity);
+    TLongBuffer(int position, int limit) {
         this.position = position;
         this.limit = limit;
     }
@@ -26,10 +28,21 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
         if (capacity < 0) {
             throw new IllegalArgumentException("Capacity is negative: " + capacity);
         }
+        if (PlatformDetector.isJavaScript()) {
+            var array = new long[capacity];
+            return new TLongBufferOverTypedArray(0, capacity, false, BigInt64Array.fromJavaArray(array), array);
+        }
         return new TLongBufferOverArray(capacity);
     }
 
     public static TLongBuffer wrap(long[] array, int offset, int length) {
+        if (PlatformDetector.isJavaScript()) {
+            var result = new TLongBufferOverTypedArray(0, array.length, false, BigInt64Array.fromJavaArray(array),
+                    array);
+            result.position = offset;
+            result.limit = offset + length;
+            return result;
+        }
         return new TLongBufferOverArray(0, array.length, array, offset, offset + length, false);
     }
 
@@ -56,30 +69,51 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
     abstract void putElement(int index, long value);
 
     public TLongBuffer get(long[] dst, int offset, int length) {
-        if (offset < 0 || offset > dst.length) {
-            throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
+        if (length < 0 || offset < 0 || offset + length > dst.length) {
+            throw new IndexOutOfBoundsException();
         }
-        if (offset + length > dst.length) {
-            throw new IndexOutOfBoundsException("The last long in dst " + (offset + length) + " is outside "
-                    + "of array of size " + dst.length);
-        }
-        if (remaining() < length) {
+        if (length > remaining()) {
             throw new TBufferUnderflowException();
         }
-        if (length < 0) {
-            throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
-        }
-        int pos = position;
-        for (int i = 0; i < length; ++i) {
-            dst[offset++] = getElement(pos++);
-        }
+        getImpl(position, dst, offset, length);
         position += length;
         return this;
     }
 
+    public TLongBuffer get(int index, long[] dst, int offset, int length) {
+        if (length < 0 || offset < 0 || offset + length > dst.length || index < 0 || index + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        getImpl(index, dst, offset, length);
+        return this;
+    }
+
+    public TLongBuffer get(int index, long[] dst) {
+        return get(index, dst, 0, dst.length);
+    }
+
+    abstract void getImpl(int index, long[] dst, int offset, int length);
+
     public TLongBuffer get(long[] dst) {
         return get(dst, 0, dst.length);
     }
+
+    public TLongBuffer put(int index, TLongBuffer src, int offset, int length) {
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (index < 0 || index > limit() || offset < 0 || offset + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        putImpl(index, src, offset, length);
+        return this;
+    }
+
+    public TLongBuffer put(int index, long[] src) {
+        return put(index, src, 0, src.length);
+    }
+
+    abstract void putImpl(int index, TLongBuffer src, int offset, int length);
 
     public TLongBuffer put(TLongBuffer src) {
         if (isReadOnly()) {
@@ -88,13 +122,8 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
         if (remaining() < src.remaining()) {
             throw new TBufferOverflowException();
         }
-        int length = src.remaining();
-        int pos = position;
-        int offset = src.position;
-        for (int i = 0; i < length; ++i) {
-            putElement(pos++, src.getElement(offset++));
-        }
-        position += length;
+        putImpl(position, src, src.position, src.remaining());
+        position += src.remaining();
         return this;
     }
 
@@ -105,27 +134,30 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
         if (remaining() < length) {
             throw new TBufferOverflowException();
         }
-        if (offset < 0 || offset > src.length) {
-            throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + src.length + ")");
+        if (length < 0 || offset < 0 || offset + length > src.length) {
+            throw new IndexOutOfBoundsException();
         }
-        if (offset + length > src.length) {
-            throw new IndexOutOfBoundsException("The last long in src " + (offset + length) + " is outside "
-                    + "of array of size " + src.length);
-        }
-        if (length < 0) {
-            throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
-        }
-        int pos = position;
-        for (int i = 0; i < length; ++i) {
-            putElement(pos++, src[offset++]);
-        }
+        putImpl(position, src, offset, length);
         position += length;
+        return this;
+    }
+
+    public TLongBuffer put(int index, long[] src, int offset, int length) {
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (length < 0 || offset < 0 || offset + length > src.length || index < 0 || index + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        putImpl(index, src, offset, length);
         return this;
     }
 
     public final TLongBuffer put(long[] src) {
         return put(src, 0, src.length);
     }
+
+    abstract void putImpl(int index, long[] src, int offset, int length);
 
     @Override
     public final boolean hasArray() {
@@ -155,7 +187,7 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
 
     @Override
     public String toString() {
-        return "[LongBuffer position=" + position + ", limit=" + limit + ", capacity=" + capacity + ", mark "
+        return "[LongBuffer position=" + position + ", limit=" + limit + ", capacity=" + capacity() + ", mark "
                 + (mark >= 0 ? " at " + mark : " is not set") + "]";
     }
 

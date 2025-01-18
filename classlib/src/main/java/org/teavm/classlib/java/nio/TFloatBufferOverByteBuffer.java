@@ -16,15 +16,17 @@
 package org.teavm.classlib.java.nio;
 
 abstract class TFloatBufferOverByteBuffer extends TFloatBufferImpl {
-    TByteBufferImpl byteByffer;
-    boolean readOnly;
+    TByteBufferImpl byteBuffer;
+    private boolean readOnly;
     int start;
+    private int capacity;
 
-    public TFloatBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
+    TFloatBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
             boolean readOnly) {
-        super(capacity, position, limit);
+        super(position, limit);
         this.start = start;
-        this.byteByffer = byteBuffer;
+        this.capacity = capacity;
+        this.byteBuffer = byteBuffer;
         this.readOnly = readOnly;
     }
 
@@ -46,5 +48,37 @@ abstract class TFloatBufferOverByteBuffer extends TFloatBufferImpl {
     @Override
     boolean readOnly() {
         return readOnly;
+    }
+
+    @Override
+    void getImpl(int index, float[] dst, int offset, int length) {
+        while (length-- > 0) {
+            dst[offset++] = getElement(index++);
+        }
+    }
+
+    @Override
+    void putImpl(int index, float[] src, int offset, int length) {
+        while (length-- > 0) {
+            putElement(index++, src[offset++]);
+        }
+    }
+
+    @Override
+    void putImpl(int index, TFloatBuffer src, int offset, int length) {
+        if (src instanceof TFloatBufferOverByteBuffer && src.order() == order()) {
+            var srcImpl = (TFloatBufferOverByteBuffer) src;
+            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + index * 4,
+                    byteBuffer.array, start + offset * 4, length * 4);
+        } else {
+            while (length-- > 0) {
+                putElement(index++, src.getElement(offset++));
+            }
+        }
+    }
+
+    @Override
+    int capacityImpl() {
+        return capacity;
     }
 }

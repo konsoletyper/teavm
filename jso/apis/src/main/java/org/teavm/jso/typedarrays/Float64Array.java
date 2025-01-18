@@ -16,6 +16,7 @@
 package org.teavm.jso.typedarrays;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
 
@@ -61,4 +62,7 @@ public class Float64Array extends ArrayBufferView {
     @JSBody(params = { "buffer", "offset" }, script = "return new Float64Array(buffer, offset);")
     @Deprecated
     public static native Float64Array create(ArrayBuffer buffer, int offset);
+
+    @JSBody(params = "array", script = "return array;")
+    public static native Float64Array fromJavaArray(@JSByRef double[] array);
 }

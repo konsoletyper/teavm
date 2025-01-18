@@ -15,9 +15,11 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.classlib.PlatformDetector;
+import org.teavm.jso.typedarrays.Float64Array;
+
 public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubleBuffer> {
-    TDoubleBuffer(int capacity, int position, int limit) {
-        super(capacity);
+    TDoubleBuffer(int position, int limit) {
         this.position = position;
         this.limit = limit;
     }
@@ -26,10 +28,21 @@ public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubl
         if (capacity < 0) {
             throw new IllegalArgumentException("Capacity is negative: " + capacity);
         }
+        if (PlatformDetector.isJavaScript()) {
+            var array = new double[capacity];
+            return new TDoubleBufferOverTypedArray(0, capacity, false, Float64Array.fromJavaArray(array), array);
+        }
         return new TDoubleBufferOverArray(capacity);
     }
 
     public static TDoubleBuffer wrap(double[] array, int offset, int length) {
+        if (PlatformDetector.isJavaScript()) {
+            var result = new TDoubleBufferOverTypedArray(0, array.length, false, Float64Array.fromJavaArray(array),
+                    array);
+            result.position = offset;
+            result.limit = offset + length;
+            return result;
+        }
         return new TDoubleBufferOverArray(0, array.length, array, offset, offset + length, false);
     }
 
@@ -56,30 +69,47 @@ public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubl
     abstract void putElement(int index, double value);
 
     public TDoubleBuffer get(double[] dst, int offset, int length) {
-        if (offset < 0 || offset > dst.length) {
-            throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
+        if (length < 0 || offset < 0 || offset + length > dst.length) {
+            throw new IndexOutOfBoundsException();
         }
-        if (offset + length > dst.length) {
-            throw new IndexOutOfBoundsException("The last double in dst " + (offset + length) + " is outside "
-                    + "of array of size " + dst.length);
-        }
-        if (remaining() < length) {
+        if (length > remaining()) {
             throw new TBufferUnderflowException();
         }
-        if (length < 0) {
-            throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
-        }
-        int pos = position;
-        for (int i = 0; i < length; ++i) {
-            dst[offset++] = getElement(pos++);
-        }
+        getImpl(position, dst, offset, length);
         position += length;
         return this;
     }
 
+    public TDoubleBuffer get(int index, double[] dst, int offset, int length) {
+        if (length < 0 || offset < 0 || offset + length > dst.length || index < 0 || index + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        getImpl(index, dst, offset, length);
+        return this;
+    }
+
+    public TDoubleBuffer get(int index, double[] dst) {
+        return get(index, dst, 0, dst.length);
+    }
+
+    abstract void getImpl(int index, double[] dst, int offset, int length);
+
     public TDoubleBuffer get(double[] dst) {
         return get(dst, 0, dst.length);
     }
+
+    public TDoubleBuffer put(int index, TDoubleBuffer src, int offset, int length) {
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (index < 0 || index > limit() || offset < 0 || offset + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        putImpl(index, src, offset, length);
+        return this;
+    }
+
+    abstract void putImpl(int index, TDoubleBuffer src, int offset, int length);
 
     public TDoubleBuffer put(TDoubleBuffer src) {
         if (isReadOnly()) {
@@ -88,13 +118,8 @@ public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubl
         if (remaining() < src.remaining()) {
             throw new TBufferOverflowException();
         }
-        int length = src.remaining();
-        int pos = position;
-        int offset = src.position;
-        for (int i = 0; i < length; ++i) {
-            putElement(pos++, src.getElement(offset++));
-        }
-        position += length;
+        putImpl(position, src, src.position, src.remaining());
+        position += src.remaining();
         return this;
     }
 
@@ -105,27 +130,34 @@ public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubl
         if (remaining() < length) {
             throw new TBufferOverflowException();
         }
-        if (offset < 0 || offset > src.length) {
-            throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + src.length + ")");
+        if (length < 0 || offset < 0 || offset + length > src.length) {
+            throw new IndexOutOfBoundsException();
         }
-        if (offset + length > src.length) {
-            throw new IndexOutOfBoundsException("The last double in src " + (offset + length) + " is outside "
-                    + "of array of size " + src.length);
-        }
-        if (length < 0) {
-            throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
-        }
-        int pos = position;
-        for (int i = 0; i < length; ++i) {
-            putElement(pos++, src[offset++]);
-        }
+        putImpl(position, src, offset, length);
         position += length;
+        return this;
+    }
+
+    public TDoubleBuffer put(int index, double[] src, int offset, int length) {
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (length < 0 || offset < 0 || offset + length > src.length || index < 0 || index + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        putImpl(index, src, offset, length);
         return this;
     }
 
     public final TDoubleBuffer put(double[] src) {
         return put(src, 0, src.length);
     }
+
+    public TDoubleBuffer put(int index, double[] src) {
+        return put(index, src, 0, src.length);
+    }
+
+    abstract void putImpl(int index, double[] src, int offset, int length);
 
     @Override
     public final boolean hasArray() {
@@ -155,7 +187,7 @@ public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubl
 
     @Override
     public String toString() {
-        return "[DoubleBuffer position=" + position + ", limit=" + limit + ", capacity=" + capacity + ", mark "
+        return "[DoubleBuffer position=" + position + ", limit=" + limit + ", capacity=" + capacity() + ", mark "
                 + (mark >= 0 ? " at " + mark : " is not set") + "]";
     }
 

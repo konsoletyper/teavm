@@ -16,17 +16,19 @@
 package org.teavm.classlib.java.nio;
 
 class TLongBufferOverArray extends TLongBufferImpl {
-    boolean readOnly;
-    int start;
-    long[] array;
+    private boolean readOnly;
+    private int start;
+    private int capacity;
+    private long[] array;
 
-    public TLongBufferOverArray(int capacity) {
+    TLongBufferOverArray(int capacity) {
         this(0, capacity, new long[capacity], 0, capacity, false);
     }
 
-    public TLongBufferOverArray(int start, int capacity, long[] array, int position, int limit, boolean readOnly) {
-        super(capacity, position, limit);
+    TLongBufferOverArray(int start, int capacity, long[] array, int position, int limit, boolean readOnly) {
+        super(position, limit);
         this.start = start;
+        this.capacity = capacity;
         this.readOnly = readOnly;
         this.array = array;
     }
@@ -34,6 +36,11 @@ class TLongBufferOverArray extends TLongBufferImpl {
     @Override
     TLongBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
         return new TLongBufferOverArray(this.start + start, capacity, array, position, limit, readOnly);
+    }
+
+    @Override
+    int capacityImpl() {
+        return capacity;
     }
 
     @Override
@@ -68,6 +75,27 @@ class TLongBufferOverArray extends TLongBufferImpl {
 
     @Override
     public TByteOrder order() {
-        return TByteOrder.BIG_ENDIAN;
+        return TByteOrder.nativeOrder();
+    }
+
+    @Override
+    void getImpl(int index, long[] dst, int offset, int length) {
+        System.arraycopy(array, start + index, dst, offset, length);
+    }
+
+    @Override
+    void putImpl(int index, long[] src, int offset, int length) {
+        System.arraycopy(src, offset, array, start + index, length);
+    }
+
+    @Override
+    void putImpl(int index, TLongBuffer src, int offset, int length) {
+        if (src.hasArray()) {
+            System.arraycopy(src.array(), src.arrayOffset() + offset, array, start + index, length);
+        } else {
+            while (length-- > 0) {
+                src.putElement(offset++, getElement(index++));
+            }
+        }
     }
 }

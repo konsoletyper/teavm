@@ -42,7 +42,7 @@ jobs:
         args+=("-Pteavm.localNodeJS=true")
         echo "${args[@]}"
         ./gradlew "${args[@]}" test
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: "test-reports-${{ matrix.platform }}"

@@ -56,6 +56,10 @@ public abstract class ArrayBufferView implements JSObject {
 
     public native void set(@JSByRef int[] other);
 
+    public native void set(@JSByRef long[] other, int offset);
+
+    public native void set(@JSByRef long[] other);
+
     public native void set(@JSByRef float[] other, int offset);
 
     public native void set(@JSByRef float[] other);

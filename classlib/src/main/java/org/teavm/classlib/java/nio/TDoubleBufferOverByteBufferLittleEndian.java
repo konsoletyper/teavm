@@ -15,21 +15,21 @@
  */
 package org.teavm.classlib.java.nio;
 
-class TLongBufferOverByteBufferBigEndian extends TLongBufferOverByteBuffer {
-    TLongBufferOverByteBufferBigEndian(int start, int capacity, TByteBufferImpl byteBuffer, int position,
+class TDoubleBufferOverByteBufferLittleEndian extends TDoubleBufferOverByteBuffer {
+    TDoubleBufferOverByteBufferLittleEndian(int start, int capacity, TByteBufferImpl byteBuffer, int position,
             int limit, boolean readOnly) {
         super(start, capacity, byteBuffer, position, limit, readOnly);
     }
 
     @Override
-    TLongBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        return new TLongBufferOverByteBufferBigEndian(this.start + start * 8, capacity,
+    TDoubleBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
+        return new TDoubleBufferOverByteBufferLittleEndian(this.start + start * 4, capacity,
                 byteBuffer, position, limit, readOnly);
     }
 
     @Override
-    long getElement(int index) {
-        return (((long) byteBuffer.array[start + index * 8] & 0xFF) << 56)
+    double getElement(int index) {
+        var value = (((long) byteBuffer.array[start + index * 8] & 0xFF) << 56)
                 | (((long) byteBuffer.array[start + index * 8 + 1] & 0xFF) << 48)
                 | (((long) byteBuffer.array[start + index * 8 + 2] & 0xFF) << 40)
                 | (((long) byteBuffer.array[start + index * 8 + 3] & 0xFF) << 32)
@@ -37,10 +37,12 @@ class TLongBufferOverByteBufferBigEndian extends TLongBufferOverByteBuffer {
                 | (((long) byteBuffer.array[start + index * 8 + 5] & 0xFF) << 16)
                 | (((long) byteBuffer.array[start + index * 8 + 6] & 0xFF) << 8)
                 | (byteBuffer.array[start + index * 8 + 7] & 0xFF);
+        return Double.longBitsToDouble(value);
     }
 
     @Override
-    void putElement(int index, long value) {
+    void putElement(int index, double d) {
+        long value = Double.doubleToLongBits(d);
         byteBuffer.array[start + index * 8] = (byte) (value >> 56);
         byteBuffer.array[start + index * 8 + 1] = (byte) (value >> 48);
         byteBuffer.array[start + index * 8 + 2] = (byte) (value >> 40);
@@ -53,6 +55,6 @@ class TLongBufferOverByteBufferBigEndian extends TLongBufferOverByteBuffer {
 
     @Override
     public TByteOrder order() {
-        return TByteOrder.BIG_ENDIAN;
+        return TByteOrder.LITTLE_ENDIAN;
     }
 }
