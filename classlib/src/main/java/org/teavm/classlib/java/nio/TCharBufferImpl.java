@@ -16,8 +16,8 @@
 package org.teavm.classlib.java.nio;
 
 abstract class TCharBufferImpl extends TCharBuffer {
-    public TCharBufferImpl(int capacity, int position, int limit) {
-        super(capacity, position, limit);
+    TCharBufferImpl(int position, int limit) {
+        super(position, limit);
     }
 
     @Override
@@ -27,12 +27,12 @@ abstract class TCharBufferImpl extends TCharBuffer {
 
     @Override
     public TCharBuffer duplicate() {
-        return duplicate(0, capacity, position, limit, isReadOnly());
+        return duplicate(0, capacity(), position, limit, isReadOnly());
     }
 
     @Override
     public TCharBuffer asReadOnlyBuffer() {
-        return duplicate(0, capacity, position, limit, true);
+        return duplicate(0, capacity(), position, limit, true);
     }
 
     abstract TCharBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly);
@@ -90,7 +90,7 @@ abstract class TCharBufferImpl extends TCharBuffer {
             }
         }
         position = sz;
-        limit = capacity;
+        limit = capacity();
         mark = -1;
         return this;
     }
@@ -109,6 +109,6 @@ abstract class TCharBufferImpl extends TCharBuffer {
 
     @Override
     public TCharBuffer subSequence(int start, int end) {
-        return duplicate(0, capacity, position + start, position + end, isReadOnly());
+        return duplicate(0, capacity(), position + start, position + end, isReadOnly());
     }
 }

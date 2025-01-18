@@ -16,17 +16,19 @@
 package org.teavm.classlib.java.nio;
 
 class TIntBufferOverArray extends TIntBufferImpl {
-    boolean readOnly;
-    int start;
-    int[] array;
+    private boolean readOnly;
+    private int start;
+    private int capacity;
+    private int[] array;
 
-    public TIntBufferOverArray(int capacity) {
+    TIntBufferOverArray(int capacity) {
         this(0, capacity, new int[capacity], 0, capacity, false);
     }
 
-    public TIntBufferOverArray(int start, int capacity, int[] array, int position, int limit, boolean readOnly) {
-        super(capacity, position, limit);
+    TIntBufferOverArray(int start, int capacity, int[] array, int position, int limit, boolean readOnly) {
+        super(position, limit);
         this.start = start;
+        this.capacity = capacity;
         this.readOnly = readOnly;
         this.array = array;
     }
@@ -34,6 +36,11 @@ class TIntBufferOverArray extends TIntBufferImpl {
     @Override
     TIntBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
         return new TIntBufferOverArray(this.start + start, capacity, array, position, limit, readOnly);
+    }
+
+    @Override
+    int capacityImpl() {
+        return capacity;
     }
 
     @Override
@@ -68,6 +75,27 @@ class TIntBufferOverArray extends TIntBufferImpl {
 
     @Override
     public TByteOrder order() {
-        return TByteOrder.BIG_ENDIAN;
+        return TByteOrder.nativeOrder();
+    }
+
+    @Override
+    void getImpl(int index, int[] dst, int offset, int length) {
+        System.arraycopy(array, start + index, dst, offset, length);
+    }
+
+    @Override
+    void putImpl(int index, int[] src, int offset, int length) {
+        System.arraycopy(src, offset, array, start + index, length);
+    }
+
+    @Override
+    void putImpl(int index, TIntBuffer src, int offset, int length) {
+        if (src.hasArray()) {
+            System.arraycopy(src.array(), src.arrayOffset() + offset, array, start + index, length);
+        } else {
+            while (length-- > 0) {
+                src.putElement(offset++, getElement(index++));
+            }
+        }
     }
 }

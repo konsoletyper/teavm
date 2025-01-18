@@ -16,7 +16,7 @@
 package org.teavm.classlib.java.nio;
 
 class TIntBufferOverByteBufferLittleEndian extends TIntBufferOverByteBuffer {
-    public TIntBufferOverByteBufferLittleEndian(int start, int capacity, TByteBufferImpl byteBuffer, int position,
+    TIntBufferOverByteBufferLittleEndian(int start, int capacity, TByteBufferImpl byteBuffer, int position,
             int limit, boolean readOnly) {
         super(start, capacity, byteBuffer, position, limit, readOnly);
     }
@@ -24,23 +24,23 @@ class TIntBufferOverByteBufferLittleEndian extends TIntBufferOverByteBuffer {
     @Override
     TIntBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
         return new TIntBufferOverByteBufferLittleEndian(this.start + start * 4, capacity,
-                byteByffer, position, limit, readOnly);
+                byteBuffer, position, limit, readOnly);
     }
 
     @Override
     int getElement(int index) {
-        return (byteByffer.array[start + index * 4] & 0xFF)
-                | ((byteByffer.array[start + index * 4 + 1] & 0xFF) << 8)
-                | ((byteByffer.array[start + index * 4 + 2] & 0xFF) << 16)
-                | ((byteByffer.array[start + index * 4 + 3] & 0xFF) << 24);
+        return (byteBuffer.array[start + index * 4] & 0xFF)
+                | ((byteBuffer.array[start + index * 4 + 1] & 0xFF) << 8)
+                | ((byteBuffer.array[start + index * 4 + 2] & 0xFF) << 16)
+                | ((byteBuffer.array[start + index * 4 + 3] & 0xFF) << 24);
     }
 
     @Override
     void putElement(int index, int value) {
-        byteByffer.array[start + index * 4] = (byte) value;
-        byteByffer.array[start + index * 4 + 1] = (byte) (value >> 8);
-        byteByffer.array[start + index * 4 + 2] = (byte) (value >> 16);
-        byteByffer.array[start + index * 4 + 3] = (byte) (value >> 24);
+        byteBuffer.array[start + index * 4] = (byte) value;
+        byteBuffer.array[start + index * 4 + 1] = (byte) (value >> 8);
+        byteBuffer.array[start + index * 4 + 2] = (byte) (value >> 16);
+        byteBuffer.array[start + index * 4 + 3] = (byte) (value >> 24);
     }
 
     @Override

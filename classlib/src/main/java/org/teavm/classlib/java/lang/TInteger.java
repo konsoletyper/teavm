@@ -377,7 +377,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
 
     public static int reverseBytes(int i) {
         i = ((i & 0xFF00FF00) >>> 8) | ((i & 0x00FF00FF) << 8);
-        i = (i >>> 16) + (i << 16);
+        i = (i >>> 16) | (i << 16);
         return i;
     }
 

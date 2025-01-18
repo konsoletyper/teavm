@@ -16,8 +16,10 @@
 package org.teavm.classlib.java.nio;
 
 public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatBuffer> {
+    int capacity;
+
     TFloatBuffer(int capacity, int position, int limit) {
-        super(capacity);
+        this.capacity = capacity;
         this.position = position;
         this.limit = limit;
     }
@@ -35,6 +37,11 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
 
     public static TFloatBuffer wrap(float[] array) {
         return wrap(array, 0, array.length);
+    }
+
+    @Override
+    int capacityImpl() {
+        return capacity;
     }
 
     public abstract TFloatBuffer slice();

@@ -16,27 +16,27 @@
 package org.teavm.classlib.java.nio;
 
 class TCharBufferOverByteBufferBigEndian extends TCharBufferOverByteBuffer {
-    public TCharBufferOverByteBufferBigEndian(int start, int capacity, TByteBufferImpl byteBuffer, int position,
+    TCharBufferOverByteBufferBigEndian(int start, int capacity, TByteBufferImpl byteBuffer, int position,
             int limit, boolean readOnly) {
         super(start, capacity, byteBuffer, position, limit, readOnly);
     }
 
     @Override
     char getChar(int index) {
-        int value = ((byteByffer.array[start + index * 2] & 0xFF) << 8)
-                | (byteByffer.array[start + index * 2 + 1] & 0xFF);
+        int value = ((byteBuffer.array[start + index * 2] & 0xFF) << 8)
+                | (byteBuffer.array[start + index * 2 + 1] & 0xFF);
         return (char) value;
     }
 
     @Override
     void putChar(int index, char value) {
-        byteByffer.array[start + index * 2] = (byte) (value >> 8);
-        byteByffer.array[start + index * 2 + 1] = (byte) value;
+        byteBuffer.array[start + index * 2] = (byte) (value >> 8);
+        byteBuffer.array[start + index * 2 + 1] = (byte) value;
     }
 
     @Override
     TCharBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        return new TCharBufferOverByteBufferBigEndian(this.start + start * 2, capacity, byteByffer,
+        return new TCharBufferOverByteBufferBigEndian(this.start + start * 2, capacity, byteBuffer,
                 position, limit, readOnly);
     }
 

@@ -16,8 +16,8 @@
 package org.teavm.classlib.java.nio;
 
 abstract class TShortBufferImpl extends TShortBuffer {
-    public TShortBufferImpl(int capacity, int position, int limit) {
-        super(capacity, position, limit);
+    TShortBufferImpl(int position, int limit) {
+        super(position, limit);
     }
 
     @Override
@@ -27,12 +27,12 @@ abstract class TShortBufferImpl extends TShortBuffer {
 
     @Override
     public TShortBuffer duplicate() {
-        return duplicate(0, capacity, position, limit, isReadOnly());
+        return duplicate(0, capacity(), position, limit, isReadOnly());
     }
 
     @Override
     public TShortBuffer asReadOnlyBuffer() {
-        return duplicate(0, capacity, position, limit, true);
+        return duplicate(0, capacity(), position, limit, true);
     }
 
     abstract TShortBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly);
@@ -90,7 +90,7 @@ abstract class TShortBufferImpl extends TShortBuffer {
             }
         }
         position = sz;
-        limit = capacity;
+        limit = capacity();
         mark = -1;
         return this;
     }

@@ -16,8 +16,8 @@
 package org.teavm.classlib.java.nio;
 
 abstract class TIntBufferImpl extends TIntBuffer {
-    public TIntBufferImpl(int capacity, int position, int limit) {
-        super(capacity, position, limit);
+    TIntBufferImpl(int position, int limit) {
+        super(position, limit);
     }
 
     @Override
@@ -27,12 +27,12 @@ abstract class TIntBufferImpl extends TIntBuffer {
 
     @Override
     public TIntBuffer duplicate() {
-        return duplicate(0, capacity, position, limit, isReadOnly());
+        return duplicate(0, capacity(), position, limit, isReadOnly());
     }
 
     @Override
     public TIntBuffer asReadOnlyBuffer() {
-        return duplicate(0, capacity, position, limit, true);
+        return duplicate(0, capacity(), position, limit, true);
     }
 
     abstract TIntBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly);
@@ -90,7 +90,7 @@ abstract class TIntBufferImpl extends TIntBuffer {
             }
         }
         position = sz;
-        limit = capacity;
+        limit = capacity();
         mark = -1;
         return this;
     }

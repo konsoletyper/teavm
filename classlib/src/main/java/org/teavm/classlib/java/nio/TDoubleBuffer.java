@@ -16,8 +16,10 @@
 package org.teavm.classlib.java.nio;
 
 public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubleBuffer> {
+    int capacity;
+
     TDoubleBuffer(int capacity, int position, int limit) {
-        super(capacity);
+        this.capacity = capacity;
         this.position = position;
         this.limit = limit;
     }
@@ -35,6 +37,11 @@ public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubl
 
     public static TDoubleBuffer wrap(double[] array) {
         return wrap(array, 0, array.length);
+    }
+
+    @Override
+    int capacityImpl() {
+        return capacity;
     }
 
     public abstract TDoubleBuffer slice();
