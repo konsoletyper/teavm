@@ -264,6 +264,17 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     @Import(name = "teavm_reinterpretFloatToInt")
     @NoSideEffects
     @Unmanaged
+    /**
+     * Platform dependent behaviour in the JS backend.
+     *
+     * The JavaScript engines in Firefox and Safari have special handling of NaN values.
+     *
+     * Except for V8 in chrome, most engines seem to canonicalize NaN values for internal
+     * bookkeeping (and using these NaN values as object pointers internally). This is not
+     * expected to change in the future.
+     *
+     * @see #intBitsToFloat(float)
+     */
     public static native int floatToRawIntBits(float value);
 
     public static int floatToIntBits(float value) {
@@ -277,6 +288,21 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     @Import(name = "teavm_reinterpretIntToFloat")
     @NoSideEffects
     @Unmanaged
+    /**
+     * Platform dependent behaviour in the JS backend.
+     *
+     * The JavaScript engines in Firefox and Safari have special handling of NaN values.
+     *
+     * Except for V8 in chrome, most engines seem to canonicalize NaN values for internal
+     * bookkeeping (and using these NaN values as object pointers internally). This is not
+     * expected to change in the future.
+     *
+     * As a result, application code intending to run with the JS backend should not depend
+     * on `long`s retaining their bits through the conversion of a `double` — or `float`
+     * for that matter.
+     *
+     * See https://github.com/konsoletyper/teavm/issues/895
+     */
     public static native float intBitsToFloat(int bits);
 
     public static String toHexString(float f) {

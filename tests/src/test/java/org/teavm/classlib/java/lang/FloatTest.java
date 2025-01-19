@@ -132,15 +132,24 @@ public class FloatTest {
         assertEquals(-1, Float.compare(-0.0f, 0.0f));
     }
 
+    /**
+     * This test will fail on the JavaScript engines in Firefox and Safari.
+     *
+     * This is due to how JS numbers (i.e. `double`s) are handled internally. Except for V8 in chrome,
+     * most engines seem to canonicalize NaN values for internal bookkeeping (and using these NaN values
+     * as object pointers internally). This is not expected to change in the future.
+     *
+     * See https://github.com/konsoletyper/teavm/issues/895
+     */
     @Test
     public void testNaN() {
         assertTrue(Float.isNaN(OTHER_NAN));
-        assertTrue(OTHER_NAN != OTHER_NAN);
-        assertTrue(OTHER_NAN != Double.NaN);
+        assertTrue(OTHER_NAN != OTHER_NAN); // fail
+        assertTrue(OTHER_NAN != Double.NaN); // fail
         assertEquals(Float.valueOf(Float.NaN), Float.valueOf(Float.NaN));
         assertEquals(Float.valueOf(OTHER_NAN), Float.valueOf(Float.NaN));
         assertEquals(Float.valueOf(OTHER_NAN), Float.valueOf(OTHER_NAN));
-        assertNotEquals(Float.floatToRawIntBits(OTHER_NAN), Float.floatToRawIntBits(Float.NaN));
+        assertNotEquals(Float.floatToRawIntBits(OTHER_NAN), Float.floatToRawIntBits(Float.NaN)); // fail
         assertEquals(Float.floatToIntBits(OTHER_NAN), Float.floatToIntBits(Float.NaN));
     }
 }
