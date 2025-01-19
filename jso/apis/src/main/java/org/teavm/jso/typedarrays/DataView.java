@@ -52,6 +52,14 @@ public class DataView extends ArrayBufferView {
 
     public native int getUint32(int byteOffset, boolean littleEndian);
 
+    public native long getBigInt64(int byteOffset);
+
+    public native long getBigInt64(int byteOffset, boolean littleEndian);
+
+    public native long getBigUint64(int byteOffset);
+
+    public native long getBigUint64(int byteOffset, boolean littleEndian);
+
     public native float getFloat32(int byteOffset);
 
     public native float getFloat32(int byteOffset, boolean littleEndian);
@@ -75,6 +83,14 @@ public class DataView extends ArrayBufferView {
     public native void setInt32(int byteOffset, int value);
 
     public native void setInt32(int byteOffset, int value, boolean littleEndian);
+
+    public native void setBigInt64(int byteOffset, long value);
+
+    public native void setBigInt64(int byteOffset, long value, boolean littleEndian);
+
+    public native void setBigUint64(int byteOffset, long value);
+
+    public native void setBigUint64(int byteOffset, long value, boolean littleEndian);
 
     public native void setUint32(int byteOffset, int value);
 
