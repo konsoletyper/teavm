@@ -101,12 +101,7 @@ public class JSTypeHelper {
             return false;
         }
         if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case LONG:
-                    return false;
-                default:
-                    return true;
-            }
+            return true;
         } else if (type instanceof ValueType.Array) {
             return isSupportedType(((ValueType.Array) type).getItemType());
         } else if (type instanceof ValueType.Object) {
@@ -129,6 +124,7 @@ public class JSTypeHelper {
                 case SHORT:
                 case CHARACTER:
                 case INTEGER:
+                case LONG:
                 case FLOAT:
                 case DOUBLE:
                     return true;

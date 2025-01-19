@@ -52,6 +52,8 @@ public final class JSMethods {
             JS.WrapFunction.class);
     public static final MethodReference INT_ARRAY_WRAPPER = new MethodReference(JS.class, "intArrayWrapper",
             JS.WrapFunction.class);
+    public static final MethodReference LONG_ARRAY_WRAPPER = new MethodReference(JS.class, "longArrayWrapper",
+            JS.WrapFunction.class);
     public static final MethodReference FLOAT_ARRAY_WRAPPER = new MethodReference(JS.class, "floatArrayWrapper",
             JS.WrapFunction.class);
     public static final MethodReference DOUBLE_ARRAY_WRAPPER = new MethodReference(JS.class, "doubleArrayWrapper",
@@ -74,6 +76,8 @@ public final class JSMethods {
             JSArrayReader.class, char[].class);
     public static final MethodReference UNWRAP_INT_ARRAY = new MethodReference(JS.class, "unwrapIntArray",
             JSArrayReader.class, int[].class);
+    public static final MethodReference UNWRAP_LONG_ARRAY = new MethodReference(JS.class, "unwrapLongArray",
+            JSArrayReader.class, long[].class);
     public static final MethodReference UNWRAP_FLOAT_ARRAY = new MethodReference(JS.class, "unwrapFloatArray",
             JSArrayReader.class, float[].class);
     public static final MethodReference UNWRAP_DOUBLE_ARRAY = new MethodReference(JS.class, "unwrapDoubleArray",
@@ -92,6 +96,8 @@ public final class JSMethods {
             "charArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference INT_ARRAY_UNWRAPPER = new MethodReference(JS.class,
             "intArrayUnwrapper", JS.UnwrapFunction.class);
+    public static final MethodReference LONG_ARRAY_UNWRAPPER = new MethodReference(JS.class,
+            "longArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference FLOAT_ARRAY_UNWRAPPER = new MethodReference(JS.class,
             "floatArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference DOUBLE_ARRAY_UNWRAPPER = new MethodReference(JS.class,
@@ -109,6 +115,8 @@ public final class JSMethods {
             "dataToCharArray", JSObject.class, char[].class);
     public static final MethodReference DATA_TO_INT_ARRAY = new MethodReference(JS.class,
             "dataToIntArray", JSObject.class, int[].class);
+    public static final MethodReference DATA_TO_LONG_ARRAY = new MethodReference(JS.class,
+            "dataToLongArray", JSObject.class, long[].class);
     public static final MethodReference DATA_TO_FLOAT_ARRAY = new MethodReference(JS.class,
             "dataToFloatArray", JSObject.class, float[].class);
     public static final MethodReference DATA_TO_DOUBLE_ARRAY = new MethodReference(JS.class,

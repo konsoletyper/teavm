@@ -261,6 +261,8 @@ class JSValueMarshaller {
                     return JSMethods.CHAR_ARRAY_WRAPPER;
                 case INTEGER:
                     return JSMethods.INT_ARRAY_WRAPPER;
+                case LONG:
+                    return JSMethods.LONG_ARRAY_WRAPPER;
                 case FLOAT:
                     return JSMethods.FLOAT_ARRAY_WRAPPER;
                 case DOUBLE:
@@ -302,6 +304,8 @@ class JSValueMarshaller {
                     return invokeMethod(location, JSMethods.DATA_TO_CHAR_ARRAY, var);
                 case INTEGER:
                     return invokeMethod(location, JSMethods.DATA_TO_INT_ARRAY, var);
+                case LONG:
+                    return invokeMethod(location, JSMethods.DATA_TO_LONG_ARRAY, var);
                 case FLOAT:
                     return invokeMethod(location, JSMethods.DATA_TO_FLOAT_ARRAY, var);
                 case DOUBLE:
@@ -338,7 +342,8 @@ class JSValueMarshaller {
                     return unwrap(var, "unwrapFloat", JSMethods.JS_OBJECT, ValueType.FLOAT,
                             location.getSourceLocation());
                 case LONG:
-                    break;
+                    return unwrap(var, "unwrapLong", JSMethods.JS_OBJECT, ValueType.LONG,
+                            location.getSourceLocation());
             }
         } else if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
@@ -504,6 +509,8 @@ class JSValueMarshaller {
                     return JSMethods.UNWRAP_CHAR_ARRAY;
                 case INTEGER:
                     return JSMethods.UNWRAP_INT_ARRAY;
+                case LONG:
+                    return JSMethods.UNWRAP_LONG_ARRAY;
                 case FLOAT:
                     return JSMethods.UNWRAP_FLOAT_ARRAY;
                 case DOUBLE:
@@ -530,6 +537,8 @@ class JSValueMarshaller {
                     return JSMethods.CHAR_ARRAY_UNWRAPPER;
                 case INTEGER:
                     return JSMethods.INT_ARRAY_UNWRAPPER;
+                case LONG:
+                    return JSMethods.LONG_ARRAY_UNWRAPPER;
                 case FLOAT:
                     return JSMethods.FLOAT_ARRAY_UNWRAPPER;
                 case DOUBLE:

@@ -25,6 +25,7 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSArrayReader;
+import org.teavm.jso.core.JSBigInt;
 import org.teavm.jso.core.JSBoolean;
 import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.core.JSString;
@@ -65,6 +66,11 @@ public final class JS {
     @InjectedBy(JSNativeInjector.class)
     @PluggableDependency(JSNativeInjector.class)
     @NoSideEffects
+    public static native long[] dataToLongArray(JSObject obj);
+
+    @InjectedBy(JSNativeInjector.class)
+    @PluggableDependency(JSNativeInjector.class)
+    @NoSideEffects
     public static native float[] dataToFloatArray(JSObject obj);
 
     @InjectedBy(JSNativeInjector.class)
@@ -91,6 +97,11 @@ public final class JS {
     @NoSideEffects
     @Import(name = "wrapInt", module = "teavmJso")
     public static native JSObject wrap(int value);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    @Import(name = "wrapLong", module = "teavmJso")
+    public static native JSObject wrap(long value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
@@ -135,6 +146,11 @@ public final class JS {
     @NoSideEffects
     @Import(name = "unwrapInt", module = "teavmJso")
     public static native int unwrapInt(JSObject value);
+
+    @InjectedBy(JSNativeInjector.class)
+    @NoSideEffects
+    @Import(name = "unwrapLong", module = "teavmJso")
+    public static native long unwrapLong(JSObject value);
 
     @InjectedBy(JSNativeInjector.class)
     @NoSideEffects
@@ -280,6 +296,21 @@ public final class JS {
         return JS::wrap;
     }
 
+    public static JSArray<JSBigInt> wrap(long[] array) {
+        if (array == null) {
+            return null;
+        }
+        var result = new JSArray<JSBigInt>(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            result.set(i, JSBigInt.valueOf(array[i]));
+        }
+        return result;
+    }
+
+    public static WrapFunction<long[], JSArray<JSBigInt>> longArrayWrapper() {
+        return JS::wrap;
+    }
+
     @NoSideEffects
     public static JSArray<JSString> wrap(String[] array) {
         if (array == null) {
@@ -418,6 +449,21 @@ public final class JS {
 
     public static UnwrapFunction<JSArrayReader<JSNumber>, int[]> intArrayUnwrapper() {
         return JS::unwrapIntArray;
+    }
+
+    public static long[] unwrapLongArray(JSArrayReader<JSBigInt> array) {
+        if (array == null) {
+            return null;
+        }
+        var result = new long[array.getLength()];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = array.get(i).longValue();
+        }
+        return result;
+    }
+
+    public static UnwrapFunction<JSArrayReader<JSBigInt>, long[]> longArrayUnwrapper() {
+        return JS::unwrapLongArray;
     }
 
     public static char[] unwrapCharArray(JSArrayReader<JSNumber> array) {

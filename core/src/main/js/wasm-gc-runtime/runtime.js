@@ -546,8 +546,8 @@ function jsoImports(imports, context) {
         concatArray: (a, b) => a.concat(b),
         getJavaException: e => e[javaExceptionSymbol]
     };
-    for (let name of ["wrapByte", "wrapShort", "wrapChar", "wrapInt", "wrapFloat", "wrapDouble", "unwrapByte",
-        "unwrapShort", "unwrapChar", "unwrapInt", "unwrapFloat", "unwrapDouble"]) {
+    for (let name of ["wrapByte", "wrapShort", "wrapChar", "wrapInt", "wrapLong", "wrapFloat", "wrapDouble",
+        "unwrapByte", "unwrapShort", "unwrapChar", "unwrapInt", "unwrapLong", "unwrapFloat", "unwrapDouble"]) {
         imports.teavmJso[name] = identity;
     }
     function wrapCallFromJavaToJs(call) {
