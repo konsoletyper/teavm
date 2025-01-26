@@ -16,6 +16,8 @@
 
 plugins {
     `java-library`
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 description = "Tests"
@@ -43,6 +45,7 @@ dependencies {
     testImplementation(libs.rhino)
     testImplementation(libs.junit)
     testImplementation(libs.testng)
+    testImplementation(libs.kotlin.serialization.json)
 }
 
 tasks.test {

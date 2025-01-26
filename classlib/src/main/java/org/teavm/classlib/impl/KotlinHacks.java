@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
@@ -28,6 +29,7 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.Program;
+import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.util.ProgramUtils;
@@ -42,6 +44,8 @@ public class KotlinHacks implements ClassHolderTransformer {
             patchReflection(cls);
         } else if (cls.getName().equals("kotlin.text.StringsKt__StringNumberConversionsJVMKt")) {
             patchStrings(cls, context.getHierarchy().getClassSource());
+        } else if (cls.getName().equals("kotlin.jvm.internal.ClassReference$Companion")) {
+            patchClassReferenceCompanion(cls, context.getHierarchy());
         }
     }
 
@@ -91,6 +95,18 @@ public class KotlinHacks implements ClassHolderTransformer {
                 if (templateMethod != null) {
                     method.setProgram(ProgramUtils.copy(templateMethod.getProgram()));
                 }
+            }
+        }
+    }
+
+    private void patchClassReferenceCompanion(ClassHolder cls, ClassHierarchy hierarchy) {
+        for (MethodHolder method : cls.getMethods()) {
+            if (method.getName().equals("getClassSimpleName")) {
+                var pe = ProgramEmitter.create(method, hierarchy);
+                pe.var(1, Class.class).invokeVirtual("getSimpleName", String.class).returnValue();
+            } else if (method.getName().equals("getClassQualifiedName")) {
+                var pe = ProgramEmitter.create(method, hierarchy);
+                pe.var(1, Class.class).invokeVirtual("getName", String.class).returnValue();
             }
         }
     }

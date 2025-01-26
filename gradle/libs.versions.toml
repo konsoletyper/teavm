@@ -9,7 +9,7 @@ idea = "2022.3.1"
 idea-scala = "2022.3.1"
 maven = "3.5.4"
 maven-tools = "3.7.1"
-
+kotlin = "2.1.0"
 
 [libraries]
 
@@ -47,6 +47,8 @@ maven-core = { module = "org.apache.maven:maven-core", version.ref = "maven" }
 maven-embedder = { module = "org.apache.maven:maven-embedder", version.ref = "maven" }
 maven-compat = { module = "org.apache.maven:maven-compat", version.ref = "maven" }
 
+kotlin-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.8.0" }
+
 [libraries.maven-plugin-tools-api]
 module = "org.apache.maven.plugin-tools:maven-plugin-tools-api"
 version.ref = "maven-tools"
@@ -72,3 +74,5 @@ shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 intellij = { id = "org.jetbrains.intellij", version = "1.17.2" }
 pluginPublish = { id = "com.gradle.plugin-publish", version = "1.1.0" }
 nodejs = { id = "com.github.node-gradle.node", version = "7.1.0" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
