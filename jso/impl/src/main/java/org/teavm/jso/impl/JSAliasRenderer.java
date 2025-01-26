@@ -94,7 +94,7 @@ class JSAliasRenderer implements RendererListener, MethodContributor {
         var members = collectMembers(classReader, AliasCollector::isInstanceMember);
 
         if (members.methods.isEmpty() && members.properties.isEmpty()) {
-            return false;
+            return members.constructor != null;
         }
 
         writer.append("c").ws().append("=").ws().appendClass(classReader.getName()).append(".prototype;")

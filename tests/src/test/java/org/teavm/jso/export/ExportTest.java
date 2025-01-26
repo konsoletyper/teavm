@@ -115,6 +115,11 @@ public class ExportTest {
         testExport("varargs", ModuleWithVararg.class, true);
     }
 
+    @Test
+    public void exportClassWithConstructorOnly() {
+        testExport("exportClassWithConstructorOnly", ModuleWithExportedClassWithConstructorOnly.class, true);
+    }
+
     private void testExport(String name, Class<?> moduleClass) {
         testExport(name, moduleClass, false);
     }
