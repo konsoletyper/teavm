@@ -20,20 +20,22 @@ let $rt_throw = ex => {
 };
 let $rt_javaExceptionProp = teavm_globals.Symbol("javaException")
 let $rt_exception = ex => {
-    let err = ex.$jsException;
-    if (!err) {
-        let javaCause = $rt_throwableCause(ex);
-        let jsCause = javaCause !== null ? javaCause.$jsException : void 0;
-        let cause = typeof jsCause === "object" ? { cause : jsCause } : void 0;
-        err = new JavaError("Java exception thrown", cause);
-        if (typeof teavm_globals.Error.captureStackTrace === "function") {
-            teavm_globals.Error.captureStackTrace(err);
-        }
-        err[$rt_javaExceptionProp] = ex;
-        ex.$jsException = err;
-        $rt_fillStack(err, ex);
+    if (!ex.$jsException) {
+        $rt_fillNativeException(ex);
     }
-    return err;
+    return ex.$jsException;
+}
+let $rt_fillNativeException = ex => {
+    let javaCause = $rt_throwableCause(ex);
+    let jsCause = javaCause !== null ? javaCause.$jsException : void 0;
+    let cause = typeof jsCause === "object" ? { cause : jsCause } : void 0;
+    let err = new JavaError("Java exception thrown", cause);
+    if (typeof teavm_globals.Error.captureStackTrace === "function") {
+        teavm_globals.Error.captureStackTrace(err);
+    }
+    err[$rt_javaExceptionProp] = ex;
+    ex.$jsException = err;
+    $rt_fillStack(err, ex);
 }
 let $rt_fillStack = (err, ex) => {
     if (typeof $rt_decodeStack === "function" && err.stack) {

@@ -23,9 +23,11 @@ import org.teavm.interop.Import;
 import org.teavm.interop.Remove;
 import org.teavm.interop.Rename;
 import org.teavm.interop.Superclass;
+import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.impl.JSWrapper;
 import org.teavm.runtime.ExceptionHandling;
 
 @Superclass("java.lang.Object")
@@ -46,6 +48,7 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     public void init(String message, TThrowable cause, boolean enableSuppression, boolean writableStackTrace) {
+        initNativeException();
         if (writableStackTrace) {
             fillInStackTrace();
         }
@@ -61,6 +64,7 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     private void init() {
+        initNativeException();
         this.suppressionEnabled = true;
         this.writableStackTrace = true;
         fillInStackTrace();
@@ -72,6 +76,7 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     private void init(String message) {
+        initNativeException();
         this.suppressionEnabled = true;
         this.writableStackTrace = true;
         fillInStackTrace();
@@ -85,6 +90,7 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     private void init(String message, TThrowable cause) {
+        initNativeException();
         this.suppressionEnabled = true;
         this.writableStackTrace = true;
         fillInStackTrace();
@@ -99,6 +105,7 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     private void init(TThrowable cause) {
+        initNativeException();
         this.suppressionEnabled = true;
         this.writableStackTrace = true;
         fillInStackTrace();
@@ -115,6 +122,15 @@ public class TThrowable extends RuntimeException {
         }
         return this;
     }
+
+    private void initNativeException() {
+        if (PlatformDetector.isJavaScript()) {
+            initNativeExceptionJS(JSWrapper.directJavaToJs(this));
+        }
+    }
+
+    @JSBody(params = "o", script = "$rt_fillNativeException(o);")
+    private static native void initNativeExceptionJS(JSObject o);
 
     @Import(name = "decorateException")
     private static native void decorateException(Object obj);
