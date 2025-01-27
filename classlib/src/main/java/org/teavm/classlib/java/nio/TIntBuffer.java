@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.nio;
 
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.interop.Address;
 import org.teavm.jso.typedarrays.Int32Array;
 
 public abstract class TIntBuffer extends TBuffer implements Comparable<TIntBuffer> {
@@ -32,12 +33,23 @@ public abstract class TIntBuffer extends TBuffer implements Comparable<TIntBuffe
             var array = new int[capacity];
             return new TIntBufferOverTypedArray(0, capacity, false, Int32Array.fromJavaArray(array), array);
         }
+        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+            var array = new int[capacity];
+            return new TIntBufferNative(array, 0, capacity, false, array, Address.ofData(array), capacity, false);
+        }
         return new TIntBufferOverArray(capacity);
     }
 
     public static TIntBuffer wrap(int[] array, int offset, int length) {
         if (PlatformDetector.isJavaScript()) {
             var result = new TIntBufferOverTypedArray(0, array.length, false, Int32Array.fromJavaArray(array), array);
+            result.position = offset;
+            result.limit = offset + length;
+            return result;
+        }
+        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+            var result = new TIntBufferNative(array, 0, array.length, false, array, Address.ofData(array),
+                    array.length, false);
             result.position = offset;
             result.limit = offset + length;
             return result;

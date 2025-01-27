@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.nio;
 
 public abstract class TBuffer {
+    TBuffer nextRef;
     int position;
     int limit;
     int mark = -1;

@@ -35,6 +35,7 @@ import java.util.function.Supplier;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
+import org.teavm.backend.lowlevel.dependency.BufferDependencyListener;
 import org.teavm.backend.lowlevel.dependency.StringsDependencyListener;
 import org.teavm.backend.lowlevel.generate.NameProviderWithSpecialNames;
 import org.teavm.backend.lowlevel.transform.CoroutineTransformation;
@@ -437,6 +438,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
 
         dependencyAnalyzer.addDependencyListener(new StringsDependencyListener());
+        dependencyAnalyzer.addDependencyListener(new BufferDependencyListener());
 
         for (var intrinsic : additionalIntrinsics) {
             intrinsic.contributeDependencies(dependencyAnalyzer);

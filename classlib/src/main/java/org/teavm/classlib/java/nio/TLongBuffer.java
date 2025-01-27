@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.nio;
 
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.interop.Address;
 import org.teavm.jso.typedarrays.BigInt64Array;
 
 public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuffer> {
@@ -32,6 +33,10 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
             var array = new long[capacity];
             return new TLongBufferOverTypedArray(0, capacity, false, BigInt64Array.fromJavaArray(array), array);
         }
+        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+            var array = new long[capacity];
+            return new TLongBufferNative(array, 0, capacity, false, array, Address.ofData(array), capacity, false);
+        }
         return new TLongBufferOverArray(capacity);
     }
 
@@ -39,6 +44,13 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
         if (PlatformDetector.isJavaScript()) {
             var result = new TLongBufferOverTypedArray(0, array.length, false, BigInt64Array.fromJavaArray(array),
                     array);
+            result.position = offset;
+            result.limit = offset + length;
+            return result;
+        }
+        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+            var result = new TLongBufferNative(array, 0, array.length, false, array, Address.ofData(array),
+                    array.length, false);
             result.position = offset;
             result.limit = offset + length;
             return result;

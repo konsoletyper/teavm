@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.nio;
 
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.interop.Address;
 import org.teavm.jso.typedarrays.Int16Array;
 
 public abstract class TShortBuffer extends TBuffer implements Comparable<TShortBuffer> {
@@ -32,12 +33,23 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
             var array = new short[capacity];
             return new TShortBufferOverTypedArray(0, capacity, false, Int16Array.fromJavaArray(array), array);
         }
+        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+            var array = new short[capacity];
+            return new TShortBufferNative(array, 0, capacity, false, array, Address.ofData(array), capacity, false);
+        }
         return new TShortBufferOverArray(capacity);
     }
 
     public static TShortBuffer wrap(short[] array, int offset, int length) {
         if (PlatformDetector.isJavaScript()) {
             var result = new TShortBufferOverTypedArray(0, array.length, false, Int16Array.fromJavaArray(array), array);
+            result.position = offset;
+            result.limit = offset + length;
+            return result;
+        }
+        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+            var result = new TShortBufferNative(array, 0, array.length, false, array, Address.ofData(array),
+                    array.length, false);
             result.position = offset;
             result.limit = offset + length;
             return result;
