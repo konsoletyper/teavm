@@ -211,11 +211,10 @@ public class AddressIntrinsic implements Intrinsic {
                 context.writer().print("sizeof(void*)");
                 break;
             case "ofData": {
-                ValueType.Array type = (ValueType.Array) invocation.getMethod().parameterType(0);
-                context.writer().print("((char*) ");
+                var type = (ValueType.Array) invocation.getMethod().parameterType(0);
+                context.writer().print("TEAVM_ARRAY_DATA(");
                 context.emit(invocation.getArguments().get(0));
-                context.writer().print(" + sizeof(TeaVM_Array) + (intptr_t) TEAVM_ALIGN(NULL, "
-                        + sizeOf(type.getItemType()) + "))");
+                context.writer().print(", ").printType(type.getItemType()).print(")");
                 break;
             }
 

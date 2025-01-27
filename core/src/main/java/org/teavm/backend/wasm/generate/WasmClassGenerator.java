@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.teavm.backend.lowlevel.generate.ClassGeneratorUtil;
 import org.teavm.backend.wasm.WasmFunctionRepository;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.binary.DataArray;
@@ -271,7 +272,7 @@ public class WasmClassGenerator {
 
     private DataValue createStructure(ClassBinaryData binaryData) {
         String parent = binaryData.cls.getParent();
-        int parentPtr = !binaryData.isInferface && parent != null
+        int parentPtr = !binaryData.isInterface && parent != null
                 ? getClassPointer(ValueType.object(binaryData.cls.getParent()))
                 : 0;
 
@@ -349,6 +350,11 @@ public class WasmClassGenerator {
             if (cls.hasModifier(ElementModifier.SYNTHETIC)) {
                 flags |= RuntimeClass.SYNTHETIC;
             }
+        }
+
+        flags = ClassGeneratorUtil.contributeToFlags(cls, flags);
+        if (binaryData.bufferObjectFieldOffset >= 0) {
+            header.setAddress(CLASS_ENUM_VALUES, binaryData.bufferObjectFieldOffset);
         }
 
         if (cls != null && binaryData.start >= 0
@@ -512,7 +518,7 @@ public class WasmClassGenerator {
             data.alignment = 4;
         }
 
-        data.isInferface = cls.hasModifier(ElementModifier.INTERFACE);
+        data.isInterface = cls.hasModifier(ElementModifier.INTERFACE);
         data.cls = cls;
 
         for (FieldReader field : cls.getFields()) {
@@ -536,6 +542,9 @@ public class WasmClassGenerator {
                 if (dwarfClass != null) {
                     dwarfClass.registerField(field.getName(), field.getType(), offset);
                     dwarfClassGenerator.getTypePtr(field.getType());
+                }
+                if (ClassGeneratorUtil.isBufferObjectField(field)) {
+                    data.bufferObjectFieldOffset = offset;
                 }
             }
             if (data.alignment == 0) {
@@ -718,7 +727,7 @@ public class WasmClassGenerator {
                     var parent = data.cls != null && data.cls.getParent() != null
                             ? indexes.get(ValueType.object(data.cls.getParent()))
                             : -1;
-                    if (data.isInferface) {
+                    if (data.isInterface) {
                         debug.writeInterface(className, data.start);
                     } else {
                         debug.startClass(className, parent, data.start, data.size);
@@ -803,10 +812,11 @@ public class WasmClassGenerator {
         int size;
         int alignment;
         int start;
-        boolean isInferface;
+        boolean isInterface;
         ObjectIntMap<String> fieldLayout = new ObjectIntHashMap<>();
         DataValue data;
         ClassReader cls;
         boolean function;
+        int bufferObjectFieldOffset = -1;
     }
 }

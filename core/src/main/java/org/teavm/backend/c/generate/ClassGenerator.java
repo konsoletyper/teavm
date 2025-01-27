@@ -555,7 +555,10 @@ public class ClassGenerator {
         if (cls != null && cls.hasModifier(ElementModifier.ENUM)) {
             enumConstants = writeEnumConstants(cls, name);
         } else {
-            enumConstants = "NULL";
+            enumConstants = getBufferFieldInitializer(cls);
+            if (enumConstants == null) {
+                enumConstants = "NULL";
+            }
         }
 
         headerWriter.print("extern ").print(structName).print(" ").print(name).println(";");
@@ -599,6 +602,20 @@ public class ClassGenerator {
         }
 
         codeWriter.outdent().println(";");
+    }
+
+    private String getBufferFieldInitializer(ClassReader cls) {
+        if (cls == null) {
+            return null;
+        }
+        for (var field : cls.getFields()) {
+            if (ClassGeneratorUtil.isBufferObjectField(field)) {
+                String structName = context.getNames().forClass(cls.getName());
+                String fieldName = context.getNames().forMemberField(field.getReference());
+                return "(void*) offsetof(" + structName + ", " + fieldName + ")";
+            }
+        }
+        return null;
     }
 
     private int getInheritanceDepth(String className) {
@@ -796,14 +813,7 @@ public class ClassGenerator {
                 superinterfaces = sb.append(" }").toString();
             }
 
-            switch (className) {
-                case "java.lang.ref.WeakReference":
-                    flags |= RuntimeClass.VM_TYPE_WEAKREFERENCE << RuntimeClass.VM_TYPE_SHIFT;
-                    break;
-                case "java.lang.ref.ReferenceQueue":
-                    flags |= RuntimeClass.VM_TYPE_REFERENCEQUEUE << RuntimeClass.VM_TYPE_SHIFT;
-                    break;
-            }
+            flags = ClassGeneratorUtil.contributeToFlags(cls, flags);
 
             if (cls != null) {
                 simpleName = cls.getSimpleName();

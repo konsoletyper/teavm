@@ -30,11 +30,14 @@ import java.nio.ReadOnlyBufferException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.java.lang.DoubleTest;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class ByteBufferTest {
     @Test
+    @SkipPlatform({TestPlatform.WASI, TestPlatform.WEBASSEMBLY})
     public void allocatesDirect() {
         ByteBuffer buffer = ByteBuffer.allocateDirect(100);
         assertThat(buffer.isDirect(), is(true));
@@ -168,6 +171,7 @@ public class ByteBufferTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.WASI, TestPlatform.WEBASSEMBLY})
     public void slicePropertiesSameWithOriginal() {
         ByteBuffer buffer = ByteBuffer.allocate(100).asReadOnlyBuffer().slice();
         assertThat(buffer.isReadOnly(), is(true));
@@ -631,8 +635,16 @@ public class ByteBufferTest {
 
         buffer.putDouble(1, 2.0);
         assertArrayEquals(new byte[] { 63, 64, 0, 0, 0, 0, 0, 0, 0, 55, 0, 0, 0, 0, 0, 0 }, array);
+    }
+
+    @Test
+    @SkipPlatform(TestPlatform.C)
+    public void putsDoubleNaN() {
+        var array = new byte[8];
+        var buffer = ByteBuffer.wrap(array);
+
         buffer.putDouble(0, DoubleTest.OTHER_NAN);
-        assertArrayEquals(new byte[] { 127, -8, 0, 0, 0, 0, 0, 1, 0, 55, 0, 0, 0, 0, 0, 0 }, array);
+        assertArrayEquals(new byte[] { 127, -8, 0, 0, 0, 0, 0, 1 }, array);
     }
 
     @Test

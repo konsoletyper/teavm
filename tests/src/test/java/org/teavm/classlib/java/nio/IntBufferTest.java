@@ -143,6 +143,7 @@ public class IntBufferTest {
         slice1.put(new int[15]);
         var slice2 = slice1.slice();
 
+        System.out.println("slice2 = " + slice2);
         assertEquals(25, slice2.arrayOffset());
         assertEquals(75, slice2.capacity());
     }

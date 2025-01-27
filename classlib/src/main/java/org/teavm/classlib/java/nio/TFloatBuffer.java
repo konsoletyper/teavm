@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.nio;
 
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.interop.Address;
 import org.teavm.jso.typedarrays.Float32Array;
 
 public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatBuffer> {
@@ -32,6 +33,10 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
             var array = new float[capacity];
             return new TFloatBufferOverTypedArray(0, capacity, false, Float32Array.fromJavaArray(array), array);
         }
+        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+            var array = new float[capacity];
+            return new TFloatBufferNative(array, 0, capacity, false, array, Address.ofData(array), capacity, false);
+        }
         return new TFloatBufferOverArray(capacity);
     }
 
@@ -39,6 +44,13 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
         if (PlatformDetector.isJavaScript()) {
             var result = new TFloatBufferOverTypedArray(0, array.length, false, Float32Array.fromJavaArray(array),
                     array);
+            result.position = offset;
+            result.limit = offset + length;
+            return result;
+        }
+        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+            var result = new TFloatBufferNative(array, 0, array.length, false, array, Address.ofData(array),
+                    array.length, false);
             result.position = offset;
             result.limit = offset + length;
             return result;
