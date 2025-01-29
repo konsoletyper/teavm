@@ -27,25 +27,18 @@ dependencies {
     teavm(teavm.libs.jsoApis)
 }
 
-teavm {
-    all {
-        mainClass = "org.teavm.samples.kotlin.HelloKt"
-    }
-    js {
-        addedToWebApp = true
-    }
-    wasmGC {
-        addedToWebApp = true
-    }
+teavm.js {
+    addedToWebApp = true
+    mainClass = "org.teavm.samples.kotlin.CoroutinesKt"
 }
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(11)
     }
 }
 
-kotlin.jvmToolchain(21)
+kotlin.jvmToolchain(11)
 
 tasks.withType<KotlinJvmCompile>().configureEach {
     jvmTargetValidationMode.set(JvmTargetValidationMode.WARNING)
