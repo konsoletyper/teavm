@@ -56,6 +56,22 @@ public final class Wasi {
     public static final byte WHENCE_CURRENT = 1;
     public static final byte WHENCE_END = 2;
 
+    public static final int AF_INET = 0;
+    public static final int AF_INET6 = 1;
+    public static final int AF_UNIX = 2;
+
+    public static final int INET4 = 0;
+    public static final int INET6 = 1;
+    public static final int INET_UNSPEC = 2;
+
+    public static final int SOCK_ANY = -1;
+    public static final int SOCK_DGRAM = 0;
+    public static final int SOCK_STREAM = 1;
+
+    public static final int SHUT_RD = 0;
+    public static final int SHUT_WR = 1;
+    public static final int SHUT_RDWR = 2;
+
     private Wasi() {
     }
 
@@ -132,4 +148,84 @@ public final class Wasi {
     @Import(name = "random_get", module = "wasi_snapshot_preview1")
     public static native short randomGet(Address buffer, int bufferLength);
 
+    @Import(name = "sock_open", module = "wasi_snapshot_preview1")
+    public static native int sockOpen(int fd, int af, int socktype, Address sockfd);
+
+    @Import(name = "sock_bind", module = "wasi_snapshot_preview1")
+    public static native int sockBind(int fd, Address addr);
+
+    @Import(name = "sock_listen", module = "wasi_snapshot_preview1")
+    public static native int sockListen(int fd, int backlog);
+
+    @Import(name = "sock_connect", module = "wasi_snapshot_preview1")
+    public static native int sockConnect(int fd, Address addr);
+
+    @Import(name = "sock_set_reuse_addr", module = "wasi_snapshot_preview1")
+    public static native int sockSetReuseAddr(int fd, int reuse);
+
+    @Import(name = "sock_set_broadcast", module = "wasi_snapshot_preview1")
+    public static native int sockSetBroadcast(int fd, int option);
+
+    @Import(name = "sock_addr_local", module = "wasi_snapshot_preview1")
+    public static native int sockAddrLocal(int fd, Address addr);
+
+    @Import(name = "sock_addr_remote", module = "wasi_snapshot_preview1")
+    public static native int sockAddrRemote(int fd, Address addr);
+
+    @Import(name = "sock_recv_from", module = "wasi_snapshot_preview1")
+    public static native int sockRecvFrom(int fd, Address riData, int riDataLen,
+            int riFlags, Address srcAddr, Address addrLen);
+
+    @Import(name = "sock_send_to", module = "wasi_snapshot_preview1")
+    public static native int sockSendTo(int fd, Address siData, int siDataLen,
+            int siFlags, Address destAddr, Address addrLen);
+
+    @Import(name = "sock_addr_resolve", module = "wasi_snapshot_preview1")
+    public static native int sockAddrResolve(Address node, Address service, Address hints,
+            Address res, int maxResLen, Address resLen);
+
+    @Import(name = "sock_shutdown", module = "wasi_snapshot_preview1")
+    public static native int sockShutdown(int fd, int how);
+
+    @Import(name = "sock_accept", module = "wasi_snapshot_preview1")
+    public static native int sockAccept(int fd, int flags, Address fdNew);
+
+    @Import(name = "sock_get_keep_alive", module = "wasi_snapshot_preview1")
+    public static native int sockGetKeepAlive(int fd, Address option);
+
+    @Import(name = "sock_set_keep_alive", module = "wasi_snapshot_preview1")
+    public static native int sockSetKeepAlive(int fd, int option);
+
+    @Import(name = "sock_get_reuse_addr", module = "wasi_snapshot_preview1")
+    public static native int sockGetReuseAddr(int fd, Address option);
+
+    @Import(name = "sock_get_recv_buf_size", module = "wasi_snapshot_preview1")
+    public static native int sockGetRecvBufSize(int fd, Address size);
+
+    @Import(name = "sock_set_recv_buf_size", module = "wasi_snapshot_preview1")
+    public static native int sockSetRecvBufSize(int fd, int size);
+
+    @Import(name = "sock_get_send_buf_size", module = "wasi_snapshot_preview1")
+    public static native int sockGetSendBufSize(int fd, Address size);
+
+    @Import(name = "sock_set_send_buf_size", module = "wasi_snapshot_preview1")
+    public static native int sockSetSendBufSize(int fd, int size);
+
+    @Import(name = "sock_get_linger", module = "wasi_snapshot_preview1")
+    public static native int sockGetLinger(int fd, Address isEnabled, Address linger);
+
+    @Import(name = "sock_set_linger", module = "wasi_snapshot_preview1")
+    public static native int sockSetLinger(int fd, int isEnabled, int linger);
+
+    @Import(name = "sock_get_recv_timeout", module = "wasi_snapshot_preview1")
+    public static native int sockGetRecvTimeout(int fd, Address timeout);
+
+    @Import(name = "sock_set_recv_timeout", module = "wasi_snapshot_preview1")
+    public static native int sockSetRecvTimeout(int fd, int timeout);
+
+    @Import(name = "sock_get_tcp_no_delay", module = "wasi_snapshot_preview1")
+    public static native int sockGetTcpNoDelay(int fd, Address option);
+
+    @Import(name = "sock_set_tcp_no_delay", module = "wasi_snapshot_preview1")
+    public static native int sockSetTcpNoDelay(int fd, int option);
 }
