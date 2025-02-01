@@ -35,6 +35,12 @@ public interface WasmGCClassInfoProvider {
 
     int getFieldIndex(FieldReference fieldRef);
 
+    int getHeapFieldOffset(FieldReference fieldRef);
+
+    int getHeapSize(String className);
+
+    int getHeapAlignment(String className);
+
     WasmGlobal getStaticFieldLocation(FieldReference fieldRef);
 
     WasmFunction getArrayConstructor(ValueType type, int depth);

@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generate.gc.classes;
 
+import com.carrotsearch.hppc.ObjectByteHashMap;
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.ArrayDeque;
@@ -33,6 +34,7 @@ import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTable;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableEntry;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
+import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.generate.gc.WasmGCInitializerContributor;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCGenerationUtil;
@@ -76,6 +78,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.dependency.DependencyInfo;
+import org.teavm.interop.Structure;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -115,6 +118,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private Map<FieldReference, WasmGlobal> staticFieldLocations = new HashMap<>();
     private List<Consumer<WasmFunction>> staticFieldInitializers = new ArrayList<>();
     private ClassInitializerInfo classInitializerInfo;
+    private ObjectByteHashMap<String> heapStructures = new ObjectByteHashMap<>();
 
     public final WasmGCStringPool strings;
     public final WasmGCStandardClasses standardClasses;
@@ -280,6 +284,20 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         }
     }
 
+    private boolean isHeapStructure(String className) {
+        var result = heapStructures.getOrDefault(className, (byte) -1);
+        if (result < 0) {
+            if (className.equals(Structure.class.getName())) {
+                result = 1;
+            } else {
+                var cls = classSource.get(className);
+                result = cls != null && cls.getParent() != null && isHeapStructure(cls.getParent()) ? (byte) 1 : 0;
+            }
+            heapStructures.put(className, result);
+        }
+        return result != 0;
+    }
+
     @Override
     public WasmGCClassInfo getClassInfo(ValueType type) {
         var classInfo = classInfoMap.get(type);
@@ -309,24 +327,30 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                         }
                     }
                     if (classInfo.structure == null) {
-                        var structName = names.topLevel(names.suggestForType(type));
-                        classInfo.structure = new WasmStructure(structName,
-                                fields -> fillFields(finalClassInfo, fields, type));
-                        classInfo.structure.setNominal(true);
-                        module.types.add(classInfo.structure);
-                        nonInitializedStructures.add(classInfo.structure);
+                        if (name != null && isHeapStructure(name)) {
+                            classInfo.heapStructure = true;
+                        } else {
+                            var structName = names.topLevel(names.suggestForType(type));
+                            classInfo.structure = new WasmStructure(structName,
+                                    fields -> fillFields(finalClassInfo, fields, type));
+                            classInfo.structure.setNominal(true);
+                            module.types.add(classInfo.structure);
+                            nonInitializedStructures.add(classInfo.structure);
+                        }
                     }
                 }
-                if (name != null) {
-                    if (!isInterface) {
-                        virtualTable = virtualTables.lookup(name);
+                if (!classInfo.isHeapStructure()) {
+                    if (name != null) {
+                        if (!isInterface) {
+                            virtualTable = virtualTables.lookup(name);
+                        }
+                        if (classReader != null && classReader.getParent() != null && !isInterface) {
+                            classInfo.structure.setSupertype(getClassInfo(classReader.getParent()).structure);
+                        }
+                    } else {
+                        virtualTable = virtualTables.lookup("java.lang.Object");
+                        classInfo.structure.setSupertype(standardClasses.objectClass().structure);
                     }
-                    if (classReader != null && classReader.getParent() != null && !isInterface) {
-                        classInfo.structure.setSupertype(getClassInfo(classReader.getParent()).structure);
-                    }
-                } else {
-                    virtualTable = virtualTables.lookup("java.lang.Object");
-                    classInfo.structure.setSupertype(standardClasses.objectClass().structure);
                 }
             }
             var pointerName = names.topLevel(names.suggestForType(type) + "@class");
@@ -351,29 +375,31 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             }
 
             var classStructure = classInfo.virtualTableStructure;
-            classInfo.pointer = new WasmGlobal(pointerName, classStructure.getNonNullReference(),
-                    new WasmStructNewDefault(classStructure));
-            classInfo.pointer.setImmutable(true);
-            module.globals.add(classInfo.pointer);
-            if (type instanceof ValueType.Primitive) {
-                initPrimitiveClass(classInfo, (ValueType.Primitive) type);
-            } else if (type instanceof ValueType.Void) {
-                initVoidClass(classInfo);
-            } else if (type instanceof ValueType.Array) {
-                initArrayClass(classInfo, (ValueType.Array) type);
-            } else if (type instanceof ValueType.Object) {
-                initRegularClass(classInfo, virtualTable, classStructure, ((ValueType.Object) type).getClassName());
-            }
-            var req = metadataRequirements.getInfo(type);
-            if (req != null) {
-                if (req.newArray()) {
-                    classInfo.initArrayFunction = getArrayConstructor(classInfo.getValueType(), 1);
-                    classInfo.initArrayFunction.setReferenced(true);
+            if (classStructure != null) {
+                classInfo.pointer = new WasmGlobal(pointerName, classStructure.getNonNullReference(),
+                        new WasmStructNewDefault(classStructure));
+                classInfo.pointer.setImmutable(true);
+                module.globals.add(classInfo.pointer);
+                if (type instanceof ValueType.Primitive) {
+                    initPrimitiveClass(classInfo, (ValueType.Primitive) type);
+                } else if (type instanceof ValueType.Void) {
+                    initVoidClass(classInfo);
+                } else if (type instanceof ValueType.Array) {
+                    initArrayClass(classInfo, (ValueType.Array) type);
+                } else if (type instanceof ValueType.Object) {
+                    initRegularClass(classInfo, virtualTable, classStructure, ((ValueType.Object) type).getClassName());
                 }
-                if (req.isAssignable()) {
-                    var supertypeFunction = supertypeGenerator.getIsSupertypeFunction(classInfo.getValueType());
-                    supertypeFunction.setReferenced(true);
-                    classInfo.supertypeFunction = supertypeFunction;
+                var req = metadataRequirements.getInfo(type);
+                if (req != null) {
+                    if (req.newArray()) {
+                        classInfo.initArrayFunction = getArrayConstructor(classInfo.getValueType(), 1);
+                        classInfo.initArrayFunction.setReferenced(true);
+                    }
+                    if (req.isAssignable()) {
+                        var supertypeFunction = supertypeGenerator.getIsSupertypeFunction(classInfo.getValueType());
+                        supertypeFunction.setReferenced(true);
+                        classInfo.supertypeFunction = supertypeFunction;
+                    }
                 }
             }
         }
@@ -1110,8 +1136,78 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     @Override
     public int getFieldIndex(FieldReference fieldRef) {
-        getClassInfo(fieldRef.getClassName()).structure.init();
+        var classInfo = getClassInfo(fieldRef.getClassName());
+        if (classInfo.isHeapStructure()) {
+            throw new IllegalArgumentException("Given field belongs to heap structure");
+        }
+        classInfo.structure.init();
         return fieldIndexes.getOrDefault(fieldRef, -1);
+    }
+
+    @Override
+    public int getHeapFieldOffset(FieldReference fieldRef) {
+        var classInfo = getClassInfo(fieldRef.getClassName());
+        if (!classInfo.isHeapStructure()) {
+            throw new IllegalArgumentException("Given field does not belong to heap structure");
+        }
+        if (classInfo.heapFieldOffsets == null) {
+            fillHeapFieldOffsets(classInfo);
+        }
+        return classInfo.heapFieldOffsets.get(fieldRef.getFieldName());
+    }
+
+    @Override
+    public int getHeapSize(String className) {
+        var classInfo = getClassInfo(className);
+        if (!classInfo.isHeapStructure()) {
+            throw new IllegalArgumentException("Given field does not belong to heap structure");
+        }
+        if (classInfo.heapFieldOffsets == null) {
+            fillHeapFieldOffsets(classInfo);
+        }
+        return classInfo.heapSize;
+    }
+
+    @Override
+    public int getHeapAlignment(String className) {
+        var classInfo = getClassInfo(className);
+        if (!classInfo.isHeapStructure()) {
+            throw new IllegalArgumentException("Given field does not belong to heap structure");
+        }
+        if (classInfo.heapFieldOffsets == null) {
+            fillHeapFieldOffsets(classInfo);
+        }
+        return classInfo.heapAlignment;
+    }
+
+    private void fillHeapFieldOffsets(WasmGCClassInfo classInfo) {
+        var offsets = new ObjectIntHashMap<String>();
+        classInfo.heapFieldOffsets = offsets;
+        var className = ((ValueType.Object) classInfo.getValueType()).getClassName();
+        var offset = 0;
+        var alignment = 1;
+        if (!className.equals(Structure.class.getName())) {
+            var cls = classSource.get(className);
+            var parentInfo = getClassInfo(cls.getParent());
+            if (parentInfo.heapFieldOffsets == null) {
+                fillHeapFieldOffsets(parentInfo);
+            }
+            offset = parentInfo.heapSize;
+            for (var field : cls.getFields()) {
+                if (field.hasModifier(ElementModifier.STATIC)) {
+                    continue;
+                }
+                var size = WasmClassGenerator.getTypeSize(field.getType());
+                if (offset == 0) {
+                    alignment = size;
+                }
+                offset = WasmClassGenerator.align(offset, size);
+                offsets.put(field.getName(), offset);
+                offset += size;
+            }
+        }
+        classInfo.heapSize = offset;
+        classInfo.heapAlignment = alignment;
     }
 
     @Override

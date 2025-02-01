@@ -497,7 +497,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         } else if (left instanceof VariableExpr) {
             var varExpr = (VariableExpr) left;
             var local = function.getLocalVariables().get(varExpr.getIndex() - firstVariable);
-            accept(statement.getRightValue());
+            accept(statement.getRightValue(), local.getType());
             var setLocal = new WasmSetLocal(local, result);
             setLocal.setLocation(statement.getLocation());
             resultConsumer.add(setLocal);
@@ -854,6 +854,10 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     protected abstract CallSiteIdentifier generateCallSiteId(TextLocation location);
 
     protected void acceptWithType(Expr expr, ValueType type) {
+        accept(expr);
+    }
+
+    protected void accept(Expr expr, WasmType type) {
         accept(expr);
     }
 

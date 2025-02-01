@@ -24,8 +24,12 @@ public class WasmStoreInt32 extends WasmExpression implements WasmMemoryAccess {
     private WasmInt32Subtype convertTo;
     private int offset;
 
-    public WasmStoreInt32(int alignment, WasmExpression index, WasmExpression value,
-            WasmInt32Subtype convertTo) {
+    public WasmStoreInt32(int alignment, WasmExpression index, WasmExpression value, WasmInt32Subtype convertTo) {
+        this(alignment, index, value, convertTo, 0);
+    }
+
+    public WasmStoreInt32(int alignment, WasmExpression index, WasmExpression value, WasmInt32Subtype convertTo,
+            int offset) {
         Objects.requireNonNull(index);
         Objects.requireNonNull(convertTo);
         Objects.requireNonNull(value);
@@ -33,7 +37,9 @@ public class WasmStoreInt32 extends WasmExpression implements WasmMemoryAccess {
         this.index = index;
         this.value = value;
         this.convertTo = convertTo;
+        this.offset = offset;
     }
+
 
     public int getAlignment() {
         return alignment;

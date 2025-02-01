@@ -17,12 +17,17 @@ package org.teavm.backend.wasm;
 
 import org.teavm.backend.wasm.generate.gc.WasmGCDeclarationsGenerator;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.runtime.StringInternPool;
+import org.teavm.interop.Address;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.runtime.heap.Heap;
 
 public class WasmGCModuleGenerator {
     private WasmGCDeclarationsGenerator declarationsGenerator;
+    private WasmFunction initializer;
 
     public WasmGCModuleGenerator(WasmGCDeclarationsGenerator declarationsGenerator) {
         this.declarationsGenerator = declarationsGenerator;
@@ -31,6 +36,14 @@ public class WasmGCModuleGenerator {
     public void generate() {
         declarationsGenerator.generate();
         createInitializer();
+    }
+
+    public void initBuffersHeap(int offset, int minSize, int maxSize) {
+        var target = declarationsGenerator.functions().forStaticMethod(new MethodReference(Heap.class,
+                "init", Address.class, int.class, int.class, void.class));
+        var call = new WasmCall(target, new WasmInt32Constant(offset), new WasmInt32Constant(minSize),
+                new WasmInt32Constant(maxSize));
+        initializer.getBody().add(call);
     }
 
     public WasmFunction generateReportGarbageCollectedStringFunction() {
@@ -45,7 +58,7 @@ public class WasmGCModuleGenerator {
 
     private void createInitializer() {
         var functionType = declarationsGenerator.functionTypes.of(null);
-        var initializer = new WasmFunction(functionType);
+        initializer = new WasmFunction(functionType);
         initializer.setName("teavm@initializer");
         declarationsGenerator.module.functions.add(initializer);
         declarationsGenerator.module.setStartFunction(initializer);
