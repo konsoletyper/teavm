@@ -157,6 +157,12 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter(property = "teavm.maxHeapSize", defaultValue = "128")
     private int maxHeapSize;
 
+    @Parameter(property = "teavm.minDirectBuffersSize", defaultValue = "2")
+    private int minDirectBuffersSize;
+
+    @Parameter(property = "teavm.maxDirectBuffersSize", defaultValue = "32")
+    private int maxDirectBuffersSize;
+
     @Parameter(property = "teavm.outOfProcess", defaultValue = "false")
     private boolean outOfProcess;
 
@@ -200,6 +206,8 @@ public class TeaVMCompileMojo extends AbstractMojo {
                     : TeaVMSourceFilePolicy.DO_NOTHING);
             builder.setMinHeapSize(minHeapSize * 1024 * 1024);
             builder.setMaxHeapSize(maxHeapSize * 1024 * 1024);
+            builder.setMinDirectBuffersSize(minDirectBuffersSize * 1024 * 1024);
+            builder.setMaxDirectBuffersSize(maxDirectBuffersSize * 1024 * 1024);
             builder.setShortFileNames(shortFileNames);
             builder.setAssertionsRemoved(assertionsRemoved);
         } catch (RuntimeException e) {

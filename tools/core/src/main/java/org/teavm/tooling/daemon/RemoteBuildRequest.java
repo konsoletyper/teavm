@@ -56,6 +56,8 @@ public class RemoteBuildRequest implements Serializable {
     public WasmDebugInfoLevel wasmDebugInfoLevel;
     public int minHeapSize;
     public int maxHeapSize;
+    public int minDirectBuffersSize;
+    public int maxDirectBuffersSize;
     public boolean heapDump;
     public boolean shortFileNames;
     public boolean assertionsRemoved;

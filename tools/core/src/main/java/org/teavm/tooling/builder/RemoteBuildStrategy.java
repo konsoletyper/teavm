@@ -215,6 +215,16 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setMinDirectBuffersSize(int minDirectBuffersSize) {
+        request.minDirectBuffersSize = minDirectBuffersSize;
+    }
+
+    @Override
+    public void setMaxDirectBuffersSize(int maxDirectBuffersSize) {
+        request.maxDirectBuffersSize = maxDirectBuffersSize;
+    }
+
+    @Override
     public void setHeapDump(boolean heapDump) {
         request.heapDump = heapDump;
     }

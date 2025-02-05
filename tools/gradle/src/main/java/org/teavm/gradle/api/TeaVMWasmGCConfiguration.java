@@ -37,4 +37,8 @@ public interface TeaVMWasmGCConfiguration extends TeaVMCommonConfiguration, TeaV
     Property<SourceFilePolicy> getSourceFilePolicy();
 
     Property<Boolean> getModularRuntime();
+
+    Property<Integer> getMinDirectBuffersSize();
+
+    Property<Integer> getMaxDirectBuffersSize();
 }

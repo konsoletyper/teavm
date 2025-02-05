@@ -93,6 +93,10 @@ public interface BuildStrategy {
 
     void setMaxHeapSize(int maxHeapSize);
 
+    void setMinDirectBuffersSize(int minDirectBuffersSize);
+
+    void setMaxDirectBuffersSize(int maxDirectBuffersSize);
+
     void setHeapDump(boolean heapDump);
 
     void setShortFileNames(boolean shortFileNames);

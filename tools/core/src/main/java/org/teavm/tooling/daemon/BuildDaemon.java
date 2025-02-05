@@ -166,6 +166,8 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
         tool.setWasmDebugInfoLevel(request.wasmDebugInfoLevel);
         tool.setMinHeapSize(request.minHeapSize);
         tool.setMaxHeapSize(request.maxHeapSize);
+        tool.setMinDirectBuffersSize(request.minDirectBuffersSize);
+        tool.setMaxDirectBuffersSize(request.maxDirectBuffersSize);
         tool.setHeapDump(request.heapDump);
         tool.setShortFileNames(request.shortFileNames);
         tool.setAssertionsRemoved(request.assertionsRemoved);

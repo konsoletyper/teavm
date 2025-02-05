@@ -68,6 +68,8 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private WasmDebugInfoLocation wasmDebugInfoLocation;
     private int minHeapSize = 4 * 1024 * 1024;
     private int maxHeapSize = 128 * 1024 * 1024;
+    private int minDirectBuffersSize = 2 * 1024 * 1024;
+    private int maxDirectBuffersSize = 32 * 1024 * 1024;
     private final List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
     private boolean heapDump;
     private TeaVMProgressListener progressListener;
@@ -244,6 +246,16 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setMinDirectBuffersSize(int minDirectBuffersSize) {
+        this.minDirectBuffersSize = minDirectBuffersSize;
+    }
+
+    @Override
+    public void setMaxDirectBuffersSize(int maxDirectBuffersSize) {
+        this.maxDirectBuffersSize = maxDirectBuffersSize;
+    }
+
+    @Override
     public void setHeapDump(boolean heapDump) {
         this.heapDump = heapDump;
     }
@@ -291,6 +303,8 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setWasmDebugInfoLocation(wasmDebugInfoLocation);
         tool.setMinHeapSize(minHeapSize);
         tool.setMaxHeapSize(maxHeapSize);
+        tool.setMinDirectBuffersSize(minDirectBuffersSize);
+        tool.setMaxDirectBuffersSize(maxDirectBuffersSize);
         tool.setHeapDump(heapDump);
         tool.setShortFileNames(shortFileNames);
         tool.setAssertionsRemoved(assertionsRemoved);

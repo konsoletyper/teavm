@@ -231,6 +231,8 @@ public class TeaVMPlugin implements Plugin<Project> {
             task.getStrict().convention(wasmGC.getStrict());
             task.getSourceMap().convention(wasmGC.getSourceMap());
             task.getSourceFilePolicy().convention(wasmGC.getSourceFilePolicy());
+            task.getMinDirectBuffersSize().convention(wasmGC.getMinDirectBuffersSize());
+            task.getMaxDirectBuffersSize().convention(wasmGC.getMaxDirectBuffersSize());
             setupSources(task.getSourceFiles(), project);
             buildTask.dependsOn(task);
         });

@@ -125,6 +125,12 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
                 .orElse(SourceFilePolicy.LINK_LOCAL_FILES));
         wasmGC.getModularRuntime().convention(property("wasm-gc.modularRuntime")
                 .map(Boolean::parseBoolean).orElse(false));
+        wasmGC.getMinDirectBuffersSize().convention(property("wasm-gc.minDirectBuffersSize")
+                .map(Integer::parseInt)
+                .orElse(2));
+        wasmGC.getMaxDirectBuffersSize().convention(property("wasm-gc.maxDirectBuffersSize")
+                .map(Integer::parseInt)
+                .orElse(32));
     }
 
     private void setupWasiDefaults() {
