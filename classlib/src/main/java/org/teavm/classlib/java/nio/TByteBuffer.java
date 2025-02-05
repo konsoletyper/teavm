@@ -20,9 +20,11 @@ import java.util.Objects;
 import org.teavm.backend.c.runtime.Memory;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TComparable;
+import org.teavm.classlib.java.lang.TOutOfMemoryError;
 import org.teavm.interop.Address;
 import org.teavm.jso.typedarrays.Int8Array;
 import org.teavm.runtime.GC;
+import org.teavm.runtime.heap.Heap;
 
 public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBuffer> {
     TByteOrder order = TByteOrder.BIG_ENDIAN;
@@ -50,6 +52,16 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
             var array = new byte[capacity];
             var result = new TByteBufferNative(array, 0, array, Address.ofData(array), array.length, false);
             result.limit = capacity;
+            return result;
+        }
+        if (PlatformDetector.isWebAssemblyGC()) {
+            var addr = Heap.alloc(capacity);
+            if (addr == null) {
+                throw new TOutOfMemoryError();
+            }
+            var result = new TByteBufferNative(null, 0, null, addr, capacity, false);
+            result.limit = capacity;
+            TBuffersCleaner.register(result, addr);
             return result;
         }
         return new TByteBufferImpl(capacity, true);

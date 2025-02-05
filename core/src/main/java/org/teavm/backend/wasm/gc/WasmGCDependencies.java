@@ -22,6 +22,7 @@ import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyAnalyzer;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.interop.Address;
 import org.teavm.model.MethodReference;
 import org.teavm.runtime.heap.Heap;
@@ -44,6 +45,7 @@ public class WasmGCDependencies {
         analyzer.addDependencyListener(new WasmGCReferenceQueueDependency());
         analyzer.addDependencyListener(new WasmGCResourceDependency());
         analyzer.addDependencyListener(new SystemArrayCopyDependencySupport());
+        handleReferences();
     }
 
     public void contributeStandardExports() {
@@ -134,5 +136,14 @@ public class WasmGCDependencies {
     private void contributeBuffers() {
         analyzer.linkMethod(new MethodReference(Heap.class, "init", Address.class, int.class, int.class,
                 void.class)).use();
+    }
+
+    private void handleReferences() {
+        analyzer.addDependencyListener(new AbstractDependencyListener() {
+            @Override
+            public void methodReached(DependencyAgent agent, MethodDependency method) {
+                var ref = method.getMethod().getReference();
+            }
+        });
     }
 }

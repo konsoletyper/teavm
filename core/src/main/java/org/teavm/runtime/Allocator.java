@@ -28,7 +28,7 @@ public final class Allocator {
 
     public static Address allocate(RuntimeClass tag) {
         RuntimeObject object = GC.alloc(tag.size);
-        fillZero(object.toAddress(), tag.size);
+        Address.fillZero(object.toAddress(), tag.size);
         object.classReference = tag.pack();
         return object.toAddress();
     }
@@ -39,7 +39,7 @@ public final class Allocator {
         sizeInBytes += itemSize * size;
         sizeInBytes = Address.align(Address.fromInt(sizeInBytes), Address.sizeOf()).toInt();
         Address result = GC.alloc(sizeInBytes).toAddress();
-        fillZero(result, sizeInBytes);
+        Address.fillZero(result, sizeInBytes);
 
         RuntimeArray array = result.toStructure();
         array.classReference = tag.pack();
@@ -63,11 +63,6 @@ public final class Allocator {
         return array;
     }
 
-    public static native void fillZero(Address address, int count);
-
-    public static native void fill(Address address, byte value, int count);
-
-    public static native void moveMemoryBlock(Address source, Address target, int count);
 
     public static native boolean isInitialized(Class<?> cls);
 }

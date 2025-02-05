@@ -209,6 +209,10 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         add(new MethodReference(Address.class, "align", Address.class, int.class, Address.class), intrinsic);
         add(new MethodReference(Address.class, "sizeOf", int.class), intrinsic);
         add(new MethodReference(Address.class, "add", Class.class, int.class, Address.class), intrinsic);
+        add(new MethodReference(Address.class, "fillZero", Address.class, int.class, void.class), intrinsic);
+        add(new MethodReference(Address.class, "fill", Address.class, byte.class, int.class, void.class), intrinsic);
+        add(new MethodReference(Address.class, "moveMemoryBlock", Address.class, Address.class, int.class, void.class),
+                intrinsic);
     }
 
     private void fillStructure() {

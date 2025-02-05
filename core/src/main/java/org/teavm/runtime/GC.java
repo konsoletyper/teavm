@@ -95,7 +95,7 @@ public final class GC {
         firstDirectBuffer = null;
 
         int regionCount = getRegionCount();
-        Allocator.fill(cardTable(), CARD_VALID, regionCount);
+        Address.fill(cardTable(), CARD_VALID, regionCount);
     }
 
     private static int getRegionCount() {
@@ -181,8 +181,8 @@ public final class GC {
     private static void triggerFullGC() {
         isFullGC = true;
         int regionsCount = getRegionCount();
-        Allocator.fill(cardTable(), (byte) 0, getRegionCount());
-        Allocator.fill(regionsAddress().toAddress(), (byte) 0, regionsCount * Structure.sizeOf(Region.class));
+        Address.fill(cardTable(), (byte) 0, getRegionCount());
+        Address.fill(regionsAddress().toAddress(), (byte) 0, regionsCount * Structure.sizeOf(Region.class));
     }
 
     private static void collectGarbageImpl(int size) {
@@ -209,7 +209,7 @@ public final class GC {
         currentChunk = currentChunkPointer.value;
         currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
 
-        Allocator.fill(cardTable(), CARD_VALID, getRegionCount());
+        Address.fill(cardTable(), CARD_VALID, getRegionCount());
     }
 
     private static void doCollectGarbage() {
@@ -1370,7 +1370,7 @@ public final class GC {
             }
         }
 
-        Allocator.moveMemoryBlock(blockSource, blockTarget, blockSize);
+        Address.moveMemoryBlock(blockSource, blockTarget, blockSize);
 
         FreeChunk object = blockTarget.toStructure();
         Address blockTargetEnd = blockTarget.add(blockSize);

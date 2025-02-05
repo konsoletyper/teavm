@@ -23,7 +23,9 @@ import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
+import org.teavm.backend.wasm.model.expression.WasmCopy;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.expression.WasmFill;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
 import org.teavm.backend.wasm.model.expression.WasmInt64Subtype;
@@ -157,6 +159,27 @@ public class AddressIntrinsic implements WasmGCIntrinsic {
                 result = new WasmConversion(WasmNumType.INT32, WasmNumType.INT64, true, result);
                 result.setLocation(invocation.getLocation());
                 return result;
+            }
+            case "fill": {
+                var fill = new WasmFill();
+                fill.setIndex(context.generate(invocation.getArguments().get(0)));
+                fill.setValue(context.generate(invocation.getArguments().get(1)));
+                fill.setCount(context.generate(invocation.getArguments().get(2)));
+                return fill;
+            }
+            case "fillZero": {
+                var fill = new WasmFill();
+                fill.setIndex(context.generate(invocation.getArguments().get(0)));
+                fill.setValue(new WasmInt32Constant(0));
+                fill.setCount(context.generate(invocation.getArguments().get(1)));
+                return fill;
+            }
+            case "moveMemoryBlock": {
+                var copy = new WasmCopy();
+                copy.setSourceIndex(context.generate(invocation.getArguments().get(0)));
+                copy.setDestinationIndex(context.generate(invocation.getArguments().get(1)));
+                copy.setCount(context.generate(invocation.getArguments().get(2)));
+                return copy;
             }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());

@@ -16,7 +16,6 @@
 package org.teavm.classlib.java.nio;
 
 import org.teavm.interop.Address;
-import org.teavm.runtime.Allocator;
 
 class TByteBufferNative extends TByteBuffer {
     private byte[] array;
@@ -527,7 +526,7 @@ class TByteBufferNative extends TByteBuffer {
     }
 
     static void copy(Address from, Address to, int count) {
-        Allocator.moveMemoryBlock(from, to, count);
+        Address.moveMemoryBlock(from, to, count);
     }
 
     static TByteOrder oppositeOrder(TByteOrder order) {

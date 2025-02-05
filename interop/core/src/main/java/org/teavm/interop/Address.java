@@ -95,4 +95,10 @@ public final class Address {
     }
 
     public static native void pin(Object obj);
+
+    public static native void fillZero(Address address, int count);
+
+    public static native void fill(Address address, byte value, int count);
+
+    public static native void moveMemoryBlock(Address source, Address target, int count);
 }

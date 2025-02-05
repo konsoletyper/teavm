@@ -378,7 +378,7 @@ public class TObject {
             size = itemSize * array.size + headerSize.toInt();
         }
         if (size > skip) {
-            Allocator.moveMemoryBlock(self.toAddress().add(skip), copy.toAddress().add(skip), size - skip);
+            Address.moveMemoryBlock(self.toAddress().add(skip), copy.toAddress().add(skip), size - skip);
         }
         return copy;
     }
