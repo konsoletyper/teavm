@@ -21,14 +21,14 @@ import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
 
 @JSClass
-public class BigInt64Array extends ArrayBufferView {
+public class BigInt64Array extends TypedArray {
     public BigInt64Array(int length) {
     }
 
     public BigInt64Array(ArrayBuffer buffer) {
     }
 
-    public BigInt64Array(ArrayBufferView buffer) {
+    public BigInt64Array(TypedArray buffer) {
     }
 
     public BigInt64Array(ArrayBuffer buffer, int offset, int length) {

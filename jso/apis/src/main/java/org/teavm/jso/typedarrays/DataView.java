@@ -23,9 +23,6 @@ public class DataView extends ArrayBufferView {
     public DataView(ArrayBuffer buffer) {
     }
 
-    public DataView(ArrayBufferView buffer) {
-    }
-
     public DataView(ArrayBuffer buffer, int offset, int length) {
     }
 

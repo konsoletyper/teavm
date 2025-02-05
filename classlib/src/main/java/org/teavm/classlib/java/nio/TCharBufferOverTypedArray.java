@@ -15,9 +15,10 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Uint16Array;
 
-class TCharBufferOverTypedArray extends TCharBufferImpl {
+class TCharBufferOverTypedArray extends TCharBufferImpl implements TArrayBufferViewProvider {
     private boolean readOnly;
     private Uint16Array data;
     private char[] array;
@@ -111,5 +112,15 @@ class TCharBufferOverTypedArray extends TCharBufferImpl {
                 data.set(index++, src.get(offset++));
             }
         }
+    }
+
+    @Override
+    public ArrayBufferView getArrayBufferView() {
+        return data;
+    }
+
+    @Override
+    public int elementSize() {
+        return 2;
     }
 }

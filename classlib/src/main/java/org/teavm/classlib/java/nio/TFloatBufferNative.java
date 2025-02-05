@@ -16,8 +16,10 @@
 package org.teavm.classlib.java.nio;
 
 import org.teavm.interop.Address;
+import org.teavm.jso.typedarrays.ArrayBufferView;
+import org.teavm.jso.typedarrays.Float32Array;
 
-class TFloatBufferNative extends TFloatBufferImpl {
+class TFloatBufferNative extends TFloatBufferImpl implements TArrayBufferViewProvider {
     private float[] array;
     private boolean readOnly;
     @TNativeBufferObjectMarker
@@ -156,5 +158,15 @@ class TFloatBufferNative extends TFloatBufferImpl {
         return swap
                 ? TByteBufferNative.oppositeOrder(TByteOrder.nativeOrder())
                 : TByteOrder.nativeOrder();
+    }
+
+    @Override
+    public ArrayBufferView getArrayBufferView() {
+        return new Float32Array(TJSBufferHelper.WasmGC.getLinearMemory(), address.toInt(), capacity);
+    }
+
+    @Override
+    public int elementSize() {
+        return 4;
     }
 }

@@ -15,9 +15,10 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Float32Array;
 
-class TFloatBufferOverTypedArray extends TFloatBufferImpl {
+class TFloatBufferOverTypedArray extends TFloatBufferImpl implements TArrayBufferViewProvider {
     private boolean readOnly;
     private Float32Array data;
     private float[] array;
@@ -104,5 +105,15 @@ class TFloatBufferOverTypedArray extends TFloatBufferImpl {
                 data.set(index++, src.get(offset++));
             }
         }
+    }
+
+    @Override
+    public ArrayBufferView getArrayBufferView() {
+        return data;
+    }
+
+    @Override
+    public int elementSize() {
+        return 4;
     }
 }

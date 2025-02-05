@@ -21,14 +21,14 @@ import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
 
 @JSClass
-public class Int16Array extends ArrayBufferView {
+public class Int16Array extends TypedArray {
     public Int16Array(int length) {
     }
 
     public Int16Array(ArrayBuffer buffer) {
     }
 
-    public Int16Array(ArrayBufferView buffer) {
+    public Int16Array(TypedArray buffer) {
     }
 
     public Int16Array(ArrayBuffer buffer, int offset, int length) {
@@ -53,7 +53,7 @@ public class Int16Array extends ArrayBufferView {
 
     @JSBody(params = "buffer", script = "return new Int16Array(buffer);")
     @Deprecated
-    public static native Int16Array create(ArrayBufferView buffer);
+    public static native Int16Array create(TypedArray buffer);
 
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new Int16Array(buffer, offset, length);")
     @Deprecated

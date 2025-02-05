@@ -184,6 +184,9 @@ function coreImports(imports, context) {
         },
         decorateException(javaException) {
             new JavaError(context, javaException);
+        },
+        linearMemory() {
+            return context.exports["teavm.memory"].buffer;
         }
     };
 }

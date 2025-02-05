@@ -16,8 +16,10 @@
 package org.teavm.classlib.java.nio;
 
 import org.teavm.interop.Address;
+import org.teavm.jso.typedarrays.ArrayBufferView;
+import org.teavm.jso.typedarrays.Int8Array;
 
-class TByteBufferNative extends TByteBuffer {
+class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider {
     private byte[] array;
     private int arrayOffset;
     @TNativeBufferObjectMarker
@@ -531,5 +533,15 @@ class TByteBufferNative extends TByteBuffer {
 
     static TByteOrder oppositeOrder(TByteOrder order) {
         return order == TByteOrder.BIG_ENDIAN ? TByteOrder.LITTLE_ENDIAN : TByteOrder.BIG_ENDIAN;
+    }
+
+    @Override
+    public ArrayBufferView getArrayBufferView() {
+        return new Int8Array(TJSBufferHelper.WasmGC.getLinearMemory(), address.toInt(), capacity);
+    }
+
+    @Override
+    public int elementSize() {
+        return 1;
     }
 }

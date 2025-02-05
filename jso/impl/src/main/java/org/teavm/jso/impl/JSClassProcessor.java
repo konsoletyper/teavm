@@ -35,6 +35,8 @@ import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSBuffer;
+import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSFunctor;
@@ -47,6 +49,7 @@ import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -84,6 +87,7 @@ import org.teavm.model.util.ProgramUtils;
 class JSClassProcessor {
     private static final String NO_SIDE_EFFECTS = NoSideEffects.class.getName();
     private final ClassReaderSource classSource;
+    private final ClassHierarchy hierarchy;
     private final JSBodyRepository repository;
     private final JavaInvocationProcessor javaInvocationProcessor;
     private Program program;
@@ -102,9 +106,11 @@ class JSClassProcessor {
     private Predicate<String> classFilter = n -> true;
     private boolean wasmGC;
 
-    JSClassProcessor(ClassReaderSource classSource, JSTypeHelper typeHelper, JSBodyRepository repository,
-            Diagnostics diagnostics, IncrementalDependencyRegistration incrementalCache, boolean strict) {
+    JSClassProcessor(ClassReaderSource classSource, ClassHierarchy hierarchy, JSTypeHelper typeHelper,
+            JSBodyRepository repository, Diagnostics diagnostics, IncrementalDependencyRegistration incrementalCache,
+            boolean strict) {
         this.classSource = classSource;
+        this.hierarchy = hierarchy;
         this.typeHelper = typeHelper;
         this.repository = repository;
         this.diagnostics = diagnostics;
@@ -233,7 +239,7 @@ class JSClassProcessor {
 
     private void setCurrentProgram(Program program) {
         this.program = program;
-        marshaller = new JSValueMarshaller(diagnostics, typeHelper, classSource, program, replacement);
+        marshaller = new JSValueMarshaller(diagnostics, typeHelper, classSource, hierarchy, program, replacement);
         findVariableAliases();
     }
 
@@ -932,7 +938,7 @@ class JSClassProcessor {
         boolean[] byRefParams = new boolean[method.parameterCount()];
         validateSignature(method, callLocation, byRefParams);
         if (invoke.getInstance() != null) {
-            if (!typeHelper.isSupportedType(ValueType.object(method.getOwnerName()))) {
+            if (!typeHelper.isJavaScriptClass(method.getOwnerName())) {
                 diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
                         + "declaration. It is non-static and declared on a non-overlay class {{c1}}",
                         invoke.getMethod(), method.getOwnerName());
@@ -962,13 +968,15 @@ class JSClassProcessor {
         if (invoke.getInstance() != null) {
             var arg = invoke.getInstance();
             arg = marshaller.wrapArgument(callLocation, arg,
-                    ValueType.object(method.getOwnerName()), types.typeOf(arg), false);
+                    ValueType.object(method.getOwnerName()), types.typeOf(arg), false, null);
             newArgs.add(arg);
         }
         for (int i = 0; i < invoke.getArguments().size(); ++i) {
             var arg = invoke.getArguments().get(i);
+            var bufferType = extractBufferType(method.parameterAnnotation(i), method.parameterType(i),
+                    "parameter" + (i + 1), method.getReference(), callLocation);
             arg = marshaller.wrapArgument(callLocation, invoke.getArguments().get(i),
-                    method.parameterType(i), types.typeOf(arg), byRefParams[i]);
+                    method.parameterType(i), types.typeOf(arg), byRefParams[i], bufferType);
             newArgs.add(arg);
         }
         newInvoke.setArguments(newArgs.toArray(new Variable[0]));
@@ -982,6 +990,28 @@ class JSClassProcessor {
         incrementalCache.addDependencies(methodToProcess.getReference(), method.getOwnerName());
 
         return true;
+    }
+
+    private JSBufferType extractBufferType(AnnotationContainerReader annotations, ValueType type, String subject,
+            MethodReference method, CallLocation callLocation) {
+        var annot = annotations.get(JSBuffer.class.getName());
+        if (annot == null) {
+            return null;
+        }
+        if (!isBufferType(type)) {
+            diagnostics.error(callLocation, subject + " of {{m0}} is marked with @JSBuffer, "
+                    + "but is not valid java.nio.Buffer", method);
+            return null;
+        }
+        return JSBufferType.valueOf(annot.getValue("value").getEnumValue().getFieldName());
+    }
+
+    private boolean isBufferType(ValueType type) {
+        if (!(type instanceof ValueType.Object)) {
+            return false;
+        }
+        var className = ((ValueType.Object) type).getClassName();
+        return hierarchy.isSuperType("java.nio.Buffer", className, false);
     }
 
     private boolean processProperty(MethodReader method, String suggestedName, CallLocation callLocation,
@@ -1008,8 +1038,8 @@ class JSClassProcessor {
                 propertyName = cutPrefix(method.getName(), 3);
             }
             var value = invoke.getArguments().get(0);
-            value = marshaller.wrapArgument(callLocation, value,
-                    method.parameterType(0), types.typeOf(value), false);
+            value = marshaller.wrapArgument(callLocation, value, method.parameterType(0), types.typeOf(value), false,
+                    null);
             addPropertySet(propertyName, getCallTarget(invoke), value, invoke.getLocation(), pure);
             return true;
         }
@@ -1023,7 +1053,7 @@ class JSClassProcessor {
             Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
             var index = invoke.getArguments().get(0);
             addIndexerGet(getCallTarget(invoke), marshaller.wrapArgument(callLocation, index,
-                    method.parameterType(0), types.typeOf(index), false), result, invoke.getLocation());
+                    method.parameterType(0), types.typeOf(index), false, null), result, invoke.getLocation());
             if (result != null) {
                 result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType(), false,
                         canBeOnlyJava(invoke.getReceiver()));
@@ -1033,10 +1063,11 @@ class JSClassProcessor {
         }
         if (isProperSetIndexer(method.getDescriptor())) {
             var index = invoke.getArguments().get(0);
-            index = marshaller.wrapArgument(callLocation, index, method.parameterType(0), types.typeOf(index), false);
+            index = marshaller.wrapArgument(callLocation, index, method.parameterType(0), types.typeOf(index), false,
+                    null);
             var value = invoke.getArguments().get(1);
             value = marshaller.wrapArgument(callLocation, value, method.parameterType(1),
-                    types.typeOf(value), false);
+                    types.typeOf(value), false, null);
             addIndexerSet(getCallTarget(invoke), index, value, invoke.getLocation());
             return true;
         }
@@ -1046,21 +1077,10 @@ class JSClassProcessor {
     }
 
     private boolean validateSignature(MethodReader method, CallLocation callLocation, boolean[] byRefParams) {
-        if (method.getResultType() != ValueType.VOID && !typeHelper.isSupportedType(method.getResultType())) {
-            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
-                    + "declaration, since it returns wrong type", method.getReference());
-            return false;
-        }
-
         ValueType[] parameterTypes = method.getParameterTypes();
         AnnotationContainerReader[] parameterAnnotations = method.getParameterAnnotations();
         for (int i = 0; i < parameterTypes.length; i++) {
             ValueType paramType = parameterTypes[i];
-            if (!typeHelper.isSupportedType(paramType)) {
-                diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
-                        + "declaration: its " + (i + 1) + "th parameter has wrong type", method.getReference());
-                return false;
-            }
             if (parameterAnnotations[i].get(JSByRef.class.getName()) != null) {
                 if (!typeHelper.isSupportedByRefType(paramType)) {
                     diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
@@ -1112,8 +1132,10 @@ class JSClassProcessor {
                     && !wasmGC) {
                 byRef = true;
             }
-            arg = marshaller.wrapArgument(callLocation, arg,
-                    method.parameterType(i), types.typeOf(arg), byRef);
+            var bufferType = extractBufferType(method.parameterAnnotation(i), method.parameterType(i),
+                    "Parameter " + (i + 1), method.getReference(), callLocation);
+            arg = marshaller.wrapArgument(callLocation, arg, method.parameterType(i), types.typeOf(arg), byRef,
+                    bufferType);
             callArguments.add(arg);
         }
 
@@ -1198,8 +1220,10 @@ class JSClassProcessor {
         newInvoke.setLocation(invoke.getLocation());
         for (int i = 0; i < invoke.getArguments().size(); ++i) {
             var arg = invoke.getArguments().get(i);
-            arg = marshaller.wrapArgument(callLocation, arg,
-                    method.parameterType(i), types.typeOf(arg), byRefParams[i]);
+            var bufferType = extractBufferType(method.parameterAnnotation(i), method.parameterType(i),
+                    "Parameter " + (i + 1), method.getReference(), callLocation);
+            arg = marshaller.wrapArgument(callLocation, arg, method.parameterType(i), types.typeOf(arg),
+                    byRefParams[i], bufferType);
             newArguments.add(arg);
         }
         newInvoke.setArguments(newArguments.toArray(new Variable[0]));
@@ -1235,16 +1259,10 @@ class JSClassProcessor {
             ++paramCount;
         }
         if (!isStatic) {
-            ValueType paramType = ValueType.object(methodToProcess.getOwnerName());
-            if (!typeHelper.isSupportedType(paramType)) {
+            if (!typeHelper.isJavaScriptClass(methodToProcess.getOwnerName())) {
                 diagnostics.error(location, "Non-static JSBody method {{m0}} is owned by non-JS class {{c1}}",
                         methodToProcess.getReference(), methodToProcess.getOwnerName());
             }
-        }
-        if (methodToProcess.getResultType() != ValueType.VOID
-                && !typeHelper.isSupportedType(methodToProcess.getResultType())) {
-            diagnostics.error(location, "JSBody method {{m0}} returns unsupported type {{t1}}",
-                    methodToProcess.getReference(), methodToProcess.getResultType());
         }
 
         // generate parameter types for proxy method
@@ -1402,7 +1420,7 @@ class JSClassProcessor {
         if (insn.getReceiver() != null) {
             replacement.clear();
             exit.setValueToReturn(marshaller.wrap(insn.getReceiver(), callee.getResultType(), JSType.MIXED,
-                    null, false));
+                    null, false, null));
             block.addAll(replacement);
         }
         block.add(exit);
@@ -1487,7 +1505,7 @@ class JSClassProcessor {
     }
 
     private boolean isProperGetter(MethodReader method, String suggestedName) {
-        if (method.parameterCount() > 0 || !typeHelper.isSupportedType(method.getResultType())) {
+        if (method.parameterCount() > 0) {
             return false;
         }
         if (suggestedName != null) {
@@ -1503,8 +1521,7 @@ class JSClassProcessor {
     }
 
     private boolean isProperSetter(MethodReader method, String suggestedName) {
-        if (method.parameterCount() != 1 || !typeHelper.isSupportedType(method.parameterType(0))
-                || method.getResultType() != ValueType.VOID) {
+        if (method.parameterCount() != 1 || method.getResultType() != ValueType.VOID) {
             return false;
         }
 
@@ -1520,13 +1537,11 @@ class JSClassProcessor {
     }
 
     private boolean isProperGetIndexer(MethodDescriptor desc) {
-        return desc.parameterCount() == 1 && typeHelper.isSupportedType(desc.parameterType(0))
-                && typeHelper.isSupportedType(desc.getResultType());
+        return desc.parameterCount() == 1;
     }
 
     private boolean isProperSetIndexer(MethodDescriptor desc) {
-        return desc.parameterCount() == 2 && typeHelper.isSupportedType(desc.parameterType(0))
-                && typeHelper.isSupportedType(desc.parameterType(1)) && desc.getResultType() == ValueType.VOID;
+        return desc.parameterCount() == 2 && desc.getResultType() == ValueType.VOID;
     }
 
     private static String cutPrefix(String name, int prefixLength) {

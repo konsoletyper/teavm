@@ -15,9 +15,10 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Int16Array;
 
-class TShortBufferOverTypedArray extends TShortBufferImpl {
+class TShortBufferOverTypedArray extends TShortBufferImpl implements TArrayBufferViewProvider {
     private boolean readOnly;
     private Int16Array data;
     private short[] array;
@@ -104,5 +105,15 @@ class TShortBufferOverTypedArray extends TShortBufferImpl {
                 data.set(index++, src.get(offset++));
             }
         }
+    }
+
+    @Override
+    public ArrayBufferView getArrayBufferView() {
+        return data;
+    }
+
+    @Override
+    public int elementSize() {
+        return 2;
     }
 }

@@ -16,8 +16,10 @@
 package org.teavm.classlib.java.nio;
 
 import org.teavm.interop.Address;
+import org.teavm.jso.typedarrays.ArrayBufferView;
+import org.teavm.jso.typedarrays.Int32Array;
 
-class TIntBufferNative extends TIntBufferImpl {
+class TIntBufferNative extends TIntBufferImpl implements TArrayBufferViewProvider {
     private int[] array;
     private boolean readOnly;
     @TNativeBufferObjectMarker
@@ -152,5 +154,15 @@ class TIntBufferNative extends TIntBufferImpl {
         return swap
                 ? TByteBufferNative.oppositeOrder(TByteOrder.nativeOrder())
                 : TByteOrder.nativeOrder();
+    }
+
+    @Override
+    public ArrayBufferView getArrayBufferView() {
+        return new Int32Array(TJSBufferHelper.WasmGC.getLinearMemory(), address.toInt(), capacity);
+    }
+
+    @Override
+    public int elementSize() {
+        return 4;
     }
 }

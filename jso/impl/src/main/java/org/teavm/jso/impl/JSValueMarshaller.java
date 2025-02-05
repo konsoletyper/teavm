@@ -18,12 +18,14 @@ package org.teavm.jso.impl;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSModule;
 import org.teavm.jso.JSObject;
 import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
@@ -51,19 +53,22 @@ class JSValueMarshaller {
     private Diagnostics diagnostics;
     private JSTypeHelper typeHelper;
     private ClassReaderSource classSource;
+    private ClassHierarchy hierarchy;
     private Program program;
     private List<Instruction> replacement;
 
     JSValueMarshaller(Diagnostics diagnostics, JSTypeHelper typeHelper, ClassReaderSource classSource,
-            Program program, List<Instruction> replacement) {
+            ClassHierarchy hierarchy, Program program, List<Instruction> replacement) {
         this.diagnostics = diagnostics;
+        this.hierarchy = hierarchy;
         this.typeHelper = typeHelper;
         this.classSource = classSource;
         this.program = program;
         this.replacement = replacement;
     }
 
-    Variable wrapArgument(CallLocation location, Variable var, ValueType type, JSType jsType, boolean byRef) {
+    Variable wrapArgument(CallLocation location, Variable var, ValueType type, JSType jsType, boolean byRef,
+            JSBufferType bufferType) {
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
             ClassReader cls = classSource.get(className);
@@ -71,7 +76,7 @@ class JSValueMarshaller {
                 return wrapFunctor(location, var, cls, jsType);
             }
         }
-        return wrap(var, type, jsType, location.getSourceLocation(), byRef);
+        return wrap(var, type, jsType, location.getSourceLocation(), byRef, bufferType);
     }
 
     boolean isProperFunctor(ClassReader type) {
@@ -115,7 +120,8 @@ class JSValueMarshaller {
         return functor;
     }
 
-    Variable wrap(Variable var, ValueType type, JSType jsType, TextLocation location, boolean byRef) {
+    Variable wrap(Variable var, ValueType type, JSType jsType, TextLocation location, boolean byRef,
+            JSBufferType bufferType) {
         if (byRef) {
             InvokeInstruction insn = new InvokeInstruction();
             insn.setMethod(JSMethods.ARRAY_DATA);
@@ -144,6 +150,9 @@ class JSValueMarshaller {
                 }
             }
             if (!className.equals("java.lang.String")) {
+                if (hierarchy.isSuperType("java.nio.Buffer", className, false)) {
+                    return wrapBuffer(var, className, bufferType, location);
+                }
                 if (!typeHelper.isJavaScriptClass(className) && !typeHelper.isJavaScriptImplementation(className)) {
                     var unwrapNative = new InvokeInstruction();
                     unwrapNative.setLocation(location);
@@ -217,6 +226,101 @@ class JSValueMarshaller {
             replacement.add(insn);
         }
         return result;
+    }
+
+    private Variable wrapBuffer(Variable value, String className, JSBufferType type, TextLocation location) {
+        var extract = new InvokeInstruction();
+        extract.setType(InvocationType.SPECIAL);
+        extract.setMethod(new MethodReference("java.nio.JSBufferHelper", "getArrayBufferView",
+                ValueType.object("java.nio.Buffer"), ValueType.object("org.teavm.jso.typedarrays.ArrayBufferView")));
+        extract.setArguments(value);
+        extract.setReceiver(program.createVariable());
+        extract.setLocation(location);
+        replacement.add(extract);
+
+        type = resolveBufferType(className, type);
+        String targetName;
+        switch (type) {
+            case INT8:
+                targetName = "Int8Array";
+                break;
+            case UINT8:
+                targetName = "Uint8Array";
+                break;
+            case INT16:
+                targetName = "Int16Array";
+                break;
+            case UINT16:
+                targetName = "Uint16Array";
+                break;
+            case INT32:
+                targetName = "Int32Array";
+                break;
+            case UINT32:
+                targetName = "Uint32Array";
+                break;
+            case INT64:
+                targetName = "BigInt64Array";
+                break;
+            case UINT64:
+                targetName = "BigUint64Array";
+                break;
+            case FLOAT32:
+                targetName = "Float32Array";
+                break;
+            case FLOAT64:
+                targetName = "Float64Array";
+                break;
+            case DATA_VIEW:
+                targetName = "DataView";
+                break;
+            default:
+                throw new IllegalStateException();
+        }
+
+        var convert = new InvokeInstruction();
+        convert.setType(InvocationType.SPECIAL);
+        convert.setMethod(new MethodReference("java.nio.JSBufferHelper", "to" + targetName,
+                ValueType.object("org.teavm.jso.typedarrays.ArrayBufferView"),
+                ValueType.object("org.teavm.jso.typedarrays." + targetName)));
+        convert.setArguments(extract.getReceiver());
+        convert.setReceiver(program.createVariable());
+        convert.setLocation(location);
+        replacement.add(convert);
+
+        return convert.getReceiver();
+    }
+
+    private JSBufferType resolveBufferType(String className, JSBufferType type) {
+        if (type == null) {
+            switch (className) {
+                case "java.nio.ByteBuffer":
+                    type = JSBufferType.INT8;
+                    break;
+                case "java.nio.CharBuffer":
+                    type = JSBufferType.UINT16;
+                    break;
+                case "java.nio.ShortBuffer":
+                    type = JSBufferType.INT16;
+                    break;
+                case "java.nio.IntBuffer":
+                    type = JSBufferType.INT32;
+                    break;
+                case "java.nio.LongBuffer":
+                    type = JSBufferType.INT64;
+                    break;
+                case "java.nio.FloatBuffer":
+                    type = JSBufferType.FLOAT32;
+                    break;
+                case "java.nio.DoubleBuffer":
+                    type = JSBufferType.FLOAT64;
+                    break;
+            }
+        }
+        if (type == null) {
+            type = JSBufferType.DATA_VIEW;
+        }
+        return type;
     }
 
     private ValueType getWrappedType(ValueType type) {
@@ -587,7 +691,7 @@ class JSValueMarshaller {
     }
 
     Variable addStringWrap(Variable var, TextLocation location) {
-        return wrap(var, stringType, JSType.MIXED, location, false);
+        return wrap(var, stringType, JSType.MIXED, location, false, null);
     }
 
     Variable addString(String str, TextLocation location) {

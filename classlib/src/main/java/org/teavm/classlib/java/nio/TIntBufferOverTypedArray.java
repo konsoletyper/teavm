@@ -15,9 +15,10 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Int32Array;
 
-class TIntBufferOverTypedArray extends TIntBufferImpl {
+class TIntBufferOverTypedArray extends TIntBufferImpl implements TArrayBufferViewProvider {
     private boolean readOnly;
     private Int32Array data;
     private int[] array;
@@ -104,5 +105,15 @@ class TIntBufferOverTypedArray extends TIntBufferImpl {
                 data.set(index++, src.get(offset++));
             }
         }
+    }
+
+    @Override
+    public ArrayBufferView getArrayBufferView() {
+        return data;
+    }
+
+    @Override
+    public int elementSize() {
+        return 4;
     }
 }

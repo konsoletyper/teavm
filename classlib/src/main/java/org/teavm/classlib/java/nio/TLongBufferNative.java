@@ -16,8 +16,10 @@
 package org.teavm.classlib.java.nio;
 
 import org.teavm.interop.Address;
+import org.teavm.jso.typedarrays.ArrayBufferView;
+import org.teavm.jso.typedarrays.BigInt64Array;
 
-class TLongBufferNative extends TLongBufferImpl {
+class TLongBufferNative extends TLongBufferImpl implements TArrayBufferViewProvider {
     private long[] array;
     private boolean readOnly;
     @TNativeBufferObjectMarker
@@ -151,5 +153,15 @@ class TLongBufferNative extends TLongBufferImpl {
         return swap
                 ? TByteBufferNative.oppositeOrder(TByteOrder.nativeOrder())
                 : TByteOrder.nativeOrder();
+    }
+
+    @Override
+    public ArrayBufferView getArrayBufferView() {
+        return new BigInt64Array(TJSBufferHelper.WasmGC.getLinearMemory(), address.toInt(), capacity);
+    }
+
+    @Override
+    public int elementSize() {
+        return 8;
     }
 }

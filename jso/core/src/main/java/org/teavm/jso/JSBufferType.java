@@ -13,23 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.nio;
+package org.teavm.jso;
 
-import org.teavm.interop.Address;
-import org.teavm.jso.core.JSFinalizationRegistry;
-import org.teavm.jso.core.JSNumber;
-import org.teavm.runtime.heap.Heap;
-
-final class TBuffersCleaner {
-    private static final JSFinalizationRegistry registry = new JSFinalizationRegistry(address -> {
-        var addr = Address.fromInt(((JSNumber) address).intValue());
-        Heap.release(addr);
-    });
-
-    private TBuffersCleaner() {
-    }
-
-    static void register(Object object, Address address) {
-        registry.register(object, JSNumber.valueOf(address.toInt()));
-    }
+public enum JSBufferType {
+    DATA_VIEW,
+    INT8,
+    UINT8,
+    INT16,
+    UINT16,
+    INT32,
+    UINT32,
+    INT64,
+    UINT64,
+    FLOAT32,
+    FLOAT64
 }

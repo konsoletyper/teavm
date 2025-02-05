@@ -15,9 +15,10 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.BigInt64Array;
 
-class TLongBufferOverTypedArray extends TLongBufferImpl {
+class TLongBufferOverTypedArray extends TLongBufferImpl implements TArrayBufferViewProvider {
     private boolean readOnly;
     private BigInt64Array data;
     private long[] array;
@@ -104,5 +105,15 @@ class TLongBufferOverTypedArray extends TLongBufferImpl {
                 data.set(index++, src.get(offset++));
             }
         }
+    }
+
+    @Override
+    public ArrayBufferView getArrayBufferView() {
+        return data;
+    }
+
+    @Override
+    public int elementSize() {
+        return 8;
     }
 }

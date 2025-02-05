@@ -15,10 +15,11 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.DataView;
 import org.teavm.jso.typedarrays.Int8Array;
 
-class TDoubleBufferOverDataView extends TDoubleBufferImpl {
+class TDoubleBufferOverDataView extends TDoubleBufferImpl implements TArrayBufferViewProvider {
     private boolean readOnly;
     private DataView data;
     private boolean littleEndian;
@@ -109,5 +110,15 @@ class TDoubleBufferOverDataView extends TDoubleBufferImpl {
     @Override
     int capacityImpl() {
         return data.getByteLength() / 8;
+    }
+
+    @Override
+    public ArrayBufferView getArrayBufferView() {
+        return data;
+    }
+
+    @Override
+    public int elementSize() {
+        return 8;
     }
 }

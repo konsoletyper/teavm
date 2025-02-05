@@ -15,9 +15,10 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Float64Array;
 
-class TDoubleBufferOverTypedArray extends TDoubleBufferImpl {
+class TDoubleBufferOverTypedArray extends TDoubleBufferImpl implements TArrayBufferViewProvider {
     private boolean readOnly;
     private Float64Array data;
     private double[] array;
@@ -104,5 +105,15 @@ class TDoubleBufferOverTypedArray extends TDoubleBufferImpl {
                 data.set(index++, src.get(offset++));
             }
         }
+    }
+
+    @Override
+    public ArrayBufferView getArrayBufferView() {
+        return data;
+    }
+
+    @Override
+    public int elementSize() {
+        return 8;
     }
 }

@@ -96,23 +96,6 @@ public class JSTypeHelper {
         return cls.getInterfaces().stream().anyMatch(this::isJavaScriptClass);
     }
 
-    public boolean isSupportedType(ValueType type) {
-        if (type == ValueType.VOID) {
-            return false;
-        }
-        if (type instanceof ValueType.Primitive) {
-            return true;
-        } else if (type instanceof ValueType.Array) {
-            return isSupportedType(((ValueType.Array) type).getItemType());
-        } else if (type instanceof ValueType.Object) {
-            String typeName = ((ValueType.Object) type).getClassName();
-            return typeName.equals("java.lang.String") || typeName.equals("java.lang.Object")
-                    || isJavaScriptClass(typeName);
-        } else {
-            return false;
-        }
-    }
-
     public boolean isSupportedByRefType(ValueType type) {
         if (!(type instanceof ValueType.Array)) {
             return false;

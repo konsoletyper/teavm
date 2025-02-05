@@ -111,16 +111,6 @@ class JavaInvocationProcessor implements NodeVisitor {
                 diagnostics.error(location, "Can't call method {{m0}} of non-JS class", method.getReference());
             }
         }
-        for (int i = 0; i < method.parameterCount(); ++i) {
-            if (!typeHelper.isSupportedType(method.parameterType(i))) {
-                diagnostics.error(location, "Invalid type {{t0}} of parameter " + (i + 1) + " of method {{m1}}",
-                        method.parameterType(i), method.getReference());
-            }
-        }
-        if (method.getResultType() != ValueType.VOID && !typeHelper.isSupportedType(method.getResultType())) {
-            diagnostics.error(location, "Invalid type {{t0}} of return value of method {{m1}}", method.getResultType(),
-                    method.getReference());
-        }
     }
 
     private MethodReference createCallbackMethod(MethodReader method) {

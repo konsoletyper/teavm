@@ -19,9 +19,15 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSBuffer;
+import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
@@ -202,6 +208,23 @@ public class ConversionTest {
         assertNotSame(first, second);
         second[0] = 99;
         assertEquals(99, first[0]);
+    }
+
+    @Test
+    public void passBuffer() {
+        var buffer = ByteBuffer.allocateDirect(8)
+                .order(ByteOrder.nativeOrder())
+                .asIntBuffer();
+        buffer.put(0, 2);
+        buffer.put(1, 3);
+        assertEquals(5, readBuffer(buffer));
+
+        var floatBuffer = ByteBuffer.allocateDirect(8)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer();
+        floatBuffer.put(0, 1.1f);
+        floatBuffer.put(1, 2.2f);
+        assertEquals(3.3, readFloatBuffer(floatBuffer), 0.01);
     }
 
     @JSBody(params = { "a", "b", "c", "d", "e", "f", "g", "h", "i" }, script = ""
@@ -421,4 +444,10 @@ public class ConversionTest {
     @JSByRef
     @JSBody(params = "array", script = "return array;")
     private static native long[] rewrap(@JSByRef long[] array);
+
+    @JSBody(params = "buffer", script = "return buffer[0] + buffer[1];")
+    private static native int readBuffer(IntBuffer buffer);
+
+    @JSBody(params = "buffer", script = "return buffer[0] + buffer[1];")
+    private static native float readFloatBuffer(@JSBuffer(JSBufferType.FLOAT32) Buffer buffer);
 }

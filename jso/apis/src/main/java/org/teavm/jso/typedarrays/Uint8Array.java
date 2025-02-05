@@ -20,14 +20,14 @@ import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
 
 @JSClass
-public class Uint8Array extends ArrayBufferView {
+public class Uint8Array extends TypedArray {
     public Uint8Array(int length) {
     }
 
     public Uint8Array(ArrayBuffer buffer) {
     }
 
-    public Uint8Array(ArrayBufferView buffer) {
+    public Uint8Array(TypedArray buffer) {
     }
 
     public Uint8Array(ArrayBuffer buffer, int offset, int length) {
@@ -52,7 +52,7 @@ public class Uint8Array extends ArrayBufferView {
 
     @JSBody(params = "buffer", script = "return new Uint8Array(buffer);")
     @Deprecated
-    public static native Uint8Array create(ArrayBufferView buffer);
+    public static native Uint8Array create(TypedArray buffer);
 
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new Uint8Array(buffer, offset, length);")
     @Deprecated

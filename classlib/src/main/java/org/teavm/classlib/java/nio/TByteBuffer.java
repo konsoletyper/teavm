@@ -61,7 +61,7 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
             }
             var result = new TByteBufferNative(null, 0, null, addr, capacity, false);
             result.limit = capacity;
-            TBuffersCleaner.register(result, addr);
+            TJSBufferHelper.WasmGC.register(result, addr);
             return result;
         }
         return new TByteBufferImpl(capacity, true);

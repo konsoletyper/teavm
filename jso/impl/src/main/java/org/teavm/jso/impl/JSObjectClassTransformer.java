@@ -82,7 +82,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         this.hierarchy = context.getHierarchy();
         if (processor == null || processor.getClassSource() != hierarchy.getClassSource()) {
             typeHelper = new JSTypeHelper(hierarchy.getClassSource());
-            processor = new JSClassProcessor(hierarchy.getClassSource(), typeHelper, repository,
+            processor = new JSClassProcessor(hierarchy.getClassSource(), hierarchy, typeHelper, repository,
                     context.getDiagnostics(), context.getIncrementalCache(), context.isStrict());
             processor.setWasmGC(wasmGC);
             processor.setClassFilter(classFilter);
@@ -180,7 +180,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             BasicBlock basicBlock = program.createBasicBlock();
             List<Instruction> marshallInstructions = new ArrayList<>();
             JSValueMarshaller marshaller = new JSValueMarshaller(diagnostics, typeHelper, hierarchy.getClassSource(),
-                    program, marshallInstructions);
+                    hierarchy, program, marshallInstructions);
 
             Variable[] variablesToPass = new Variable[method.parameterCount()];
             for (int i = 0; i < method.parameterCount(); ++i) {
@@ -246,7 +246,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
                     resultType = method.getResultType();
                 }
                 exit.setValueToReturn(marshaller.wrapArgument(callLocation, result, resultType,
-                        typeHelper.mapType(method.getResultType()), false));
+                        typeHelper.mapType(method.getResultType()), false, null));
                 basicBlock.addAll(marshallInstructions);
                 marshallInstructions.clear();
             }
@@ -292,7 +292,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
 
             var basicBlock = program.createBasicBlock();
             var marshallInstructions = new ArrayList<Instruction>();
-            var marshaller = new JSValueMarshaller(diagnostics, typeHelper, hierarchy.getClassSource(),
+            var marshaller = new JSValueMarshaller(diagnostics, typeHelper, hierarchy.getClassSource(), hierarchy,
                     program, marshallInstructions);
 
             var variablesToPass = new Variable[method.parameterCount()];
@@ -323,7 +323,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             if (method.getResultType() != ValueType.VOID) {
                 invocation.setReceiver(program.createVariable());
                 exit.setValueToReturn(marshaller.wrapArgument(callLocation, invocation.getReceiver(),
-                        method.getResultType(), typeHelper.mapType(method.getResultType()), false));
+                        method.getResultType(), typeHelper.mapType(method.getResultType()), false, null));
                 basicBlock.addAll(marshallInstructions);
                 marshallInstructions.clear();
             }
