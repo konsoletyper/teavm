@@ -37,17 +37,17 @@ public interface AudioBuffer extends JSObject {
 
     void copyFromChannel(Float32Array destination, int channelNumber);
 
-    void copyFromChannel(@JSByRef float[] destination, int channelNumber);
+    void copyFromChannel(@JSByRef(optional = true) float[] destination, int channelNumber);
 
     void copyFromChannel(Float32Array destination, int channelNumber, int startInChannel);
 
-    void copyFromChannel(@JSByRef float[] destination, int channelNumber, int startInChannel);
+    void copyFromChannel(@JSByRef(optional = true) float[] destination, int channelNumber, int startInChannel);
 
     void copyToChannel(Float32Array source, int channelNumber);
 
-    void copyToChannel(@JSByRef float[] source, int channelNumber);
+    void copyToChannel(@JSByRef(optional = true) float[] source, int channelNumber);
 
     void copyToChannel(Float32Array source, int channelNumber, int startInChannel);
 
-    void copyToChannel(@JSByRef float[] source, int channelNumber, int startInChannel);
+    void copyToChannel(@JSByRef(optional = true) float[] source, int channelNumber, int startInChannel);
 }

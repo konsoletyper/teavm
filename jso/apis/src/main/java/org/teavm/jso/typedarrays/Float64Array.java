@@ -15,7 +15,10 @@
  */
 package org.teavm.jso.typedarrays;
 
+import java.nio.Buffer;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSBuffer;
+import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
@@ -65,4 +68,7 @@ public class Float64Array extends TypedArray {
 
     @JSBody(params = "array", script = "return array;")
     public static native Float64Array fromJavaArray(@JSByRef double[] array);
+
+    @JSBody(params = "buffer", script = "return buffer;")
+    public static native Float64Array fromJavaBuffer(@JSBuffer(JSBufferType.FLOAT64) Buffer buffer);
 }

@@ -40,7 +40,7 @@ public interface AudioParam extends JSObject {
 
     void setValueCurveAtTime(Float32Array values, double startTime, double duration);
 
-    void setValueCurveAtTime(@JSByRef float[] values, double startTime, double duration);
+    void setValueCurveAtTime(@JSByRef(optional = true) float[] values, double startTime, double duration);
 
     void cancelScheduledValues(double startTime);
 }

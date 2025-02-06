@@ -32,7 +32,7 @@ public interface AudioWorkerNode extends AudioNode {
         return onEvent("message", listener);
     }
 
-    void postMessage(JSObject message, @JSByRef JSObject[] transfer);
+    void postMessage(JSObject message, @JSByRef(optional = true) JSObject[] transfer);
 
     void postMessage(JSObject message, JSObject transfer);
 

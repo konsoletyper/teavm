@@ -44,10 +44,10 @@ public class BigInt64Array extends TypedArray {
     public native void set(int index, long value);
 
     @Override
-    public native void set(@JSByRef long[] data, int offset);
+    public native void set(@JSByRef(optional = true) long[] data, int offset);
 
     @Override
-    public native void set(@JSByRef long[] data);
+    public native void set(@JSByRef(optional = true) long[] data);
 
     @JSBody(params = "array", script = "return array;")
     public static native BigInt64Array fromJavaArray(@JSByRef long[] array);

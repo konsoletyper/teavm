@@ -30,26 +30,6 @@ import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMBuilder;
 
 public class JSOTest {
-    @Test
-    public void reportsAboutWrongParameterOfJSBody() {
-        Problem foundProblem = build("callJSBodyWithWrongParameter").stream().filter(problem -> {
-            return problem.getLocation().getMethod().getName().equals("callJSBodyWithWrongParameter")
-                    && problem.getText().equals("Method {{m0}} is not a proper native JavaScript method "
-                        + "declaration: its 1th parameter has wrong type");
-        }).findAny().orElse(null);
-
-        assertNotNull(foundProblem);
-        Object[] params = foundProblem.getParams();
-        assertThat(params[0], is(new MethodReference(JSOTest.class, "jsBodyWithWrongParameter",
-                A.class, void.class)));
-    }
-
-    private static void callJSBodyWithWrongParameter() {
-        jsBodyWithWrongParameter(new A());
-    }
-
-    @JSBody(params = "param", script = "alert(param.toString());")
-    private static native void jsBodyWithWrongParameter(A param);
 
     @Test
     public void reportsAboutWrongNonStaticJSBody() {
@@ -71,27 +51,6 @@ public class JSOTest {
 
     @JSBody(script = "alert(this.toString());")
     private native void wrongNonStaticJSBody();
-
-    @Test
-    public void reportsAboutJSBodyWithWrongReturningType() {
-        Problem foundProblem = build("callJSBodyWithWrongReturningType").stream().filter(problem -> {
-            return problem.getLocation().getMethod().getName().equals("callJSBodyWithWrongReturningType")
-                    && problem.getText().equals("Method {{m0}} is not a proper native JavaScript method "
-                            + "declaration, since it returns wrong type");
-        }).findAny().orElse(null);
-
-        assertNotNull(foundProblem);
-        Object[] params = foundProblem.getParams();
-        assertThat(params[0], is(new MethodReference(JSOTest.class, "jsBodyWithWrongReturningType", String.class,
-                A.class)));
-    }
-
-    private static void callJSBodyWithWrongReturningType() {
-        jsBodyWithWrongReturningType("foo");
-    }
-
-    @JSBody(params = "value", script = "return value;")
-    private static native A jsBodyWithWrongReturningType(String value);
 
     private List<Problem> build(String methodName) {
         TeaVM vm = new TeaVMBuilder(new JavaScriptTarget()).build();

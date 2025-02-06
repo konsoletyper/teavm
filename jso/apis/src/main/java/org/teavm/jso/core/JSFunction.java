@@ -47,5 +47,5 @@ public abstract class JSFunction implements JSObject {
     public abstract Object call(Object thisArg, Object a, Object b, Object c, Object d, Object e, Object f, Object g,
             Object h);
 
-    public abstract Object apply(Object thisArg, @JSByRef Object[] arguments);
+    public abstract Object apply(Object thisArg, @JSByRef(optional = true) Object[] arguments);
 }

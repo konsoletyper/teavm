@@ -15,7 +15,10 @@
  */
 package org.teavm.jso.typedarrays;
 
+import java.nio.Buffer;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSBuffer;
+import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSClass;
 
 @JSClass
@@ -105,12 +108,14 @@ public class DataView extends ArrayBufferView {
     @Deprecated
     public static native DataView create(ArrayBuffer buffer);
 
-    @JSBody(params = "buffer", script = "return new DataView(buffer);")
-    public static native DataView create(ArrayBufferView buffer);
-
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new DataView(buffer, offset, length);")
+    @Deprecated
     public static native DataView create(ArrayBuffer buffer, int offset, int length);
 
     @JSBody(params = { "buffer", "offset" }, script = "return new DataView(buffer, offset);")
+    @Deprecated
     public static native DataView create(ArrayBuffer buffer, int offset);
+
+    @JSBody(params = "buffer", script = "return buffer;")
+    public static native DataView fromJavaBuffer(@JSBuffer(JSBufferType.DATA_VIEW) Buffer buffer);
 }

@@ -15,7 +15,10 @@
  */
 package org.teavm.jso.typedarrays;
 
+import java.nio.Buffer;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSBuffer;
+import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
@@ -71,4 +74,7 @@ public class Int32Array extends TypedArray {
 
     @JSBody(params = "array", script = "return array;")
     public static native Int32Array fromJavaArray(@JSByRef int[] array);
+
+    @JSBody(params = "buffer", script = "return buffer;")
+    public static native Int32Array fromJavaBuffer(@JSBuffer(JSBufferType.INT32) Buffer buffer);
 }

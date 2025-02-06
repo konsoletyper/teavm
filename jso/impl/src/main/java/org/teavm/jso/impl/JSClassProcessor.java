@@ -945,11 +945,24 @@ class JSClassProcessor {
             }
         }
 
-        boolean returnByRef = method.getAnnotations().get(JSByRef.class.getName()) != null;
-        if (returnByRef && !typeHelper.isSupportedByRefType(method.getResultType())) {
-            diagnostics.error(callLocation, "Method {{m0}} is marked with @JSByRef, but does not return valid "
-                    + "array type", method.getReference());
-            return false;
+        var returnByRef = false;
+        var byRef = method.getAnnotations().get(JSByRef.class.getName());
+        if (byRef != null) {
+            if (!typeHelper.isSupportedByRefType(method.getResultType())) {
+                diagnostics.error(callLocation, "Method {{m0}} is marked with @JSByRef, but does not return valid "
+                        + "array type", method.getReference());
+                return false;
+            }
+            if (wasmGC) {
+                var optionalValue = byRef.getValue("optional");
+                if (optionalValue == null || !optionalValue.getBoolean()) {
+                    diagnostics.error(callLocation, "Method {{m0}} is marked with "
+                            + "@JSByRef, which is not supported in Wasm GC", method.getReference());
+                }
+                return false;
+            } else {
+                returnByRef = true;
+            }
         }
 
         requireJSBody(diagnostics, method);
@@ -1081,14 +1094,23 @@ class JSClassProcessor {
         AnnotationContainerReader[] parameterAnnotations = method.getParameterAnnotations();
         for (int i = 0; i < parameterTypes.length; i++) {
             ValueType paramType = parameterTypes[i];
-            if (parameterAnnotations[i].get(JSByRef.class.getName()) != null) {
+            var byRef = parameterAnnotations[i].get(JSByRef.class.getName());
+            if (byRef != null) {
                 if (!typeHelper.isSupportedByRefType(paramType)) {
                     diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
                             + "declaration: its " + (i + 1) + "th parameter is declared as JSByRef, "
                             + "which has incompatible type", method.getReference());
                     return false;
+                } else if (wasmGC) {
+                    var optionalValue = byRef.getValue("optional");
+                    if (optionalValue == null || !optionalValue.getBoolean()) {
+                        diagnostics.error(callLocation, "Parameter " + (i + 1) + " of method {{m0}} is marked with "
+                                + "@JSByRef, which is not supported in Wasm GC", method.getReference());
+                    }
+                    return false;
+                } else {
+                    byRefParams[i] = true;
                 }
-                byRefParams[i] = true;
             }
         }
 

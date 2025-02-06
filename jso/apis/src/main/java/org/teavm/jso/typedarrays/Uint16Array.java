@@ -15,7 +15,10 @@
  */
 package org.teavm.jso.typedarrays;
 
+import java.nio.Buffer;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSBuffer;
+import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
@@ -65,4 +68,7 @@ public class Uint16Array extends TypedArray {
 
     @JSBody(params = "array", script = "return array;")
     public static native Uint16Array fromJavaArray(@JSByRef char[] array);
+
+    @JSBody(params = "buffer", script = "return buffer;")
+    public static native Uint16Array fromJavaBuffer(@JSBuffer(JSBufferType.UINT16) Buffer buffer);
 }

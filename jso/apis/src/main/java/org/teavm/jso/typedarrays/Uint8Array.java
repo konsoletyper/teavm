@@ -15,7 +15,10 @@
  */
 package org.teavm.jso.typedarrays;
 
+import java.nio.Buffer;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSBuffer;
+import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
 
@@ -61,4 +64,7 @@ public class Uint8Array extends TypedArray {
     @JSBody(params = { "buffer", "offset" }, script = "return new Uint8Array(buffer, offset);")
     @Deprecated
     public static native Uint8Array create(ArrayBuffer buffer, int offset);
+
+    @JSBody(params = "buffer", script = "return buffer;")
+    public static native Uint8Array fromJavaBuffer(@JSBuffer(JSBufferType.UINT8) Buffer buffer);
 }
