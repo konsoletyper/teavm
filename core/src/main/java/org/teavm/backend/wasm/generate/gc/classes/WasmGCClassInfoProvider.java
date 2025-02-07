@@ -27,12 +27,19 @@ public interface WasmGCClassInfoProvider {
     int CUSTOM_FIELD_OFFSETS = 2;
     int ARRAY_DATA_FIELD_OFFSET = 2;
     int WEAK_REFERENCE_OFFSET = 2;
+    int STRING_POOL_ENTRY_OFFSET = 5;
 
     WasmGCClassInfo getClassInfo(ValueType type);
 
     WasmStructure getArrayVirtualTableStructure();
 
     int getFieldIndex(FieldReference fieldRef);
+
+    int getHeapFieldOffset(FieldReference fieldRef);
+
+    int getHeapSize(String className);
+
+    int getHeapAlignment(String className);
 
     WasmGlobal getStaticFieldLocation(FieldReference fieldRef);
 
@@ -64,11 +71,15 @@ public interface WasmGCClassInfoProvider {
 
     int getArrayLengthOffset();
 
+    int getArrayCopyOffset();
+
     int getEnumConstantsFunctionOffset();
 
     int getCloneOffset();
 
     int getServicesOffset();
+
+    int getThrowableNativeOffset();
 
     default WasmGCClassInfo getClassInfo(String name) {
         return getClassInfo(ValueType.object(name));

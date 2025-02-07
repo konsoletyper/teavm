@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-import * as varargs from '/tests/varargs/test.js';
+const varargs = await (await import('/tests/varargs/provider.js')).default;
 
 export async function test() {
     assertEquals("strings: a, b", varargs.strings("a", "b"));

@@ -19,6 +19,16 @@ plugins {
     alias(libs.plugins.intellij)
 }
 
+javaVersion {
+    version = JavaVersion.VERSION_17
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 intellij {
     version = libs.versions.idea.asProvider().get()
     type = "IC"

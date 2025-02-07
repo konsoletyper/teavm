@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.export;
 
+import java.util.Arrays;
 import org.teavm.jso.JSExport;
 import org.teavm.jso.JSProperty;
 
@@ -59,6 +60,11 @@ public final class ModuleWithExportedClassMembers {
         @JSProperty
         public static String staticProp() {
             return "I'm static";
+        }
+
+        @JSExport
+        public String consumeIntArray(int[] array) {
+            return "accepted int array: " + Arrays.toString(array);
         }
     }
 }

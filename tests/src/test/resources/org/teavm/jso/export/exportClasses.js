@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { A, BB } from '/tests/exportClasses/test.js';
+const { A, BB } = await (await import("/tests/exportClasses/provider.js")).default;
 
 export async function test() {
     assertEquals(23, A.foo());

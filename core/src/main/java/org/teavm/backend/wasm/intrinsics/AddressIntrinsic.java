@@ -23,8 +23,10 @@ import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
+import org.teavm.backend.wasm.model.expression.WasmCopy;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.expression.WasmFill;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
 import org.teavm.backend.wasm.model.expression.WasmInt64Subtype;
@@ -184,28 +186,33 @@ public class AddressIntrinsic implements WasmIntrinsic {
                 result.setLocation(invocation.getLocation());
                 return result;
             }
+            case "fill": {
+                var fill = new WasmFill();
+                fill.setIndex(manager.generate(invocation.getArguments().get(0)));
+                fill.setValue(manager.generate(invocation.getArguments().get(1)));
+                fill.setCount(manager.generate(invocation.getArguments().get(2)));
+                return fill;
+            }
+            case "fillZero": {
+                var fill = new WasmFill();
+                fill.setIndex(manager.generate(invocation.getArguments().get(0)));
+                fill.setValue(new WasmInt32Constant(0));
+                fill.setCount(manager.generate(invocation.getArguments().get(1)));
+                return fill;
+            }
+            case "moveMemoryBlock": {
+                var copy = new WasmCopy();
+                copy.setSourceIndex(manager.generate(invocation.getArguments().get(0)));
+                copy.setDestinationIndex(manager.generate(invocation.getArguments().get(1)));
+                copy.setCount(manager.generate(invocation.getArguments().get(2)));
+                return copy;
+            }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());
         }
     }
 
     private static int getAlignment(ValueType type) {
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                case BYTE:
-                    return 1;
-                case SHORT:
-                case CHARACTER:
-                    return 2;
-                case INTEGER:
-                case FLOAT:
-                    return 4;
-                case LONG:
-                case DOUBLE:
-                    return 8;
-            }
-        }
-        return 4;
+        return WasmClassGenerator.getTypeSize(type);
     }
 }

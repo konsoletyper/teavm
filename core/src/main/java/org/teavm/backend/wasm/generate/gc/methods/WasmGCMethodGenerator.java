@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Consumer;
+import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
@@ -31,6 +33,7 @@ import org.teavm.backend.wasm.gc.PreciseTypeInference;
 import org.teavm.backend.wasm.gc.PreciseValueType;
 import org.teavm.backend.wasm.gc.WasmGCVariableCategoryProvider;
 import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
+import org.teavm.backend.wasm.generate.gc.WasmGCInitializerContributor;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCStandardClasses;
@@ -52,6 +55,7 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassHolderSource;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -68,7 +72,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private ClassInitializerInfo classInitInfo;
     private WasmFunctionTypes functionTypes;
     private WasmGCSupertypeFunctionProvider supertypeFunctions;
-    private WasmGCNameProvider names;
+    public final WasmGCNameProvider names;
     private Diagnostics diagnostics;
     private WasmGCTypeMapper typeMapper;
     private WasmGCCustomGeneratorProvider customGenerators;
@@ -84,6 +88,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private WasmGCStandardClasses standardClasses;
     private WasmGCStringProvider strings;
     private boolean strict;
+    private String entryPoint;
+    private Consumer<WasmGCInitializerContributor> initializerContributors;
 
     public WasmGCMethodGenerator(
             WasmModule module,
@@ -97,7 +103,9 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             Diagnostics diagnostics,
             WasmGCCustomGeneratorProvider customGenerators,
             WasmGCIntrinsicProvider intrinsics,
-            boolean strict
+            boolean strict,
+            String entryPoint,
+            Consumer<WasmGCInitializerContributor> initializerContributors
     ) {
         this.module = module;
         this.hierarchy = hierarchy;
@@ -111,6 +119,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         this.customGenerators = customGenerators;
         this.intrinsics = intrinsics;
         this.strict = strict;
+        this.entryPoint = entryPoint;
+        this.initializerContributors = initializerContributors;
     }
 
     public void setTypeMapper(WasmGCTypeMapper typeMapper) {
@@ -217,7 +227,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             var printWriter = new PrintWriter(buffer);
             e.printStackTrace(printWriter);
             diagnostics.error(new CallLocation(method.getReference()),
-                    "Failed generating method body due to internal exception: " + buffer.toString());
+                    "Failed generating method body due to internal exception: " + buffer);
         }
     }
 
@@ -268,16 +278,29 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             }
         }
 
+        var nonNullableVars = new boolean[ast.getVariables().size()];
+        var preciseTypes = new PreciseValueType[ast.getVariables().size()];
         for (var i = firstVar; i < ast.getVariables().size(); ++i) {
-            var localVar = ast.getVariables().get(i);
             var representative = method.getProgram().variableAt(variableRepresentatives[i]);
             var inferredType = typeInference.typeOf(representative);
             if (inferredType == null) {
                 inferredType = new PreciseValueType(ValueType.object("java.lang.Object"), false);
             }
-            var type = !inferredType.isArrayUnwrap
-                    ? typeMapper.mapType(inferredType.valueType)
-                    : classInfoProvider.getClassInfo(inferredType.valueType).getArray().getReference();
+            preciseTypes[i] = inferredType;
+            nonNullableVars[i] = inferredType.isArrayUnwrap;
+        }
+        calculateNonNullableVars(nonNullableVars, ast);
+
+        for (var i = firstVar; i < ast.getVariables().size(); ++i) {
+            var localVar = ast.getVariables().get(i);
+            var inferredType = preciseTypes[i];
+            WasmType type;
+            if (!inferredType.isArrayUnwrap) {
+                type = typeMapper.mapType(inferredType.valueType);
+            } else {
+                var arrayType = classInfoProvider.getClassInfo(inferredType.valueType).getArray();
+                type = nonNullableVars[i] ? arrayType.getNonNullReference() : arrayType.getReference();
+            }
             var wasmLocal = new WasmLocal(type, localVar.getName());
             function.add(wasmLocal);
         }
@@ -286,6 +309,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         var visitor = new WasmGCGenerationVisitor(getGenerationContext(), method.getReference(),
                 function, firstVar, false, typeInference);
         visitor.generate(ast.getBody(), function.getBody());
+    }
+
+    private void calculateNonNullableVars(boolean[] nonNullVars, RegularMethodNode ast) {
+        var calculator = new NonNullVarsCalculator(nonNullVars);
+        ast.getBody().acceptVisitor(calculator);
     }
 
     private void generateNativeMethodBody(MethodHolder method, WasmFunction function) {
@@ -318,7 +346,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         return decompiler;
     }
 
-    private WasmGCGenerationContext getGenerationContext() {
+    public WasmGCGenerationContext getGenerationContext() {
         if (context == null) {
             context = new WasmGCGenerationContext(
                     module,
@@ -336,7 +364,10 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                     customGenerators,
                     intrinsics,
                     names,
-                    strict
+                    strict,
+                    entryPoint,
+                    initializerContributors,
+                    diagnostics
             );
         }
         return context;
@@ -353,6 +384,16 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     }
 
     private WasmGCCustomGeneratorContext customGeneratorContext = new WasmGCCustomGeneratorContext() {
+        @Override
+        public ClassLoader classLoader() {
+            return classLoader;
+        }
+
+        @Override
+        public ListableClassReaderSource classes() {
+            return classes;
+        }
+
         @Override
         public WasmModule module() {
             return module;
@@ -386,6 +427,26 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         @Override
         public BaseWasmFunctionRepository functions() {
             return WasmGCMethodGenerator.this;
+        }
+
+        @Override
+        public Diagnostics diagnostics() {
+            return diagnostics;
+        }
+
+        @Override
+        public WasmGCStringProvider strings() {
+            return context.strings();
+        }
+
+        @Override
+        public String entryPoint() {
+            return context.entryPoint();
+        }
+
+        @Override
+        public void addToInitializer(Consumer<WasmFunction> initializerContributor) {
+            context.addToInitializer(initializerContributor);
         }
     };
 }

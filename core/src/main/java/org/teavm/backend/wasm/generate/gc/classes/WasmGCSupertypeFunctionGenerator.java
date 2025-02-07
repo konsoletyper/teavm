@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -51,19 +52,22 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
     private TagRegistry tagRegistry;
     private WasmFunctionTypes functionTypes;
     private WasmFunctionType functionType;
+    private Queue<Runnable> queue;
 
     WasmGCSupertypeFunctionGenerator(
             WasmModule module,
             WasmGCClassGenerator classGenerator,
             WasmGCNameProvider nameProvider,
             TagRegistry tagRegistry,
-            WasmFunctionTypes functionTypes
+            WasmFunctionTypes functionTypes,
+            Queue<Runnable> queue
     ) {
         this.module = module;
         this.classGenerator = classGenerator;
         this.nameProvider = nameProvider;
         this.tagRegistry = tagRegistry;
         this.functionTypes = functionTypes;
+        this.queue = queue;
     }
 
     @Override
@@ -83,17 +87,19 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
         function.add(subtypeVar);
         module.functions.add(function);
 
-        if (type instanceof ValueType.Object) {
-            var className = ((ValueType.Object) type).getClassName();
-            generateIsClass(subtypeVar, className, function);
-        } else if (type instanceof ValueType.Array) {
-            ValueType itemType = ((ValueType.Array) type).getItemType();
-            generateIsArray(subtypeVar, itemType, function.getBody());
-        } else {
-            var expected = classGenerator.getClassInfo(type).pointer;
-            var condition = new WasmReferencesEqual(new WasmGetLocal(subtypeVar), new WasmGetGlobal(expected));
-            function.getBody().add(condition);
-        }
+        queue.add(() -> {
+            if (type instanceof ValueType.Object) {
+                var className = ((ValueType.Object) type).getClassName();
+                generateIsClass(subtypeVar, className, function);
+            } else if (type instanceof ValueType.Array) {
+                ValueType itemType = ((ValueType.Array) type).getItemType();
+                generateIsArray(subtypeVar, itemType, function.getBody());
+            } else {
+                var expected = classGenerator.getClassInfo(type).pointer;
+                var condition = new WasmReferencesEqual(new WasmGetLocal(subtypeVar), new WasmGetGlobal(expected));
+                function.getBody().add(condition);
+            }
+        });
 
         return function;
     }

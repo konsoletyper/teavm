@@ -37,11 +37,19 @@ public class ImportSectionParser extends BaseSectionParser {
         listener.startEntry(module, name);
         reportAddress();
         var type = reader.data[reader.ptr++];
-        if (type == 0) {
-            var typeIndex = readLEB();
-            listener.function(typeIndex);
-        } else {
-            throw new ParseException("Unsupported import type", reader.ptr);
+        switch (type) {
+            case 0: {
+                var typeIndex = readLEB();
+                listener.function(typeIndex);
+                break;
+            }
+            case 3: {
+                var valueType = reader.readType();
+                listener.global(valueType, reader.readLEB() != 0);
+                break;
+            }
+            default:
+                throw new ParseException("Unsupported import type", reader.ptr);
         }
         listener.endEntry();
     }

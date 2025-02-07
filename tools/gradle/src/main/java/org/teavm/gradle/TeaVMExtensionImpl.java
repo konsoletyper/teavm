@@ -31,6 +31,8 @@ import org.teavm.gradle.api.TeaVMJSConfiguration;
 import org.teavm.gradle.api.TeaVMWasiConfiguration;
 import org.teavm.gradle.api.TeaVMWasmConfiguration;
 import org.teavm.gradle.api.TeaVMWasmGCConfiguration;
+import org.teavm.gradle.api.WasmDebugInfoLevel;
+import org.teavm.gradle.api.WasmDebugInfoLocation;
 
 class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtension {
     private TeaVMJSConfiguration js;
@@ -78,7 +80,7 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
                 .orElse(OptimizationLevel.BALANCED));
         js.getSourceFilePolicy().convention(property("js.sourceFilePolicy")
                 .map(SourceFilePolicy::valueOf)
-                .orElse(SourceFilePolicy.DO_NOTHING));
+                .orElse(SourceFilePolicy.LINK_LOCAL_FILES));
         js.getDevServer().getStackDeobfuscated().convention(property("js.devServer.stackDeobfuscated")
                 .map(Boolean::parseBoolean));
         js.getDevServer().getIndicator().convention(property("js.devServer.indicator").map(Boolean::parseBoolean));
@@ -111,6 +113,24 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         wasmGC.getCopyRuntime().convention(property("wasm-gc.copyRuntime").map(Boolean::parseBoolean).orElse(true));
         wasmGC.getObfuscated().convention(property("wasm-gc.obfuscated").map(Boolean::parseBoolean).orElse(true));
         wasmGC.getDisassembly().convention(property("wasm-gc.disassembly").map(Boolean::parseBoolean).orElse(false));
+        wasmGC.getDebugInformation().convention(property("wasm-gc.debugInformation").map(Boolean::parseBoolean)
+                .orElse(false));
+        wasmGC.getDebugInfoLocation().convention(property("wasm-gc.debugInformation.location")
+                .map(v -> WasmDebugInfoLocation.valueOf(v.toUpperCase())).orElse(WasmDebugInfoLocation.EXTERNAL));
+        wasmGC.getDebugInfoLevel().convention(property("wasm-gc.debugInformation.level")
+                .map(v -> WasmDebugInfoLevel.valueOf(v.toUpperCase())).orElse(WasmDebugInfoLevel.DEOBFUSCATION));
+        wasmGC.getSourceMap().convention(property("wasm-gc.sourceMap").map(Boolean::parseBoolean).orElse(false));
+        wasmGC.getSourceFilePolicy().convention(property("wasm-gc.sourceFilePolicy")
+                .map(SourceFilePolicy::valueOf)
+                .orElse(SourceFilePolicy.LINK_LOCAL_FILES));
+        wasmGC.getModularRuntime().convention(property("wasm-gc.modularRuntime")
+                .map(Boolean::parseBoolean).orElse(false));
+        wasmGC.getMinDirectBuffersSize().convention(property("wasm-gc.minDirectBuffersSize")
+                .map(Integer::parseInt)
+                .orElse(2));
+        wasmGC.getMaxDirectBuffersSize().convention(property("wasm-gc.maxDirectBuffersSize")
+                .map(Integer::parseInt)
+                .orElse(32));
     }
 
     private void setupWasiDefaults() {

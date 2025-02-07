@@ -88,6 +88,7 @@ import org.teavm.model.optimization.MethodOptimization;
 import org.teavm.model.optimization.MethodOptimizationContext;
 import org.teavm.model.optimization.RedundantJumpElimination;
 import org.teavm.model.optimization.RedundantNullCheckElimination;
+import org.teavm.model.optimization.RedundantPhiElimination;
 import org.teavm.model.optimization.RepeatedFieldReadElimination;
 import org.teavm.model.optimization.ScalarReplacement;
 import org.teavm.model.optimization.SystemArrayCopyOptimization;
@@ -317,11 +318,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
 
-        var mainMethod = cls.getMethod(MAIN_METHOD_DESC) != null
-                ? dependencyAnalyzer.linkMethod(new MethodReference(entryPoint,
-                        "main", ValueType.parse(String[].class), ValueType.VOID))
-                : null;
         dependencyAnalyzer.defer(() -> {
+            var mainMethod = cls.getMethod(MAIN_METHOD_DESC) != null
+                    ? dependencyAnalyzer.linkMethod(new MethodReference(entryPoint,
+                    "main", ValueType.parse(String[].class), ValueType.VOID))
+                    : null;
             dependencyAnalyzer.linkClass(entryPoint).initClass(null);
             if (mainMethod != null) {
                 mainMethod.getVariable(1).propagate(dependencyAnalyzer.getType("[Ljava/lang/String;"));
@@ -380,7 +381,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
 
-        processEntryPoint();
+        target.setEntryPoint(entryPoint, entryPointName);
         dependencyAnalyzer.setAsyncSupported(target.isAsyncSupported());
         dependencyAnalyzer.setInterruptor(() -> {
             int progress = dependencyAnalyzer.getReachableClasses().size();
@@ -388,6 +389,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return !cancelled;
         });
         target.contributeDependencies(dependencyAnalyzer);
+        dependencyAnalyzer.initDependencies();
+        processEntryPoint();
         if (target.needsSystemArrayCopyOptimization()) {
             dependencyAnalyzer.addDependencyListener(new StdlibDependencyListener());
         }
@@ -574,9 +577,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         BasicBlock block = program.basicBlockAt(0);
         Instruction first = block.getFirstInstruction();
         for (String className : classInitializerInfo.getInitializationOrder()) {
-            var invoke = new InvokeInstruction();
-            invoke.setMethod(new MethodReference(className, CLINIT_DESC));
-            first.insertPrevious(invoke);
+            if (target.filterClassInitializer(className)) {
+                var invoke = new InvokeInstruction();
+                invoke.setMethod(new MethodReference(className, CLINIT_DESC));
+                first.insertPrevious(invoke);
+            }
         }
     }
 
@@ -828,6 +833,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (target.needsSystemArrayCopyOptimization()) {
             optimizations.add(new SystemArrayCopyOptimization());
         }
+        optimizations.add(new RedundantPhiElimination());
         return optimizations;
     }
 

@@ -24,6 +24,7 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmPackedType;
 import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.interop.Address;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.ValueType;
@@ -104,8 +105,8 @@ public class WasmGCTypeMapper {
             if (type instanceof ValueType.Object) {
                 var className = ((ValueType.Object) type).getClassName();
                 var cls = classes.get(className);
-                if (cls != null) {
-                    className = "java.lang.Object";
+                if (cls == null) {
+                    type = ValueType.object("java.lang.Object");
                 }
             }
             while (degree-- > 0) {
@@ -127,11 +128,20 @@ public class WasmGCTypeMapper {
                 }
             }
             if (result == null) {
-                var cls = classes.get(className);
-                if (cls == null) {
-                    className = "java.lang.Object";
+                if (className.equals(Address.class.getName())) {
+                    result = WasmType.INT32;
+                } else {
+                    var cls = classes.get(className);
+                    if (cls == null) {
+                        className = "java.lang.Object";
+                    }
+                    var classInfo = classInfoProvider.getClassInfo(className);
+                    if (classInfo.isHeapStructure()) {
+                        result = WasmType.INT32;
+                    } else {
+                        result = classInfo.getType();
+                    }
                 }
-                result = classInfoProvider.getClassInfo(className).getType();
                 typeCache.put(className, result);
             }
         }

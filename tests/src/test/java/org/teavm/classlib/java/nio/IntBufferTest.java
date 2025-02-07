@@ -17,11 +17,14 @@ package org.teavm.classlib.java.nio;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.InvalidMarkException;
 import java.nio.ReadOnlyBufferException;
@@ -140,6 +143,7 @@ public class IntBufferTest {
         slice1.put(new int[15]);
         var slice2 = slice1.slice();
 
+        System.out.println("slice2 = " + slice2);
         assertEquals(25, slice2.arrayOffset());
         assertEquals(75, slice2.capacity());
     }
@@ -390,5 +394,192 @@ public class IntBufferTest {
         IntBuffer ib = IntBuffer.allocate(0);
         ib.put(new int[0]);
         ib.get(new int[0]);
+    }
+
+    @Test
+    public void bulkPut() {
+        var buffer = IntBuffer.allocate(100);
+        buffer.put(new int[] { 1, 2, 3 });
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer.put(1, new int[] { 4, 5, 6 });
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(4, buffer.get(1));
+        assertEquals(5, buffer.get(2));
+        assertEquals(6, buffer.get(3));
+
+        buffer.put(0, new int[] { 7, 8, 9, 10 }, 1, 2);
+        assertEquals(8, buffer.get(0));
+        assertEquals(9, buffer.get(1));
+        assertEquals(5, buffer.get(2));
+        assertEquals(6, buffer.get(3));
+    }
+
+    @Test
+    public void bulkPutWrapper() {
+        var byteBuffer = ByteBuffer.allocate(100);
+        byteBuffer.order(ByteOrder.BIG_ENDIAN);
+        var buffer = byteBuffer.asIntBuffer();
+
+        buffer.put(new int[] { 1, 2, 3 });
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer.put(1, new int[] { 4, 5, 6 });
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(4, buffer.get(1));
+        assertEquals(5, buffer.get(2));
+        assertEquals(6, buffer.get(3));
+        assertEquals(0, byteBuffer.get(0));
+        assertEquals(1, byteBuffer.get(3));
+
+        buffer.put(0, new int[] { 7, 8, 9, 10 }, 1, 2);
+        assertEquals(8, buffer.get(0));
+        assertEquals(9, buffer.get(1));
+        assertEquals(5, buffer.get(2));
+        assertEquals(6, buffer.get(3));
+
+        byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer = byteBuffer.asIntBuffer();
+
+        buffer.put(new int[] { 1, 2, 3 });
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer.put(1, new int[] { 4, 5, 6 });
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(4, buffer.get(1));
+        assertEquals(5, buffer.get(2));
+        assertEquals(6, buffer.get(3));
+        assertEquals(1, byteBuffer.get(0));
+        assertEquals(0, byteBuffer.get(3));
+
+        buffer.put(0, new int[] { 7, 8, 9, 10 }, 1, 2);
+        assertEquals(8, buffer.get(0));
+        assertEquals(9, buffer.get(1));
+        assertEquals(5, buffer.get(2));
+        assertEquals(6, buffer.get(3));
+    }
+
+    @Test
+    public void bulkPutBuffer() {
+        var buffer = IntBuffer.allocate(100);
+        buffer.put(IntBuffer.wrap(new int[] { 1, 2, 3 }));
+
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer.put(1, IntBuffer.wrap(new int[] { 4, 5, 6 }), 1, 2);
+        assertEquals(3, buffer.position());
+        assertEquals(1, buffer.get(0));
+        assertEquals(5, buffer.get(1));
+        assertEquals(6, buffer.get(2));
+    }
+
+    @Test
+    public void bulkPutBufferWrapper() {
+        var buffer = ByteBuffer.allocate(100).order(ByteOrder.BIG_ENDIAN).asIntBuffer();
+        buffer.put(ByteBuffer.wrap(new byte[] { 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3 })
+                .order(ByteOrder.BIG_ENDIAN)
+                .asIntBuffer());
+
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer = ByteBuffer.allocate(100).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
+        buffer.put(ByteBuffer.wrap(new byte[] { 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3 })
+                .order(ByteOrder.BIG_ENDIAN)
+                .asIntBuffer());
+
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer = ByteBuffer.allocate(100).order(ByteOrder.BIG_ENDIAN).asIntBuffer();
+        buffer.put(ByteBuffer.wrap(new byte[] { 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0 })
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .asIntBuffer());
+
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+
+        buffer = ByteBuffer.allocate(100).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
+        buffer.put(ByteBuffer.wrap(new byte[] { 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0 })
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .asIntBuffer());
+
+        assertEquals(1, buffer.get(0));
+        assertEquals(2, buffer.get(1));
+        assertEquals(3, buffer.get(2));
+    }
+
+    @Test
+    public void bulkGet() {
+        var buffer = IntBuffer.wrap(new int[] { 1, 2, 3, 4, 5, 6 });
+        var arr = new int[3];
+
+        buffer.get(arr);
+        assertArrayEquals(new int[] { 1, 2, 3 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer.get(1, arr);
+        assertArrayEquals(new int[] { 2, 3, 4 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer.get(4, arr, 1, 2);
+        assertArrayEquals(new int[] { 2, 5, 6 }, arr);
+        assertEquals(3, buffer.position());
+    }
+
+    @Test
+    public void bulkGetWrapper() {
+        var buffer = ByteBuffer.wrap(new byte[] { 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0,
+                        6, 0, 0, 0 })
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .asIntBuffer();
+        var arr = new int[3];
+
+        buffer.get(arr);
+        assertArrayEquals(new int[] { 1, 2, 3 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer.get(1, arr);
+        assertArrayEquals(new int[] { 2, 3, 4 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer.get(4, arr, 1, 2);
+        assertArrayEquals(new int[] { 2, 5, 6 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer = ByteBuffer.wrap(new byte[] { 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0, 5,
+                        0, 0, 0, 6 })
+                .order(ByteOrder.BIG_ENDIAN)
+                .asIntBuffer();
+
+        buffer.get(arr);
+        assertArrayEquals(new int[] { 1, 2, 3 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer.get(1, arr);
+        assertArrayEquals(new int[] { 2, 3, 4 }, arr);
+        assertEquals(3, buffer.position());
+
+        buffer.get(4, arr, 1, 2);
+        assertArrayEquals(new int[] { 2, 5, 6 }, arr);
+        assertEquals(3, buffer.position());
     }
 }

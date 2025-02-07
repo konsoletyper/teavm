@@ -15,15 +15,15 @@
  */
 package org.teavm.jso.typedarrays;
 
+import java.nio.Buffer;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSBuffer;
+import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSClass;
 
 @JSClass
 public class DataView extends ArrayBufferView {
     public DataView(ArrayBuffer buffer) {
-    }
-
-    public DataView(ArrayBufferView buffer) {
     }
 
     public DataView(ArrayBuffer buffer, int offset, int length) {
@@ -52,6 +52,14 @@ public class DataView extends ArrayBufferView {
 
     public native int getUint32(int byteOffset, boolean littleEndian);
 
+    public native long getBigInt64(int byteOffset);
+
+    public native long getBigInt64(int byteOffset, boolean littleEndian);
+
+    public native long getBigUint64(int byteOffset);
+
+    public native long getBigUint64(int byteOffset, boolean littleEndian);
+
     public native float getFloat32(int byteOffset);
 
     public native float getFloat32(int byteOffset, boolean littleEndian);
@@ -76,6 +84,14 @@ public class DataView extends ArrayBufferView {
 
     public native void setInt32(int byteOffset, int value, boolean littleEndian);
 
+    public native void setBigInt64(int byteOffset, long value);
+
+    public native void setBigInt64(int byteOffset, long value, boolean littleEndian);
+
+    public native void setBigUint64(int byteOffset, long value);
+
+    public native void setBigUint64(int byteOffset, long value, boolean littleEndian);
+
     public native void setUint32(int byteOffset, int value);
 
     public native void setUint32(int byteOffset, int value, boolean littleEndian);
@@ -92,12 +108,14 @@ public class DataView extends ArrayBufferView {
     @Deprecated
     public static native DataView create(ArrayBuffer buffer);
 
-    @JSBody(params = "buffer", script = "return new DataView(buffer);")
-    public static native DataView create(ArrayBufferView buffer);
-
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new DataView(buffer, offset, length);")
+    @Deprecated
     public static native DataView create(ArrayBuffer buffer, int offset, int length);
 
     @JSBody(params = { "buffer", "offset" }, script = "return new DataView(buffer, offset);")
+    @Deprecated
     public static native DataView create(ArrayBuffer buffer, int offset);
+
+    @JSBody(params = "buffer", script = "return buffer;")
+    public static native DataView fromJavaBuffer(@JSBuffer(JSBufferType.DATA_VIEW) Buffer buffer);
 }

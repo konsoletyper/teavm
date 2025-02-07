@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.SupportedOn;
 import org.teavm.interop.UnsupportedOn;
@@ -64,6 +63,7 @@ import org.teavm.model.util.ProgramUtils;
 public class ReferenceResolver {
     private ClassReaderSource classSource;
     private MethodReference currentMethod;
+    private Diagnostics diagnostics;
     private Program program;
     private boolean modified;
     private List<Instruction> instructionsToAdd = new ArrayList<>();
@@ -71,20 +71,23 @@ public class ReferenceResolver {
     private Map<String, Map<MethodDescriptor, Optional<MethodReader>>> methodCache = new HashMap<>(1000, 0.5f);
     private Set<String> platformTags = new HashSet<>();
     private UnreachableBasicBlockEliminator unreachableBlockEliminator;
-    private Map<MethodReference, List<Consumer<Diagnostics>>> pendingErrors = new HashMap<>();
+    private Map<MethodReference, List<Runnable>> pendingErrors = new HashMap<>();
+    private Set<MethodReference> usedMethods = new HashSet<>();
     private boolean shouldStop;
 
-    public ReferenceResolver(ClassReaderSource classSource, String[] platformTags) {
+    public ReferenceResolver(ClassReaderSource classSource, String[] platformTags, Diagnostics diagnostics) {
         this.classSource = classSource;
         this.platformTags.addAll(List.of(platformTags));
         unreachableBlockEliminator = new UnreachableBasicBlockEliminator();
+        this.diagnostics = diagnostics;
     }
 
-    public void use(MethodReference method, Diagnostics diagnostics) {
+    public void use(MethodReference method) {
+        usedMethods.add(method);
         var errors = pendingErrors.remove(method);
         if (errors != null) {
             for (var error : errors) {
-                error.accept(diagnostics);
+                error.run();
             }
         }
     }
@@ -394,8 +397,12 @@ public class ReferenceResolver {
 
     private void reportError(TextLocation location, String message, Object param) {
         var method = currentMethod;
-        pendingErrors.computeIfAbsent(method, k -> new ArrayList<>()).add(diagnostics ->
-            diagnostics.error(new CallLocation(method, location), message, param));
+        if (usedMethods.contains(method)) {
+            diagnostics.error(new CallLocation(method, location), message, param);
+        } else {
+            pendingErrors.computeIfAbsent(method, k -> new ArrayList<>()).add(() ->
+                    diagnostics.error(new CallLocation(method, location), message, param));
+        }
     }
 
     private static class FieldWrapper {

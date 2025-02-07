@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.lowlevel.generate;
 
+import org.teavm.model.ClassReader;
+import org.teavm.model.FieldReader;
 import org.teavm.model.ValueType;
 import org.teavm.runtime.RuntimeClass;
 
@@ -52,5 +54,25 @@ public final class ClassGeneratorUtil {
             default:
                 throw new AssertionError();
         }
+    }
+
+    public static int contributeToFlags(ClassReader cls, int flags) {
+        if (cls != null) {
+            switch (cls.getName()) {
+                case "java.lang.ref.WeakReference":
+                    flags |= RuntimeClass.VM_TYPE_WEAKREFERENCE << RuntimeClass.VM_TYPE_SHIFT;
+                    break;
+                case "java.lang.ref.ReferenceQueue":
+                    flags |= RuntimeClass.VM_TYPE_REFERENCEQUEUE << RuntimeClass.VM_TYPE_SHIFT;
+                    break;
+            }
+        }
+
+        return flags;
+    }
+
+
+    public static boolean isBufferObjectField(FieldReader cls) {
+        return cls.getAnnotations().get("java.nio.NativeBufferObjectMarker") != null;
     }
 }

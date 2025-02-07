@@ -15,19 +15,22 @@
  */
 package org.teavm.jso.typedarrays;
 
+import java.nio.Buffer;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSBuffer;
+import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
 
 @JSClass
-public class Uint8ClampedArray extends ArrayBufferView {
+public class Uint8ClampedArray extends TypedArray {
     public Uint8ClampedArray(int length) {
     }
 
     public Uint8ClampedArray(ArrayBuffer buffer) {
     }
 
-    public Uint8ClampedArray(ArrayBufferView buffer) {
+    public Uint8ClampedArray(TypedArray buffer) {
     }
 
     public Uint8ClampedArray(ArrayBuffer buffer, int offset, int length) {
@@ -52,7 +55,7 @@ public class Uint8ClampedArray extends ArrayBufferView {
 
     @JSBody(params = "buffer", script = "return new Uint8ClampedArray(buffer);")
     @Deprecated
-    public static native Uint8ClampedArray create(ArrayBufferView buffer);
+    public static native Uint8ClampedArray create(TypedArray buffer);
 
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new "
             + "Uint8ClampedArray(buffer, offset, length);")
@@ -60,5 +63,9 @@ public class Uint8ClampedArray extends ArrayBufferView {
     public static native Uint8ClampedArray create(ArrayBuffer buffer, int offset, int length);
 
     @JSBody(params = { "buffer", "offset" }, script = "return new Uint8ClampedArray(buffer, offset);")
+    @Deprecated
     public static native Uint8ClampedArray create(ArrayBuffer buffer, int offset);
+
+    @JSBody(params = "buffer", script = "return buffer;")
+    public static native Uint8ClampedArray fromJavaBuffer(@JSBuffer(JSBufferType.UINT8) Buffer buffer);
 }

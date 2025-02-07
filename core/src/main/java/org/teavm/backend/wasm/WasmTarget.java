@@ -35,6 +35,7 @@ import java.util.function.Supplier;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
+import org.teavm.backend.lowlevel.dependency.BufferDependencyListener;
 import org.teavm.backend.lowlevel.dependency.StringsDependencyListener;
 import org.teavm.backend.lowlevel.generate.NameProviderWithSpecialNames;
 import org.teavm.backend.lowlevel.transform.CoroutineTransformation;
@@ -115,6 +116,7 @@ import org.teavm.backend.wasm.render.WasmBinaryWriter;
 import org.teavm.backend.wasm.render.WasmCRenderer;
 import org.teavm.backend.wasm.render.WasmRenderer;
 import org.teavm.backend.wasm.runtime.WasmSupport;
+import org.teavm.backend.wasm.transformation.BaseClassesTransformation;
 import org.teavm.backend.wasm.transformation.IndirectCallTraceTransformation;
 import org.teavm.backend.wasm.transformation.MemoryAccessTraceTransformation;
 import org.teavm.backend.wasm.transformation.WasiFileSystemProviderTransformer;
@@ -241,6 +243,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     public List<ClassHolderTransformer> getTransformers() {
         List<ClassHolderTransformer> transformers = new ArrayList<>();
         transformers.add(new ClassPatch());
+        transformers.add(new BaseClassesTransformation());
         transformers.add(new WasmDependencyListener());
         if (runtimeType == WasmRuntimeType.WASI) {
             transformers.add(new WasiSupportClassTransformer());
@@ -435,6 +438,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
 
         dependencyAnalyzer.addDependencyListener(new StringsDependencyListener());
+        dependencyAnalyzer.addDependencyListener(new BufferDependencyListener());
 
         for (var intrinsic : additionalIntrinsics) {
             intrinsic.contributeDependencies(dependencyAnalyzer);

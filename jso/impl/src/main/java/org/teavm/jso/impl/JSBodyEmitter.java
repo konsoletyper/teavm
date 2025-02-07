@@ -20,8 +20,16 @@ import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
-interface JSBodyEmitter {
+public interface JSBodyEmitter {
+    MethodReference method();
+
     void emit(InjectorContext context);
 
     void emit(GeneratorContext context, SourceWriter writer, MethodReference methodRef);
+
+    String[] parameterNames();
+
+    JsBodyImportInfo[] imports();
+
+    boolean isStatic();
 }

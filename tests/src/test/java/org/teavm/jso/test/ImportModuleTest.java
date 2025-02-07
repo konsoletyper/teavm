@@ -26,12 +26,13 @@ import org.teavm.junit.JsModuleTest;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.ServeJS;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
-@OnlyPlatform(TestPlatform.JAVASCRIPT)
+@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @EachTestCompiledSeparately
 public class ImportModuleTest {
     @Test
@@ -39,12 +40,14 @@ public class ImportModuleTest {
             "org/teavm/jso/test/amd.js",
             "org/teavm/jso/test/amdModule.js"
     })
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void amd() {
         assertEquals(23, runTestFunction());
     }
 
     @Test
     @AttachJavaScript("org/teavm/jso/test/commonjs.js")
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
     public void commonjs() {
         assertEquals(23, runTestFunction());
     }

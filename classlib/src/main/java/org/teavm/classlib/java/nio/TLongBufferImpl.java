@@ -16,8 +16,8 @@
 package org.teavm.classlib.java.nio;
 
 abstract class TLongBufferImpl extends TLongBuffer {
-    public TLongBufferImpl(int capacity, int position, int limit) {
-        super(capacity, position, limit);
+    TLongBufferImpl(int position, int limit) {
+        super(position, limit);
     }
 
     @Override
@@ -27,12 +27,12 @@ abstract class TLongBufferImpl extends TLongBuffer {
 
     @Override
     public TLongBuffer duplicate() {
-        return duplicate(0, capacity, position, limit, isReadOnly());
+        return duplicate(0, capacity(), position, limit, isReadOnly());
     }
 
     @Override
     public TLongBuffer asReadOnlyBuffer() {
-        return duplicate(0, capacity, position, limit, true);
+        return duplicate(0, capacity(), position, limit, true);
     }
 
     abstract TLongBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly);
@@ -90,7 +90,7 @@ abstract class TLongBufferImpl extends TLongBuffer {
             }
         }
         position = sz;
-        limit = capacity;
+        limit = capacity();
         mark = -1;
         return this;
     }

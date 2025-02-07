@@ -21,8 +21,11 @@ import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCCustomGeneratorProvider;
-import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.runtime.gc.WasmGCResources;
+import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
@@ -32,21 +35,30 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
     private Map<MethodReference, Container> generators = new HashMap<>();
     private ClassReaderSource classes;
     private ServiceRepository services;
+    private WasmGCResourcesGenerator resourcesGenerator;
 
     public WasmGCCustomGenerators(ClassReaderSource classes, ServiceRepository services,
             List<WasmGCCustomGeneratorFactory> factories,
-            Map<MethodReference, WasmGCCustomGenerator> generators) {
+            Map<MethodReference, WasmGCCustomGenerator> generators,
+            Properties properties) {
         this.factories = List.copyOf(factories);
         this.classes = classes;
         this.services = services;
+        resourcesGenerator = new WasmGCResourcesGenerator(properties);
         fillClass();
         fillStringPool();
         fillSystem();
         fillArray();
         fillWeakReference();
+        fillString();
+        fillResources();
         for (var entry : generators.entrySet()) {
             add(entry.getKey(), entry.getValue());
         }
+    }
+
+    public void contributeToModule(WasmModule module) {
+        resourcesGenerator.writeModule(module);
     }
 
     private void fillClass() {
@@ -79,6 +91,16 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
         add(new MethodReference(WeakReference.class, "clear", void.class), generator);
     }
 
+    private void fillString() {
+        var generator = new StringGenerator();
+        add(new MethodReference(String.class, "intern", String.class), generator);
+    }
+
+    private void fillResources() {
+        add(new MethodReference(WasmGCResources.class, "acquireResources", WasmGCResources.Resource[].class),
+                resourcesGenerator);
+    }
+
     @Override
     public WasmGCCustomGenerator get(MethodReference method) {
         var result = generators.get(method);
@@ -86,6 +108,9 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
             WasmGCCustomGenerator generator = null;
             for (var factory : factories) {
                 generator = factory.createGenerator(method, factoryContext);
+                if (generator != null) {
+                    break;
+                }
             }
             result = new Container(generator);
             generators.put(method, result);

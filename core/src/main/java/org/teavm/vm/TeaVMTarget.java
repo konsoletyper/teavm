@@ -35,6 +35,9 @@ public interface TeaVMTarget {
 
     List<DependencyListener> getDependencyListeners();
 
+    default void setEntryPoint(String entryPoint, String name) {
+    }
+
     void setController(TeaVMTargetController controller);
 
     List<TeaVMHostExtension> getHostExtensions();
@@ -68,6 +71,10 @@ public interface TeaVMTarget {
     }
 
     default boolean needsSystemArrayCopyOptimization() {
+        return true;
+    }
+
+    default boolean filterClassInitializer(String initializer) {
         return true;
     }
 }

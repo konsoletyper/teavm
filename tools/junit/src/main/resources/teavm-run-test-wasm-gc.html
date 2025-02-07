@@ -24,30 +24,26 @@
     <script type="text/javascript" src="${SCRIPT}-runtime.js"></script>
     <script type="text/javascript">
         let instance;
-        TeaVM.wasm.load("${SCRIPT}", {
+        Error.stackTraceLimit = 250;
+        TeaVM.wasmGC.load("${SCRIPT}", {
+            stackDeobfuscator: {
+                enabled: true
+            },
             installImports(o) {
                 o.teavmTest = {
                     success() {
-                        var pre = document.createElement("pre");
+                        let pre = document.createElement("pre");
                         document.body.appendChild(pre);
                         pre.appendChild(document.createTextNode("OK"));
                     },
-                    failure(javaString) {
-                        let jsString = "";
-                        let length = instance.exports.stringLength(javaString);
-                        for (let i = 0; i < length; ++i) {
-                            jsString += String.fromCharCode(instance.exports.charAt(javaString, i));
-                        }
-                        var pre = document.createElement("pre");
+                    failure(message) {
+                        let pre = document.createElement("pre");
                         document.body.appendChild(pre);
-                        pre.appendChild(document.createTextNode(jsString));
+                        pre.appendChild(document.createTextNode(message));
                     }
                 };
             }
-        }).then(teavm => {
-            instance = teavm.instance;
-            teavm.main(["${IDENTIFIER}"])
-        });
+        }).then(teavm => teavm.exports.main(["${IDENTIFIER}"]));
     </script>
   </body>
 </html>

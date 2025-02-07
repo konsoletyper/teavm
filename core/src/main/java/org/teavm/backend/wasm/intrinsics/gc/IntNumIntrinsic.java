@@ -17,11 +17,15 @@ package org.teavm.backend.wasm.intrinsics.gc;
 
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmRuntime;
+import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.expression.WasmIntUnary;
+import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
 import org.teavm.model.MethodReference;
 
 public class IntNumIntrinsic implements WasmGCIntrinsic {
@@ -48,8 +52,25 @@ public class IntNumIntrinsic implements WasmGCIntrinsic {
                 return new WasmCall(context.functions().forStaticMethod(compareUnsigned),
                         context.generate(invocation.getArguments().get(0)),
                         context.generate(invocation.getArguments().get(1)));
+            case "numberOfLeadingZeros":
+                return castToInt(new WasmIntUnary(wasmType, WasmIntUnaryOperation.CLZ,
+                        context.generate(invocation.getArguments().get(0))));
+            case "numberOfTrailingZeros":
+                return castToInt(new WasmIntUnary(wasmType, WasmIntUnaryOperation.CTZ,
+                        context.generate(invocation.getArguments().get(0))));
+            case "bitCount":
+                return castToInt(new WasmIntUnary(wasmType, WasmIntUnaryOperation.POPCNT,
+                        context.generate(invocation.getArguments().get(0))));
             default:
                 throw new AssertionError();
+        }
+    }
+
+    private WasmExpression castToInt(WasmExpression expr) {
+        if (wasmType == WasmIntType.INT64) {
+            return new WasmConversion(WasmNumType.INT64, WasmNumType.INT32, false, expr);
+        } else {
+            return expr;
         }
     }
 }

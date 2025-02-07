@@ -16,6 +16,8 @@
 
 plugins {
     `java-library`
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 description = "Tests"
@@ -43,6 +45,7 @@ dependencies {
     testImplementation(libs.rhino)
     testImplementation(libs.junit)
     testImplementation(libs.testng)
+    testImplementation(libs.kotlin.serialization.json)
 }
 
 tasks.test {
@@ -61,7 +64,7 @@ tasks.test {
     systemProperty("teavm.junit.wasm.disasm", providers.gradleProperty("teavm.tests.wasm.disasm")
         .orElse("false").get())
 
-    systemProperty("teavm.junit.wasm-gc", providers.gradleProperty("teavm.tests.wasm-gc").orElse("false").get())
+    systemProperty("teavm.junit.wasm-gc", providers.gradleProperty("teavm.tests.wasm-gc").orElse("true").get())
     systemProperty("teavm.junit.wasm-gc.runner", browser)
     systemProperty("teavm.junit.wasm-gc.disasm", providers.gradleProperty("teavm.tests.wasm-gc.disasm")
         .orElse("false").get())
@@ -93,4 +96,5 @@ tasks.test {
             .joinToString(File.pathSeparator))
 
     maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+    maxHeapSize = "800m"
 }

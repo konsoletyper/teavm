@@ -15,19 +15,23 @@
  */
 package org.teavm.jso.typedarrays;
 
+import java.nio.Buffer;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSBuffer;
+import org.teavm.jso.JSBufferType;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
 
 @JSClass
-public class Float64Array extends ArrayBufferView {
+public class Float64Array extends TypedArray {
     public Float64Array(int length) {
     }
 
     public Float64Array(ArrayBuffer buffer) {
     }
 
-    public Float64Array(ArrayBufferView buffer) {
+    public Float64Array(TypedArray buffer) {
     }
 
     public Float64Array(ArrayBuffer buffer, int offset, int length) {
@@ -52,7 +56,7 @@ public class Float64Array extends ArrayBufferView {
 
     @JSBody(params = "buffer", script = "return new Float64Array(buffer);")
     @Deprecated
-    public static native Float64Array create(ArrayBufferView buffer);
+    public static native Float64Array create(TypedArray buffer);
 
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new Float64Array(buffer, offset, length);")
     @Deprecated
@@ -61,4 +65,10 @@ public class Float64Array extends ArrayBufferView {
     @JSBody(params = { "buffer", "offset" }, script = "return new Float64Array(buffer, offset);")
     @Deprecated
     public static native Float64Array create(ArrayBuffer buffer, int offset);
+
+    @JSBody(params = "array", script = "return array;")
+    public static native Float64Array fromJavaArray(@JSByRef double[] array);
+
+    @JSBody(params = "buffer", script = "return buffer;")
+    public static native Float64Array fromJavaBuffer(@JSBuffer(JSBufferType.FLOAT64) Buffer buffer);
 }

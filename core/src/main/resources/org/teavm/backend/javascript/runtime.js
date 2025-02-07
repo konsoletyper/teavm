@@ -119,3 +119,7 @@ let $rt_apply = (instance, method, args) => instance[method].apply(instance, arg
 let $rt_apply_topLevel = (method, args) => method.apply(null, args);
 
 let $rt_skip = (array, count) => count === 0 ? array : Array.prototype.slice.call(array, count);
+
+let $rt_callWithReceiver = f => function() {
+    return f.apply(null, [this].concat(Array.prototype.slice.call(arguments)));
+}

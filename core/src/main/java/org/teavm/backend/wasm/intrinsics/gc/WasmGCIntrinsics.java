@@ -22,10 +22,15 @@ import java.util.Map;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCIntrinsicProvider;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.runtime.StringInternPool;
+import org.teavm.backend.wasm.runtime.gc.WasmGCResources;
 import org.teavm.common.ServiceRepository;
+import org.teavm.interop.Address;
+import org.teavm.interop.Structure;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.runtime.heap.Heap;
 
 public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
     private Map<MethodReference, IntrinsicContainer> intrinsics = new HashMap<>();
@@ -38,7 +43,6 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         this.classes = classes;
         this.services = services;
         this.factories = List.copyOf(factories);
-        factories = List.copyOf(factories);
         fillWasmRuntime();
         fillObject();
         fillClass();
@@ -48,6 +52,11 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         fillFloat();
         fillDouble();
         fillArray();
+        fillString();
+        fillResources();
+        fillHeap();
+        fillAddress();
+        fillStructure();
         for (var entry : customIntrinsics.entrySet()) {
             add(entry.getKey(), entry.getValue());
         }
@@ -105,8 +114,11 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
     }
 
     private void fillSystem() {
+        var arrayCopyIntrinsic = new SystemArrayCopyIntrinsic();
         add(new MethodReference(System.class, "arraycopy", Object.class, int.class, Object.class,
-                int.class, int.class, void.class), new SystemArrayCopyIntrinsic());
+                int.class, int.class, void.class), arrayCopyIntrinsic);
+        add(new MethodReference(System.class, "doArrayCopy", Object.class, int.class, Object.class,
+                int.class, int.class, void.class), arrayCopyIntrinsic);
         add(new MethodReference(System.class, "currentTimeMillis", long.class), new SystemIntrinsic());
     }
 
@@ -120,6 +132,9 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         add(new MethodReference(wrapperClass, "divideUnsigned", javaClass, javaClass, javaClass), intrinsic);
         add(new MethodReference(wrapperClass, "remainderUnsigned", javaClass, javaClass, javaClass), intrinsic);
         add(new MethodReference(wrapperClass, "compareUnsigned", javaClass, javaClass, int.class), intrinsic);
+        add(new MethodReference(wrapperClass, "numberOfLeadingZeros", javaClass, int.class), intrinsic);
+        add(new MethodReference(wrapperClass, "numberOfTrailingZeros", javaClass, int.class), intrinsic);
+        add(new MethodReference(wrapperClass, "bitCount", javaClass, int.class), intrinsic);
     }
 
     private void fillFloat() {
@@ -146,6 +161,67 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         var intrinsic = new ArrayIntrinsic();
         add(new MethodReference(Array.class, "getLength", Object.class, int.class), intrinsic);
         add(new MethodReference(Array.class, "getImpl", Object.class, int.class, Object.class), intrinsic);
+    }
+
+    private void fillString() {
+        var intrinsic = new StringInternPoolIntrinsic();
+        var className = StringInternPool.class.getName() + "$Entry";
+        add(new MethodReference(className, "getValue", ValueType.parse(String.class)), intrinsic);
+        add(new MethodReference(className, "setValue", ValueType.parse(String.class), ValueType.VOID), intrinsic);
+    }
+
+    private void fillResources() {
+        var intrinsic = new WasmGCResourcesIntrinsic();
+        add(new MethodReference(WasmGCResources.class, "readSingleByte", int.class, int.class), intrinsic);
+    }
+
+    private void fillHeap() {
+        var intrinsic = new HeapIntrinsic();
+        add(new MethodReference(Heap.class, "grow", int.class, int.class), intrinsic);
+    }
+
+    private void fillAddress() {
+        var intrinsic = new AddressIntrinsic();
+        add(new MethodReference(Address.class, "add", int.class, Address.class), intrinsic);
+        add(new MethodReference(Address.class, "add", long.class, Address.class), intrinsic);
+        add(new MethodReference(Address.class, "toLong", long.class), intrinsic);
+        add(new MethodReference(Address.class, "toInt", int.class), intrinsic);
+        add(new MethodReference(Address.class, "fromLong", long.class, Address.class), intrinsic);
+        add(new MethodReference(Address.class, "fromInt", int.class, Address.class), intrinsic);
+        add(new MethodReference(Address.class, "isLessThan", Address.class, boolean.class), intrinsic);
+        add(new MethodReference(Address.class, "toStructure", Structure.class), intrinsic);
+        add(new MethodReference(Address.class, "getByte", byte.class), intrinsic);
+        add(new MethodReference(Address.class, "putByte", byte.class, void.class), intrinsic);
+        add(new MethodReference(Address.class, "getShort", short.class), intrinsic);
+        add(new MethodReference(Address.class, "putShort", short.class, void.class), intrinsic);
+        add(new MethodReference(Address.class, "getChar", char.class), intrinsic);
+        add(new MethodReference(Address.class, "putChar", char.class, void.class), intrinsic);
+        add(new MethodReference(Address.class, "getInt", int.class), intrinsic);
+        add(new MethodReference(Address.class, "putInt", int.class, void.class), intrinsic);
+        add(new MethodReference(Address.class, "getLong", long.class), intrinsic);
+        add(new MethodReference(Address.class, "putLong", long.class, void.class), intrinsic);
+        add(new MethodReference(Address.class, "getFloat", float.class), intrinsic);
+        add(new MethodReference(Address.class, "putFloat", float.class, void.class), intrinsic);
+        add(new MethodReference(Address.class, "getDouble", double.class), intrinsic);
+        add(new MethodReference(Address.class, "putDouble", double.class, void.class), intrinsic);
+        add(new MethodReference(Address.class, "getAddress", Address.class), intrinsic);
+        add(new MethodReference(Address.class, "putAddress", Address.class, void.class), intrinsic);
+        add(new MethodReference(Address.class, "align", Address.class, int.class, Address.class), intrinsic);
+        add(new MethodReference(Address.class, "sizeOf", int.class), intrinsic);
+        add(new MethodReference(Address.class, "add", Class.class, int.class, Address.class), intrinsic);
+        add(new MethodReference(Address.class, "fillZero", Address.class, int.class, void.class), intrinsic);
+        add(new MethodReference(Address.class, "fill", Address.class, byte.class, int.class, void.class), intrinsic);
+        add(new MethodReference(Address.class, "moveMemoryBlock", Address.class, Address.class, int.class, void.class),
+                intrinsic);
+    }
+
+    private void fillStructure() {
+        var intrinsic = new StructureIntrinsic();
+        add(new MethodReference(Structure.class, "cast", Structure.class), intrinsic);
+        add(new MethodReference(Structure.class, "toAddress", Address.class), intrinsic);
+        add(new MethodReference(Structure.class, "sizeOf", Class.class, int.class), intrinsic);
+        add(new MethodReference(Structure.class, "add", Class.class, Structure.class, int.class, Structure.class),
+                intrinsic);
     }
 
     private void add(MethodReference methodRef, WasmGCIntrinsic intrinsic) {

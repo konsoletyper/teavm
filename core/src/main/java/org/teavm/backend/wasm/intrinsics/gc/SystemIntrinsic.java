@@ -32,7 +32,7 @@ public class SystemIntrinsic implements WasmGCIntrinsic {
             workerFunction = new WasmFunction(context.functionTypes().of(WasmType.FLOAT64));
             workerFunction.setName("teavm@currentTimeMillis");
             workerFunction.setImportName("currentTimeMillis");
-            workerFunction.setImportModule("teavm");
+            workerFunction.setImportModule("teavmDate");
             context.module().functions.add(workerFunction);
         }
         var call = new WasmCall(workerFunction);

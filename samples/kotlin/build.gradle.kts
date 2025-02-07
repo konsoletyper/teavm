@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
  */
 
 plugins {
-    kotlin("jvm") version "1.9.20"
+    alias(libs.plugins.kotlin.jvm)
     war
     id("org.teavm")
 }
@@ -27,9 +27,16 @@ dependencies {
     teavm(teavm.libs.jsoApis)
 }
 
-teavm.js {
-    addedToWebApp = true
-    mainClass = "org.teavm.samples.kotlin.HelloKt"
+teavm {
+    all {
+        mainClass = "org.teavm.samples.kotlin.HelloKt"
+    }
+    js {
+        addedToWebApp = true
+    }
+    wasmGC {
+        addedToWebApp = true
+    }
 }
 
 java {

@@ -101,13 +101,14 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     private final Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
     private TextLocation lastEmittedLocation = TextLocation.EMPTY;
 
-    public StatementRenderer(RenderingContext context, SourceWriter writer) {
+    public StatementRenderer(RenderingContext context, SourceWriter writer,
+            VariableNameGenerator variableNameGenerator) {
         this.context = context;
         this.writer = writer;
         this.classSource = context.getClassSource();
         this.minifying = context.isMinifying();
         this.naming = context.getNaming();
-        variableNameGenerator = new VariableNameGenerator(minifying);
+        this.variableNameGenerator = variableNameGenerator;
     }
 
     public void clear() {

@@ -31,4 +31,10 @@ public interface TeaVMTests {
     void wasm(Action<TeaVMWasmTests> config);
 
     void wasm(@DelegatesTo(TeaVMWasmTests.class) Closure<?> config);
+
+    TeaVMWasmTests getWasmGC();
+
+    void wasmGC(Action<TeaVMWasmTests> config);
+
+    void wasmGC(@DelegatesTo(TeaVMWasmTests.class) Closure<?> config);
 }

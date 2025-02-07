@@ -29,7 +29,7 @@ import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
-@OnlyPlatform(TestPlatform.JAVASCRIPT)
+@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @EachTestCompiledSeparately
 public class ExportClassTest {
     @Test
@@ -45,6 +45,16 @@ public class ExportClassTest {
 
         setFoo(o);
         assertEquals("w", o.fooValue);
+    }
+
+    @Test
+    public void simpleClassExportedViaStaticHelper() {
+        assertEquals("(OK)", callNativeJSMethod(new SimpleClass()));
+        assertEquals("[OK]", callNativeJSMethod(new DerivedSimpleClass()));
+    }
+
+    private static String callNativeJSMethod(I a) {
+        return callIFromJs(a);
     }
 
     @JSBody(params = "a", script = "return a.foo('OK');")

@@ -15,25 +15,54 @@
  */
 package org.teavm.classlib.java.nio;
 
+import java.nio.BufferUnderflowException;
 import java.util.Objects;
+import org.teavm.backend.c.runtime.Memory;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TComparable;
+import org.teavm.classlib.java.lang.TOutOfMemoryError;
+import org.teavm.interop.Address;
+import org.teavm.jso.typedarrays.Int8Array;
+import org.teavm.runtime.GC;
+import org.teavm.runtime.heap.Heap;
 
 public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBuffer> {
-    int start;
-    byte[] array;
     TByteOrder order = TByteOrder.BIG_ENDIAN;
 
-    TByteBuffer(int start, int capacity, byte[] array, int position, int limit) {
-        super(capacity);
-        this.start = start;
-        this.array = array;
-        this.position = position;
-        this.limit = limit;
+    TByteBuffer() {
     }
 
     public static TByteBuffer allocateDirect(int capacity) {
         if (capacity < 0) {
             throw new IllegalArgumentException("Capacity is negative: " + capacity);
+        }
+        if (PlatformDetector.isJavaScript()) {
+            var result = new TByteBufferJsImpl(null, 0, new Int8Array(capacity), true, false);
+            result.limit = capacity;
+            return result;
+        }
+        if (PlatformDetector.isC()) {
+            var memory = Memory.malloc(capacity);
+            var result = new TByteBufferNative(null, 0, null, memory, capacity, false);
+            GC.registerDirectBuffer(Address.ofObject(result).toStructure());
+            result.limit = capacity;
+            return result;
+        }
+        if (PlatformDetector.isWebAssembly()) {
+            var array = new byte[capacity];
+            var result = new TByteBufferNative(array, 0, array, Address.ofData(array), array.length, false);
+            result.limit = capacity;
+            return result;
+        }
+        if (PlatformDetector.isWebAssemblyGC()) {
+            var addr = Heap.alloc(capacity);
+            if (addr == null) {
+                throw new TOutOfMemoryError();
+            }
+            var result = new TByteBufferNative(null, 0, null, addr, capacity, false);
+            result.limit = capacity;
+            TJSBufferHelper.WasmGC.register(result, addr);
+            return result;
         }
         return new TByteBufferImpl(capacity, true);
     }
@@ -42,11 +71,36 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
         if (capacity < 0) {
             throw new IllegalArgumentException("Capacity is negative: " + capacity);
         }
+        if (PlatformDetector.isJavaScript()) {
+            var array = new byte[capacity];
+            var result = new TByteBufferJsImpl(array, 0, Int8Array.fromJavaArray(array), false, false);
+            result.limit = capacity;
+            return result;
+        }
+        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+            var array = new byte[capacity];
+            var result = new TByteBufferNative(array, 0, array, Address.ofData(array), array.length, false);
+            result.limit = capacity;
+            return result;
+        }
         return new TByteBufferImpl(capacity, false);
     }
 
     public static TByteBuffer wrap(byte[] array, int offset, int length) {
         Objects.checkFromIndexSize(offset, length, array.length);
+        if (PlatformDetector.isJavaScript()) {
+            var data = Int8Array.fromJavaArray(array);
+            var result = new TByteBufferJsImpl(array, 0, data, false, false);
+            result.position = offset;
+            result.limit = offset + length;
+            return result;
+        }
+        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+            var result = new TByteBufferNative(array, 0, array, Address.ofData(array), array.length, false);
+            result.position = offset;
+            result.limit = offset + length;
+            return result;
+        }
         return new TByteBufferImpl(0, array.length, array, offset, offset + length, false, false);
     }
 
@@ -69,34 +123,50 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
     public abstract TByteBuffer put(int index, byte b);
 
     public TByteBuffer get(byte[] dst, int offset, int length) {
-        if (offset < 0 || offset > dst.length) {
-            throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
+        if (length < 0 || offset < 0 || offset + length > dst.length) {
+            throw new IndexOutOfBoundsException();
         }
-        if (offset + length > dst.length) {
-            throw new IndexOutOfBoundsException("The last byte in dst " + (offset + length) + " is outside "
-                    + "of array of size " + dst.length);
+        if (length > remaining()) {
+            throw new BufferUnderflowException();
         }
-        if (remaining() < length) {
-            throw new TBufferUnderflowException();
-        }
-        if (length < 0) {
-            throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
-        }
-        int pos = position + start;
-        for (int i = 0; i < length; ++i) {
-            dst[offset++] = array[pos++];
-        }
+        getImpl(position, dst, offset, length);
         position += length;
         return this;
     }
+
+    public TByteBuffer get(int index, byte[] dst, int offset, int length) {
+        if (length < 0 || offset < 0 || offset + length > dst.length || index < 0 || index + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        getImpl(index, dst, offset, length);
+        return this;
+    }
+
+    abstract void getImpl(int index, byte[] dst, int offset, int length);
 
     public TByteBuffer get(byte[] dst) {
         return get(dst, 0, dst.length);
     }
 
     public TByteBuffer put(TByteBuffer src) {
-        return put(src.array, src.start + src.position, src.remaining());
+        return put(position(), src, src.position(), src.remaining());
     }
+
+    public TByteBuffer put(int index, TByteBuffer src, int offset, int length) {
+        if (src.remaining() == 0) {
+            return this;
+        }
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (length < 0 || offset < 0 || offset + length > src.limit() || index < 0 || index + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        putImpl(index, src, offset, length);
+        return this;
+    }
+
+    abstract void putImpl(int index, TByteBuffer src, int offset, int length);
 
     public TByteBuffer put(byte[] src, int offset, int length) {
         if (length == 0) {
@@ -105,23 +175,13 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
         if (isReadOnly()) {
             throw new TReadOnlyBufferException();
         }
-        if (remaining() < length) {
+        if (length < 0 || offset < 0 || offset + length > src.length) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (length > remaining()) {
             throw new TBufferOverflowException();
         }
-        if (offset < 0 || offset > src.length) {
-            throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + src.length + ")");
-        }
-        if (offset + length > src.length) {
-            throw new IndexOutOfBoundsException("The last byte in src " + (offset + length) + " is outside "
-                    + "of array of size " + src.length);
-        }
-        if (length < 0) {
-            throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
-        }
-        int pos = position + start;
-        for (int i = 0; i < length; ++i) {
-            array[pos++] = src[offset++];
-        }
+        putImpl(src, offset, position, length);
         position += length;
         return this;
     }
@@ -130,20 +190,42 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
         return put(src, 0, src.length);
     }
 
+    public TByteBuffer put(int index, byte[] src, int offset, int length) {
+        if (length == 0) {
+            return this;
+        }
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (length < 0 || offset < 0 || offset + length > src.length || index < 0 || index + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        putImpl(src, offset, length, length);
+        return this;
+    }
+
+    abstract void putImpl(byte[] src, int srcOffset, int destOffset, int length);
+
     @Override
-    public boolean hasArray() {
-        return true;
+    public final boolean hasArray() {
+        return hasArrayImpl();
     }
 
     @Override
     public final byte[] array() {
-        return array;
+        return arrayImpl();
     }
 
     @Override
-    public int arrayOffset() {
-        return start;
+    public final int arrayOffset() {
+        return arrayOffsetImpl();
     }
+
+    abstract boolean hasArrayImpl();
+
+    abstract byte[] arrayImpl();
+
+    abstract int arrayOffsetImpl();
 
     public abstract TByteBuffer compact();
 
@@ -152,16 +234,16 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
 
     @Override
     public String toString() {
-        return "[ByteBuffer position=" + position + ", limit=" + limit + ", capacity=" + capacity + ", mark "
+        return "[ByteBuffer position=" + position + ", limit=" + limit + ", capacity=" + capacity() + ", mark "
                 + (mark >= 0 ? " at " + mark : " is not set") + "]";
     }
 
     @Override
     public int hashCode() {
         int hashCode = 0;
-        int pos = position + start;
-        for (int i = position; i < limit; ++i) {
-            hashCode = 31 * hashCode + array[pos++];
+        int pos = position();
+        for (int i = position(); i < limit; ++i) {
+            hashCode = 31 * hashCode + get(pos);
         }
         return hashCode;
     }
@@ -179,10 +261,10 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
         if (sz != other.remaining()) {
             return false;
         }
-        int a = position + start;
-        int b = other.position + other.start;
+        int a = position();
+        int b = other.position();
         for (int i = 0; i < sz; ++i) {
-            if (array[a++] != other.array[b++]) {
+            if (get(a++) != other.get(b++)) {
                 return false;
             }
         }
@@ -195,10 +277,10 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
             return 0;
         }
         int sz = Math.min(remaining(), other.remaining());
-        int a = position + start;
-        int b = other.position + other.start;
+        int a = position();
+        int b = other.position();
         for (int i = 0; i < sz; ++i) {
-            int r = Byte.compare(array[a++], other.array[b++]);
+            int r = Byte.compare(get(a++), other.get(b++));
             if (r != 0) {
                 return r;
             }
@@ -212,7 +294,11 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
 
     public final TByteBuffer order(TByteOrder bo) {
         order = bo;
+        onOrderChanged();
         return this;
+    }
+
+    void onOrderChanged() {
     }
 
     public abstract char getChar();

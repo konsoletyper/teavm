@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.debug.info;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +33,48 @@ public class LineInfo {
 
     public List<? extends LineInfoSequence> sequences() {
         return sequenceList;
+    }
+
+    public DeobfuscatedLocation[] deobfuscate(int[] addresses) {
+        var result = new ArrayList<DeobfuscatedLocation>();
+        for (var address : addresses) {
+            var part = deobfuscateSingle(address);
+            if (part != null) {
+                result.addAll(List.of(part));
+            }
+        }
+        return result.toArray(new DeobfuscatedLocation[0]);
+    }
+
+    public DeobfuscatedLocation[] deobfuscateSingle(int address) {
+        var sequence = find(address);
+        if (sequence == null) {
+            return null;
+        }
+        var instructionLoc = sequence.unpack().find(address);
+        if (instructionLoc == null) {
+            return returnForSequence(sequence);
+        }
+        var location = instructionLoc.location();
+        if (location == null) {
+            return returnForSequence(sequence);
+        }
+        var result = new DeobfuscatedLocation[location.depth()];
+        var method = sequence.method();
+        var i = 0;
+        while (i < result.length - 1) {
+            var inlining = location.inlining();
+            result[i++] = new DeobfuscatedLocation(location.file(), inlining.method(), location.line());
+            location = location.inlining().location();
+        }
+        result[i] = new DeobfuscatedLocation(location.file(), method, location.line());
+        return result;
+    }
+
+    private DeobfuscatedLocation[] returnForSequence(LineInfoSequence sequence) {
+        return new DeobfuscatedLocation[] {
+                new DeobfuscatedLocation(null, sequence.method(), -1)
+        };
     }
 
     public LineInfoSequence find(int address) {

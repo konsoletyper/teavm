@@ -22,6 +22,8 @@ import org.teavm.model.ClassReaderSource;
 public interface WasmGCCustomTypeMapperFactoryContext {
     ClassReaderSource classes();
 
+    ClassReaderSource originalClasses();
+
     WasmModule module();
 
     WasmGCClassInfoProvider classInfoProvider();

@@ -27,6 +27,7 @@ import org.teavm.backend.wasm.generate.DwarfClassGenerator;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
 import org.teavm.backend.wasm.model.WasmCustomSection;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
@@ -49,6 +50,7 @@ public class WasmBinaryRenderer {
 
     private static final int EXTERNAL_KIND_FUNCTION = 0;
     private static final int EXTERNAL_KIND_MEMORY = 2;
+    private static final int EXTERNAL_KIND_GLOBAL = 3;
     private static final int EXTERNAL_KIND_TAG = 4;
 
     private WasmBinaryWriter output;
@@ -137,20 +139,29 @@ public class WasmBinaryRenderer {
     }
 
     private void renderImports(WasmModule module) {
-        List<WasmFunction> functions = new ArrayList<>();
+        var functions = new ArrayList<WasmFunction>();
         for (var function : module.functions) {
             if (function.getImportName() == null) {
                 continue;
             }
             functions.add(function);
         }
-        if (functions.isEmpty()) {
+
+        var globals = new ArrayList<WasmGlobal>();
+        for (var global : module.globals) {
+            if (global.getImportName() == null) {
+                continue;
+            }
+            globals.add(global);
+        }
+
+        if (functions.isEmpty() && globals.isEmpty()) {
             return;
         }
 
         WasmBinaryWriter section = new WasmBinaryWriter();
 
-        section.writeLEB(functions.size());
+        section.writeLEB(functions.size() + globals.size());
         for (WasmFunction function : functions) {
             int signatureIndex = module.types.indexOf(function.getType());
             String moduleName = function.getImportModule();
@@ -158,11 +169,21 @@ public class WasmBinaryRenderer {
                 moduleName = "";
             }
             section.writeAsciiString(moduleName);
-
             section.writeAsciiString(function.getImportName());
 
             section.writeByte(EXTERNAL_KIND_FUNCTION);
             section.writeLEB(signatureIndex);
+        }
+        for (var global : globals) {
+            var moduleName = global.getImportModule();
+            if (moduleName == null) {
+                moduleName = "";
+            }
+            section.writeAsciiString(moduleName);
+            section.writeAsciiString(global.getImportName());
+            section.writeByte(EXTERNAL_KIND_GLOBAL);
+            section.writeType(global.getType(), module);
+            section.writeByte(global.isImmutable() ? 0 : 1);
         }
 
         writeSection(SECTION_IMPORT, "import", section.getData());
@@ -210,16 +231,19 @@ public class WasmBinaryRenderer {
     }
 
     private void renderGlobals(WasmModule module) {
-        if (module.globals.isEmpty()) {
+        var globals = module.globals.stream()
+                .filter(global -> global.getImportName() == null)
+                .collect(Collectors.toList());
+        if (globals.isEmpty()) {
             return;
         }
 
         var section = new WasmBinaryWriter();
         var visitor = new WasmBinaryRenderingVisitor(section, module, null, null, 0);
-        section.writeLEB(module.globals.size());
-        for (var global : module.globals) {
+        section.writeLEB(globals.size());
+        for (var global : globals) {
             section.writeType(global.getType(), module);
-            section.writeByte(global.isImmutable() ? 0 : 1); // mutable
+            section.writeByte(global.isImmutable() ? 0 : 1);
             global.getInitialValue().acceptVisitor(visitor);
             section.writeByte(0x0b);
         }
@@ -241,7 +265,11 @@ public class WasmBinaryRenderer {
                 .filter(tag -> tag.getExportName() != null)
                 .collect(Collectors.toList());
 
-        section.writeLEB(functions.size() + tags.size() + 1);
+        var globals = module.globals.stream()
+                .filter(global -> global.getExportName() != null)
+                .collect(Collectors.toList());
+
+        section.writeLEB(functions.size() + tags.size() + globals.size() + 1);
         for (var function : functions) {
             int functionIndex = module.functions.indexOf(function);
 
@@ -257,9 +285,16 @@ public class WasmBinaryRenderer {
             section.writeByte(EXTERNAL_KIND_TAG);
             section.writeLEB(tagIndex);
         }
+        for (var global : globals) {
+            var index = module.globals.indexOf(global);
+            section.writeAsciiString(global.getExportName());
+
+            section.writeByte(EXTERNAL_KIND_GLOBAL);
+            section.writeLEB(index);
+        }
 
         // We also need to export the memory to make it accessible
-        section.writeAsciiString("memory");
+        section.writeAsciiString(module.memoryExportName);
         section.writeByte(EXTERNAL_KIND_MEMORY);
         section.writeLEB(0);
 
@@ -324,8 +359,9 @@ public class WasmBinaryRenderer {
                 .collect(Collectors.toList());
 
         section.writeLEB(functions.size());
+        var sectionOffset = output.getPosition() + 4;
         for (var function : functions) {
-            var body = renderFunction(module, function, section.getPosition() + 4);
+            var body = renderFunction(module, function, section.getPosition() + 4, sectionOffset);
             var startPos = section.getPosition();
             section.writeLEB4(body.length);
             section.writeBytes(body);
@@ -339,10 +375,10 @@ public class WasmBinaryRenderer {
             dwarfGenerator.setCodeSize(section.getPosition());
         }
 
-        writeSection(SECTION_CODE, "code", section.getData());
+        writeSection(SECTION_CODE, "code", section.getData(), true);
     }
 
-    private byte[] renderFunction(WasmModule module, WasmFunction function, int offset) {
+    private byte[] renderFunction(WasmModule module, WasmFunction function, int offset, int sectionOffset) {
         var code = new WasmBinaryWriter();
 
         var dwarfSubprogram = dwarfClassGen != null ? dwarfClassGen.getSubprogram(function.getName()) : null;
@@ -351,6 +387,7 @@ public class WasmBinaryRenderer {
             dwarfSubprogram.function = function;
         }
         if (debugLines != null && function.getJavaMethod() != null) {
+            debugLines.advance(offset + sectionOffset);
             debugLines.start(function.getJavaMethod());
         }
 
@@ -381,10 +418,11 @@ public class WasmBinaryRenderer {
         }
 
         var visitor = new WasmBinaryRenderingVisitor(code, module, dwarfGenerator,
-                function.getJavaMethod() != null ? debugLines : null, offset);
+                function.getJavaMethod() != null ? debugLines : null, offset + sectionOffset);
         for (var part : function.getBody()) {
             visitor.preprocess(part);
         }
+        visitor.setPositionToEmit(code.getPosition());
         for (var part : function.getBody()) {
             part.acceptVisitor(visitor);
         }
@@ -396,7 +434,7 @@ public class WasmBinaryRenderer {
             dwarfSubprogram.endOffset = code.getPosition() + offset;
         }
         if (debugVariables != null) {
-            writeDebugVariables(function, offset, code.getPosition());
+            writeDebugVariables(function, offset + sectionOffset, code.getPosition());
         }
 
         return code.getData();
@@ -462,7 +500,7 @@ public class WasmBinaryRenderer {
 
         WasmBinaryWriter functionsSubsection = new WasmBinaryWriter();
         var functions = module.functions.stream()
-                .filter(f -> f.getName() != null && f.getImportName() == null)
+                .filter(f -> f.getName() != null)
                 .collect(Collectors.toList());
         functionsSubsection.writeLEB(functions.size());
 
@@ -588,13 +626,21 @@ public class WasmBinaryRenderer {
     }
 
     private void writeSection(int id, String name, byte[] data) {
+        writeSection(id, name, data, false);
+    }
+
+    private void writeSection(int id, String name, byte[] data, boolean constantSizeLength) {
         var start = output.getPosition();
         output.writeByte(id);
         int length = data.length;
         if (id == 0) {
             length += name.length() + 1;
         }
-        output.writeLEB(length);
+        if (constantSizeLength) {
+            output.writeLEB4(length);
+        } else {
+            output.writeLEB(length);
+        }
         if (id == 0) {
             output.writeAsciiString(name);
         }

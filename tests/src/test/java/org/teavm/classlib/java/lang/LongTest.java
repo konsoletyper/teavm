@@ -87,6 +87,35 @@ public class LongTest {
     }
 
     @Test
+    public void numberOfLeadingZerosComputed() {
+        assertEquals(0,  Long.numberOfLeadingZeros(-1L));
+        assertEquals(1,  Long.numberOfLeadingZeros(0x4000000000000000L));
+        assertEquals(1,  Long.numberOfLeadingZeros(0x4000000000000123L));
+        assertEquals(1,  Long.numberOfLeadingZeros(0x7FFFFFFFFFFFFFFFL));
+        assertEquals(63, Long.numberOfLeadingZeros(1L));
+        assertEquals(62, Long.numberOfLeadingZeros(2L));
+        assertEquals(62, Long.numberOfLeadingZeros(3L));
+        assertEquals(0,  Long.numberOfLeadingZeros(0x8000000000000000L));
+        assertEquals(0,  Long.numberOfLeadingZeros(0x8000000000000123L));
+        assertEquals(0,  Long.numberOfLeadingZeros(0xFFFFFFFFFFFFFFFFL));
+        assertEquals(64, Long.numberOfLeadingZeros(0L));
+    }
+
+    @Test
+    public void numberOfTrailingZerosComputed() {
+        assertEquals(1,  Long.numberOfTrailingZeros(0xFFFFFFFFFFFFFFFEL));
+        assertEquals(1,  Long.numberOfTrailingZeros(0x4000000000000002L));
+        assertEquals(1,  Long.numberOfTrailingZeros(0x0000000000000002L));
+        assertEquals(63, Long.numberOfTrailingZeros(0x8000000000000000L));
+        assertEquals(62, Long.numberOfTrailingZeros(0x4000000000000000L));
+        assertEquals(62, Long.numberOfTrailingZeros(0xC000000000000000L));
+        assertEquals(0,  Long.numberOfTrailingZeros(0x0000000000000001L));
+        assertEquals(0,  Long.numberOfTrailingZeros(0x1230000000000003L));
+        assertEquals(0,  Long.numberOfTrailingZeros(0xFFFFFFFFFFFFFFFFL));
+        assertEquals(64, Long.numberOfTrailingZeros(0L));
+    }
+
+    @Test
     public void highestOneBit() {
         assertEquals(1L << 63, Long.highestOneBit(-1L));
         assertEquals(1L << 63, Long.highestOneBit(Long.MIN_VALUE));

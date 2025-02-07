@@ -22,6 +22,9 @@ public interface ImportSectionListener {
     default void function(int typeIndex) {
     }
 
+    default void global(WasmHollowType type, boolean mutable) {
+    }
+
     default void endEntry() {
     }
 }

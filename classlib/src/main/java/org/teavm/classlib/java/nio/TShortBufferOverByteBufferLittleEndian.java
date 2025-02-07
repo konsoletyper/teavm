@@ -16,7 +16,7 @@
 package org.teavm.classlib.java.nio;
 
 class TShortBufferOverByteBufferLittleEndian extends TShortBufferOverByteBuffer {
-    public TShortBufferOverByteBufferLittleEndian(int start, int capacity, TByteBufferImpl byteBuffer, int position,
+    TShortBufferOverByteBufferLittleEndian(int start, int capacity, TByteBufferImpl byteBuffer, int position,
             int limit, boolean readOnly) {
         super(start, capacity, byteBuffer, position, limit, readOnly);
     }
@@ -24,20 +24,20 @@ class TShortBufferOverByteBufferLittleEndian extends TShortBufferOverByteBuffer 
     @Override
     TShortBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
         return new TShortBufferOverByteBufferLittleEndian(this.start + start * 2, capacity,
-                byteByffer, position, limit, readOnly);
+                byteBuffer, position, limit, readOnly);
     }
 
     @Override
     short getElement(int index) {
-        int value = (byteByffer.array[start + index * 2] & 0xFF)
-                | ((byteByffer.array[start + index * 2 + 1] & 0xFF) << 8);
+        int value = (byteBuffer.array[start + index * 2] & 0xFF)
+                | ((byteBuffer.array[start + index * 2 + 1] & 0xFF) << 8);
         return (short) value;
     }
 
     @Override
     void putElement(int index, short value) {
-        byteByffer.array[start + index * 2] = (byte) value;
-        byteByffer.array[start + index * 2 + 1] = (byte) (value >> 8);
+        byteBuffer.array[start + index * 2] = (byte) value;
+        byteBuffer.array[start + index * 2 + 1] = (byte) (value >> 8);
     }
 
     @Override

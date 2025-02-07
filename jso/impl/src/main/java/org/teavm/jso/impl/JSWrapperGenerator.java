@@ -34,6 +34,8 @@ public class JSWrapperGenerator implements Injector, DependencyPlugin {
             case "directJsToJava":
             case "dependencyJavaToJs":
             case "dependencyJsToJava":
+            case "marshallJavaToJs":
+            case "unmarshallJavaFromJs":
             case "wrapperToJs":
             case "jsToWrapper":
                 context.writeExpr(context.getArgument(0), context.getPrecedence());
@@ -45,17 +47,6 @@ public class JSWrapperGenerator implements Injector, DependencyPlugin {
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().append(" instanceof ").appendFunction("$rt_objcls").append("()");
                 if (context.getPrecedence().ordinal() >= Precedence.COMPARISON.ordinal()) {
-                    context.getWriter().append(")");
-                }
-                break;
-            case "isJSImplementation":
-                if (context.getPrecedence().ordinal() >= Precedence.EQUALITY.ordinal()) {
-                    context.getWriter().append("(");
-                }
-                context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
-                context.getWriter().append("[").appendFunction("$rt_jso_marker").append("]")
-                        .ws().append("===").ws().append("true");
-                if (context.getPrecedence().ordinal() >= Precedence.EQUALITY.ordinal()) {
                     context.getWriter().append(")");
                 }
                 break;

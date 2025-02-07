@@ -16,15 +16,17 @@
 package org.teavm.classlib.java.nio;
 
 abstract class TShortBufferOverByteBuffer extends TShortBufferImpl {
-    TByteBufferImpl byteByffer;
-    boolean readOnly;
+    TByteBufferImpl byteBuffer;
+    private boolean readOnly;
     int start;
+    private int capacity;
 
-    public TShortBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
+    TShortBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
             boolean readOnly) {
-        super(capacity, position, limit);
+        super(position, limit);
         this.start = start;
-        this.byteByffer = byteBuffer;
+        this.capacity = capacity;
+        this.byteBuffer = byteBuffer;
         this.readOnly = readOnly;
     }
 
@@ -46,5 +48,37 @@ abstract class TShortBufferOverByteBuffer extends TShortBufferImpl {
     @Override
     boolean readOnly() {
         return readOnly;
+    }
+
+    @Override
+    void getImpl(int index, short[] dst, int offset, int length) {
+        while (length-- > 0) {
+            dst[offset++] = getElement(index++);
+        }
+    }
+
+    @Override
+    void putImpl(int index, short[] src, int offset, int length) {
+        while (length-- > 0) {
+            putElement(index++, src[offset++]);
+        }
+    }
+
+    @Override
+    void putImpl(int index, TShortBuffer src, int offset, int length) {
+        if (src instanceof TShortBufferOverByteBuffer && src.order() == order()) {
+            var srcImpl = (TShortBufferOverByteBuffer) src;
+            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + index * 2,
+                    byteBuffer.array, start + offset * 2, length * 2);
+        } else {
+            while (length-- > 0) {
+                putElement(index++, src.getElement(offset++));
+            }
+        }
+    }
+
+    @Override
+    int capacityImpl() {
+        return capacity;
     }
 }

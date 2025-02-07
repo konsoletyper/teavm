@@ -44,23 +44,27 @@ public abstract class ArrayBufferView implements JSObject {
 
     public native void set(JSArrayReader<?> other);
 
-    public native void set(@JSByRef byte[] other, int offset);
+    public native void set(@JSByRef(optional = true) byte[] other, int offset);
 
-    public native void set(@JSByRef byte[] other);
+    public native void set(@JSByRef(optional = true) byte[] other);
 
-    public native void set(@JSByRef short[] other, int offset);
+    public native void set(@JSByRef(optional = true) short[] other, int offset);
 
-    public native void set(@JSByRef short[] other);
+    public native void set(@JSByRef(optional = true) short[] other);
 
-    public native void set(@JSByRef int[] other, int offset);
+    public native void set(@JSByRef(optional = true) int[] other, int offset);
 
-    public native void set(@JSByRef int[] other);
+    public native void set(@JSByRef(optional = true) int[] other);
 
-    public native void set(@JSByRef float[] other, int offset);
+    public native void set(@JSByRef(optional = true) long[] other, int offset);
 
-    public native void set(@JSByRef float[] other);
+    public native void set(@JSByRef(optional = true) long[] other);
 
-    public native void set(@JSByRef double[] other, int offset);
+    public native void set(@JSByRef(optional = true) float[] other, int offset);
 
-    public native void set(@JSByRef double[] other);
+    public native void set(@JSByRef(optional = true) float[] other);
+
+    public native void set(@JSByRef(optional = true) double[] other, int offset);
+
+    public native void set(@JSByRef(optional = true) double[] other);
 }

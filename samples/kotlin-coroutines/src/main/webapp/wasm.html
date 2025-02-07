@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kotlin coroutines example</title>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+  <script type="text/javascript" charset="utf-8" src="wasm-gc/kotlin-coroutines.wasm-runtime.js"></script>
+  <script type="text/javascript">
+      async function launch() {
+          let teavm = await TeaVM.wasmGC.load("wasm-gc/kotlin-coroutines.wasm");
+          teavm.exports.main([]);
+      }
+  </script>
+</head>
+<body onload="launch()">
+</body>
+</html>

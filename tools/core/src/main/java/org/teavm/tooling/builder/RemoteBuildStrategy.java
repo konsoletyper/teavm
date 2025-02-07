@@ -20,6 +20,8 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 import java.util.Properties;
 import org.teavm.backend.javascript.JSModuleType;
+import org.teavm.backend.wasm.WasmDebugInfoLevel;
+import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.Problem;
@@ -193,6 +195,16 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setWasmDebugInfoLevel(WasmDebugInfoLevel wasmDebugInfoLevel) {
+        request.wasmDebugInfoLevel = wasmDebugInfoLevel;
+    }
+
+    @Override
+    public void setWasmDebugInfoLocation(WasmDebugInfoLocation wasmDebugInfoLocation) {
+        request.wasmDebugInfoLocation = wasmDebugInfoLocation;
+    }
+
+    @Override
     public void setMinHeapSize(int minHeapSize) {
         request.minHeapSize = minHeapSize;
     }
@@ -200,6 +212,16 @@ public class RemoteBuildStrategy implements BuildStrategy {
     @Override
     public void setMaxHeapSize(int maxHeapSize) {
         request.maxHeapSize = maxHeapSize;
+    }
+
+    @Override
+    public void setMinDirectBuffersSize(int minDirectBuffersSize) {
+        request.minDirectBuffersSize = minDirectBuffersSize;
+    }
+
+    @Override
+    public void setMaxDirectBuffersSize(int maxDirectBuffersSize) {
+        request.maxDirectBuffersSize = maxDirectBuffersSize;
     }
 
     @Override

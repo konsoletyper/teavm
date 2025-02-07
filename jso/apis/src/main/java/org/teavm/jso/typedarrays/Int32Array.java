@@ -15,20 +15,23 @@
  */
 package org.teavm.jso.typedarrays;
 
+import java.nio.Buffer;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSBuffer;
+import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSIndexer;
 
 @JSClass
-public class Int32Array extends ArrayBufferView {
+public class Int32Array extends TypedArray {
     public Int32Array(int length) {
     }
 
     public Int32Array(ArrayBuffer buffer) {
     }
 
-    public Int32Array(ArrayBufferView buffer) {
+    public Int32Array(TypedArray buffer) {
     }
 
     public Int32Array(ArrayBuffer buffer, int offset, int length) {
@@ -59,7 +62,7 @@ public class Int32Array extends ArrayBufferView {
 
     @JSBody(params = "buffer", script = "return new Int32Array(buffer);")
     @Deprecated
-    public static native Int32Array create(ArrayBufferView buffer);
+    public static native Int32Array create(TypedArray buffer);
 
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new Int32Array(buffer, offset, length);")
     @Deprecated
@@ -68,4 +71,10 @@ public class Int32Array extends ArrayBufferView {
     @JSBody(params = { "buffer", "offset" }, script = "return new Int32Array(buffer, offset);")
     @Deprecated
     public static native Int32Array create(ArrayBuffer buffer, int offset);
+
+    @JSBody(params = "array", script = "return array;")
+    public static native Int32Array fromJavaArray(@JSByRef int[] array);
+
+    @JSBody(params = "buffer", script = "return buffer;")
+    public static native Int32Array fromJavaBuffer(@JSBuffer(JSBufferType.INT32) Buffer buffer);
 }

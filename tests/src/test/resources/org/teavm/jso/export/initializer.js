@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { foo, bar, getCount, getAnotherCount } from '/tests/initializer/test.js';
+const { foo, bar, getCount, getAnotherCount } = await (await import('/tests/initializer/provider.js')).default;
 
 export async function test() {
     assertEquals("foo", foo());

@@ -43,6 +43,7 @@ import org.teavm.backend.wasm.model.expression.WasmDefaultExpressionVisitor;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmExpressionVisitor;
+import org.teavm.backend.wasm.model.expression.WasmExternConversion;
 import org.teavm.backend.wasm.model.expression.WasmFill;
 import org.teavm.backend.wasm.model.expression.WasmFloat32Constant;
 import org.teavm.backend.wasm.model.expression.WasmFloat64Constant;
@@ -768,6 +769,21 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmTest expression) {
         open().append("ref.test ").append(type(expression.getTestType()));
+        line(expression.getValue());
+        close();
+    }
+
+    @Override
+    public void visit(WasmExternConversion expression) {
+        open();
+        switch (expression.getType()) {
+            case EXTERN_TO_ANY:
+                append("any.convert_extern");
+                break;
+            case ANY_TO_EXTERN:
+                append("extern.convert_any");
+                break;
+        }
         line(expression.getValue());
         close();
     }

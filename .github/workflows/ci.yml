@@ -14,12 +14,14 @@ jobs:
         - js
         - wasm
         - wasi
+        - wasm-gc
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-java@v3
       with:
         java-version: 11
         distribution: adopt
+    - uses: actions/setup-node@v4
     - uses: gradle/gradle-build-action@v2
     - if: ${{ matrix.platform == 'wasi' }}
       uses: bytecodealliance/actions/wasmtime/setup@v1
@@ -29,7 +31,7 @@ jobs:
         echo 'wasmtime "$@"'> "$HOME/.wasmtime/bin/wasmtime"
         chmod +x "$HOME/.wasmtime/bin/wasmtime"
     - run: |
-        platforms=("c" "js" "wasm" "wasi")
+        platforms=("c" "js" "wasm" "wasi" "wasm-gc")
         args=()
         for v in "${platforms[@]}"
         do
@@ -37,9 +39,10 @@ jobs:
             args+=("-Pteavm.tests.${v}=false")
           fi
         done
+        args+=("-Pteavm.localNodeJS=true")
         echo "${args[@]}"
         ./gradlew "${args[@]}" test
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: "test-reports-${{ matrix.platform }}"
@@ -55,4 +58,4 @@ jobs:
           distribution: adopt
       - uses: gradle/gradle-build-action@v2
       - run: |
-          ./gradlew build -x test
+          ./gradlew check -x test

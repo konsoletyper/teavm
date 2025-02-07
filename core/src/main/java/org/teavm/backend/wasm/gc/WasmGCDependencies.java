@@ -18,9 +18,14 @@ package org.teavm.backend.wasm.gc;
 import java.util.Arrays;
 import java.util.List;
 import org.teavm.backend.wasm.WasmRuntime;
-import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
+import org.teavm.dependency.AbstractDependencyListener;
+import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyAnalyzer;
+import org.teavm.dependency.MethodDependency;
+import org.teavm.interop.Address;
 import org.teavm.model.MethodReference;
+import org.teavm.runtime.heap.Heap;
 
 public class WasmGCDependencies {
     private DependencyAnalyzer analyzer;
@@ -35,7 +40,12 @@ public class WasmGCDependencies {
         contributeMathUtils();
         contributeExceptionUtils();
         contributeInitializerUtils();
+        contributeString();
+        contributeBuffers();
         analyzer.addDependencyListener(new WasmGCReferenceQueueDependency());
+        analyzer.addDependencyListener(new WasmGCResourceDependency());
+        analyzer.addDependencyListener(new SystemArrayCopyDependencySupport());
+        handleReferences();
     }
 
     public void contributeStandardExports() {
@@ -102,9 +112,38 @@ public class WasmGCDependencies {
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "throwCloneNotSupportedException",
                 void.class)).use();
         analyzer.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class)).use();
+
+        analyzer.addDependencyListener(new AbstractDependencyListener() {
+            @Override
+            public void classReached(DependencyAgent agent, String className) {
+                if (className.equals(Throwable.class.getName())) {
+                    agent.linkMethod(new MethodReference(Throwable.class, "getMessage", String.class))
+                            .propagate(0, Throwable.class)
+                            .use();
+                }
+            }
+        });
     }
 
     private void contributeInitializerUtils() {
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "nextCharArray", char[].class)).use();
+    }
+
+    private void contributeString() {
+        analyzer.addDependencyListener(new StringInternDependencySupport());
+    }
+
+    private void contributeBuffers() {
+        analyzer.linkMethod(new MethodReference(Heap.class, "init", Address.class, int.class, int.class,
+                void.class)).use();
+    }
+
+    private void handleReferences() {
+        analyzer.addDependencyListener(new AbstractDependencyListener() {
+            @Override
+            public void methodReached(DependencyAgent agent, MethodDependency method) {
+                var ref = method.getMethod().getReference();
+            }
+        });
     }
 }

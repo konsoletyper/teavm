@@ -18,7 +18,7 @@ import org.teavm.gradle.tasks.TeaVMTask
  */
 
 plugins {
-    kotlin("multiplatform") version "2.0.20"
+    alias(libs.plugins.kotlin.multiplatform)
     war
     id("org.teavm")
 }

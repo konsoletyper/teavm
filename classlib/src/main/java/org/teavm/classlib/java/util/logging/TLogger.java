@@ -23,6 +23,7 @@ import org.teavm.classlib.java.lang.TThrowable;
 import org.teavm.classlib.java.util.THashMap;
 import org.teavm.classlib.java.util.TMap;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.impl.JS;
 
 public class TLogger {
     public static final String GLOBAL_LOGGER_NAME = "global";
@@ -70,11 +71,23 @@ public class TLogger {
             }
         } else {
             if (record.getLevel().intValue() >= TLevel.SEVERE.intValue()) {
-                error(message);
+                if (PlatformDetector.isWebAssemblyGC()) {
+                    JS.invoke(JS.global("console"), JS.wrap("error"), JS.wrap(message));
+                } else {
+                    error(message);
+                }
             } else if (record.getLevel().intValue() >= TLevel.WARNING.intValue()) {
-                warn(message);
+                if (PlatformDetector.isWebAssemblyGC()) {
+                    JS.invoke(JS.global("console"), JS.wrap("warn"), JS.wrap(message));
+                } else {
+                    warn(message);
+                }
             } else {
-                infoImpl(message);
+                if (PlatformDetector.isWebAssemblyGC()) {
+                    JS.invoke(JS.global("console"), JS.wrap("info"), JS.wrap(message));
+                } else {
+                    infoImpl(message);
+                }
             }
         }
     }

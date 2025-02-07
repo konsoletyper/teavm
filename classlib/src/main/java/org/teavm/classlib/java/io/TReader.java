@@ -82,7 +82,7 @@ public abstract class TReader implements TCloseable, TReadable {
     }
 
     public boolean ready() throws IOException {
-        return true;
+        return false;
     }
 
     public boolean markSupported() {

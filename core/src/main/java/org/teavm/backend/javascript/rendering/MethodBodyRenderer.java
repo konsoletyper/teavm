@@ -47,13 +47,13 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
     private boolean threadLibraryUsed;
 
     public MethodBodyRenderer(RenderingContext context, Diagnostics diagnostics, boolean minifying,
-            Set<MethodReference> asyncMethods, SourceWriter writer) {
+            Set<MethodReference> asyncMethods, SourceWriter writer, VariableNameGenerator variableNameGenerator) {
         this.context = context;
         this.diagnostics = diagnostics;
         this.minifying = minifying;
         this.asyncMethods = asyncMethods;
         this.writer = writer;
-        statementRenderer = new StatementRenderer(context, writer);
+        statementRenderer = new StatementRenderer(context, writer, variableNameGenerator);
     }
 
     public void setCurrentMethod(MethodNode node) {

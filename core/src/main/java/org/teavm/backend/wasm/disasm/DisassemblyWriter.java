@@ -16,6 +16,12 @@
 package org.teavm.backend.wasm.disasm;
 
 import java.io.PrintWriter;
+import org.teavm.backend.wasm.debug.info.LineInfo;
+import org.teavm.backend.wasm.debug.info.LineInfoCommandVisitor;
+import org.teavm.backend.wasm.debug.info.LineInfoEnterCommand;
+import org.teavm.backend.wasm.debug.info.LineInfoExitCommand;
+import org.teavm.backend.wasm.debug.info.LineInfoFileCommand;
+import org.teavm.backend.wasm.debug.info.LineInfoLineCommand;
 import org.teavm.backend.wasm.parser.AddressListener;
 
 public abstract class DisassemblyWriter {
@@ -26,6 +32,10 @@ public abstract class DisassemblyWriter {
     private boolean hasAddress;
     private boolean lineStarted;
     private int addressOffset;
+    private LineInfo debugLines;
+    private int currentSequenceIndex;
+    private int currentCommandIndex = -1;
+    private int lineInfoIndent;
 
     public DisassemblyWriter(PrintWriter out) {
         this.out = out;
@@ -37,6 +47,14 @@ public abstract class DisassemblyWriter {
 
     public void setAddressOffset(int addressOffset) {
         this.addressOffset = addressOffset;
+    }
+
+    public void setDebugLines(LineInfo debugLines) {
+        this.debugLines = debugLines;
+    }
+
+    public void startSection() {
+        currentSequenceIndex = 0;
     }
 
     public DisassemblyWriter address() {
@@ -63,6 +81,9 @@ public abstract class DisassemblyWriter {
     private void startLine() {
         if (!lineStarted) {
             lineStarted = true;
+            if (debugLines != null) {
+                printDebugLine();
+            }
             if (withAddress) {
                 if (hasAddress) {
                     hasAddress = false;
@@ -75,6 +96,81 @@ public abstract class DisassemblyWriter {
                 out.print("  ");
             }
         }
+    }
+
+    private void printDebugLine() {
+        if (currentSequenceIndex >= debugLines.sequences().size()) {
+            return;
+        }
+        if (currentCommandIndex < 0) {
+            if (address < debugLines.sequences().get(currentSequenceIndex).startAddress()) {
+                return;
+            }
+            currentCommandIndex = 0;
+            printSingleDebugAnnotation("start debug line sequence");
+        } else {
+            if (address >= debugLines.sequences().get(currentSequenceIndex).endAddress()) {
+                printSingleDebugAnnotation("end debug line sequence");
+                ++currentSequenceIndex;
+                currentCommandIndex = -1;
+                lineInfoIndent = 0;
+                return;
+            }
+        }
+
+        var sequence = debugLines.sequences().get(currentSequenceIndex);
+        while (currentCommandIndex < sequence.commands().size()) {
+            var command = sequence.commands().get(currentCommandIndex);
+            if (address < command.address()) {
+                break;
+            }
+
+            command.acceptVisitor(new LineInfoCommandVisitor() {
+                @Override
+                public void visit(LineInfoEnterCommand command) {
+                    printSingleDebugAnnotation("enter inline " + command.method().cls().name() + "."
+                            + command.method().name());
+                    ++lineInfoIndent;
+                }
+
+                @Override
+                public void visit(LineInfoExitCommand command) {
+                    --lineInfoIndent;
+                    printSingleDebugAnnotation("exit inline");
+                }
+
+                @Override
+                public void visit(LineInfoFileCommand command) {
+                    if (command.file() == null) {
+                        printSingleDebugAnnotation("at <unknown>:" + command.line());
+                    } else {
+                        printSingleDebugAnnotation("at " + command.file().name() + ":" + command.line());
+                    }
+                }
+
+                @Override
+                public void visit(LineInfoLineCommand command) {
+                    printSingleDebugAnnotation("at " + command.line());
+                }
+            });
+            ++currentCommandIndex;
+        }
+    }
+
+    private void printSingleDebugAnnotation(String text) {
+        out.print("                ");
+        for (int i = 0; i < indentLevel; ++i) {
+            out.print("  ");
+        }
+        for (int i = 0; i < lineInfoIndent; ++i) {
+            out.print("  ");
+        }
+        startAnnotation();
+        out.print("(; ");
+        write(text);
+        out.print(" ;)");
+        endAnnotation();
+        out.print("\n");
     }
 
     private void printAddress() {
@@ -107,6 +203,12 @@ public abstract class DisassemblyWriter {
     public abstract DisassemblyWriter prologue();
 
     public abstract DisassemblyWriter epilogue();
+
+    protected void startAnnotation() {
+    }
+
+    protected void endAnnotation() {
+    }
 
     public void flush() {
         out.flush();

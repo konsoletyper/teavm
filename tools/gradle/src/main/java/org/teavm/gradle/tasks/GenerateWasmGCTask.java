@@ -15,8 +15,14 @@
  */
 package org.teavm.gradle.tasks;
 
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Optional;
+import org.teavm.gradle.api.SourceFilePolicy;
+import org.teavm.gradle.api.WasmDebugInfoLevel;
+import org.teavm.gradle.api.WasmDebugInfoLocation;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.builder.BuildStrategy;
 
@@ -24,6 +30,12 @@ public abstract class GenerateWasmGCTask extends TeaVMTask {
     public GenerateWasmGCTask() {
         getStrict().convention(true);
         getObfuscated().convention(true);
+        getDebugInfoLevel().convention(WasmDebugInfoLevel.DEOBFUSCATION);
+        getDebugInfoLocation().convention(WasmDebugInfoLocation.EXTERNAL);
+        getSourceMap().convention(false);
+        getSourceFilePolicy().convention(SourceFilePolicy.LINK_LOCAL_FILES);
+        getMinDirectBuffersSize().convention(2);
+        getMaxDirectBuffersSize().convention(32);
     }
 
     @Input
@@ -32,10 +44,54 @@ public abstract class GenerateWasmGCTask extends TeaVMTask {
     @Input
     public abstract Property<Boolean> getObfuscated();
 
+    @Input
+    public abstract Property<WasmDebugInfoLevel> getDebugInfoLevel();
+
+    @Input
+    public abstract Property<WasmDebugInfoLocation> getDebugInfoLocation();
+
+    @Input
+    public abstract Property<Boolean> getSourceMap();
+
+    @InputFiles
+    public abstract ConfigurableFileCollection getSourceFiles();
+
+    @Input
+    @Optional
+    public abstract Property<SourceFilePolicy> getSourceFilePolicy();
+
+    @Input
+    public abstract Property<Integer> getMinDirectBuffersSize();
+
+    @Input
+    public abstract Property<Integer> getMaxDirectBuffersSize();
+
     @Override
     protected void setupBuilder(BuildStrategy builder) {
         builder.setStrict(getStrict().get());
         builder.setObfuscated(getObfuscated().get());
+        builder.setDebugInformationGenerated(getDebugInformation().get());
+        builder.setSourceMapsFileGenerated(getSourceMap().get());
+        builder.setMinDirectBuffersSize(getMinDirectBuffersSize().get() * 1024 * 1024);
+        builder.setMaxDirectBuffersSize(getMaxDirectBuffersSize().get() * 1024 * 1024);
+        switch (getDebugInfoLevel().get()) {
+            case FULL:
+                builder.setWasmDebugInfoLevel(org.teavm.backend.wasm.WasmDebugInfoLevel.FULL);
+                break;
+            case DEOBFUSCATION:
+                builder.setWasmDebugInfoLevel(org.teavm.backend.wasm.WasmDebugInfoLevel.DEOBFUSCATION);
+                break;
+        }
+        switch (getDebugInfoLocation().get()) {
+            case EMBEDDED:
+                builder.setWasmDebugInfoLocation(org.teavm.backend.wasm.WasmDebugInfoLocation.EMBEDDED);
+                break;
+            case EXTERNAL:
+                builder.setWasmDebugInfoLocation(org.teavm.backend.wasm.WasmDebugInfoLocation.EXTERNAL);
+                break;
+        }
         builder.setTargetType(TeaVMTargetType.WEBASSEMBLY_GC);
+        TaskUtils.applySourceFiles(getSourceFiles(), builder);
+        TaskUtils.applySourceFilePolicy(getSourceFilePolicy(), builder);
     }
 }

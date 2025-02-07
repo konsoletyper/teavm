@@ -39,7 +39,6 @@ import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.browser.Performance;
-import org.teavm.runtime.Allocator;
 import org.teavm.runtime.GC;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
@@ -156,7 +155,7 @@ public final class TSystem extends TObject {
         Address destAddress = dest.toAddress().add(offset);
         destAddress = destAddress.add(itemSize * destPos);
 
-        Allocator.moveMemoryBlock(srcAddress, destAddress, length * itemSize);
+        Address.moveMemoryBlock(srcAddress, destAddress, length * itemSize);
     }
 
     @DelegateTo("currentTimeMillisLowLevel")

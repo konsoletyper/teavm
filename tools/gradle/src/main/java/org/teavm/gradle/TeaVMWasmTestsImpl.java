@@ -23,10 +23,12 @@ import org.teavm.gradle.api.TeaVMWebTestRunner;
 class TeaVMWasmTestsImpl implements TeaVMWasmTests {
     private Property<Boolean> enabled;
     private Property<TeaVMWebTestRunner> runner;
+    private String name;
 
-    TeaVMWasmTestsImpl(ObjectFactory objectFactory) {
+    TeaVMWasmTestsImpl(ObjectFactory objectFactory, String name) {
         enabled = objectFactory.property(Boolean.class);
         runner = objectFactory.property(TeaVMWebTestRunner.class);
+        this.name = name;
     }
 
     @Override
@@ -40,8 +42,9 @@ class TeaVMWasmTestsImpl implements TeaVMWasmTests {
     }
 
     void configure(TeaVMBaseExtensionImpl extension) {
-        enabled.convention(extension.property("tests.wasm.enabled").map(Boolean::parseBoolean).orElse(false));
-        runner.convention(extension.property("tests.wasm.runner").map(s -> TeaVMWebTestRunner.valueOf(s.toUpperCase()))
+        enabled.convention(extension.property("tests." + name + ".enabled").map(Boolean::parseBoolean).orElse(false));
+        runner.convention(extension.property("tests." + name + ".runner")
+                .map(s -> TeaVMWebTestRunner.valueOf(s.toUpperCase()))
                 .orElse(TeaVMWebTestRunner.CHROME));
     }
 }

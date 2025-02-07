@@ -15,6 +15,8 @@
  */
 package org.teavm.runtime;
 
+import org.teavm.backend.c.runtime.Memory;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Address;
 import org.teavm.interop.Export;
 import org.teavm.interop.Import;
@@ -46,6 +48,7 @@ public final class GC {
     static RelocationBlock lastRelocationBlock;
     static boolean isFullGC = true;
     private static int youngGCCount;
+    private static RuntimeBuffer firstDirectBuffer;
 
     static native Address gcStorageAddress();
 
@@ -89,13 +92,19 @@ public final class GC {
         currentChunkPointer.value = currentChunk;
         freeChunks = 1;
         totalChunks = 1;
+        firstDirectBuffer = null;
 
         int regionCount = getRegionCount();
-        Allocator.fill(cardTable(), CARD_VALID, regionCount);
+        Address.fill(cardTable(), CARD_VALID, regionCount);
     }
 
     private static int getRegionCount() {
         return (int) (availableBytes() / regionSize()) + 1;
+    }
+
+    public static void registerDirectBuffer(RuntimeBuffer buffer) {
+        buffer.nextRef = firstDirectBuffer;
+        firstDirectBuffer = buffer;
     }
 
     public static RuntimeObject alloc(int size) {
@@ -172,8 +181,8 @@ public final class GC {
     private static void triggerFullGC() {
         isFullGC = true;
         int regionsCount = getRegionCount();
-        Allocator.fill(cardTable(), (byte) 0, getRegionCount());
-        Allocator.fill(regionsAddress().toAddress(), (byte) 0, regionsCount * Structure.sizeOf(Region.class));
+        Address.fill(cardTable(), (byte) 0, getRegionCount());
+        Address.fill(regionsAddress().toAddress(), (byte) 0, regionsCount * Structure.sizeOf(Region.class));
     }
 
     private static void collectGarbageImpl(int size) {
@@ -200,7 +209,7 @@ public final class GC {
         currentChunk = currentChunkPointer.value;
         currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
 
-        Allocator.fill(cardTable(), CARD_VALID, getRegionCount());
+        Address.fill(cardTable(), CARD_VALID, getRegionCount());
     }
 
     private static void doCollectGarbage() {
@@ -210,6 +219,7 @@ public final class GC {
         }
         mark();
         processReferences();
+        processDirectBuffers();
         sweep();
         defragment();
         updateFreeMemory();
@@ -547,6 +557,45 @@ public final class GC {
         long offset = object.toAddress().toLong() - heapAddress().toLong();
         Address cardTableItem = cardTable().add(offset / regionSize());
         cardTableItem.putByte((byte) (cardTableItem.getByte() & ~CARD_VALID));
+    }
+
+    private static void processDirectBuffers() {
+        var buffer = firstDirectBuffer;
+        RuntimeBuffer prevBuffer = null;
+        while (buffer != null) {
+            var next = buffer.nextRef;
+            if ((buffer.classReference & RuntimeObject.GC_MARKED) == 0) {
+                freeBufferContent(buffer);
+            } else {
+                if (prevBuffer == null) {
+                    firstDirectBuffer = buffer;
+                } else {
+                    prevBuffer.nextRef = buffer;
+                }
+                prevBuffer = buffer;
+            }
+            buffer = next;
+        }
+
+        if (prevBuffer == null) {
+            firstDirectBuffer = null;
+        } else {
+            prevBuffer.nextRef = null;
+        }
+    }
+
+    private static void freeBufferContent(RuntimeBuffer buffer) {
+        var cls = RuntimeClass.getClass(buffer);
+        while (cls != null) {
+            if (cls.enumValues != null) {
+                var fieldOffset = cls.enumValues.toInt();
+                var fieldAddress = buffer.toAddress().add(fieldOffset).add(Address.sizeOf());
+                var dataAddress = fieldAddress.getAddress();
+                free(dataAddress);
+                return;
+            }
+            cls = cls.parent;
+        }
     }
 
     private static void sweep() {
@@ -1086,13 +1135,24 @@ public final class GC {
 
     private static void updatePointersInFields(RuntimeClass cls, RuntimeObject object) {
         Address layout = cls.layout;
+        int bufferFieldOffset = -1;
+        if (cls.enumValues != null && (cls.flags & RuntimeClass.ENUM) == 0) {
+            bufferFieldOffset = cls.enumValues.toInt();
+        }
         if (layout != null) {
             short fieldCount = layout.getShort();
             while (fieldCount-- > 0) {
                 layout = layout.add(2);
                 int fieldOffset = layout.getShort();
                 Address referenceHolder = object.toAddress().add(fieldOffset);
-                referenceHolder.putAddress(updatePointer(referenceHolder.getAddress()));
+                var oldPointer = referenceHolder.getAddress();
+                var newPointer = updatePointer(oldPointer);
+                referenceHolder.putAddress(newPointer);
+                if (fieldOffset == bufferFieldOffset && oldPointer != null) {
+                    var diff = newPointer.diff(oldPointer);
+                    referenceHolder = referenceHolder.add(Address.sizeOf());
+                    referenceHolder.putAddress(referenceHolder.getAddress().add(diff));
+                }
             }
         }
     }
@@ -1310,7 +1370,7 @@ public final class GC {
             }
         }
 
-        Allocator.moveMemoryBlock(blockSource, blockTarget, blockSize);
+        Address.moveMemoryBlock(blockSource, blockTarget, blockSize);
 
         FreeChunk object = blockTarget.toStructure();
         Address blockTargetEnd = blockTarget.add(blockSize);
@@ -1481,5 +1541,11 @@ public final class GC {
 
     static class Region extends Structure {
         short start;
+    }
+
+    private static void free(Address address) {
+        if (PlatformDetector.isC()) {
+            Memory.free(address);
+        }
     }
 }

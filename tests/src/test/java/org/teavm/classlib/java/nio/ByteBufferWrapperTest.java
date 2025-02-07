@@ -31,6 +31,27 @@ import org.teavm.junit.TeaVMTestRunner;
 @RunWith(TeaVMTestRunner.class)
 public class ByteBufferWrapperTest {
     @Test
+    public void wrapsIntoCharBuffer() {
+        byte[] array = new byte[100];
+        var buffer = ByteBuffer.wrap(array);
+        buffer.limit(80);
+        buffer.get(new byte[10]);
+        buffer = buffer.slice();
+        buffer.put(0, (byte) 0x23);
+        buffer.put(1, (byte) 0x24);
+
+        var wrapper = buffer.asCharBuffer();
+        assertEquals(35, wrapper.capacity());
+        assertEquals(0, wrapper.position());
+        assertEquals(35, wrapper.limit());
+        assertEquals(0x2324, wrapper.get(0));
+
+        wrapper.put(0, (char) 0x2526);
+        assertEquals(0x25, buffer.get(0));
+        assertEquals(0x26, buffer.get(1));
+    }
+
+    @Test
     public void wrapsIntoShortBuffer() {
         byte[] array = new byte[100];
         ByteBuffer buffer = ByteBuffer.wrap(array);
@@ -134,7 +155,38 @@ public class ByteBufferWrapperTest {
     }
 
     @Test
-    public void shortEndiannesWorks() {
+    public void wrapsIntoDoubleBuffer() {
+        var array = new byte[100];
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.limit(70);
+        buffer.get(new byte[10]);
+        buffer = buffer.slice();
+        buffer.put(0, (byte) 0x40);
+        buffer.put(1, (byte) 0x09);
+        buffer.put(2, (byte) 0x21);
+        buffer.put(3, (byte) 0xf9);
+        buffer.put(4, (byte) 0xf0);
+        buffer.put(5, (byte) 0x1b);
+        buffer.put(6, (byte) 0x86);
+        buffer.put(7, (byte) 0x6E);
+
+        var wrapper = buffer.asDoubleBuffer();
+        assertEquals(7, wrapper.capacity());
+        assertEquals(0, wrapper.position());
+        assertEquals(7, wrapper.limit());
+        assertEquals(3.14159, wrapper.get(0), 0.00001);
+
+        wrapper.put(0, 2.71828);
+        assertEquals((byte) 0x40, buffer.get(0));
+        assertEquals((byte) 0x05, buffer.get(1));
+        assertEquals((byte) 0xbf, buffer.get(2));
+        assertEquals((byte) 0x09, buffer.get(3));
+        assertEquals((byte) 0x95, buffer.get(4));
+        assertEquals((byte) 0xAA, buffer.get(5));
+    }
+
+    @Test
+    public void shortEndiannessWorks() {
         byte[] array = new byte[100];
         ByteBuffer buffer = ByteBuffer.wrap(array);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -145,7 +197,7 @@ public class ByteBufferWrapperTest {
     }
 
     @Test
-    public void intEndiannesWorks() {
+    public void intEndiannessWorks() {
         byte[] array = new byte[100];
         ByteBuffer buffer = ByteBuffer.wrap(array);
         buffer.order(ByteOrder.LITTLE_ENDIAN);

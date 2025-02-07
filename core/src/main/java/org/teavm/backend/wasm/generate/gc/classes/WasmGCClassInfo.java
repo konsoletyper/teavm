@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generate.gc.classes;
 
+import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.List;
 import java.util.function.Consumer;
 import org.teavm.backend.wasm.model.WasmArray;
@@ -27,6 +28,7 @@ import org.teavm.model.ValueType;
 
 public class WasmGCClassInfo {
     private ValueType valueType;
+    boolean heapStructure;
     WasmStructure structure;
     WasmStructure virtualTableStructure;
     WasmGlobal pointer;
@@ -35,6 +37,9 @@ public class WasmGCClassInfo {
     List<WasmFunction> newArrayFunctions;
     WasmFunction initArrayFunction;
     WasmFunction supertypeFunction;
+    ObjectIntMap<String> heapFieldOffsets;
+    int heapSize;
+    int heapAlignment;
 
     WasmGCClassInfo(ValueType valueType) {
         this.valueType = valueType;
@@ -42,6 +47,10 @@ public class WasmGCClassInfo {
 
     public ValueType getValueType() {
         return valueType;
+    }
+
+    public boolean isHeapStructure() {
+        return heapStructure;
     }
 
     public WasmStructure getStructure() {

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryExpr;
@@ -46,7 +45,6 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.InvocationType;
 import org.teavm.ast.MonitorEnterStatement;
 import org.teavm.ast.MonitorExitStatement;
-import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
 import org.teavm.ast.OperationType;
@@ -134,6 +132,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     private boolean async;
     protected WasmExpression result;
     protected List<WasmExpression> resultConsumer;
+    protected int blockLevel;
 
     public BaseWasmGenerationVisitor(BaseWasmGenerationContext context, MethodReference currentMethod,
             WasmFunction function, int firstVariable, boolean async) {
@@ -498,7 +497,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         } else if (left instanceof VariableExpr) {
             var varExpr = (VariableExpr) left;
             var local = function.getLocalVariables().get(varExpr.getIndex() - firstVariable);
-            accept(statement.getRightValue());
+            accept(statement.getRightValue(), local.getType());
             var setLocal = new WasmSetLocal(local, result);
             setLocal.setLocation(statement.getLocation());
             resultConsumer.add(setLocal);
@@ -593,9 +592,11 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     @Override
     public void visit(ConditionalStatement statement) {
         accept(statement.getCondition());
+        ++blockLevel;
         var conditional = new WasmConditional(forCondition(result));
         visitMany(statement.getConsequent(), conditional.getThenBlock().getBody());
         visitMany(statement.getAlternative(), conditional.getElseBlock().getBody());
+        --blockLevel;
         resultConsumer.add(conditional);
     }
 
@@ -618,6 +619,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
                 .max().orElse(0);
 
         var defaultBlock = new WasmBlock(false);
+        ++blockLevel;
         breakTargets.put(statement, defaultBlock);
         var oldBreakTarget = currentBreakTarget;
         currentBreakTarget = statement;
@@ -653,6 +655,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         breakTargets.remove(statement);
         currentBreakTarget = oldBreakTarget;
 
+        --blockLevel;
         resultConsumer.add(wrapper);
     }
 
@@ -740,6 +743,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         var wrapper = new WasmBlock(false);
         var loop = new WasmBlock(true);
 
+        ++blockLevel;
         continueTargets.put(statement, loop);
         breakTargets.put(statement, wrapper);
         var oldBreakTarget = currentBreakTarget;
@@ -767,12 +771,15 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         } else {
             resultConsumer.add(loop);
         }
+
+        --blockLevel;
     }
 
     protected WasmExpression invocation(InvocationExpr expr, List<WasmExpression> resultConsumer, boolean willDrop) {
         var callSiteId = generateCallSiteId(expr.getLocation());
         if (needsCallSiteId() && isManagedCall(expr.getMethod())) {
             var invocation = generateInvocation(expr, callSiteId);
+            invocation.setLocation(expr.getLocation());
             var type = mapType(expr.getMethod().getReturnType());
 
             List<WasmExpression> targetList;
@@ -822,6 +829,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             return block;
         } else {
             var resultExpr = generateInvocation(expr, null);
+            resultExpr.setLocation(expr.getLocation());
             return trivialInvocation(resultExpr, resultConsumer, expr.getLocation(), willDrop);
         }
     }
@@ -846,6 +854,10 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     protected abstract CallSiteIdentifier generateCallSiteId(TextLocation location);
 
     protected void acceptWithType(Expr expr, ValueType type) {
+        accept(expr);
+    }
+
+    protected void accept(Expr expr, WasmType type) {
         accept(expr);
     }
 
@@ -959,6 +971,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     @Override
     public void visit(BlockStatement statement) {
         var block = new WasmBlock(false);
+        ++blockLevel;
 
         if (statement.getId() != null) {
             breakTargets.put(statement, block);
@@ -971,6 +984,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         }
 
         resultConsumer.add(block);
+        --blockLevel;
     }
 
 
@@ -1018,86 +1032,8 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     protected abstract void allocateObject(String className, TextLocation location, WasmLocal local,
             List<WasmExpression> target);
 
-    @Override
-    public void visit(NewArrayExpr expr) {
-        var block = new WasmBlock(false);
-        block.setType(mapType(ValueType.arrayOf(expr.getType())));
-
-        var callSiteId = generateCallSiteId(expr.getLocation());
-        callSiteId.generateRegister(block.getBody(), expr.getLocation());
-
-        allocateArray(expr.getType(), () -> {
-            accept(expr.getLength());
-            return result;
-        }, expr.getLocation(), null, block.getBody());
-
-        if (block.getBody().size() == 1) {
-            result = block.getBody().get(0);
-        } else {
-            result = block;
-        }
-    }
-
-    protected abstract void allocateArray(ValueType itemType, Supplier<WasmExpression> length, TextLocation location,
-            WasmLocal local, List<WasmExpression> target);
-
     protected abstract WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType arrayType,
             Supplier<List<WasmExpression>> dimensions, TextLocation location);
-
-    @Override
-    public void visit(ArrayFromDataExpr expr) {
-        var type = expr.getType();
-
-        var arrayType = ArrayType.OBJECT;
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                case BYTE:
-                    arrayType = ArrayType.BYTE;
-                    break;
-                case SHORT:
-                    arrayType = ArrayType.SHORT;
-                    break;
-                case CHARACTER:
-                    arrayType = ArrayType.CHAR;
-                    break;
-                case INTEGER:
-                    arrayType = ArrayType.INT;
-                    break;
-                case LONG:
-                    arrayType = ArrayType.LONG;
-                    break;
-                case FLOAT:
-                    arrayType = ArrayType.FLOAT;
-                    break;
-                case DOUBLE:
-                    arrayType = ArrayType.DOUBLE;
-                    break;
-            }
-        }
-
-        var wasmArrayType = mapType(ValueType.arrayOf(expr.getType()));
-        var block = new WasmBlock(false);
-        block.setType(wasmArrayType);
-        var callSiteId = generateCallSiteId(expr.getLocation());
-        callSiteId.generateRegister(block.getBody(), expr.getLocation());
-
-        var array = tempVars.acquire(wasmArrayType);
-        allocateArray(expr.getType(), () -> new WasmInt32Constant(expr.getData().size()), expr.getLocation(), array,
-                block.getBody());
-
-        for (int i = 0; i < expr.getData().size(); ++i) {
-            var arrayData = unwrapArray(new WasmGetLocal(array));
-            block.getBody().add(storeArrayItem(arrayData, new WasmInt32Constant(i), expr.getData().get(i),
-                    arrayType));
-        }
-
-        block.getBody().add(new WasmGetLocal(array));
-        block.setLocation(expr.getLocation());
-        tempVars.release(array);
-
-        result = block;
-    }
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
@@ -1133,9 +1069,15 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         } else {
             result = null;
         }
-        var wasmStatement = new WasmReturn(result);
-        wasmStatement.setLocation(statement.getLocation());
-        resultConsumer.add(wasmStatement);
+        if (blockLevel == 0) {
+            if (result != null) {
+                resultConsumer.add(result);
+            }
+        } else {
+            var wasmStatement = new WasmReturn(result);
+            wasmStatement.setLocation(statement.getLocation());
+            resultConsumer.add(wasmStatement);
+        }
     }
 
     protected WasmExpression forceType(WasmExpression expression, ValueType type) {
@@ -1234,9 +1176,11 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     @Override
     public void visit(PrimitiveCastExpr expr) {
         accept(expr.getValue());
-        result = new WasmConversion(WasmGeneratorUtil.mapType(expr.getSource()),
+        var conversion = new WasmConversion(WasmGeneratorUtil.mapType(expr.getSource()),
                 WasmGeneratorUtil.mapType(expr.getTarget()), true, result);
-        result.setLocation(expr.getLocation());
+        conversion.setNonTrapping(true);
+        conversion.setLocation(expr.getLocation());
+        result = conversion;
     }
 
     @Override
@@ -1261,6 +1205,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     protected void generateTry(List<TryCatchStatement> tryCatchStatements, List<Statement> protectedBody) {
         var throwableType = mapType(ValueType.object("java.lang.Throwable"));
         var innerCatchBlock = new WasmBlock(false);
+        ++blockLevel;
 
         var catchBlocks = new ArrayList<WasmBlock>();
         for (int i = 0; i < tryCatchStatements.size(); ++i) {
@@ -1327,6 +1272,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
         resultConsumer.add(outerCatchBlock);
         tempVars.release(exceptionVar);
+        --blockLevel;
     }
 
     protected void checkExceptionType(TryCatchStatement tryCatch, WasmLocal exceptionVar, List<WasmExpression> target,

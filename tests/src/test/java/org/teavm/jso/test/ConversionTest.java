@@ -17,12 +17,16 @@ package org.teavm.jso.test;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
-import org.teavm.jso.JSByRef;
+import org.teavm.jso.JSBuffer;
+import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSString;
@@ -34,13 +38,13 @@ import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
-@OnlyPlatform(TestPlatform.JAVASCRIPT)
+@OnlyPlatform({TestPlatform.JAVASCRIPT, TestPlatform.WEBASSEMBLY_GC})
 @EachTestCompiledSeparately
 public class ConversionTest {
     @Test
     public void convertsPrimitivesToJavaScript() {
-        assertEquals("true:2:3:64:4:5.5:6.5:foo", combinePrimitives(true, (byte) 2, (short) 3,
-                '@', 4, 5.5F, 6.5, "foo"));
+        assertEquals("true:2:3:64:4:5.5:6.5:foo:7", combinePrimitives(true, (byte) 2, (short) 3,
+                '@', 4, 5.5F, 6.5, "foo", 7L));
     }
 
     @Test
@@ -54,13 +58,14 @@ public class ConversionTest {
         assertEquals(5.5, map.getF(), 0.01);
         assertEquals(6.5, map.getG(), 0.01);
         assertEquals("foo", map.getH());
+        assertEquals(7L, map.getI());
     }
 
     @Test
     public void convertsPrimitiveArraysToJavaScript() {
-        assertEquals("true:2:3:64:4:5.5:6.5:foo", combinePrimitiveArrays(new boolean[] { true }, new byte[] { 2 },
+        assertEquals("true:2:3:64:4:5.5:6.5:foo:7", combinePrimitiveArrays(new boolean[] { true }, new byte[] { 2 },
                 new short[] { 3 }, new char[] { '@' }, new int[] { 4 }, new float[] { 5.5F }, new double[] { 6.5 },
-                new String[] { "foo" }));
+                new String[] { "foo" }, new long[] { 7L }));
     }
 
     @Test
@@ -78,13 +83,15 @@ public class ConversionTest {
         assertArrayEquals(new float[] { 5.5F }, arrays.getF(), 0.01F);
         assertArrayEquals(new double[] { 6.5 }, arrays.getG(), 0.01);
         assertArrayEquals(new String[] { "foo" }, arrays.getH());
+        assertArrayEquals(new long[] { 7L }, arrays.getI());
     }
 
     @Test
     public void convertsPrimitiveArrays2ToJavaScript() {
-        assertEquals("true:2:3:64:4:5.5:6.5:foo", combinePrimitiveArrays2(new boolean[][] {{ true }},
+        assertEquals("true:2:3:64:4:5.5:6.5:foo:7", combinePrimitiveArrays2(new boolean[][] {{ true }},
                 new byte[][] {{ 2 }}, new short[][] {{ 3 }}, new char[][] {{ '@' }}, new int[][] {{ 4 }},
-                new float[][] {{ 5.5F }}, new double[][] {{ 6.5 }}, new String[][] {{ "foo" }}));
+                new float[][] {{ 5.5F }}, new double[][] {{ 6.5 }}, new String[][] {{ "foo" }},
+                new long[][] {{ 7L }}));
     }
 
     @Test
@@ -103,6 +110,7 @@ public class ConversionTest {
         assertArrayEquals(new float[] { 5.5F }, arrays.getF()[0], 0.01F);
         assertArrayEquals(new double[] { 6.5 }, arrays.getG()[0], 0.01);
         assertArrayEquals(new String[] { "foo" }, arrays.getH()[0]);
+        assertArrayEquals(new long[] { 7 }, arrays.getI()[0]);
     }
 
     @Test
@@ -151,55 +159,51 @@ public class ConversionTest {
         assertEquals(23, array[0]);
     }
 
-    @Test
-    public void passesArrayByRef() {
-        int[] array = { 23, 42 };
-
-        mutateByRef(array);
-        assertEquals(24, array[0]);
-        assertEquals(43, array[1]);
-
-        createByRefMutator().mutate(array);
-        assertEquals(25, array[0]);
-        assertEquals(44, array[1]);
-    }
 
     @Test
-    public void returnsArrayByRef() {
-        int[] first = { 23, 42 };
-        int[] second = rewrap(first);
-        assertNotSame(first, second);
-        second[0] = 99;
-        assertEquals(99, first[0]);
+    public void passBuffer() {
+        var buffer = ByteBuffer.allocateDirect(8)
+                .order(ByteOrder.nativeOrder())
+                .asIntBuffer();
+        buffer.put(0, 2);
+        buffer.put(1, 3);
+        assertEquals(5, readBuffer(buffer));
+
+        var floatBuffer = ByteBuffer.allocateDirect(8)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer();
+        floatBuffer.put(0, 1.1f);
+        floatBuffer.put(1, 2.2f);
+        assertEquals(3.3, readFloatBuffer(floatBuffer), 0.01);
     }
 
-    @JSBody(params = { "a", "b", "c", "d", "e", "f", "g", "h" }, script = ""
+    @JSBody(params = { "a", "b", "c", "d", "e", "f", "g", "h", "i" }, script = ""
             + "return '' + a + ':' + b + ':' + c + ':' + d + ':' + e + ':' + f.toFixed(1) + ':'"
-                    + "+ g.toFixed(1) + ':' + h;")
+                    + "+ g.toFixed(1) + ':' + h + ':' + i;")
     private static native String combinePrimitives(boolean a, byte b, short c, char d, int e, float f, double g,
-            String h);
+            String h, long i);
 
-    @JSBody(script = "return { a : true, b : 2, c : 3, d : 64, e : 4, f : 5.5, g : 6.5, h : 'foo' };")
+    @JSBody(script = "return { a: true, b: 2, c: 3, d: 64, e: 4, f: 5.5, g: 6.5, h : 'foo', i: BigInt(7) };")
     private static native Primitives getPrimitives();
 
-    @JSBody(params = { "a", "b", "c", "d", "e", "f", "g", "h" }, script = ""
+    @JSBody(params = { "a", "b", "c", "d", "e", "f", "g", "h", "i" }, script = ""
             + "return '' + a[0] + ':' + b[0] + ':' + c[0] + ':' + d[0] + ':' + e[0] + ':' + f[0].toFixed(1) + ':'"
-                    + "+ g[0].toFixed(1) + ':' + h[0];")
+                    + "+ g[0].toFixed(1) + ':' + h[0] + ':' + i[0];")
     private static native String combinePrimitiveArrays(boolean[] a, byte[] b, short[] c, char[] d, int[] e, float[] f,
-            double[] g, String[] h);
+            double[] g, String[] h, long[] i);
 
-    @JSBody(params = {}, script = "return { a : [true], b : [2], c : [3], d : [64], e : [4], f : [5.5], "
-            + "g : [6.5], h : ['foo'] };")
+    @JSBody(script = "return { a: [true], b: [2], c: [3], d: [64], e: [4], f: [5.5], "
+            + "g: [6.5], h: ['foo'], i: [BigInt(7)] };")
     private static native PrimitiveArrays getPrimitiveArrays();
 
-    @JSBody(params = { "a", "b", "c", "d", "e", "f", "g", "h" }, script = ""
+    @JSBody(params = { "a", "b", "c", "d", "e", "f", "g", "h", "i" }, script = ""
             + "return '' + a[0][0] + ':' + b[0][0] + ':' + c[0][0] + ':' + d[0][0] + ':' + e[0][0] + ':' "
-                    + "+ f[0][0].toFixed(1) + ':' + g[0][0].toFixed(1) + ':' + h[0][0];")
+                    + "+ f[0][0].toFixed(1) + ':' + g[0][0].toFixed(1) + ':' + h[0][0] + ':' + i[0][0];")
     private static native String combinePrimitiveArrays2(boolean[][] a, byte[][] b, short[][] c, char[][] d, int[][] e,
-            float[][] f, double[][] g, String[][] h);
+            float[][] f, double[][] g, String[][] h, long[][] i);
 
-    @JSBody(params = {}, script = "return { a : [[true]], b : [[2]], c : [[3]], d : [[64]], e : [[4]], f : [[5.5]], "
-            + "g : [[6.5]], h : [['foo']] };")
+    @JSBody(script = "return { a: [[true]], b: [[2]], c: [[3]], d: [[64]], e: [[4]], f: [[5.5]], "
+            + "g: [[6.5]], h: [['foo']], i: [[BigInt(7)]] };")
     private static native PrimitiveArrays2 getPrimitiveArrays2();
 
     @JSBody(params = { "a", "b", "c", "d", "e", "f", "g", "h" }, script = ""
@@ -209,7 +213,7 @@ public class ConversionTest {
     private static native String combinePrimitiveArrays4(boolean[][][][] a, byte[][][][] b, short[][][][] c,
             char[][][][] d, int[][][][] e, float[][][][] f, double[][][][] g, String[][][][] h);
 
-    @JSBody(params = {}, script = "return { a : [[[[true]]]], b : [[[[2]]]], c : [[[[3]]]], d : [[[[64]]]], "
+    @JSBody(script = "return { a : [[[[true]]]], b : [[[[2]]]], c : [[[[3]]]], d : [[[[64]]]], "
             + "e : [[[[4]]]], f : [[[[5.5]]]], g : [[[[6.5]]]], h : [[[['foo']]]] };")
     private static native PrimitiveArrays4 getPrimitiveArrays4();
 
@@ -237,6 +241,9 @@ public class ConversionTest {
 
         @JSProperty
         String getH();
+
+        @JSProperty
+        long getI();
     }
 
     interface PrimitiveArrays extends JSObject {
@@ -263,6 +270,9 @@ public class ConversionTest {
 
         @JSProperty
         String[] getH();
+
+        @JSProperty
+        long[] getI();
     }
 
     interface PrimitiveArrays2 extends JSObject {
@@ -289,6 +299,9 @@ public class ConversionTest {
 
         @JSProperty
         String[][] getH();
+
+        @JSProperty
+        long[][] getI();
     }
 
     interface PrimitiveArrays4 extends JSObject {
@@ -332,27 +345,10 @@ public class ConversionTest {
     @JSBody(params = "array", script = "array[0]++; return array[0];")
     private static native int mutate(int[] array);
 
-    @JSBody(params = "array", script = ""
-            + "for (var i = 0; i < array.length; ++i) {"
-                + "array[i]++;"
-            + "}")
-    private static native void mutateByRef(@JSByRef int[] array);
 
-    private interface ByRefMutator extends JSObject {
-        void mutate(@JSByRef int[] array);
-    }
+    @JSBody(params = "buffer", script = "return buffer[0] + buffer[1];")
+    private static native int readBuffer(IntBuffer buffer);
 
-    @JSBody(script = ""
-            + "return {"
-                + "mutate : function(array) {"
-                    + "for (var i = 0; i < array.length; ++i) {"
-                        + "array[i]++;"
-                    + "}"
-                + "}"
-            + "};")
-    private static native ByRefMutator createByRefMutator();
-
-    @JSByRef
-    @JSBody(params = "array", script = "return array;")
-    private static native int[] rewrap(@JSByRef int[] array);
+    @JSBody(params = "buffer", script = "return buffer[0] + buffer[1];")
+    private static native float readFloatBuffer(@JSBuffer(JSBufferType.FLOAT32) Buffer buffer);
 }

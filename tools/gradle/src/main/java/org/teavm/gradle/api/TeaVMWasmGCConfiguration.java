@@ -27,4 +27,18 @@ public interface TeaVMWasmGCConfiguration extends TeaVMCommonConfiguration, TeaV
     Property<Boolean> getDisassembly();
 
     Property<String> getTargetFileName();
+
+    Property<WasmDebugInfoLocation> getDebugInfoLocation();
+
+    Property<WasmDebugInfoLevel> getDebugInfoLevel();
+
+    Property<Boolean> getSourceMap();
+
+    Property<SourceFilePolicy> getSourceFilePolicy();
+
+    Property<Boolean> getModularRuntime();
+
+    Property<Integer> getMinDirectBuffersSize();
+
+    Property<Integer> getMaxDirectBuffersSize();
 }

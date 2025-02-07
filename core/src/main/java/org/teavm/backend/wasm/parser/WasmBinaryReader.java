@@ -173,6 +173,13 @@ public class WasmBinaryReader {
         return result;
     }
 
+    public int readInt32() {
+        return (data[ptr++] & 0xFF)
+                | ((data[ptr++] & 0xFF) << 8)
+                | ((data[ptr++] & 0xFF) << 16)
+                | ((data[ptr++] & 0xFF) << 24);
+    }
+
     public int readFixedInt() {
         return ((data[ptr++] & 0xFF) << 24)
                 | ((data[ptr++] & 0xFF) << 16)

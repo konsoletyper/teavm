@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.backend.wasm.runtime.WasmGCSupport;
+import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
@@ -185,6 +185,10 @@ public class TObject {
         Monitor monitor = this.monitor;
         if (monitor == null) {
             return true;
+        }
+        if (PlatformDetector.isWebAssemblyGC()) {
+            // TODO: fix Monitor implementation and remove this block
+            return monitor.owner == null;
         }
         if (monitor.owner == null
                 && (monitor.enteringThreads == null || monitor.enteringThreads.isEmpty())
@@ -374,7 +378,7 @@ public class TObject {
             size = itemSize * array.size + headerSize.toInt();
         }
         if (size > skip) {
-            Allocator.moveMemoryBlock(self.toAddress().add(skip), copy.toAddress().add(skip), size - skip);
+            Address.moveMemoryBlock(self.toAddress().add(skip), copy.toAddress().add(skip), size - skip);
         }
         return copy;
     }

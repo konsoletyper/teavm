@@ -24,14 +24,27 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ValueType;
 
-class JSTypeHelper {
+public class JSTypeHelper {
     private ClassReaderSource classSource;
     private Map<String, Boolean> knownJavaScriptClasses = new HashMap<>();
     private Map<String, Boolean> knownJavaScriptImplementations = new HashMap<>();
 
-    JSTypeHelper(ClassReaderSource classSource) {
+    public JSTypeHelper(ClassReaderSource classSource) {
         this.classSource = classSource;
         knownJavaScriptClasses.put(JSObject.class.getName(), true);
+    }
+
+    public JSType mapType(ValueType type) {
+        if (type instanceof ValueType.Object) {
+            var className = ((ValueType.Object) type).getClassName();
+            if (isJavaScriptClass(className)) {
+                return JSType.JS;
+            }
+        } else if (type instanceof ValueType.Array) {
+            var elementType = mapType(((ValueType.Array) type).getItemType());
+            return JSType.arrayOf(elementType);
+        }
+        return JSType.JAVA;
     }
 
     public boolean isJavaScriptClass(String className) {
@@ -71,7 +84,8 @@ class JSTypeHelper {
             return false;
         }
         ClassReader cls = classSource.get(className);
-        if (cls == null || cls.getAnnotations().get(JSClass.class.getName()) != null) {
+        if (cls == null || cls.getAnnotations().get(JSClass.class.getName()) != null
+                || cls.hasModifier(ElementModifier.ABSTRACT)) {
             return false;
         }
         if (cls.getParent() != null) {
@@ -80,28 +94,6 @@ class JSTypeHelper {
             }
         }
         return cls.getInterfaces().stream().anyMatch(this::isJavaScriptClass);
-    }
-
-    public boolean isSupportedType(ValueType type) {
-        if (type == ValueType.VOID) {
-            return false;
-        }
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case LONG:
-                    return false;
-                default:
-                    return true;
-            }
-        } else if (type instanceof ValueType.Array) {
-            return isSupportedType(((ValueType.Array) type).getItemType());
-        } else if (type instanceof ValueType.Object) {
-            String typeName = ((ValueType.Object) type).getClassName();
-            return typeName.equals("java.lang.String") || typeName.equals("java.lang.Object")
-                    || isJavaScriptClass(typeName);
-        } else {
-            return false;
-        }
     }
 
     public boolean isSupportedByRefType(ValueType type) {
@@ -115,6 +107,7 @@ class JSTypeHelper {
                 case SHORT:
                 case CHARACTER:
                 case INTEGER:
+                case LONG:
                 case FLOAT:
                 case DOUBLE:
                     return true;

@@ -17,9 +17,7 @@ package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
-import org.teavm.backend.wasm.model.expression.WasmCopy;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmFill;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
@@ -45,9 +43,6 @@ public class AllocatorIntrinsic implements WasmIntrinsic {
             return false;
         }
         switch (methodReference.getName()) {
-            case "fill":
-            case "fillZero":
-            case "moveMemoryBlock":
             case "isInitialized":
                 return true;
             default:
@@ -58,27 +53,6 @@ public class AllocatorIntrinsic implements WasmIntrinsic {
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
         switch (invocation.getMethod().getName()) {
-            case "fill": {
-                var fill = new WasmFill();
-                fill.setIndex(manager.generate(invocation.getArguments().get(0)));
-                fill.setValue(manager.generate(invocation.getArguments().get(1)));
-                fill.setCount(manager.generate(invocation.getArguments().get(2)));
-                return fill;
-            }
-            case "fillZero": {
-                var fill = new WasmFill();
-                fill.setIndex(manager.generate(invocation.getArguments().get(0)));
-                fill.setValue(new WasmInt32Constant(0));
-                fill.setCount(manager.generate(invocation.getArguments().get(1)));
-                return fill;
-            }
-            case "moveMemoryBlock": {
-                var copy = new WasmCopy();
-                copy.setSourceIndex(manager.generate(invocation.getArguments().get(0)));
-                copy.setDestinationIndex(manager.generate(invocation.getArguments().get(1)));
-                copy.setCount(manager.generate(invocation.getArguments().get(2)));
-                return copy;
-            }
             case "isInitialized": {
                 WasmExpression pointer = manager.generate(invocation.getArguments().get(0));
                 if (pointer instanceof WasmInt32Constant) {

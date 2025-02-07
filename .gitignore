@@ -4,13 +4,13 @@ build
 /build-cache
 /deploy-with-env.sh
 /release-with-env.sh
-/.gradle
-/build-logic/.gradle
+.gradle
 /relocated
 /samples/.gradle
 local.properties
 teavm-local.properties
 .kotlin
+node_modules
 
 # KDE
 .directory
@@ -34,4 +34,4 @@ teavm-local.properties
 !.idea/inspectionProfies
 !.idea/codeStyles
 !.idea/copyright
-
+.intellijPlatform

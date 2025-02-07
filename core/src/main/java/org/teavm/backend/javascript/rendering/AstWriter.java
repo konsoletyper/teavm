@@ -291,6 +291,9 @@ public class AstWriter {
             case Token.WHILE:
                 print((WhileLoop) node);
                 break;
+            case Token.DEBUGGER:
+                writer.append("debugger;");
+                break;
             default:
                 if (node instanceof InfixExpression) {
                     printInfix((InfixExpression) node, precedence);

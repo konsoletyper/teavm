@@ -23,11 +23,14 @@ public class WasmGlobal extends WasmEntity {
     private WasmType type;
     private WasmExpression initialValue;
     private boolean immutable;
+    private String exportName;
+    private String importName;
+    private String importModule;
 
     public WasmGlobal(String name, WasmType type, WasmExpression initialValue) {
         this.name = name;
         this.type = Objects.requireNonNull(type);
-        this.initialValue = Objects.requireNonNull(initialValue);
+        this.initialValue = initialValue;
     }
 
     public String getName() {
@@ -47,7 +50,7 @@ public class WasmGlobal extends WasmEntity {
     }
 
     public void setInitialValue(WasmExpression initialValue) {
-        this.initialValue = Objects.requireNonNull(initialValue);
+        this.initialValue = initialValue;
     }
 
     public boolean isImmutable() {
@@ -56,5 +59,37 @@ public class WasmGlobal extends WasmEntity {
 
     public void setImmutable(boolean immutable) {
         this.immutable = immutable;
+    }
+
+    public String getExportName() {
+        return exportName;
+    }
+
+    public void setExportName(String exportName) {
+        this.exportName = exportName;
+    }
+
+    public String getImportName() {
+        return importName;
+    }
+
+    public void setImportName(String importName) {
+        this.importName = importName;
+        if (collection != null) {
+            collection.invalidateIndexes();
+        }
+    }
+
+    public String getImportModule() {
+        return importModule;
+    }
+
+    public void setImportModule(String importModule) {
+        this.importModule = importModule;
+    }
+
+    @Override
+    boolean isImported() {
+        return importName != null;
     }
 }

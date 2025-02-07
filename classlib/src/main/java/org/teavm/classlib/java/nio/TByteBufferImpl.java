@@ -16,18 +16,44 @@
 package org.teavm.classlib.java.nio;
 
 class TByteBufferImpl extends TByteBuffer {
+    private int capacity;
+    private int start;
+    byte[] array;
     private boolean direct;
     private boolean readOnly;
 
-    public TByteBufferImpl(int capacity, boolean direct) {
+    TByteBufferImpl(int capacity, boolean direct) {
         this(0, capacity, new byte[capacity], 0, capacity, direct, false);
     }
 
-    public TByteBufferImpl(int start, int capacity, byte[] array, int position, int limit,
-            boolean direct, boolean readOnly) {
-        super(start, capacity, array, position, limit);
+    TByteBufferImpl(int start, int capacity, byte[] array, int position, int limit, boolean direct, boolean readOnly) {
+        this.start = start;
+        this.capacity = capacity;
+        this.array = array;
+        this.position = position;
+        this.limit = limit;
         this.direct = direct;
         this.readOnly = readOnly;
+    }
+
+    @Override
+    boolean hasArrayImpl() {
+        return true;
+    }
+
+    @Override
+    byte[] arrayImpl() {
+        return array;
+    }
+
+    @Override
+    int arrayOffsetImpl() {
+        return start;
+    }
+
+    @Override
+    int capacityImpl() {
+        return capacity;
     }
 
     @Override
@@ -84,6 +110,27 @@ class TByteBufferImpl extends TByteBuffer {
         }
         array[start + index] = b;
         return this;
+    }
+
+    @Override
+    void getImpl(int index, byte[] dst, int offset, int length) {
+        System.arraycopy(array, start + index, dst, offset, length);
+    }
+
+    @Override
+    void putImpl(int index, TByteBuffer src, int offset, int length) {
+        if (src.hasArray()) {
+            System.arraycopy(src.array(), src.position(), array, start + offset, length);
+        } else {
+            for (var i = 0; i < length; i++) {
+                put(index + i, src.get(offset + i));
+            }
+        }
+    }
+
+    @Override
+    void putImpl(byte[] src, int srcOffset, int destOffset, int length) {
+        System.arraycopy(src, srcOffset, array, start + destOffset, length);
     }
 
     @Override
@@ -517,9 +564,10 @@ class TByteBufferImpl extends TByteBuffer {
     @Override
     public TDoubleBuffer asDoubleBuffer() {
         int sz = remaining() / 8;
-        TDoubleBufferOverByteBuffer result = new TDoubleBufferOverByteBuffer(start + position, sz, this, 0, sz,
-                isReadOnly());
-        result.byteOrder = order;
-        return result;
+        if (order == TByteOrder.LITTLE_ENDIAN) {
+            return new TDoubleBufferOverByteBufferBigEndian(start + position, sz, this, 0, sz, isReadOnly());
+        } else {
+            return new TDoubleBufferOverByteBufferLittleEndian(start + position, sz, this, 0, sz, isReadOnly());
+        }
     }
 }

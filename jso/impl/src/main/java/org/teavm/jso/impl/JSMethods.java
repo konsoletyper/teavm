@@ -19,10 +19,11 @@ import java.util.Arrays;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSArrayReader;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-final class JSMethods {
+public final class JSMethods {
     public static final MethodReference GET = new MethodReference(JS.class, "get", JSObject.class,
             JSObject.class, JSObject.class);
     public static final MethodReference GET_PURE = new MethodReference(JS.class, "getPure", JSObject.class,
@@ -51,6 +52,8 @@ final class JSMethods {
             JS.WrapFunction.class);
     public static final MethodReference INT_ARRAY_WRAPPER = new MethodReference(JS.class, "intArrayWrapper",
             JS.WrapFunction.class);
+    public static final MethodReference LONG_ARRAY_WRAPPER = new MethodReference(JS.class, "longArrayWrapper",
+            JS.WrapFunction.class);
     public static final MethodReference FLOAT_ARRAY_WRAPPER = new MethodReference(JS.class, "floatArrayWrapper",
             JS.WrapFunction.class);
     public static final MethodReference DOUBLE_ARRAY_WRAPPER = new MethodReference(JS.class, "doubleArrayWrapper",
@@ -73,6 +76,8 @@ final class JSMethods {
             JSArrayReader.class, char[].class);
     public static final MethodReference UNWRAP_INT_ARRAY = new MethodReference(JS.class, "unwrapIntArray",
             JSArrayReader.class, int[].class);
+    public static final MethodReference UNWRAP_LONG_ARRAY = new MethodReference(JS.class, "unwrapLongArray",
+            JSArrayReader.class, long[].class);
     public static final MethodReference UNWRAP_FLOAT_ARRAY = new MethodReference(JS.class, "unwrapFloatArray",
             JSArrayReader.class, float[].class);
     public static final MethodReference UNWRAP_DOUBLE_ARRAY = new MethodReference(JS.class, "unwrapDoubleArray",
@@ -91,6 +96,8 @@ final class JSMethods {
             "charArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference INT_ARRAY_UNWRAPPER = new MethodReference(JS.class,
             "intArrayUnwrapper", JS.UnwrapFunction.class);
+    public static final MethodReference LONG_ARRAY_UNWRAPPER = new MethodReference(JS.class,
+            "longArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference FLOAT_ARRAY_UNWRAPPER = new MethodReference(JS.class,
             "floatArrayUnwrapper", JS.UnwrapFunction.class);
     public static final MethodReference DOUBLE_ARRAY_UNWRAPPER = new MethodReference(JS.class,
@@ -108,6 +115,8 @@ final class JSMethods {
             "dataToCharArray", JSObject.class, char[].class);
     public static final MethodReference DATA_TO_INT_ARRAY = new MethodReference(JS.class,
             "dataToIntArray", JSObject.class, int[].class);
+    public static final MethodReference DATA_TO_LONG_ARRAY = new MethodReference(JS.class,
+            "dataToLongArray", JSObject.class, long[].class);
     public static final MethodReference DATA_TO_FLOAT_ARRAY = new MethodReference(JS.class,
             "dataToFloatArray", JSObject.class, float[].class);
     public static final MethodReference DATA_TO_DOUBLE_ARRAY = new MethodReference(JS.class,
@@ -142,6 +151,24 @@ final class JSMethods {
     private static final MethodReference[] INVOKE_METHODS = new MethodReference[13];
     private static final MethodReference[] CONSTRUCT_METHODS = new MethodReference[13];
     private static final MethodReference[] ARRAY_OF_METHODS = new MethodReference[13];
+
+    public static final MethodReference WRAP = new MethodReference(JSWrapper.class, "wrap", JSObject.class,
+            Object.class);
+    public static final MethodReference MAYBE_WRAP = new MethodReference(JSWrapper.class, "maybeWrap", Object.class,
+            Object.class);
+    public static final MethodReference UNWRAP = new MethodReference(JSWrapper.class, "unwrap", Object.class,
+            JSObject.class);
+    public static final MethodReference MAYBE_UNWRAP = new MethodReference(JSWrapper.class, "maybeUnwrap",
+            Object.class, JSObject.class);
+    public static final MethodReference IS_JS = new MethodReference(JSWrapper.class, "isJs",
+            Object.class, boolean.class);
+    public static final MethodReference WRAPPER_IS_PRIMITIVE = new MethodReference(JSWrapper.class, "isPrimitive",
+            Object.class, JSObject.class, boolean.class);
+    public static final MethodReference WRAPPER_INSTANCE_OF = new MethodReference(JSWrapper.class, "instanceOf",
+            Object.class, JSObject.class, boolean.class);
+
+    public static final String JS_MARSHALLABLE = JSMarshallable.class.getName();
+    public static final MethodDescriptor MARSHALL_TO_JS = new MethodDescriptor("marshallToJs", JS_OBJECT);
 
     static {
         for (int i = 0; i < INVOKE_METHODS.length; ++i) {

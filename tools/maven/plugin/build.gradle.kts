@@ -25,6 +25,7 @@ description = "A set of mojos that allow to include TeaVM compiler into maven bu
 dependencies {
     implementation(project(":core"))
     implementation(project(":tools:core"))
+    implementation(project(":tools:deobfuscator-wasm-gc"))
 }
 
 teavmPublish {

@@ -21,13 +21,22 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
+import org.teavm.backend.wasm.debug.info.LineInfo;
+import org.teavm.backend.wasm.debug.parser.DebugClassParser;
+import org.teavm.backend.wasm.debug.parser.DebugFileParser;
+import org.teavm.backend.wasm.debug.parser.DebugLinesParser;
+import org.teavm.backend.wasm.debug.parser.DebugMethodParser;
+import org.teavm.backend.wasm.debug.parser.DebugPackageParser;
+import org.teavm.backend.wasm.debug.parser.DebugSectionParser;
+import org.teavm.backend.wasm.debug.parser.DebugStringParser;
 import org.teavm.backend.wasm.parser.AddressListener;
 import org.teavm.backend.wasm.parser.CodeSectionParser;
 import org.teavm.backend.wasm.parser.FunctionSectionListener;
 import org.teavm.backend.wasm.parser.FunctionSectionParser;
 import org.teavm.backend.wasm.parser.GlobalSectionParser;
-import org.teavm.backend.wasm.parser.ImportSectionListener;
 import org.teavm.backend.wasm.parser.ImportSectionParser;
 import org.teavm.backend.wasm.parser.ModuleParser;
 import org.teavm.backend.wasm.parser.NameSectionListener;
@@ -41,9 +50,29 @@ public final class Disassembler {
     private DisassemblyWriter writer;
     private WasmHollowFunctionType[] functionTypes;
     private int[] functionTypeRefs;
+    private int importFunctionCount;
+    private int importGlobalCount;
+    private Map<String, DebugSectionParser> debugSectionParsers = new HashMap<>();
+    private DebugLinesParser debugLines;
+    private LineInfo lineInfo;
 
     public Disassembler(DisassemblyWriter writer) {
         this.writer = writer;
+        installDebugParsers();
+    }
+
+    private void installDebugParsers() {
+        var strings = addDebugSection(new DebugStringParser());
+        var files = addDebugSection(new DebugFileParser(strings));
+        var packages = addDebugSection(new DebugPackageParser(strings));
+        var classes = addDebugSection(new DebugClassParser(strings, packages));
+        var methods = addDebugSection(new DebugMethodParser(strings, classes));
+        debugLines = addDebugSection(new DebugLinesParser(files, methods));
+    }
+
+    private <T extends DebugSectionParser> T addDebugSection(T section) {
+        debugSectionParsers.put(section.name(), section);
+        return section;
     }
 
     public void startModule() {
@@ -65,18 +94,25 @@ public final class Disassembler {
     public void read(byte[] bytes) {
         var nameAccumulator = new NameAccumulatingSectionListener();
         var input = new ByteArrayAsyncInputStream(bytes);
-        var nameParser = createNameParser(input, nameAccumulator);
-        input.readFully(nameParser::parse);
+        var preparationParser = createPreparationParser(input, nameAccumulator);
+        input.readFully(preparationParser::parse);
+        lineInfo = debugLines.getLineInfo();
 
         input = new ByteArrayAsyncInputStream(bytes);
         var parser = createParser(input, nameAccumulator.buildProvider());
         input.readFully(parser::parse);
     }
 
-    public ModuleParser createNameParser(AsyncInputStream input, NameSectionListener listener) {
+    public ModuleParser createPreparationParser(AsyncInputStream input, NameSectionListener listener) {
         return new ModuleParser(input) {
             @Override
             protected Consumer<byte[]> getSectionConsumer(int code, int pos, String name) {
+                if (code == 0) {
+                    var debugSection = debugSectionParsers.get(name);
+                    if (debugSection != null) {
+                        return debugSection::parse;
+                    }
+                }
                 return Disassembler.this.getNameSectionConsumer(code, name, listener);
             }
         };
@@ -89,17 +125,6 @@ public final class Disassembler {
                 return Disassembler.this.getSectionConsumer(code, pos, nameProvider);
             }
         };
-    }
-
-    ImportListenerImpl importListener = new ImportListenerImpl();
-
-    static class ImportListenerImpl implements ImportSectionListener {
-        int count;
-
-        @Override
-        public void function(int typeIndex) {
-            ++count;
-        }
     }
 
     public Consumer<byte[]> getSectionConsumer(int code, int pos, NameProvider nameProvider) {
@@ -115,13 +140,16 @@ public final class Disassembler {
             };
         } else if (code == 2) {
             return bytes -> {
+                var importListener = new DisassemblyImportSectionListener(writer, nameProvider, functionTypes);
                 var parser = new ImportSectionParser(importListener);
                 parser.parse(AddressListener.EMPTY, bytes);
+                importFunctionCount = importListener.functionCount();
+                importGlobalCount = importListener.globalCount();
             };
         } else if (code == 3) {
             return bytes -> {
                 var signatures = new IntArrayList();
-                for (var i = 0; i < importListener.count; ++i) {
+                for (var i = 0; i < importFunctionCount; ++i) {
                     signatures.add(0);
                 }
                 var parser = new FunctionSectionParser(new FunctionSectionListener() {
@@ -139,6 +167,7 @@ public final class Disassembler {
                 var globalWriter = new DisassemblyGlobalSectionListener(writer, nameProvider);
                 writer.setAddressOffset(pos);
                 var sectionParser = new GlobalSectionParser(globalWriter);
+                sectionParser.setGlobalIndexOffset(importGlobalCount);
                 sectionParser.parse(writer.addressListener, bytes);
                 writer.flush();
             };
@@ -148,11 +177,14 @@ public final class Disassembler {
                 disassembler.setFunctionTypes(functionTypes);
                 disassembler.setFunctionTypeRefs(functionTypeRefs);
                 writer.setAddressOffset(pos);
+                writer.setDebugLines(lineInfo);
+                writer.startSection();
                 writer.write("(; code section size: " + bytes.length + " ;)").eol();
                 var sectionParser = new CodeSectionParser(disassembler);
-                sectionParser.setFunctionIndexOffset(importListener.count);
+                sectionParser.setFunctionIndexOffset(importFunctionCount);
                 sectionParser.parse(writer.addressListener, bytes);
                 writer.flush();
+                writer.setDebugLines(null);
             };
         } else {
             return null;

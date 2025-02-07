@@ -24,6 +24,7 @@ public class WasmConversion extends WasmExpression {
     private boolean signed;
     private WasmExpression operand;
     private boolean reinterpret;
+    private boolean nonTrapping;
 
     public WasmConversion(WasmNumType sourceType, WasmNumType targetType, boolean signed, WasmExpression operand) {
         Objects.requireNonNull(sourceType);
@@ -76,6 +77,14 @@ public class WasmConversion extends WasmExpression {
     public void setOperand(WasmExpression operand) {
         Objects.requireNonNull(operand);
         this.operand = operand;
+    }
+
+    public boolean isNonTrapping() {
+        return nonTrapping;
+    }
+
+    public void setNonTrapping(boolean nonTrapping) {
+        this.nonTrapping = nonTrapping;
     }
 
     @Override

@@ -181,6 +181,9 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
             case "dataToIntArray":
                 dataToArray(context, "$rt_intcls");
                 break;
+            case "dataToLongArray":
+                dataToArray(context, "$rt_longcls");
+                break;
             case "dataToFloatArray":
                 dataToArray(context, "$rt_floatcls");
                 break;

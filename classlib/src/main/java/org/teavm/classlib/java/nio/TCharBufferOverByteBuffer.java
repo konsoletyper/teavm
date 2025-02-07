@@ -16,15 +16,17 @@
 package org.teavm.classlib.java.nio;
 
 abstract class TCharBufferOverByteBuffer extends TCharBufferImpl {
-    TByteBufferImpl byteByffer;
-    boolean readOnly;
+    TByteBufferImpl byteBuffer;
+    private boolean readOnly;
     int start;
+    private int capacity;
 
-    public TCharBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
+    TCharBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
             boolean readOnly) {
-        super(capacity, position, limit);
+        super(position, limit);
         this.start = start;
-        this.byteByffer = byteBuffer;
+        this.capacity = capacity;
+        this.byteBuffer = byteBuffer;
         this.readOnly = readOnly;
     }
 
@@ -46,5 +48,44 @@ abstract class TCharBufferOverByteBuffer extends TCharBufferImpl {
     @Override
     boolean readOnly() {
         return readOnly;
+    }
+
+    @Override
+    void getImpl(int index, char[] dst, int offset, int length) {
+        while (length-- > 0) {
+            dst[offset++] = getChar(index++);
+        }
+    }
+
+    @Override
+    void putImpl(int index, char[] src, int offset, int length) {
+        while (length-- > 0) {
+            putChar(index++, src[offset++]);
+        }
+    }
+
+    @Override
+    void putImpl(int index, String src, int offset, int length) {
+        while (length-- > 0) {
+            putChar(index++, src.charAt(offset++));
+        }
+    }
+
+    @Override
+    void putImpl(int index, TCharBuffer src, int offset, int length) {
+        if (src instanceof TCharBufferOverByteBuffer && src.order() == order()) {
+            var srcImpl = (TCharBufferOverByteBuffer) src;
+            System.arraycopy(srcImpl.byteBuffer.array, srcImpl.start + index * 2,
+                    byteBuffer.array, start + offset * 2, length * 2);
+        } else {
+            while (length-- > 0) {
+                putChar(index++, src.getChar(offset++));
+            }
+        }
+    }
+
+    @Override
+    int capacityImpl() {
+        return capacity;
     }
 }

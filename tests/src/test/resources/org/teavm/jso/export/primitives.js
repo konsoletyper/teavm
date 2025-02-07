@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import * as java from '/tests/primitives/test.js';
+const java = await (await import('/tests/primitives/provider.js')).default;
 
 function testReturnPrimitives() {
     assertEquals(true, java.boolResult());
@@ -45,8 +45,13 @@ function testConsumePrimitives() {
     assertEquals("string:q", java.stringParam("q"));
 }
 
+function testConsumePrimitiveArrays() {
+    assertEquals("intArray:[2, 3, 5]", java.intArrayParam([2, 3, 5]));
+}
+
 export async function test() {
     testReturnPrimitives();
     testReturnArrays();
     testConsumePrimitives();
+    testConsumePrimitiveArrays();
 }

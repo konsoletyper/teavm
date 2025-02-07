@@ -16,8 +16,8 @@
 package org.teavm.classlib.impl.console;
 
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
-import org.teavm.backend.wasm.runtime.WasmGCSupport;
 import org.teavm.backend.wasm.runtime.WasmSupport;
+import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Address;
 import org.teavm.interop.Import;

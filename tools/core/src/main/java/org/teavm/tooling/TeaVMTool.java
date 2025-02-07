@@ -38,9 +38,12 @@ import org.teavm.backend.c.generate.ShorteningFileNameProvider;
 import org.teavm.backend.c.generate.SimpleFileNameProvider;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.javascript.JavaScriptTarget;
+import org.teavm.backend.wasm.WasmDebugInfoLevel;
+import org.teavm.backend.wasm.WasmDebugInfoLocation;
 import org.teavm.backend.wasm.WasmGCTarget;
 import org.teavm.backend.wasm.WasmRuntimeType;
 import org.teavm.backend.wasm.WasmTarget;
+import org.teavm.backend.wasm.debug.sourcemap.SourceMapBuilder;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.cache.AlwaysStaleCacheStatus;
 import org.teavm.cache.CacheStatus;
@@ -63,6 +66,7 @@ import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.transformation.AssertionRemoval;
 import org.teavm.parsing.ClasspathClassHolderSource;
+import org.teavm.tooling.sources.DefaultSourceFileResolver;
 import org.teavm.tooling.sources.SourceFileProvider;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.DirectoryBuildTarget;
@@ -108,15 +112,20 @@ public class TeaVMTool {
     private JavaScriptTarget javaScriptTarget;
     private WasmTarget webAssemblyTarget;
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
+    private WasmDebugInfoLocation wasmDebugInfoLocation = WasmDebugInfoLocation.EXTERNAL;
+    private WasmDebugInfoLevel wasmDebugInfoLevel = WasmDebugInfoLevel.DEOBFUSCATION;
     private boolean wasmExceptionsUsed;
     private CTarget cTarget;
     private Set<File> generatedFiles = new HashSet<>();
     private int minHeapSize = 4 * (1 << 20);
     private int maxHeapSize = 128 * (1 << 20);
+    private int minDirectBuffersSize = 2 * (1 << 20);
+    private int maxDirectBuffersSize = 32 * (1 << 20);
     private ReferenceCache referenceCache;
     private boolean heapDump;
     private boolean shortFileNames;
     private boolean assertionsRemoved;
+    private SourceMapBuilder wasmSourceMapWriter;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -261,6 +270,14 @@ public class TeaVMTool {
         this.maxHeapSize = maxHeapSize;
     }
 
+    public void setMinDirectBuffersSize(int minDirectBuffersSize) {
+        this.minDirectBuffersSize = minDirectBuffersSize;
+    }
+
+    public void setMaxDirectBuffersSize(int maxDirectBuffersSize) {
+        this.maxDirectBuffersSize = maxDirectBuffersSize;
+    }
+
     public ClassLoader getClassLoader() {
         return classLoader;
     }
@@ -279,6 +296,14 @@ public class TeaVMTool {
 
     public void setWasmExceptionsUsed(boolean wasmExceptionsUsed) {
         this.wasmExceptionsUsed = wasmExceptionsUsed;
+    }
+
+    public void setWasmDebugInfoLocation(WasmDebugInfoLocation wasmDebugInfoLocation) {
+        this.wasmDebugInfoLocation = wasmDebugInfoLocation;
+    }
+
+    public void setWasmDebugInfoLevel(WasmDebugInfoLevel wasmDebugInfoLevel) {
+        this.wasmDebugInfoLevel = wasmDebugInfoLevel;
     }
 
     public void setHeapDump(boolean heapDump) {
@@ -388,6 +413,16 @@ public class TeaVMTool {
         var target = new WasmGCTarget();
         target.setObfuscated(obfuscated);
         target.setStrict(strict);
+        target.setDebugInfo(debugInformationGenerated);
+        target.setDebugInfoLevel(debugInformationGenerated ? WasmDebugInfoLevel.FULL : wasmDebugInfoLevel);
+        target.setDebugInfoLocation(wasmDebugInfoLocation);
+        target.setBufferHeapMinSize(minDirectBuffersSize);
+        target.setBufferHeapMaxSize(maxDirectBuffersSize);
+        if (sourceMapsFileGenerated) {
+            wasmSourceMapWriter = new SourceMapBuilder();
+            target.setSourceMapBuilder(wasmSourceMapWriter);
+            target.setSourceMapLocation(getResolvedTargetFileName() + ".map");
+        }
         return target;
     }
 
@@ -512,6 +547,8 @@ public class TeaVMTool {
                         Writer writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
                     additionalJavaScriptOutput(writer);
                 }
+            } else if (targetType == TeaVMTargetType.WEBASSEMBLY_GC) {
+                additionalWasmGCOutput();
             }
 
             if (incremental) {
@@ -576,42 +613,39 @@ public class TeaVMTool {
         }
     }
 
+    private void additionalWasmGCOutput() throws IOException {
+        if (sourceMapsFileGenerated) {
+            var targetDir = new File(targetDirectory, "src");
+            var resolver = new DefaultSourceFileResolver(targetDir, sourceFileProviders);
+            resolver.setSourceFilePolicy(sourceFilePolicy);
+            resolver.open();
+
+            if (sourceFilePolicy != TeaVMSourceFilePolicy.DO_NOTHING) {
+                wasmSourceMapWriter.addSourceResolver(resolver);
+            }
+            var file = new File(targetDirectory, getResolvedTargetFileName() + ".map");
+            try (var out = new FileOutputStream(file);
+                    var writer = new OutputStreamWriter(out, StandardCharsets.UTF_8)) {
+                wasmSourceMapWriter.writeSourceMap(writer);
+            }
+
+            resolver.close();
+        }
+    }
+
     private void writeSourceMaps(Writer out, DebugInformation debugInfo) throws IOException {
         var sourceMapWriter = new SourceMapsWriter(out);
-        for (var provider : sourceFileProviders) {
-            provider.open();
-        }
-
         var targetDir = new File(targetDirectory, "src");
+        var resolver = new DefaultSourceFileResolver(targetDir, sourceFileProviders);
+        resolver.setSourceFilePolicy(sourceFilePolicy);
+        resolver.open();
+
         if (sourceFilePolicy != TeaVMSourceFilePolicy.DO_NOTHING) {
-            sourceMapWriter.addSourceResolver(fileName -> {
-                for (var provider : sourceFileProviders) {
-                    var sourceFile = provider.getSourceFile(fileName);
-                    if (sourceFile != null) {
-                        if (sourceFilePolicy == TeaVMSourceFilePolicy.COPY || sourceFile.getFile() == null) {
-                            var outputFile = new File(targetDir, fileName);
-                            outputFile.getParentFile().mkdirs();
-                            try (var input = sourceFile.open();
-                                    var output = new FileOutputStream(outputFile)) {
-                                input.transferTo(output);
-                            }
-                            if (sourceFilePolicy == TeaVMSourceFilePolicy.LINK_LOCAL_FILES) {
-                                return "file://" + outputFile.getCanonicalPath();
-                            }
-                        } else {
-                            return "file://" + sourceFile.getFile().getCanonicalPath();
-                        }
-                        break;
-                    }
-                }
-                return null;
-            });
+            sourceMapWriter.addSourceResolver(resolver);
         }
         sourceMapWriter.write(getResolvedTargetFileName(), "src", debugInfo);
 
-        for (var provider : sourceFileProviders) {
-            provider.close();
-        }
+        resolver.close();
     }
 
     private void printStats() {

@@ -28,6 +28,7 @@ public class DebugLinesBuilder extends DebugSectionBuilder implements DebugLines
     private String file;
     private int line = 1;
     private Deque<State> states = new ArrayDeque<>();
+    private StringBuilder indent = new StringBuilder(" ");
 
     public DebugLinesBuilder(DebugFiles files, DebugMethods methods) {
         super(DebugConstants.SECTION_LINES);
@@ -82,6 +83,7 @@ public class DebugLinesBuilder extends DebugSectionBuilder implements DebugLines
     @Override
     public void start(MethodReference methodReference) {
         flushPtr();
+        indent.append(".");
         blob.writeLEB(DebugConstants.LOC_START);
         blob.writeLEB(methods.methodPtr(methodReference));
         states.push(new State(file, line));
@@ -92,6 +94,7 @@ public class DebugLinesBuilder extends DebugSectionBuilder implements DebugLines
     @Override
     public void end() {
         flushPtr();
+        indent.setLength(indent.length() - 1);
         blob.writeLEB(DebugConstants.LOC_END);
         if (!states.isEmpty()) {
             var state = states.pop();

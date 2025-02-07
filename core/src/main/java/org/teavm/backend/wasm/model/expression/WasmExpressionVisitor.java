@@ -102,6 +102,8 @@ public interface WasmExpressionVisitor {
 
     void visit(WasmCast expression);
 
+    void visit(WasmExternConversion expression);
+
     void visit(WasmTest expression);
 
     void visit(WasmStructNew expression);

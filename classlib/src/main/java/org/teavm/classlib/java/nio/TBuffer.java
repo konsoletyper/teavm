@@ -16,19 +16,19 @@
 package org.teavm.classlib.java.nio;
 
 public abstract class TBuffer {
-    int capacity;
+    TBuffer nextRef;
     int position;
     int limit;
     int mark = -1;
 
-    TBuffer(int capacity) {
-        this.capacity = capacity;
-        limit = capacity;
+    TBuffer() {
     }
 
     public final int capacity() {
-        return capacity;
+        return capacityImpl();
     }
+
+    abstract int capacityImpl();
 
     public final int position() {
         return position;
@@ -51,9 +51,8 @@ public abstract class TBuffer {
     }
 
     public TBuffer limit(int newLimit) {
-        if (newLimit < 0 || newLimit > capacity) {
-            throw new IllegalArgumentException("New limit " + newLimit + " is outside of range [0;"
-                    + capacity + "]");
+        if (newLimit < 0 || newLimit > capacity()) {
+            throw new IllegalArgumentException();
         }
         if (mark > newLimit) {
             mark = -1;
@@ -80,7 +79,7 @@ public abstract class TBuffer {
 
     public TBuffer clear() {
         position = 0;
-        limit = capacity;
+        limit = capacity();
         mark = -1;
         return this;
     }

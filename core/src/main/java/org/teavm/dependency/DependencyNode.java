@@ -32,7 +32,6 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 public class DependencyNode implements ValueDependencyInfo {
-    private static final int DEGREE_THRESHOLD = 2;
     DependencyAnalyzer dependencyAnalyzer;
     List<DependencyConsumer> followers;
     TypeSet typeSet;
@@ -58,9 +57,6 @@ public class DependencyNode implements ValueDependencyInfo {
     }
 
     public void propagate(DependencyType type) {
-        if (degree > DEGREE_THRESHOLD) {
-            return;
-        }
         if (!hasType(type) && filter(type)) {
             propagateCount++;
             moveToSeparateDomain();
@@ -96,10 +92,6 @@ public class DependencyNode implements ValueDependencyInfo {
     }
 
     public void propagate(DependencyType[] newTypes) {
-        if (degree > DEGREE_THRESHOLD) {
-            return;
-        }
-
         if (newTypes.length == 0) {
             return;
         }
@@ -314,9 +306,6 @@ public class DependencyNode implements ValueDependencyInfo {
     }
 
     private void connectArrayItemNodes(DependencyNode node) {
-        if (degree > DEGREE_THRESHOLD || node.degree > DEGREE_THRESHOLD) {
-            return;
-        }
         if (!isArray(typeFilter) || !isArray(node.typeFilter)) {
             return;
         }

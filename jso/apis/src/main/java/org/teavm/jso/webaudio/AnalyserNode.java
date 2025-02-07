@@ -50,13 +50,13 @@ public interface AnalyserNode extends AudioNode {
 
     void getFloatFrequencyData(Float32Array array);
 
-    void getFloatFrequencyData(@JSByRef float[] array);
+    void getFloatFrequencyData(@JSByRef(optional = true) float[] array);
 
     void getByteFrequencyData(Uint8Array array);
 
     void getFloatTimeDomainData(Float32Array array);
 
-    void getFloatTimeDomainData(@JSByRef float[] array);
+    void getFloatTimeDomainData(@JSByRef(optional = true) float[] array);
 
     void getByteTimeDomainData(Uint8Array array);
 }

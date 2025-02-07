@@ -22,8 +22,7 @@ import org.teavm.backend.wasm.model.WasmFunction;
 public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
     private Function<WasmExpression, WasmExpression> mapper;
 
-    public WasmReplacingExpressionVisitor(
-            Function<WasmExpression, WasmExpression> mapper) {
+    public WasmReplacingExpressionVisitor(Function<WasmExpression, WasmExpression> mapper) {
         this.mapper = mapper;
     }
 
@@ -328,6 +327,12 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmTest expression) {
+        expression.getValue().acceptVisitor(this);
+        expression.setValue(mapper.apply(expression.getValue()));
+    }
+
+    @Override
+    public void visit(WasmExternConversion expression) {
         expression.getValue().acceptVisitor(this);
         expression.setValue(mapper.apply(expression.getValue()));
     }

@@ -42,10 +42,13 @@ public class ClassMetadataRequirements {
             "get", Object.class, int.class, Object.class);
     private static final MethodReference ARRAY_LENGTH = new MethodReference(Array.class,
             "getLength", Object.class, int.class);
+    private static final MethodReference ARRAY_COPY = new MethodReference(System.class,
+            "arraycopy", Object.class, int.class, Object.class, int.class, int.class, void.class);
     private static final ClassInfo EMPTY_INFO = new ClassInfo();
     private Map<ValueType, ClassInfo> requirements = new HashMap<>();
     private boolean hasArrayGet;
     private boolean hasArrayLength;
+    private boolean hasArrayCopy;
     private boolean hasEnumConstants;
     private boolean hasSuperclass;
     private boolean hasIsAssignable;
@@ -137,6 +140,15 @@ public class ClassMetadataRequirements {
             }
         }
 
+        var arrayCopy = dependencyInfo.getMethod(ARRAY_COPY);
+        if (arrayCopy != null) {
+            hasArrayCopy = arrayCopy.isUsed();
+            var classNames = arrayCopy.getVariable(1).getTypes();
+            for (var className : classNames) {
+                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).arrayCopy = true;
+            }
+        }
+
         var clone = dependencyInfo.getMethod(new MethodReference(Object.class, "cloneObject", Object.class));
         if (clone != null) {
             var classNames = clone.getVariable(0).getTypes();
@@ -180,6 +192,10 @@ public class ClassMetadataRequirements {
 
     public boolean hasArrayLength() {
         return hasArrayLength;
+    }
+
+    public boolean hasArrayCopy() {
+        return hasArrayCopy;
     }
 
     public boolean hasEnumConstants() {
@@ -240,6 +256,7 @@ public class ClassMetadataRequirements {
         boolean newArray;
         boolean arrayLength;
         boolean arrayGet;
+        boolean arrayCopy;
         boolean cloneMethod;
         boolean enumConstants;
 
@@ -284,6 +301,11 @@ public class ClassMetadataRequirements {
         }
 
         @Override
+        public boolean arrayCopy() {
+            return arrayCopy;
+        }
+
+        @Override
         public boolean arrayGet() {
             return arrayGet;
         }
@@ -317,6 +339,8 @@ public class ClassMetadataRequirements {
         boolean arrayLength();
 
         boolean arrayGet();
+
+        boolean arrayCopy();
 
         boolean cloneMethod();
 

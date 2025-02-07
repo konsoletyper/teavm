@@ -17,6 +17,7 @@ package org.teavm.junit;
 
 import org.teavm.classlib.impl.console.JSConsoleStringPrintStream;
 import org.teavm.interop.Import;
+import org.teavm.jso.core.JSString;
 
 final class TestWasmGCEntryPoint {
     private TestWasmGCEntryPoint() {
@@ -29,14 +30,13 @@ final class TestWasmGCEntryPoint {
         } catch (Throwable e) {
             var out = new JSConsoleStringPrintStream();
             e.printStackTrace(out);
-            reportFailure(out.toString());
+            reportFailure(JSString.valueOf(out.toString()));
         }
-        TestEntryPoint.run(args.length > 0 ? args[0] : null);
     }
 
     @Import(module = "teavmTest", name = "success")
     private static native void reportSuccess();
 
     @Import(module = "teavmTest", name = "failure")
-    private static native void reportFailure(String message);
+    private static native void reportFailure(JSString message);
 }

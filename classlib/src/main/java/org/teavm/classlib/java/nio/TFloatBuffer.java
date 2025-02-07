@@ -15,9 +15,12 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.classlib.PlatformDetector;
+import org.teavm.interop.Address;
+import org.teavm.jso.typedarrays.Float32Array;
+
 public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatBuffer> {
-    TFloatBuffer(int capacity, int position, int limit) {
-        super(capacity);
+    TFloatBuffer(int position, int limit) {
         this.position = position;
         this.limit = limit;
     }
@@ -26,10 +29,32 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
         if (capacity < 0) {
             throw new IllegalArgumentException("Capacity is negative: " + capacity);
         }
+        if (PlatformDetector.isJavaScript()) {
+            var array = new float[capacity];
+            return new TFloatBufferOverTypedArray(0, capacity, false, Float32Array.fromJavaArray(array), array);
+        }
+        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+            var array = new float[capacity];
+            return new TFloatBufferNative(array, 0, capacity, false, array, Address.ofData(array), capacity, false);
+        }
         return new TFloatBufferOverArray(capacity);
     }
 
     public static TFloatBuffer wrap(float[] array, int offset, int length) {
+        if (PlatformDetector.isJavaScript()) {
+            var result = new TFloatBufferOverTypedArray(0, array.length, false, Float32Array.fromJavaArray(array),
+                    array);
+            result.position = offset;
+            result.limit = offset + length;
+            return result;
+        }
+        if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
+            var result = new TFloatBufferNative(array, 0, array.length, false, array, Address.ofData(array),
+                    array.length, false);
+            result.position = offset;
+            result.limit = offset + length;
+            return result;
+        }
         return new TFloatBufferOverArray(0, array.length, array, offset, offset + length, false);
     }
 
@@ -56,30 +81,47 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
     abstract void putElement(int index, float value);
 
     public TFloatBuffer get(float[] dst, int offset, int length) {
-        if (offset < 0 || offset > dst.length) {
-            throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
+        if (length < 0 || offset < 0 || offset + length > dst.length) {
+            throw new IndexOutOfBoundsException();
         }
-        if (offset + length > dst.length) {
-            throw new IndexOutOfBoundsException("The last float in dst " + (offset + length) + " is outside "
-                    + "of array of size " + dst.length);
-        }
-        if (remaining() < length) {
+        if (length > remaining()) {
             throw new TBufferUnderflowException();
         }
-        if (length < 0) {
-            throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
-        }
-        int pos = position;
-        for (int i = 0; i < length; ++i) {
-            dst[offset++] = getElement(pos++);
-        }
+        getImpl(position, dst, offset, length);
         position += length;
         return this;
     }
 
+    public TFloatBuffer get(int index, float[] dst, int offset, int length) {
+        if (length < 0 || offset < 0 || offset + length > dst.length || index < 0 || index + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        getImpl(index, dst, offset, length);
+        return this;
+    }
+
+    public TFloatBuffer get(int index, float[] dst) {
+        return get(index, dst, 0, dst.length);
+    }
+
+    abstract void getImpl(int index, float[] dst, int offset, int length);
+
     public TFloatBuffer get(float[] dst) {
         return get(dst, 0, dst.length);
     }
+
+    public TFloatBuffer put(int index, TFloatBuffer src, int offset, int length) {
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (index < 0 || index > limit() || offset < 0 || offset + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        putImpl(index, src, offset, length);
+        return this;
+    }
+
+    abstract void putImpl(int index, TFloatBuffer src, int offset, int length);
 
     public TFloatBuffer put(TFloatBuffer src) {
         if (isReadOnly()) {
@@ -88,13 +130,8 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
         if (remaining() < src.remaining()) {
             throw new TBufferOverflowException();
         }
-        int length = src.remaining();
-        int pos = position;
-        int offset = src.position;
-        for (int i = 0; i < length; ++i) {
-            putElement(pos++, src.getElement(offset++));
-        }
-        position += length;
+        putImpl(position, src, src.position, src.remaining());
+        position += src.remaining();
         return this;
     }
 
@@ -105,27 +142,34 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
         if (remaining() < length) {
             throw new TBufferOverflowException();
         }
-        if (offset < 0 || offset > src.length) {
-            throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + src.length + ")");
+        if (length < 0 || offset < 0 || offset + length > src.length) {
+            throw new IndexOutOfBoundsException();
         }
-        if (offset + length > src.length) {
-            throw new IndexOutOfBoundsException("The last float in src " + (offset + length) + " is outside "
-                    + "of array of size " + src.length);
-        }
-        if (length < 0) {
-            throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
-        }
-        int pos = position;
-        for (int i = 0; i < length; ++i) {
-            putElement(pos++, src[offset++]);
-        }
+        putImpl(position, src, offset, length);
         position += length;
+        return this;
+    }
+
+    public TFloatBuffer put(int index, float[] src, int offset, int length) {
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (length < 0 || offset < 0 || offset + length > src.length || index < 0 || index + length > limit()) {
+            throw new IndexOutOfBoundsException();
+        }
+        putImpl(index, src, offset, length);
         return this;
     }
 
     public final TFloatBuffer put(float[] src) {
         return put(src, 0, src.length);
     }
+
+    public TFloatBuffer put(int index, float[] src) {
+        return put(index, src, 0, src.length);
+    }
+
+    abstract void putImpl(int index, float[] src, int offset, int length);
 
     @Override
     public final boolean hasArray() {
@@ -155,7 +199,7 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
 
     @Override
     public String toString() {
-        return "[FloatBuffer position=" + position + ", limit=" + limit + ", capacity=" + capacity + ", mark "
+        return "[FloatBuffer position=" + position + ", limit=" + limit + ", capacity=" + capacity() + ", mark "
                 + (mark >= 0 ? " at " + mark : " is not set") + "]";
     }
 

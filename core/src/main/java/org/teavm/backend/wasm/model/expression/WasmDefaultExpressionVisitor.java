@@ -278,6 +278,11 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmExternConversion expression) {
+        expression.getValue().acceptVisitor(this);
+    }
+
+    @Override
     public void visit(WasmStructNew expression) {
         for (var initializer : expression.getInitializers()) {
             initializer.acceptVisitor(this);

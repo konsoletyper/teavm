@@ -37,4 +37,14 @@ public class Location {
     public InliningLocation inlining() {
         return inlining;
     }
+
+    public int depth() {
+        var result = 0;
+        var loc = this;
+        while (loc != null) {
+            ++result;
+            loc = loc.inlining != null ? loc.inlining.location() : null;
+        }
+        return result;
+    }
 }

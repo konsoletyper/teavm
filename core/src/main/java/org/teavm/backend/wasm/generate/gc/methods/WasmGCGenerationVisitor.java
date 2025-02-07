@@ -17,12 +17,14 @@ package org.teavm.backend.wasm.generate.gc.methods;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.CastExpr;
 import org.teavm.ast.ConditionalExpr;
+import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.Expr;
 import org.teavm.ast.InstanceOfExpr;
 import org.teavm.ast.InvocationExpr;
@@ -48,6 +50,7 @@ import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
@@ -63,10 +66,19 @@ import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
+import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
+import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
+import org.teavm.backend.wasm.model.expression.WasmInt64Subtype;
+import org.teavm.backend.wasm.model.expression.WasmIntBinary;
+import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmIntUnary;
 import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIsNull;
+import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
+import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
+import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
+import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
@@ -74,12 +86,18 @@ import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSignedType;
+import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
+import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
+import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
+import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.model.expression.WasmTest;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
+import org.teavm.backend.wasm.runtime.StringInternPool;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
@@ -97,7 +115,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             WasmFunction function, int firstVariable, boolean async, PreciseTypeInference types) {
         super(context, currentMethod, function, firstVariable, async);
         this.context = context;
-        generationUtil = new WasmGCGenerationUtil(context.classInfoProvider(), tempVars);
+        generationUtil = new WasmGCGenerationUtil(context.classInfoProvider());
         this.types = types;
     }
 
@@ -106,6 +124,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         accept(expr, null);
     }
 
+    @Override
     protected void accept(Expr expr, WasmType type) {
         var previousExpectedType = expectedType;
         expectedType = type;
@@ -182,32 +201,65 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected void storeField(Expr qualified, FieldReference field, Expr value, TextLocation location) {
+        WasmExpression expr;
         if (qualified == null) {
             var global = context.classInfoProvider().getStaticFieldLocation(field);
             accept(value, global.getType());
             var wasmValue = result;
-            var result = new WasmSetGlobal(global, wasmValue);
-            result.setLocation(location);
-            resultConsumer.add(result);
+            expr = new WasmSetGlobal(global, wasmValue);
         } else {
             acceptWithType(qualified, ValueType.object(field.getClassName()));
             var target = result;
-            target.acceptVisitor(typeInference);
-            var type = (WasmType.CompositeReference) typeInference.getResult();
-            var struct = (WasmStructure) type.composite;
-            var fieldIndex = context.classInfoProvider().getFieldIndex(field);
-            if (fieldIndex >= 0) {
-                accept(value, struct.getFields().get(fieldIndex).getUnpackedType());
-                var wasmValue = result;
-
-                var expr = new WasmStructSet(struct, target, fieldIndex, wasmValue);
-                expr.setLocation(location);
-                resultConsumer.add(expr);
+            if (context.classInfoProvider().getClassInfo(field.getClassName()).isHeapStructure()) {
+                expr = storeHeapField(target, field, value);
             } else {
-                accept(value);
-                resultConsumer.add(result);
+                expr = storeNormalField(target, field, value);
             }
         }
+        expr.setLocation(location);
+        resultConsumer.add(expr);
+    }
+
+    private WasmExpression storeNormalField(WasmExpression target, FieldReference field, Expr value) {
+        target.acceptVisitor(typeInference);
+        var type = (WasmType.CompositeReference) typeInference.getResult();
+        var struct = (WasmStructure) type.composite;
+        var fieldIndex = context.classInfoProvider().getFieldIndex(field);
+        if (fieldIndex >= 0) {
+            accept(value, struct.getFields().get(fieldIndex).getUnpackedType());
+            return new WasmStructSet(struct, target, fieldIndex, result);
+        } else {
+            accept(value);
+            return result;
+        }
+    }
+
+    private WasmExpression storeHeapField(WasmExpression target, FieldReference field, Expr value) {
+        var cls = context.classes().get(field.getClassName());
+        var type = cls.getField(field.getFieldName()).getType();
+        var offset = context.classInfoProvider().getHeapFieldOffset(field);
+        accept(value, context.typeMapper().mapType(type));
+        var wasmValue = result;
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                case BYTE:
+                    return new WasmStoreInt32(1, target, wasmValue, WasmInt32Subtype.INT8, offset);
+                case CHARACTER:
+                    return new WasmStoreInt32(2, target, wasmValue, WasmInt32Subtype.UINT16, offset);
+                case SHORT:
+                    return new WasmStoreInt32(2, target, wasmValue, WasmInt32Subtype.INT16, offset);
+                case INTEGER:
+                    return new WasmStoreInt32(4, target, wasmValue, WasmInt32Subtype.INT32, offset);
+                case LONG:
+                    return new WasmStoreInt64(8, target, wasmValue, WasmInt64Subtype.INT32, offset);
+                case FLOAT:
+                    return new WasmStoreFloat32(4, target, wasmValue, offset);
+                case DOUBLE:
+                    return new WasmStoreFloat64(8, target, wasmValue, offset);
+            }
+        }
+        return new WasmStoreInt32(4, target, wasmValue, WasmInt32Subtype.INT32, offset);
     }
 
     @Override
@@ -225,6 +277,9 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected WasmExpression nullLiteral(Expr expr) {
         var type = expectedType;
+        if (type == WasmType.INT32) {
+            return new WasmInt32Constant(0);
+        }
         if (expr.getVariableIndex() >= 0) {
             var javaType = types.typeOf(expr.getVariableIndex());
             if (javaType != null) {
@@ -278,20 +333,12 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         if (expr.getType() == null) {
             switch (expr.getOperation()) {
                 case EQUALS: {
-                    accept(expr.getFirstOperand());
-                    var first = result;
-                    accept(expr.getSecondOperand());
-                    var second = result;
-                    result = new WasmReferencesEqual(first, second);
+                    isReferenceEq(expr);
                     result.setLocation(expr.getLocation());
                     return;
                 }
                 case NOT_EQUALS:
-                    accept(expr.getFirstOperand());
-                    var first = result;
-                    accept(expr.getSecondOperand());
-                    var second = result;
-                    result = new WasmReferencesEqual(first, second);
+                    isReferenceEq(expr);
                     result = new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ, result);
                     result.setLocation(expr.getLocation());
                     return;
@@ -300,6 +347,46 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             }
         }
         super.visit(expr);
+    }
+
+    private void isReferenceEq(BinaryExpr expr) {
+        if (isNull(expr.getFirstOperand())) {
+            accept(expr.getSecondOperand());
+            result.acceptVisitor(typeInference);
+            if (typeInference.getResult() == WasmType.INT32) {
+                result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, result,
+                        new WasmInt32Constant(0));
+            } else {
+                result = new WasmIsNull(result);
+            }
+        } else if (isNull(expr.getSecondOperand())) {
+            accept(expr.getFirstOperand());
+            result.acceptVisitor(typeInference);
+            if (typeInference.getResult() == WasmType.INT32) {
+                result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, result,
+                        new WasmInt32Constant(0));
+            } else {
+                result = new WasmIsNull(result);
+            }
+        } else {
+            accept(expr.getFirstOperand());
+            var first = result;
+            accept(expr.getSecondOperand());
+            var second = result;
+            first.acceptVisitor(typeInference);
+            if (typeInference.getResult() == WasmType.INT32) {
+                result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, first, second);
+            } else {
+                result = new WasmReferencesEqual(first, second);
+            }
+        }
+    }
+
+    private boolean isNull(Expr expr) {
+        if (!(expr instanceof ConstantExpr)) {
+            return false;
+        }
+        return ((ConstantExpr) expr).getValue() == null;
     }
 
     @Override
@@ -368,28 +455,22 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     public void visit(ArrayFromDataExpr expr) {
         var wasmArrayType = (WasmType.CompositeReference) mapType(ValueType.arrayOf(expr.getType()));
-        var block = new WasmBlock(false);
-        block.setType(wasmArrayType);
         var wasmArrayStruct = (WasmStructure) wasmArrayType.composite;
         var wasmArrayDataType = (WasmType.CompositeReference) wasmArrayStruct.getFields()
                 .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
         var wasmArray = (WasmArray) wasmArrayDataType.composite;
-        var array = tempVars.acquire(wasmArrayType);
 
-        generationUtil.allocateArrayWithElements(expr.getType(), () -> {
+        var array = generationUtil.allocateArrayWithElements(expr.getType(), () -> {
             var items = new ArrayList<WasmExpression>();
             for (int i = 0; i < expr.getData().size(); ++i) {
                 accept(expr.getData().get(i), wasmArray.getElementType().asUnpackedType());
                 items.add(result);
             }
             return items;
-        }, expr.getLocation(), array, block.getBody());
+        });
+        array.setLocation(expr.getLocation());
 
-        block.getBody().add(new WasmGetLocal(array));
-        block.setLocation(expr.getLocation());
-        tempVars.release(array);
-
-        result = block;
+        result = array;
     }
 
     @Override
@@ -399,12 +480,6 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         var call = new WasmCall(function, result);
         call.setLocation(expr.getLocation());
         result = call;
-    }
-
-    @Override
-    protected void allocateArray(ValueType itemType, Supplier<WasmExpression> length, TextLocation location,
-            WasmLocal local, List<WasmExpression> target) {
-        generationUtil.allocateArray(itemType, length, location, local, target);
     }
 
     @Override
@@ -453,6 +528,14 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     public void visit(CastExpr expr) {
         acceptWithType(expr.getValue(), expr.getTarget());
+        if (expr.getTarget() instanceof ValueType.Object) {
+            var className = ((ValueType.Object) expr.getTarget()).getClassName();
+            if (context.classInfoProvider().getClassInfo(className).isHeapStructure()) {
+                accept(expr.getValue(), WasmType.INT32);
+                return;
+            }
+        }
+
         result.acceptVisitor(typeInference);
         var sourceType = (WasmType.Reference) typeInference.getResult();
         if (sourceType == null) {
@@ -479,9 +562,10 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
                 canInsertCast = false;
             } else if (!sourceStruct.isSupertypeOf(targetStruct)) {
                 var block = new WasmBlock(false);
+                block.setType(targetType);
                 block.setLocation(expr.getLocation());
-                block.getBody().add(result);
-                block.getBody().add(new WasmUnreachable());
+                block.getBody().add(new WasmDrop(result));
+                block.getBody().add(new WasmNullConstant(targetType));
                 result = block;
                 return;
             }
@@ -539,6 +623,9 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected boolean needsClassInitializer(String className) {
+        if (className.equals(StringInternPool.class.getName())) {
+            return false;
+        }
         return context.classInfoProvider().getClassInfo(className).getInitializerPointer() != null;
     }
 
@@ -596,9 +683,19 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         if (expr.getType() == ArrayType.OBJECT && expr.getVariableIndex() >= 0) {
             var targetType = types.typeOf(expr.getVariableIndex());
             if (targetType != null) {
-                result = new WasmCast(result, (WasmType.Reference) mapType(targetType.valueType));
+                var wasmTargetType = (WasmType.Reference) mapType(targetType.valueType);
+                if (!isExtern(wasmTargetType)) {
+                    result = new WasmCast(result, (WasmType.Reference) mapType(targetType.valueType));
+                }
             }
         }
+    }
+
+    private boolean isExtern(WasmType.Reference type) {
+        if (!(type instanceof WasmType.SpecialReference)) {
+            return false;
+        }
+        return ((WasmType.SpecialReference) type).kind == WasmType.SpecialReferenceKind.EXTERN;
     }
 
     @Override
@@ -674,49 +771,82 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             acceptWithType(expr.getQualified(), ValueType.object(expr.getField().getClassName()));
             var target = result;
 
-            target.acceptVisitor(typeInference);
-            var type = (WasmType.CompositeReference) typeInference.getResult();
-            if (type == null) {
-                result = new WasmUnreachable();
-                result.setLocation(expr.getLocation());
-                return;
-            }
-            var struct = (WasmStructure) type.composite;
-            var fieldIndex = context.classInfoProvider().getFieldIndex(expr.getField());
-            if (fieldIndex >= 0) {
-                var structGet = new WasmStructGet(struct, target, fieldIndex);
+            var classInfo = context.classInfoProvider().getClassInfo(expr.getField().getClassName());
+            if (classInfo.isHeapStructure()) {
+                var offset = context.classInfoProvider().getHeapFieldOffset(expr.getField());
                 var cls = context.classes().get(expr.getField().getClassName());
-                if (cls != null) {
-                    var field = cls.getField(expr.getField().getFieldName());
-                    if (field != null) {
-                        var fieldType = field.getType();
-                        if (fieldType instanceof ValueType.Primitive) {
-                            switch (((ValueType.Primitive) fieldType).getKind()) {
-                                case BOOLEAN:
-                                    structGet.setSignedType(WasmSignedType.UNSIGNED);
-                                    break;
-                                case BYTE:
-                                    structGet.setSignedType(WasmSignedType.SIGNED);
-                                    break;
-                                case SHORT:
-                                    structGet.setSignedType(WasmSignedType.SIGNED);
-                                    break;
-                                case CHARACTER:
-                                    structGet.setSignedType(WasmSignedType.UNSIGNED);
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
+                var field = cls.getField(expr.getField().getFieldName());
+                result = getHeapField(field.getType(), target, offset);
+            } else {
+                result = getNormalField(expr, target);
+            }
+            result.setLocation(expr.getLocation());
+        }
+    }
+
+    private WasmExpression getNormalField(QualificationExpr expr, WasmExpression target) {
+        target.acceptVisitor(typeInference);
+        var type = (WasmType.CompositeReference) typeInference.getResult();
+        if (type == null) {
+            return new WasmUnreachable();
+        }
+        var struct = (WasmStructure) type.composite;
+        var fieldIndex = context.classInfoProvider().getFieldIndex(expr.getField());
+        if (fieldIndex < 0) {
+            return new WasmUnreachable();
+        }
+        var structGet = new WasmStructGet(struct, target, fieldIndex);
+        var cls = context.classes().get(expr.getField().getClassName());
+        if (cls != null) {
+            var field = cls.getField(expr.getField().getFieldName());
+            if (field != null) {
+                var fieldType = field.getType();
+                if (fieldType instanceof ValueType.Primitive) {
+                    switch (((ValueType.Primitive) fieldType).getKind()) {
+                        case BOOLEAN:
+                            structGet.setSignedType(WasmSignedType.UNSIGNED);
+                            break;
+                        case BYTE:
+                            structGet.setSignedType(WasmSignedType.SIGNED);
+                            break;
+                        case SHORT:
+                            structGet.setSignedType(WasmSignedType.SIGNED);
+                            break;
+                        case CHARACTER:
+                            structGet.setSignedType(WasmSignedType.UNSIGNED);
+                            break;
+                        default:
+                            break;
                     }
                 }
-                structGet.setLocation(expr.getLocation());
-                result = structGet;
-            } else {
-                result = new WasmUnreachable();
-                result.setLocation(expr.getLocation());
             }
         }
+        return structGet;
+    }
+
+    private WasmExpression getHeapField(ValueType type, WasmExpression target, int offset) {
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                case BYTE:
+                    return new WasmLoadInt32(1, target, WasmInt32Subtype.INT8, offset);
+                case CHARACTER:
+                    return new WasmLoadInt32(2, target, WasmInt32Subtype.UINT16, offset);
+                case SHORT:
+                    return new WasmLoadInt32(2, target, WasmInt32Subtype.INT16, offset);
+                case INTEGER:
+                    return new WasmLoadInt32(4, target, WasmInt32Subtype.INT32, offset);
+                case LONG:
+                    return new WasmLoadInt64(8, target, WasmInt64Subtype.INT64, offset);
+                case FLOAT:
+                    return new WasmLoadFloat32(4, target, offset);
+                case DOUBLE:
+                    return new WasmLoadFloat64(8, target, offset);
+                default:
+                    break;
+            }
+        }
+        return new WasmLoadInt32(4, target, WasmInt32Subtype.INT32, offset);
     }
 
     @Override
@@ -816,6 +946,31 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         @Override
         public WasmGCStringProvider strings() {
             return context.strings();
+        }
+
+        @Override
+        public WasmTag exceptionTag() {
+            return context.getExceptionTag();
+        }
+
+        @Override
+        public String entryPoint() {
+            return context.entryPoint();
+        }
+
+        @Override
+        public Diagnostics diagnostics() {
+            return context.diagnostics();
+        }
+
+        @Override
+        public MethodReference currentMethod() {
+            return currentMethod;
+        }
+
+        @Override
+        public void addToInitializer(Consumer<WasmFunction> initializerContributor) {
+            context.addToInitializer(initializerContributor);
         }
     };
 }

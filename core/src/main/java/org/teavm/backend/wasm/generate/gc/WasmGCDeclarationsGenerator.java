@@ -15,7 +15,9 @@
  */
 package org.teavm.backend.wasm.generate.gc;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
@@ -28,11 +30,14 @@ import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCCustomGeneratorProvider;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCIntrinsicProvider;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCMethodGenerator;
+import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.analysis.ClassInitializerInfo;
@@ -46,10 +51,12 @@ public class WasmGCDeclarationsGenerator {
     public final WasmFunctionTypes functionTypes;
     private final WasmGCClassGenerator classGenerator;
     private final WasmGCMethodGenerator methodGenerator;
+    private List<WasmGCInitializerContributor> initializerContributors = new ArrayList<>();
 
     public WasmGCDeclarationsGenerator(
             WasmModule module,
             ListableClassHolderSource classes,
+            ClassReaderSource originalClasses,
             ClassLoader classLoader,
             ClassInitializerInfo classInitializerInfo,
             DependencyInfo dependencyInfo,
@@ -58,7 +65,8 @@ public class WasmGCDeclarationsGenerator {
             WasmGCIntrinsicProvider intrinsics,
             List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories,
             Predicate<MethodReference> isVirtual,
-            boolean strict
+            boolean strict,
+            String entryPoint
     ) {
         this.module = module;
         hierarchy = new ClassHierarchy(classes);
@@ -77,13 +85,16 @@ public class WasmGCDeclarationsGenerator {
                 diagnostics,
                 customGenerators,
                 intrinsics,
-                strict
+                strict,
+                entryPoint,
+                initializerContributors::add
         );
         var tags = new TagRegistry(classes, hierarchy);
         var metadataRequirements = new ClassMetadataRequirements(dependencyInfo);
         classGenerator = new WasmGCClassGenerator(
                 module,
                 classes,
+                originalClasses,
                 hierarchy,
                 dependencyInfo,
                 functionTypes,
@@ -132,7 +143,8 @@ public class WasmGCDeclarationsGenerator {
     }
 
     public void contributeToInitializer(WasmFunction function) {
-        var contributors = List.of(classGenerator, classGenerator.strings);
+        var contributors = new ArrayList<>(List.of(classGenerator, classGenerator.strings));
+        contributors.addAll(initializerContributors);
         for (var contributor : contributors) {
             contributor.contributeToInitializerDefinitions(function);
         }
@@ -149,5 +161,21 @@ public class WasmGCDeclarationsGenerator {
 
     public WasmFunction dummyInitializer() {
         return methodGenerator.getDummyInitializer();
+    }
+
+    public WasmGCNameProvider names() {
+        return methodGenerator.names;
+    }
+
+    public WasmGCStringProvider strings() {
+        return classGenerator.strings;
+    }
+
+    public WasmTag exceptionTag() {
+        return methodGenerator.getGenerationContext().getExceptionTag();
+    }
+
+    public void addToInitializer(Consumer<WasmFunction> contributor) {
+        methodGenerator.getGenerationContext().addToInitializer(contributor);
     }
 }

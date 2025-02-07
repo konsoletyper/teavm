@@ -16,8 +16,8 @@
 package org.teavm.classlib.java.nio;
 
 abstract class TFloatBufferImpl extends TFloatBuffer {
-    public TFloatBufferImpl(int capacity, int position, int limit) {
-        super(capacity, position, limit);
+    TFloatBufferImpl(int position, int limit) {
+        super(position, limit);
     }
 
     @Override
@@ -27,12 +27,12 @@ abstract class TFloatBufferImpl extends TFloatBuffer {
 
     @Override
     public TFloatBuffer duplicate() {
-        return duplicate(0, capacity, position, limit, isReadOnly());
+        return duplicate(0, capacity(), position, limit, isReadOnly());
     }
 
     @Override
     public TFloatBuffer asReadOnlyBuffer() {
-        return duplicate(0, capacity, position, limit, true);
+        return duplicate(0, capacity(), position, limit, true);
     }
 
     abstract TFloatBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly);
@@ -90,7 +90,7 @@ abstract class TFloatBufferImpl extends TFloatBuffer {
             }
         }
         position = sz;
-        limit = capacity;
+        limit = capacity();
         mark = -1;
         return this;
     }

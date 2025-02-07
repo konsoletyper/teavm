@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { createObject, consumeObject, C } from '/tests/exportClassMembers/test.js';
+const { createObject, consumeObject, C } = await (await import('/tests/exportClassMembers/provider.js')).default;
 
 export async function test() {
     let o = createObject("qwe");
@@ -22,4 +22,5 @@ export async function test() {
     assertEquals("consumeObject:qwe:42", consumeObject(o));
     assertEquals(99, C.baz());
     assertEquals("I'm static", C.staticProp);
+    assertEquals("accepted int array: [2, 3, 5]", o.consumeIntArray([2, 3, 5]));
 }

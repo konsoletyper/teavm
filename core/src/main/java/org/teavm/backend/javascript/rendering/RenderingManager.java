@@ -18,6 +18,7 @@ package org.teavm.backend.javascript.rendering;
 import java.util.Properties;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.common.ServiceRepository;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 
@@ -31,6 +32,8 @@ public interface RenderingManager extends ServiceRepository {
     void exportFunction(String functionName, String alias);
 
     ListableClassReaderSource getClassSource();
+
+    ClassReaderSource getOriginalClassSource();
 
     ClassLoader getClassLoader();
 

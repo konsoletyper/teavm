@@ -30,22 +30,21 @@
     <script type="application/javascript">
         let runner = null;
         function init() {
-            TeaVM.wasm.load("wasm-gc/pi.wasm", {
+            TeaVM.wasmGC.load("wasm-gc/pi.wasm", {
                 installImports(o) {
                     function putwchar(ch) {
                         $rt_putStdoutCustom(String.fromCharCode(ch));
                     }
-                    o.teavm.putcharStderr = putwchar;
-                    o.teavm.putcharStdout = putwchar;
+                    o.teavmConsole.putcharStderr = putwchar;
+                    o.teavmConsole.putcharStdout = putwchar;
                 },
             }).then(teavm => {
-                this.instance = teavm.instance;
-                runner = n => teavm.main([n.toString()]);
+                runner = n => teavm.exports.main([n.toString()]);
                 document.getElementById("run").disabled = false;
             })
         }
         function calculate() {
-            var count = parseInt(document.getElementById("digit-count").value);
+            let count = parseInt(document.getElementById("digit-count").value);
             runner(count);
         }
         init();
