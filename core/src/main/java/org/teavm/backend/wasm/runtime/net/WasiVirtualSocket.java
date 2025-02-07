@@ -25,7 +25,8 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.teavm.backend.wasm.runtime.WasiBuffer;
-import org.teavm.backend.wasm.runtime.net.impl.*;
+import org.teavm.backend.wasm.runtime.net.impl.SockAddrInet4;
+import org.teavm.backend.wasm.runtime.net.impl.SockAddrInet6;
 import org.teavm.backend.wasm.wasi.Wasi;
 import org.teavm.interop.Address;
 import org.teavm.interop.Structure;
@@ -34,14 +35,21 @@ import org.teavm.runtime.net.VirtualSocket;
 
 public class WasiVirtualSocket implements VirtualSocket {
 
-    private static final int MAX_RESOLVED_ADDRESSES = 16;
-    private static final int ADDR_SIZE = 22;
     private static final int IPV4_ADDR_SIZE = 4;
     private static final int IPV6_ADDR_SIZE = 8;
-    private static final int ADDR_INFO_BUFFER_SIZE = AddrInfo.getBufferSize();
-    private static final int ADDR_INFO_ADDR_BUFFER_SIZE = AddrInfo.getAddrBufferSize();
+    private static final int ADDR_SIZE = 22;
+    private static final int ADDR_INFO_BUFFER_SIZE = 28;
+    private static final int ADDR_INFO_ADDR_BUFFER_SIZE = 18;
+    private static final int MAX_RESOLVED_ADDRESSES = 16;
+
     public static final int HINTS_ENABLED = 1;
     public static final int HINTS_DISABLED = 2;
+
+    public class AddrInfoHints extends Structure {
+        public int type;
+        public int family;
+        public int hintsEnabled;
+    }
 
     public static class CIOVec extends Structure {
         public int address;
@@ -196,14 +204,20 @@ public class WasiVirtualSocket implements VirtualSocket {
             validateSotype(sotype);
         }
 
-        AddrInfoHints hints = new AddrInfoHints(sotype, proto, hintsEnabled);
+        Address hintsAddr = WasiBuffer.getBuffer();
+        AddrInfoHints hints = hintsAddr.toStructure();
+
+        hints.type = sotype;
+        hints.family = proto;
+        hints.hintsEnabled = hintsEnabled;
+
         byte[] resultBuffer = new byte[ADDR_INFO_BUFFER_SIZE * MAX_RESOLVED_ADDRESSES];
         int[] resolvedCount = new int[1];
 
         int errno = Wasi.sockAddrResolve(
                 Address.ofData(nameNT),
                 Address.ofData(serviceNT),
-                hints.getAddress(),
+                hintsAddr,
                 Address.ofData(resultBuffer),
                 resultBuffer.length,
                 Address.ofData(resolvedCount));
@@ -215,17 +229,18 @@ public class WasiVirtualSocket implements VirtualSocket {
         SockAddr[] addresses = new SockAddr[resolvedCount[0]];
 
         for (int i = 0; i < resolvedCount[0]; i++) {
-            ByteBuffer buffer =
-                    ByteBuffer.wrap(resultBuffer, i * ADDR_INFO_BUFFER_SIZE, ADDR_INFO_BUFFER_SIZE)
-                            .order(ByteOrder.nativeOrder());
-
+            ByteBuffer buffer = ByteBuffer.wrap(resultBuffer, i * ADDR_INFO_BUFFER_SIZE, ADDR_INFO_BUFFER_SIZE)
+                    .order(ByteOrder.nativeOrder());
             int sockKind = buffer.getInt();
             byte[] addrBuf = new byte[ADDR_INFO_ADDR_BUFFER_SIZE];
             buffer.get(addrBuf);
-            int sockType = buffer.getInt();
+            buffer.getInt();
 
-            AddrInfo addrInfo = new AddrInfo(sockKind, addrBuf, sockType);
-            addresses[i] = parseSockAddr(addrInfoToRaw(addrInfo));
+            ByteBuffer rawBuffer = ByteBuffer.allocate(ADDR_SIZE).order(ByteOrder.nativeOrder());
+            rawBuffer.putInt(sockKind);
+            rawBuffer.put(addrBuf);
+
+            addresses[i] = parseSockAddr(rawBuffer.array());
         }
 
         return addresses;
@@ -419,12 +434,5 @@ public class WasiVirtualSocket implements VirtualSocket {
         } else {
             throw new SocketException("Unknown address family: " + kind);
         }
-    }
-
-    private byte[] addrInfoToRaw(AddrInfo addrInfo) {
-        ByteBuffer buffer = ByteBuffer.allocate(ADDR_SIZE).order(ByteOrder.nativeOrder());
-        buffer.putInt(addrInfo.getSockKind());
-        buffer.put(addrInfo.getAddrBuf());
-        return buffer.array();
     }
 }
