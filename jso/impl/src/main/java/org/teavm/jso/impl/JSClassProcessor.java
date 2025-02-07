@@ -1106,8 +1106,8 @@ class JSClassProcessor {
                     if (optionalValue == null || !optionalValue.getBoolean()) {
                         diagnostics.error(callLocation, "Parameter " + (i + 1) + " of method {{m0}} is marked with "
                                 + "@JSByRef, which is not supported in Wasm GC", method.getReference());
+                        return false;
                     }
-                    return false;
                 } else {
                     byRefParams[i] = true;
                 }
