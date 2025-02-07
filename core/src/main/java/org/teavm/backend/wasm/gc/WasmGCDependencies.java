@@ -55,7 +55,7 @@ public class WasmGCDependencies {
                 .use();
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "setToStringArray", String[].class,
                         int.class, String.class, void.class))
-                .propagate(1, analyzer.getType("[java/lang/String;"))
+                .propagate(1, analyzer.getType("[Ljava/lang/String;"))
                 .propagate(3, analyzer.getType("java.lang.String"))
                 .use();
         analyzer.linkMethod(new MethodReference(StringBuilder.class, "append", char.class, StringBuilder.class))
