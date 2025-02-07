@@ -958,8 +958,8 @@ class JSClassProcessor {
                 if (optionalValue == null || !optionalValue.getBoolean()) {
                     diagnostics.error(callLocation, "Method {{m0}} is marked with "
                             + "@JSByRef, which is not supported in Wasm GC", method.getReference());
+                    return false;
                 }
-                return false;
             } else {
                 returnByRef = true;
             }
