@@ -547,7 +547,7 @@ function jsoImports(imports, context) {
                 rethrowJsAsJava(e);
             }
         },
-        concatArray: (a, b) => a.concat(b),
+        concatArray: (a, b) => [...a, ...b],
         getJavaException: e => e[javaExceptionSymbol],
         jsExports: () => context.userExports
     };

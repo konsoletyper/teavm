@@ -189,7 +189,7 @@ class JSValueMarshaller {
         if (degree <= 1) {
             InvokeInstruction insn = new InvokeInstruction();
             insn.setMethod(referenceCache.getCached(new MethodReference(JS.class.getName(), "wrap",
-                    getWrappedType(type), getWrapperType(type))));
+                    getWrappedType(type), getWrapperType())));
             insn.setArguments(var);
             insn.setReceiver(result);
             insn.setType(InvocationType.SPECIAL);
@@ -218,7 +218,7 @@ class JSValueMarshaller {
 
             insn = new InvokeInstruction();
             insn.setMethod(referenceCache.getCached(new MethodReference(JS.class.getName(), "map",
-                    getWrappedType(type), ValueType.parse(JS.WrapFunction.class), getWrapperType(type))));
+                    getWrappedType(type), ValueType.parse(JS.WrapFunction.class), getWrapperType())));
             insn.setArguments(var, function);
             insn.setReceiver(result);
             insn.setType(InvocationType.SPECIAL);
@@ -344,12 +344,8 @@ class JSValueMarshaller {
         }
     }
 
-    private ValueType getWrapperType(ValueType type) {
-        if (type instanceof ValueType.Array) {
-            return JSMethods.JS_ARRAY;
-        } else {
-            return JSMethods.JS_OBJECT;
-        }
+    private ValueType getWrapperType() {
+        return JSMethods.JS_OBJECT;
     }
 
     private MethodReference getWrapperFunction(ValueType type) {

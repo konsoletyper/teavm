@@ -29,6 +29,13 @@ import org.teavm.jso.core.JSBigInt;
 import org.teavm.jso.core.JSBoolean;
 import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.core.JSString;
+import org.teavm.jso.typedarrays.BigInt64Array;
+import org.teavm.jso.typedarrays.Float32Array;
+import org.teavm.jso.typedarrays.Float64Array;
+import org.teavm.jso.typedarrays.Int16Array;
+import org.teavm.jso.typedarrays.Int32Array;
+import org.teavm.jso.typedarrays.Int8Array;
+import org.teavm.jso.typedarrays.Uint16Array;
 
 public final class JS {
     private JS() {
@@ -172,7 +179,7 @@ public final class JS {
     @NoSideEffects
     public static native String unwrapString(JSObject value);
 
-    public static <T extends JSObject> JSArray<T> wrap(T[] array) {
+    public static <T extends JSObject> JSObject wrap(T[] array) {
         if (array == null) {
             return null;
         }
@@ -183,7 +190,7 @@ public final class JS {
         return result;
     }
 
-    public static <T> JSArray<T> wrap(T[] array) {
+    public static <T> JSObject wrap(T[] array) {
         if (array == null) {
             return null;
         }
@@ -194,11 +201,11 @@ public final class JS {
         return result;
     }
 
-    public static <T extends JSObject> WrapFunction<T[], JSArray<T>> arrayWrapper() {
+    public static <T extends JSObject> WrapFunction<T[], JSObject> arrayWrapper() {
         return JS::wrap;
     }
 
-    public static <T extends JSObject, S> JSArray<T> map(S[] array, WrapFunction<S, T> f) {
+    public static <T extends JSObject, S> JSObject map(S[] array, WrapFunction<S, T> f) {
         if (array == null) {
             return null;
         }
@@ -217,11 +224,11 @@ public final class JS {
         T apply(S obj);
     }
 
-    public static <T extends JSObject, S> WrapFunction<S[], JSArray<T>> arrayMapper(WrapFunction<S, T> f) {
+    public static <T extends JSObject, S> WrapFunction<S[], JSObject> arrayMapper(WrapFunction<S, T> f) {
         return array -> map(array, f);
     }
 
-    public static JSArray<JSBoolean> wrap(boolean[] array) {
+    public static JSObject wrap(boolean[] array) {
         if (array == null) {
             return null;
         }
@@ -232,87 +239,87 @@ public final class JS {
         return result;
     }
 
-    public static WrapFunction<boolean[], JSArray<JSBoolean>> booleanArrayWrapper() {
+    public static WrapFunction<boolean[], JSObject> booleanArrayWrapper() {
         return JS::wrap;
     }
 
-    public static JSArray<JSNumber> wrap(byte[] array) {
+    public static JSObject wrap(byte[] array) {
         if (array == null) {
             return null;
         }
-        var result = new JSArray<JSNumber>(array.length);
+        var result = new Int8Array(array.length);
         for (int i = 0; i < array.length; ++i) {
-            result.set(i, JSNumber.valueOf(array[i]));
+            result.set(i, array[i]);
         }
         return result;
     }
 
-    public static WrapFunction<byte[], JSArray<JSNumber>> byteArrayWrapper() {
+    public static WrapFunction<byte[], JSObject> byteArrayWrapper() {
         return JS::wrap;
     }
 
-    public static JSArray<JSNumber> wrap(short[] array) {
+    public static JSObject wrap(short[] array) {
         if (array == null) {
             return null;
         }
-        var result = new JSArray<JSNumber>(array.length);
+        var result = new Int16Array(array.length);
         for (int i = 0; i < array.length; ++i) {
-            result.set(i, JSNumber.valueOf(array[i]));
+            result.set(i, array[i]);
         }
         return result;
     }
 
-    public static WrapFunction<short[], JSArray<JSNumber>> shortArrayWrapper() {
+    public static WrapFunction<short[], JSObject> shortArrayWrapper() {
         return JS::wrap;
     }
 
-    public static JSArray<JSNumber> wrap(char[] array) {
+    public static JSObject wrap(char[] array) {
         if (array == null) {
             return null;
         }
-        var result = new JSArray<JSNumber>(array.length);
+        var result = new Uint16Array(array.length);
         for (int i = 0; i < array.length; ++i) {
-            result.set(i, JSNumber.valueOf(array[i]));
+            result.set(i, array[i]);
         }
         return result;
     }
 
-    public static WrapFunction<char[], JSArray<JSNumber>> charArrayWrapper() {
+    public static WrapFunction<char[], JSObject> charArrayWrapper() {
         return JS::wrap;
     }
 
-    public static JSArray<JSNumber> wrap(int[] array) {
+    public static JSObject wrap(int[] array) {
         if (array == null) {
             return null;
         }
-        var result = new JSArray<JSNumber>(array.length);
+        var result = new Int32Array(array.length);
         for (int i = 0; i < array.length; ++i) {
-            result.set(i, JSNumber.valueOf(array[i]));
+            result.set(i, array[i]);
         }
         return result;
     }
 
-    public static WrapFunction<int[], JSArray<JSNumber>> intArrayWrapper() {
+    public static WrapFunction<int[], JSObject> intArrayWrapper() {
         return JS::wrap;
     }
 
-    public static JSArray<JSBigInt> wrap(long[] array) {
+    public static JSObject wrap(long[] array) {
         if (array == null) {
             return null;
         }
-        var result = new JSArray<JSBigInt>(array.length);
+        var result = new BigInt64Array(array.length);
         for (int i = 0; i < array.length; ++i) {
-            result.set(i, JSBigInt.valueOf(array[i]));
+            result.set(i, array[i]);
         }
         return result;
     }
 
-    public static WrapFunction<long[], JSArray<JSBigInt>> longArrayWrapper() {
+    public static WrapFunction<long[], JSObject> longArrayWrapper() {
         return JS::wrap;
     }
 
     @NoSideEffects
-    public static JSArray<JSString> wrap(String[] array) {
+    public static JSObject wrap(String[] array) {
         if (array == null) {
             return null;
         }
@@ -323,37 +330,37 @@ public final class JS {
         return result;
     }
 
-    public static WrapFunction<String[], JSArray<JSString>> stringArrayWrapper() {
+    public static WrapFunction<String[], JSObject> stringArrayWrapper() {
         return JS::wrap;
     }
 
-    public static JSArray<JSNumber> wrap(float[] array) {
+    public static JSObject wrap(float[] array) {
         if (array == null) {
             return null;
         }
-        var result = new JSArray<JSNumber>(array.length);
+        var result = new Float32Array(array.length);
         for (int i = 0; i < array.length; ++i) {
-            result.set(i, JSNumber.valueOf(array[i]));
+            result.set(i, array[i]);
         }
         return result;
     }
 
-    public static WrapFunction<float[], JSArray<JSNumber>> floatArrayWrapper() {
+    public static WrapFunction<float[], JSObject> floatArrayWrapper() {
         return JS::wrap;
     }
 
-    public static JSArray<JSNumber> wrap(double[] array) {
+    public static JSObject wrap(double[] array) {
         if (array == null) {
             return null;
         }
-        var result = new JSArray<JSNumber>(array.length);
+        var result = new Float64Array(array.length);
         for (int i = 0; i < array.length; ++i) {
-            result.set(i, JSNumber.valueOf(array[i]));
+            result.set(i, array[i]);
         }
         return result;
     }
 
-    public static WrapFunction<double[], JSArray<JSNumber>> doubleArrayWrapper() {
+    public static WrapFunction<double[], JSObject> doubleArrayWrapper() {
         return JS::wrap;
     }
 
