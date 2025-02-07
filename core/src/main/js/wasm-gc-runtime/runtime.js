@@ -30,9 +30,10 @@ let setGlobalName = function(name, value) {
     new Function("value", name + " = value;")(value);
 }
 
-function defaults(imports) {
+function defaults(imports, userExports) {
     let context = {
         exports: null,
+        userExports: userExports,
         stackDeobfuscator: null
     };
     dateImports(imports);
@@ -547,7 +548,8 @@ function jsoImports(imports, context) {
             }
         },
         concatArray: (a, b) => a.concat(b),
-        getJavaException: e => e[javaExceptionSymbol]
+        getJavaException: e => e[javaExceptionSymbol],
+        jsExports: () => context.userExports
     };
     for (let name of ["wrapByte", "wrapShort", "wrapChar", "wrapInt", "wrapLong", "wrapFloat", "wrapDouble",
         "unwrapByte", "unwrapShort", "unwrapChar", "unwrapInt", "unwrapLong", "unwrapFloat", "unwrapDouble"]) {
@@ -655,7 +657,8 @@ async function load(path, options) {
     ]);
 
     const importObj = {};
-    const defaultsResult = defaults(importObj);
+    let userExports = {};
+    const defaultsResult = defaults(importObj, userExports);
     if (typeof options.installImports !== "undefined") {
         options.installImports(importObj);
     }
@@ -672,7 +675,6 @@ async function load(path, options) {
             defaultsResult.supplyStackDeobfuscator(deobfuscator);
         }
     }
-    let userExports = {};
     let teavm = {
         exports: userExports,
         instance: instance,
