@@ -662,7 +662,7 @@ async function load(path, options) {
     if (!options.noAutoImports) {
         await wrapImports(module, importObj);
     }
-    let instance = new WebAssembly.Instance(module, importObj);
+    let instance = await WebAssembly.instantiate(module, importObj);
 
     defaultsResult.supplyExports(instance.exports);
     if (deobfuscatorFactory) {
@@ -676,7 +676,7 @@ async function load(path, options) {
     let teavm = {
         exports: userExports,
         instance: instance,
-        module: module
+        module: instance.module
     };
     for (let key in instance.exports) {
         let exportObj = instance.exports[key];
