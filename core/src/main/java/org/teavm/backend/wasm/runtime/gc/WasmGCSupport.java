@@ -39,6 +39,10 @@ public class WasmGCSupport {
         throw new CloneNotSupportedException();
     }
 
+    public static Object defaultClone(Object object) throws CloneNotSupportedException {
+        throw new CloneNotSupportedException();
+    }
+
     public static int nextObjectId() {
         var x = lastObjectId;
         x ^= x << 13;
