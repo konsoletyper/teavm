@@ -549,6 +549,10 @@ function jsoImports(imports, context) {
         },
         concatArray: (a, b) => [...a, ...b],
         getJavaException: e => e[javaExceptionSymbol],
+        getJSException: e => {
+            let getJsException = context.exports["teavm.getJsException"]
+            return getJsException(e);
+        },
         jsExports: () => context.userExports
     };
     for (let name of ["wrapByte", "wrapShort", "wrapChar", "wrapInt", "wrapLong", "wrapFloat", "wrapDouble",

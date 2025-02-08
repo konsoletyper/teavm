@@ -24,5 +24,6 @@ public final class JSExceptions {
     @Import(name = "getJavaException", module = "teavmJso")
     public static native Throwable getJavaException(JSObject e);
 
-    public static native JSObject getJSException(Throwable e);
+    @Import(name = "getJSException", module = "teavmJso")
+    public static native JSObject su(Throwable e);
 }
