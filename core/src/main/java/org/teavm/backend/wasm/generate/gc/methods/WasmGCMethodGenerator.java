@@ -295,7 +295,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             var localVar = ast.getVariables().get(i);
             var inferredType = preciseTypes[i];
             WasmType type;
-            if (!inferredType.isArrayUnwrap) {
+            if (!inferredType.isArrayUnwrap || inferredType.valueType == null) {
                 type = typeMapper.mapType(inferredType.valueType);
             } else {
                 var arrayType = classInfoProvider.getClassInfo(inferredType.valueType).getArray();

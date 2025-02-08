@@ -133,4 +133,9 @@ public class PreciseTypeInference extends BaseTypeInference<PreciseValueType> {
     protected PreciseValueType arrayUnwrapType(PreciseValueType type) {
         return new PreciseValueType(type.valueType, true);
     }
+
+    @Override
+    protected PreciseValueType arrayWrapType(PreciseValueType type) {
+        return new PreciseValueType(type.valueType, false);
+    }
 }
