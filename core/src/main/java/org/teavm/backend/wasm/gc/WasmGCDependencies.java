@@ -45,6 +45,7 @@ public class WasmGCDependencies {
         analyzer.addDependencyListener(new WasmGCReferenceQueueDependency());
         analyzer.addDependencyListener(new WasmGCResourceDependency());
         analyzer.addDependencyListener(new SystemArrayCopyDependencySupport());
+        analyzer.addDependencyListener(new WasmGCSignatureDependencyListener());
         handleReferences();
     }
 
