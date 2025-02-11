@@ -401,6 +401,11 @@ class JSClassProcessor {
                 className = "java.lang.Object";
             }
         }
+
+        convertInvokeArgs(invoke, className);
+    }
+
+    private void convertInvokeArgs(InvokeInstruction invoke, String className) {
         Variable[] newArgs = null;
         for (var i = 0; i < invoke.getArguments().size(); ++i) {
             var type = invoke.getMethod().parameterType(i);
@@ -892,6 +897,7 @@ class JSClassProcessor {
         }
         if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
             if (isStatic) {
+                convertInvokeArgs(invoke, method.getOwnerName());
                 return false;
             }
             MethodReader overridden = getOverriddenMethod(method);
