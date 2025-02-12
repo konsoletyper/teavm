@@ -143,7 +143,10 @@ function coreImports(imports, context) {
             }
             return new WeakRef(value);
         },
-        deref: weakRef => weakRef.deref(),
+        deref: weakRef => {
+            let result = weakRef.deref();
+            return result !== void 0 ? result : null;
+        },
         createStringWeakRef(value, heldValue) {
             stringFinalizationRegistry.register(value, heldValue)
             return new WeakRef(value);
