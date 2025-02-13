@@ -95,11 +95,17 @@ let $rt_resuming = () => {
     return thread != null && thread.isResuming();
 }
 let $rt_suspend = callback => {
+    let nativeThread = $rt_requireNativeThread();
+    return nativeThread.suspend(callback);
+}
+let $rt_requireNativeThread = () => {
     let nativeThread = $rt_nativeThread();
     if (nativeThread === null) {
-        throw new teavm_globals.Error("Suspension point reached from non-threading context (perhaps, from native JS method).");
+        throw new teavm_globals.Error("Suspension point reached from non-threading context " +
+            "(perhaps, from native JS method). See https://teavm.org/docs/runtime/coroutines.html " +
+            "('Interaction with JavaScript' section)");
     }
-    return nativeThread.suspend(callback);
+    return nativeThread;
 }
 let $rt_startThread = (runner, callback) => new TeaVMThread(runner).start(callback);
 let $rt_currentNativeThread = null;
