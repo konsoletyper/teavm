@@ -23,7 +23,9 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.teavm.common.LCATree;
@@ -42,14 +44,16 @@ class WasmGCVirtualTableBuilder {
     private List<Table> tables = new ArrayList<>();
     private Map<String, Table> tableMap = new HashMap<>();
     private LCATree lcaTree;
-    private Map<String, Table> interfaceImplementors = new HashMap<>();
     Map<String, WasmGCVirtualTable> result = new HashMap<>();
 
     void build() {
         initTables();
         buildLCA();
+        initInterfaceTables();
         fillInterfaceImplementors();
+        createFakeInterfaceRepresentatives();
         groupMethodsFromCallSites();
+        moveClassesToMergedTables();
         fillTables();
         buildResult();
     }
@@ -67,6 +71,9 @@ class WasmGCVirtualTableBuilder {
                 initTable(cls.getParent());
             }
             var table = new Table(cls, tables.size());
+            if (cls.getParent() != null) {
+                table.parent = tableMap.get(cls.getParent());
+            }
             tables.add(table);
             tableMap.put(className, table);
         }
@@ -81,18 +88,27 @@ class WasmGCVirtualTableBuilder {
         }
     }
 
-    private void fillInterfaceImplementors() {
+    private void initInterfaceTables() {
         for (var className : classes.getClassNames()) {
             var cls = classes.get(className);
-            if (!cls.hasModifier(ElementModifier.INTERFACE)) {
+            if (cls.hasModifier(ElementModifier.INTERFACE)) {
+                var table = new Table(cls, tables.size());
+                tables.add(table);
+                tableMap.put(className, table);
+            }
+        }
+    }
+
+    private void fillInterfaceImplementors() {
+        for (var table : tables) {
+            if (!table.cls.hasModifier(ElementModifier.INTERFACE)) {
                 var visited = new HashSet<String>();
                 do {
-                    var table = tableMap.get(cls.getName());
-                    for (var itfName : cls.getInterfaces()) {
+                    for (var itfName : table.cls.getInterfaces()) {
                         addImplementorToInterface(itfName, table, visited);
                     }
-                    cls = cls.getParent() != null ? classes.get(cls.getParent()) : null;
-                } while (cls != null);
+                    table = table.cls.getParent() != null ? tableMap.get(table.cls.getParent()) : null;
+                } while (table != null);
             }
         }
     }
@@ -101,13 +117,19 @@ class WasmGCVirtualTableBuilder {
         if (!visited.add(interfaceName)) {
             return;
         }
-        var knownImplementor = interfaceImplementors.get(interfaceName);
-        if (knownImplementor == null) {
-            interfaceImplementors.put(interfaceName, newImplementor);
-        } else {
-            var lcaIndex = lcaTree.lcaOf(newImplementor.index + 1, knownImplementor.index + 1);
+        var itf = tableMap.get(interfaceName);
+        if (!itf.commonImplementorFilled) {
+            itf.commonImplementorFilled = true;
+            itf.commonImplementor = newImplementor.parent;
+        } else if (itf.commonImplementor != null) {
+            var lcaIndex = lcaTree.lcaOf(newImplementor.index + 1, itf.commonImplementor.index + 1);
             if (lcaIndex > 0) {
-                interfaceImplementors.put(interfaceName, tables.get(lcaIndex - 1));
+                itf.commonImplementor = tables.get(lcaIndex - 1);
+                if (itf.commonImplementor == newImplementor) {
+                    itf.commonImplementor = newImplementor.parent;
+                }
+            } else {
+                itf.commonImplementor = null;
             }
         }
         var cls = classes.get(interfaceName);
@@ -118,24 +140,122 @@ class WasmGCVirtualTableBuilder {
         }
     }
 
+    private void createFakeInterfaceRepresentatives() {
+        var visited = new HashSet<Table>();
+        for (var table : tables) {
+            if (!table.cls.hasModifier(ElementModifier.INTERFACE)) {
+                mergeInterfacesToClass(visited, table);
+                visited.clear();
+            }
+        }
+
+        for (var table : tables) {
+            table.visited = false;
+        }
+
+        for (var table : tables) {
+            if (!table.cls.hasModifier(ElementModifier.INTERFACE)) {
+                mergeInterfacesAndMakeParent(table, table.parent, v -> { });
+            }
+        }
+    }
+
+    private void mergeInterfacesToClass(Set<Table> visited, Table table) {
+        if (table.visited) {
+            return;
+        }
+        table.visited = true;
+        if (table.parent != null) {
+            mergeInterfacesToClass(visited, table.parent);
+        }
+        for (var itf : table.cls.getInterfaces()) {
+            mergeInterfaceToClass(visited, tableMap.get(itf), table);
+        }
+    }
+
+    private void mergeInterfaceToClass(Set<Table> visited, Table table, Table classTable) {
+        if (table == null || table.reference != null || !visited.add(table)) {
+            return;
+        }
+        if (table.commonImplementorFilled) {
+            if (table.commonImplementor != classTable.parent) {
+                table.reference = table.commonImplementor;
+                table.interfaceMergedIntoClass = true;
+            }
+        }
+        for (var superItf : table.cls.getInterfaces()) {
+            mergeInterfaceToClass(visited, tableMap.get(superItf), classTable);
+        }
+    }
+
+    private void mergeInterfacesAndMakeParent(Table table, Table parentTable, Consumer<Table> onVisit) {
+        if (table.visited) {
+            return;
+        }
+        table.visited = true;
+        onVisit.accept(table);
+        if (table.cls.getInterfaces().isEmpty()) {
+            table.parent = parentTable;
+            return;
+        }
+        var interfaces = table.cls.getInterfaces().stream()
+                .map(itf -> tableMap.get(itf))
+                .filter(Objects::nonNull)
+                .map(Table::resolve)
+                .filter(itf -> itf.commonImplementor == parentTable && !itf.interfaceMergedIntoClass)
+                .distinct()
+                .collect(Collectors.toList());
+        if (interfaces.isEmpty()) {
+            table.parent = parentTable;
+            return;
+        }
+        var remaining = new LinkedHashSet<>(interfaces);
+        for (var itf : interfaces) {
+            mergeInterfacesAndMakeParent(itf, parentTable, v -> {
+                if (v != itf) {
+                    remaining.remove(v);
+                }
+                onVisit.accept(v);
+            });
+        }
+
+        interfaces = new ArrayList<>(remaining);
+        var singleInterface = interfaces.get(0);
+        for (var i = 1; i < interfaces.size(); i++) {
+            interfaces.get(i).merge(singleInterface);
+        }
+        table.parent = singleInterface;
+    }
+
     private void groupMethodsFromCallSites() {
         for (var methodRef : methodsAtCallSites) {
-            var className = mapInterface(methodRef.getClassName());
+            var className = mapClassName(methodRef.getClassName());
             var group = groupedMethodsAtCallSites.computeIfAbsent(className, k -> new LinkedHashSet<>());
             group.add(methodRef.getDescriptor());
         }
     }
 
-    private String mapInterface(String name) {
-        var cls = classes.get(name);
-        if (cls == null || !cls.hasModifier(ElementModifier.INTERFACE)) {
+    private String mapClassName(String name) {
+        var table = tableMap.get(name);
+        if (table == null) {
             return name;
         }
-        var implementor = interfaceImplementors.get(cls.getName());
-        if (implementor == null) {
-            return name;
+        return table.resolve().cls.getName();
+    }
+
+    private void moveClassesToMergedTables() {
+        for (var table : tables) {
+            if (table.parent != null) {
+                table.parent = table.parent.resolve();
+            }
+            var resolvedTable = table.resolve();
+            if (resolvedTable != table) {
+                if (resolvedTable.mergedClasses == null) {
+                    resolvedTable.mergedClasses = new ArrayList<>();
+                }
+                resolvedTable.mergedClasses.add(table.cls);
+            }
         }
-        return implementor.cls.getName();
     }
 
     private void fillTables() {
@@ -152,8 +272,7 @@ class WasmGCVirtualTableBuilder {
             return;
         }
         table.filled = true;
-        var parent = table.cls.getParent() != null ? tableMap.get(table.cls.getParent()) : null;
-        table.parent = parent;
+        var parent = table.parent;
         var indexes = new ObjectIntHashMap<MethodDescriptor>();
         if (parent != null) {
             fillTable(parent);
@@ -166,15 +285,22 @@ class WasmGCVirtualTableBuilder {
             table.interfaces.addAll(parent.interfaces);
         }
 
-        for (var method : table.cls.getMethods()) {
-            if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)) {
-                if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
-                    continue;
+        var classes = new ArrayList<ClassReader>();
+        classes.add(table.cls);
+        if (table.mergedClasses != null) {
+            classes.addAll(table.mergedClasses);
+        }
+        for (var cls : classes) {
+            for (var method : cls.getMethods()) {
+                if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)) {
+                    if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
+                        continue;
+                    }
+                    if (!isVirtual.test(method.getReference()) && !method.getReference().equals(CLONE_METHOD)) {
+                        continue;
+                    }
+                    table.currentImplementors.put(method.getDescriptor(), method.getReference());
                 }
-                if (!isVirtual.test(method.getReference()) && !method.getReference().equals(CLONE_METHOD)) {
-                    continue;
-                }
-                table.currentImplementors.put(method.getDescriptor(), method.getReference());
             }
         }
 
@@ -227,19 +353,19 @@ class WasmGCVirtualTableBuilder {
     }
 
     private void buildResult() {
-        for (var className : classes.getClassNames()) {
-            var cls = classes.get(className);
-            var table = !cls.hasModifier(ElementModifier.INTERFACE)
-                    ? tableMap.get(className)
-                    : interfaceImplementors.get(className);
-            if (table != null) {
-                result.put(className, table.getBuildResult());
-            }
+        for (var table : tables) {
+            result.put(table.cls.getName(), table.getBuildResult());
         }
     }
 
     private static class Table {
+        boolean visited;
+        Table reference;
+        Table commonImplementor;
+        boolean commonImplementorFilled;
+        boolean interfaceMergedIntoClass;
         final ClassReader cls;
+        List<ClassReader> mergedClasses;
         int index;
         boolean filled;
         boolean used;
@@ -249,22 +375,48 @@ class WasmGCVirtualTableBuilder {
         Map<MethodDescriptor, MethodReference> currentImplementors = new HashMap<>();
         Set<String> interfaces = new HashSet<>();
         private WasmGCVirtualTable buildResult;
+        private boolean building;
 
         Table(ClassReader cls, int index) {
             this.cls = cls;
             this.index = index;
         }
 
+        void merge(Table other) {
+            other.reference = this;
+            if (parent != null) {
+                other.parent = parent;
+            } else if (other.parent == null) {
+                other.parent = parent;
+            }
+        }
+
         WasmGCVirtualTable getBuildResult() {
+            if (reference != null) {
+                return resolve().getBuildResult();
+            }
             if (buildResult == null) {
+                if (building) {
+                    throw new IllegalStateException();
+                }
+                building = true;
                 buildResult = new WasmGCVirtualTable(parent != null ? parent.getBuildResult() : null, cls.getName(),
                         used, !cls.hasModifier(ElementModifier.ABSTRACT));
                 buildResult.entries = entries.stream()
                         .map(Entry::getBuildResult)
                         .collect(Collectors.toList());
                 buildResult.implementors = implementors.toArray(new MethodReference[0]);
+                buildResult.fakeInterfaceRepresentative = cls.hasModifier(ElementModifier.INTERFACE);
             }
             return buildResult;
+        }
+
+        Table resolve() {
+            if (reference != null) {
+                reference = reference.resolve();
+                return reference;
+            }
+            return this;
         }
     }
 

@@ -341,8 +341,9 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 }
                 if (!classInfo.isHeapStructure()) {
                     if (name != null) {
-                        if (!isInterface) {
-                            virtualTable = virtualTables.lookup(name);
+                        virtualTable = virtualTables.lookup(name);
+                        if (isInterface && virtualTable != null && !virtualTable.isFakeInterfaceRepresentative()) {
+                            virtualTable = null;
                         }
                         if (classReader != null && classReader.getParent() != null && !isInterface) {
                             classInfo.structure.setSupertype(getClassInfo(classReader.getParent()).structure);
