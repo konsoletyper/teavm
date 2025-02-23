@@ -20,6 +20,7 @@ import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public class WasmGCResourceDependency extends AbstractDependencyListener {
     private static final MethodReference ACQUIRE_METHOD = new MethodReference(WasmGCResources.class,
@@ -32,7 +33,8 @@ public class WasmGCResourceDependency extends AbstractDependencyListener {
                     "create", String.class, int.class, int.class, WasmGCResources.Resource.class));
             create.propagate(1, agent.getType("java.lang.String"));
             create.use();
-            method.getResult().propagate(agent.getType("[" + WasmGCResources.Resource.class.getName()));
+            method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.object(
+                    WasmGCResources.Resource.class.getName())).toString()));
             method.getResult().getArrayItem().propagate(agent.getType(WasmGCResources.Resource.class.getName()));
         }
     }
