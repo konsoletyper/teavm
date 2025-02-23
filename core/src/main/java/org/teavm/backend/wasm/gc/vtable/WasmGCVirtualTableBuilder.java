@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.teavm.common.LCATree;
@@ -155,7 +154,7 @@ class WasmGCVirtualTableBuilder {
 
         for (var table : tables) {
             if (!table.cls.hasModifier(ElementModifier.INTERFACE)) {
-                mergeInterfacesAndMakeParent(table, table.parent, v -> { });
+                mergeInterfacesAndMakeParent(table, table.parent);
             }
         }
     }
@@ -188,12 +187,11 @@ class WasmGCVirtualTableBuilder {
         }
     }
 
-    private void mergeInterfacesAndMakeParent(Table table, Table parentTable, Consumer<Table> onVisit) {
+    private void mergeInterfacesAndMakeParent(Table table, Table parentTable) {
         if (table.visited) {
             return;
         }
         table.visited = true;
-        onVisit.accept(table);
         if (table.cls.getInterfaces().isEmpty()) {
             table.parent = parentTable;
             return;
@@ -203,28 +201,38 @@ class WasmGCVirtualTableBuilder {
                 .filter(Objects::nonNull)
                 .map(Table::resolve)
                 .filter(itf -> itf.commonImplementor == parentTable && !itf.interfaceMergedIntoClass)
-                .distinct()
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
         if (interfaces.isEmpty()) {
             table.parent = parentTable;
             return;
         }
-        var remaining = new LinkedHashSet<>(interfaces);
+        findDirectlyImplementedInterfaces(new HashSet<>(), table, parentTable, 0, interfaces);
         for (var itf : interfaces) {
-            mergeInterfacesAndMakeParent(itf, parentTable, v -> {
-                if (v != itf) {
-                    remaining.remove(v);
-                }
-                onVisit.accept(v);
-            });
+            mergeInterfacesAndMakeParent(itf, parentTable);
         }
 
-        interfaces = new ArrayList<>(remaining);
-        var singleInterface = interfaces.get(0);
+        var interfaceList = new ArrayList<>(interfaces);
+        var singleInterface = interfaceList.get(0);
         for (var i = 1; i < interfaces.size(); i++) {
-            interfaces.get(i).merge(singleInterface);
+            singleInterface.merge(interfaceList.get(i));
         }
         table.parent = singleInterface;
+    }
+
+    private void findDirectlyImplementedInterfaces(Set<Table> visited, Table table, Table parentTable,
+            int level, Set<Table> result) {
+        if (!visited.add(table)) {
+            return;
+        }
+        if (level > 1) {
+            result.remove(table);
+        }
+        for (var itf : table.cls.getInterfaces()) {
+            var itfTable = tableMap.get(itf);
+            if (itfTable != null && itfTable.commonImplementor == parentTable && !itfTable.interfaceMergedIntoClass) {
+                findDirectlyImplementedInterfaces(visited, itfTable, parentTable, level + 1, result);
+            }
+        }
     }
 
     private void groupMethodsFromCallSites() {
