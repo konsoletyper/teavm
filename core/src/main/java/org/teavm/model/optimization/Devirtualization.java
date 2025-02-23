@@ -16,8 +16,10 @@
 package org.teavm.model.optimization;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import org.teavm.common.OptionalPredicate;
 import org.teavm.dependency.DependencyInfo;
@@ -41,6 +43,8 @@ public class Devirtualization {
     private ClassHierarchy hierarchy;
     private Set<MethodReference> virtualMethods = new HashSet<>();
     private Set<? extends MethodReference> readonlyVirtualMethods = Collections.unmodifiableSet(virtualMethods);
+    private Map<ValueDependencyInfo, Map<MethodReference, Set<MethodReference>>> implementationCache =
+            new HashMap<>();
     private int virtualCallSites;
     private int directCallSites;
     private int remainingCasts;
@@ -99,8 +103,7 @@ public class Devirtualization {
             return;
         }
         ValueDependencyInfo var = methodDep.getVariable(invoke.getInstance().getIndex());
-        Set<MethodReference> implementations = getImplementations(var.getTypes(),
-                invoke.getMethod());
+        Set<MethodReference> implementations = getImplementations(var, invoke.getMethod());
         if (implementations.size() == 1) {
             MethodReference resolvedImplementaiton = implementations.iterator().next();
             if (shouldLog) {
@@ -201,20 +204,33 @@ public class Devirtualization {
         return true;
     }
 
-    private Set<MethodReference> getImplementations(String[] classNames, MethodReference ref) {
-        return implementations(hierarchy, dependency, classNames, ref);
+    private Set<MethodReference> getImplementations(ValueDependencyInfo value, MethodReference ref) {
+        if (dependency.isPrecise()) {
+            return implementations(hierarchy, dependency, value.getTypes(), ref);
+        } else {
+            var map = implementationCache.computeIfAbsent(value, v -> new HashMap<>());
+            return map.computeIfAbsent(ref, m -> implementations(hierarchy, dependency, value.getTypes(), m));
+        }
     }
 
     public static Set<MethodReference> implementations(ClassHierarchy hierarchy, DependencyInfo dependency,
             String[] classNames, MethodReference ref) {
         OptionalPredicate<String> isSuperclass = hierarchy.getSuperclassPredicate(ref.getClassName());
         Set<MethodReference> methods = new LinkedHashSet<>();
+        var arrayEncountered = false;
         for (String className : classNames) {
             if (className.startsWith("[")) {
+                if (arrayEncountered) {
+                    continue;
+                }
+                arrayEncountered = true;
                 className = "java.lang.Object";
             }
+            if (!isSuperclass.test(className, false)) {
+                continue;
+            }
             ClassReader cls = hierarchy.getClassSource().get(className);
-            if (cls == null || !isSuperclass.test(cls.getName(), false)) {
+            if (cls == null) {
                 continue;
             }
             MethodDependencyInfo methodDep = dependency.getMethodImplementation(new MethodReference(

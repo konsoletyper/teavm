@@ -119,4 +119,9 @@ public class PreciseDependencyAnalyzer extends DependencyAnalyzer {
     boolean domainOptimizationEnabled() {
         return true;
     }
+
+    @Override
+    public boolean isPrecise() {
+        return true;
+    }
 }

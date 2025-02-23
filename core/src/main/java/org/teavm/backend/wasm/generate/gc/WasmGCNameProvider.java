@@ -15,18 +15,18 @@
  */
 package org.teavm.backend.wasm.generate.gc;
 
+import com.carrotsearch.hppc.ObjectIntHashMap;
+import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 public class WasmGCNameProvider {
-    private Set<String> occupiedTopLevelNames = new HashSet<>();
-    private Set<String> occupiedStructNames = new HashSet<>();
+    private ObjectIntMap<String> occupiedTopLevelIndexes = new ObjectIntHashMap<>();
+    private ObjectIntMap<String> occupiedStructIndexes = new ObjectIntHashMap<>();
 
     private Map<MethodDescriptor, String> virtualMethodNames = new HashMap<>();
     private Map<FieldReference, String> memberFieldNames = new HashMap<>();
@@ -36,17 +36,17 @@ public class WasmGCNameProvider {
     }
 
     public String structureField(String name) {
-        return pickUnoccupied(name, occupiedStructNames);
+        return pickUnoccupied(name, occupiedStructIndexes);
     }
 
     public String forVirtualMethod(MethodDescriptor method) {
         return virtualMethodNames.computeIfAbsent(method,
-                k -> pickUnoccupied(sanitize(k.getName()), occupiedStructNames));
+                k -> pickUnoccupied(sanitize(k.getName()), occupiedStructIndexes));
     }
 
     public String forMemberField(FieldReference field) {
         return memberFieldNames.computeIfAbsent(field,
-                k -> pickUnoccupied(sanitize(field.getFieldName()), occupiedStructNames));
+                k -> pickUnoccupied(sanitize(field.getFieldName()), occupiedStructIndexes));
     }
 
     public String suggestForMethod(MethodReference method) {
@@ -142,15 +142,16 @@ public class WasmGCNameProvider {
     }
 
     private String pickUnoccupied(String name) {
-        return pickUnoccupied(name, occupiedTopLevelNames);
+        return pickUnoccupied(name, occupiedTopLevelIndexes);
     }
 
-    private String pickUnoccupied(String name, Set<String> occupied) {
+    private String pickUnoccupied(String name, ObjectIntMap<String> occupiedIndexes) {
         String result = name;
-        int index = 0;
-        while (!occupied.add(result)) {
-            result = name + "_" + index++;
+        int index = occupiedIndexes.getOrDefault(result, -1);
+        if (index >= 0) {
+            result = name + "_" + index;
         }
+        occupiedIndexes.put(result, ++index);
 
         return result;
     }
