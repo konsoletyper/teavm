@@ -229,7 +229,11 @@ class WasmGCVirtualTableBuilder {
         }
         for (var itf : table.cls.getInterfaces()) {
             var itfTable = tableMap.get(itf);
-            if (itfTable != null && itfTable.commonImplementor == parentTable && !itfTable.interfaceMergedIntoClass) {
+            if (itfTable == null) {
+                continue;
+            }
+            itfTable = itfTable.resolve();
+            if (itfTable.commonImplementor == parentTable && !itfTable.interfaceMergedIntoClass) {
                 findDirectlyImplementedInterfaces(visited, itfTable, parentTable, level + 1, result);
             }
         }
