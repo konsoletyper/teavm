@@ -62,8 +62,11 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
 
     private WasmExpression generateGetClass(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         var obj = context.generate(invocation.getArguments().get(0));
-        var objectStruct = context.classInfoProvider().getClassInfo("java.lang.Object").getStructure();
-        var result = new WasmStructGet(objectStruct, obj, WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
+        var objectInfo = context.classInfoProvider().getClassInfo("java.lang.Object");
+        var objectStruct = objectInfo.getStructure();
+        var vt = new WasmStructGet(objectStruct, obj, WasmGCClassInfoProvider.VT_FIELD_OFFSET);
+        var result = new WasmStructGet(objectInfo.getVirtualTableStructure(), vt,
+                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
         result.setLocation(invocation.getLocation());
         return result;
     }
@@ -135,14 +138,17 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
     }
 
     private WasmExpression generateClone(InvocationExpr invocation, WasmGCIntrinsicContext context) {
-        var objectStruct = context.classInfoProvider().getClassInfo("java.lang.Object").getStructure();
+        var objectInfo = context.classInfoProvider().getClassInfo("java.lang.Object");
+        var objectStruct = objectInfo.getStructure();
         var classStruct = context.classInfoProvider().getClassInfo("java.lang.Class").getStructure();
 
         var block = new WasmBlock(false);
         block.setType(objectStruct.getReference());
         var obj = context.exprCache().create(context.generate(invocation.getArguments().get(0)),
                 objectStruct.getReference(), invocation.getLocation(), block.getBody());
-        var cls = new WasmStructGet(objectStruct, obj.expr(), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
+        var vt = new WasmStructGet(objectStruct, obj.expr(), WasmGCClassInfoProvider.VT_FIELD_OFFSET);
+        var cls = new WasmStructGet(objectInfo.getVirtualTableStructure(), vt,
+                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
         var functionRef = new WasmStructGet(classStruct, cls, context.classInfoProvider().getCloneOffset());
         var call = new WasmCallReference(functionRef, context.functionTypes().of(
                 objectStruct.getReference(), objectStruct.getReference()));

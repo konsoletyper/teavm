@@ -190,8 +190,8 @@ public class WasmGCStringPool implements WasmGCStringProvider, WasmGCInitializer
         function.getBody().add(new WasmStructSet(stringTypeInfo.getStructure(),
                 new WasmGetLocal(stringLocal), WasmGCClassInfoProvider.CUSTOM_FIELD_OFFSETS, value));
         function.getBody().add(new WasmStructSet(stringTypeInfo.getStructure(), new WasmGetLocal(stringLocal),
-                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET,
-                new WasmGetGlobal(stringTypeInfo.getPointer())));
+                WasmGCClassInfoProvider.VT_FIELD_OFFSET,
+                new WasmGetGlobal(stringTypeInfo.getVirtualTablePointer())));
         if (hasIntern()) {
             var queryFunction = functionProvider.forStaticMethod(new MethodReference(StringInternPool.class,
                     "query", String.class, String.class));

@@ -113,6 +113,7 @@ public class DisassemblyTypeSectionListener extends BaseDisassemblyListener impl
     public void endStructType() {
         writer.outdent().write(")").eol();
         fieldIndex = 0;
+        needsFieldIndex = false;
     }
 
     @Override

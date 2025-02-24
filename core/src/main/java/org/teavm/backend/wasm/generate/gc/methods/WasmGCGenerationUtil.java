@@ -58,7 +58,7 @@ public class WasmGCGenerationUtil {
         var wasmArray = (WasmArray) wasmArrayType.composite;
 
         var structNew = new WasmStructNew(classInfo.getStructure());
-        structNew.getInitializers().add(new WasmGetGlobal(classInfo.getPointer()));
+        structNew.getInitializers().add(new WasmGetGlobal(classInfo.getVirtualTablePointer()));
         structNew.getInitializers().add(new WasmNullConstant(WasmType.Reference.EQ));
         structNew.getInitializers().add(data.apply(wasmArray));
         return structNew;

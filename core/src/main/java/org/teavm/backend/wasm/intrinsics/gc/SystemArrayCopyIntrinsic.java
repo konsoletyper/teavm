@@ -81,14 +81,18 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
         var source = context.exprCache().create(context.generate(invocation.getArguments().get(0)),
                 objStruct.getReference(), invocation.getLocation(), block.getBody());
         WasmExpression sourceCls = new WasmStructGet(objStruct, source.expr(),
-                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
+                WasmGCClassInfoProvider.VT_FIELD_OFFSET);
         sourceCls = new WasmCast(sourceCls, arrayClsStruct.getNonNullReference());
-        var copyFunction = new WasmStructGet(arrayClsStruct, sourceCls,
+        var sourceClsCached = context.exprCache().create(sourceCls, arrayClsStruct.getNonNullReference(),
+                invocation.getLocation(), block.getBody());
+        var copyFunction = new WasmStructGet(arrayClsStruct, sourceClsCached.expr(),
                 context.classInfoProvider().getArrayCopyOffset());
         var functionTypeRef = (WasmType.CompositeReference) arrayClsStruct.getFields().get(
                 context.classInfoProvider().getArrayCopyOffset()).getUnpackedType();
         var functionType = (WasmFunctionType) functionTypeRef.composite;
         var call = new WasmCallReference(copyFunction, functionType);
+        call.getArguments().add(new WasmStructGet(arrayClsStruct, sourceClsCached.expr(),
+                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET));
         call.getArguments().add(source.expr());
         call.getArguments().add(context.generate(invocation.getArguments().get(1)));
         call.getArguments().add(context.generate(invocation.getArguments().get(2)));
@@ -96,6 +100,7 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
         call.getArguments().add(context.generate(invocation.getArguments().get(4)));
         block.getBody().add(call);
         source.release();
+        sourceClsCached.release();
         return block;
     }
 

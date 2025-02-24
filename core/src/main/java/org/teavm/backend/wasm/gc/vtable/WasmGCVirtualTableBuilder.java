@@ -295,6 +295,8 @@ class WasmGCVirtualTableBuilder {
             }
             table.currentImplementors.putAll(parent.currentImplementors);
             table.interfaces.addAll(parent.interfaces);
+        } else {
+            table.used = true;
         }
 
         var classes = new ArrayList<ClassReader>();

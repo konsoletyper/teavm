@@ -404,8 +404,8 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         }
 
         WasmExpression classRef = new WasmStructGet(context.standardClasses().objectClass().getStructure(),
-                new WasmGetLocal(instance), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-        var index = context.classInfoProvider().getVirtualMethodsOffset() + entry.getIndex();
+                new WasmGetLocal(instance), WasmGCClassInfoProvider.VT_FIELD_OFFSET);
+        var index = WasmGCClassInfoProvider.VIRTUAL_METHOD_OFFSET + entry.getIndex();
         var expectedInstanceClassInfo = context.classInfoProvider().getClassInfo(vtable.getClassName());
         var expectedInstanceClassStruct = context.classInfoProvider().getClassInfo(
                 nonInterfaceAncestor.getClassName()).getStructure();
@@ -443,7 +443,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         target.add(structNew);
 
         var initClassField = new WasmStructSet(classInfo.getStructure(), new WasmGetLocal(targetVar),
-                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET, new WasmGetGlobal(classInfo.getPointer()));
+                WasmGCClassInfoProvider.VT_FIELD_OFFSET, new WasmGetGlobal(classInfo.getVirtualTablePointer()));
         initClassField.setLocation(location);
         target.add(initClassField);
 
@@ -503,9 +503,14 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     protected WasmExpression generateInstanceOf(WasmExpression expression, ValueType type) {
         context.classInfoProvider().getClassInfo(type);
         var supertypeCall = new WasmCall(context.supertypeFunctions().getIsSupertypeFunction(type));
-        var classRef = new WasmStructGet(
+        var vtRef = new WasmStructGet(
                 context.standardClasses().objectClass().getStructure(),
                 expression,
+                WasmGCClassInfoProvider.VT_FIELD_OFFSET
+        );
+        var classRef = new WasmStructGet(
+                context.standardClasses().objectClass().getVirtualTableStructure(),
+                vtRef,
                 WasmGCClassInfoProvider.CLASS_FIELD_OFFSET
         );
         supertypeCall.getArguments().add(classRef);
