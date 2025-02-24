@@ -62,8 +62,10 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
 
     private WasmExpression generateGetClass(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         var obj = context.generate(invocation.getArguments().get(0));
-        var objectStruct = context.classInfoProvider().getClassInfo("java.lang.Object").getStructure();
-        var result = new WasmStructGet(objectStruct, obj, WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
+        var objectInfo = context.classInfoProvider().getClassInfo("java.lang.Object");
+        var objectStruct = objectInfo.getStructure();
+        var vt = new WasmStructGet(objectStruct, obj, WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
+        var result = new WasmStructGet(objectInfo.getVirtualTableStructure(), vt, 0);
         result.setLocation(invocation.getLocation());
         return result;
     }

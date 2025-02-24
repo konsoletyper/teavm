@@ -503,10 +503,15 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     protected WasmExpression generateInstanceOf(WasmExpression expression, ValueType type) {
         context.classInfoProvider().getClassInfo(type);
         var supertypeCall = new WasmCall(context.supertypeFunctions().getIsSupertypeFunction(type));
-        var classRef = new WasmStructGet(
+        var vtRef = new WasmStructGet(
                 context.standardClasses().objectClass().getStructure(),
                 expression,
                 WasmGCClassInfoProvider.CLASS_FIELD_OFFSET
+        );
+        var classRef = new WasmStructGet(
+                context.standardClasses().objectClass().getVirtualTableStructure(),
+                vtRef,
+                0
         );
         supertypeCall.getArguments().add(classRef);
         return supertypeCall;

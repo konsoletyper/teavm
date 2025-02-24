@@ -50,7 +50,7 @@ public class TeaVMCopyWebassemblyGCRuntimeMojo extends AbstractMojo {
         try {
             var name = new StringBuilder("wasm-gc");
             if (modular) {
-                name.append("-modular");
+                name.append("-module");
             }
             name.append("-runtime");
             if (minified) {
