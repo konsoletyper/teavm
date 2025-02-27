@@ -47,9 +47,7 @@ public class WasmCollection<T extends WasmEntity> implements Iterable<T> {
         if (entity.collection != null) {
             throw new IllegalArgumentException("Entity already belongs some collection");
         }
-        if (!indexesInvalid) {
-            entity.index = items.size();
-        }
+        invalidateIndexes();
         entity.collection = this;
         items.add(entity);
     }
@@ -72,14 +70,27 @@ public class WasmCollection<T extends WasmEntity> implements Iterable<T> {
         items.clear();
     }
 
-    void invalidateIndexes() {
+    final void invalidateIndexes() {
         indexesInvalid = true;
+    }
+
+    public int indexInCollection(T entity) {
+        if (entity.collection != this) {
+            throw new IllegalArgumentException("Given entity does not belong to this module");
+        }
+        ensureIndexes();
+        return entity.indexInCollection;
     }
 
     public int indexOf(T entity) {
         if (entity.collection != this) {
             throw new IllegalArgumentException("Given entity does not belong to this module");
         }
+        ensureIndexes();
+        return entity.index;
+    }
+
+    private void ensureIndexes() {
         if (indexesInvalid) {
             indexesInvalid = false;
             var index = 0;
@@ -88,13 +99,14 @@ public class WasmCollection<T extends WasmEntity> implements Iterable<T> {
                     item.index = index++;
                 }
             }
+            var indexInCollection = 0;
             for (var item : items) {
+                item.indexInCollection = indexInCollection++;
                 if (!item.isImported()) {
                     item.index = index++;
                 }
             }
         }
-        return entity.index;
     }
 
     @Override

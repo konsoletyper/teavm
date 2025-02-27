@@ -29,7 +29,7 @@ final class WasmTypeGraphBuilder {
         var graphBuilder = new GraphBuilder(size);
         var visitor = new GraphBuilderVisitor(module, graphBuilder);
         for (var type : types) {
-            visitor.currentIndex = module.types.indexOf(type);
+            visitor.currentIndex = module.types.indexInCollection(type);
             type.acceptVisitor(visitor);
         }
 
@@ -67,8 +67,8 @@ final class WasmTypeGraphBuilder {
                 var a = structures.get(i);
                 var b = structures.get(j);
                 if (areSameStructures(parentFieldCount, a, b)) {
-                    var p = module.types.indexOf(a);
-                    var q = module.types.indexOf(b);
+                    var p = module.types.indexInCollection(a);
+                    var q = module.types.indexInCollection(b);
                     graphBuilder.addEdge(p, q);
                     graphBuilder.addEdge(q, p);
                     continue outer;
@@ -130,7 +130,7 @@ final class WasmTypeGraphBuilder {
         private void addEdge(WasmType type) {
             if (type instanceof WasmType.CompositeReference) {
                 var composite = ((WasmType.CompositeReference) type).composite;
-                graphBuilder.addEdge(currentIndex, module.types.indexOf(composite));
+                graphBuilder.addEdge(currentIndex, module.types.indexInCollection(composite));
             }
         }
     }
