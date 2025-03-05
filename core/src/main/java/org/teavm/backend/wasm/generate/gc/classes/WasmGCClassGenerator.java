@@ -634,15 +634,23 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 classInfo.initializerPointer.setInitialValue(new WasmFunctionReference(initFunction));
             }
 
-            assignClassToVT(virtualTable, classInfo, target);
+            if (virtualTable != null && virtualTable.isConcrete()) {
+                assignClassToVT(virtualTable, classInfo, target);
+            }
         };
     }
 
     private void assignClassToVT(WasmGCVirtualTable virtualTable, WasmGCClassInfo classInfo,
             List<WasmExpression> target) {
-        var vtStruct = virtualTable == null || virtualTable.getParent() == null
-                ? classInfo.virtualTableStructure
-                : standardClasses.objectClass().getVirtualTableStructure();
+        if (virtualTable != null) {
+            while (virtualTable.getParent() != null) {
+                virtualTable = virtualTable.getParent();
+            }
+            if (!virtualTable.getClassName().equals("java.lang.Object")) {
+                return;
+            }
+        }
+        var vtStruct = standardClasses.objectClass().getVirtualTableStructure();
         target.add(new WasmStructSet(vtStruct,
                 new WasmGetGlobal(classInfo.virtualTablePointer), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET,
                 new WasmGetGlobal(classInfo.pointer)));

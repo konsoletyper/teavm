@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -50,7 +49,8 @@ class WasmGCVirtualTableBuilder {
         buildLCA();
         initInterfaceTables();
         fillInterfaceImplementors();
-        createFakeInterfaceRepresentatives();
+        liftInterfaces();
+        buildInterfacesHierarchy();
         groupMethodsFromCallSites();
         moveClassesToMergedTables();
         fillTables();
@@ -139,84 +139,100 @@ class WasmGCVirtualTableBuilder {
         }
     }
 
-    private void createFakeInterfaceRepresentatives() {
-        var visited = new HashSet<Table>();
+    private void liftInterfaces() {
         for (var table : tables) {
-            if (!table.cls.hasModifier(ElementModifier.INTERFACE)) {
-                mergeInterfacesToClass(visited, table);
-                visited.clear();
+            if (table.cls.hasModifier(ElementModifier.INTERFACE) || table.cls.getInterfaces().isEmpty()) {
+                continue;
+            }
+            var accumulatedInterfaces = new LinkedHashSet<Table>();
+            for (var itfName : table.cls.getInterfaces()) {
+                var itf = tableMap.get(itfName);
+                if (itf != null) {
+                    accumulatedInterfaces.add(itf);
+                }
+            }
+            while (table != null) {
+                if (table.liftedInterfaces == null) {
+                    table.liftedInterfaces = new LinkedHashSet<>();
+                } else {
+                    accumulatedInterfaces.removeAll(table.liftedInterfaces);
+                }
+                if (accumulatedInterfaces.isEmpty()) {
+                    break;
+                }
+                table.liftedInterfaces.addAll(accumulatedInterfaces);
+                var parent = table.parent;
+                accumulatedInterfaces.removeIf(itf -> itf.commonImplementor == parent);
+                if (accumulatedInterfaces.isEmpty()) {
+                    break;
+                }
+                table = parent;
             }
         }
-
         for (var table : tables) {
-            table.visited = false;
-        }
-
-        for (var table : tables) {
-            if (!table.cls.hasModifier(ElementModifier.INTERFACE)) {
-                mergeInterfacesAndMakeParent(table, table.parent);
+            if (table.liftedInterfaces != null) {
+                table.liftedInterfaces.removeIf(itf -> itf.commonImplementor != table.parent);
+                if (table.liftedInterfaces.isEmpty()) {
+                    table.liftedInterfaces = null;
+                }
             }
         }
     }
 
-    private void mergeInterfacesToClass(Set<Table> visited, Table table) {
+    private void buildInterfacesHierarchy() {
+        for (var table : tables) {
+            if (table.cls.hasModifier(ElementModifier.INTERFACE)) {
+                setUpInterfaceInHierarchy(table, table.commonImplementor);
+            } else if (table.liftedInterfaces != null) {
+                setUpInterfaceInHierarchy(table, table.parent);
+            }
+        }
+    }
+
+    private void setUpInterfaceInHierarchy(Table table, Table parent) {
         if (table.visited) {
             return;
         }
         table.visited = true;
-        if (table.parent != null) {
-            mergeInterfacesToClass(visited, table.parent);
-        }
-        for (var itf : table.cls.getInterfaces()) {
-            mergeInterfaceToClass(visited, tableMap.get(itf), table);
-        }
-    }
-
-    private void mergeInterfaceToClass(Set<Table> visited, Table table, Table classTable) {
-        if (table == null || table.reference != null || !visited.add(table)) {
-            return;
-        }
-        if (table.commonImplementorFilled) {
-            if (table.commonImplementor != classTable.parent) {
-                table.reference = table.commonImplementor;
-                table.interfaceMergedIntoClass = true;
+        var interfaces = new LinkedHashSet<Table>();
+        if (table.liftedInterfaces != null) {
+            for (var itf : table.liftedInterfaces) {
+                itf = itf.resolve();
+                if (itf.commonImplementor == parent && !itf.interfaceMergedIntoClass) {
+                    setUpInterfaceInHierarchy(itf, parent);
+                    interfaces.add(itf.resolve());
+                }
+            }
+        } else {
+            for (var itfName : table.cls.getInterfaces()) {
+                var itf = tableMap.get(itfName);
+                if (itf == null) {
+                    continue;
+                }
+                itf = itf.resolve();
+                if (itf.commonImplementor == parent && !itf.interfaceMergedIntoClass) {
+                    setUpInterfaceInHierarchy(itf, parent);
+                    interfaces.add(itf.resolve());
+                }
             }
         }
-        for (var superItf : table.cls.getInterfaces()) {
-            mergeInterfaceToClass(visited, tableMap.get(superItf), classTable);
-        }
-    }
-
-    private void mergeInterfacesAndMakeParent(Table table, Table parentTable) {
-        if (table.visited) {
-            return;
-        }
-        table.visited = true;
-        if (table.cls.getInterfaces().isEmpty()) {
-            table.parent = parentTable;
-            return;
-        }
-        var interfaces = table.cls.getInterfaces().stream()
-                .map(itf -> tableMap.get(itf))
-                .filter(Objects::nonNull)
-                .map(Table::resolve)
-                .filter(itf -> itf.commonImplementor == parentTable && !itf.interfaceMergedIntoClass)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
         if (interfaces.isEmpty()) {
-            table.parent = parentTable;
-            return;
+            table.parent = parent;
+        } else {
+            var visited = new HashSet<Table>();
+            for (var itf : interfaces.toArray(new Table[0])) {
+                findDirectlyImplementedInterfaces(visited, itf, parent, 1, interfaces);
+            }
+            var finalInterfaces = interfaces.stream()
+                    .map(Table::resolve)
+                    .distinct()
+                    .collect(Collectors.toList());
+            var singleExample = finalInterfaces.get(0);
+            for (var i = 1; i < finalInterfaces.size(); i++) {
+                singleExample.merge(finalInterfaces.get(i));
+            }
+            table.parent = singleExample;
         }
-        findDirectlyImplementedInterfaces(new HashSet<>(), table, parentTable, 0, interfaces);
-        for (var itf : interfaces) {
-            mergeInterfacesAndMakeParent(itf, parentTable);
-        }
-
-        var interfaceList = new ArrayList<>(interfaces);
-        var singleInterface = interfaceList.get(0);
-        for (var i = 1; i < interfaces.size(); i++) {
-            singleInterface.merge(interfaceList.get(i));
-        }
-        table.parent = singleInterface;
     }
 
     private void findDirectlyImplementedInterfaces(Set<Table> visited, Table table, Table parentTable,
@@ -374,6 +390,8 @@ class WasmGCVirtualTableBuilder {
 
     private static class Table {
         boolean visited;
+        boolean keep;
+        Set<Table> liftedInterfaces;
         Table reference;
         Table commonImplementor;
         boolean commonImplementorFilled;
@@ -425,9 +443,16 @@ class WasmGCVirtualTableBuilder {
             return buildResult;
         }
 
+        private boolean resolving;
+
         Table resolve() {
             if (reference != null) {
+                if (resolving) {
+                    throw new IllegalStateException();
+                }
+                resolving = true;
                 reference = reference.resolve();
+                resolving = false;
                 return reference;
             }
             return this;
