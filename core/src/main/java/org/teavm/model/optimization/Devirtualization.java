@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.teavm.common.OptionalPredicate;
 import org.teavm.dependency.DependencyInfo;
@@ -45,6 +46,7 @@ public class Devirtualization {
     private Set<? extends MethodReference> readonlyVirtualMethods = Collections.unmodifiableSet(virtualMethods);
     private Map<ValueDependencyInfo, Map<MethodReference, Set<MethodReference>>> implementationCache =
             new HashMap<>();
+    private Map<ValueDependencyInfo, Map<ValueType, Optional<String>>> castCache = new HashMap<>();
     private int virtualCallSites;
     private int directCallSites;
     private int remainingCasts;
@@ -156,16 +158,9 @@ public class Devirtualization {
         if (var == null) {
             return;
         }
-        boolean canFail = false;
-        String failType = null;
-        for (String type : var.getTypes()) {
-            if (castCanFail(type, cast.getTargetType())) {
-                failType = type;
-                canFail = true;
-            }
-        }
+        var failType = getCastFailType(var, cast.getTargetType());
 
-        if (canFail) {
+        if (failType != null) {
             if (shouldLog) {
                 System.out.print("REMAINING CAST to " + cast.getTargetType() + " (example is " + failType + ")");
                 if (cast.getLocation() != null) {
@@ -187,6 +182,25 @@ public class Devirtualization {
             cast.setWeak(true);
             eliminatedCasts++;
         }
+    }
+
+    private String getCastFailType(ValueDependencyInfo node, ValueType targetType) {
+        if (dependency.isPrecise()) {
+            return computeCastFailType(node, targetType);
+        } else {
+            var byType = castCache.computeIfAbsent(node, n -> new HashMap<>());
+            return byType.computeIfAbsent(targetType, t -> Optional.ofNullable(computeCastFailType(node, t)))
+                    .orElse(null);
+        }
+    }
+
+    private String computeCastFailType(ValueDependencyInfo node, ValueType targetType) {
+        for (String type : node.getTypes()) {
+            if (castCanFail(type, targetType)) {
+                return type;
+            }
+        }
+        return null;
     }
 
     private boolean castCanFail(String type, ValueType target) {
