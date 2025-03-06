@@ -49,6 +49,7 @@ class WasmGCVirtualTableBuilder {
         buildLCA();
         initInterfaceTables();
         fillInterfaceImplementors();
+        mergeTrivialInterfaces();
         liftInterfaces();
         buildInterfacesHierarchy();
         groupMethodsFromCallSites();
@@ -139,6 +140,18 @@ class WasmGCVirtualTableBuilder {
         }
     }
 
+    private void mergeTrivialInterfaces() {
+        for (var table : tables) {
+            if (table.cls.hasModifier(ElementModifier.INTERFACE)) {
+                if (table.cls.getInterfaces().isEmpty() && table.cls.getMethods().isEmpty()
+                        && table.commonImplementor != null) {
+                    table.interfaceMergedIntoClass = true;
+                    table.commonImplementor.merge(table);
+                }
+            }
+        }
+    }
+
     private void liftInterfaces() {
         for (var table : tables) {
             if (table.cls.hasModifier(ElementModifier.INTERFACE) || table.cls.getInterfaces().isEmpty()) {
@@ -147,7 +160,7 @@ class WasmGCVirtualTableBuilder {
             var accumulatedInterfaces = new LinkedHashSet<Table>();
             for (var itfName : table.cls.getInterfaces()) {
                 var itf = tableMap.get(itfName);
-                if (itf != null) {
+                if (itf != null && !itf.interfaceMergedIntoClass) {
                     accumulatedInterfaces.add(itf);
                 }
             }
