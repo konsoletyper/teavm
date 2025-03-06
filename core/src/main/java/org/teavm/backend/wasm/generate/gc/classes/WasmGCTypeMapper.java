@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.model.WasmFunctionType;
-import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmPackedType;
 import org.teavm.backend.wasm.model.WasmStorageType;
 import org.teavm.backend.wasm.model.WasmType;
@@ -33,16 +32,14 @@ public class WasmGCTypeMapper {
     private ClassReaderSource classes;
     private WasmGCClassInfoProvider classInfoProvider;
     private WasmFunctionTypes functionTypes;
-    private WasmModule module;
     private List<WasmGCCustomTypeMapper> customTypeMappers;
     private Map<String, WasmType> typeCache = new HashMap<>();
 
     WasmGCTypeMapper(ClassReaderSource classes, WasmGCClassInfoProvider classInfoProvider,
-            WasmFunctionTypes functionTypes, WasmModule module) {
+            WasmFunctionTypes functionTypes) {
         this.classes = classes;
         this.classInfoProvider = classInfoProvider;
         this.functionTypes = functionTypes;
-        this.module = module;
     }
 
     void setCustomTypeMappers(List<WasmGCCustomTypeMapper> customTypeMappers) {
@@ -148,7 +145,7 @@ public class WasmGCTypeMapper {
         return result;
     }
 
-    public WasmFunctionType getFunctionType(WasmType receiverType, MethodDescriptor methodDesc, boolean fresh) {
+    public WasmFunctionType getFunctionType(WasmType receiverType, MethodDescriptor methodDesc) {
         var returnType = mapType(methodDesc.getResultType());
         var javaParamTypes = methodDesc.getParameterTypes();
         var paramTypes = new WasmType[javaParamTypes.length + 1];
@@ -156,16 +153,10 @@ public class WasmGCTypeMapper {
         for (var i = 0; i < javaParamTypes.length; ++i) {
             paramTypes[i + 1] = mapType(javaParamTypes[i]);
         }
-        if (fresh) {
-            var type = new WasmFunctionType(null, returnType, List.of(paramTypes));
-            module.types.add(type);
-            return type;
-        } else {
-            return functionTypes.of(returnType, paramTypes);
-        }
+        return functionTypes.of(returnType, paramTypes);
     }
 
-    public WasmFunctionType getFunctionType(String className, MethodDescriptor methodDesc, boolean fresh) {
-        return getFunctionType(classInfoProvider.getClassInfo(className).getType(), methodDesc, fresh);
+    public WasmFunctionType getFunctionType(String className, MethodDescriptor methodDesc) {
+        return getFunctionType(classInfoProvider.getClassInfo(className).getType(), methodDesc);
     }
 }

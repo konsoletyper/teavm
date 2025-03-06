@@ -187,7 +187,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         supertypeGenerator = new WasmGCSupertypeFunctionGenerator(module, this, names, tagRegistry, functionTypes,
                 queue);
         newArrayGenerator = new WasmGCNewArrayFunctionGenerator(module, functionTypes, this, names, queue);
-        typeMapper = new WasmGCTypeMapper(classSource, this, functionTypes, module);
+        typeMapper = new WasmGCTypeMapper(classSource, this, functionTypes);
         var customTypeMapperFactoryContext = customTypeMapperFactoryContext();
         typeMapper.setCustomTypeMappers(customTypeMapperFactories.stream()
                 .map(factory -> factory.createTypeMapper(customTypeMapperFactoryContext))
@@ -1003,7 +1003,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
         var arrayType = (WasmArray) arrayTypeRef.composite;
 
-        var type = typeMapper.getFunctionType(standardClasses.objectClass().getType(), CLONE_METHOD_DESC, false);
+        var type = typeMapper.getFunctionType(standardClasses.objectClass().getType(), CLONE_METHOD_DESC);
         var function = new WasmFunction(type);
         function.setName(names.topLevel("Array<" + names.suggestForType(itemType) + ">::clone"));
         module.functions.add(function);
@@ -1075,7 +1075,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     private void addVirtualTableFields(List<WasmField> fields, WasmGCVirtualTable virtualTable) {
         for (var entry : virtualTable.getEntries()) {
-            var functionType = typeMapper.getFunctionType(entry.getOrigin().getClassName(), entry.getMethod(), false);
+            var functionType = typeMapper.getFunctionType(entry.getOrigin().getClassName(), entry.getMethod());
             var field = new WasmField(functionType.getReference().asStorage());
             field.setName(names.forVirtualMethod(entry.getMethod()));
             fields.add(field);
