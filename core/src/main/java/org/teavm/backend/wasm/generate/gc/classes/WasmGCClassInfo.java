@@ -17,24 +17,24 @@ package org.teavm.backend.wasm.generate.gc.classes;
 
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.List;
-import java.util.function.Consumer;
+import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTable;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.model.ValueType;
 
 public class WasmGCClassInfo {
+    private WasmGCClassGenerator classGenerator;
     private ValueType valueType;
     boolean heapStructure;
+    WasmGCVirtualTable virtualTable;
     WasmStructure structure;
     WasmStructure virtualTableStructure;
     WasmGlobal pointer;
     WasmGlobal virtualTablePointer;
     WasmGlobal initializerPointer;
-    Consumer<List<WasmExpression>> initializer;
     List<WasmFunction> newArrayFunctions;
     WasmFunction initArrayFunction;
     WasmFunction supertypeFunction;
@@ -42,7 +42,8 @@ public class WasmGCClassInfo {
     int heapSize;
     int heapAlignment;
 
-    WasmGCClassInfo(ValueType valueType) {
+    WasmGCClassInfo(WasmGCClassGenerator classGenerator, ValueType valueType) {
+        this.classGenerator = classGenerator;
         this.valueType = valueType;
     }
 
@@ -73,10 +74,24 @@ public class WasmGCClassInfo {
     }
 
     public WasmGlobal getPointer() {
+        if (pointer == null) {
+            classGenerator.initClassPointer(this);
+            if (virtualTablePointer != null) {
+                classGenerator.assignClassToVT(this);
+            }
+        }
         return pointer;
     }
 
     public WasmGlobal getVirtualTablePointer() {
+        if (virtualTableStructure == null
+                || !(valueType instanceof ValueType.Array || valueType instanceof ValueType.Object)) {
+            return null;
+        }
+        if (virtualTablePointer == null) {
+            classGenerator.initClassVirtualTable(this);
+            classGenerator.assignClassToVT(this);
+        }
         return virtualTablePointer;
     }
 

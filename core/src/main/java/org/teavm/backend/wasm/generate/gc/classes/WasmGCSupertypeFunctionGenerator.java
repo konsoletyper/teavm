@@ -95,9 +95,13 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
                 ValueType itemType = ((ValueType.Array) type).getItemType();
                 generateIsArray(subtypeVar, itemType, function.getBody());
             } else {
-                var expected = classGenerator.getClassInfo(type).pointer;
-                var condition = new WasmReferencesEqual(new WasmGetLocal(subtypeVar), new WasmGetGlobal(expected));
-                function.getBody().add(condition);
+                var expected = classGenerator.getClassInfo(type).getPointer();
+                if (expected != null) {
+                    var condition = new WasmReferencesEqual(new WasmGetLocal(subtypeVar), new WasmGetGlobal(expected));
+                    function.getBody().add(condition);
+                } else {
+                    function.getBody().add(new WasmInt32Constant(0));
+                }
             }
         });
 

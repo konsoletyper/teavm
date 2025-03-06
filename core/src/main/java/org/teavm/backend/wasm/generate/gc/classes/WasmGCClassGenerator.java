@@ -261,6 +261,10 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         }
     }
 
+    private void addToInitializer(Consumer<List<WasmExpression>> initializer) {
+        queue.add(() -> initializer.accept(initializerFunctionStatements));
+    }
+
     @Override
     public void contributeToInitializerDefinitions(WasmFunction function) {
     }
@@ -270,13 +274,15 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         function.getBody().addAll(initializerFunctionStatements);
         initializerFunctionStatements.clear();
         for (var classInfo : classInfoMap.values()) {
-            if (classInfo.supertypeFunction != null) {
-                function.getBody().add(setClassField(classInfo, classSupertypeFunctionOffset,
-                        new WasmFunctionReference(classInfo.supertypeFunction)));
-            }
-            if (classInfo.initArrayFunction != null) {
-                function.getBody().add(setClassField(classInfo, classNewArrayOffset,
-                        new WasmFunctionReference(classInfo.initArrayFunction)));
+            if (classInfo.pointer != null) {
+                if (classInfo.supertypeFunction != null) {
+                    function.getBody().add(setClassField(classInfo, classSupertypeFunctionOffset,
+                            new WasmFunctionReference(classInfo.supertypeFunction)));
+                }
+                if (classInfo.initArrayFunction != null) {
+                    function.getBody().add(setClassField(classInfo, classNewArrayOffset,
+                            new WasmFunctionReference(classInfo.initArrayFunction)));
+                }
             }
         }
         for (var consumer : staticFieldInitializers) {
@@ -302,12 +308,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     public WasmGCClassInfo getClassInfo(ValueType type) {
         var classInfo = classInfoMap.get(type);
         if (classInfo == null) {
-            classInfo = new WasmGCClassInfo(type);
+            classInfo = new WasmGCClassInfo(this, type);
             var finalClassInfo = classInfo;
-            queue.add(() -> {
-                finalClassInfo.initializer.accept(initializerFunctionStatements);
-                finalClassInfo.initializer = null;
-            });
             classInfoMap.put(type, classInfo);
             WasmGCVirtualTable virtualTable = null;
             if (!(type instanceof ValueType.Primitive)) {
@@ -354,8 +356,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     }
                 }
             }
-            var pointerName = names.topLevel(names.suggestForType(type) + "@class");
-            var vtName = names.topLevel(names.suggestForType(type) + "@vt");
+            classInfo.virtualTable = virtualTable;
             if (virtualTable != null) {
                 if (type instanceof ValueType.Object) {
                     if (virtualTable.isUsed()) {
@@ -378,25 +379,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
             var vtStructure = classInfo.virtualTableStructure;
             if (vtStructure != null) {
-                var classStructure = standardClasses.classClass().getStructure();
-                classInfo.pointer = new WasmGlobal(pointerName, classStructure.getNonNullReference(),
-                        new WasmStructNewDefault(classStructure));
-                classInfo.pointer.setImmutable(true);
-                classInfo.virtualTablePointer = new WasmGlobal(vtName, vtStructure.getNonNullReference(),
-                        new WasmStructNewDefault(vtStructure));
-                classInfo.virtualTablePointer.setImmutable(true);
-                module.globals.add(classInfo.pointer);
-                module.globals.add(classInfo.virtualTablePointer);
-
-                if (type instanceof ValueType.Primitive) {
-                    initPrimitiveClass(classInfo, (ValueType.Primitive) type);
-                } else if (type instanceof ValueType.Void) {
-                    initVoidClass(classInfo);
-                } else if (type instanceof ValueType.Array) {
-                    initArrayClass(classInfo, (ValueType.Array) type);
-                } else if (type instanceof ValueType.Object) {
-                    initRegularClass(classInfo, virtualTable, vtStructure, ((ValueType.Object) type).getClassName());
-                }
+                tryFillInitializerPointer(classInfo);
                 var req = metadataRequirements.getInfo(type);
                 if (req != null) {
                     if (req.newArray()) {
@@ -412,6 +395,71 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             }
         }
         return classInfo;
+    }
+
+    private void tryFillInitializerPointer(WasmGCClassInfo classInfo) {
+        var type = classInfo.getValueType();
+        if (!(type instanceof ValueType.Object)) {
+            return;
+        }
+        var name = ((ValueType.Object) type).getClassName();
+        var cls = classSource.get(name);
+        if (classInitializerInfo.isDynamicInitializer(name)) {
+            if (cls != null && cls.getMethod(CLINIT_METHOD_DESC) != null) {
+                var clinitType = functionTypes.of(null);
+                var wasmName = names.topLevel(names.suggestForClass(name) + "@initializer");
+                classInfo.initializerPointer = new WasmGlobal(wasmName, clinitType.getReference(),
+                        new WasmNullConstant(clinitType.getReference()));
+                var initFunction = functionProvider.forStaticMethod(
+                        new MethodReference(name, CLINIT_METHOD_DESC));
+                initFunction.setReferenced(true);
+                classInfo.initializerPointer.setInitialValue(new WasmFunctionReference(initFunction));
+                module.globals.add(classInfo.initializerPointer);
+            }
+        }
+    }
+
+    void initClassVirtualTable(WasmGCClassInfo classInfo) {
+        var type = classInfo.getValueType();
+        var virtualTableStructure = classInfo.virtualTableStructure;
+        var vtName = names.topLevel(names.suggestForType(type) + "@vt");
+        var virtualTablePointer = new WasmGlobal(vtName, virtualTableStructure.getNonNullReference(),
+                new WasmStructNewDefault(virtualTableStructure));
+        virtualTablePointer.setImmutable(true);
+        classInfo.virtualTablePointer = virtualTablePointer;
+        module.globals.add(virtualTablePointer);
+        if (type instanceof ValueType.Array) {
+            addToInitializer(target -> fillArrayVirtualTableMethods(classInfo.getValueType(), target,
+                    classInfo.virtualTablePointer, classInfo.structure));
+        } else if (type instanceof ValueType.Object) {
+            var virtualTable = classInfo.virtualTable;
+            if (virtualTable != null && virtualTable.isConcrete()) {
+                var classStructure = classInfo.virtualTableStructure;
+                addToInitializer(target -> fillVirtualTableMethods(target, classStructure,
+                        classInfo.virtualTablePointer, virtualTable));
+            }
+        }
+    }
+
+    void initClassPointer(WasmGCClassInfo classInfo) {
+        var type = classInfo.getValueType();
+        var classStructure = standardClasses.classClass().getStructure();
+        var pointerName = names.topLevel(names.suggestForType(type) + "@class");
+        var pointer = new WasmGlobal(pointerName, classStructure.getNonNullReference(),
+                new WasmStructNewDefault(classStructure));
+        pointer.setImmutable(true);
+        classInfo.pointer = pointer;
+        module.globals.add(pointer);
+        if (type instanceof ValueType.Primitive) {
+            initPrimitiveClass(classInfo, (ValueType.Primitive) type);
+        } else if (type instanceof ValueType.Void) {
+            initVoidClass(classInfo);
+        } else if (type instanceof ValueType.Array) {
+            initArrayClass(classInfo, (ValueType.Array) type);
+        } else if (type instanceof ValueType.Object) {
+            initRegularClass(classInfo, classInfo.virtualTable,
+                    ((ValueType.Object) type).getClassName());
+        }
     }
 
     @Override
@@ -517,7 +565,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     private void initPrimitiveClass(WasmGCClassInfo classInfo, ValueType.Primitive type) {
-        classInfo.initializer = target -> {
+        addToInitializer(target -> {
             int kind;
             switch (type.getKind()) {
                 case BOOLEAN:
@@ -554,33 +602,23 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     name,
                     kind
             ));
-        };
+        });
     }
 
     private void initVoidClass(WasmGCClassInfo classInfo) {
-        classInfo.initializer = target -> {
+        addToInitializer(target -> {
             target.add(fillPrimitiveClass(
                     classInfo.pointer,
                     "void",
                     WasmGCClassFlags.PRIMITIVE_VOID
             ));
-        };
+        });
     }
 
-    private void initRegularClass(WasmGCClassInfo classInfo, WasmGCVirtualTable virtualTable,
-            WasmStructure classStructure, String name) {
+    private void initRegularClass(WasmGCClassInfo classInfo, WasmGCVirtualTable virtualTable, String name) {
         var cls = classSource.get(name);
 
-        if (classInitializerInfo.isDynamicInitializer(name)) {
-            if (cls != null && cls.getMethod(CLINIT_METHOD_DESC) != null) {
-                var clinitType = functionTypes.of(null);
-                var wasmName = names.topLevel(names.suggestForClass(name) + "@initializer");
-                classInfo.initializerPointer = new WasmGlobal(wasmName, clinitType.getReference(),
-                        new WasmNullConstant(clinitType.getReference()));
-                module.globals.add(classInfo.initializerPointer);
-            }
-        }
-        classInfo.initializer = target -> {
+        addToInitializer(target -> {
             standardClasses.classClass().getStructure().init();
             var ranges = tagRegistry.getRanges(name);
             int tag = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
@@ -599,15 +637,17 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 }
                 if (cls.getParent() != null && metadataReq.superclass()) {
                     var parent = getClassInfo(cls.getParent());
-                    target.add(setClassField(classInfo, classParentOffset, new WasmGetGlobal(parent.pointer)));
+                    target.add(setClassField(classInfo, classParentOffset, new WasmGetGlobal(parent.getPointer())));
                 }
                 if (cls.getOwnerName() != null && metadataReq.enclosingClass()) {
                     var owner = getClassInfo(cls.getOwnerName());
-                    target.add(setClassField(classInfo, classEnclosingClassOffset, new WasmGetGlobal(owner.pointer)));
+                    target.add(setClassField(classInfo, classEnclosingClassOffset,
+                            new WasmGetGlobal(owner.getPointer())));
                 }
                 if (cls.getDeclaringClassName() != null && metadataReq.declaringClass()) {
                     var owner = getClassInfo(cls.getDeclaringClassName());
-                    target.add(setClassField(classInfo, classDeclaringClassOffset, new WasmGetGlobal(owner.pointer)));
+                    target.add(setClassField(classInfo, classDeclaringClassOffset,
+                            new WasmGetGlobal(owner.getPointer())));
                 }
                 if (metadataReq.cloneMethod()) {
                     WasmFunction cloneFunction;
@@ -625,22 +665,20 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                             new WasmFunctionReference(createEnumConstantsFunction(classInfo, cls))));
                 }
             }
-            if (virtualTable != null && virtualTable.isConcrete()) {
-                fillVirtualTableMethods(target, classStructure, classInfo.virtualTablePointer, virtualTable);
-            }
-            if (classInfo.initializerPointer != null) {
-                var initFunction = functionProvider.forStaticMethod(new MethodReference(name, CLINIT_METHOD_DESC));
-                initFunction.setReferenced(true);
-                classInfo.initializerPointer.setInitialValue(new WasmFunctionReference(initFunction));
-            }
-
-            if (virtualTable != null && virtualTable.isConcrete()) {
-                assignClassToVT(virtualTable, classInfo, target);
-            }
-        };
+        });
     }
 
-    private void assignClassToVT(WasmGCVirtualTable virtualTable, WasmGCClassInfo classInfo,
+    void assignClassToVT(WasmGCClassInfo classInfo) {
+        if (classInfo.getValueType() instanceof ValueType.Array) {
+            addToInitializer(target -> doAssignClassToVT(null, classInfo, target));
+        } else {
+            if (classInfo.virtualTable != null && classInfo.virtualTable.isConcrete()) {
+                addToInitializer(target -> doAssignClassToVT(classInfo.virtualTable, classInfo, target));
+            }
+        }
+    }
+
+    private void doAssignClassToVT(WasmGCVirtualTable virtualTable, WasmGCClassInfo classInfo,
             List<WasmExpression> target) {
         if (virtualTable != null) {
             while (virtualTable.getParent() != null) {
@@ -653,7 +691,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         var vtStruct = standardClasses.objectClass().getVirtualTableStructure();
         target.add(new WasmStructSet(vtStruct,
                 new WasmGetGlobal(classInfo.virtualTablePointer), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET,
-                new WasmGetGlobal(classInfo.pointer)));
+                new WasmGetGlobal(classInfo.getPointer())));
     }
 
     private int getFlags(ClassReader cls) {
@@ -1142,15 +1180,13 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     private void initArrayClass(WasmGCClassInfo classInfo, ValueType.Array type) {
-        classInfo.initializer = target -> {
+        addToInitializer(target -> {
             var itemTypeInfo = getClassInfo(type.getItemType());
             target.add(new WasmCall(
                     getCreateArrayClassFunction(),
                     new WasmGetGlobal(classInfo.pointer),
-                    new WasmGetGlobal(itemTypeInfo.pointer)
+                    new WasmGetGlobal(itemTypeInfo.getPointer())
             ));
-            fillArrayVirtualTableMethods(classInfo.getValueType(), target, classInfo.virtualTablePointer,
-                    classInfo.structure);
             var metadataReq = metadataRequirements.getInfo(type);
             if (metadataReq.cloneMethod()) {
                 var cloneFunction = generateArrayCloneMethod(classInfo.structure, type.getItemType());
@@ -1161,8 +1197,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 var name = strings.getStringConstant(type.toString());
                 target.add(setClassField(classInfo, classNameOffset, new WasmGetGlobal(name.global)));
             }
-            assignClassToVT(null, classInfo, target);
-        };
+        });
     }
 
     private WasmExpression fillPrimitiveClass(WasmGlobal global, String name, int kind) {
@@ -1312,7 +1347,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 function.getBody().add(new WasmSetGlobal(global, new WasmGetGlobal(constant)));
             });
         } else if (value instanceof ValueType) {
-            var constant = getClassInfo((ValueType) value).pointer;
+            var constant = getClassInfo((ValueType) value).getPointer();
             staticFieldInitializers.add(function -> {
                 function.getBody().add(new WasmSetGlobal(global, new WasmGetGlobal(constant)));
             });
@@ -1526,7 +1561,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 standardClasses.classClass().getStructure(),
                 new WasmGetLocal(targetVar),
                 VT_FIELD_OFFSET,
-                new WasmGetGlobal(standardClasses.classClass().virtualTablePointer)
+                new WasmGetGlobal(standardClasses.classClass().getVirtualTablePointer())
         ));
         var flagsExpr = new WasmIntBinary(
                 WasmIntType.INT32,
@@ -1593,7 +1628,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 standardClasses.classClass().getStructure(),
                 new WasmGetLocal(targetVar),
                 VT_FIELD_OFFSET,
-                new WasmGetGlobal(standardClasses.classClass().virtualTablePointer)
+                new WasmGetGlobal(standardClasses.classClass().getVirtualTablePointer())
         ));
         function.getBody().add(new WasmStructSet(
                 standardClasses.classClass().getStructure(),
@@ -1669,7 +1704,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     standardClasses.classClass().getStructure(),
                     new WasmGetLocal(targetVar),
                     classParentOffset,
-                    new WasmGetGlobal(standardClasses.objectClass().pointer)
+                    new WasmGetGlobal(standardClasses.objectClass().getPointer())
             ));
         }
         return function;
