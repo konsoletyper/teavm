@@ -967,6 +967,9 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private void fillVirtualTableEntry(List<WasmExpression> target, WasmGlobal global,
             WasmStructure structure, WasmGCVirtualTable virtualTable, WasmGCVirtualTableEntry entry) {
         var implementor = virtualTable.implementor(entry);
+        if (entry.getOrigin() != virtualTable) {
+            structure = getClassInfo(entry.getOrigin().getClassName()).virtualTableStructure;
+        }
         if (implementor != null && !entry.getMethod().equals(GET_CLASS_METHOD)) {
             var fieldIndex = VIRTUAL_METHOD_OFFSET + entry.getIndex();
             var expectedType = (WasmType.CompositeReference) structure.getFields().get(fieldIndex)
