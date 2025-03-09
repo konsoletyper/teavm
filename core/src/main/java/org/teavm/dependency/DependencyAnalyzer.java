@@ -15,9 +15,6 @@
  */
 package org.teavm.dependency;
 
-import com.carrotsearch.hppc.IntHashSet;
-import com.carrotsearch.hppc.IntSet;
-import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,11 +61,12 @@ import org.teavm.model.util.ProgramUtils;
 import org.teavm.parsing.Parser;
 
 public abstract class DependencyAnalyzer implements DependencyInfo {
-    private static final int PROPAGATION_STACK_THRESHOLD = 50;
     private static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", void.class);
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     static final boolean shouldTag = System.getProperty("org.teavm.tagDependencies", "false").equals("true")
             || shouldLog;
+    static final boolean shouldLogSummary = System.getProperty("org.teavm.logDependenciesSummary", "false")
+            .equals("true") || shouldLog;
     static final boolean dependencyReport = System.getProperty("org.teavm.dependencyReport", "false").equals("true");
     private int classNameSuffix;
     private ClassReaderSource unprocessedClassSource;
@@ -84,9 +82,9 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private CachedFunction<String, ClassDependency> classCache;
     private List<DependencyListener> listeners = new ArrayList<>();
     private ServiceRepository services;
-    private Deque<Transition> pendingTransitions = new ArrayDeque<>();
-    private Deque<Runnable> tasks = new ArrayDeque<>();
-    private Queue<Runnable> deferredTasks = new ArrayDeque<>();
+    private List<Runnable> deferredTasks = new ArrayList<>();
+    private Queue<Runnable> queue = new ArrayDeque<>();
+    List<Runnable> tasksOnMergePhase = new ArrayList<>();
     List<DependencyType> types = new ArrayList<>();
     private Map<String, DependencyType> typeMap = new HashMap<>();
     private DependencyAnalyzerInterruptor interruptor;
@@ -94,7 +92,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private Diagnostics diagnostics;
     DefaultCallGraph callGraph = new DefaultCallGraph();
     private DependencyAgent agent;
-    Map<MethodReference, DependencyPlugin> dependencyPlugins = new HashMap<>();
+    private Map<MethodReference, DependencyPlugin> dependencyPlugins = new HashMap<>();
     private boolean completing;
     private Map<String, DependencyTypeFilter> superClassFilters = new HashMap<>();
     private List<DependencyNode> allNodes = new ArrayList<>();
@@ -104,6 +102,12 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private ReferenceCache referenceCache;
     private Set<String> generatedClassNames = new HashSet<>();
     DependencyType classType;
+    private List<DependencyNode> orderedNodes = new ArrayList<>();
+    DependencyNode lastPendingTransition;
+    DependencyNode lastPendingTypes;
+    boolean hasPendingTypesInList;
+    private boolean started;
+    private int roundCount;
 
     DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics, ReferenceCache referenceCache, String[] platformTags) {
@@ -185,6 +189,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             typeFilter = null;
         }
         DependencyNode node = new DependencyNode(this, typeFilter);
+        node.orderIndex = allNodes.size();
         allNodes.add(node);
         return node;
     }
@@ -264,13 +269,11 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
             dep.used = false;
             lock(dep, false);
-            deferredTasks.add(() -> {
+            defer(() -> {
                 classSource.getReferenceResolver().use(dep.method.getReference());
                 processMethod(dep);
                 dep.used = true;
             });
-
-            processQueue();
         }
     }
 
@@ -284,89 +287,12 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         classSource.addTransformer(transformer);
     }
 
-    private int propagationDepth;
-
-    void schedulePropagation(DependencyConsumer consumer, DependencyType type) {
-        if (propagationDepth < PROPAGATION_STACK_THRESHOLD) {
-            ++propagationDepth;
-            consumer.consume(type);
-            --propagationDepth;
-        } else {
-            tasks.add(() -> consumer.consume(type));
-        }
-    }
-
-    void schedulePropagation(Transition consumer, DependencyType type) {
-        if (!consumer.destination.filter(type)) {
-            return;
-        }
-
-        if (consumer.pendingTypes == null && propagationDepth < PROPAGATION_STACK_THRESHOLD
-                && consumer.pointsToDomainOrigin() && consumer.destination.propagateCount < 20) {
-            ++propagationDepth;
-            consumer.consume(type);
-            --propagationDepth;
-        } else {
-            if (consumer.pendingTypes == null) {
-                pendingTransitions.add(consumer);
-                consumer.pendingTypes = new IntHashSet(50);
-            }
-            consumer.pendingTypes.add(type.index);
-        }
-    }
-
-    void schedulePropagation(Transition consumer, DependencyType[] types) {
-        if (types.length == 0) {
-            return;
-        }
-        if (types.length == 1) {
-            schedulePropagation(consumer, types[0]);
-            return;
-        }
-
-        if (consumer.pendingTypes == null && propagationDepth < PROPAGATION_STACK_THRESHOLD
-                && consumer.pointsToDomainOrigin() && consumer.destination.propagateCount < 20) {
-            ++propagationDepth;
-            consumer.consume(types);
-            --propagationDepth;
-        } else {
-            if (consumer.pendingTypes == null) {
-                pendingTransitions.add(consumer);
-                consumer.pendingTypes = new IntHashSet(Math.max(50, types.length));
-            }
-            consumer.pendingTypes.ensureCapacity(types.length + consumer.pendingTypes.size());
-            for (DependencyType type : types) {
-                consumer.pendingTypes.add(type.index);
-            }
-        }
-    }
-
-    void schedulePropagation(DependencyConsumer consumer, DependencyType[] types) {
-        if (types.length == 0) {
-            return;
-        }
-        if (types.length == 1) {
-            schedulePropagation(consumer, types[0]);
-            return;
-        }
-
-        if (propagationDepth < PROPAGATION_STACK_THRESHOLD) {
-            ++propagationDepth;
-            for (DependencyType type : types) {
-                consumer.consume(type);
-            }
-            --propagationDepth;
-        } else {
-            tasks.add(() -> {
-                for (DependencyType type : types) {
-                    consumer.consume(type);
-                }
-            });
-        }
-    }
-
     public void defer(Runnable task) {
-        deferredTasks.add(task);
+        if (!started) {
+            deferredTasks.add(task);
+        } else {
+            queue.add(task);
+        }
     }
 
     public ClassDependency linkClass(String className) {
@@ -377,7 +303,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         if (!dep.activated) {
             dep.activated = true;
             if (!dep.isMissing()) {
-                deferredTasks.add(() -> {
+                defer(() -> {
                     for (DependencyListener listener : listeners) {
                         listener.classReached(agent, className);
                     }
@@ -426,10 +352,14 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     }
 
     void initClass(ClassDependency cls, CallLocation location) {
+        if (cls.initialized) {
+            return;
+        }
+        cls.initialized = true;
         ClassReader reader = cls.getClassReader();
         MethodReader method = reader.getMethod(CLINIT_METHOD);
         if (method != null) {
-            deferredTasks.add(() -> {
+            defer(() -> {
                 MethodDependency initMethod = linkMethod(method.getReference());
                 if (location != null) {
                     initMethod.addLocation(location);
@@ -459,7 +389,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         MethodDependency dep = new MethodDependency(this, parameterNodes, paramCount, resultNode, thrown,
                 method, methodRef);
         if (method != null) {
-            deferredTasks.add(() -> linkClass(dep.getMethod().getOwnerName())
+            defer(() -> linkClass(dep.getMethod().getOwnerName())
                     .initClass(new CallLocation(dep.getMethod().getReference())));
         }
         return dep;
@@ -479,7 +409,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     void scheduleMethodAnalysis(MethodDependency dep) {
         classSource.getReferenceResolver().use(dep.getReference());
-        deferredTasks.add(() -> {
+        defer(() -> {
             classSource.getReferenceResolver().use(dep.getReference());
             processMethod(dep);
         });
@@ -618,67 +548,29 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         return result;
     }
 
-    private void processQueue() {
+    public void processDependencies() {
+        interrupted = false;
+        for (var listeners : listeners) {
+            listeners.started(agent);
+        }
+        started = true;
+        for (var task : deferredTasks) {
+            task.run();
+        }
+        deferredTasks.clear();
+        while (!interrupted) {
+            if (!performRound()) {
+                break;
+            }
+        }
+        started = false;
         if (interrupted) {
             return;
         }
-        while (!deferredTasks.isEmpty() || !tasks.isEmpty() || !pendingTransitions.isEmpty()) {
-            while (true) {
-                processNodeToNodeTransitionQueue();
-                if (tasks.isEmpty()) {
-                    break;
-                }
-                while (!tasks.isEmpty()) {
-                    tasks.remove().run();
-                }
-                if (interruptor != null && !interruptor.shouldContinue()) {
-                    interrupted = true;
-                    return;
-                }
-            }
-
-            propagationDepth = PROPAGATION_STACK_THRESHOLD;
-            while (!deferredTasks.isEmpty()) {
-                deferredTasks.remove().run();
-            }
-            propagationDepth = 0;
-        }
-    }
-
-    private void processNodeToNodeTransitionQueue() {
-        while (!pendingTransitions.isEmpty()) {
-            Transition transition = pendingTransitions.remove();
-            IntSet pendingTypes = transition.pendingTypes;
-            transition.pendingTypes = null;
-            if (pendingTypes.size() == 1) {
-                DependencyType type = types.get(pendingTypes.iterator().next().value);
-                transition.consume(type);
-            } else {
-                DependencyType[] typesToPropagate = new DependencyType[pendingTypes.size()];
-                int index = 0;
-                for (IntCursor cursor : pendingTypes) {
-                    typesToPropagate[index++] = types.get(cursor.value);
-                }
-                transition.consume(typesToPropagate);
-            }
-        }
-    }
-
-    public void initDependencies() {
-        for (var listener : listeners) {
-            listener.started(agent);
-        }
-    }
-
-    public void processDependencies() {
-        interrupted = false;
-        processQueue();
-        if (!interrupted) {
-            completing = true;
-            lock();
-            for (DependencyListener listener : listeners) {
-                listener.completing(agent);
-            }
+        completing = true;
+        lock();
+        for (DependencyListener listener : listeners) {
+            listener.completing(agent);
         }
 
         for (DependencyListener listener : listeners) {
@@ -690,15 +582,125 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         }
     }
 
+    private boolean performRound() {
+        if (lastPendingTypes == null && lastPendingTransition == null) {
+            return false;
+        }
+        if (shouldLogSummary) {
+            System.out.println("Performing round: " + roundCount++);
+        }
+        applyPendingTransitions();
+        orderNodes();
+        if (shouldLogSummary) {
+            System.out.println("Nodes selected: " + orderedNodes.size());
+        }
+        if (orderedNodes.isEmpty()) {
+            return false;
+        }
+        propagateTypesAlongTransitions();
+        while (!queue.isEmpty()) {
+            queue.remove().run();
+        }
+        orderedNodes.clear();
+        return true;
+    }
+
+    private void applyPendingTransitions() {
+        for (var node = lastPendingTransition; node != null;) {
+            var next = node.nextPendingTransitions;
+            node.applyPendingTransitions();
+            node = next;
+        }
+    }
+
+    private void orderNodes() {
+        var nodeStack = new ArrayDeque<DependencyNode>();
+
+        pushNodes(nodeStack);
+        for (var node : nodeStack) {
+            node.index = 0;
+        }
+
+        while (!nodeStack.isEmpty()) {
+            var node = nodeStack.pop();
+            switch (node.index) {
+                case 0: {
+                    node.index = 1;
+                    nodeStack.push(node);
+                    var transitions = node.successors();
+                    if (transitions != null) {
+                        for (var transition : transitions) {
+                            var dest = transition.destination;
+                            if (dest.index == 0) {
+                                nodeStack.push(dest);
+                            }
+                        }
+                    }
+                    break;
+                }
+                case 1:
+                    node.index = 2;
+                    orderedNodes.add(node);
+                    break;
+            }
+        }
+
+        Collections.reverse(orderedNodes);
+        for (var node : orderedNodes) {
+            node.index = -1;
+        }
+    }
+
+    private void pushNodes(Deque<DependencyNode> stack) {
+        for (var node = lastPendingTransition; node != null; node = node.nextPendingTransitions) {
+            if (!node.onStack) {
+                node.onStack = true;
+                stack.push(node);
+            }
+        }
+        for (var node = lastPendingTypes; node != null; node = node.nextPendingTypes) {
+            if (!node.onStack) {
+                node.onStack = true;
+                stack.push(node);
+            }
+        }
+        for (var node : stack) {
+            node.onStack = false;
+        }
+    }
+
+    private void propagateTypesAlongTransitions() {
+        for (var node : orderedNodes) {
+            node.inPropagationList = true;
+            node.nextPendingTransitions = null;
+            node.nextPendingTypes = null;
+            node.inPendingTypesList = false;
+        }
+        lastPendingTransition = null;
+        lastPendingTypes = null;
+        for (var task : tasksOnMergePhase) {
+            task.run();
+        }
+        tasksOnMergePhase.clear();
+        do {
+            hasPendingTypesInList = false;
+            propagateTypesAlongTransitionsSingleRound();
+        } while (hasPendingTypesInList);
+        for (var node : orderedNodes) {
+            node.inPropagationList = false;
+        }
+    }
+
+    private void propagateTypesAlongTransitionsSingleRound() {
+        for (var node : orderedNodes) {
+            node.applyPendingTypes();
+        }
+    }
+
     private void reportDependencies() {
         List<ReportEntry> report = new ArrayList<>();
-        int domainCount = 0;
         for (DependencyNode node : allNodes) {
-            String tag = node.tag + "";
-            if (node.typeSet != null && node.typeSet.origin == node) {
-                ++domainCount;
-                tag += "{*}";
-            }
+            String tag = node.tag;
             report.add(new ReportEntry(tag, node.getTypes().length));
         }
 
@@ -708,24 +710,14 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         }
 
         System.out.println("Total nodes: " + allNodes.size());
-        System.out.println("Total domains: " + domainCount);
     }
 
     public void cleanup(ClassSourcePacker classSourcePacker) {
-        for (DependencyNode node : allNodes) {
-            node.followers = null;
-            node.transitions = null;
-            node.transitionList = null;
-            node.method = null;
+        for (var node : allNodes) {
+            node.pack();
         }
 
-        for (DependencyNode node : allNodes) {
-            if (node.typeSet != null) {
-                node.typeSet.cleanup();
-            }
-        }
-
-        for (Map<?, MethodDependency> map : methodCache.values()) {
+        for (var map : methodCache.values()) {
             for (MethodDependency methodDependency : map.values()) {
                 methodDependency.locationListeners = null;
                 methodDependency.locations = null;
@@ -860,7 +852,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         return result;
     }
 
-
     static class IncrementalCache implements IncrementalDependencyProvider, IncrementalDependencyRegistration {
         private final String[] emptyArray = new String[0];
         private Map<String, IncrementalItem> classes = new HashMap<>();
@@ -924,5 +915,4 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         Set<String> dependencies;
     }
 
-    abstract boolean domainOptimizationEnabled();
 }

@@ -104,8 +104,7 @@ class VirtualCallConsumer implements DependencyConsumer {
             }
             DependencyNode[] targetParams = methodDep.getVariables();
             if (parameters[0] != null && targetParams[0] != null) {
-                parameters[0].connect(targetParams[0],
-                        analyzer.getSuperClassFilter(methodDep.getMethod().getOwnerName()));
+                parameters[0].connect(targetParams[0]);
             }
             for (int i = 1; i < parameters.length; ++i) {
                 if (parameters[i] != null && targetParams[i] != null) {
