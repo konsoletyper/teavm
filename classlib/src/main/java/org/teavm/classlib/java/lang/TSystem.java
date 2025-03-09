@@ -301,7 +301,7 @@ public final class TSystem extends TObject {
     private static native long nanoTimeLowLevel();
 
     public static int identityHashCode(Object x) {
-        return ((TObject) x).identity();
+        return x == null ? 0 : ((TObject) x).identity();
     }
 
     public static String lineSeparator() {
