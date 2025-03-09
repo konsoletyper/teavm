@@ -32,7 +32,6 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 
 public class AsyncMethodGenerator implements Generator, DependencyPlugin, MethodContributor {
     private static final MethodDescriptor completeMethod = new MethodDescriptor("complete", Object.class, void.class);
@@ -84,8 +83,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Method
         MethodDependency completeMethod = agent.linkMethod(
                 new MethodReference(AsyncCallbackWrapper.class, "complete", Object.class, void.class));
         if (method.getResult() != null) {
-            completeMethod.getVariable(1).connect(method.getResult(), type -> agent.getClassHierarchy()
-                    .isSuperType(ref.getReturnType(), ValueType.object(type.getName()), false));
+            completeMethod.getVariable(1).connect(method.getResult());
         }
         completeMethod.use();
 

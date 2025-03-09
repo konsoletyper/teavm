@@ -15,6 +15,7 @@
  */
 package org.teavm.dependency;
 
+import java.util.LinkedHashSet;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
@@ -108,16 +109,12 @@ public class PreciseDependencyAnalyzer extends DependencyAnalyzer {
         DependencyNode node = createNode();
         node.degree = degree;
         node.classValueNode = node;
-        node.classNodeParent = parent;
+        node.classParentNodes = new LinkedHashSet<>();
+        node.classParentNodes.add(node);
         if (DependencyAnalyzer.shouldTag) {
             node.tag = parent.tag + "@";
         }
         return node;
-    }
-
-    @Override
-    boolean domainOptimizationEnabled() {
-        return true;
     }
 
     @Override

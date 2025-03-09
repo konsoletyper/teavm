@@ -132,43 +132,41 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
         return subtypeNodes.computeIfAbsent(type, key -> {
             DependencyNode node = createNode();
 
-            defer(() -> {
-                int degree = 0;
-                while (degree < key.length() && key.charAt(degree) == '[') {
-                    degree++;
-                }
+            int degree = 0;
+            while (degree < key.length() && key.charAt(degree) == '[') {
+                degree++;
+            }
 
-                if (degree > 0) {
-                    ValueType fullType = ValueType.parse(key);
-                    if (fullType instanceof ValueType.Object) {
-                        String prefix = key.substring(0, degree) + "L";
-                        String className = ((ValueType.Object) fullType).getClassName();
-                        ClassReader cls = getClassSource().get(className);
-                        if (cls != null) {
-                            if (cls.getParent() != null) {
-                                node.connect(getSubtypeNode(prefix + cls.getParent().replace('.', '/') + ";"));
-                            } else {
-                                node.connect(getSubtypeNode("java.lang.Object"));
-                            }
-                            for (String itf : cls.getInterfaces()) {
-                                node.connect(getSubtypeNode(prefix + itf.replace('.', '/') + ";"));
-                            }
-                        }
-                    } else {
-                        node.connect(getSubtypeNode("java.lang.Object"));
-                    }
-                } else {
-                    ClassReader cls = getClassSource().get(key);
+            if (degree > 0) {
+                ValueType fullType = ValueType.parse(key);
+                if (fullType instanceof ValueType.Object) {
+                    String prefix = key.substring(0, degree) + "L";
+                    String className = ((ValueType.Object) fullType).getClassName();
+                    ClassReader cls = getClassSource().get(className);
                     if (cls != null) {
                         if (cls.getParent() != null) {
-                            node.connect(getSubtypeNode(cls.getParent()));
+                            node.connect(getSubtypeNode(prefix + cls.getParent().replace('.', '/') + ";"));
+                        } else {
+                            node.connect(getSubtypeNode("java.lang.Object"));
                         }
                         for (String itf : cls.getInterfaces()) {
-                            node.connect(getSubtypeNode(itf));
+                            node.connect(getSubtypeNode(prefix + itf.replace('.', '/') + ";"));
                         }
                     }
+                } else {
+                    node.connect(getSubtypeNode("java.lang.Object"));
                 }
-            });
+            } else {
+                ClassReader cls = getClassSource().get(key);
+                if (cls != null) {
+                    if (cls.getParent() != null) {
+                        node.connect(getSubtypeNode(cls.getParent()));
+                    }
+                    for (String itf : cls.getInterfaces()) {
+                        node.connect(getSubtypeNode(itf));
+                    }
+                }
+            }
 
             return node;
         });
@@ -177,16 +175,9 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
     FastVirtualCallConsumer getVirtualCallConsumer(MethodReference method) {
         return virtualCallConsumers.computeIfAbsent(method, key -> {
             FastVirtualCallConsumer consumer = new FastVirtualCallConsumer(instancesNode, key, this);
-            defer(() -> {
-                getSubtypeNode(method.getClassName()).addConsumer(consumer);
-            });
+            getSubtypeNode(method.getClassName()).addConsumer(consumer);
             return consumer;
         });
-    }
-
-    @Override
-    boolean domainOptimizationEnabled() {
-        return false;
     }
 
     @Override

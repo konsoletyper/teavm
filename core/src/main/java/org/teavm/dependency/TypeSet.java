@@ -15,75 +15,148 @@
  */
 package org.teavm.dependency;
 
-import com.carrotsearch.hppc.ObjectArrayList;
-import com.carrotsearch.hppc.cursors.ObjectCursor;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.function.Predicate;
 
 class TypeSet {
-    private static final int SMALL_TYPES_THRESHOLD = 3;
+    static final int SMALL_TYPES_THRESHOLD = 3;
     static final DependencyType[] EMPTY_TYPES = new DependencyType[0];
     private DependencyAnalyzer dependencyAnalyzer;
-    DependencyNode origin;
-    private int[] smallTypes;
-    private BitSet types;
-    private int typesCount;
+    Object data;
 
-    private Object domain;
-    ObjectArrayList<Transition> transitions;
-    ArrayList<ConsumerWithNode> consumers;
-
-    TypeSet(DependencyAnalyzer dependencyAnalyzer, DependencyNode origin) {
+    TypeSet(DependencyAnalyzer dependencyAnalyzer) {
         this.dependencyAnalyzer = dependencyAnalyzer;
-        this.origin = origin;
-        domain = origin;
     }
 
-    void addType(DependencyType type) {
-        if (types == null) {
-            if (smallTypes == null) {
-                smallTypes = new int[] { type.index };
-                return;
-            }
-        }
-        if (smallTypes != null) {
-            if (smallTypes.length == SMALL_TYPES_THRESHOLD) {
-                types = new BitSet(dependencyAnalyzer.types.size() * 2);
-                for (int existingType : smallTypes) {
-                    types.set(existingType);
+    void addType(int type) {
+        if (data == null) {
+            data = new int[] { type };
+            return;
+        } else if (data instanceof int[]) {
+            var array = (int[]) data;
+            if (array.length == SMALL_TYPES_THRESHOLD) {
+                var bitSet = new BitSet(dependencyAnalyzer.types.size() * 2);
+                for (int existingType : array) {
+                    bitSet.set(existingType);
                 }
-                typesCount = smallTypes.length;
-                smallTypes = null;
+                data = bitSet;
             } else {
-                smallTypes = Arrays.copyOf(smallTypes, smallTypes.length + 1);
-                smallTypes[smallTypes.length - 1] = type.index;
+                array = Arrays.copyOf(array, array.length + 1);
+                array[array.length - 1] = type;
+                data = array;
                 return;
             }
         }
-        types.set(type.index);
-        typesCount++;
+        var bitSet = (BitSet) data;
+        bitSet.set(type);
+    }
+
+    void addTypes(int[] newTypes) {
+        if (newTypes.length > SMALL_TYPES_THRESHOLD) {
+            if (data == null) {
+                data = new BitSet();
+            } else if (data instanceof int[]) {
+                var array = (int[]) data;
+                var bitSet = new BitSet();
+                for (var typeIndex : array) {
+                    bitSet.set(typeIndex);
+                }
+                data = bitSet;
+            }
+        } else {
+            if (data == null) {
+                data = newTypes.clone();
+                return;
+            }
+
+            if (data instanceof int[]) {
+                var array = (int[]) data;
+                var sizeToAdd = newTypes.length;
+                for (var type : newTypes) {
+                    for (var typeIndex : array) {
+                        if (typeIndex == type) {
+                            --sizeToAdd;
+                            break;
+                        }
+                    }
+                }
+                if (sizeToAdd == 0) {
+                    return;
+                }
+                if (array.length + sizeToAdd < SMALL_TYPES_THRESHOLD) {
+                    var i = array.length;
+                    var oldLength = i;
+                    array = Arrays.copyOf(array, array.length + sizeToAdd);
+                    outer:
+                    for (var newType : newTypes) {
+                        for (var j = 0; j < oldLength; ++j) {
+                            if (newType == array[j]) {
+                                continue outer;
+                            }
+                        }
+                        array[i++] = newType;
+                    }
+                    data = array;
+                    return;
+                } else {
+                    var bitSet = new BitSet();
+                    for (var typeIndex : array) {
+                        bitSet.set(typeIndex);
+                    }
+                    data = bitSet;
+                }
+            }
+        }
+
+        var bitSet = (BitSet) data;
+        for (var newType : newTypes) {
+            bitSet.set(newType);
+        }
+    }
+
+    void addTypes(BitSet newTypes) {
+        if (data == null) {
+            data = new BitSet();
+        } else if (data instanceof int[]) {
+            var array = (int[]) data;
+            var bitSet = new BitSet();
+            for (var typeIndex : array) {
+                bitSet.set(typeIndex);
+            }
+            data = bitSet;
+        }
+
+        var bitSet = (BitSet) data;
+        bitSet.or(newTypes);
+    }
+
+    void addTypes(TypeSet other) {
+        if (other == null) {
+            return;
+        }
+        if (other.data instanceof int[]) {
+            addTypes((int[]) other.data);
+        } else if (other.data instanceof BitSet) {
+            addTypes((BitSet) other.data);
+        }
     }
 
     DependencyType[] getTypes() {
-        if (this.types != null) {
-            DependencyType[] types = new DependencyType[this.types.cardinality()];
+        if (data instanceof BitSet) {
+            var bitSet = (BitSet) data;
+            var types = new DependencyType[bitSet.cardinality()];
             int j = 0;
-            for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
-                DependencyType type = dependencyAnalyzer.types.get(index);
+            for (int index = bitSet.nextSetBit(0); index >= 0; index = bitSet.nextSetBit(index + 1)) {
+                var type = dependencyAnalyzer.types.get(index);
                 types[j++] = type;
             }
             return types;
-        } else if (this.smallTypes != null) {
-            DependencyType[] types = new DependencyType[smallTypes.length];
+        } else if (data instanceof int[]) {
+            var array = (int[]) data;
+            var types = new DependencyType[array.length];
             for (int i = 0; i < types.length; ++i) {
-                DependencyType type = dependencyAnalyzer.types.get(smallTypes[i]);
-                types[i] = type;
+                types[i] = dependencyAnalyzer.types.get(array[i]);
             }
             return types;
         } else {
@@ -92,11 +165,12 @@ class TypeSet {
     }
 
     boolean hasMoreTypesThan(int limit, Predicate<DependencyType> filter) {
-        if (this.types != null) {
+        if (data instanceof BitSet) {
+            var bitSet = (BitSet) data;
             if (filter == null) {
-                return this.types.cardinality() > limit;
+                return bitSet.cardinality() > limit;
             }
-            for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
+            for (int index = bitSet.nextSetBit(0); index >= 0; index = bitSet.nextSetBit(index + 1)) {
                 DependencyType type = dependencyAnalyzer.types.get(index);
                 if (filter.test(type)) {
                     if (--limit < 0) {
@@ -105,15 +179,16 @@ class TypeSet {
                 }
             }
             return false;
-        } else if (this.smallTypes != null) {
-            if (this.smallTypes.length <= limit) {
+        } else if (data instanceof int[]) {
+            var array = (int[]) data;
+            if (array.length <= limit) {
                 return false;
             }
             if (filter == null) {
                 return true;
             }
-            for (int i = 0; i < smallTypes.length; ++i) {
-                DependencyType type = dependencyAnalyzer.types.get(smallTypes[i]);
+            for (int i = 0; i < array.length; ++i) {
+                var type = dependencyAnalyzer.types.get(array[i]);
                 if (filter.test(type)) {
                     if (--limit < 0) {
                         return true;
@@ -126,206 +201,28 @@ class TypeSet {
         }
     }
 
-    DependencyType[] getTypesForNode(DependencyNode sourceNode, DependencyNode targetNode,
-            DependencyTypeFilter filter) {
-        int j = 0;
-        DependencyType[] types;
-        if (this.types != null) {
-            int[] filteredTypes = null;
-            if (typesCount > 15) {
-                filteredTypes = filter != null ? filter.tryExtract(this.types) : null;
-                if (filteredTypes == null) {
-                    filteredTypes = sourceNode.getFilter().tryExtract(this.types);
-                }
-                if (filteredTypes == null) {
-                    filteredTypes = targetNode.getFilter().tryExtract(this.types);
-                }
-            }
-            if (filteredTypes != null) {
-                types = new DependencyType[filteredTypes.length];
-                for (int index : filteredTypes) {
-                    DependencyType type = dependencyAnalyzer.types.get(index);
-                    if (sourceNode.filter(type) && !targetNode.hasType(type) && targetNode.filter(type)
-                            && (filter == null || filter.match(type))) {
-                        types[j++] = type;
-                    }
-                }
-            } else {
-                types = new DependencyType[typesCount];
-                for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
-                    DependencyType type = dependencyAnalyzer.types.get(index);
-                    if (sourceNode.filter(type) && !targetNode.hasType(type) && targetNode.filter(type)
-                            && (filter == null || filter.match(type))) {
-                        types[j++] = type;
-                    }
-                }
-            }
-        } else if (this.smallTypes != null) {
-            types = new DependencyType[smallTypes.length];
-            for (int i = 0; i < types.length; ++i) {
-                DependencyType type = dependencyAnalyzer.types.get(smallTypes[i]);
-                if (sourceNode.filter(type) && !targetNode.hasType(type) && targetNode.filter(type)
-                        && (filter == null || filter.match(type))) {
-                    types[j++] = type;
-                }
-            }
-        } else {
-            return EMPTY_TYPES;
-        }
-
-        if (j == 0) {
-            return EMPTY_TYPES;
-        }
-        if (j < types.length) {
-            types = Arrays.copyOf(types, j);
-        }
-        return types;
+    boolean hasType(DependencyType type) {
+        return hasType(type.index);
     }
 
-    boolean hasType(DependencyType type) {
-        if (smallTypes != null) {
-            for (int i = 0; i < smallTypes.length; ++i) {
-                if (smallTypes[i] == type.index) {
+    boolean hasType(int type) {
+        if (data instanceof int[]) {
+            var array = (int[]) data;
+            for (int i = 0; i < array.length; ++i) {
+                if (array[i] == type) {
                     return true;
                 }
             }
             return false;
+        } else if (data instanceof BitSet) {
+            var bitSet = (BitSet) data;
+            return bitSet.get(type);
+        } else {
+            return false;
         }
-        return types != null && types.get(type.index);
     }
 
     boolean hasAnyType() {
-        return types != null || smallTypes != null;
-    }
-
-    TypeSet copy(DependencyNode origin) {
-        TypeSet result = new TypeSet(dependencyAnalyzer, origin);
-        result.types = types != null ? (BitSet) types.clone() : null;
-        result.smallTypes = smallTypes;
-        result.typesCount = typesCount;
-        return result;
-    }
-
-    void invalidate() {
-        transitions = null;
-        consumers = null;
-    }
-
-    Set<? extends DependencyNode> domain() {
-        if (domain == null) {
-            return Set.of();
-        } else if (domain instanceof DependencyNode) {
-            return Set.of((DependencyNode) domain);
-        } else {
-            //noinspection unchecked
-            return (Set<? extends DependencyNode>) domain;
-        }
-    }
-
-    void addDomain(DependencyNode node) {
-        if (domain == null) {
-            domain = node;
-        } else if (domain instanceof DependencyNode) {
-            if (domain == node) {
-                return;
-            }
-            domain = new HashSet<>(Set.of((DependencyNode) domain));
-        }
-        @SuppressWarnings("unchecked")
-        var set = (Set<DependencyNode>) domain;
-        set.add(node);
-    }
-
-    void addDomain(Collection<? extends DependencyNode> nodes) {
-        if (nodes.isEmpty()) {
-            return;
-        }
-        if (domain == null) {
-            if (nodes.size() == 1) {
-                domain = nodes.iterator().next();
-            }
-            return;
-        } else if (domain instanceof DependencyNode) {
-            if (nodes.contains(domain) && nodes.size() == 1) {
-                return;
-            }
-            domain = new HashSet<>(Set.of((DependencyNode) domain));
-        }
-        @SuppressWarnings("unchecked")
-        var set = (Set<DependencyNode>) domain;
-        set.addAll(nodes);
-    }
-
-    void removeDomain(Collection<? extends DependencyNode> nodes) {
-        if (domain == null || nodes.isEmpty()) {
-            return;
-        }
-        if (domain instanceof DependencyNode) {
-            if (nodes.contains(domain)) {
-                domain = null;
-            }
-            return;
-        }
-
-        @SuppressWarnings("unchecked")
-        var set = (Set<DependencyNode>) domain;
-        set.removeAll(nodes);
-        if (set.isEmpty()) {
-            domain = null;
-        } else if (set.size() == 1) {
-            domain = set.iterator().next();
-        }
-    }
-
-    ObjectArrayList<Transition> getTransitions() {
-        if (transitions == null) {
-            transitions = new ObjectArrayList<>();
-            for (DependencyNode node : domain()) {
-                if (node.transitions != null) {
-                    for (ObjectCursor<Transition> cursor : node.transitionList) {
-                        Transition transition = cursor.value;
-                        if (transition.filter != null || transition.destination.typeSet != this) {
-                            transitions.add(transition);
-                        }
-                    }
-                }
-            }
-        }
-        return transitions;
-    }
-
-    List<ConsumerWithNode> getConsumers() {
-        if (domain == null) {
-            return List.of();
-        } else if (domain instanceof DependencyNode) {
-            var node = (DependencyNode) domain;
-            if (node.followers == null) {
-                return List.of();
-            } else {
-                return List.of(new ConsumerWithNode(node.followers.toArray(new DependencyConsumer[0]), node));
-            }
-        } else {
-            if (consumers == null) {
-                consumers = new ArrayList<>();
-                for (var node : domain()) {
-                    if (node.followers != null) {
-                        consumers.add(new ConsumerWithNode(node.followers.toArray(new DependencyConsumer[0]), node));
-                    }
-                }
-                consumers.trimToSize();
-            }
-            return consumers;
-        }
-    }
-
-    int typeCount() {
-        return smallTypes != null ? smallTypes.length : types != null ? typesCount : 0;
-    }
-
-    void cleanup() {
-        origin = null;
-        domain = null;
-        transitions = null;
-        consumers = null;
+        return data != null;
     }
 }

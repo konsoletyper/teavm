@@ -234,7 +234,8 @@ class DependencyGraphBuilder {
                 ClassReader targetClass = classSource.get(targetClsName);
                 if (targetClass != null && !(targetClass.getName().equals("java.lang.Object"))) {
                     if (valueNode != null && receiverNode != null) {
-                        valueNode.connect(receiverNode, dependencyAnalyzer.getSuperClassFilter(targetClass.getName()));
+                        receiverNode.typeFilter = targetType;
+                        valueNode.connect(receiverNode);
                     }
                     return;
                 }
@@ -251,7 +252,8 @@ class DependencyGraphBuilder {
                     }
                 }
                 if (valueNode != null && receiverNode != null) {
-                    valueNode.connect(receiverNode, dependencyAnalyzer.getSuperClassFilter(targetType.toString()));
+                    receiverNode.typeFilter = targetType;
+                    valueNode.connect(receiverNode);
                 }
                 return;
             }

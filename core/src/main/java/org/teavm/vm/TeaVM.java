@@ -333,9 +333,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     public void preserveType(String className) {
-        dependencyAnalyzer.defer(() -> {
-            dependencyAnalyzer.linkClass(className).initClass(null);
-        });
+        dependencyAnalyzer.linkClass(className).initClass(null);
         preservedClasses.add(className);
     }
 
@@ -389,7 +387,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return !cancelled;
         });
         target.contributeDependencies(dependencyAnalyzer);
-        dependencyAnalyzer.initDependencies();
         processEntryPoint();
         if (target.needsSystemArrayCopyOptimization()) {
             dependencyAnalyzer.addDependencyListener(new StdlibDependencyListener());

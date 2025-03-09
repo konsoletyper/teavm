@@ -24,6 +24,7 @@ public class ClassDependency implements ClassDependencyInfo {
     private ClassReader classReader;
     boolean present;
     boolean activated;
+    boolean initialized;
 
     ClassDependency(DependencyAnalyzer analyzer, String className, ClassReader classReader) {
         this.analyzer = analyzer;
