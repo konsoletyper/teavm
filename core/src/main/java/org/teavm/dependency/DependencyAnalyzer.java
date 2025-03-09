@@ -15,9 +15,7 @@
  */
 package org.teavm.dependency;
 
-import com.carrotsearch.hppc.IntHashSet;
-import com.carrotsearch.hppc.IntSet;
-import com.carrotsearch.hppc.cursors.IntCursor;
+import com.carrotsearch.hppc.IntStack;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,7 +62,6 @@ import org.teavm.model.util.ProgramUtils;
 import org.teavm.parsing.Parser;
 
 public abstract class DependencyAnalyzer implements DependencyInfo {
-    private static final int PROPAGATION_STACK_THRESHOLD = 50;
     private static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", void.class);
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     static final boolean shouldTag = System.getProperty("org.teavm.tagDependencies", "false").equals("true")
@@ -84,8 +81,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private CachedFunction<String, ClassDependency> classCache;
     private List<DependencyListener> listeners = new ArrayList<>();
     private ServiceRepository services;
-    private Deque<Transition> pendingTransitions = new ArrayDeque<>();
-    private Deque<Runnable> tasks = new ArrayDeque<>();
     private Queue<Runnable> deferredTasks = new ArrayDeque<>();
     List<DependencyType> types = new ArrayList<>();
     private Map<String, DependencyType> typeMap = new HashMap<>();
@@ -104,6 +99,9 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private ReferenceCache referenceCache;
     private Set<String> generatedClassNames = new HashSet<>();
     DependencyType classType;
+    private List<DependencyNode> orderedNodes = new ArrayList<>();
+    DependencyNode lastPendingTransition;
+    DependencyNode lastPendingTypes;
 
     DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics, ReferenceCache referenceCache, String[] platformTags) {
@@ -269,8 +267,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
                 processMethod(dep);
                 dep.used = true;
             });
-
-            processQueue();
         }
     }
 
@@ -282,87 +278,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     public void addClassTransformer(ClassHolderTransformer transformer) {
         classSource.addTransformer(transformer);
-    }
-
-    private int propagationDepth;
-
-    void schedulePropagation(DependencyConsumer consumer, DependencyType type) {
-        if (propagationDepth < PROPAGATION_STACK_THRESHOLD) {
-            ++propagationDepth;
-            consumer.consume(type);
-            --propagationDepth;
-        } else {
-            tasks.add(() -> consumer.consume(type));
-        }
-    }
-
-    void schedulePropagation(Transition consumer, DependencyType type) {
-        if (!consumer.destination.filter(type)) {
-            return;
-        }
-
-        if (consumer.pendingTypes == null && propagationDepth < PROPAGATION_STACK_THRESHOLD
-                && consumer.pointsToDomainOrigin() && consumer.destination.propagateCount < 20) {
-            ++propagationDepth;
-            consumer.consume(type);
-            --propagationDepth;
-        } else {
-            if (consumer.pendingTypes == null) {
-                pendingTransitions.add(consumer);
-                consumer.pendingTypes = new IntHashSet(50);
-            }
-            consumer.pendingTypes.add(type.index);
-        }
-    }
-
-    void schedulePropagation(Transition consumer, DependencyType[] types) {
-        if (types.length == 0) {
-            return;
-        }
-        if (types.length == 1) {
-            schedulePropagation(consumer, types[0]);
-            return;
-        }
-
-        if (consumer.pendingTypes == null && propagationDepth < PROPAGATION_STACK_THRESHOLD
-                && consumer.pointsToDomainOrigin() && consumer.destination.propagateCount < 20) {
-            ++propagationDepth;
-            consumer.consume(types);
-            --propagationDepth;
-        } else {
-            if (consumer.pendingTypes == null) {
-                pendingTransitions.add(consumer);
-                consumer.pendingTypes = new IntHashSet(Math.max(50, types.length));
-            }
-            consumer.pendingTypes.ensureCapacity(types.length + consumer.pendingTypes.size());
-            for (DependencyType type : types) {
-                consumer.pendingTypes.add(type.index);
-            }
-        }
-    }
-
-    void schedulePropagation(DependencyConsumer consumer, DependencyType[] types) {
-        if (types.length == 0) {
-            return;
-        }
-        if (types.length == 1) {
-            schedulePropagation(consumer, types[0]);
-            return;
-        }
-
-        if (propagationDepth < PROPAGATION_STACK_THRESHOLD) {
-            ++propagationDepth;
-            for (DependencyType type : types) {
-                consumer.consume(type);
-            }
-            --propagationDepth;
-        } else {
-            tasks.add(() -> {
-                for (DependencyType type : types) {
-                    consumer.consume(type);
-                }
-            });
-        }
     }
 
     public void defer(Runnable task) {
@@ -618,52 +533,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         return result;
     }
 
-    private void processQueue() {
-        if (interrupted) {
-            return;
-        }
-        while (!deferredTasks.isEmpty() || !tasks.isEmpty() || !pendingTransitions.isEmpty()) {
-            while (true) {
-                processNodeToNodeTransitionQueue();
-                if (tasks.isEmpty()) {
-                    break;
-                }
-                while (!tasks.isEmpty()) {
-                    tasks.remove().run();
-                }
-                if (interruptor != null && !interruptor.shouldContinue()) {
-                    interrupted = true;
-                    return;
-                }
-            }
-
-            propagationDepth = PROPAGATION_STACK_THRESHOLD;
-            while (!deferredTasks.isEmpty()) {
-                deferredTasks.remove().run();
-            }
-            propagationDepth = 0;
-        }
-    }
-
-    private void processNodeToNodeTransitionQueue() {
-        while (!pendingTransitions.isEmpty()) {
-            Transition transition = pendingTransitions.remove();
-            IntSet pendingTypes = transition.pendingTypes;
-            transition.pendingTypes = null;
-            if (pendingTypes.size() == 1) {
-                DependencyType type = types.get(pendingTypes.iterator().next().value);
-                transition.consume(type);
-            } else {
-                DependencyType[] typesToPropagate = new DependencyType[pendingTypes.size()];
-                int index = 0;
-                for (IntCursor cursor : pendingTypes) {
-                    typesToPropagate[index++] = types.get(cursor.value);
-                }
-                transition.consume(typesToPropagate);
-            }
-        }
-    }
-
     public void initDependencies() {
         for (var listener : listeners) {
             listener.started(agent);
@@ -672,13 +541,19 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     public void processDependencies() {
         interrupted = false;
-        processQueue();
-        if (!interrupted) {
-            completing = true;
-            lock();
-            for (DependencyListener listener : listeners) {
-                listener.completing(agent);
+
+        while (!interrupted) {
+            if (!performRound()) {
+                break;
             }
+        }
+        if (interrupted) {
+            return;
+        }
+        completing = true;
+        lock();
+        for (DependencyListener listener : listeners) {
+            listener.completing(agent);
         }
 
         for (DependencyListener listener : listeners) {
@@ -690,15 +565,191 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         }
     }
 
+    private boolean performRound() {
+        if (lastPendingTypes == null && lastPendingTransition == null) {
+            return false;
+        }
+        applyPendingTransitions();
+        mergeSccs();
+        orderNodes();
+        if (orderedNodes.isEmpty()) {
+            return false;
+        }
+        propagateTypesAlongTransitions();
+        orderedNodes.clear();
+        return true;
+    }
+
+    private void applyPendingTransitions() {
+        for (var node = lastPendingTransition; node != null; ) {
+            var next = node.nextPendingTransitions;
+            node.applyPendingTransitions();
+            node = next;
+        }
+        lastPendingTransition = null;
+    }
+
+    private void mergeSccs() {
+        for (var scc : findSccs()) {
+            var last = scc[scc.length - 1];
+            for (var i = scc.length - 2; i >= 0; --i) {
+                last.merge(scc[i]);
+            }
+        }
+    }
+
+    private DependencyNode[][] findSccs() {
+        List<DependencyNode[]> components = new ArrayList<>();
+
+        int index = 0;
+        var procNodeStack = new ArrayDeque<DependencyNode>();
+        var procStateStack = new IntStack();
+        var stack = new ArrayDeque<DependencyNode>();
+
+        pushNodes(procNodeStack);
+        for (var node : procNodeStack) {
+            node.index = -1;
+            node.lowLink = -1;
+            node.onStack = false;
+            procStateStack.push(0);
+        }
+
+        while (!procNodeStack.isEmpty()) {
+            var state = procStateStack.pop();
+            var v = procNodeStack.pop();
+
+            switch (state) {
+                case 0: {
+                    if (v.index >= 0) {
+                        break;
+                    }
+                    v.index = index;
+                    v.lowLink = index;
+                    index++;
+                    stack.push(v);
+                    v.onStack = true;
+
+                    procNodeStack.push(v);
+                    procStateStack.push(3);
+
+                    if (v.transitions != null) {
+                        for (var transition : v.transitions.values()) {
+                            procNodeStack.push(transition.destination);
+                            procNodeStack.push(v);
+                            procStateStack.push(1);
+                        }
+                    }
+                    break;
+                }
+
+                case 1: {
+                    var w = procNodeStack.pop();
+
+                    if (w.index < 0) {
+                        procNodeStack.push(w);
+                        procNodeStack.push(v);
+                        procStateStack.push(2);
+
+                        procNodeStack.push(w);
+                        procStateStack.push(0);
+                    } else if (w.onStack) {
+                        v.lowLink = Math.min(v.lowLink, w.lowLink);
+                    }
+
+                    break;
+                }
+
+                case 2: {
+                    var w = procNodeStack.pop();
+                    v.lowLink = Math.min(v.lowLink, w.lowLink);
+                    break;
+                }
+
+                case 3: {
+                    if (v.lowLink == v.index) {
+                        var scc = new ArrayList<DependencyNode>();
+                        DependencyNode w;
+                        do {
+                            w = stack.pop();
+                            w.onStack = false;
+                            scc.add(w);
+                        } while (w != v);
+
+                        if (scc.size() > 1) {
+                            components.add(scc.toArray(new DependencyNode[0]));
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        return components.toArray(DependencyNode[][]::new);
+    }
+
+    private void orderNodes() {
+        var nodeStack = new ArrayDeque<DependencyNode>();
+
+        pushNodes(nodeStack);
+        for (var node : nodeStack) {
+            node.index = 0;
+        }
+
+        while (!nodeStack.isEmpty()) {
+            var node = nodeStack.pop();
+            switch (node.index) {
+                case 0:
+                    node.index = 1;
+                    nodeStack.push(node);
+                    if (node.transitions != null) {
+                        for (var transition : node.transitions.values()) {
+                            if (transition.destination.index == 0) {
+                                nodeStack.push(transition.destination);
+                            }
+                        }
+                    }
+                    break;
+                case 1:
+                    node.index = 2;
+                    orderedNodes.add(node);
+                    break;
+            }
+        }
+
+        Collections.reverse(orderedNodes);
+    }
+
+    private void pushNodes(Deque<DependencyNode> stack) {
+        for (var node = lastPendingTransition; node != null; node = node.nextPendingTransitions) {
+            stack.push(node);
+        }
+        for (var node = lastPendingTypes; node != null; node = node.nextPendingTypes) {
+            stack.push(node);
+        }
+    }
+
+    private void propagateTypesAlongTransitions() {
+        while (lastPendingTypes != null) {
+            propagateTypesAlongTransitionsSingleRound();
+        }
+    }
+
+    private void propagateTypesAlongTransitionsSingleRound() {
+        for (var node = lastPendingTypes; node != null;) {
+            var next = node.nextPendingTypes;
+            node.nextPendingTransitions = null;
+            node = next;
+        }
+        lastPendingTypes = null;
+        for (var node : orderedNodes) {
+            node.applyPendingTypes();
+        }
+    }
+
     private void reportDependencies() {
         List<ReportEntry> report = new ArrayList<>();
-        int domainCount = 0;
         for (DependencyNode node : allNodes) {
-            String tag = node.tag + "";
-            if (node.typeSet != null && node.typeSet.origin == node) {
-                ++domainCount;
-                tag += "{*}";
-            }
+            String tag = node.tag;
             report.add(new ReportEntry(tag, node.getTypes().length));
         }
 
@@ -708,24 +759,16 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         }
 
         System.out.println("Total nodes: " + allNodes.size());
-        System.out.println("Total domains: " + domainCount);
     }
 
     public void cleanup(ClassSourcePacker classSourcePacker) {
         for (DependencyNode node : allNodes) {
-            node.followers = null;
+            node.consumers = null;
             node.transitions = null;
-            node.transitionList = null;
             node.method = null;
         }
 
-        for (DependencyNode node : allNodes) {
-            if (node.typeSet != null) {
-                node.typeSet.cleanup();
-            }
-        }
-
-        for (Map<?, MethodDependency> map : methodCache.values()) {
+        for (var map : methodCache.values()) {
             for (MethodDependency methodDependency : map.values()) {
                 methodDependency.locationListeners = null;
                 methodDependency.locations = null;
@@ -924,5 +967,4 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         Set<String> dependencies;
     }
 
-    abstract boolean domainOptimizationEnabled();
 }
