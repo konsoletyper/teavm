@@ -113,6 +113,11 @@ public class WasmGCDeclarationsGenerator {
         methodGenerator.setTypeMapper(classGenerator.typeMapper);
     }
 
+    public void setCompactMode(boolean compactMode) {
+        methodGenerator.setCompactMode(compactMode);
+        classGenerator.setCompactMode(compactMode);
+    }
+
     public void setFriendlyToDebugger(boolean friendlyToDebugger) {
         methodGenerator.setFriendlyToDebugger(friendlyToDebugger);
     }

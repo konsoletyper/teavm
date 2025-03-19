@@ -98,6 +98,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private boolean strict;
     private String entryPoint;
     private Consumer<WasmGCInitializerContributor> initializerContributors;
+    private boolean compactMode;
 
     public WasmGCMethodGenerator(
             WasmModule module,
@@ -129,6 +130,10 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         this.strict = strict;
         this.entryPoint = entryPoint;
         this.initializerContributors = initializerContributors;
+    }
+
+    public void setCompactMode(boolean compactMode) {
+        this.compactMode = compactMode;
     }
 
     public void setTypeMapper(WasmGCTypeMapper typeMapper) {
@@ -200,7 +205,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private WasmFunction createInstanceFunction(MethodReference methodReference) {
         var returnType = typeMapper.mapType(methodReference.getReturnType());
         var parameterTypes = new WasmType[methodReference.parameterCount() + 1];
-        parameterTypes[0] = typeMapper.mapType(ValueType.object(methodReference.getClassName()));
+        var compactMethod = compactMode
+                && typeMapper.mapType(ValueType.object(methodReference.getClassName())) instanceof WasmType.Reference;
+        parameterTypes[0] = compactMethod
+                ? WasmType.Reference.ANY
+                : typeMapper.mapType(ValueType.object(methodReference.getClassName()));
         for (var i = 0; i < methodReference.parameterCount(); ++i) {
             parameterTypes[i + 1] = typeMapper.mapType(methodReference.parameterType(i));
         }
@@ -249,6 +258,9 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         eliminateMultipleNullConstantUsages(method.getProgram());
         var decompiler = getDecompiler();
         var categoryProvider = new WasmGCVariableCategoryProvider(hierarchy);
+        var methodCompact = compactMode && !method.hasModifier(ElementModifier.STATIC)
+                && typeMapper.mapType(ValueType.object(method.getOwnerName())) instanceof WasmType.Reference;
+        categoryProvider.setCompactMode(methodCompact);
         var allocator = new RegisterAllocator(categoryProvider);
         allocator.allocateRegisters(method.getReference(), method.getProgram(), friendlyToDebugger);
         var ast = decompiler.decompileRegular(method);
@@ -304,7 +316,9 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             var localVar = ast.getVariables().get(i);
             var inferredType = preciseTypes[i];
             WasmType type;
-            if (!inferredType.isArrayUnwrap || inferredType.valueType == null) {
+            if (i == 0 && compactMode) {
+                type = WasmType.Reference.ANY;
+            } else if (!inferredType.isArrayUnwrap || inferredType.valueType == null) {
                 type = typeMapper.mapType(inferredType.valueType);
             } else {
                 var arrayType = classInfoProvider.getClassInfo(inferredType.valueType).getArray();
@@ -317,6 +331,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         addInitializerErase(method, function);
         var visitor = new WasmGCGenerationVisitor(getGenerationContext(), method.getReference(),
                 function, firstVar, false, typeInference);
+        visitor.setCompactMode(methodCompact);
         visitor.generate(ast.getBody(), function.getBody());
     }
 
@@ -525,6 +540,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         @Override
         public String entryPoint() {
             return context.entryPoint();
+        }
+
+        @Override
+        public boolean isCompactMode() {
+            return compactMode;
         }
 
         @Override

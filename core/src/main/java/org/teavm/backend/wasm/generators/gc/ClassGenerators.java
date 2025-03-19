@@ -20,7 +20,9 @@ import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
+import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
+import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmIsNull;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
@@ -42,7 +44,7 @@ public class ClassGenerators implements WasmGCCustomGenerator {
 
     private void generateIsAssignable(WasmFunction function, WasmGCCustomGeneratorContext context) {
         var classCls = context.classInfoProvider().getClassInfo("java.lang.Class");
-        var thisVar = new WasmLocal(classCls.getType());
+        var thisVar = new WasmLocal(context.isCompactMode() ? WasmType.Reference.ANY : classCls.getType());
         var otherClassVar = new WasmLocal(classCls.getType());
         function.add(thisVar);
         function.add(otherClassVar);
@@ -55,7 +57,11 @@ public class ClassGenerators implements WasmGCCustomGenerator {
         throwExpr.getArguments().add(npe);
         conditional.getThenBlock().getBody().add(throwExpr);
 
-        var functionRef = new WasmStructGet(classCls.getStructure(), new WasmGetLocal(thisVar),
+        WasmExpression thisExpr = new WasmGetLocal(thisVar);
+        if (context.isCompactMode()) {
+            thisExpr = new WasmCast(thisExpr, classCls.getType());
+        }
+        var functionRef = new WasmStructGet(classCls.getStructure(), thisExpr,
                 context.classInfoProvider().getClassSupertypeFunctionOffset());
         var call = new WasmCallReference(functionRef,
                 context.functionTypes().of(WasmType.INT32, classCls.getType()));

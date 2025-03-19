@@ -92,6 +92,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private boolean strict;
     private boolean obfuscated;
     private boolean debugInfo;
+    private boolean compactMode;
     private SourceMapBuilder sourceMapBuilder;
     private String sourceMapLocation;
     private WasmDebugInfoLocation debugLocation = WasmDebugInfoLocation.EXTERNAL;
@@ -140,6 +141,10 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
 
     public void setBufferHeapMaxSize(int bufferHeapMaxSize) {
         this.bufferHeapMaxSize = bufferHeapMaxSize;
+    }
+
+    public void setCompactMode(boolean compactMode) {
+        this.compactMode = compactMode;
     }
 
     @Override
@@ -270,6 +275,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
                 controller.getEntryPoint()
         );
         declarationsGenerator.setFriendlyToDebugger(controller.isFriendlyToDebugger());
+        declarationsGenerator.setCompactMode(compactMode);
         var moduleGenerator = new WasmGCModuleGenerator(declarationsGenerator);
 
         var classConsumerContext = createClassConsumerContext(classes, declarationsGenerator);

@@ -33,6 +33,7 @@ import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.SubscriptExpr;
 import org.teavm.ast.TryCatchStatement;
+import org.teavm.ast.VariableExpr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.PreciseTypeInference;
@@ -110,6 +111,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     private WasmGCGenerationUtil generationUtil;
     private WasmType expectedType;
     private PreciseTypeInference types;
+    private boolean compactMode;
 
     public WasmGCGenerationVisitor(WasmGCGenerationContext context, MethodReference currentMethod,
             WasmFunction function, int firstVariable, boolean async, PreciseTypeInference types) {
@@ -117,6 +119,10 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         this.context = context;
         generationUtil = new WasmGCGenerationUtil(context.classInfoProvider());
         this.types = types;
+    }
+
+    public void setCompactMode(boolean compactMode) {
+        this.compactMode = compactMode;
     }
 
     @Override
@@ -150,6 +156,17 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected boolean isManagedCall(MethodReference method) {
         return false;
+    }
+
+    @Override
+    public void visit(VariableExpr expr) {
+        super.visit(expr);
+        if (compactMode && expr.getVariableIndex() == 0) {
+            var receiverType = context.typeMapper().mapType(ValueType.object(currentMethod.getClassName()));
+            var cast = new WasmCast(result, (WasmType.Reference) receiverType);
+            cast.setLocation(expr.getLocation());
+            result = cast;
+        }
     }
 
     @Override
