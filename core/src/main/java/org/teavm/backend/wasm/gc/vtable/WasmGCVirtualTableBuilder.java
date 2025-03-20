@@ -303,7 +303,7 @@ class WasmGCVirtualTableBuilder {
         for (var className : classes.getClassNames()) {
             var table = tableMap.get(className);
             if (table != null) {
-                fillTable(table);
+                fillTable(table.resolve());
             }
         }
     }
@@ -427,13 +427,38 @@ class WasmGCVirtualTableBuilder {
             this.index = index;
         }
 
+        int depth = 0;
+
         void merge(Table other) {
+            if (++depth == 50) {
+                throw new IllegalStateException();
+            }
             other.reference = this;
-            if (parent != null) {
-                other.parent = parent;
+            if (parent == null) {
+                parent = other.parent;
             } else if (other.parent == null) {
                 other.parent = parent;
+            } else {
+                parent = parent.resolve();
+                other.parent = other.parent.resolve();
+                if (parent == other) {
+                    parent = other.parent;
+                } else if (this == other.parent) {
+                    other.parent = parent;
+                } else if (parent != other.parent) {
+                    if (!parent.cls.hasModifier(ElementModifier.INTERFACE)) {
+                        merge(other.parent);
+                        other.parent = parent;
+                    } else if (!other.parent.cls.hasModifier(ElementModifier.INTERFACE)) {
+                        merge(parent);
+                        parent = other.parent;
+                    } else if (parent.cls.hasModifier(ElementModifier.INTERFACE)
+                            && other.parent.cls.hasModifier(ElementModifier.INTERFACE)) {
+                        parent.merge(other.parent);
+                    }
+                }
             }
+            --depth;
         }
 
         WasmGCVirtualTable getBuildResult() {
