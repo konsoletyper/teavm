@@ -35,7 +35,7 @@ public class WasmGCClassInfo {
     WasmGlobal virtualTablePointer;
     WasmGlobal initializerPointer;
     Consumer<List<WasmExpression>> initializer;
-    List<WasmFunction> newArrayFunctions;
+    WasmFunction newArrayFunction;
     WasmFunction initArrayFunction;
     WasmFunction supertypeFunction;
     ObjectIntMap<String> heapFieldOffsets;

@@ -64,7 +64,13 @@ public class ClassGenerators implements WasmGCCustomGenerator {
         var functionRef = new WasmStructGet(classCls.getStructure(), thisExpr,
                 context.classInfoProvider().getClassSupertypeFunctionOffset());
         var call = new WasmCallReference(functionRef,
-                context.functionTypes().of(WasmType.INT32, classCls.getType()));
+                context.functionTypes().of(WasmType.INT32, classCls.getType(), classCls.getType()));
+
+        thisExpr = new WasmGetLocal(thisVar);
+        if (context.isCompactMode()) {
+            thisExpr = new WasmCast(thisExpr, classCls.getType());
+        }
+        call.getArguments().add(thisExpr);
         call.getArguments().add(new WasmGetLocal(otherClassVar));
 
         function.getBody().add(call);

@@ -30,6 +30,11 @@ public class WasmCallReference extends WasmExpression {
         this.type = Objects.requireNonNull(type);
     }
 
+    public WasmCallReference(WasmExpression functionReference, WasmFunctionType type, WasmExpression... arguments) {
+        this(functionReference, type);
+        getArguments().addAll(List.of(arguments));
+    }
+
     public WasmExpression getFunctionReference() {
         return functionReference;
     }

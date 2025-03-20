@@ -17,7 +17,6 @@ package org.teavm.backend.wasm.generate.gc.classes;
 
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import org.teavm.backend.wasm.WasmFunctionTypes;
@@ -27,7 +26,7 @@ import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
@@ -53,6 +52,7 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
     private WasmFunctionTypes functionTypes;
     private WasmFunctionType functionType;
     private Queue<Runnable> queue;
+    private WasmFunction isArrayFunction;
 
     WasmGCSupertypeFunctionGenerator(
             WasmModule module,
@@ -82,8 +82,11 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
 
     private WasmFunction generateIsSupertypeFunction(ValueType type) {
         var function = new WasmFunction(getFunctionType());
+        var classClass = classGenerator.standardClasses.classClass();
         function.setName(nameProvider.topLevel(nameProvider.suggestForType(type) + "@isSupertypes"));
-        var subtypeVar = new WasmLocal(classGenerator.standardClasses.classClass().getType(), "subtype");
+        var thisVar = new WasmLocal(classClass.getType(), "this");
+        var subtypeVar = new WasmLocal(classClass.getType(), "subtype");
+        function.add(thisVar);
         function.add(subtypeVar);
         module.functions.add(function);
 
@@ -91,10 +94,8 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
             if (type instanceof ValueType.Object) {
                 var className = ((ValueType.Object) type).getClassName();
                 generateIsClass(subtypeVar, className, function);
-            } else if (type instanceof ValueType.Array) {
-                ValueType itemType = ((ValueType.Array) type).getItemType();
-                generateIsArray(subtypeVar, itemType, function.getBody());
             } else {
+                assert !(type instanceof ValueType.Array);
                 var expected = classGenerator.getClassInfo(type).pointer;
                 var condition = new WasmReferencesEqual(new WasmGetLocal(subtypeVar), new WasmGetGlobal(expected));
                 function.getBody().add(condition);
@@ -156,26 +157,46 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
         body.add(new WasmInt32Constant(1));
     }
 
-    private void generateIsArray(WasmLocal subtypeVar, ValueType itemType, List<WasmExpression> body) {
+    WasmFunction getIsArraySupertypeFunction() {
+        if (isArrayFunction != null) {
+            return isArrayFunction;
+        }
+
+        var function = new WasmFunction(getFunctionType());
+        isArrayFunction = function;
+        module.functions.add(function);
+
+        var classClass = classGenerator.standardClasses.classClass();
+        function.setName(nameProvider.topLevel("teavm@isArrayType"));
+        var thisVar = new WasmLocal(classClass.getType(), "this");
+        var subtypeVar = new WasmLocal(classClass.getType(), "subtype");
+        function.add(thisVar);
+        function.add(subtypeVar);
+
         int itemOffset = classGenerator.getClassArrayItemOffset();
 
-        var itemExpression = getClassField(new WasmGetLocal(subtypeVar), itemOffset);
-        body.add(new WasmSetLocal(subtypeVar, itemExpression));
+        function.getBody().add(new WasmSetLocal(subtypeVar, getClassField(new WasmGetLocal(subtypeVar), itemOffset)));
 
         var itemTest = new WasmConditional(new WasmIsNull(new WasmGetLocal(subtypeVar)));
         itemTest.setType(WasmType.INT32);
         itemTest.getThenBlock().getBody().add(new WasmInt32Constant(0));
 
-        var delegateToItem = new WasmCall(getIsSupertypeFunction(itemType));
-        delegateToItem.getArguments().add(new WasmGetLocal(subtypeVar));
+        function.getBody().add(new WasmSetLocal(thisVar, getClassField(new WasmGetLocal(thisVar), itemOffset)));
+        var functionType = functionTypes.of(WasmType.INT32, classClass.getType(), classClass.getType());
+        var functionRef = new WasmStructGet(classClass.getStructure(), new WasmGetLocal(thisVar),
+                classGenerator.getClassSupertypeFunctionOffset());
+        var delegateToItem = new WasmCallReference(functionRef, functionType, new WasmGetLocal(thisVar),
+                new WasmGetLocal(subtypeVar));
         itemTest.getElseBlock().getBody().add(delegateToItem);
 
-        body.add(itemTest);
+        function.getBody().add(itemTest);
+        return function;
     }
 
     public WasmFunctionType getFunctionType() {
         if (functionType == null) {
-            functionType = functionTypes.of(WasmType.INT32, classGenerator.standardClasses.classClass().getType());
+            var classClass = classGenerator.standardClasses.classClass();
+            functionType = functionTypes.of(WasmType.INT32, classClass.getType(), classClass.getType());
         }
         return functionType;
     }

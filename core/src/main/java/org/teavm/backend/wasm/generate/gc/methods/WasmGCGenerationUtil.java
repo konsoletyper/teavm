@@ -21,11 +21,12 @@ import java.util.function.Supplier;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewFixed;
+import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNew;
 import org.teavm.model.ValueType;
 
@@ -34,10 +35,6 @@ public class WasmGCGenerationUtil {
 
     public WasmGCGenerationUtil(WasmGCClassInfoProvider classInfoProvider) {
         this.classInfoProvider = classInfoProvider;
-    }
-
-    public WasmExpression allocateArray(ValueType itemType, Supplier<WasmExpression> length) {
-        return allocateArray(itemType, arrayType -> new WasmArrayNewDefault(arrayType, length.get()));
     }
 
     public WasmExpression allocateArrayWithElements(ValueType itemType,
@@ -49,8 +46,9 @@ public class WasmGCGenerationUtil {
         });
     }
 
-    public WasmExpression allocateArray(ValueType itemType,  Function<WasmArray, WasmExpression> data) {
+    public WasmExpression allocateArray(ValueType itemType, Function<WasmArray, WasmExpression> data) {
         var classInfo = classInfoProvider.getClassInfo(ValueType.arrayOf(itemType));
+        var classClass = classInfoProvider.getClassInfo("java.lang.Class");
 
         var wasmArrayType = (WasmType.CompositeReference) classInfo.getStructure().getFields()
                 .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET)
@@ -58,7 +56,17 @@ public class WasmGCGenerationUtil {
         var wasmArray = (WasmArray) wasmArrayType.composite;
 
         var structNew = new WasmStructNew(classInfo.getStructure());
-        structNew.getInitializers().add(new WasmGetGlobal(classInfo.getVirtualTablePointer()));
+        int depth = 1;
+        while (itemType instanceof ValueType.Array) {
+            itemType = ((ValueType.Array) itemType).getItemType();
+        }
+        WasmExpression arrayClassRef = new WasmGetGlobal(classInfoProvider.getClassInfo(itemType).getPointer());
+        for (var i = 0; i < depth; ++i) {
+            arrayClassRef = new WasmCall(classInfoProvider.getGetArrayClassFunction(), arrayClassRef);
+        }
+        var arrayVt = new WasmStructGet(classClass.getStructure(), arrayClassRef,
+                classInfoProvider.getClassVtFieldOffset());
+        structNew.getInitializers().add(arrayVt);
         structNew.getInitializers().add(new WasmNullConstant(WasmType.Reference.EQ));
         structNew.getInitializers().add(data.apply(wasmArray));
         return structNew;

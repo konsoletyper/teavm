@@ -45,7 +45,11 @@ public interface WasmGCClassInfoProvider {
 
     WasmGlobal getStaticFieldLocation(FieldReference fieldRef);
 
-    WasmFunction getArrayConstructor(ValueType type, int depth);
+    WasmFunction getArrayConstructor(ValueType type);
+
+    WasmFunction getMultiArrayConstructor(int depth);
+
+    WasmFunction getGetArrayClassFunction();
 
     int getClassArrayItemOffset();
 
@@ -66,6 +70,8 @@ public interface WasmGCClassInfoProvider {
     int getClassSimpleNameOffset();
 
     int getClassCanonicalNameOffset();
+
+    int getClassVtFieldOffset();
 
     int getArrayGetOffset();
 
