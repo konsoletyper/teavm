@@ -309,6 +309,7 @@ function jsoImports(imports, context) {
         )(c);
     }
     imports.teavmJso = {
+        isUndefined: o => typeof o === "undefined",
         emptyString: () => "",
         stringFromCharCode: code => String.fromCharCode(code),
         concatStrings: (a, b) => a + b,
