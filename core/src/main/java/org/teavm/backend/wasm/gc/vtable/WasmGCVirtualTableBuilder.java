@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -231,40 +232,30 @@ class WasmGCVirtualTableBuilder {
         }
         if (interfaces.isEmpty()) {
             table.parent = parent;
+            table.depth = 0;
         } else {
-            var visited = new HashSet<Table>();
-            for (var itf : interfaces.toArray(new Table[0])) {
-                findDirectlyImplementedInterfaces(visited, itf, parent, 1, interfaces);
+            var maxDepth = 0;
+            for (var itf : interfaces) {
+                maxDepth = Math.max(itf.depth, maxDepth);
             }
-            var finalInterfaces = interfaces.stream()
-                    .map(Table::resolve)
-                    .distinct()
-                    .collect(Collectors.toList());
-            var singleExample = finalInterfaces.get(0);
-            for (var i = 1; i < finalInterfaces.size(); i++) {
-                singleExample.merge(finalInterfaces.get(i));
-            }
-            table.parent = singleExample;
-        }
-    }
 
-    private void findDirectlyImplementedInterfaces(Set<Table> visited, Table table, Table parentTable,
-            int level, Set<Table> result) {
-        if (!visited.add(table)) {
-            return;
-        }
-        if (level > 1) {
-            result.remove(table);
-        }
-        for (var itf : table.cls.getInterfaces()) {
-            var itfTable = tableMap.get(itf);
-            if (itfTable == null) {
-                continue;
+            Table singleExample = null;
+            for (var i = 0; i <= maxDepth; i++) {
+                var level = i;
+                var interfacesAtLevel = interfaces.stream()
+                        .map(itf -> itf.atDepth(level))
+                        .filter(Objects::nonNull)
+                        .map(Table::resolve)
+                        .distinct()
+                        .collect(Collectors.toList());
+                singleExample = interfacesAtLevel.get(0);
+                for (var j = 1; j < interfacesAtLevel.size(); ++j) {
+                    singleExample.merge(interfacesAtLevel.get(j));
+                }
             }
-            itfTable = itfTable.resolve();
-            if (itfTable.commonImplementor == parentTable && !itfTable.interfaceMergedIntoClass) {
-                findDirectlyImplementedInterfaces(visited, itfTable, parentTable, level + 1, result);
-            }
+
+            table.parent = singleExample;
+            table.depth = singleExample.depth + 1;
         }
     }
 
@@ -333,22 +324,24 @@ class WasmGCVirtualTableBuilder {
         if (table.mergedClasses != null) {
             classes.addAll(table.mergedClasses);
         }
-        for (var cls : classes) {
-            for (var method : cls.getMethods()) {
-                if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)) {
-                    if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
-                        continue;
+        if (!table.cls.hasModifier(ElementModifier.INTERFACE)) {
+            for (var cls : classes) {
+                for (var method : cls.getMethods()) {
+                    if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)) {
+                        if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
+                            continue;
+                        }
+                        if (!isVirtual.test(method.getReference()) && !method.getReference().equals(CLONE_METHOD)) {
+                            continue;
+                        }
+                        table.currentImplementors.put(method.getDescriptor(), method.getReference());
                     }
-                    if (!isVirtual.test(method.getReference()) && !method.getReference().equals(CLONE_METHOD)) {
-                        continue;
-                    }
-                    table.currentImplementors.put(method.getDescriptor(), method.getReference());
                 }
             }
-        }
 
-        for (var itfName : table.cls.getInterfaces()) {
-            fillFromInterfaces(itfName, table);
+            for (var itfName : table.cls.getInterfaces()) {
+                fillFromInterfaces(itfName, table);
+            }
         }
 
         var group = groupedMethodsAtCallSites.get(table.cls.getName());
@@ -403,7 +396,7 @@ class WasmGCVirtualTableBuilder {
 
     private static class Table {
         boolean visited;
-        boolean keep;
+        int depth = -1;
         Set<Table> liftedInterfaces;
         Table reference;
         Table commonImplementor;
@@ -429,11 +422,17 @@ class WasmGCVirtualTableBuilder {
 
         void merge(Table other) {
             other.reference = this;
-            if (parent != null) {
-                other.parent = parent;
-            } else if (other.parent == null) {
-                other.parent = parent;
+        }
+
+        Table atDepth(int depth) {
+            if (depth > this.depth) {
+                return null;
             }
+            var result = this;
+            while (depth < result.depth) {
+                result = result.parent;
+            }
+            return result;
         }
 
         WasmGCVirtualTable getBuildResult() {
