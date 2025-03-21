@@ -18,117 +18,131 @@
 
 Error.stackTraceLimit = 250;
 
+let lastLauncher = null;
+
 window.addEventListener("message", event => {
     let request = event.data;
     switch (request.type) {
-        case "JAVASCRIPT": {
-            const files = request.additionalFiles ? [...request.additionalFiles, request.file] : [request.file];
-            appendFiles(files, 0, () => {
-                launchTest(request.argument, response => {
-                    event.source.postMessage(response, "*");
-                });
-            }, error => {
-                event.source.postMessage(wrapResponse({ status: "failed", errorMessage: error }), "*");
+        case "JAVASCRIPT":
+            processRequest(event, async () => {
+                const files = request.additionalFiles ? [...request.additionalFiles, request.file] : [request.file];
+                await appendFiles(files);
+                let launcher = prepareJsLauncher();
+                lastLauncher = launcher;
+                await launcher(request.argument);
             });
             break;
-        }
-        case "WASM": {
-            const runtimeFile = request.file.path + "-runtime.js";
-            appendFiles([{ path: runtimeFile, type: "regular" }], 0, () => {
-                launchWasmTest(request.file, request.argument, response => {
-                    event.source.postMessage(response, "*");
-                });
-            }, error => {
-                event.source.postMessage(wrapResponse({ status: "failed", errorMessage: error }), "*");
+        case "WASM":
+            processRequest(event, async () => {
+                const runtimeFile = request.file.path + "-runtime.js";
+                await appendFiles([{ path: runtimeFile, type: "regular" }]);
+                let launcher = await prepareWasmLauncher(request.file);
+                lastLauncher = launcher;
+                await launcher(request.argument);
             });
             break;
-        }
 
-        case "WASM_GC": {
-            const runtimeFile = request.file.path + "-runtime.js";
-            const runtimeFileObj = { path: runtimeFile, type: "regular" };
-            const files = request.additionalFiles ? [...request.additionalFiles, runtimeFileObj] : [runtimeFileObj]
-            appendFiles(files, 0, () => {
-                launchWasmGCTest(request.file, request.argument, response => {
-                    event.source.postMessage(response, "*");
-                });
-            }, error => {
-                event.source.postMessage(wrapResponse({ status: "failed", errorMessage: error} ), "*");
+        case "WASM_GC":
+            processRequest(event, async () => {
+                const runtimeFile = request.file.path + "-runtime.js";
+                const runtimeFileObj = { path: runtimeFile, type: "regular" };
+                const files = request.additionalFiles ? [...request.additionalFiles, runtimeFileObj] : [runtimeFileObj];
+                await appendFiles(files);
+                let launcher = await prepareWasmGCLauncher(request.file);
+                lastLauncher = launcher;
+                await launcher(request.argument);
             });
             break;
-        }
+
+        case "REPEAT":
+            processRequest(event, async () => {
+                await lastLauncher(request.argument);
+            });
+            break;
     }
 });
 
-function appendFiles(files, index, callback, errorCallback) {
-    if (index === files.length) {
-        callback();
-    } else {
-        let file = files[index];
+function processRequest(event, processor) {
+    (async function() {
+        try {
+            await processor();
+            event.source.postMessage(wrapResponse({ status: "OK" }), "*");
+        } catch (e) {
+            event.source.postMessage(
+                wrapResponse({ status: "failed", errorMessage: e.message + "\n" + e.stack }),
+                "*"
+            );
+        }
+    })();
+}
+
+async function appendFiles(files) {
+    for (const file of files) {
         if (file.type === "module") {
-            import("./" + file.path).then(module => {
-                window.main = module.main;
-                appendFiles(files, index + 1, callback, errorCallback);
-            });
+            const module = await import("./" + file.path);
+            window.main = module.main;
         } else {
             let script = document.createElement("script");
-            script.onload = () => {
-                appendFiles(files, index + 1, callback, errorCallback);
-            };
-            script.onerror = () => {
-                errorCallback("failed to load script " + file.path);
-            };
+            let promise = new Promise((resolve, reject) => {
+                script.onload = () => {
+                    resolve();
+                };
+                script.onerror = () => {
+                    reject(new Error("failed to load script " + file.path));
+                };
+            })
             script.src = file.path;
             document.body.appendChild(script);
+            await promise;
         }
     }
 }
 
-function launchTest(argument, callback) {
-    let m = typeof main === "undefined" ? window.main : main;
-    m(argument ? [argument] : [], result => {
-        if (result instanceof Error) {
-            callback(wrapResponse({
-                status: "failed",
-                errorMessage: buildErrorMessage(result)
-            }));
-        } else {
-            callback({ status: "OK" });
-        }
-    });
-
-    function buildErrorMessage(e) {
-        if (typeof $rt_decodeStack === "function" && typeof teavmException == "string") {
-            return teavmException;
-        }
-        let stack = "";
-        let je = main.javaException ? main.javaException(e) : void 0;
-        if (je && je.constructor.$meta) {
-            stack = je.constructor.$meta.name + ": ";
-            stack += je.getMessage();
-            stack += "\n";
-        }
-        stack += e.stack;
-        return stack;
+function prepareJsLauncher() {
+    return async argument => {
+        await new Promise((resolve, reject) => {
+            let m = typeof main === "undefined" ? window.main : main;
+            m(argument ? [argument] : [], result => {
+                if (result instanceof Error) {
+                    reject(new Error(buildErrorMessage(result)));
+                } else {
+                    resolve();
+                }
+            });
+        });
     }
 }
 
-function launchWasmTest(file, argument, callback) {
+function buildErrorMessage(e) {
+    if (typeof $rt_decodeStack === "function" && typeof teavmException == "string") {
+        return teavmException;
+    }
+    let stack = "";
+    let je = main.javaException ? main.javaException(e) : void 0;
+    if (je && je.constructor.$meta) {
+        stack = je.constructor.$meta.name + ": ";
+        stack += je.getMessage();
+        stack += "\n";
+    }
+    stack += e.stack;
+    return stack;
+}
+
+async function prepareWasmLauncher(file) {
     let output = [];
     let outputBuffer = "";
     let outputBufferStderr = "";
+    let resolveCallback = null;
+    let rejectCallback = null;
 
     function putwchar(charCode) {
         if (charCode === 10) {
             switch (outputBuffer) {
                 case "SUCCESS":
-                    callback(wrapResponse({ status: "OK" }));
+                    resolveCallback();
                     break;
                 case "FAILURE":
-                    callback(wrapResponse({
-                        status: "failed",
-                        errorMessage: output.join("\n")
-                    }));
+                    rejectCallback(new Error(output.join("\n")));
                     break;
                 default:
                     output.push(outputBuffer);
@@ -167,32 +181,38 @@ function launchWasmTest(file, argument, callback) {
 
     let instance = null;
 
-    TeaVM.wasm.load(file.path, {
-        installImports: function(o) {
-            o.teavm.putwcharsOut = (chars, count) => putwchars(instance, chars, count);
-            o.teavm.putwcharsErr = (chars, count) => putwcharsStderr(instance, chars, count);
-            o.teavm.putwchar = putwchar;
-        },
-        errorCallback: function(err) {
-            callback(wrapResponse({
-                status: "failed",
-                errorMessage: err.message + '\n' + err.stack
-            }));
-        }
-    }).then(teavm => {
+    let loader = await TeaVM.wasm.loader(file.path);
+    return async argument => {
+        output = [];
+        outputBuffer = "";
+        outputBufferStderr = "";
+
+        let teavm = await loader({
+            installImports: function(o) {
+                o.teavm.putwcharsOut = (chars, count) => putwchars(instance, chars, count);
+                o.teavm.putwcharsErr = (chars, count) => putwcharsStderr(instance, chars, count);
+                o.teavm.putwchar = putwchar;
+            },
+            errorCallback: function(err) {
+                rejectCallback(err);
+            }
+        });
         instance = teavm.instance;
-        return teavm.main(argument ? [argument] : []);
-    }).catch(err => {
-        callback(wrapResponse({
-            status: "failed",
-            errorMessage: err.message + '\n' + err.stack
-        }));
-    })
+
+        let promise = new Promise((resolve, reject) => {
+            resolveCallback = resolve;
+            rejectCallback = reject;
+        })
+        teavm.main(argument ? [argument] : []);
+        await promise;
+    }
 }
 
-function launchWasmGCTest(file, argument, callback) {
+async function prepareWasmGCLauncher(file) {
     let outputBuffer = "";
     let outputBufferStderr = "";
+    let resolveCallback = null;
+    let rejectCallback = null;
 
     function putchar(charCode) {
         if (charCode === 10) {
@@ -212,7 +232,7 @@ function launchWasmGCTest(file, argument, callback) {
         }
     }
 
-    TeaVM.wasmGC.load(file.path, {
+    let teavm = await TeaVM.wasmGC.load(file.path, {
         stackDeobfuscator: {
             enabled: true
         },
@@ -221,24 +241,24 @@ function launchWasmGCTest(file, argument, callback) {
             o.teavmConsole.putcharStderr = putcharStderr;
             o.teavmTest = {
                 success() {
-                    callback(wrapResponse({ status: "OK" }));
+                    resolveCallback();
                 },
                 failure(message) {
-                    callback(wrapResponse({
-                        status: "failed",
-                        errorMessage: message
-                    }));
+                    rejectCallback(new Error(message));
                 }
             };
         }
-    }).then(teavm => {
-        return teavm.exports.main(argument ? [argument] : []);
-    }).catch(err => {
-        callback(wrapResponse({
-            status: "failed",
-            errorMessage: err.message + '\n' + err.stack
-        }));
-    })
+    });
+    return async argument => {
+        outputBuffer = "";
+        outputBufferStderr = "";
+        let promise = new Promise((resolve, reject) => {
+            resolveCallback = resolve;
+            rejectCallback = reject;
+        });
+        teavm.exports.main(argument ? [argument] : []);
+        await promise;
+    };
 }
 
 function start() {

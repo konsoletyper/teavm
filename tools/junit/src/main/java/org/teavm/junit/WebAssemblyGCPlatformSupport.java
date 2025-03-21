@@ -19,7 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.teavm.junit.PropertyNames.OPTIMIZED;
 import static org.teavm.junit.PropertyNames.SOURCE_DIRS;
 import static org.teavm.junit.PropertyNames.WASM_GC_ENABLED;
-import static org.teavm.junit.PropertyNames.WASM_RUNNER;
+import static org.teavm.junit.PropertyNames.WASM_GC_RUNNER;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -79,7 +79,7 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
 
     @Override
     TestRunStrategy createRunStrategy(File outputDir) {
-        var runStrategyName = System.getProperty(WASM_RUNNER);
+        var runStrategyName = System.getProperty(WASM_GC_RUNNER);
         return runStrategyName != null
                 ? new BrowserRunStrategy(outputDir, "WASM_GC", BrowserRunner.pickBrowser(runStrategyName))
                 : null;

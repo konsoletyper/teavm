@@ -58,6 +58,14 @@ public final class Heap {
         return root;
     }
 
+    static int getCurrentSize() {
+        return currentSize;
+    }
+
+    static int getMaxSize() {
+        return maxSize;
+    }
+
     static void resetRoot() {
         root = null;
     }

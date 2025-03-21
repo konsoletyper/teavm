@@ -192,6 +192,28 @@ TeaVM.wasm = function() {
         }));
     }
 
+    function loader(path) {
+        return WebAssembly.compileStreaming(fetch(path)).then((module => {
+            return options => {
+                if (!options) {
+                    options = {};
+                }
+
+                const importObj = {};
+                const controller = defaults(importObj);
+                if (typeof options.installImports !== "undefined") {
+                    options.installImports(importObj, controller);
+                }
+                return WebAssembly.instantiate(module, importObj).then(instance => {
+                    controller.instance = instance;
+                    let teavm = createTeaVM(instance);
+                    teavm.main = createMain(teavm, controller);
+                    return teavm;
+                });
+            }
+        }));
+    }
+
     function createMain(teavm, controller) {
         return function(args) {
             if (typeof args === "undefined") {
@@ -224,5 +246,5 @@ TeaVM.wasm = function() {
         }
     }
 
-    return { JavaError, load };
+    return { JavaError, load, loader };
 }();
