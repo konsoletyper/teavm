@@ -18,6 +18,8 @@ package org.teavm.backend.wasm.generate.gc.classes;
 import com.carrotsearch.hppc.ObjectByteHashMap;
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,6 +40,7 @@ import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.generate.gc.WasmGCInitializerContributor;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
+import org.teavm.backend.wasm.generate.gc.annotations.WasmGCAnnotationsGenerator;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringPool;
 import org.teavm.backend.wasm.model.WasmArray;
@@ -131,6 +134,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     public final WasmGCTypeMapper typeMapper;
     private final WasmGCNameProvider names;
     private List<WasmExpression> initializerFunctionStatements = new ArrayList<>();
+    private List<Consumer<WasmFunction>> annotationInitStatements = new ArrayList<>();
+    private WasmGCAnnotationsGenerator annotationsGenerator;
     private WasmFunction createPrimitiveClassFunction;
     private WasmFunction getArrayClassFunction;
     private WasmFunction fillArrayClassFunction;
@@ -152,6 +157,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private int classSupertypeFunctionOffset;
     private int classEnclosingClassOffset;
     private int classDeclaringClassOffset;
+    private int classAnnotationsOffset = -1;
     private int enumConstantsFunctionOffset = -1;
     private int arrayLengthOffset = -1;
     private int arrayGetOffset = -1;
@@ -210,6 +216,9 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         if (loadServicesMethod != null && loadServicesMethod.isUsed()) {
             hasLoadServices = true;
         }
+
+        annotationsGenerator = new WasmGCAnnotationsGenerator(classSource, metadataRequirements,
+                this, strings, annotationInitStatements);
     }
 
     public void setCompactMode(boolean compactMode) {
@@ -297,6 +306,15 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         }
         for (var consumer : staticFieldInitializers) {
             consumer.accept(function);
+        }
+        if (!annotationInitStatements.isEmpty()) {
+            var annotationsFunction = new WasmFunction(functionTypes.of(null));
+            annotationsFunction.setName(names.topLevel("teavm@initClassAnnotations"));
+            module.functions.add(annotationsFunction);
+            function.getBody().add(new WasmCall(annotationsFunction));
+            for (var contributor : annotationInitStatements) {
+                contributor.accept(annotationsFunction);
+            }
         }
     }
 
@@ -527,6 +545,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     @Override
+    public int getClassAnnotationsOffset() {
+        return classAnnotationsOffset;
+    }
+
+    @Override
     public int getNewArrayFunctionOffset() {
         standardClasses.classClass().getStructure().init();
         return classNewArrayOffset;
@@ -671,6 +694,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 classInfo.initializerPointer.setInitialValue(new WasmFunctionReference(initFunction));
             }
         };
+        annotationsGenerator.addClassAnnotations(name, classInfo);
     }
 
     private void assignClassToVT(WasmGCVirtualTable virtualTable, WasmGCClassInfo classInfo,
@@ -716,6 +740,14 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         }
         if (cls.hasModifier(ElementModifier.ENUM)) {
             flags |= WasmGCClassFlags.ENUM;
+        }
+        if (cls.hasModifier(ElementModifier.ANNOTATION)) {
+            var retention = cls.getAnnotations().get(Retention.class.getName());
+            if (retention != null && retention.getValue("value").getEnumValue().getFieldName().equals("RUNTIME")) {
+                if (cls.getAnnotations().get(Inherited.class.getName()) != null) {
+                    flags |= WasmGCClassFlags.INHERITED_ANNOTATIONS;
+                }
+            }
         }
         return flags;
     }
@@ -1567,6 +1599,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 var enumConstantsType = functionTypes.of(enumArrayType);
                 fields.add(createClassField(enumConstantsType.getReference().asStorage(), "getEnumConstants"));
             }
+            if (metadataRequirements.hasGetAnnotations()) {
+                classAnnotationsOffset = fields.size();
+                var annotationArrayType = getObjectArrayType();
+                fields.add(createClassField(annotationArrayType.getReference().asStorage(), "annotations"));
+            }
         }
     }
 
@@ -1606,19 +1643,24 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             wasmArray = new WasmArray(wasmArrayName, wasmElementType);
             module.types.add(wasmArray);
         } else {
-            wasmElementType = standardClasses.objectClass().getType().asStorage();
-            wasmArray = objectArrayType;
-            if (wasmArray == null) {
-                var wasmArrayName = names.topLevel(names.suggestForType(ValueType.arrayOf(
-                        ValueType.object("java.lang.Object"))) + "$Data");
-                wasmArray = new WasmArray(wasmArrayName, wasmElementType);
-                module.types.add(wasmArray);
-                objectArrayType = wasmArray;
-            }
+            wasmArray = getObjectArrayType();
         }
 
         classInfo.structure.getFields().add(new WasmField(wasmArray.getNonNullReference().asStorage(),
                 arrayDataFieldName()));
+    }
+
+    public WasmArray getObjectArrayType() {
+        var wasmArray = objectArrayType;
+        if (wasmArray == null) {
+            var wasmElementType = standardClasses.objectClass().getType().asStorage();
+            var wasmArrayName = names.topLevel(names.suggestForType(ValueType.arrayOf(
+                    ValueType.object("java.lang.Object"))) + "$Data");
+            wasmArray = new WasmArray(wasmArrayName, wasmElementType);
+            module.types.add(wasmArray);
+            objectArrayType = wasmArray;
+        }
+        return wasmArray;
     }
 
     private String arrayDataFieldName() {

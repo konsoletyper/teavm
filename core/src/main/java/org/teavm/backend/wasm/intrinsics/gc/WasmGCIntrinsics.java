@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.intrinsics.gc;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.List;
@@ -104,6 +105,7 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         add(new MethodReference(Class.class, "setSimpleNameCache", Class.class, String.class, void.class), intrinsic);
         add(new MethodReference(Class.class, "getCanonicalNameCache", String.class), intrinsic);
         add(new MethodReference(Class.class, "setCanonicalNameCache", String.class, void.class), intrinsic);
+        add(new MethodReference(Class.class, "getDeclaredAnnotationsImpl", Annotation[].class), intrinsic);
     }
 
     private void fillClassSupport() {

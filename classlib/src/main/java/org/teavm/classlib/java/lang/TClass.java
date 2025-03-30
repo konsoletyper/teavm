@@ -800,8 +800,7 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
             var map = new LinkedHashMap<Class<?>, TAnnotation>();
             while (cls != null) {
                 for (var annot : cls.getDeclaredAnnotations()) {
-                    var platformClass = ((TClass<?>) (Object) annot.annotationType()).platformClass;
-                    if (initial || (platformClass.getMetadata().getFlags() & Flags.INHERITED_ANNOTATION) != 0) {
+                    if (initial || isInherited(annot)) {
                         map.putIfAbsent(annot.annotationType(), annot);
                     }
                 }
@@ -813,16 +812,32 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
         return annotationsCache.clone();
     }
 
+    private static boolean isInherited(TAnnotation annot) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            var flags = ((TClass<?>) (Object) annot.annotationType()).getWasmGCFlags();
+            return (flags & WasmGCClassFlags.INHERITED_ANNOTATIONS) != 0;
+        } else {
+            var platformClass = ((TClass<?>) (Object) annot.annotationType()).platformClass;
+            return (platformClass.getMetadata().getFlags() & Flags.INHERITED_ANNOTATION) != 0;
+        }
+    }
+
     @Override
     public TAnnotation[] getDeclaredAnnotations() {
         if (declaredAnnotationsCache == null) {
-            declaredAnnotationsCache = (TAnnotation[]) Platform.getAnnotations(getPlatformClass());
+            if (PlatformDetector.isWebAssemblyGC()) {
+                declaredAnnotationsCache = getDeclaredAnnotationsImpl();
+            } else {
+                declaredAnnotationsCache = (TAnnotation[]) Platform.getAnnotations(getPlatformClass());
+            }
             if (declaredAnnotationsCache == null) {
                 declaredAnnotationsCache = new TAnnotation[0];
             }
         }
         return declaredAnnotationsCache.clone();
     }
+
+    private native TAnnotation[] getDeclaredAnnotationsImpl();
 
     private void ensureAnnotationsByType() {
         if (annotationsByType != null) {

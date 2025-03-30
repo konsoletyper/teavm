@@ -181,14 +181,14 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void annotationsExposed() {
         var annotations = A.class.getAnnotations();
         assertTrue(Stream.of(annotations).anyMatch(a -> a instanceof TestAnnot));
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void annotationFieldsExposed() {
         AnnotWithDefaultField annot = B.class.getAnnotation(AnnotWithDefaultField.class);
         assertEquals(2, annot.x());
@@ -197,7 +197,7 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void annotationFieldTypesSupported() {
         AnnotWithVariousFields annot = D.class.getAnnotation(AnnotWithVariousFields.class);
         assertEquals(true, annot.a());
@@ -226,7 +226,7 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void inheritedAnnotation() {
         assertTrue(A.class.isAnnotationPresent(InheritedAnnot.class));
         assertTrue(A.class.isAnnotationPresent(TestAnnot.class));

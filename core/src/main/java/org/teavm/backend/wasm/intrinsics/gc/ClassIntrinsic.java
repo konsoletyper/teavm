@@ -15,10 +15,17 @@
  */
 package org.teavm.backend.wasm.intrinsics.gc;
 
+import java.lang.annotation.Annotation;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.generate.gc.methods.WasmGCGenerationUtil;
+import org.teavm.backend.wasm.model.expression.WasmArrayNewFixed;
+import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.expression.WasmNullBranch;
+import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
+import org.teavm.model.ValueType;
 
 public class ClassIntrinsic implements WasmGCIntrinsic {
     @Override
@@ -74,6 +81,8 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
                 return generateGetCanonicalName(invocation, context);
             case "setCanonicalNameCache":
                 return generateSetCanonicalName(invocation, context);
+            case "getDeclaredAnnotationsImpl":
+                return generateGetDeclaredAnnotations(invocation, context);
             default:
                 throw new IllegalArgumentException("Unsupported invocation method: " + invocation.getMethod());
         }
@@ -120,5 +129,21 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
         var value = context.generate(invocation.getArguments().get(1));
         return new WasmStructSet(classCls.getStructure(), arg,
                 context.classInfoProvider().getClassCanonicalNameOffset(), value);
+    }
+
+    private WasmExpression generateGetDeclaredAnnotations(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var classCls = context.classInfoProvider().getClassInfo("java.lang.Class");
+        var util = new WasmGCGenerationUtil(context.classInfoProvider());
+        return util.allocateArray(ValueType.parse(Annotation.class), a -> {
+            var block = new WasmBlock(false);
+            block.setType(a.getNonNullReference());
+            var arg = context.generate(invocation.getArguments().get(0));
+            var annotationsData = new WasmStructGet(classCls.getStructure(), arg,
+                    context.classInfoProvider().getClassAnnotationsOffset());
+            var nullCheck = new WasmNullBranch(WasmNullCondition.NOT_NULL, annotationsData, block);
+            block.getBody().add(nullCheck);
+            block.getBody().add(new WasmArrayNewFixed(a));
+            return block;
+        });
     }
 }

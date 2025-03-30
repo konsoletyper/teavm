@@ -425,7 +425,7 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(CloneArrayInstruction insn) {
-            graphBuilder.addEdge(insn.getArray().getIndex(), insn.getReceiver().getIndex());
+            type(insn.getReceiver(), ValueType.object("java.lang.Object"));
         }
 
         @Override
