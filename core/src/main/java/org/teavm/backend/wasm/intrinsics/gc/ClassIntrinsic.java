@@ -83,6 +83,8 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
                 return generateSetCanonicalName(invocation, context);
             case "getDeclaredAnnotationsImpl":
                 return generateGetDeclaredAnnotations(invocation, context);
+            case "getInterfacesImpl":
+                return generateGetInterfaces(invocation, context);
             default:
                 throw new IllegalArgumentException("Unsupported invocation method: " + invocation.getMethod());
         }
@@ -141,6 +143,22 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
             var annotationsData = new WasmStructGet(classCls.getStructure(), arg,
                     context.classInfoProvider().getClassAnnotationsOffset());
             var nullCheck = new WasmNullBranch(WasmNullCondition.NOT_NULL, annotationsData, block);
+            block.getBody().add(nullCheck);
+            block.getBody().add(new WasmArrayNewFixed(a));
+            return block;
+        });
+    }
+
+    private WasmExpression generateGetInterfaces(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var classCls = context.classInfoProvider().getClassInfo("java.lang.Class");
+        var util = new WasmGCGenerationUtil(context.classInfoProvider());
+        return util.allocateArray(ValueType.parse(Class.class), a -> {
+            var block = new WasmBlock(false);
+            block.setType(a.getNonNullReference());
+            var arg = context.generate(invocation.getArguments().get(0));
+            var interfacesData = new WasmStructGet(classCls.getStructure(), arg,
+                    context.classInfoProvider().getClassInterfacesOffset());
+            var nullCheck = new WasmNullBranch(WasmNullCondition.NOT_NULL, interfacesData, block);
             block.getBody().add(nullCheck);
             block.getBody().add(new WasmArrayNewFixed(a));
             return block;

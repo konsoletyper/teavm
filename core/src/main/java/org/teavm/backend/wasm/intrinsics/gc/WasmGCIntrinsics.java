@@ -106,6 +106,7 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         add(new MethodReference(Class.class, "getCanonicalNameCache", String.class), intrinsic);
         add(new MethodReference(Class.class, "setCanonicalNameCache", String.class, void.class), intrinsic);
         add(new MethodReference(Class.class, "getDeclaredAnnotationsImpl", Annotation[].class), intrinsic);
+        add(new MethodReference(Class.class, "getInterfacesImpl", Class[].class), intrinsic);
     }
 
     private void fillClassSupport() {

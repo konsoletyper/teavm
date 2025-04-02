@@ -59,6 +59,7 @@ public class ClassMetadataRequirements {
     private boolean hasSimpleName;
     private boolean hasName;
     private boolean hasGetAnnotations;
+    private boolean hasGetInterfaces;
 
     public ClassMetadataRequirements(DependencyInfo dependencyInfo) {
         MethodDependencyInfo getNameMethod = dependencyInfo.getMethod(GET_NAME_METHOD);
@@ -184,6 +185,16 @@ public class ClassMetadataRequirements {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).annotations = true;
             }
         }
+
+        var getInterfaces = dependencyInfo.getMethod(new MethodReference(Class.class, "getInterfaces",
+                Class[].class));
+        if (getInterfaces != null && getInterfaces.isUsed()) {
+            hasGetInterfaces = true;
+            var classNames = getInterfaces.getVariable(0).getClassValueNode().getTypes();
+            for (var className : classNames) {
+                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).interfaces = true;
+            }
+        }
     }
 
     public Info getInfo(String className) {
@@ -246,6 +257,10 @@ public class ClassMetadataRequirements {
         return hasGetAnnotations;
     }
 
+    public boolean hasGetInterfaces() {
+        return hasGetInterfaces;
+    }
+
     private void addClassesRequiringName(Map<ValueType, ClassInfo> target, String[] source) {
         for (String typeName : source) {
             target.computeIfAbsent(decodeType(typeName), k -> new ClassInfo()).name = true;
@@ -276,6 +291,7 @@ public class ClassMetadataRequirements {
         boolean cloneMethod;
         boolean enumConstants;
         boolean annotations;
+        boolean interfaces;
 
         @Override
         public boolean name() {
@@ -341,6 +357,11 @@ public class ClassMetadataRequirements {
         public boolean annotations() {
             return annotations;
         }
+
+        @Override
+        public boolean interfaces() {
+            return interfaces;
+        }
     }
 
     public interface Info {
@@ -369,5 +390,7 @@ public class ClassMetadataRequirements {
         boolean enumConstants();
 
         boolean annotations();
+
+        boolean interfaces();
     }
 }

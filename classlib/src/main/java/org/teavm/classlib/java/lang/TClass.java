@@ -692,21 +692,28 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
     @SuppressWarnings("unchecked")
     @PluggableDependency(ClassGenerator.class)
     public TClass<? super T>[] getInterfaces() {
-        PlatformSequence<PlatformClass> supertypes = platformClass.getMetadata().getSupertypes();
+        if (PlatformDetector.isWebAssemblyGC()) {
+            var result = getInterfacesImpl();
+            return result != null ? result.clone() : (TClass<? super T>[]) new TClass<?>[0];
+        } else {
+            PlatformSequence<PlatformClass> supertypes = platformClass.getMetadata().getSupertypes();
 
-        TClass<? super T>[] filteredSupertypes = (TClass<? super T>[]) new TClass<?>[supertypes.getLength()];
-        int j = 0;
-        for (int i = 0; i < supertypes.getLength(); ++i) {
-            if (supertypes.get(i) != platformClass.getMetadata().getSuperclass()) {
-                filteredSupertypes[j++] = (TClass<? super T>) getClass(supertypes.get(i));
+            TClass<? super T>[] filteredSupertypes = (TClass<? super T>[]) new TClass<?>[supertypes.getLength()];
+            int j = 0;
+            for (int i = 0; i < supertypes.getLength(); ++i) {
+                if (supertypes.get(i) != platformClass.getMetadata().getSuperclass()) {
+                    filteredSupertypes[j++] = (TClass<? super T>) getClass(supertypes.get(i));
+                }
             }
-        }
 
-        if (filteredSupertypes.length > j) {
-            filteredSupertypes = Arrays.copyOf(filteredSupertypes, j);
+            if (filteredSupertypes.length > j) {
+                filteredSupertypes = Arrays.copyOf(filteredSupertypes, j);
+            }
+            return filteredSupertypes;
         }
-        return filteredSupertypes;
     }
+
+    private native TClass<? super T>[] getInterfacesImpl();
 
     @SuppressWarnings("unchecked")
     public T[] getEnumConstants() {

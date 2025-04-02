@@ -57,6 +57,7 @@ import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewDefault;
+import org.teavm.backend.wasm.model.expression.WasmArrayNewFixed;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
@@ -158,6 +159,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private int classEnclosingClassOffset;
     private int classDeclaringClassOffset;
     private int classAnnotationsOffset = -1;
+    private int classInterfacesOffset = -1;
     private int enumConstantsFunctionOffset = -1;
     private int arrayLengthOffset = -1;
     private int arrayGetOffset = -1;
@@ -550,6 +552,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     @Override
+    public int getClassInterfacesOffset() {
+        return classInterfacesOffset;
+    }
+
+    @Override
     public int getNewArrayFunctionOffset() {
         standardClasses.classClass().getStructure().init();
         return classNewArrayOffset;
@@ -679,6 +686,9 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                     target.add(setClassField(classInfo, enumConstantsFunctionOffset,
                             new WasmFunctionReference(createEnumConstantsFunction(classInfo, cls))));
                 }
+                if (metadataReq.interfaces() && !cls.getInterfaces().isEmpty()) {
+                    target.add(setClassField(classInfo, classInterfacesOffset, createInterfacesArray(cls)));
+                }
             }
 
             if (classInfo.virtualTablePointer != null) {
@@ -695,6 +705,14 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             }
         };
         annotationsGenerator.addClassAnnotations(name, classInfo);
+    }
+
+    private WasmExpression createInterfacesArray(ClassReader cls) {
+        var result = new WasmArrayNewFixed(getObjectArrayType());
+        for (var itf : cls.getInterfaces()) {
+            result.getElements().add(new WasmGetGlobal(getClassInfo(itf).getPointer()));
+        }
+        return result;
     }
 
     private void assignClassToVT(WasmGCVirtualTable virtualTable, WasmGCClassInfo classInfo,
@@ -1603,6 +1621,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 classAnnotationsOffset = fields.size();
                 var annotationArrayType = getObjectArrayType();
                 fields.add(createClassField(annotationArrayType.getReference().asStorage(), "annotations"));
+            }
+            if (metadataRequirements.hasGetInterfaces()) {
+                classInterfacesOffset = fields.size();
+                var classArrayType = getObjectArrayType();
+                fields.add(createClassField(classArrayType.getReference().asStorage(), "interfaces"));
             }
         }
     }
