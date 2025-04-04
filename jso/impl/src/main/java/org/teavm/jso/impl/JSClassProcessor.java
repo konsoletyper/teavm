@@ -401,6 +401,11 @@ class JSClassProcessor {
                 className = "java.lang.Object";
             }
         }
+
+        convertInvokeArgs(invoke, className);
+    }
+
+    private void convertInvokeArgs(InvokeInstruction invoke, String className) {
         Variable[] newArgs = null;
         for (var i = 0; i < invoke.getArguments().size(); ++i) {
             var type = invoke.getMethod().parameterType(i);
@@ -892,6 +897,7 @@ class JSClassProcessor {
         }
         if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
             if (isStatic) {
+                convertInvokeArgs(invoke, method.getOwnerName());
                 return false;
             }
             MethodReader overridden = getOverriddenMethod(method);
@@ -958,8 +964,8 @@ class JSClassProcessor {
                 if (optionalValue == null || !optionalValue.getBoolean()) {
                     diagnostics.error(callLocation, "Method {{m0}} is marked with "
                             + "@JSByRef, which is not supported in Wasm GC", method.getReference());
+                    return false;
                 }
-                return false;
             } else {
                 returnByRef = true;
             }
@@ -1106,8 +1112,8 @@ class JSClassProcessor {
                     if (optionalValue == null || !optionalValue.getBoolean()) {
                         diagnostics.error(callLocation, "Parameter " + (i + 1) + " of method {{m0}} is marked with "
                                 + "@JSByRef, which is not supported in Wasm GC", method.getReference());
+                        return false;
                     }
-                    return false;
                 } else {
                     byRefParams[i] = true;
                 }

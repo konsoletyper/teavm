@@ -228,8 +228,17 @@ public abstract class BaseTypeInference<T> {
                     typeStack.push(type);
                 }
             }
+            for (var pred : arrayUnwrapGraph.incomingEdges(variable)) {
+                if (nullTypes[pred]) {
+                    var wrapType = arrayWrapType(type);
+                    if (!Objects.equals(types[pred], wrapType)) {
+                        stack.push(pred);
+                        typeStack.push(wrapType);
+                    }
+                }
+            }
             if (arrayGraph.incomingEdgesCount(variable) > 0) {
-                var arrayType = arrayType(type);
+                var arrayType = arrayUnwrapType(arrayType(type));
                 for (var pred : arrayGraph.incomingEdges(variable)) {
                     if (nullTypes[pred] && !Objects.equals(types[pred], arrayType)) {
                         stack.push(pred);
@@ -240,7 +249,7 @@ public abstract class BaseTypeInference<T> {
             if (backArrayGraph.outgoingEdgesCount(variable) > 0) {
                 var elementType = elementType(type);
                 for (var succ : backArrayGraph.outgoingEdges(variable)) {
-                    if (!Objects.equals(types[succ], elementType)) {
+                    if (nullTypes[succ] && !Objects.equals(types[succ], elementType)) {
                         stack.push(succ);
                         typeStack.push(elementType);
                     }
@@ -294,6 +303,10 @@ public abstract class BaseTypeInference<T> {
     }
 
     protected T arrayUnwrapType(T type) {
+        return type;
+    }
+
+    protected T arrayWrapType(T type) {
         return type;
     }
 
@@ -412,7 +425,7 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(CloneArrayInstruction insn) {
-            graphBuilder.addEdge(insn.getArray().getIndex(), insn.getReceiver().getIndex());
+            type(insn.getReceiver(), ValueType.object("java.lang.Object"));
         }
 
         @Override

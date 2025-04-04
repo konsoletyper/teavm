@@ -118,7 +118,33 @@ function runSingleTest(test, callback) {
 }
 
 function runSingleTestWithDeobfuscator(test, deobfuscator, callback) {
+    let listener = event => {
+        if (event.source !== lastIFrame.contentWindow) {
+            return;
+        }
+        window.removeEventListener("message", listener);
+        callback(event.data);
+    };
+
+    if (test.type === lastRequestType
+            && filesEqual(test.file, lastFile)
+            && arraysEqual(lastAdditionalFiles, test.additionalFiles, filesEqual)) {
+        console.log("Reusing last launcher");
+        window.addEventListener("message", listener);
+        lastIFrame.contentWindow.postMessage({ type: "REPEAT", argument: test.argument }, "*");
+        return;
+    }
+
+    if (lastIFrame !== null) {
+        document.body.removeChild(lastIFrame);
+    }
+    console.log(test);
+    lastRequestType = test.type;
+    lastFile = test.file;
+    lastAdditionalFiles = test.additionalFiles;
+
     let iframe = document.createElement("iframe");
+    lastIFrame = iframe;
     document.body.appendChild(iframe);
     let handshakeListener = handshakeEvent => {
         if (handshakeEvent.source !== iframe.contentWindow || handshakeEvent.data !== "ready") {
@@ -126,14 +152,6 @@ function runSingleTestWithDeobfuscator(test, deobfuscator, callback) {
         }
         window.removeEventListener("message", handshakeListener);
 
-        let listener = event => {
-            if (event.source !== iframe.contentWindow) {
-                return;
-            }
-            window.removeEventListener("message", listener);
-            document.body.removeChild(iframe);
-            callback(event.data);
-        };
         window.addEventListener("message", listener);
 
         iframe.contentWindow.$rt_decodeStack = deobfuscator != null
@@ -145,3 +163,35 @@ function runSingleTestWithDeobfuscator(test, deobfuscator, callback) {
     iframe.src = "about:blank";
     iframe.src = "frame.html";
 }
+
+function arraysEqual(a, b) {
+    if (!Array.isArray(a) || !Array.isArray(b)) {
+        return a === b;
+    }
+    if (a.length !== b.length) {
+        return false;
+    }
+    for (let i = 0; i < a.length; ++i) {
+        if (a[i] !== b[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function filesEqual(a, b) {
+    if (a === b) {
+        return true;
+    }
+    if (typeof a !== "object" || typeof b !== "object") {
+        return false;
+    }
+    return a.type === b.type && a.path === b.path;
+}
+
+let lastRequestType = null;
+let lastAdditionalFiles = null;
+let lastFiles = [];
+let lastFile = null;
+let lastIFrame = null;
+let frameCallback = null;

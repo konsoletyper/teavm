@@ -32,9 +32,10 @@ public class WasmGCClassInfo {
     WasmStructure structure;
     WasmStructure virtualTableStructure;
     WasmGlobal pointer;
+    WasmGlobal virtualTablePointer;
     WasmGlobal initializerPointer;
     Consumer<List<WasmExpression>> initializer;
-    List<WasmFunction> newArrayFunctions;
+    WasmFunction newArrayFunction;
     WasmFunction initArrayFunction;
     WasmFunction supertypeFunction;
     ObjectIntMap<String> heapFieldOffsets;
@@ -73,6 +74,10 @@ public class WasmGCClassInfo {
 
     public WasmGlobal getPointer() {
         return pointer;
+    }
+
+    public WasmGlobal getVirtualTablePointer() {
+        return virtualTablePointer;
     }
 
     public WasmGlobal getInitializerPointer() {

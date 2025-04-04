@@ -17,7 +17,10 @@ package org.teavm.backend.wasm.generators.gc;
 
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmCast;
+import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.runtime.StringInternPool;
 import org.teavm.model.MethodReference;
@@ -28,8 +31,14 @@ public class StringGenerator implements WasmGCCustomGenerator {
     public void apply(MethodReference method, WasmFunction function, WasmGCCustomGeneratorContext context) {
         var worker = context.functions().forStaticMethod(new MethodReference(StringInternPool.class,
                 "query", String.class, String.class));
-        var instanceLocal = new WasmLocal(context.typeMapper().mapType(ValueType.parse(String.class)), "this");
+        var stringType = context.typeMapper().mapType(ValueType.parse(String.class));
+        var instanceType = context.isCompactMode() ? WasmType.Reference.ANY : stringType;
+        var instanceLocal = new WasmLocal(instanceType, "this");
         function.add(instanceLocal);
-        function.getBody().add(new WasmCall(worker, new WasmGetLocal(instanceLocal)));
+        WasmExpression instance = new WasmGetLocal(instanceLocal);
+        if (context.isCompactMode()) {
+            instance = new WasmCast(instance, (WasmType.Reference) stringType);
+        }
+        function.getBody().add(new WasmCall(worker, instance));
     }
 }

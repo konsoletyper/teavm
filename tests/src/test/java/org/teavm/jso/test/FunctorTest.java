@@ -20,9 +20,11 @@ import static org.junit.Assert.assertSame;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSClass;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.core.JSObjects;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
@@ -90,8 +92,14 @@ public class FunctorTest {
 
     @Test
     public void castToFunctor() {
-        JSBiFunction f = getBiFunctionAsObject().cast();
+        var f = (JSBiFunction) getBiFunctionAsObject();
         assertEquals(23042, f.foo(23, 42));
+    }
+
+    @Test
+    public void propsWithFunction() {
+        var o = PropsObjectWithFunctor.create((a, b) -> a + 10 * b);
+        assertEquals(123, acceptPropsObjectWithFunctor(o));
     }
 
     @JSBody(params = { "f", "a", "b" }, script = "return '(' + f(a, b) + ')';")
@@ -162,4 +170,19 @@ public class FunctorTest {
         @JSProperty("baz")
         String propbaz();
     }
+
+    @JSClass(transparent = true)
+    abstract static class PropsObjectWithFunctor implements JSObject {
+        static PropsObjectWithFunctor create(JSBiFunction foo) {
+            PropsObjectWithFunctor result = JSObjects.create();
+            result.setFoo(foo);
+            return result;
+        }
+
+        @JSProperty
+        public native void setFoo(JSBiFunction foo);
+    }
+
+    @JSBody(params = "obj", script = "return 100 + obj.foo(3, 2);")
+    private static native int acceptPropsObjectWithFunctor(JSObject obj);
 }

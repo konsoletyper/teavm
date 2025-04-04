@@ -149,6 +149,11 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
         return analyzer.incrementalCache;
     }
 
+    @Override
+    public boolean isPrecise() {
+        return analyzer.isPrecise();
+    }
+
     void cleanup() {
         analyzer = null;
     }

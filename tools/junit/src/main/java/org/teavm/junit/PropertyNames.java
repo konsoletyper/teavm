@@ -27,6 +27,7 @@ final class PropertyNames {
     static final String WASI_ENABLED = "teavm.junit.wasi";
     static final String WASI_RUNNER = "teavm.junit.wasi.runner";
     static final String WASM_GC_ENABLED = "teavm.junit.wasm-gc";
+    static final String WASM_GC_RUNNER = "teavm.junit.wasm-gc.runner";
     static final String WASM_GC_DISASM = "teavm.junit.wasm-gc.disasm";
     static final String C_COMPILER = "teavm.junit.c.compiler";
     static final String C_LINE_NUMBERS = "teavm.junit.c.lineNumbers";

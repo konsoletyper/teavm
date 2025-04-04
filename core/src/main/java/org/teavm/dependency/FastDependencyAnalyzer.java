@@ -195,4 +195,9 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
         subtypeNodes.clear();
         super.cleanup(classSourcePacker);
     }
+
+    @Override
+    public boolean isPrecise() {
+        return false;
+    }
 }

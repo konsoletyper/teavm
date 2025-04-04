@@ -41,4 +41,6 @@ public interface DependencyInfo {
     ClassDependencyInfo getClass(String className);
 
     CallGraph getCallGraph();
+
+    boolean isPrecise();
 }

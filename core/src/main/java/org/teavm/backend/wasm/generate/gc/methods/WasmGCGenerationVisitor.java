@@ -33,6 +33,7 @@ import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.SubscriptExpr;
 import org.teavm.ast.TryCatchStatement;
+import org.teavm.ast.VariableExpr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.PreciseTypeInference;
@@ -110,6 +111,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     private WasmGCGenerationUtil generationUtil;
     private WasmType expectedType;
     private PreciseTypeInference types;
+    private boolean compactMode;
 
     public WasmGCGenerationVisitor(WasmGCGenerationContext context, MethodReference currentMethod,
             WasmFunction function, int firstVariable, boolean async, PreciseTypeInference types) {
@@ -117,6 +119,10 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         this.context = context;
         generationUtil = new WasmGCGenerationUtil(context.classInfoProvider());
         this.types = types;
+    }
+
+    public void setCompactMode(boolean compactMode) {
+        this.compactMode = compactMode;
     }
 
     @Override
@@ -150,6 +156,17 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected boolean isManagedCall(MethodReference method) {
         return false;
+    }
+
+    @Override
+    public void visit(VariableExpr expr) {
+        super.visit(expr);
+        if (compactMode && expr.getVariableIndex() == 0) {
+            var receiverType = context.typeMapper().mapType(ValueType.object(currentMethod.getClassName()));
+            var cast = new WasmCast(result, (WasmType.Reference) receiverType);
+            cast.setLocation(expr.getLocation());
+            result = cast;
+        }
     }
 
     @Override
@@ -270,6 +287,21 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected WasmExpression classLiteral(ValueType type) {
+        if (type instanceof ValueType.Array) {
+            var itemType = ((ValueType.Array) type).getItemType();
+            if (!(itemType instanceof ValueType.Primitive)) {
+                var degree = 0;
+                while (type instanceof ValueType.Array) {
+                    type = ((ValueType.Array) type).getItemType();
+                    ++degree;
+                }
+                WasmExpression result = new WasmGetGlobal(context.classInfoProvider().getClassInfo(type).getPointer());
+                while (degree-- > 0) {
+                    result = new WasmCall(context.classInfoProvider().getGetArrayClassFunction(), result);
+                }
+                return result;
+            }
+        }
         var classConstant = context.classInfoProvider().getClassInfo(type);
         return new WasmGetGlobal(classConstant.getPointer());
     }
@@ -398,14 +430,17 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         }
 
         var entry = vtable.entry(method.getDescriptor());
-        if (entry == null) {
+        var nonInterfaceAncestor = vtable.closestNonInterfaceAncestor();
+        if (entry == null || nonInterfaceAncestor == null) {
             return new WasmUnreachable();
         }
 
         WasmExpression classRef = new WasmStructGet(context.standardClasses().objectClass().getStructure(),
-                new WasmGetLocal(instance), WasmGCClassInfoProvider.CLASS_FIELD_OFFSET);
-        var index = context.classInfoProvider().getVirtualMethodsOffset() + entry.getIndex();
+                new WasmGetLocal(instance), WasmGCClassInfoProvider.VT_FIELD_OFFSET);
+        var index = WasmGCClassInfoProvider.VIRTUAL_METHOD_OFFSET + entry.getIndex();
         var expectedInstanceClassInfo = context.classInfoProvider().getClassInfo(vtable.getClassName());
+        var expectedInstanceClassStruct = context.classInfoProvider().getClassInfo(
+                nonInterfaceAncestor.getClassName()).getStructure();
         var vtableStruct = expectedInstanceClassInfo.getVirtualTableStructure();
         classRef = new WasmCast(classRef, vtableStruct.getNonNullReference());
 
@@ -415,8 +450,8 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         WasmExpression instanceRef = new WasmGetLocal(instance);
         var instanceType = (WasmType.CompositeReference) instance.getType();
         var instanceStruct = (WasmStructure) instanceType.composite;
-        if (!expectedInstanceClassInfo.getStructure().isSupertypeOf(instanceStruct)) {
-            instanceRef = new WasmCast(instanceRef, expectedInstanceClassInfo.getStructure().getNonNullReference());
+        if (!expectedInstanceClassStruct.isSupertypeOf(instanceStruct)) {
+            instanceRef = new WasmCast(instanceRef, expectedInstanceClassStruct.getNonNullReference());
         }
 
         invoke.getArguments().add(instanceRef);
@@ -440,7 +475,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         target.add(structNew);
 
         var initClassField = new WasmStructSet(classInfo.getStructure(), new WasmGetLocal(targetVar),
-                WasmGCClassInfoProvider.CLASS_FIELD_OFFSET, new WasmGetGlobal(classInfo.getPointer()));
+                WasmGCClassInfoProvider.VT_FIELD_OFFSET, new WasmGetGlobal(classInfo.getVirtualTablePointer()));
         initClassField.setLocation(location);
         target.add(initClassField);
 
@@ -476,8 +511,8 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     public void visit(NewArrayExpr expr) {
         accept(expr.getLength(), WasmType.INT32);
-        var function = context.classInfoProvider().getArrayConstructor(expr.getType(), 1);
-        var call = new WasmCall(function, result);
+        var function = context.classInfoProvider().getArrayConstructor(expr.getType());
+        var call = new WasmCall(function, classLiteral(expr.getType()), result);
         call.setLocation(expr.getLocation());
         result = call;
     }
@@ -485,13 +520,12 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected WasmExpression allocateMultiArray(List<WasmExpression> target, ValueType arrayType,
             Supplier<List<WasmExpression>> dimensions, TextLocation location) {
+        var args = new ArrayList<WasmExpression>();
         var dimensionsValue = dimensions.get();
-        var itemType = arrayType;
-        for (var i = 0; i < dimensionsValue.size(); ++i) {
-            itemType = ((ValueType.Array) itemType).getItemType();
-        }
-        var function = context.classInfoProvider().getArrayConstructor(itemType, dimensionsValue.size());
-        var call = new WasmCall(function, dimensionsValue.toArray(new WasmExpression[0]));
+        args.add(classLiteral(((ValueType.Array) arrayType).getItemType()));
+        args.addAll(dimensionsValue);
+        var function = context.classInfoProvider().getMultiArrayConstructor(dimensionsValue.size());
+        var call = new WasmCall(function, args.toArray(new WasmExpression[0]));
         call.setLocation(location);
         return call;
     }
@@ -499,14 +533,26 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected WasmExpression generateInstanceOf(WasmExpression expression, ValueType type) {
         context.classInfoProvider().getClassInfo(type);
+        var block = new WasmBlock(false);
+        block.setType(WasmType.INT32);
         var supertypeCall = new WasmCall(context.supertypeFunctions().getIsSupertypeFunction(type));
-        var classRef = new WasmStructGet(
+        var vtRef = new WasmStructGet(
                 context.standardClasses().objectClass().getStructure(),
                 expression,
+                WasmGCClassInfoProvider.VT_FIELD_OFFSET
+        );
+        var classRef = new WasmStructGet(
+                context.standardClasses().objectClass().getVirtualTableStructure(),
+                vtRef,
                 WasmGCClassInfoProvider.CLASS_FIELD_OFFSET
         );
-        supertypeCall.getArguments().add(classRef);
-        return supertypeCall;
+        var classClass = context.standardClasses().classClass().getType();
+        var classRefCached = exprCache.create(classRef, classClass, expression.getLocation(), block.getBody());
+        supertypeCall.getArguments().add(classRefCached.expr());
+        supertypeCall.getArguments().add(classRefCached.expr());
+        classRefCached.release();
+        block.getBody().add(supertypeCall);
+        return block;
     }
 
     @Override

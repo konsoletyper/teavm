@@ -491,7 +491,7 @@ class DependencyGraphBuilder {
             DependencyNode receiverNode = getNode(receiver);
             receiverNode.propagate(dependencyAnalyzer.getType("[java/lang/Class;"));
             receiverNode.getArrayItem().propagate(dependencyAnalyzer.classType);
-            instanceNode.getArrayItem().getClassValueNode().addConsumer(type -> {
+            instanceNode.getClassValueNode().addConsumer(type -> {
                 String className = type.getName();
                 if (className.startsWith("[")) {
                     return;
@@ -504,7 +504,8 @@ class DependencyGraphBuilder {
                     }
                 }
 
-                methodDep.getVariable(0).propagate(type);
+                methodDep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.Class"));
+                methodDep.getVariable(0).getClassValueNode().propagate(type);
             });
         }
 

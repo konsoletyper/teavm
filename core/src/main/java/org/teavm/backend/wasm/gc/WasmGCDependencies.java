@@ -45,6 +45,7 @@ public class WasmGCDependencies {
         analyzer.addDependencyListener(new WasmGCReferenceQueueDependency());
         analyzer.addDependencyListener(new WasmGCResourceDependency());
         analyzer.addDependencyListener(new SystemArrayCopyDependencySupport());
+        analyzer.addDependencyListener(new WasmGCSignatureDependencyListener());
         handleReferences();
     }
 
@@ -55,7 +56,7 @@ public class WasmGCDependencies {
                 .use();
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "setToStringArray", String[].class,
                         int.class, String.class, void.class))
-                .propagate(1, analyzer.getType("[java/lang/String;"))
+                .propagate(1, analyzer.getType("[Ljava/lang/String;"))
                 .propagate(3, analyzer.getType("java.lang.String"))
                 .use();
         analyzer.linkMethod(new MethodReference(StringBuilder.class, "append", char.class, StringBuilder.class))
@@ -111,6 +112,7 @@ public class WasmGCDependencies {
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "cce", ClassCastException.class)).use();
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "throwCloneNotSupportedException",
                 void.class)).use();
+        analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "defaultClone", Object.class, Object.class)).use();
         analyzer.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class)).use();
 
         analyzer.addDependencyListener(new AbstractDependencyListener() {

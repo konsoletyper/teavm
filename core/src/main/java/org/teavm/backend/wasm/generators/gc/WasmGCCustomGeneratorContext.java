@@ -53,5 +53,7 @@ public interface WasmGCCustomGeneratorContext {
 
     String entryPoint();
 
+    boolean isCompactMode();
+
     void addToInitializer(Consumer<WasmFunction> initializerContributor);
 }

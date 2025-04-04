@@ -23,6 +23,8 @@ import org.teavm.model.ValueType;
 
 public interface WasmGCClassInfoProvider {
     int CLASS_FIELD_OFFSET = 0;
+    int VT_FIELD_OFFSET = 0;
+    int VIRTUAL_METHOD_OFFSET = 1;
     int MONITOR_FIELD_OFFSET = 1;
     int CUSTOM_FIELD_OFFSETS = 2;
     int ARRAY_DATA_FIELD_OFFSET = 2;
@@ -43,9 +45,11 @@ public interface WasmGCClassInfoProvider {
 
     WasmGlobal getStaticFieldLocation(FieldReference fieldRef);
 
-    WasmFunction getArrayConstructor(ValueType type, int depth);
+    WasmFunction getArrayConstructor(ValueType type);
 
-    int getVirtualMethodsOffset();
+    WasmFunction getMultiArrayConstructor(int depth);
+
+    WasmFunction getGetArrayClassFunction();
 
     int getClassArrayItemOffset();
 
@@ -66,6 +70,12 @@ public interface WasmGCClassInfoProvider {
     int getClassSimpleNameOffset();
 
     int getClassCanonicalNameOffset();
+
+    int getClassVtFieldOffset();
+
+    int getClassAnnotationsOffset();
+
+    int getClassInterfacesOffset();
 
     int getArrayGetOffset();
 

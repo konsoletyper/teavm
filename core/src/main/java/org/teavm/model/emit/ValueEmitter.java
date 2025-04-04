@@ -937,7 +937,7 @@ public class ValueEmitter {
         insn.setArray(variable);
         insn.setReceiver(result);
         pe.addInstruction(insn);
-        return pe.var(result, type);
+        return pe.var(result, ValueType.object("java.lang.Object"));
     }
 
     private ArrayElementType getArrayElementType(ValueType type) {

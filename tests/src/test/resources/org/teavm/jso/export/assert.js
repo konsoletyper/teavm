@@ -18,7 +18,9 @@ function assertEquals(a, b) {
     if (a == b) {
         return
     }
-    if (a instanceof Array && b instanceof Array && a.length === b.length) {
+    if ((a instanceof Array || ArrayBuffer.isView(a))
+            && (b instanceof Array || ArrayBuffer.isView(b))
+            && a.length === b.length) {
         let allEqual = true;
         for (let i = 0; i < a.length; ++i) {
             if (a[i] != b[i]) {

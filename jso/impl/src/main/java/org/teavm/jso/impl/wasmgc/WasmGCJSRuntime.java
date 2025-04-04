@@ -37,7 +37,7 @@ final class WasmGCJSRuntime {
     }
 
     static String jsToString(JSObject obj) {
-        if (obj == null) {
+        if (obj == null || isUndefined(obj)) {
             return null;
         }
         var length = stringLength(obj);
@@ -50,6 +50,9 @@ final class WasmGCJSRuntime {
         }
         return new String(chars);
     }
+
+    @Import(name = "isUndefined", module = "teavmJso")
+    static native boolean isUndefined(JSObject o);
 
     @Import(name = "emptyString", module = "teavmJso")
     static native JSObject emptyString();

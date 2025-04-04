@@ -52,7 +52,8 @@ import org.teavm.classlib.impl.unicode.LikelySubtagsMetadataGenerator;
 import org.teavm.classlib.impl.unicode.NumberFormatMetadataGenerator;
 import org.teavm.classlib.impl.unicode.TimeZoneLocalizationGenerator;
 import org.teavm.classlib.java.lang.CharacterMetadataGenerator;
-import org.teavm.classlib.java.lang.reflect.AnnotationDependencyListener;
+import org.teavm.classlib.java.lang.reflect.JSAnnotationDependencyListener;
+import org.teavm.classlib.java.lang.reflect.WasmGCAnnotationDependencyListener;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -84,6 +85,7 @@ public class JCLPlugin implements TeaVMPlugin {
             if (jsExtension != null) {
                 jsExtension.add(loadServicesMethod, new ServiceLoaderJSSupport());
                 jsExtension.addVirtualMethods(new AnnotationVirtualMethods());
+                host.add(new JSAnnotationDependencyListener());
             }
 
             TeaVMCHost cHost = host.getExtension(TeaVMCHost.class);
@@ -99,6 +101,7 @@ public class JCLPlugin implements TeaVMPlugin {
             var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
             if (wasmGCHost != null) {
                 wasmGCHost.addGeneratorFactory(new ServiceLoaderWasmGCSupport());
+                host.add(new WasmGCAnnotationDependencyListener());
             }
         }
 
@@ -107,8 +110,6 @@ public class JCLPlugin implements TeaVMPlugin {
 
             host.add(new ReflectionTransformer());
         }
-
-        host.add(new AnnotationDependencyListener());
 
         LambdaMetafactorySubstitutor lms = new LambdaMetafactorySubstitutor();
         host.add(new MethodReference("java.lang.invoke.LambdaMetafactory", "metafactory",

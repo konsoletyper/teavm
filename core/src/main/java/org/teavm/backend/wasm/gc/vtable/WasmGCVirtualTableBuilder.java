@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -42,14 +43,18 @@ class WasmGCVirtualTableBuilder {
     private List<Table> tables = new ArrayList<>();
     private Map<String, Table> tableMap = new HashMap<>();
     private LCATree lcaTree;
-    private Map<String, Table> interfaceImplementors = new HashMap<>();
     Map<String, WasmGCVirtualTable> result = new HashMap<>();
 
     void build() {
         initTables();
         buildLCA();
+        initInterfaceTables();
         fillInterfaceImplementors();
+        mergeTrivialInterfaces();
+        liftInterfaces();
+        buildInterfacesHierarchy();
         groupMethodsFromCallSites();
+        moveClassesToMergedTables();
         fillTables();
         buildResult();
     }
@@ -67,6 +72,9 @@ class WasmGCVirtualTableBuilder {
                 initTable(cls.getParent());
             }
             var table = new Table(cls, tables.size());
+            if (cls.getParent() != null) {
+                table.parent = tableMap.get(cls.getParent());
+            }
             tables.add(table);
             tableMap.put(className, table);
         }
@@ -81,18 +89,27 @@ class WasmGCVirtualTableBuilder {
         }
     }
 
-    private void fillInterfaceImplementors() {
+    private void initInterfaceTables() {
         for (var className : classes.getClassNames()) {
             var cls = classes.get(className);
-            if (!cls.hasModifier(ElementModifier.INTERFACE)) {
+            if (cls.hasModifier(ElementModifier.INTERFACE)) {
+                var table = new Table(cls, tables.size());
+                tables.add(table);
+                tableMap.put(className, table);
+            }
+        }
+    }
+
+    private void fillInterfaceImplementors() {
+        for (var table : tables) {
+            if (!table.cls.hasModifier(ElementModifier.INTERFACE)) {
                 var visited = new HashSet<String>();
                 do {
-                    var table = tableMap.get(cls.getName());
-                    for (var itfName : cls.getInterfaces()) {
+                    for (var itfName : table.cls.getInterfaces()) {
                         addImplementorToInterface(itfName, table, visited);
                     }
-                    cls = cls.getParent() != null ? classes.get(cls.getParent()) : null;
-                } while (cls != null);
+                    table = table.cls.getParent() != null ? tableMap.get(table.cls.getParent()) : null;
+                } while (table != null);
             }
         }
     }
@@ -101,13 +118,19 @@ class WasmGCVirtualTableBuilder {
         if (!visited.add(interfaceName)) {
             return;
         }
-        var knownImplementor = interfaceImplementors.get(interfaceName);
-        if (knownImplementor == null) {
-            interfaceImplementors.put(interfaceName, newImplementor);
-        } else {
-            var lcaIndex = lcaTree.lcaOf(newImplementor.index + 1, knownImplementor.index + 1);
+        var itf = tableMap.get(interfaceName);
+        if (!itf.commonImplementorFilled) {
+            itf.commonImplementorFilled = true;
+            itf.commonImplementor = newImplementor.parent;
+        } else if (itf.commonImplementor != null) {
+            var lcaIndex = lcaTree.lcaOf(newImplementor.index + 1, itf.commonImplementor.index + 1);
             if (lcaIndex > 0) {
-                interfaceImplementors.put(interfaceName, tables.get(lcaIndex - 1));
+                itf.commonImplementor = tables.get(lcaIndex - 1);
+                if (itf.commonImplementor == newImplementor) {
+                    itf.commonImplementor = newImplementor.parent;
+                }
+            } else {
+                itf.commonImplementor = null;
             }
         }
         var cls = classes.get(interfaceName);
@@ -118,24 +141,153 @@ class WasmGCVirtualTableBuilder {
         }
     }
 
+    private void mergeTrivialInterfaces() {
+        for (var table : tables) {
+            if (table.cls.hasModifier(ElementModifier.INTERFACE)) {
+                if (table.cls.getInterfaces().isEmpty() && table.cls.getMethods().isEmpty()
+                        && table.commonImplementor != null) {
+                    table.interfaceMergedIntoClass = true;
+                    table.commonImplementor.merge(table);
+                }
+            }
+        }
+    }
+
+    private void liftInterfaces() {
+        for (var table : tables) {
+            if (table.cls.hasModifier(ElementModifier.INTERFACE) || table.cls.getInterfaces().isEmpty()) {
+                continue;
+            }
+            var accumulatedInterfaces = new LinkedHashSet<Table>();
+            for (var itfName : table.cls.getInterfaces()) {
+                var itf = tableMap.get(itfName);
+                if (itf != null && !itf.interfaceMergedIntoClass) {
+                    accumulatedInterfaces.add(itf);
+                }
+            }
+            while (table != null) {
+                if (table.liftedInterfaces == null) {
+                    table.liftedInterfaces = new LinkedHashSet<>();
+                } else {
+                    accumulatedInterfaces.removeAll(table.liftedInterfaces);
+                }
+                if (accumulatedInterfaces.isEmpty()) {
+                    break;
+                }
+                table.liftedInterfaces.addAll(accumulatedInterfaces);
+                var parent = table.parent;
+                accumulatedInterfaces.removeIf(itf -> itf.commonImplementor == parent);
+                if (accumulatedInterfaces.isEmpty()) {
+                    break;
+                }
+                table = parent;
+            }
+        }
+        for (var table : tables) {
+            if (table.liftedInterfaces != null) {
+                table.liftedInterfaces.removeIf(itf -> itf.commonImplementor != table.parent);
+                if (table.liftedInterfaces.isEmpty()) {
+                    table.liftedInterfaces = null;
+                }
+            }
+        }
+    }
+
+    private void buildInterfacesHierarchy() {
+        for (var table : tables) {
+            if (table.cls.hasModifier(ElementModifier.INTERFACE)) {
+                setUpInterfaceInHierarchy(table, table.commonImplementor);
+            } else if (table.liftedInterfaces != null) {
+                setUpInterfaceInHierarchy(table, table.parent);
+            }
+        }
+    }
+
+    private void setUpInterfaceInHierarchy(Table table, Table parent) {
+        if (table.visited) {
+            return;
+        }
+        table.visited = true;
+        var interfaces = new LinkedHashSet<Table>();
+        if (table.liftedInterfaces != null) {
+            for (var itf : table.liftedInterfaces) {
+                itf = itf.resolve();
+                if (itf.commonImplementor == parent && !itf.interfaceMergedIntoClass) {
+                    setUpInterfaceInHierarchy(itf, parent);
+                    interfaces.add(itf.resolve());
+                }
+            }
+        } else {
+            for (var itfName : table.cls.getInterfaces()) {
+                var itf = tableMap.get(itfName);
+                if (itf == null) {
+                    continue;
+                }
+                itf = itf.resolve();
+                if (itf.commonImplementor == parent && !itf.interfaceMergedIntoClass) {
+                    setUpInterfaceInHierarchy(itf, parent);
+                    interfaces.add(itf.resolve());
+                }
+            }
+        }
+        if (interfaces.isEmpty()) {
+            table.parent = parent;
+            table.depth = 0;
+        } else {
+            var maxDepth = 0;
+            for (var itf : interfaces) {
+                maxDepth = Math.max(itf.depth, maxDepth);
+            }
+
+            Table singleExample = null;
+            for (var i = 0; i <= maxDepth; i++) {
+                var level = i;
+                var interfacesAtLevel = interfaces.stream()
+                        .map(itf -> itf.atDepth(level))
+                        .filter(Objects::nonNull)
+                        .map(Table::resolve)
+                        .distinct()
+                        .collect(Collectors.toList());
+                singleExample = interfacesAtLevel.get(0);
+                for (var j = 1; j < interfacesAtLevel.size(); ++j) {
+                    singleExample.merge(interfacesAtLevel.get(j));
+                }
+            }
+
+            table.parent = singleExample;
+            table.depth = singleExample.depth + 1;
+        }
+    }
+
     private void groupMethodsFromCallSites() {
         for (var methodRef : methodsAtCallSites) {
-            var className = mapInterface(methodRef.getClassName());
+            var className = mapClassName(methodRef.getClassName());
             var group = groupedMethodsAtCallSites.computeIfAbsent(className, k -> new LinkedHashSet<>());
             group.add(methodRef.getDescriptor());
         }
     }
 
-    private String mapInterface(String name) {
-        var cls = classes.get(name);
-        if (cls == null || !cls.hasModifier(ElementModifier.INTERFACE)) {
+    private String mapClassName(String name) {
+        var table = tableMap.get(name);
+        if (table == null) {
             return name;
         }
-        var implementor = interfaceImplementors.get(cls.getName());
-        if (implementor == null) {
-            return name;
+        return table.resolve().cls.getName();
+    }
+
+    private void moveClassesToMergedTables() {
+        for (var table : tables) {
+            if (table.parent != null) {
+                table.parent = table.parent.resolve();
+            }
+            var resolvedTable = table.resolve();
+            if (resolvedTable != table) {
+                if (resolvedTable.mergedClasses == null) {
+                    resolvedTable.mergedClasses = new ArrayList<>();
+                }
+                resolvedTable.mergedClasses.add(table.cls);
+            }
         }
-        return implementor.cls.getName();
     }
 
     private void fillTables() {
@@ -152,8 +304,7 @@ class WasmGCVirtualTableBuilder {
             return;
         }
         table.filled = true;
-        var parent = table.cls.getParent() != null ? tableMap.get(table.cls.getParent()) : null;
-        table.parent = parent;
+        var parent = table.parent;
         var indexes = new ObjectIntHashMap<MethodDescriptor>();
         if (parent != null) {
             fillTable(parent);
@@ -164,22 +315,33 @@ class WasmGCVirtualTableBuilder {
             }
             table.currentImplementors.putAll(parent.currentImplementors);
             table.interfaces.addAll(parent.interfaces);
+        } else {
+            table.used = true;
         }
 
-        for (var method : table.cls.getMethods()) {
-            if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)) {
-                if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
-                    continue;
+        var classes = new ArrayList<ClassReader>();
+        classes.add(table.cls);
+        if (table.mergedClasses != null) {
+            classes.addAll(table.mergedClasses);
+        }
+        if (!table.cls.hasModifier(ElementModifier.INTERFACE)) {
+            for (var cls : classes) {
+                for (var method : cls.getMethods()) {
+                    if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)) {
+                        if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
+                            continue;
+                        }
+                        if (!isVirtual.test(method.getReference()) && !method.getReference().equals(CLONE_METHOD)) {
+                            continue;
+                        }
+                        table.currentImplementors.put(method.getDescriptor(), method.getReference());
+                    }
                 }
-                if (!isVirtual.test(method.getReference()) && !method.getReference().equals(CLONE_METHOD)) {
-                    continue;
-                }
-                table.currentImplementors.put(method.getDescriptor(), method.getReference());
             }
-        }
 
-        for (var itfName : table.cls.getInterfaces()) {
-            fillFromInterfaces(itfName, table);
+            for (var itfName : table.cls.getInterfaces()) {
+                fillFromInterfaces(itfName, table);
+            }
         }
 
         var group = groupedMethodsAtCallSites.get(table.cls.getName());
@@ -227,19 +389,21 @@ class WasmGCVirtualTableBuilder {
     }
 
     private void buildResult() {
-        for (var className : classes.getClassNames()) {
-            var cls = classes.get(className);
-            var table = !cls.hasModifier(ElementModifier.INTERFACE)
-                    ? tableMap.get(className)
-                    : interfaceImplementors.get(className);
-            if (table != null) {
-                result.put(className, table.getBuildResult());
-            }
+        for (var table : tables) {
+            result.put(table.cls.getName(), table.getBuildResult());
         }
     }
 
     private static class Table {
+        boolean visited;
+        int depth = -1;
+        Set<Table> liftedInterfaces;
+        Table reference;
+        Table commonImplementor;
+        boolean commonImplementorFilled;
+        boolean interfaceMergedIntoClass;
         final ClassReader cls;
+        List<ClassReader> mergedClasses;
         int index;
         boolean filled;
         boolean used;
@@ -249,22 +413,61 @@ class WasmGCVirtualTableBuilder {
         Map<MethodDescriptor, MethodReference> currentImplementors = new HashMap<>();
         Set<String> interfaces = new HashSet<>();
         private WasmGCVirtualTable buildResult;
+        private boolean building;
 
         Table(ClassReader cls, int index) {
             this.cls = cls;
             this.index = index;
         }
 
+        void merge(Table other) {
+            other.reference = this;
+        }
+
+        Table atDepth(int depth) {
+            if (depth > this.depth) {
+                return null;
+            }
+            var result = this;
+            while (depth < result.depth) {
+                result = result.parent;
+            }
+            return result;
+        }
+
         WasmGCVirtualTable getBuildResult() {
+            if (reference != null) {
+                return resolve().getBuildResult();
+            }
             if (buildResult == null) {
+                if (building) {
+                    throw new IllegalStateException();
+                }
+                building = true;
                 buildResult = new WasmGCVirtualTable(parent != null ? parent.getBuildResult() : null, cls.getName(),
                         used, !cls.hasModifier(ElementModifier.ABSTRACT));
                 buildResult.entries = entries.stream()
                         .map(Entry::getBuildResult)
                         .collect(Collectors.toList());
                 buildResult.implementors = implementors.toArray(new MethodReference[0]);
+                buildResult.fakeInterfaceRepresentative = cls.hasModifier(ElementModifier.INTERFACE);
             }
             return buildResult;
+        }
+
+        private boolean resolving;
+
+        Table resolve() {
+            if (reference != null) {
+                if (resolving) {
+                    throw new IllegalStateException();
+                }
+                resolving = true;
+                reference = reference.resolve();
+                resolving = false;
+                return reference;
+            }
+            return this;
         }
     }
 

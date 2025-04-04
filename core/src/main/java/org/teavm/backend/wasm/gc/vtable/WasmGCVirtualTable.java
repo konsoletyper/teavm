@@ -31,6 +31,7 @@ public class WasmGCVirtualTable {
     List<WasmGCVirtualTableEntry> entries;
     MethodReference[] implementors;
     private Map<MethodDescriptor, WasmGCVirtualTableEntry> entryMap;
+    boolean fakeInterfaceRepresentative;
 
     WasmGCVirtualTable(WasmGCVirtualTable parent, String className, boolean used, boolean concrete) {
         this.parent = parent;
@@ -76,6 +77,18 @@ public class WasmGCVirtualTable {
 
     public boolean isConcrete() {
         return concrete;
+    }
+
+    public boolean isFakeInterfaceRepresentative() {
+        return fakeInterfaceRepresentative;
+    }
+
+    public WasmGCVirtualTable closestNonInterfaceAncestor() {
+        var result = this;
+        while (result != null && result.isFakeInterfaceRepresentative()) {
+            result = result.parent;
+        }
+        return result;
     }
 
     public WasmGCVirtualTableEntry entry(MethodDescriptor method) {

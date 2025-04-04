@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
@@ -54,14 +55,21 @@ import org.teavm.interop.Import;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.Instruction;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
+import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
 import org.teavm.model.analysis.ClassInitializerInfo;
+import org.teavm.model.instructions.NullConstantInstruction;
+import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.RegisterAllocator;
+import org.teavm.model.util.UsageExtractor;
 
 public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private WasmModule module;
@@ -90,6 +98,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private boolean strict;
     private String entryPoint;
     private Consumer<WasmGCInitializerContributor> initializerContributors;
+    private boolean compactMode;
 
     public WasmGCMethodGenerator(
             WasmModule module,
@@ -121,6 +130,10 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         this.strict = strict;
         this.entryPoint = entryPoint;
         this.initializerContributors = initializerContributors;
+    }
+
+    public void setCompactMode(boolean compactMode) {
+        this.compactMode = compactMode;
     }
 
     public void setTypeMapper(WasmGCTypeMapper typeMapper) {
@@ -192,7 +205,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private WasmFunction createInstanceFunction(MethodReference methodReference) {
         var returnType = typeMapper.mapType(methodReference.getReturnType());
         var parameterTypes = new WasmType[methodReference.parameterCount() + 1];
-        parameterTypes[0] = typeMapper.mapType(ValueType.object(methodReference.getClassName()));
+        var compactMethod = compactMode
+                && typeMapper.mapType(ValueType.object(methodReference.getClassName())) instanceof WasmType.Reference;
+        parameterTypes[0] = compactMethod
+                ? WasmType.Reference.ANY
+                : typeMapper.mapType(ValueType.object(methodReference.getClassName()));
         for (var i = 0; i < methodReference.parameterCount(); ++i) {
             parameterTypes[i + 1] = typeMapper.mapType(methodReference.parameterType(i));
         }
@@ -238,8 +255,12 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
 
     private void generateRegularMethodBody(MethodHolder method, WasmFunction function) {
         Objects.requireNonNull(method.getProgram());
+        eliminateMultipleNullConstantUsages(method.getProgram());
         var decompiler = getDecompiler();
         var categoryProvider = new WasmGCVariableCategoryProvider(hierarchy);
+        var methodCompact = compactMode && !method.hasModifier(ElementModifier.STATIC)
+                && typeMapper.mapType(ValueType.object(method.getOwnerName())) instanceof WasmType.Reference;
+        categoryProvider.setCompactMode(methodCompact);
         var allocator = new RegisterAllocator(categoryProvider);
         allocator.allocateRegisters(method.getReference(), method.getProgram(), friendlyToDebugger);
         var ast = decompiler.decompileRegular(method);
@@ -295,7 +316,9 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             var localVar = ast.getVariables().get(i);
             var inferredType = preciseTypes[i];
             WasmType type;
-            if (!inferredType.isArrayUnwrap) {
+            if (i == 0 && compactMode) {
+                type = WasmType.Reference.ANY;
+            } else if (!inferredType.isArrayUnwrap || inferredType.valueType == null) {
                 type = typeMapper.mapType(inferredType.valueType);
             } else {
                 var arrayType = classInfoProvider.getClassInfo(inferredType.valueType).getArray();
@@ -308,7 +331,82 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         addInitializerErase(method, function);
         var visitor = new WasmGCGenerationVisitor(getGenerationContext(), method.getReference(),
                 function, firstVar, false, typeInference);
+        visitor.setCompactMode(methodCompact);
         visitor.generate(ast.getBody(), function.getBody());
+    }
+
+    private void eliminateMultipleNullConstantUsages(Program program) {
+        var nulls = new boolean[program.variableCount()];
+        var usageCount = new int[program.variableCount()];
+        var locations = new TextLocation[program.variableCount()];
+        var usageExtractor = new UsageExtractor();
+        for (var block : program.getBasicBlocks()) {
+            for (var insn : block) {
+                insn.acceptVisitor(usageExtractor);
+                var usedVars = usageExtractor.getUsedVariables();
+                if (usedVars != null) {
+                    for (var usedVar : usedVars) {
+                        usageCount[usedVar.getIndex()]++;
+                    }
+                }
+                if (insn instanceof NullConstantInstruction) {
+                    var index  = ((NullConstantInstruction) insn).getReceiver().getIndex();
+                    nulls[index] = true;
+                    locations[index] = insn.getLocation();
+                }
+            }
+            for (var phi : block.getPhis()) {
+                for (var input : phi.getIncomings()) {
+                    usageCount[input.getValue().getIndex()]++;
+                }
+            }
+        }
+
+        for (var i = 0; i < program.variableCount(); ++i) {
+            if (nulls[i]) {
+                if (usageCount[i] <= 1) {
+                    nulls[i] = false;
+                }
+            } else {
+                usageCount[i] = 0;
+            }
+        }
+
+        var mapFunction = new Function<Variable, Variable>() {
+            Instruction instruction;
+
+            @Override
+            public Variable apply(Variable variable) {
+                if (variable.getIndex() >= nulls.length || !nulls[variable.getIndex()]
+                        || usageCount[variable.getIndex()]++ == 0) {
+                    return variable;
+                }
+                var nullConstant = new NullConstantInstruction();
+                nullConstant.setReceiver(program.createVariable());
+                nullConstant.setLocation(locations[variable.getIndex()]);
+                instruction.insertPrevious(nullConstant);
+                return nullConstant.getReceiver();
+            }
+        };
+        var mapper = new InstructionVariableMapper(mapFunction);
+        for (var block : program.getBasicBlocks()) {
+            for (var insn : block) {
+                mapFunction.instruction = insn;
+                insn.acceptVisitor(mapper);
+            }
+            for (var phi : block.getPhis()) {
+                for (var input : phi.getIncomings()) {
+                    var index = input.getValue().getIndex();
+                    if (index < nulls.length && nulls[index] && usageCount[index]++ > 0) {
+                        var nullConstant = new NullConstantInstruction();
+                        nullConstant.setReceiver(program.createVariable());
+                        nullConstant.setLocation(locations[index]);
+                        input.setValue(nullConstant.getReceiver());
+                        input.getSource().getLastInstruction().insertPrevious(nullConstant);
+                    }
+                }
+            }
+        }
     }
 
     private void calculateNonNullableVars(boolean[] nonNullVars, RegularMethodNode ast) {
@@ -442,6 +540,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         @Override
         public String entryPoint() {
             return context.entryPoint();
+        }
+
+        @Override
+        public boolean isCompactMode() {
+            return compactMode;
         }
 
         @Override

@@ -575,6 +575,9 @@ public class CodeParser extends BaseSectionParser {
             case 0xBA:
                 codeListener.convert(WasmNumType.INT64, WasmNumType.FLOAT64, true, false, false);
                 break;
+            case 0xBB:
+                codeListener.convert(WasmNumType.FLOAT32, WasmNumType.FLOAT64, true, false, false);
+                break;
             case 0xBC:
                 codeListener.convert(WasmNumType.FLOAT32, WasmNumType.INT32, false, true, false);
                 break;

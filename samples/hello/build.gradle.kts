@@ -30,9 +30,6 @@ configurations {
 dependencies {
     teavm(teavm.libs.jsoApis)
     compileOnly("jakarta.servlet:jakarta.servlet-api:6.0.0")
-
-    "teavmCli"("org.teavm:teavm-cli:0.10.0-SNAPSHOT")
-    "teavmClasslib"("org.teavm:teavm-classlib:0.10.0-SNAPSHOT")
 }
 
 teavm.js {

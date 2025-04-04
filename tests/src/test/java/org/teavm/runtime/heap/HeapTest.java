@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.interop.Address;
@@ -33,6 +35,22 @@ import org.teavm.junit.TestPlatform;
 @OnlyPlatform(TestPlatform.WEBASSEMBLY_GC)
 @SkipJVM
 public class HeapTest {
+    private Address startBackup;
+    private int minSizeBackup;
+    private int maxSizeBackup;
+
+    @Before
+    public void saveHeapState() {
+        startBackup = Heap.getStart();
+        minSizeBackup = Heap.getCurrentSize();
+        maxSizeBackup = Heap.getMaxSize();
+    }
+
+    @After
+    public void restoreHeapState() {
+        Heap.init(startBackup, minSizeBackup, maxSizeBackup);
+    }
+
     @Test
     public void allocRelease() {
         var a = Heap.alloc(65536);

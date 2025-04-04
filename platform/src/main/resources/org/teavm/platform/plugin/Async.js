@@ -15,7 +15,7 @@
  */
 
 function asyncMethod() {
-    let thread = $rt_nativeThread();
+    let thread = $rt_requireNativeThread();
     let javaThread = $rt_getThread();
     if (thread.isResuming()) {
         thread.status = 0;

@@ -152,7 +152,8 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
             block.getBody().add(structNew);
 
             var initClassField = new WasmStructSet(implementationInfo.getStructure(), new WasmGetLocal(tmpVar),
-                    WasmGCClassInfoProvider.CLASS_FIELD_OFFSET, new WasmGetGlobal(implementationInfo.getPointer()));
+                    WasmGCClassInfoProvider.VT_FIELD_OFFSET,
+                    new WasmGetGlobal(implementationInfo.getVirtualTablePointer()));
             block.getBody().add(initClassField);
 
             var constructor = context.functions().forInstanceMethod(

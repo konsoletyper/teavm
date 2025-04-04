@@ -30,9 +30,10 @@ let setGlobalName = function(name, value) {
     new Function("value", name + " = value;")(value);
 }
 
-function defaults(imports) {
+function defaults(imports, userExports) {
     let context = {
         exports: null,
+        userExports: userExports,
         stackDeobfuscator: null
     };
     dateImports(imports);
@@ -142,7 +143,10 @@ function coreImports(imports, context) {
             }
             return new WeakRef(value);
         },
-        deref: weakRef => weakRef.deref(),
+        deref: weakRef => {
+            let result = weakRef.deref();
+            return result !== void 0 ? result : null;
+        },
         createStringWeakRef(value, heldValue) {
             stringFinalizationRegistry.register(value, heldValue)
             return new WeakRef(value);
@@ -305,6 +309,7 @@ function jsoImports(imports, context) {
         )(c);
     }
     imports.teavmJso = {
+        isUndefined: o => typeof o === "undefined",
         emptyString: () => "",
         stringFromCharCode: code => String.fromCharCode(code),
         concatStrings: (a, b) => a + b,
@@ -546,8 +551,13 @@ function jsoImports(imports, context) {
                 rethrowJsAsJava(e);
             }
         },
-        concatArray: (a, b) => a.concat(b),
-        getJavaException: e => e[javaExceptionSymbol]
+        concatArray: (a, b) => [...a, ...b],
+        getJavaException: e => e[javaExceptionSymbol],
+        getJSException: e => {
+            let getJsException = context.exports["teavm.getJsException"]
+            return getJsException(e);
+        },
+        jsExports: () => context.userExports
     };
     for (let name of ["wrapByte", "wrapShort", "wrapChar", "wrapInt", "wrapLong", "wrapFloat", "wrapDouble",
         "unwrapByte", "unwrapShort", "unwrapChar", "unwrapInt", "unwrapLong", "unwrapFloat", "unwrapDouble"]) {
@@ -655,14 +665,15 @@ async function load(path, options) {
     ]);
 
     const importObj = {};
-    const defaultsResult = defaults(importObj);
+    let userExports = {};
+    const defaultsResult = defaults(importObj, userExports);
     if (typeof options.installImports !== "undefined") {
         options.installImports(importObj);
     }
     if (!options.noAutoImports) {
         await wrapImports(module, importObj);
     }
-    let instance = new WebAssembly.Instance(module, importObj);
+    let instance = await WebAssembly.instantiate(module, importObj);
 
     defaultsResult.supplyExports(instance.exports);
     if (deobfuscatorFactory) {
@@ -672,11 +683,10 @@ async function load(path, options) {
             defaultsResult.supplyStackDeobfuscator(deobfuscator);
         }
     }
-    let userExports = {};
     let teavm = {
         exports: userExports,
         instance: instance,
-        module: module
+        module: instance.module
     };
     for (let key in instance.exports) {
         let exportObj = instance.exports[key];

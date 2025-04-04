@@ -35,9 +35,11 @@ public class ArrayGenerator implements WasmGCCustomGenerator {
                 context.classInfoProvider().getNewArrayFunctionOffset());
         var functionType = context.functionTypes().of(
                 context.classInfoProvider().getClassInfo("java.lang.Object").getType(),
+                context.classInfoProvider().getClassInfo("java.lang.Class").getType(),
                 WasmType.INT32
         );
         var result = new WasmCallReference(constructorRef, functionType);
+        result.getArguments().add(new WasmGetLocal(classLocal));
         result.getArguments().add(new WasmGetLocal(sizeLocal));
         function.getBody().add(result);
     }
