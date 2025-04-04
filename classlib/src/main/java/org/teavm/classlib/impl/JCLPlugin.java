@@ -29,7 +29,13 @@ import org.teavm.classlib.impl.currency.CurrenciesGenerator;
 import org.teavm.classlib.impl.currency.CurrencyHelper;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
 import org.teavm.classlib.impl.record.ObjectMethodsSubstitutor;
+import org.teavm.classlib.impl.reflection.FieldInfo;
+import org.teavm.classlib.impl.reflection.FieldInfoList;
+import org.teavm.classlib.impl.reflection.FieldReader;
+import org.teavm.classlib.impl.reflection.FieldWriter;
 import org.teavm.classlib.impl.reflection.ReflectionTransformer;
+import org.teavm.classlib.impl.reflection.WasmGCReflectionIntrinsics;
+import org.teavm.classlib.impl.reflection.WasmGCReflectionTypeMapper;
 import org.teavm.classlib.impl.string.DefaultStringTransformer;
 import org.teavm.classlib.impl.string.JSStringConstructorGenerator;
 import org.teavm.classlib.impl.string.JSStringInjector;
@@ -186,6 +192,11 @@ public class JCLPlugin implements TeaVMPlugin {
             if (wasmHost != null) {
                 wasmHost.add(context -> new DateTimeZoneProviderIntrinsic(context.getProperties()));
             }
+
+            var wasmGcHost = host.getExtension(TeaVMWasmGCHost.class);
+            if (wasmGcHost != null) {
+                registerWasmGCReflection(wasmGcHost, reflection);
+            }
         }
 
         TeaVMPluginUtil.handleNatives(host, Class.class);
@@ -284,6 +295,32 @@ public class JCLPlugin implements TeaVMPlugin {
                 new CharacterMetadataGenerator());
         reg.register(new MethodReference(Character.class, "acquireLowerCaseMapping", StringResource.class),
                 new CharacterMetadataGenerator());
+    }
+
+    private void registerWasmGCReflection(TeaVMWasmGCHost wasmGCHost,
+            ReflectionDependencyListener reflectionDependencyListener) {
+        wasmGCHost.addCustomTypeMapperFactory(context -> new WasmGCReflectionTypeMapper(
+                context.classInfoProvider(), context.functionTypes()));
+
+        var intrinsics = new WasmGCReflectionIntrinsics(reflectionDependencyListener);
+
+        wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "name", String.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "modifiers", int.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "accessLevel", int.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "type", Class.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "reader", FieldReader.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "writer", FieldWriter.class), intrinsics);
+
+        wasmGCHost.addIntrinsic(new MethodReference(FieldInfoList.class, "count", int.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(FieldInfoList.class, "get", int.class, FieldInfo.class),
+                intrinsics);
+
+        wasmGCHost.addIntrinsic(new MethodReference(FieldReader.class, "read", Object.class, Object.class),
+                intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(FieldWriter.class, "write", Object.class, Object.class,
+                void.class), intrinsics);
+
+        wasmGCHost.addIntrinsic(new MethodReference(Class.class, "createMetadata", void.class), intrinsics);
     }
 
     @PlatformMarker

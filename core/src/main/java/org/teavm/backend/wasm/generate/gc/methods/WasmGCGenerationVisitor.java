@@ -28,7 +28,6 @@ import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.Expr;
 import org.teavm.ast.InstanceOfExpr;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.ast.InvocationType;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.SubscriptExpr;
@@ -105,6 +104,7 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
+import org.teavm.model.analysis.ClassInitializerInfo;
 
 public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     private WasmGCGenerationContext context;
@@ -751,24 +751,22 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     protected WasmExpression invocation(InvocationExpr expr, List<WasmExpression> resultConsumer, boolean willDrop) {
-        if (expr.getType() == InvocationType.SPECIAL || expr.getType() == InvocationType.STATIC) {
-            var intrinsic = context.intrinsics().get(expr.getMethod());
-            if (intrinsic != null) {
-                var resultExpr = intrinsic.apply(expr, intrinsicContext);
-                resultExpr.setLocation(expr.getLocation());
-                if (resultConsumer != null) {
-                    if (willDrop) {
-                        var drop = new WasmDrop(resultExpr);
-                        drop.setLocation(expr.getLocation());
-                        resultConsumer.add(drop);
-                    } else {
-                        resultConsumer.add(resultExpr);
-                    }
-                    result = null;
-                    return null;
+        var intrinsic = context.intrinsics().get(expr.getMethod());
+        if (intrinsic != null) {
+            var resultExpr = intrinsic.apply(expr, intrinsicContext);
+            resultExpr.setLocation(expr.getLocation());
+            if (resultConsumer != null) {
+                if (willDrop) {
+                    var drop = new WasmDrop(resultExpr);
+                    drop.setLocation(expr.getLocation());
+                    resultConsumer.add(drop);
                 } else {
-                    return resultExpr;
+                    resultConsumer.add(resultExpr);
                 }
+                result = null;
+                return null;
+            } else {
+                return resultExpr;
             }
         }
         return super.invocation(expr, resultConsumer, willDrop);
@@ -1012,6 +1010,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         @Override
         public MethodReference currentMethod() {
             return currentMethod;
+        }
+
+        @Override
+        public ClassInitializerInfo classInitInfo() {
+            return context.classInitInfo();
         }
 
         @Override

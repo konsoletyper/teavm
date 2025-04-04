@@ -17,6 +17,7 @@ package org.teavm.model.analysis;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,6 +61,7 @@ public class ClassMetadataRequirements {
     private boolean hasName;
     private boolean hasGetAnnotations;
     private boolean hasGetInterfaces;
+    private boolean hasGetFields;
 
     public ClassMetadataRequirements(DependencyInfo dependencyInfo) {
         MethodDependencyInfo getNameMethod = dependencyInfo.getMethod(GET_NAME_METHOD);
@@ -195,6 +197,12 @@ public class ClassMetadataRequirements {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).interfaces = true;
             }
         }
+
+        var getFields = dependencyInfo.getMethod(new MethodReference(Class.class, "getDeclaredFields",
+                Field[].class));
+        if (getFields != null && getFields.isUsed()) {
+            hasGetFields = true;
+        }
     }
 
     public Info getInfo(String className) {
@@ -259,6 +267,10 @@ public class ClassMetadataRequirements {
 
     public boolean hasGetInterfaces() {
         return hasGetInterfaces;
+    }
+
+    public boolean hasGetFields() {
+        return hasGetFields;
     }
 
     private void addClassesRequiringName(Map<ValueType, ClassInfo> target, String[] source) {

@@ -450,7 +450,7 @@ public class TObject {
     @Async
     private native void waitImpl(long timeout, int nanos) throws TInterruptedException;
 
-    public final void waitImpl(long timeout, int nanos, AsyncCallback<Void> callback) {
+    final void waitImpl(long timeout, int nanos, AsyncCallback<Void> callback) {
         Monitor monitor = this.monitor;
         final NotifyListenerImpl listener = new NotifyListenerImpl(this, callback, monitor.count);
         if (monitor.notifyListeners == null) {

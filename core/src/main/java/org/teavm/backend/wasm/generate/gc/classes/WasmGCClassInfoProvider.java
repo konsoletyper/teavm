@@ -35,6 +35,8 @@ public interface WasmGCClassInfoProvider {
 
     WasmStructure getArrayVirtualTableStructure();
 
+    WasmGCReflectionProvider reflection();
+
     int getFieldIndex(FieldReference fieldRef);
 
     int getHeapFieldOffset(FieldReference fieldRef);
@@ -76,6 +78,8 @@ public interface WasmGCClassInfoProvider {
     int getClassAnnotationsOffset();
 
     int getClassInterfacesOffset();
+
+    int getClassFieldsOffset();
 
     int getArrayGetOffset();
 

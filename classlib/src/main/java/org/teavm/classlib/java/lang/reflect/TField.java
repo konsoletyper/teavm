@@ -15,16 +15,13 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-import org.teavm.classlib.impl.reflection.Converter;
+import org.teavm.classlib.impl.reflection.FieldReader;
+import org.teavm.classlib.impl.reflection.FieldWriter;
 import org.teavm.classlib.impl.reflection.Flags;
-import org.teavm.classlib.impl.reflection.JSFieldGetter;
-import org.teavm.classlib.impl.reflection.JSFieldSetter;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TObject;
-import org.teavm.platform.Platform;
-import org.teavm.platform.PlatformObject;
 
 public class TField extends TAccessibleObject implements TMember {
     private TClass<?> declaringClass;
@@ -32,11 +29,11 @@ public class TField extends TAccessibleObject implements TMember {
     private int modifiers;
     private int accessLevel;
     private TClass<?> type;
-    private JSFieldGetter getter;
-    private JSFieldSetter setter;
+    private FieldReader getter;
+    private FieldWriter setter;
 
     public TField(TClass<?> declaringClass, String name, int modifiers, int accessLevel, TClass<?> type,
-            JSFieldGetter getter, JSFieldSetter setter) {
+            FieldReader getter, FieldWriter setter) {
         this.declaringClass = declaringClass;
         this.name = name;
         this.modifiers = modifiers;
@@ -92,8 +89,7 @@ public class TField extends TAccessibleObject implements TMember {
     }
 
     public Object getWithoutCheck(Object obj) {
-        PlatformObject result = getter.get(Platform.getPlatformObject(obj));
-        return Converter.toJava(result);
+        return getter.read(obj);
     }
 
     public void set(Object obj, Object value) throws TIllegalArgumentException, TIllegalAccessException {
@@ -103,7 +99,7 @@ public class TField extends TAccessibleObject implements TMember {
     }
 
     public void setWithoutCheck(Object obj, Object value) {
-        setter.set(Platform.getPlatformObject(obj), Converter.fromJava(value));
+        setter.write(obj, value);
     }
 
     private void checkInstance(Object obj) {

@@ -31,6 +31,9 @@ import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassFlags;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.reflection.ClassSupport;
+import org.teavm.classlib.impl.reflection.FieldInfoList;
+import org.teavm.classlib.impl.reflection.FieldReader;
+import org.teavm.classlib.impl.reflection.FieldWriter;
 import org.teavm.classlib.impl.reflection.Flags;
 import org.teavm.classlib.impl.reflection.JSClass;
 import org.teavm.classlib.impl.reflection.JSField;
@@ -350,18 +353,36 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
         }
         if (declaredFields == null) {
             initReflection();
-            JSClass jsClass = (JSClass) getPlatformClass().getMetadata();
-            JSArray<JSField> jsFields = jsClass.getFields();
-            declaredFields = new TField[jsFields.getLength()];
-            for (int i = 0; i < jsFields.getLength(); ++i) {
-                JSField jsField = jsFields.get(i);
-                declaredFields[i] = new TField(this, jsField.getName(), jsField.getModifiers(),
-                        jsField.getAccessLevel(), TClass.getClass(jsField.getType()), jsField.getGetter(),
-                        jsField.getSetter());
+            if (PlatformDetector.isJavaScript()) {
+                JSClass jsClass = (JSClass) getPlatformClass().getMetadata();
+                JSArray<JSField> jsFields = jsClass.getFields();
+                declaredFields = new TField[jsFields.getLength()];
+                for (int i = 0; i < jsFields.getLength(); ++i) {
+                    JSField jsField = jsFields.get(i);
+                    declaredFields[i] = new TField(this, jsField.getName(), jsField.getModifiers(),
+                            jsField.getAccessLevel(), TClass.getClass(jsField.getType()),
+                            FieldReader.forJs(jsField.getGetter()),
+                            FieldWriter.forJs(jsField.getSetter()));
+                }
+            } else {
+                var infoList = getDeclaredFieldsImpl();
+                if (infoList == null) {
+                    declaredFields = new TField[0];
+                } else {
+                    declaredFields = new TField[infoList.count()];
+                    for (var i = 0; i < declaredFields.length; ++i) {
+                        var fieldInfo = infoList.get(i);
+                        declaredFields[i] = new TField(this, fieldInfo.name(), fieldInfo.modifiers(),
+                                fieldInfo.accessLevel(), (TClass<?>) (Object) fieldInfo.type(),
+                                fieldInfo.reader(), fieldInfo.writer());
+                    }
+                }
             }
         }
         return declaredFields.clone();
     }
+
+    private native FieldInfoList getDeclaredFieldsImpl();
 
     private static void initReflection() {
         if (!reflectionInitialized) {

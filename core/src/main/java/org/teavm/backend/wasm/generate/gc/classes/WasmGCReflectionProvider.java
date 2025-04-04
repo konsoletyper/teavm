@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 Alexey Andreev.
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,23 +15,18 @@
  */
 package org.teavm.backend.wasm.generate.gc.classes;
 
-import org.teavm.backend.wasm.WasmFunctionTypes;
-import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
-import org.teavm.backend.wasm.model.WasmModule;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.backend.wasm.model.WasmArray;
+import org.teavm.backend.wasm.model.WasmStructure;
 
-public interface WasmGCCustomTypeMapperFactoryContext {
-    ClassReaderSource classes();
+public interface WasmGCReflectionProvider {
+    int FIELD_NAME = 0;
+    int FIELD_MODIFIERS = 1;
+    int FIELD_ACCESS = 2;
+    int FIELD_TYPE = 3;
+    int FIELD_READER = 4;
+    int FIELD_WRITER = 5;
 
-    ClassReaderSource originalClasses();
+    WasmStructure getReflectionFieldType();
 
-    WasmModule module();
-
-    WasmGCClassInfoProvider classInfoProvider();
-
-    WasmGCTypeMapper typeMapper();
-
-    WasmGCNameProvider names();
-
-    WasmFunctionTypes functionTypes();
+    WasmArray getReflectionFieldArrayType();
 }

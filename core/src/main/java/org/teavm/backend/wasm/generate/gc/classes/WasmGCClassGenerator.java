@@ -160,6 +160,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private int classDeclaringClassOffset;
     private int classAnnotationsOffset = -1;
     private int classInterfacesOffset = -1;
+    private int classFieldsOffset = -1;
     private int enumConstantsFunctionOffset = -1;
     private int arrayLengthOffset = -1;
     private int arrayGetOffset = -1;
@@ -180,6 +181,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private boolean hasLoadServices;
     private WasmGCSystemFunctionGenerator systemFunctions;
     private boolean compactMode;
+    private WasmGCReflectionGenerator reflectionGenerator;
 
     public WasmGCClassGenerator(WasmModule module, ClassReaderSource classSource,
             ClassReaderSource originalClassSource, ClassHierarchy hierarchy, DependencyInfo dependencyInfo,
@@ -221,6 +223,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
         annotationsGenerator = new WasmGCAnnotationsGenerator(classSource, metadataRequirements,
                 this, strings, annotationInitStatements);
+        reflectionGenerator = new WasmGCReflectionGenerator(module, functionTypes, this, names);
     }
 
     public void setCompactMode(boolean compactMode) {
@@ -257,6 +260,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             @Override
             public WasmGCTypeMapper typeMapper() {
                 return typeMapper;
+            }
+
+            @Override
+            public WasmFunctionTypes functionTypes() {
+                return functionTypes;
             }
         };
     }
@@ -554,6 +562,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     @Override
     public int getClassInterfacesOffset() {
         return classInterfacesOffset;
+    }
+
+    @Override
+    public int getClassFieldsOffset() {
+        return classFieldsOffset;
     }
 
     @Override
@@ -1410,6 +1423,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         return classInfo.heapAlignment;
     }
 
+    @Override
+    public WasmGCReflectionProvider reflection() {
+        return reflectionGenerator;
+    }
+
     private void fillHeapFieldOffsets(WasmGCClassInfo classInfo) {
         var offsets = new ObjectIntHashMap<String>();
         classInfo.heapFieldOffsets = offsets;
@@ -1626,6 +1644,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 classInterfacesOffset = fields.size();
                 var classArrayType = getObjectArrayType();
                 fields.add(createClassField(classArrayType.getReference().asStorage(), "interfaces"));
+            }
+            if (metadataRequirements.hasGetFields()) {
+                classFieldsOffset = fields.size();
+                var fieldsType = reflection().getReflectionFieldArrayType();
+                fields.add(createClassField(fieldsType.getReference().asStorage(), "fields"));
             }
         }
     }

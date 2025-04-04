@@ -27,6 +27,7 @@ import org.teavm.classlib.impl.ReflectionDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
+import org.teavm.model.AccessLevel;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
@@ -155,7 +156,8 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
 
         writer.appendClass(className).append(".$meta.fields").ws().append('=').ws().append('[').indent();
 
-        generateCreateMembers(writer, cls.getFields(), field -> {
+        var skipPrivates = ReflectionDependencyListener.shouldSkipPrivates(cls);
+        generateCreateMembers(writer, skipPrivates, cls.getFields(), field -> {
             appendProperty(writer, "type", false, () -> context.typeToClassString(writer, field.getType()));
 
             appendProperty(writer, "getter", false, () -> {
@@ -189,7 +191,8 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
 
         writer.appendClass(className).append(".$meta.methods").ws().append('=').ws().append('[').indent();
 
-        generateCreateMembers(writer, cls.getMethods(), method -> {
+        var skipPrivates = ReflectionDependencyListener.shouldSkipPrivates(cls);
+        generateCreateMembers(writer, skipPrivates, cls.getMethods(), method -> {
             appendProperty(writer, "parameterTypes", false, () -> {
                 writer.append('[');
                 for (int i = 0; i < method.parameterCount(); ++i) {
@@ -217,10 +220,15 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         writer.outdent().append("];").softNewLine();
     }
 
-    private <T extends MemberReader> void generateCreateMembers(SourceWriter writer, Iterable<T> members,
-            MemberRenderer<T> renderer) {
+    private <T extends MemberReader> void generateCreateMembers(SourceWriter writer, boolean skipPrivates,
+            Iterable<T> members, MemberRenderer<T> renderer) {
         boolean first = true;
         for (T member : members) {
+            if (skipPrivates) {
+                if (member.getLevel() == AccessLevel.PRIVATE || member.getLevel() == AccessLevel.PACKAGE_PRIVATE) {
+                    continue;
+                }
+            }
             if (!first) {
                 writer.append(",").ws();
             } else {

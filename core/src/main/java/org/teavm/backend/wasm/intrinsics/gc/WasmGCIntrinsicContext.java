@@ -33,6 +33,7 @@ import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.MethodReference;
+import org.teavm.model.analysis.ClassInitializerInfo;
 
 public interface WasmGCIntrinsicContext {
     WasmExpression generate(Expr expr);
@@ -68,6 +69,8 @@ public interface WasmGCIntrinsicContext {
     Diagnostics diagnostics();
 
     MethodReference currentMethod();
+
+    ClassInitializerInfo classInitInfo();
 
     void addToInitializer(Consumer<WasmFunction> initializerContributor);
 }

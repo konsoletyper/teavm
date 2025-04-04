@@ -25,6 +25,7 @@ import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
+import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.ValueType;
 
 public class ClassIntrinsic implements WasmGCIntrinsic {
@@ -85,6 +86,8 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
                 return generateGetDeclaredAnnotations(invocation, context);
             case "getInterfacesImpl":
                 return generateGetInterfaces(invocation, context);
+            case "getDeclaredFieldsImpl":
+                return generateGetDeclaredFields(invocation, context);
             default:
                 throw new IllegalArgumentException("Unsupported invocation method: " + invocation.getMethod());
         }
@@ -163,5 +166,15 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
             block.getBody().add(new WasmArrayNewFixed(a));
             return block;
         });
+    }
+
+    private WasmExpression generateGetDeclaredFields(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var fieldIndex = context.classInfoProvider().getClassFieldsOffset();
+        if (fieldIndex < 0) {
+            return new WasmUnreachable();
+        }
+        var arg = context.generate(invocation.getArguments().get(0));
+        var classCls = context.classInfoProvider().getClassInfo("java.lang.Class");
+        return new WasmStructGet(classCls.getStructure(), arg, fieldIndex);
     }
 }
