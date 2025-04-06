@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.Objects;
 import java.util.RandomAccess;
@@ -1821,7 +1822,7 @@ public class TArrays extends TObject {
         return new ArrayAsList<>(a);
     }
 
-    static class ArrayAsList<T> extends TAbstractList<T> implements RandomAccess {
+    static class ArrayAsList<T> extends TAbstractList<T> implements RandomAccess, Serializable {
         private T[] array;
 
         public ArrayAsList(T[] array) {
@@ -1871,6 +1872,22 @@ public class TArrays extends TObject {
     private static void deepToString(Object a, StringBuilder out, TList<Object[]> visited) {
         if (a instanceof Object[]) {
             deepToString((Object[]) a, out, visited);
+        } else if (a instanceof boolean[]) {
+            out.append(toString((boolean[]) a));
+        } else if (a instanceof byte[]) {
+            out.append(toString((byte[]) a));
+        } else if (a instanceof short[]) {
+            out.append(toString((short[]) a));
+        } else if (a instanceof char[]) {
+            out.append(toString((char[]) a));
+        } else if (a instanceof int[]) {
+            out.append(toString((int[]) a));
+        } else if (a instanceof long[]) {
+            out.append(toString((long[]) a));
+        } else if (a instanceof float[]) {
+            out.append(toString((float[]) a));
+        } else if (a instanceof double[]) {
+            out.append(toString((double[]) a));
         } else {
             out.append(a);
         }

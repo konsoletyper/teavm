@@ -186,4 +186,14 @@ public class SystemTest {
         assertNull(System.getProperty("myprop"));
         assertEquals("bar", System.getProperty("myprop2"));
     }
+
+    @Test
+    public void identityHashCode() {
+        assertEquals(0, System.identityHashCode(null));
+
+        Object o = new Object();
+        int hc = System.identityHashCode(o);
+        int hc1 = System.identityHashCode(o);
+        assertEquals(hc, hc1);
+    }
 }
