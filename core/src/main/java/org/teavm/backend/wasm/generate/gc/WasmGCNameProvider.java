@@ -147,11 +147,11 @@ public class WasmGCNameProvider {
 
     private String pickUnoccupied(String name, ObjectIntMap<String> occupiedIndexes) {
         String result = name;
-        int index = occupiedIndexes.getOrDefault(result, -1);
+        int index = occupiedIndexes.getOrDefault(name, -1);
         if (index >= 0) {
             result = name + "_" + index;
         }
-        occupiedIndexes.put(result, ++index);
+        occupiedIndexes.put(name, ++index);
 
         return result;
     }

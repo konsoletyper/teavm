@@ -15,16 +15,14 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-import org.teavm.classlib.impl.reflection.Converter;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.reflection.Flags;
-import org.teavm.classlib.impl.reflection.JSCallable;
+import org.teavm.classlib.impl.reflection.MethodCaller;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.platform.Platform;
-import org.teavm.platform.PlatformObject;
-import org.teavm.platform.PlatformSequence;
 
 public class TMethod extends TAccessibleObject implements TMember {
     private TClass<?> declaringClass;
@@ -33,17 +31,17 @@ public class TMethod extends TAccessibleObject implements TMember {
     private int accessLevel;
     private TClass<?> returnType;
     private TClass<?>[] parameterTypes;
-    private JSCallable callable;
+    private MethodCaller caller;
 
     public TMethod(TClass<?> declaringClass, String name, int flags, int accessLevel, TClass<?> returnType,
-            TClass<?>[] parameterTypes, JSCallable callable) {
+            TClass<?>[] parameterTypes, MethodCaller caller) {
         this.declaringClass = declaringClass;
         this.name = name;
         this.flags = flags;
         this.accessLevel = accessLevel;
         this.returnType = returnType;
         this.parameterTypes = parameterTypes;
-        this.callable = callable;
+        this.caller = caller;
     }
 
     @Override
@@ -96,7 +94,7 @@ public class TMethod extends TAccessibleObject implements TMember {
 
     public Object invoke(Object obj, Object... args) throws TIllegalAccessException, TIllegalArgumentException,
             TInvocationTargetException {
-        if (callable == null) {
+        if (caller == null) {
             throw new TIllegalAccessException();
         }
 
@@ -108,7 +106,7 @@ public class TMethod extends TAccessibleObject implements TMember {
             if (!declaringClass.isInstance((TObject) obj)) {
                 throw new TIllegalArgumentException();
             }
-        } else {
+        } else if (PlatformDetector.isJavaScript()) {
             Platform.initClass(declaringClass.getPlatformClass());
         }
 
@@ -122,9 +120,7 @@ public class TMethod extends TAccessibleObject implements TMember {
             }
         }
 
-        PlatformSequence<PlatformObject> jsArgs = Converter.arrayFromJava(args);
-        PlatformObject result = callable.call(Platform.getPlatformObject(obj), jsArgs);
-        return Converter.toJava(result);
+        return caller.call(obj, args);
     }
 
     public boolean isBridge() {

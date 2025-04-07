@@ -36,6 +36,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
+import org.teavm.model.FieldReference;
 import org.teavm.model.MemberReader;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
@@ -75,6 +76,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
 
     private boolean getReached;
     private boolean setReached;
+    private boolean callReached;
 
     public ReflectionDependencyListener(List<ReflectionSupplier> reflectionSuppliers) {
         this.reflectionSuppliers = reflectionSuppliers;
@@ -84,6 +86,16 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     public void started(DependencyAgent agent) {
         allClasses = agent.createNode();
         typesInReflectableSignaturesNode = agent.createNode();
+
+        var constructorParamTypes = agent.linkField(new FieldReference(Constructor.class.getName(), "parameterTypes"))
+                .getValue();
+        constructorParamTypes.getArrayItem().propagate(agent.getType("java.lang.Class"));
+        typesInReflectableSignaturesNode.connect(constructorParamTypes.getArrayItem().getClassValueNode());
+
+        var methodParamTypes = agent.linkField(new FieldReference(Method.class.getName(), "parameterTypes"))
+                .getValue();
+        methodParamTypes.getArrayItem().propagate(agent.getType("java.lang.Class"));
+        typesInReflectableSignaturesNode.connect(methodParamTypes.getArrayItem().getClassValueNode());
     }
 
     public boolean isGetReached() {
@@ -92,6 +104,10 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
 
     public boolean isSetReached() {
         return setReached;
+    }
+
+    public boolean isCallReached() {
+        return callReached;
     }
 
     public Set<String> getClassesWithReflectableFields() {
@@ -177,6 +193,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             method.getResult().propagate(agent.getType("java.lang.String"));
         } else if (method.getReference().equals(methodGetParameterTypes)
                 || method.getReference().equals(constructorGetParameterTypes)) {
+            method.getResult().propagate(agent.getType("[Ljava/lang/Class;"));
             method.getResult().getArrayItem().propagate(agent.getType("java.lang.Class"));
             typesInReflectableSignaturesNode.connect(method.getResult().getArrayItem().getClassValueNode());
         }
@@ -236,6 +253,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         DependencyNode classValueNode = agent.linkMethod(getConstructors)
                 .addLocation(location)
                 .getVariable(0).getClassValueNode();
+        callReached = true;
         classValueNode.addConsumer(reflectedType -> {
             if (reflectedType.getName().startsWith("[") || reflectedType.getName().startsWith("~")) {
                 return;
@@ -273,6 +291,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         DependencyNode classValueNode = agent.linkMethod(getMethods)
                 .addLocation(location)
                 .getVariable(0).getClassValueNode();
+        callReached = true;
         classValueNode.addConsumer(reflectedType -> {
             if (reflectedType.getName().startsWith("[")) {
                 return;

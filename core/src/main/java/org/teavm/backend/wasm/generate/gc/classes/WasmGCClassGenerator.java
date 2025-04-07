@@ -161,6 +161,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private int classAnnotationsOffset = -1;
     private int classInterfacesOffset = -1;
     private int classFieldsOffset = -1;
+    private int classMethodsOffset = -1;
     private int enumConstantsFunctionOffset = -1;
     private int arrayLengthOffset = -1;
     private int arrayGetOffset = -1;
@@ -567,6 +568,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     @Override
     public int getClassFieldsOffset() {
         return classFieldsOffset;
+    }
+
+    @Override
+    public int getClassMethodsOffset() {
+        return classMethodsOffset;
     }
 
     @Override
@@ -1584,7 +1590,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
             fields.add(createClassField(WasmType.INT32.asStorage(), "id"));
             classVtOffset = fields.size();
             fields.add(createClassField(standardClasses.objectClass().getVirtualTableStructure().getReference()
-                    .asStorage(), "id"));
+                    .asStorage(), "classVt"));
             if (metadataRequirements.hasSuperclass()) {
                 classParentOffset = fields.size();
                 fields.add(createClassField(standardClasses.classClass().getType().asStorage(), "parent"));
@@ -1649,6 +1655,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 classFieldsOffset = fields.size();
                 var fieldsType = reflection().getReflectionFieldArrayType();
                 fields.add(createClassField(fieldsType.getReference().asStorage(), "fields"));
+            }
+            if (metadataRequirements.hasGetMethods()) {
+                classMethodsOffset = fields.size();
+                var fieldsType = reflection().getReflectionMethodArrayType();
+                fields.add(createClassField(fieldsType.getReference().asStorage(), "methods"));
             }
         }
     }

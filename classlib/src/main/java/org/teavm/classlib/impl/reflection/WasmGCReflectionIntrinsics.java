@@ -15,10 +15,13 @@
  */
 package org.teavm.classlib.impl.reflection;
 
+import java.util.ArrayList;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCReflectionProvider;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
+import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
@@ -35,14 +38,17 @@ import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
+import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSignedType;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNew;
+import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.classlib.impl.ReflectionDependencyListener;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -90,6 +96,52 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                         break;
                 }
                 break;
+            case "org.teavm.classlib.impl.reflection.MethodInfo":
+                switch (invocation.getMethod().getName()) {
+                    case "name":
+                        return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_NAME);
+                    case "modifiers":
+                        return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_MODIFIERS);
+                    case "accessLevel":
+                        return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_ACCESS);
+                    case "returnType":
+                        return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_RETURN_TYPE);
+                    case "parameterTypes":
+                        return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_PARAMETER_TYPES);
+                    case "caller":
+                        return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_CALLER);
+                    default:
+                        break;
+                }
+                break;
+            case "org.teavm.classlib.impl.reflection.MethodInfoList":
+                switch (invocation.getMethod().getName()) {
+                    case "count":
+                        return new WasmArrayLength(context.generate(invocation.getArguments().get(0)));
+                    case "get": {
+                        var arg = context.generate(invocation.getArguments().get(0));
+                        var index = context.generate(invocation.getArguments().get(1));
+                        var arrayType = context.classInfoProvider().reflection().getReflectionMethodArrayType();
+                        return new WasmArrayGet(arrayType, arg, index);
+                    }
+                    default:
+                        break;
+                }
+                break;
+            case "org.teavm.classlib.impl.reflection.ClassList":
+                switch (invocation.getMethod().getName()) {
+                    case "count":
+                        return new WasmArrayLength(context.generate(invocation.getArguments().get(0)));
+                    case "get": {
+                        var arg = context.generate(invocation.getArguments().get(0));
+                        var index = context.generate(invocation.getArguments().get(1));
+                        var arrayType = context.classInfoProvider().reflection().getClassArrayType();
+                        return new WasmArrayGet(arrayType, arg, index);
+                    }
+                    default:
+                        break;
+                }
+                break;
             case "org.teavm.classlib.impl.reflection.FieldReader": {
                 var fn = context.generate(invocation.getArguments().get(0));
                 var arg = context.generate(invocation.getArguments().get(1));
@@ -105,6 +157,16 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 var type = context.functionTypes().of(null, objectType, objectType);
                 return new WasmCallReference(fn, type, arg, value);
             }
+            case "org.teavm.classlib.impl.reflection.MethodCaller": {
+                var fn = context.generate(invocation.getArguments().get(0));
+                var instanceArg = context.generate(invocation.getArguments().get(1));
+                var paramsArg = context.generate(invocation.getArguments().get(2));
+                var objectType = context.classInfoProvider().getClassInfo("java.lang.Object").getType();
+                var objArrayType = context.classInfoProvider().getClassInfo(ValueType.arrayOf(
+                        ValueType.object("java.lang.Object"))).getType();
+                var type = context.functionTypes().of(objectType, objectType, objArrayType);
+                return new WasmCallReference(fn, type, instanceArg, paramsArg);
+            }
             case "java.lang.Class":
                 return new WasmCall(getInitReflectionFunction(context));
         }
@@ -117,12 +179,19 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 arg, fieldIndex);
     }
 
+    private WasmExpression methodInfoCall(InvocationExpr invocation, WasmGCIntrinsicContext context, int fieldIndex) {
+        var arg = context.generate(invocation.getArguments().get(0));
+        return new WasmStructGet(context.classInfoProvider().reflection().getReflectionMethodType(),
+                arg, fieldIndex);
+    }
+
     private WasmFunction getInitReflectionFunction(WasmGCIntrinsicContext context) {
         if (initReflectionFunction == null) {
             initReflectionFunction = new WasmFunction(context.functionTypes().of(null));
             initReflectionFunction.setName(context.names().topLevel("@teavm.initReflection"));
             context.module().functions.add(initReflectionFunction);
             initReflectionFields(context, initReflectionFunction);
+            initReflectionMethods(context, initReflectionFunction);
         }
         return initReflectionFunction;
     }
@@ -187,6 +256,70 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
         }
     }
 
+    private void initReflectionMethods(WasmGCIntrinsicContext context, WasmFunction function) {
+        var wasmGcReflection = context.classInfoProvider().reflection();
+        var classClass = context.classInfoProvider().getClassInfo("java.lang.Class");
+        var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");
+        var objectArrayClass = context.classInfoProvider().getClassInfo(ValueType.arrayOf(
+                ValueType.object("java.lang.Object")));
+        var callerType = context.functionTypes().of(objectClass.getType(), objectClass.getType(),
+                objectArrayClass.getType());
+
+        for (var className : reflection.getClassesWithReflectableMethods()) {
+            var cls = context.hierarchy().getClassSource().get(className);
+            if (cls == null || cls.getMethods().isEmpty()) {
+                return;
+            }
+            var skipPrivates = ReflectionDependencyListener.shouldSkipPrivates(cls);
+
+            var array = new WasmArrayNewFixed(wasmGcReflection.getReflectionMethodArrayType());
+            var classInfo = context.classInfoProvider().getClassInfo(className);
+            function.getBody().add(new WasmStructSet(
+                    classClass.getStructure(),
+                    new WasmGetGlobal(classInfo.getPointer()),
+                    context.classInfoProvider().getClassMethodsOffset(),
+                    array
+            ));
+
+            var accessibleMethods = reflection.getAccessibleMethods(className);
+            for (var method : cls.getMethods()) {
+                if (skipPrivates) {
+                    if (method.getLevel() == AccessLevel.PRIVATE || method.getLevel() == AccessLevel.PACKAGE_PRIVATE) {
+                        continue;
+                    }
+                }
+                if (method.getName().equals("<clinit>")) {
+                    continue;
+                }
+                var methodInit = new WasmStructNew(wasmGcReflection.getReflectionMethodType());
+                array.getElements().add(methodInit);
+
+                var nameStr = context.strings().getStringConstant(method.getName());
+                methodInit.getInitializers().add(new WasmGetGlobal(nameStr.global));
+
+                methodInit.getInitializers().add(new WasmInt32Constant(ElementModifier.pack(method.readModifiers())));
+
+                methodInit.getInitializers().add(new WasmInt32Constant(method.getLevel().ordinal()));
+
+                methodInit.getInitializers().add(renderType(context, method.getResultType()));
+
+                var parametersArray = new WasmArrayNewFixed(wasmGcReflection.getClassArrayType());
+                for (var param : method.getParameterTypes()) {
+                    parametersArray.getElements().add(renderType(context, param));
+                }
+                methodInit.getInitializers().add(parametersArray);
+
+                if (accessibleMethods != null && accessibleMethods.contains(method.getDescriptor())
+                        && reflection.isCallReached()) {
+                    var caller = generateCaller(context, method);
+                    methodInit.getInitializers().add(new WasmFunctionReference(caller));
+                } else {
+                    methodInit.getInitializers().add(new WasmNullConstant(callerType.getReference()));
+                }
+            }
+        }
+    }
+
     private WasmFunction generateGetter(WasmGCIntrinsicContext context, FieldReader field) {
         var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");
         var getterType = context.functionTypes().of(objectClass.getType(), objectClass.getType());
@@ -202,7 +335,8 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
         WasmExpression result;
         var classInfo = context.classInfoProvider().getClassInfo(field.getOwnerName());
         if (field.hasModifier(ElementModifier.STATIC)) {
-            if (context.classInitInfo().isDynamicInitializer(field.getOwnerName())) {
+            if (context.classInitInfo().isDynamicInitializer(field.getOwnerName())
+                    && classInfo.getInitializerPointer() != null) {
                 var initRef = new WasmGetGlobal(classInfo.getInitializerPointer());
                 var initType = context.functionTypes().of(null);
                 function.getBody().add(new WasmCallReference(initRef, initType));
@@ -252,7 +386,8 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
         var value = unboxIfNecessary(context, new WasmGetLocal(valueVar), field.getType());
         var classInfo = context.classInfoProvider().getClassInfo(field.getOwnerName());
         if (field.hasModifier(ElementModifier.STATIC)) {
-            if (context.classInitInfo().isDynamicInitializer(field.getOwnerName())) {
+            if (context.classInitInfo().isDynamicInitializer(field.getOwnerName())
+                    && classInfo.getInitializerPointer() != null) {
                 var initRef = new WasmGetGlobal(classInfo.getInitializerPointer());
                 var initType = context.functionTypes().of(null);
                 function.getBody().add(new WasmCallReference(initRef, initType));
@@ -264,6 +399,83 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
             var structSet = new WasmStructSet(classInfo.getStructure(), castInstance,
                     context.classInfoProvider().getFieldIndex(field.getReference()), value);
             function.getBody().add(structSet);
+        }
+
+        return function;
+    }
+
+    private WasmFunction generateCaller(WasmGCIntrinsicContext context, MethodReader method) {
+        var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");
+        var objectArrayClass = context.classInfoProvider().getClassInfo(ValueType.arrayOf(
+                ValueType.object("java.lang.Object")));
+        var callerType = context.functionTypes().of(objectClass.getType(), objectClass.getType(),
+                objectArrayClass.getType());
+        var function = new WasmFunction(callerType);
+        function.setName(context.names().topLevel(context.names().suggestForMethod(method.getReference())
+                + "@caller"));
+        context.module().functions.add(function);
+        function.setReferenced(true);
+
+        var dataField = objectArrayClass.getStructure().getFields()
+                .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
+
+        var thisVar = new WasmLocal(objectClass.getType(), "this");
+        function.add(thisVar);
+        var argsVar = new WasmLocal(objectArrayClass.getType(), "args");
+        function.add(argsVar);
+        var argsDataVar = new WasmLocal(dataField.getUnpackedType(), "argsData");
+        function.add(argsDataVar);
+        WasmLocal instanceVar = null;
+
+        function.getBody().add(new WasmSetLocal(argsDataVar, new WasmStructGet(objectArrayClass.getStructure(),
+                new WasmGetLocal(argsVar), dataField.getIndex())));
+
+        var classInfo = context.classInfoProvider().getClassInfo(method.getOwnerName());
+        var args = new ArrayList<WasmExpression>();
+        WasmFunction callee;
+        if (method.hasModifier(ElementModifier.STATIC)) {
+            if (context.classInitInfo().isDynamicInitializer(method.getOwnerName())
+                    && classInfo.getInitializerPointer() != null) {
+                var initRef = new WasmGetGlobal(classInfo.getInitializerPointer());
+                var initType = context.functionTypes().of(null);
+                function.getBody().add(new WasmCallReference(initRef, initType));
+            }
+            callee = context.functions().forStaticMethod(method.getReference());
+        } else {
+            if (method.getName().equals("<init>")) {
+                instanceVar = new WasmLocal(classInfo.getStructure().getNonNullReference(), "instance");
+                function.add(instanceVar);
+                function.getBody().add(new WasmSetLocal(instanceVar,
+                        new WasmStructNewDefault(classInfo.getStructure())));
+                function.getBody().add(new WasmStructSet(
+                        classInfo.getStructure(),
+                        new WasmGetLocal(instanceVar),
+                        WasmGCClassInfoProvider.VT_FIELD_OFFSET,
+                        new WasmGetGlobal(classInfo.getVirtualTablePointer())
+                ));
+                args.add(new WasmGetLocal(instanceVar));
+            } else {
+                var castInstance = new WasmCast(new WasmGetLocal(thisVar), classInfo.getType());
+                args.add(castInstance);
+            }
+            callee = context.functions().forInstanceMethod(method.getReference());
+        }
+
+        var dataType = (WasmType.CompositeReference) dataField.getUnpackedType();
+        var dataArray = (WasmArray) dataType.composite;
+        for (var i = 0; i < method.parameterCount(); ++i) {
+            var rawArg = new WasmArrayGet(dataArray, new WasmGetLocal(argsDataVar), new WasmInt32Constant(i));
+            args.add(unboxIfNecessary(context, rawArg, method.parameterType(i)));
+        }
+
+        var call = new WasmCall(callee, args.toArray(new WasmExpression[0]));
+        function.getBody().add(boxIfNecessary(context, call, method.getResultType()));
+        if (method.getResultType() == ValueType.VOID) {
+            if (method.getName().equals("<init>")) {
+                function.getBody().add(new WasmGetLocal(instanceVar));
+            } else {
+                function.getBody().add(new WasmNullConstant(objectClass.getType()));
+            }
         }
 
         return function;

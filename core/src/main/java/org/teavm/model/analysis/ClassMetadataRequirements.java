@@ -17,7 +17,9 @@ package org.teavm.model.analysis;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,6 +64,7 @@ public class ClassMetadataRequirements {
     private boolean hasGetAnnotations;
     private boolean hasGetInterfaces;
     private boolean hasGetFields;
+    private boolean hasGetMethods;
 
     public ClassMetadataRequirements(DependencyInfo dependencyInfo) {
         MethodDependencyInfo getNameMethod = dependencyInfo.getMethod(GET_NAME_METHOD);
@@ -203,6 +206,18 @@ public class ClassMetadataRequirements {
         if (getFields != null && getFields.isUsed()) {
             hasGetFields = true;
         }
+
+        var getMethods = dependencyInfo.getMethod(new MethodReference(Class.class, "getDeclaredMethods",
+                Method[].class));
+        if (getMethods != null && getMethods.isUsed()) {
+            hasGetMethods = true;
+        }
+
+        var getConstructors = dependencyInfo.getMethod(new MethodReference(Class.class, "getDeclaredConstructors",
+                Constructor[].class));
+        if (getConstructors != null && getConstructors.isUsed()) {
+            hasGetMethods = true;
+        }
     }
 
     public Info getInfo(String className) {
@@ -271,6 +286,10 @@ public class ClassMetadataRequirements {
 
     public boolean hasGetFields() {
         return hasGetFields;
+    }
+
+    public boolean hasGetMethods() {
+        return hasGetMethods;
     }
 
     private void addClassesRequiringName(Map<ValueType, ClassInfo> target, String[] source) {

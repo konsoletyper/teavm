@@ -19,6 +19,7 @@ import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapper;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.model.ValueType;
 
 public class WasmGCReflectionTypeMapper implements WasmGCCustomTypeMapper {
     private WasmGCClassInfoProvider classInfoProvider;
@@ -36,6 +37,15 @@ public class WasmGCReflectionTypeMapper implements WasmGCCustomTypeMapper {
                 return classInfoProvider.reflection().getReflectionFieldType().getReference();
             case "org.teavm.classlib.impl.reflection.FieldInfoList":
                 return classInfoProvider.reflection().getReflectionFieldArrayType().getReference();
+
+            case "org.teavm.classlib.impl.reflection.MethodInfo":
+                return classInfoProvider.reflection().getReflectionMethodType().getReference();
+            case "org.teavm.classlib.impl.reflection.MethodInfoList":
+                return classInfoProvider.reflection().getReflectionMethodArrayType().getReference();
+
+            case "org.teavm.classlib.impl.reflection.ClassList":
+                return classInfoProvider.reflection().getClassArrayType().getReference();
+
             case "org.teavm.classlib.impl.reflection.FieldReader": {
                 var objType = classInfoProvider.getClassInfo("java.lang.Object").getType();
                 return functionTypes.of(objType, objType).getReference();
@@ -43,6 +53,12 @@ public class WasmGCReflectionTypeMapper implements WasmGCCustomTypeMapper {
             case "org.teavm.classlib.impl.reflection.FieldWriter": {
                 var objType = classInfoProvider.getClassInfo("java.lang.Object").getType();
                 return functionTypes.of(null, objType, objType).getReference();
+            }
+            case "org.teavm.classlib.impl.reflection.MethodCaller": {
+                var objType = classInfoProvider.getClassInfo("java.lang.Object").getType();
+                var objArrayType = classInfoProvider.getClassInfo(
+                        ValueType.arrayOf(ValueType.object("java.lang.Object"))).getType();
+                return functionTypes.of(objType, objType, objArrayType).getReference();
             }
         }
         return null;
