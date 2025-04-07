@@ -109,6 +109,8 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         add(new MethodReference(Class.class, "getInterfacesImpl", Class[].class), intrinsic);
         add(new MethodReference("java.lang.Class", "getDeclaredFieldsImpl",
                 ValueType.object("org.teavm.classlib.impl.reflection.FieldInfoList")), intrinsic);
+        add(new MethodReference("java.lang.Class", "getDeclaredMethodsImpl",
+                ValueType.object("org.teavm.classlib.impl.reflection.MethodInfoList")), intrinsic);
     }
 
     private void fillClassSupport() {

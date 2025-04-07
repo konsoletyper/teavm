@@ -22,6 +22,7 @@ import org.teavm.backend.wasm.model.WasmField;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.model.ValueType;
 
 class WasmGCReflectionGenerator implements WasmGCReflectionProvider {
     private WasmModule module;
@@ -31,6 +32,11 @@ class WasmGCReflectionGenerator implements WasmGCReflectionProvider {
 
     private WasmStructure reflectionFieldType;
     private WasmArray reflectionFieldArrayType;
+
+    private WasmStructure reflectionMethodType;
+    private WasmArray reflectionMethodArrayType;
+
+    private WasmArray classArrayType;
 
     WasmGCReflectionGenerator(WasmModule module, WasmFunctionTypes functionTypes,
             WasmGCClassInfoProvider classInfoProvider, WasmGCNameProvider names) {
@@ -75,5 +81,55 @@ class WasmGCReflectionGenerator implements WasmGCReflectionProvider {
             module.types.add(reflectionFieldArrayType);
         }
         return reflectionFieldArrayType;
+    }
+
+    @Override
+    public WasmStructure getReflectionMethodType() {
+        if (reflectionMethodType == null) {
+            reflectionMethodType = new WasmStructure(names.topLevel("@teavm.Method"), fields -> {
+                var stringClass = classInfoProvider.getClassInfo("java.lang.String");
+                var classClass = classInfoProvider.getClassInfo("java.lang.Class");
+                var objectClass = classInfoProvider.getClassInfo("java.lang.Object");
+                var objectArrayClass = classInfoProvider.getClassInfo(ValueType.arrayOf(
+                        ValueType.object("java.lang.Object")));
+
+                var callerType = functionTypes.of(objectClass.getType(), objectClass.getType(),
+                        objectArrayClass.getType()).getReference();
+
+                fields.add(new WasmField(stringClass.getType().asStorage(),
+                        names.structureField("@name")));
+                fields.add(new WasmField(WasmType.INT32.asStorage(),
+                        names.structureField("@flags")));
+                fields.add(new WasmField(WasmType.INT32.asStorage(),
+                        names.structureField("@accessLevel")));
+                fields.add(new WasmField(classClass.getType().asStorage(),
+                        names.structureField("@returnType")));
+                fields.add(new WasmField(getClassArrayType().getReference().asStorage(),
+                        names.structureField("@parameterTypes")));
+                fields.add(new WasmField(callerType.asStorage(), names.structureField("@caller")));
+            });
+            module.types.add(reflectionMethodType);
+        }
+        return reflectionMethodType;
+    }
+
+    @Override
+    public WasmArray getReflectionMethodArrayType() {
+        if (reflectionMethodArrayType == null) {
+            reflectionMethodArrayType = new WasmArray("Array<@teavm.Method>", getReflectionMethodType().getReference()
+                    .asStorage());
+            module.types.add(reflectionMethodArrayType);
+        }
+        return reflectionMethodArrayType;
+    }
+
+    @Override
+    public WasmArray getClassArrayType() {
+        if (classArrayType == null) {
+            classArrayType = new WasmArray("Array<java.lang.Class>", () ->
+                    classInfoProvider.getClassInfo("java.lang.Class").getType().asStorage());
+            module.types.add(classArrayType);
+        }
+        return classArrayType;
     }
 }

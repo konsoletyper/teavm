@@ -22,11 +22,22 @@ public interface WasmGCReflectionProvider {
     int FIELD_NAME = 0;
     int FIELD_MODIFIERS = 1;
     int FIELD_ACCESS = 2;
+
     int FIELD_TYPE = 3;
     int FIELD_READER = 4;
     int FIELD_WRITER = 5;
 
+    int FIELD_RETURN_TYPE = 3;
+    int FIELD_PARAMETER_TYPES = 4;
+    int FIELD_CALLER = 5;
+
     WasmStructure getReflectionFieldType();
 
     WasmArray getReflectionFieldArrayType();
+
+    WasmStructure getReflectionMethodType();
+
+    WasmArray getReflectionMethodArrayType();
+
+    WasmArray getClassArrayType();
 }

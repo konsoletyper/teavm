@@ -88,6 +88,8 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
                 return generateGetInterfaces(invocation, context);
             case "getDeclaredFieldsImpl":
                 return generateGetDeclaredFields(invocation, context);
+            case "getDeclaredMethodsImpl":
+                return generateGetDeclaredMethods(invocation, context);
             default:
                 throw new IllegalArgumentException("Unsupported invocation method: " + invocation.getMethod());
         }
@@ -170,6 +172,17 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
 
     private WasmExpression generateGetDeclaredFields(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         var fieldIndex = context.classInfoProvider().getClassFieldsOffset();
+        if (fieldIndex < 0) {
+            return new WasmUnreachable();
+        }
+        var arg = context.generate(invocation.getArguments().get(0));
+        var classCls = context.classInfoProvider().getClassInfo("java.lang.Class");
+        return new WasmStructGet(classCls.getStructure(), arg, fieldIndex);
+    }
+
+
+    private WasmExpression generateGetDeclaredMethods(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var fieldIndex = context.classInfoProvider().getClassMethodsOffset();
         if (fieldIndex < 0) {
             return new WasmUnreachable();
         }

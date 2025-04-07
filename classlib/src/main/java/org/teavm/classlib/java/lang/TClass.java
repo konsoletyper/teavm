@@ -38,6 +38,8 @@ import org.teavm.classlib.impl.reflection.Flags;
 import org.teavm.classlib.impl.reflection.JSClass;
 import org.teavm.classlib.impl.reflection.JSField;
 import org.teavm.classlib.impl.reflection.JSMethodMember;
+import org.teavm.classlib.impl.reflection.MethodCaller;
+import org.teavm.classlib.impl.reflection.MethodInfoList;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.classlib.java.lang.reflect.TAnnotatedElement;
 import org.teavm.classlib.java.lang.reflect.TConstructor;
@@ -563,28 +565,53 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
         }
         if (declaredMethods == null) {
             initReflection();
-            JSClass jsClass = (JSClass) getPlatformClass().getMetadata();
-            JSArray<JSMethodMember> jsMethods = jsClass.getMethods();
-            declaredMethods = new TMethod[jsMethods.getLength()];
-            int count = 0;
-            for (int i = 0; i < jsMethods.getLength(); ++i) {
-                JSMethodMember jsMethod = jsMethods.get(i);
-                if (jsMethod.getName().equals("<init>") || jsMethod.getName().equals("<clinit>")) {
-                    continue;
+            if (PlatformDetector.isJavaScript()) {
+                JSClass jsClass = (JSClass) getPlatformClass().getMetadata();
+                JSArray<JSMethodMember> jsMethods = jsClass.getMethods();
+                declaredMethods = new TMethod[jsMethods.getLength()];
+                int count = 0;
+                for (int i = 0; i < jsMethods.getLength(); ++i) {
+                    JSMethodMember jsMethod = jsMethods.get(i);
+                    if (jsMethod.getName().equals("<init>") || jsMethod.getName().equals("<clinit>")) {
+                        continue;
+                    }
+                    PlatformSequence<PlatformClass> jsParameterTypes = jsMethod.getParameterTypes();
+                    TClass<?>[] parameterTypes = new TClass<?>[jsParameterTypes.getLength()];
+                    for (int j = 0; j < parameterTypes.length; ++j) {
+                        parameterTypes[j] = getClass(jsParameterTypes.get(j));
+                    }
+                    TClass<?> returnType = getClass(jsMethod.getReturnType());
+                    declaredMethods[count++] = new TMethod(this, jsMethod.getName(), jsMethod.getModifiers(),
+                            jsMethod.getAccessLevel(), returnType, parameterTypes,
+                            MethodCaller.forJs(jsMethod.getCallable()));
                 }
-                PlatformSequence<PlatformClass> jsParameterTypes = jsMethod.getParameterTypes();
-                TClass<?>[] parameterTypes = new TClass<?>[jsParameterTypes.getLength()];
-                for (int j = 0; j < parameterTypes.length; ++j) {
-                    parameterTypes[j] = getClass(jsParameterTypes.get(j));
+                declaredMethods = Arrays.copyOf(declaredMethods, count);
+            } else {
+                var methodInfoList = getDeclaredMethodsImpl();
+                declaredMethods = new TMethod[methodInfoList.count()];
+                int count = 0;
+                for (int i = 0; i < methodInfoList.count(); ++i) {
+                    var methodInfo = methodInfoList.get(i);
+                    if (methodInfo.name().equals("<init>") || methodInfo.name().equals("<clinit>")) {
+                        continue;
+                    }
+                    var paramTypeInfoList = methodInfo.parameterTypes();
+                    var parameterTypes = new TClass<?>[paramTypeInfoList.count()];
+                    for (int j = 0; j < parameterTypes.length; ++j) {
+                        parameterTypes[j] = (TClass<?>) (Object) paramTypeInfoList.get(j);
+                    }
+                    var returnType = methodInfo.returnType();
+                    declaredMethods[count++] = new TMethod(this, methodInfo.name(), methodInfo.modifiers(),
+                            methodInfo.accessLevel(), (TClass<?>) (Object) returnType, parameterTypes,
+                            methodInfo.caller());
                 }
-                TClass<?> returnType = getClass(jsMethod.getReturnType());
-                declaredMethods[count++] = new TMethod(this, jsMethod.getName(), jsMethod.getModifiers(),
-                        jsMethod.getAccessLevel(), returnType, parameterTypes, jsMethod.getCallable());
+                declaredMethods = Arrays.copyOf(declaredMethods, count);
             }
-            declaredMethods = Arrays.copyOf(declaredMethods, count);
         }
         return declaredMethods.clone();
     }
+
+    private native MethodInfoList getDeclaredMethodsImpl();
 
     public TMethod getDeclaredMethod(String name, TClass<?>... parameterTypes) throws TNoSuchMethodException,
             TSecurityException {

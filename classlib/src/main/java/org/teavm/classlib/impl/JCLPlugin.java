@@ -29,10 +29,14 @@ import org.teavm.classlib.impl.currency.CurrenciesGenerator;
 import org.teavm.classlib.impl.currency.CurrencyHelper;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
 import org.teavm.classlib.impl.record.ObjectMethodsSubstitutor;
+import org.teavm.classlib.impl.reflection.ClassList;
 import org.teavm.classlib.impl.reflection.FieldInfo;
 import org.teavm.classlib.impl.reflection.FieldInfoList;
 import org.teavm.classlib.impl.reflection.FieldReader;
 import org.teavm.classlib.impl.reflection.FieldWriter;
+import org.teavm.classlib.impl.reflection.MethodCaller;
+import org.teavm.classlib.impl.reflection.MethodInfo;
+import org.teavm.classlib.impl.reflection.MethodInfoList;
 import org.teavm.classlib.impl.reflection.ReflectionTransformer;
 import org.teavm.classlib.impl.reflection.WasmGCReflectionIntrinsics;
 import org.teavm.classlib.impl.reflection.WasmGCReflectionTypeMapper;
@@ -315,10 +319,27 @@ public class JCLPlugin implements TeaVMPlugin {
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfoList.class, "get", int.class, FieldInfo.class),
                 intrinsics);
 
+        wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "name", String.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "modifiers", int.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "accessLevel", int.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "returnType", Class.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "parameterTypes", ClassList.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "caller", MethodCaller.class), intrinsics);
+
+        wasmGCHost.addIntrinsic(new MethodReference(MethodInfoList.class, "count", int.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(MethodInfoList.class, "get", int.class, MethodInfo.class),
+                intrinsics);
+
+        wasmGCHost.addIntrinsic(new MethodReference(ClassList.class, "count", int.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(ClassList.class, "get", int.class, Class.class),
+                intrinsics);
+
         wasmGCHost.addIntrinsic(new MethodReference(FieldReader.class, "read", Object.class, Object.class),
                 intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(FieldWriter.class, "write", Object.class, Object.class,
                 void.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(MethodCaller.class, "call", Object.class, Object[].class,
+                Object.class), intrinsics);
 
         wasmGCHost.addIntrinsic(new MethodReference(Class.class, "createMetadata", void.class), intrinsics);
     }
