@@ -120,6 +120,11 @@ public class ExportTest {
         testExport("exportClassWithConstructorOnly", ModuleWithExportedClassWithConstructorOnly.class, true);
     }
 
+    @Test
+    public void exportedClassInitializesModule() {
+        testExport("exportedClassInitializesModule", ModuleWithExportedClasses.class, true);
+    }
+
     private void testExport(String name, Class<?> moduleClass) {
         testExport(name, moduleClass, false);
     }

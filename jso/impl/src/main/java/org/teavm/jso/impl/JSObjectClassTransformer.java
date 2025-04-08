@@ -52,6 +52,7 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
@@ -129,7 +130,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
                 cls.getAnnotations().add(new AnnotationHolder(JSClassToExpose.class.getName()));
             }
         }
-        hasStaticMethods = exportStaticMethods(cls, context.getDiagnostics());
+        hasStaticMethods = exportStaticMethods(cls, context.getDiagnostics(), context.getEntryPoint());
         if (hasMemberMethods || hasStaticMethods) {
             cls.getAnnotations().add(new AnnotationHolder(JSClassObjectToExpose.class.getName()));
         }
@@ -261,7 +262,8 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         }
     }
 
-    private boolean exportStaticMethods(ClassHolder classHolder, Diagnostics diagnostics) {
+    private boolean exportStaticMethods(ClassHolder classHolder, Diagnostics diagnostics,
+            String entryPointName) {
         int index = 0;
         var hasMethods = false;
         for (var method : classHolder.getMethods().toArray(new MethodHolder[0])) {
@@ -291,6 +293,12 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             exportedMethod.setProgram(program);
 
             var basicBlock = program.createBasicBlock();
+            if (entryPointName != null && !entryPointName.equals(classHolder.getName())) {
+                var clinit = new InitClassInstruction();
+                clinit.setClassName(entryPointName);
+                basicBlock.add(clinit);
+            }
+
             var marshallInstructions = new ArrayList<Instruction>();
             var marshaller = new JSValueMarshaller(diagnostics, typeHelper, hierarchy.getClassSource(), hierarchy,
                     program, marshallInstructions);

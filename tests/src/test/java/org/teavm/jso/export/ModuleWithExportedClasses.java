@@ -20,8 +20,13 @@ import org.teavm.jso.JSExport;
 import org.teavm.jso.JSExportClasses;
 import org.teavm.jso.JSProperty;
 
-@JSExportClasses({ ModuleWithExportedClasses.A.class, ModuleWithExportedClasses.B.class })
+@JSExportClasses({
+        ModuleWithExportedClasses.A.class,
+        ModuleWithExportedClasses.B.class,
+        ModuleWithExportedClasses.C.class
+})
 public class ModuleWithExportedClasses {
+
     public static class A {
         @JSExport
         public static int foo() {
@@ -48,5 +53,16 @@ public class ModuleWithExportedClasses {
         public static B create(int bar) {
             return new B(bar);
         }
+    }
+
+    public static class C {
+        @JSExport
+        public static int getStaticField() {
+            return WithStaticField.staticField;
+        }
+    }
+
+    static class WithStaticField {
+        private static int staticField = 23;
     }
 }
