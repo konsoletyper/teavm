@@ -61,6 +61,9 @@ public class TObject {
     }
 
     static void monitorEnterSync(TObject o) {
+        if (Thread.currentThread() == null) {
+            return;
+        }
         if (o.monitor == null) {
             createMonitor(o);
         }
@@ -73,6 +76,9 @@ public class TObject {
     }
 
     static void monitorExitSync(TObject o) {
+        if (Thread.currentThread() == null) {
+            return;
+        }
         if (o.isEmptyMonitor() || o.monitor.owner != TThread.currentThread()) {
             throw new TIllegalMonitorStateException();
         }
