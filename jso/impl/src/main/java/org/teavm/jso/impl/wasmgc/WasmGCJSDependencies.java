@@ -58,6 +58,11 @@ class WasmGCJSDependencies extends AbstractDependencyListener {
             }
         } else if (methodReader.getAnnotations().get(JSBodyDelegate.class.getName()) != null) {
             method.getThrown().propagate(agent.getType(WasmGCExceptionWrapper.class.getName()));
+        } else if (methodReader.getOwnerName().equals(WasmGCJSRuntime.CharArrayData.class.getName())) {
+            if (method.getMethod().getName().equals("asString")) {
+                method.getResult().propagate(agent.getType(String.class.getName()));
+                agent.linkMethod(new MethodReference(String.class, "fromArray", char[].class, String.class)).use();
+            }
         }
     }
 

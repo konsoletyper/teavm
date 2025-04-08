@@ -26,14 +26,7 @@ final class WasmGCJSRuntime {
         if (str == null) {
             return null;
         }
-        if (str.isEmpty()) {
-            return emptyString();
-        }
-        var jsStr = stringFromCharCode(str.charAt(0));
-        for (var i = 1; i < str.length(); ++i) {
-            jsStr = concatStrings(jsStr, stringFromCharCode(str.charAt(i)));
-        }
-        return jsStr;
+        return stringFromCharArray(CharArrayData.of(str), 0, str.length());
     }
 
     static String jsToString(JSObject obj) {
@@ -41,39 +34,28 @@ final class WasmGCJSRuntime {
             return null;
         }
         var length = stringLength(obj);
-        if (length == 0) {
-            return "";
-        }
-        var chars = new char[length];
-        for (var i = 0; i < length; ++i) {
-            chars[i] = charAt(obj, i);
-        }
-        return new String(chars);
+        var chars = CharArrayData.create(length);
+        stringIntoCharArray(obj, chars, 0);
+        return chars.asString();
     }
+
+    @Import(name = "length", module = "wasm:js-string")
+    static native int stringLength(JSObject str);
+
+    @Import(name = "fromCharCodeArray", module = "wasm:js-string")
+    static native JSObject stringFromCharArray(CharArrayData data, int start, int end);
+
+    @Import(name = "intoCharCodeArray", module = "wasm:js-string")
+    static native int stringIntoCharArray(JSObject str, CharArrayData data, int start);
 
     @Import(name = "isUndefined", module = "teavmJso")
     static native boolean isUndefined(JSObject o);
-
-    @Import(name = "emptyString", module = "teavmJso")
-    static native JSObject emptyString();
-
-    @Import(name = "stringFromCharCode", module = "teavmJso")
-    static native JSObject stringFromCharCode(char c);
-
-    @Import(name = "concatStrings", module = "teavmJso")
-    static native JSObject concatStrings(JSObject a, JSObject b);
 
     @Import(name = "emptyArray", module = "teavmJso")
     static native JSObject emptyArray();
 
     @Import(name = "appendToArray", module = "teavmJso")
     static native JSObject appendToArray(JSObject array, JSObject element);
-
-    @Import(name = "stringLength", module = "teavmJso")
-    static native int stringLength(JSObject str);
-
-    @Import(name = "charAt", module = "teavmJso")
-    static native char charAt(JSObject str, int index);
 
     static native JSObject wrapObject(Object obj);
 
@@ -83,5 +65,13 @@ final class WasmGCJSRuntime {
 
     static JSObject extractException(Throwable e) {
         return e instanceof WasmGCExceptionWrapper ? ((WasmGCExceptionWrapper) e).jsException : null;
+    }
+
+    static final class CharArrayData {
+        static native CharArrayData of(String s);
+
+        native String asString();
+
+        static native CharArrayData create(int size);
     }
 }

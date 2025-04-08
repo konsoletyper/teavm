@@ -94,7 +94,7 @@ public class WasmBinaryRenderer {
         renderMemory(module);
         renderTags(module);
         renderGlobals(module);
-        renderExport(module);
+        //renderExport(module);
         renderStart(module);
         renderElement(module);
         renderCode(module);

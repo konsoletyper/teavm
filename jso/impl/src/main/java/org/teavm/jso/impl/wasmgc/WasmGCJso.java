@@ -66,7 +66,14 @@ public final class WasmGCJso {
         wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "isJava", JSObject.class, boolean.class),
                 wrapperIntrinsic);
 
+        var runtimeInstrinsic = new WasmGCJSRuntimeIntrinsic(commonGen);
         wasmGCHost.addIntrinsic(new MethodReference(WasmGCJSRuntime.class, "wrapObject", Object.class,
-                JSObject.class), new WasmGCJSRuntimeIntrinsic(commonGen));
+                JSObject.class), runtimeInstrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(WasmGCJSRuntime.CharArrayData.class, "of", String.class,
+                WasmGCJSRuntime.CharArrayData.class), runtimeInstrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(WasmGCJSRuntime.CharArrayData.class, "asString", String.class),
+                runtimeInstrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(WasmGCJSRuntime.CharArrayData.class, "create", int.class,
+                WasmGCJSRuntime.CharArrayData.class), runtimeInstrinsic);
     }
 }

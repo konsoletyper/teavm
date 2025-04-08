@@ -36,6 +36,9 @@ function defaults(imports, userExports) {
         userExports: userExports,
         stackDeobfuscator: null
     };
+    if (!hasStringBuiltins()) {
+        stringImports(imports);
+    }
     dateImports(imports);
     consoleImports(imports, context);
     coreImports(imports, context);
@@ -70,6 +73,26 @@ class JavaError extends Error {
             }
         }
         return "(could not fetch message)";
+    }
+}
+
+function stringImports(imports, context) {
+    imports["wasm:js-string"] = {
+        fromCharCode: code => String.fromCharCode(code),
+        fromCharCodeArray: (charCodes, start, end) => {
+            let s = "";
+            for (let i = start; i < end; ++i) {
+                s += String.fromCharCode(context.exports["teavm.charArrayGet"](charCodes, i));
+            }
+            return s;
+        },
+        intoCharCodeArray: (str, charCodes, start) => {
+            for (let i = 0; i < str.length; ++i) {
+                context.exports["teavm.charArraySet"](charCodes, str++, str.charCodeAt(i));
+            }
+            return str.length;
+        },
+        length: s => s.length
     }
 }
 
@@ -310,11 +333,6 @@ function jsoImports(imports, context) {
     }
     imports.teavmJso = {
         isUndefined: o => typeof o === "undefined",
-        emptyString: () => "",
-        stringFromCharCode: code => String.fromCharCode(code),
-        concatStrings: (a, b) => a + b,
-        stringLength: s => s.length,
-        charAt: (s, index) => s.charCodeAt(index),
         emptyArray: () => [],
         appendToArray: (array, e) => array.push(e),
         unwrapBoolean: value => value ? 1 : 0,
@@ -660,7 +678,7 @@ async function load(path, options) {
     let debugInfoLocation = deobfuscatorOptions.infoLocation || "auto";
     let [deobfuscatorFactory, module, debugInfo] = await Promise.all([
         deobfuscatorOptions.enabled ? getDeobfuscator(path, deobfuscatorOptions) : Promise.resolve(null),
-        WebAssembly.compileStreaming(fetch(path)),
+        WebAssembly.compileStreaming(fetch(path), { builtins: ["js-string"] }),
         fetchExternalDebugInfo(path, debugInfoLocation, deobfuscatorOptions)
     ]);
 
@@ -699,12 +717,36 @@ async function load(path, options) {
     return teavm;
 }
 
+let stringBuiltinsCache = null;
+
+function hasStringBuiltins() {
+    if (stringBuiltinsCache === null) {
+        /*
+          (module
+           (type  (func))
+           (import "wasm:js-string" "cast" (func (type 0)))
+          )
+         */
+        let bytes = new Int8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 2, 23, 1, 14, 119, 97,
+            115, 109, 58, 106, 115, 45, 115, 116, 114, 105, 110, 103, 4, 99, 97, 115, 116, 0, 0, 3, 1, 0,
+            5, 4, 1, 1, 0, 0, 10, -127, -128, -128, 0, 0]);
+        stringBuiltinsCache = !WebAssembly.validate(bytes, {builtins: ["js-string"]});
+    }
+    return stringBuiltinsCache;
+}
+
 async function getDeobfuscator(path, options) {
     try {
         const importObj = {};
         const defaultsResult = defaults(importObj, {});
         const deobfuscatorPath = options.path || path + "-deobfuscator.wasm";
-        const { instance } = await WebAssembly.instantiateStreaming(fetch(deobfuscatorPath), importObj);
+        const { instance } = await WebAssembly.instantiateStreaming(
+            fetch(deobfuscatorPath),
+            importObj,
+            {
+                builtins: ["js-string"]
+            }
+        );
         defaultsResult.supplyExports(instance.exports)
         return instance;
     } catch (e) {
