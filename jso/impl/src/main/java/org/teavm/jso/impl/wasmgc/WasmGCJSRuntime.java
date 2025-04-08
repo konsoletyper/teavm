@@ -22,18 +22,24 @@ final class WasmGCJSRuntime {
     private WasmGCJSRuntime() {
     }
 
+    private static boolean stringBuiltinsSupported = stringBuiltinsSupported();
+
     static JSObject stringToJs(String str) {
         if (str == null) {
             return null;
         }
-        if (str.isEmpty()) {
-            return emptyString();
+        if (stringBuiltinsSupported) {
+            return stringFromCharArray(CharArrayData.of(str), 0, str.length()).toNullable();
+        } else {
+            if (str.isEmpty()) {
+                return substring(stringFromCharCode(32).toNullable(), 0, 0).toNullable();
+            }
+            var result = stringFromCharCode(str.charAt(0)).toNullable();
+            for (var i = 1; i < str.length(); ++i) {
+                result = concatStrings(result, stringFromCharCode(str.charAt(i)).toNullable()).toNullable();
+            }
+            return result;
         }
-        var jsStr = stringFromCharCode(str.charAt(0));
-        for (var i = 1; i < str.length(); ++i) {
-            jsStr = concatStrings(jsStr, stringFromCharCode(str.charAt(i)));
-        }
-        return jsStr;
     }
 
     static String jsToString(JSObject obj) {
@@ -41,39 +47,50 @@ final class WasmGCJSRuntime {
             return null;
         }
         var length = stringLength(obj);
-        if (length == 0) {
-            return "";
+        var chars = CharArrayData.create(length);
+        if (stringBuiltinsSupported) {
+            stringIntoCharArray(obj, chars, 0);
+        } else {
+            for (var i = 0; i < length; i++) {
+                var code = (char) charCodeAt(obj, i);
+                chars.put(i, code);
+            }
         }
-        var chars = new char[length];
-        for (var i = 0; i < length; ++i) {
-            chars[i] = charAt(obj, i);
-        }
-        return new String(chars);
+        return chars.asString();
     }
+
+    @Import(name = "length", module = "wasm:js-string")
+    static native int stringLength(JSObject str);
+
+    @Import(name = "fromCharCodeArray", module = "wasm:js-string")
+    static native NonNullExternal stringFromCharArray(CharArrayData data, int start, int end);
+
+    @Import(name = "fromCharCode", module = "wasm:js-string")
+    static native NonNullExternal stringFromCharCode(int charCode);
+
+    @Import(name = "intoCharCodeArray", module = "wasm:js-string")
+    static native int stringIntoCharArray(JSObject str, CharArrayData data, int start);
+
+    @Import(name = "concat", module = "wasm:js-string")
+    static native NonNullExternal concatStrings(JSObject first, JSObject second);
+
+    @Import(name = "substring", module = "wasm:js-string")
+    static native NonNullExternal substring(JSObject string, int start, int end);
+
+    @Import(name = "charCodeAt", module = "wasm:js-string")
+    static native int charCodeAt(JSObject string, int index);
+
+    @Import(name = "stringBuiltinsSupported", module = "teavmJso")
+    static native boolean stringBuiltinsSupported();
 
     @Import(name = "isUndefined", module = "teavmJso")
     static native boolean isUndefined(JSObject o);
-
-    @Import(name = "emptyString", module = "teavmJso")
-    static native JSObject emptyString();
-
-    @Import(name = "stringFromCharCode", module = "teavmJso")
-    static native JSObject stringFromCharCode(char c);
-
-    @Import(name = "concatStrings", module = "teavmJso")
-    static native JSObject concatStrings(JSObject a, JSObject b);
 
     @Import(name = "emptyArray", module = "teavmJso")
     static native JSObject emptyArray();
 
     @Import(name = "appendToArray", module = "teavmJso")
     static native JSObject appendToArray(JSObject array, JSObject element);
-
-    @Import(name = "stringLength", module = "teavmJso")
-    static native int stringLength(JSObject str);
-
-    @Import(name = "charAt", module = "teavmJso")
-    static native char charAt(JSObject str, int index);
 
     static native JSObject wrapObject(Object obj);
 
@@ -83,5 +100,19 @@ final class WasmGCJSRuntime {
 
     static JSObject extractException(Throwable e) {
         return e instanceof WasmGCExceptionWrapper ? ((WasmGCExceptionWrapper) e).jsException : null;
+    }
+
+    static final class CharArrayData {
+        static native CharArrayData of(String s);
+
+        native String asString();
+
+        static native CharArrayData create(int size);
+
+        native void put(int index, char code);
+    }
+
+    static final class NonNullExternal {
+        native JSObject toNullable();
     }
 }
