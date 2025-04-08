@@ -22,24 +22,12 @@ let $rt_createArray = (cls, sz) => {
 }
 let $rt_wrapArray = (cls, data) => new ($rt_arraycls(cls))(data);
 let $rt_createUnfilledArray = (cls, sz) => new ($rt_arraycls(cls))(new teavm_globals.Array(sz));
-let $rt_createLongArray;
-let $rt_createLongArrayFromData;
-if (typeof teavm_globals.BigInt64Array !== 'function') {
-    $rt_createLongArray = sz => {
-        let data = new teavm_globals.Array(sz);
-        let arr = new $rt_longArrayCls(data);
-        data.fill(Long_ZERO);
-        return arr;
-    }
-    $rt_createLongArrayFromData = init => new $rt_longArrayCls(init);
-} else {
-    $rt_createLongArray = sz => new $rt_longArrayCls(new teavm_globals.BigInt64Array(sz));
-    $rt_createLongArrayFromData = data => {
-        let buffer = new teavm_globals.BigInt64Array(data.length);
-        buffer.set(data);
-        return new $rt_longArrayCls(buffer);
-    }
-}
+let $rt_createLongArray = sz => new $rt_longArrayCls(new teavm_globals.BigInt64Array(sz));
+let $rt_createLongArrayFromData = data => {
+    let buffer = new teavm_globals.BigInt64Array(data.length);
+    buffer.set(data);
+    return new $rt_longArrayCls(buffer);
+};
 
 let $rt_createCharArray = sz => new $rt_charArrayCls(new teavm_globals.Uint16Array(sz));
 let $rt_createCharArrayFromData = data => {
