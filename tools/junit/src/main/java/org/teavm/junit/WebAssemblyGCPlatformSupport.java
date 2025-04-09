@@ -164,6 +164,10 @@ class WebAssemblyGCPlatformSupport extends TestPlatformSupport<WasmGCTarget> {
     void additionalOutput(File outputPath, File outputPathForMethod, TeaVMTestConfiguration<?> configuration,
             MethodReference reference) {
         htmlOutput(outputPath, outputPathForMethod, configuration, reference, "teavm-run-test-wasm-gc.html");
+    }
+
+    @Override
+    void additionalOutput(File outputPath, TeaVMTestConfiguration<?> configuration) {
         var testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(),
                 getExtension() + "-runtime.js");
         var testDeobfuscatorPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(),

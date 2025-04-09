@@ -35,7 +35,8 @@ class WasiRunStrategy implements TestRunStrategy {
         try {
             List<String> commandLine = new ArrayList<>();
             commandLine.add(this.runCommand);
-            commandLine.add(new File(run.getBaseDirectory(), run.getFileName()).getAbsolutePath());
+            commandLine.add(new File(run.getGroup().getBaseDirectory(), run.getGroup().getFileName())
+                    .getAbsolutePath());
             if (run.getArgument() != null) {
                 commandLine.add(run.getArgument());
             }
@@ -110,5 +111,9 @@ class WasiRunStrategy implements TestRunStrategy {
         boolean result = process.waitFor() == 0;
         output.addAll(lines);
         return result;
+    }
+
+    @Override
+    public void cleanup() {
     }
 }

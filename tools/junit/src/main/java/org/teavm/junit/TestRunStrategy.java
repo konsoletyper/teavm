@@ -25,4 +25,6 @@ interface TestRunStrategy {
     }
 
     void runTest(TestRun run) throws IOException;
+
+    void cleanup();
 }

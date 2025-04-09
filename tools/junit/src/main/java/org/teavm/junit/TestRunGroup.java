@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,33 +15,34 @@
  */
 package org.teavm.junit;
 
-import java.lang.reflect.Method;
+import java.io.File;
 
-class TestRun {
-    TestRunGroup group;
-    private String name;
-    private Method method;
-    private String argument;
+class TestRunGroup {
+    private File baseDirectory;
+    private String fileName;
+    private TestPlatform kind;
+    private boolean module;
 
-    public TestRun(String name, Method method, String argument) {
-        this.name = name;
-        this.method = method;
-        this.argument = argument;
+    TestRunGroup(File baseDirectory, String fileName, TestPlatform kind, boolean module) {
+        this.baseDirectory = baseDirectory;
+        this.fileName = fileName;
+        this.kind = kind;
+        this.module = module;
     }
 
-    TestRunGroup getGroup() {
-        return group;
+    File getBaseDirectory() {
+        return baseDirectory;
     }
 
-    String getName() {
-        return name;
+    String getFileName() {
+        return fileName;
     }
 
-    public Method getMethod() {
-        return method;
+    TestPlatform getKind() {
+        return kind;
     }
 
-    String getArgument() {
-        return argument;
+    boolean isModule() {
+        return module;
     }
 }

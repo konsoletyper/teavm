@@ -90,6 +90,10 @@ class WebAssemblyPlatformSupport extends BaseWebAssemblyPlatformSupport {
     void additionalOutput(File outputPath, File outputPathForMethod, TeaVMTestConfiguration<?> configuration,
             MethodReference reference) {
         htmlOutput(outputPath, outputPathForMethod, configuration, reference, "teavm-run-test-wasm.html");
+    }
+
+    @Override
+    void additionalOutput(File outputPath, TeaVMTestConfiguration<?> configuration) {
         if (disassembly) {
             writeDisassembly(outputPath, "classTest", configuration);
         }

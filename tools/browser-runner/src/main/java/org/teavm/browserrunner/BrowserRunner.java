@@ -177,6 +177,7 @@ public class BrowserRunner {
 
         var nf = objectMapper.getNodeFactory();
         var node = nf.objectNode();
+        node.set("command", nf.textNode("run"));
         node.set("id", nf.numberNode(id));
 
         var array = nf.arrayNode();
@@ -190,6 +191,8 @@ public class BrowserRunner {
         fileNode.set("path", nf.textNode(run.getTestPath()));
         fileNode.set("type", nf.textNode(run.isModule() ? "module" : "regular"));
         testNode.set("file", fileNode);
+
+        testNode.set("cached", nf.booleanNode(run.isCached()));
 
         if (!run.getAdditionalFiles().isEmpty()) {
             var additionalJsJson = nf.arrayNode();
@@ -230,6 +233,19 @@ public class BrowserRunner {
         }
 
         return !callbackWrapper.shouldRepeat;
+    }
+
+    public void cleanup() {
+        var ws = wsSessionQueue.peek();
+        if (ws == null) {
+            return;
+        }
+        var nf = objectMapper.getNodeFactory();
+        var node = nf.objectNode();
+        node.set("command", nf.textNode("cleanup"));
+
+        var message = node.toString();
+        ws.getRemote().sendStringByFuture(message);
     }
 
     class TestCodeServlet extends HttpServlet {

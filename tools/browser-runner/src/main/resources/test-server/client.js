@@ -46,10 +46,17 @@ function tryConnect() {
 function listen(ws) {
     ws.onmessage = (event) => {
         let request = JSON.parse(event.data);
-        if (logging) {
-            console.log("Request #" + request.id + " received");
+        switch (request.command) {
+            case "run":
+                if (logging) {
+                    console.log("Request #" + request.id + " received");
+                }
+                runTests(ws, request.id, request.tests, 0);
+                break;
+            case "cleanup":
+                cleanup();
+                break;
         }
-        runTests(ws, request.id, request.tests, 0);
     }
 }
 
@@ -71,97 +78,115 @@ function runTests(ws, suiteId, tests, index) {
     });
 }
 
-let lastDeobfuscator = null;
-let lastDeobfuscatorFile = null;
-let lastDeobfuscatorPromise = null;
+function cleanup() {
+    console.log("Cleanup: ", frames);
+    for (let key of Object.keys(frames)) {
+        let frame = frames[key];
+        document.body.removeChild(frame);
+    }
+    frames = {}
+    deobfuscators = {};
+}
+
+let deobfuscators = {};
+
 function runSingleTest(test, callback) {
     if (logging) {
         console.log("Running test " + test.name);
     }
     if (deobfuscation) {
         const fileName = test.file.path + ".teavmdbg";
-        if (lastDeobfuscatorFile === fileName) {
-            if (lastDeobfuscatorPromise === null) {
-                runSingleTestWithDeobfuscator(test, lastDeobfuscator, callback);
+        if (test.cached && fileName in deobfuscators) {
+            let deobfuscator = deobfuscators[fileName];
+            if (typeof deobfuscator.value === "undefined") {
+                runSingleTestWithDeobfuscator(test, deobfuscator.value, callback);
             } else {
-                lastDeobfuscatorPromise.then(value => {
+                deobfuscator.promise.then(value => {
                     runSingleTestWithDeobfuscator(test, value, callback);
-                })
+                });
             }
         } else {
-            lastDeobfuscatorFile = fileName;
-            lastDeobfuscator = null;
             const xhr = new XMLHttpRequest();
             xhr.responseType = "arraybuffer";
-            lastDeobfuscatorPromise = new Promise(resolve => {
+            let deobfuscator = {};
+            deobfuscator.promise = new Promise(resolve => {
                 xhr.onreadystatechange = () => {
                     if (xhr.readyState === 4) {
-                        const newDeobfuscator = xhr.status === 200
+                        deobfuscator.value = xhr.status === 200
                             ? createDeobfuscator(xhr.response, "http://localhost:{{PORT}}/" + test.file.path)
                             : null;
-                        if (lastDeobfuscatorFile === fileName) {
-                            lastDeobfuscator = newDeobfuscator;
-                            lastDeobfuscatorPromise = null;
-                        }
-                        resolve(newDeobfuscator);
-                        runSingleTestWithDeobfuscator(test, newDeobfuscator, callback);
+                        resolve(deobfuscator.value);
+                        runSingleTestWithDeobfuscator(test, deobfuscator.value, callback);
                     }
                 }
                 xhr.open("GET", fileName);
                 xhr.send();
             });
-
+            if (test.cached) {
+                deobfuscators[fileName] = deobfuscator;
+            }
         }
     } else {
         runSingleTestWithDeobfuscator(test, null, callback);
     }
 }
 
+let frames = {};
+
 function runSingleTestWithDeobfuscator(test, deobfuscator, callback) {
+    let key;
+    let frame;
+    let reused = true;
+    if (test.cached) {
+        key = JSON.stringify({
+            type: test.type,
+            file: test.file,
+            additionalFiles: test.additionalFiles
+        });
+        frame = frames[key];
+    }
+    if (!frame) {
+        reused = false;
+        frame = document.createElement("iframe");
+        document.body.appendChild(frame);
+        if (test.cached) {
+            frames[key] = frame;
+        }
+    }
+
     let listener = event => {
-        if (event.source !== lastIFrame.contentWindow) {
+        if (event.source !== frame.contentWindow) {
             return;
         }
         window.removeEventListener("message", listener);
+        if (!test.cached) {
+            document.body.removeChild(frame);
+        }
         callback(event.data);
     };
 
-    if (test.type === lastRequestType
-            && filesEqual(test.file, lastFile)
-            && arraysEqual(lastAdditionalFiles, test.additionalFiles, filesEqual)) {
-        console.log("Reusing last launcher");
+    if (reused) {
         window.addEventListener("message", listener);
-        lastIFrame.contentWindow.postMessage({ type: "REPEAT", argument: test.argument }, "*");
+        frame.contentWindow.postMessage({ type: "REPEAT", argument: test.argument }, "*");
         return;
     }
 
-    if (lastIFrame !== null) {
-        document.body.removeChild(lastIFrame);
-    }
-    console.log(test);
-    lastRequestType = test.type;
-    lastFile = test.file;
-    lastAdditionalFiles = test.additionalFiles;
-
-    let iframe = document.createElement("iframe");
-    lastIFrame = iframe;
-    document.body.appendChild(iframe);
     let handshakeListener = handshakeEvent => {
-        if (handshakeEvent.source !== iframe.contentWindow || handshakeEvent.data !== "ready") {
+        if (handshakeEvent.source !== frame.contentWindow || handshakeEvent.data !== "ready") {
             return;
         }
         window.removeEventListener("message", handshakeListener);
 
         window.addEventListener("message", listener);
 
-        iframe.contentWindow.$rt_decodeStack = deobfuscator != null
+        frame.contentWindow.$rt_decodeStack = deobfuscator != null
             ? deobfuscator.deobfuscate.bind(deobfuscator)
             : null;
-        iframe.contentWindow.postMessage(test, "*");
+        frame.contentWindow.postMessage(test, "*");
     };
     window.addEventListener("message", handshakeListener);
-    iframe.src = "about:blank";
-    iframe.src = "frame.html";
+    frame.src = "about:blank";
+    frame.src = "frame.html";
 }
 
 function arraysEqual(a, b) {
@@ -188,10 +213,3 @@ function filesEqual(a, b) {
     }
     return a.type === b.type && a.path === b.path;
 }
-
-let lastRequestType = null;
-let lastAdditionalFiles = null;
-let lastFiles = [];
-let lastFile = null;
-let lastIFrame = null;
-let frameCallback = null;

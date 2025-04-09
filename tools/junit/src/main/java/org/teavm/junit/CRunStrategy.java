@@ -41,7 +41,7 @@ class CRunStrategy implements TestRunStrategy {
                 exeName += ".exe";
             }
 
-            var sourcesDir = new File(run.getBaseDirectory(), run.getFileName());
+            var sourcesDir = new File(run.getGroup().getBaseDirectory(), run.getGroup().getFileName());
             var outputFile = new File(sourcesDir, exeName);
             var compilerSuccess = compile(sourcesDir);
             if (!compilerSuccess) {
@@ -149,6 +149,10 @@ class CRunStrategy implements TestRunStrategy {
         boolean result = process.waitFor() == 0;
         output.addAll(lines);
         return result;
+    }
+
+    @Override
+    public void cleanup() {
     }
 
     static class Compilation {

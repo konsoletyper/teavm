@@ -170,7 +170,7 @@ public class ExportTest {
             }
 
             var descriptor = new BrowserRunDescriptor(name, "tests/" + name + "/runner.js", true,
-                    List.of("resources/org/teavm/jso/export/assert.js"), null);
+                    List.of("resources/org/teavm/jso/export/assert.js"), null, false);
             jsRunner.runTest(descriptor);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -219,7 +219,7 @@ public class ExportTest {
             }
 
             var descriptor = new BrowserRunDescriptor(name, "tests/" + name + "/runner.js", true,
-                    List.of("resources/org/teavm/jso/export/assert.js"), null);
+                    List.of("resources/org/teavm/jso/export/assert.js"), null, false);
             wasmGCRunner.runTest(descriptor);
         } catch (IOException e) {
             throw new RuntimeException(e);

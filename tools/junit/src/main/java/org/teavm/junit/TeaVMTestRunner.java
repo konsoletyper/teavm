@@ -16,7 +16,6 @@
 package org.teavm.junit;
 
 import static org.teavm.junit.PropertyNames.PATH_PARAM;
-import static org.teavm.junit.TestUtil.getOutputFile;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -34,6 +33,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -90,7 +90,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private static Map<TestPlatform, TestRunStrategy> runners = new HashMap<>();
     private List<Method> filteredChildren;
     private static ReferenceCache referenceCache = new ReferenceCache();
-    private boolean classCompilationOk;
     private List<TestRun> runsInCurrentClass = new ArrayList<>();
     private static List<TestPlatformSupport<?>> platforms = new ArrayList<>();
     private List<TestPlatformSupport<?>> participatingPlatforms = new ArrayList<>();
@@ -161,16 +160,83 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         notifier.fireTestStarted(description);
         isWholeClassCompilation = !testClass.isAnnotationPresent(EachTestCompiledSeparately.class);
         if (isWholeClassCompilation) {
-            classCompilationOk = compileWholeClass(children, notifier);
-        }
-        for (Method child : children) {
-            runChild(child, notifier);
+            runWithWholeClassCompilation(children, notifier);
+        } else {
+            for (Method child : children) {
+                runChild(child, notifier);
+            }
         }
 
         writeRunsDescriptor();
         runsInCurrentClass.clear();
 
         notifier.fireTestFinished(description);
+    }
+
+    private void runWithWholeClassCompilation(List<Method> children, RunNotifier notifier) {
+        var tests = compileWholeClass(children, notifier);
+        if (tests == null) {
+            failAllClasses(children, notifier);
+            return;
+        }
+
+        var skipJvmForClass = !testClass.isAnnotationPresent(SkipJVM.class);
+
+        for (var child : children) {
+            var description = describeChild(child);
+            notifier.fireTestStarted(description);
+
+            if (isIgnored(child)) {
+                notifier.fireTestIgnored(description);
+            } else {
+                var success = true;
+                if (skipJvmForClass && !child.isAnnotationPresent(SkipJVM.class)) {
+                    ClassHolder classHolder = classSource.get(child.getDeclaringClass().getName());
+                    MethodHolder methodHolder = classHolder.getMethod(getDescriptor(child));
+                    success = runInJvm(child, notifier, getExpectedExceptions(methodHolder));
+                }
+
+                if (success) {
+                    for (var testForPlatform : tests) {
+                        var runs = testForPlatform.runs.get(child);
+                        if (runs != null) {
+                            for (var run : runs) {
+                                try {
+                                    submitRun(run);
+                                } catch (Throwable e) {
+                                    notifier.fireTestFailure(new Failure(description, e));
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            notifier.fireTestFinished(description);
+        }
+
+        for (var testsForPlatform : tests) {
+            var runner = runners.get(testsForPlatform.platform.getPlatform());
+            runner.cleanup();
+        }
+    }
+
+    private void failAllClasses(List<Method> children, RunNotifier notifier) {
+        for (var child : children) {
+            var description = describeChild(child);
+            notifier.fireTestStarted(description);
+
+            if (isIgnored(child)) {
+                notifier.fireTestIgnored(description);
+                return;
+            } else {
+                notifier.fireTestFailure(new Failure(description,
+                        new AssertionError("Could not compile test class")));
+            }
+
+            notifier.fireTestFinished(description);
+        }
     }
 
     private List<Method> getChildren() {
@@ -216,34 +282,55 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 method.getName()));
     }
 
-    private boolean compileWholeClass(List<Method> children, RunNotifier notifier) {
-        Description description = getDescription();
+    private List<PlatformClassTests> compileWholeClass(List<Method> children, RunNotifier notifier) {
+        var description = getDescription();
 
+        var result = new ArrayList<PlatformClassTests>();
         for (var platformSupport : participatingPlatforms) {
-            if (!compileClassForPlatform(platformSupport, children, description, notifier)) {
-                return false;
+            var item = compileClassForPlatform(platformSupport, children, testClass, description, notifier);
+            if (item == null) {
+                return null;
+            }
+            if (item.platform != null) {
+                result.add(item);
             }
         }
-        return true;
+
+        return result;
     }
 
     @SuppressWarnings("unchecked")
-    private boolean compileClassForPlatform(TestPlatformSupport<?> platform, List<Method> children,
-            Description description, RunNotifier notifier) {
+    private PlatformClassTests compileClassForPlatform(TestPlatformSupport<?> platform, List<Method> children,
+            Class<?> cls, Description description, RunNotifier notifier) {
+        var platformClassTests = new PlatformClassTests();
+        var isModule = cls.isAnnotationPresent(JsModuleTest.class);
         if (platform.isEnabled() && hasChildrenToRun(children, platform.getPlatform())) {
+            platformClassTests.platform = platform;
+            var path = getOutputPathForClass(platform);
             for (var configuration : platform.getConfigurations()) {
-                var path = getOutputPathForClass(platform);
                 var castPlatform = (TestPlatformSupport<TeaVMTarget>) platform;
                 var castConfiguration = (TeaVMTestConfiguration<TeaVMTarget>) configuration;
-                var result = castPlatform.compile(wholeClass(children, platform.getPlatform()), "classTest",
-                        castConfiguration, path, testClass);
+                var runs = new ArrayList<TestRun>();
+                var result = castPlatform.compile(wholeClass(children, platform.getPlatform(), configuration, runs),
+                        "classTest", castConfiguration, path, testClass);
                 if (!result.success) {
                     notifier.fireTestFailure(createFailure(description, result));
-                    return false;
+                    return null;
                 }
+                var group = new TestRunGroup(path, result.file.getName(), platform.getPlatform(), isModule);
+                for (var run : runs) {
+                    run.group = group;
+                    platformClassTests.runs.computeIfAbsent(run.getMethod(), m -> new ArrayList<>()).add(run);
+                    platform.additionalOutput(path, new File(path, run.getMethod().getName()),
+                            configuration, MethodReference.parse(run.getArgument()));
+                }
+                platform.additionalOutput(path, configuration);
+            }
+            for (var method : platformClassTests.runs.keySet()) {
+                platform.additionalOutputForAllConfigurations(path, method);
             }
         }
-        return true;
+        return platformClassTests;
     }
 
     private boolean isPlatformPresent(AnnotatedElement declaration, TestPlatform platform) {
@@ -306,16 +393,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             List<TestRun> runs = new ArrayList<>();
 
             try {
-                if (isWholeClassCompilation) {
-                    if (!classCompilationOk) {
-                        notifier.fireTestFailure(new Failure(description,
-                                new AssertionError("Could not compile test class")));
-                    } else {
-                        prepareTestsFromWholeClass(child, runs);
-                    }
-                } else {
-                    prepareCompiledTest(child, notifier, runs);
-                }
+                prepareCompiledTest(child, notifier, runs);
 
                 for (var run : runs) {
                     try {
@@ -325,6 +403,11 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                         break;
                     }
                 }
+
+                for (var run : runs) {
+                    var strategy = runners.get(run.getGroup().getKind());
+                    strategy.cleanup();
+                }
             } finally {
                 notifier.fireTestFinished(description);
             }
@@ -333,26 +416,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 notifier.fireTestIgnored(description);
             }
             notifier.fireTestFinished(description);
-        }
-    }
-
-    private void prepareTestsFromWholeClass(Method child, List<TestRun> runs) {
-        MethodDescriptor descriptor = getDescriptor(child);
-        MethodReference reference = new MethodReference(child.getDeclaringClass().getName(), descriptor);
-
-        for (var platform : participatingPlatforms) {
-            if (platform.isEnabled() && shouldRunChild(child, platform.getPlatform())) {
-                var outputPath = getOutputPathForClass(platform);
-                var outputPathForMethod = getOutputPath(child, platform);
-                for (var configuration : platform.getConfigurations()) {
-                    var testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), false,
-                            platform.getExtension());
-                    runs.add(createTestRun(configuration, testPath, child, platform.getPlatform(),
-                            reference.toString(), isModule(child)));
-                    platform.additionalOutput(outputPath, outputPathForMethod, configuration, reference);
-                }
-                platform.additionalOutputForAllConfigurations(outputPath, child);
-            }
         }
     }
 
@@ -716,7 +779,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             return null;
         }
 
-        return createTestRun(configuration, result.file, child, kind, null, isModule(child));
+        return createTestRun(configuration, result.file, child, kind, isModule(child));
     }
 
     private boolean isModule(Method method) {
@@ -725,9 +788,10 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     }
 
     private TestRun createTestRun(TeaVMTestConfiguration<?> configuration, File file, Method child, TestPlatform kind,
-            String argument, boolean module) {
-        return new TestRun(generateName(child.getName(), configuration), file.getParentFile(), child,
-                file.getName(), kind, argument, module);
+             boolean module) {
+        var run = new TestRun(generateName(child.getName(), configuration), child, null);
+        run.group = new TestRunGroup(file.getParentFile(), file.getName(), kind, module);
+        return run;
     }
 
     private String generateName(String baseName, TeaVMTestConfiguration<?> configuration) {
@@ -748,7 +812,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private void submitRun(TestRun run) throws IOException {
         runsInCurrentClass.add(run);
-        var strategy = runners.get(run.getKind());
+        var strategy = runners.get(run.getGroup().getKind());
         if (strategy == null) {
             return;
         }
@@ -783,7 +847,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         };
     }
 
-    private Consumer<TeaVM> wholeClass(List<Method> methods, TestPlatform platform) {
+    private Consumer<TeaVM> wholeClass(List<Method> methods, TestPlatform platform,
+            TeaVMTestConfiguration<?> configuration, List<TestRun> runs) {
         return vm -> {
             Properties properties = new Properties();
             applyProperties(testClass, properties);
@@ -796,6 +861,9 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 ClassHolder classHolder = classSource.get(method.getDeclaringClass().getName());
                 MethodHolder methodHolder = classHolder.getMethod(getDescriptor(method));
                 methodReferences.add(methodHolder.getReference());
+                var run = new TestRun(generateName(method.getName(), configuration), method,
+                        methodHolder.getReference().toString());
+                runs.add(run);
             }
             new TestEntryPointTransformerForWholeClass(methodReferences, testClass.getName()).install(vm);
         };
@@ -875,7 +943,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     }
 
     private void writeRunsDescriptor(TestPlatformSupport<?> platform) {
-        var runs = runsInCurrentClass.stream().filter(run -> run.getKind() == platform.getPlatform())
+        var runs = runsInCurrentClass.stream().filter(run -> run.getGroup().getKind() == platform.getPlatform())
                 .collect(Collectors.toList());
         if (runs.isEmpty()) {
             return;
@@ -896,12 +964,12 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 first = false;
                 writer.write("  {\n");
                 writer.write("    \"baseDir\": ");
-                writeJsonString(writer, run.getBaseDirectory().getAbsolutePath().replace('\\', '/'));
+                writeJsonString(writer, run.getGroup().getBaseDirectory().getAbsolutePath().replace('\\', '/'));
                 writer.write(",\n");
                 writer.write("    \"fileName\": ");
-                writeJsonString(writer, run.getFileName());
+                writeJsonString(writer, run.getGroup().getFileName());
                 writer.write(",\n");
-                writer.write("    \"kind\": \"" + run.getKind().name() + "\"");
+                writer.write("    \"kind\": \"" + run.getGroup().getKind().name() + "\"");
                 if (run.getArgument() != null) {
                     writer.write(",\n");
                     writer.write("    \"argument\": ");
@@ -960,5 +1028,10 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private static char hex(int digit) {
         return (char) (digit < 10 ? '0' + digit : 'A' + digit - 10);
+    }
+
+    private static class PlatformClassTests {
+        TestPlatformSupport<?> platform;
+        LinkedHashMap<Method, List<TestRun>> runs = new LinkedHashMap<>();
     }
 }

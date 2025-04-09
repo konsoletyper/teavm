@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 /*
  *  Copyright 2023 Alexey Andreev.
  *
@@ -58,6 +60,12 @@ tasks {
         exclude("**/UnicodeData.txt")
         exclude("**/iso*.xml")
         exclude("**/iso*.csv")
+    }
+    withType<ShadowJar> {
+        //dependsOn(generateTzCache)
+        //from(generatedClassesDir)
+        exclude("html/**")
+        //exclude("org/teavm/classlib/impl/tz/tzdata*.zip")
     }
 }
 

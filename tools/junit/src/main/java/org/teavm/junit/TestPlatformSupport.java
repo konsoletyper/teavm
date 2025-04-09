@@ -152,6 +152,9 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
         return sb.toString();
     }
 
+    void additionalOutput(File outputPath, TeaVMTestConfiguration<?> configuration) {
+    }
+
     void additionalOutput(File outputPath, File outputPathForMethod, TeaVMTestConfiguration<?> configuration,
             MethodReference reference) {
     }
