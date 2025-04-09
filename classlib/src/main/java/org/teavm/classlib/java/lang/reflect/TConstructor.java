@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang.reflect;
 
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.classlib.impl.reflection.Converter;
 import org.teavm.classlib.impl.reflection.Flags;
 import org.teavm.classlib.impl.reflection.MethodCaller;
 import org.teavm.classlib.java.lang.TClass;
@@ -112,7 +113,7 @@ public class TConstructor<T> extends TAccessibleObject implements TMember {
         }
 
         if (PlatformDetector.isJavaScript()) {
-            var instance = declaringClass.newEmptyInstance();
+            var instance = Converter.toJava(declaringClass.newEmptyInstance());
             caller.call(instance, initargs);
             return (T) instance;
         } else {

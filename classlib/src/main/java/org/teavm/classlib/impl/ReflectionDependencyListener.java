@@ -25,6 +25,9 @@ import java.util.Map;
 import java.util.Set;
 import org.teavm.classlib.ReflectionContext;
 import org.teavm.classlib.ReflectionSupplier;
+import org.teavm.classlib.impl.reflection.ClassList;
+import org.teavm.classlib.impl.reflection.FieldInfo;
+import org.teavm.classlib.impl.reflection.MethodInfo;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyNode;
@@ -96,6 +99,18 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 .getValue();
         methodParamTypes.getArrayItem().propagate(agent.getType("java.lang.Class"));
         typesInReflectableSignaturesNode.connect(methodParamTypes.getArrayItem().getClassValueNode());
+
+        agent.linkMethod(new MethodReference(FieldInfo.class, "name", String.class)).getResult()
+                .propagate(agent.getType("java.lang.String"));
+        agent.linkMethod(new MethodReference(FieldInfo.class, "type", Class.class)).getResult()
+                .propagate(agent.getType("java.lang.Class"));
+
+        agent.linkMethod(new MethodReference(MethodInfo.class, "name", String.class)).getResult()
+                .propagate(agent.getType("java.lang.String"));
+        agent.linkMethod(new MethodReference(MethodInfo.class, "returnType", Class.class)).getResult()
+                .propagate(agent.getType("java.lang.Class"));
+        agent.linkMethod(new MethodReference(ClassList.class, "get", int.class, Class.class)).getResult()
+                .propagate(agent.getType("java.lang.Class"));
     }
 
     public boolean isGetReached() {
