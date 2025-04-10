@@ -20,6 +20,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
@@ -115,6 +116,23 @@ public class VMTest {
             wasCaught = true;
         }
         assertTrue(wasCaught);
+    }
+
+    @Test
+    public void tryCatchInCatch() {
+        var list = new ArrayList<String>();
+        try {
+            list.add("1");
+            throw new RuntimeException();
+        } catch (Throwable t) {
+            try {
+                list.add("2");
+                throw new RuntimeException();
+            } catch (Throwable t2) {
+                list.add("3");
+            }
+        }
+        assertEquals(List.of("1", "2", "3"), list);
     }
 
     @Test
