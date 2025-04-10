@@ -54,13 +54,25 @@ public class TimeZoneCache {
                 result.put(id, StorableDateTimeZone.read(id, data));
             }
         }
+        var unresolvedAliases = new HashMap<AliasDateTimeZone, String>();
         for (String aliasLine : aliasLines) {
             int index = aliasLine.indexOf(' ');
             String id = aliasLine.substring(0, index);
             String data = aliasLine.substring(index + 1);
             CharFlow flow = new CharFlow(data.toCharArray());
             Base46.decode(flow);
-            result.put(id, new AliasDateTimeZone(id, result.get(data.substring(flow.pointer))));
+            var targetId = data.substring(flow.pointer);
+            var tz = new AliasDateTimeZone(id, result.get(targetId));
+            result.put(id, tz);
+            if (tz.innerZone == null) {
+                unresolvedAliases.put(tz, targetId);
+            }
+        }
+        for (var alias : unresolvedAliases.entrySet()) {
+            alias.getKey().innerZone = result.get(alias.getValue());
+            if (alias.getKey().innerZone == null) {
+                alias.getKey().innerZone = new FixedDateTimeZone(alias.getValue(), 0, 0);
+            }
         }
         return result;
     }

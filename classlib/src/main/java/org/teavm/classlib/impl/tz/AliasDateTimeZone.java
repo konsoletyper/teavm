@@ -19,7 +19,7 @@ import java.time.zone.ZoneRules;
 import org.teavm.classlib.impl.Base46;
 
 public class AliasDateTimeZone extends StorableDateTimeZone {
-    private DateTimeZone innerZone;
+    DateTimeZone innerZone;
 
     public AliasDateTimeZone(String id, DateTimeZone innerZone) {
         super(id);

@@ -62,10 +62,10 @@ tasks {
         exclude("**/iso*.csv")
     }
     withType<ShadowJar> {
-        //dependsOn(generateTzCache)
-        //from(generatedClassesDir)
+        dependsOn(generateTzCache)
+        from(generatedClassesDir)
         exclude("html/**")
-        //exclude("org/teavm/classlib/impl/tz/tzdata*.zip")
+        exclude("org/teavm/classlib/impl/tz/tzdata*.zip")
     }
 }
 
