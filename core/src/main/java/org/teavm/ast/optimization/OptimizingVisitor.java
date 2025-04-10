@@ -853,8 +853,8 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private boolean briefStatementComparison(List<Statement> firstSeq, List<Statement> secondSeq) {
-        if (firstSeq.isEmpty() && secondSeq.isEmpty()) {
-            return true;
+        if (firstSeq.isEmpty() || secondSeq.isEmpty()) {
+            return false;
         }
         if (firstSeq.size() != 1 || secondSeq.size() != 1) {
             return false;
