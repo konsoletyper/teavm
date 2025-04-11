@@ -95,6 +95,6 @@ tasks.test {
             .map { it.asFile.absolutePath }
             .joinToString(File.pathSeparator))
 
-    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() * 2 / 3).coerceAtLeast(1)
     maxHeapSize = "800m"
 }
