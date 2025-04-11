@@ -342,6 +342,7 @@ public class JCLPlugin implements TeaVMPlugin {
                 Object.class), intrinsics);
 
         wasmGCHost.addIntrinsic(new MethodReference(Class.class, "createMetadata", void.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(Class.class, "newInstanceImpl", Object.class), intrinsics);
     }
 
     @PlatformMarker

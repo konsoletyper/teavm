@@ -97,6 +97,7 @@ import org.teavm.backend.wasm.model.expression.WasmTest;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.backend.wasm.runtime.StringInternPool;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ElementModifier;
@@ -1015,6 +1016,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         @Override
         public ClassInitializerInfo classInitInfo() {
             return context.classInitInfo();
+        }
+
+        @Override
+        public DependencyInfo dependency() {
+            return context.dependency();
         }
 
         @Override

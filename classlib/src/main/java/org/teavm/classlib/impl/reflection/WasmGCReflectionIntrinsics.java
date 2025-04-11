@@ -17,6 +17,7 @@ package org.teavm.classlib.impl.reflection;
 
 import java.util.ArrayList;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfo;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCReflectionProvider;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
@@ -28,6 +29,8 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewFixed;
+import org.teavm.backend.wasm.model.expression.WasmBlock;
+import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
@@ -36,6 +39,8 @@ import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
+import org.teavm.backend.wasm.model.expression.WasmNullBranch;
+import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
@@ -48,6 +53,7 @@ import org.teavm.classlib.impl.ReflectionDependencyListener;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -168,7 +174,30 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 return new WasmCallReference(fn, type, instanceArg, paramsArg);
             }
             case "java.lang.Class":
-                return new WasmCall(getInitReflectionFunction(context));
+                switch (invocation.getMethod().getName()) {
+                    case "createMetadata":
+                        return new WasmCall(getInitReflectionFunction(context));
+                    case "newInstanceImpl": {
+                        var classClass = context.classInfoProvider().getClassInfo("java.lang.Class");
+                        var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");
+                        var functionType = context.functionTypes().of(objectClass.getType());
+                        var arg = context.generate(invocation.getArguments().get(0));
+                        var instantiator = new WasmStructGet(classClass.getStructure(), arg,
+                                context.classInfoProvider().getClassInstantiatorOffset());
+                        var outerBlock = new WasmBlock(false);
+                        outerBlock.setType(objectClass.getType());
+                        var innerBlock = new WasmBlock(false);
+                        innerBlock.setType(functionType.getReference());
+                        var nullBranch = new WasmNullBranch(WasmNullCondition.NOT_NULL, instantiator, innerBlock);
+                        innerBlock.getBody().add(nullBranch);
+                        var br = new WasmBreak(outerBlock);
+                        br.setResult(new WasmNullConstant(objectClass.getType()));
+                        innerBlock.getBody().add(br);
+                        outerBlock.getBody().add(new WasmCallReference(innerBlock, functionType));
+                        return outerBlock;
+                    }
+                }
+                break;
         }
         throw new IllegalArgumentException();
     }
@@ -192,6 +221,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
             context.module().functions.add(initReflectionFunction);
             initReflectionFields(context, initReflectionFunction);
             initReflectionMethods(context, initReflectionFunction);
+            initReflectionInstantiator(context, initReflectionFunction);
         }
         return initReflectionFunction;
     }
@@ -320,6 +350,45 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
         }
     }
 
+    private void initReflectionInstantiator(WasmGCIntrinsicContext context, WasmFunction function) {
+        var dep = context.dependency().getMethod(new MethodReference(Class.class, "newInstance", Object.class));
+        if (dep == null || !dep.isUsed()) {
+            return;
+        }
+        var node = dep.getVariable(0).getClassValueNode();
+        if (node == null) {
+            return;
+        }
+
+        var classClass = context.classInfoProvider().getClassInfo("java.lang.Class");
+        for (var type : node.getTypes()) {
+            if (type.startsWith("~") || type.startsWith("!")) {
+                continue;
+            }
+            var cls = context.hierarchy().getClassSource().get(type);
+            if (cls == null) {
+                continue;
+            }
+            if (cls.hasModifier(ElementModifier.ABSTRACT)) {
+                continue;
+            }
+            var method = cls.getMethod(new MethodDescriptor("<init>", void.class));
+            if (method == null || (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE))) {
+                continue;
+            }
+
+            var classInfo = context.classInfoProvider().getClassInfo(cls.getName());
+            var instantiator = generateInstantiator(context, method);
+
+            function.getBody().add(new WasmStructSet(
+                    classClass.getStructure(),
+                    new WasmGetGlobal(classInfo.getPointer()),
+                            context.classInfoProvider().getClassInstantiatorOffset(),
+                    new WasmFunctionReference(instantiator)
+            ));
+        }
+    }
+
     private WasmFunction generateGetter(WasmGCIntrinsicContext context, FieldReader field) {
         var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");
         var getterType = context.functionTypes().of(objectClass.getType(), objectClass.getType());
@@ -386,12 +455,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
         var value = unboxIfNecessary(context, new WasmGetLocal(valueVar), field.getType());
         var classInfo = context.classInfoProvider().getClassInfo(field.getOwnerName());
         if (field.hasModifier(ElementModifier.STATIC)) {
-            if (context.classInitInfo().isDynamicInitializer(field.getOwnerName())
-                    && classInfo.getInitializerPointer() != null) {
-                var initRef = new WasmGetGlobal(classInfo.getInitializerPointer());
-                var initType = context.functionTypes().of(null);
-                function.getBody().add(new WasmCallReference(initRef, initType));
-            }
+            initClass(context, classInfo, field.getOwnerName(), function);
             var global = context.classInfoProvider().getStaticFieldLocation(field.getReference());
             function.getBody().add(new WasmSetGlobal(global, value));
         } else {
@@ -434,12 +498,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
         var args = new ArrayList<WasmExpression>();
         WasmFunction callee;
         if (method.hasModifier(ElementModifier.STATIC)) {
-            if (context.classInitInfo().isDynamicInitializer(method.getOwnerName())
-                    && classInfo.getInitializerPointer() != null) {
-                var initRef = new WasmGetGlobal(classInfo.getInitializerPointer());
-                var initType = context.functionTypes().of(null);
-                function.getBody().add(new WasmCallReference(initRef, initType));
-            }
+            initClass(context, classInfo, method.getOwnerName(), function);
             callee = context.functions().forStaticMethod(method.getReference());
         } else {
             if (method.getName().equals("<init>")) {
@@ -479,6 +538,46 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
         }
 
         return function;
+    }
+
+    private WasmFunction generateInstantiator(WasmGCIntrinsicContext context, MethodReader method) {
+        var className = method.getOwnerName();
+        var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");
+        var instantiatorType = context.functionTypes().of(objectClass.getType());
+
+        var instantiator = new WasmFunction(instantiatorType);
+        instantiator.setName(context.names().topLevel(className + "@instantiate"));
+        instantiator.setReferenced(true);
+        context.module().functions.add(instantiator);
+
+        var classInfo = context.classInfoProvider().getClassInfo(className);
+        var localVar = new WasmLocal(classInfo.getType(), "instance");
+        instantiator.add(localVar);
+
+        initClass(context, classInfo, method.getOwnerName(), instantiator);
+
+        instantiator.getBody().add(new WasmSetLocal(localVar, new WasmStructNewDefault(classInfo.getStructure())));
+        instantiator.getBody().add(new WasmStructSet(
+                objectClass.getStructure(),
+                new WasmGetLocal(localVar),
+                WasmGCClassInfoProvider.VT_FIELD_OFFSET,
+                new WasmGetGlobal(classInfo.getVirtualTablePointer())
+        ));
+        instantiator.getBody().add(new WasmCall(context.functions().forInstanceMethod(method.getReference()),
+                new WasmGetLocal(localVar)));
+        instantiator.getBody().add(new WasmGetLocal(localVar));
+
+        return instantiator;
+    }
+
+    private void initClass(WasmGCIntrinsicContext context, WasmGCClassInfo classInfo, String className,
+            WasmFunction function) {
+        if (context.classInitInfo().isDynamicInitializer(className)
+                && classInfo.getInitializerPointer() != null) {
+            var initRef = new WasmGetGlobal(classInfo.getInitializerPointer());
+            var initType = context.functionTypes().of(null);
+            function.getBody().add(new WasmCallReference(initRef, initType));
+        }
     }
 
     private WasmExpression boxIfNecessary(WasmGCIntrinsicContext context, WasmExpression expr, ValueType type) {

@@ -115,6 +115,19 @@ public class ClassTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    public void instanceCreatedThroughReflectionWithClassInstance() throws Exception {
+        var instance = (Runnable) getTestClass(true).newInstance();
+        instance.run();
+        assertEquals(TestObject.class, instance.getClass());
+        assertEquals(1, ((TestObject) instance).getCounter());
+    }
+
+    private Class<?> getTestClass(boolean isTestObject) {
+        return isTestObject ? TestObject.class : Object.class;
+    }
+
+    @Test
     @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC})
     public void instanceCreatedThroughReflection() throws Exception {
         Runnable instance = (Runnable) Class.forName(TestObject.class.getName()).newInstance();

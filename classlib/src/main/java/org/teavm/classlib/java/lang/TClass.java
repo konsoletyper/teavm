@@ -839,12 +839,20 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
 
     @SuppressWarnings({ "unchecked", "unused" })
     public T newInstance() throws TInstantiationException, TIllegalAccessException {
-        Object instance = Platform.newInstance(platformClass);
+        Object instance;
+        if (PlatformDetector.isJavaScript()) {
+            instance = Platform.newInstance(platformClass);
+        } else {
+            initReflection();
+            instance = newInstanceImpl();
+        }
         if (instance == null) {
             throw new TInstantiationException();
         }
         return (T) instance;
     }
+
+    private native Object newInstanceImpl();
 
     public TClass<?> getDeclaringClass() {
         PlatformClass result = Platform.getDeclaringClass(getPlatformClass());

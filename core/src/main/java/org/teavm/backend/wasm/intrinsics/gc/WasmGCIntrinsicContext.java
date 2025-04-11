@@ -30,6 +30,7 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.MethodReference;
@@ -71,6 +72,8 @@ public interface WasmGCIntrinsicContext {
     MethodReference currentMethod();
 
     ClassInitializerInfo classInitInfo();
+
+    DependencyInfo dependency();
 
     void addToInitializer(Consumer<WasmFunction> initializerContributor);
 }

@@ -218,6 +218,11 @@ public class ClassMetadataRequirements {
         if (getConstructors != null && getConstructors.isUsed()) {
             hasGetMethods = true;
         }
+
+        var newInstance = dependencyInfo.getMethod(new MethodReference(Class.class, "newInstance", Object.class));
+        if (newInstance != null && newInstance.isUsed()) {
+            hasNewInstance = true;
+        }
     }
 
     public Info getInfo(String className) {
@@ -290,6 +295,10 @@ public class ClassMetadataRequirements {
 
     public boolean hasGetMethods() {
         return hasGetMethods;
+    }
+
+    public boolean hasNewInstance() {
+        return hasNewInstance;
     }
 
     private void addClassesRequiringName(Map<ValueType, ClassInfo> target, String[] source) {

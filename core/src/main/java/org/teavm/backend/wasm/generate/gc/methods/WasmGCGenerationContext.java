@@ -37,6 +37,7 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
@@ -71,6 +72,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private Consumer<WasmGCInitializerContributor> initializerContributors;
     private Diagnostics diagnostics;
     private ClassInitializerInfo classInitInfo;
+    private DependencyInfo dependency;
 
     public WasmGCGenerationContext(WasmModule module, WasmGCVirtualTableProvider virtualTables,
             WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes, ListableClassReaderSource classes,
@@ -80,7 +82,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
             WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics,
             WasmGCNameProvider names, boolean strict, String entryPoint,
             Consumer<WasmGCInitializerContributor> initializerContributors,
-            Diagnostics diagnostics, ClassInitializerInfo classInitInfo) {
+            Diagnostics diagnostics, ClassInitializerInfo classInitInfo, DependencyInfo dependency) {
         this.module = module;
         this.virtualTables = virtualTables;
         this.typeMapper = typeMapper;
@@ -101,6 +103,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         this.initializerContributors = initializerContributors;
         this.diagnostics = diagnostics;
         this.classInitInfo = classInitInfo;
+        this.dependency = dependency;
     }
 
     public WasmGCClassInfoProvider classInfoProvider() {
@@ -215,6 +218,10 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
 
     public ClassInitializerInfo classInitInfo() {
         return classInitInfo;
+    }
+
+    public DependencyInfo dependency() {
+        return dependency;
     }
 
     public Collection<String> getInterfaceImplementors(String className) {

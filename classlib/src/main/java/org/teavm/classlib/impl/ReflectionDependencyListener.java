@@ -62,6 +62,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             Method[].class);
     private MethodReference forName = new MethodReference(Class.class, "forName", String.class, Boolean.class,
             ClassLoader.class, Class.class);
+    private MethodReference classNewInstance = new MethodReference(Class.class, "newInstance", Object.class);
     private MethodReference forNameShort = new MethodReference(Class.class, "forName", String.class, Class.class);
     private MethodReference fieldGetType = new MethodReference(Field.class, "getType", Class.class);
     private MethodReference fieldGetName = new MethodReference(Field.class, "getName", String.class);
@@ -154,6 +155,8 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             handleFieldSet(agent, method);
         } else if (method.getReference().equals(newInstance)) {
             handleNewInstance(agent, method);
+        } else if (method.getReference().equals(classNewInstance)) {
+            handleClassNewInstance(agent, method);
         } else if (method.getReference().equals(invokeMethod)) {
             handleInvoke(agent, method);
         } else if (method.getReference().equals(getFields)) {
@@ -296,6 +299,33 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 calledMethodDep.getVariable(0).propagate(reflectedType);
                 linkClassIfNecessary(agent, calledMethod, location);
             }
+
+            method.getResult().propagate(reflectedType);
+        });
+    }
+
+    private void handleClassNewInstance(DependencyAgent agent, MethodDependency method) {
+        var location = new CallLocation(method.getReference());
+
+        var classValueNode = method.getVariable(0).getClassValueNode();
+        classValueNode.addConsumer(reflectedType -> {
+            if (reflectedType.getName().startsWith("[") || reflectedType.getName().startsWith("~")) {
+                return;
+            }
+
+            ClassReader cls = agent.getClassSource().get(reflectedType.getName());
+            if (cls == null || cls.hasModifier(ElementModifier.ABSTRACT)
+                    || cls.hasModifier(ElementModifier.INTERFACE)) {
+                return;
+            }
+
+            var constructor = cls.getMethod(new MethodDescriptor("<init>", void.class));
+            if (constructor == null || constructor.getProgram() == null) {
+                return;
+            }
+            var constructorDep = agent.linkMethod(constructor.getReference()).addLocation(location);
+            constructorDep.getVariable(0).propagate(reflectedType);
+            constructorDep.use();
 
             method.getResult().propagate(reflectedType);
         });

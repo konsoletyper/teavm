@@ -83,6 +83,8 @@ public interface WasmGCClassInfoProvider {
 
     int getClassMethodsOffset();
 
+    int getClassInstantiatorOffset();
+
     int getArrayGetOffset();
 
     int getArrayLengthOffset();

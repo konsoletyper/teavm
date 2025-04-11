@@ -50,6 +50,7 @@ import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Import;
 import org.teavm.model.CallLocation;
@@ -99,6 +100,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private String entryPoint;
     private Consumer<WasmGCInitializerContributor> initializerContributors;
     private boolean compactMode;
+    private DependencyInfo dependency;
 
     public WasmGCMethodGenerator(
             WasmModule module,
@@ -112,6 +114,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             Diagnostics diagnostics,
             WasmGCCustomGeneratorProvider customGenerators,
             WasmGCIntrinsicProvider intrinsics,
+            DependencyInfo dependency,
             boolean strict,
             String entryPoint,
             Consumer<WasmGCInitializerContributor> initializerContributors
@@ -127,6 +130,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         this.diagnostics = diagnostics;
         this.customGenerators = customGenerators;
         this.intrinsics = intrinsics;
+        this.dependency = dependency;
         this.strict = strict;
         this.entryPoint = entryPoint;
         this.initializerContributors = initializerContributors;
@@ -466,7 +470,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                     entryPoint,
                     initializerContributors,
                     diagnostics,
-                    classInitInfo
+                    classInitInfo,
+                    dependency
             );
         }
         return context;

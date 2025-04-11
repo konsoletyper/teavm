@@ -85,6 +85,7 @@ public class WasmGCDeclarationsGenerator {
                 diagnostics,
                 customGenerators,
                 intrinsics,
+                dependencyInfo,
                 strict,
                 entryPoint,
                 initializerContributors::add
