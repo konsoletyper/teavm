@@ -36,6 +36,7 @@ import org.teavm.ast.VariableExpr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.PreciseTypeInference;
+import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.ExpressionCache;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.common.methods.BaseWasmGenerationVisitor;
@@ -46,7 +47,6 @@ import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
-import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmStructure;
@@ -112,6 +112,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     private WasmGCGenerationUtil generationUtil;
     private WasmType expectedType;
     private PreciseTypeInference types;
+    private WasmGCVirtualCallGenerator virtualCallGenerator;
     private boolean compactMode;
 
     public WasmGCGenerationVisitor(WasmGCGenerationContext context, MethodReference currentMethod,
@@ -119,6 +120,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         super(context, currentMethod, function, firstVariable, async);
         this.context = context;
         generationUtil = new WasmGCGenerationUtil(context.classInfoProvider());
+        virtualCallGenerator = new WasmGCVirtualCallGenerator(context.virtualTables(), context.classInfoProvider());
         this.types = types;
     }
 
@@ -425,39 +427,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected WasmExpression generateVirtualCall(WasmLocal instance, MethodReference method,
             List<WasmExpression> arguments) {
-        var vtable = context.virtualTables().lookup(method.getClassName());
-        if (vtable == null) {
-            return new WasmUnreachable();
-        }
-
-        var entry = vtable.entry(method.getDescriptor());
-        var nonInterfaceAncestor = vtable.closestNonInterfaceAncestor();
-        if (entry == null || nonInterfaceAncestor == null) {
-            return new WasmUnreachable();
-        }
-
-        WasmExpression classRef = new WasmStructGet(context.standardClasses().objectClass().getStructure(),
-                new WasmGetLocal(instance), WasmGCClassInfoProvider.VT_FIELD_OFFSET);
-        var index = WasmGCClassInfoProvider.VIRTUAL_METHOD_OFFSET + entry.getIndex();
-        var expectedInstanceClassInfo = context.classInfoProvider().getClassInfo(vtable.getClassName());
-        var expectedInstanceClassStruct = context.classInfoProvider().getClassInfo(
-                nonInterfaceAncestor.getClassName()).getStructure();
-        var vtableStruct = expectedInstanceClassInfo.getVirtualTableStructure();
-        classRef = new WasmCast(classRef, vtableStruct.getNonNullReference());
-
-        var functionRef = new WasmStructGet(vtableStruct, classRef, index);
-        var functionTypeRef = (WasmType.CompositeReference) vtableStruct.getFields().get(index).getUnpackedType();
-        var invoke = new WasmCallReference(functionRef, (WasmFunctionType) functionTypeRef.composite);
-        WasmExpression instanceRef = new WasmGetLocal(instance);
-        var instanceType = (WasmType.CompositeReference) instance.getType();
-        var instanceStruct = (WasmStructure) instanceType.composite;
-        if (!expectedInstanceClassStruct.isSupertypeOf(instanceStruct)) {
-            instanceRef = new WasmCast(instanceRef, expectedInstanceClassStruct.getNonNullReference());
-        }
-
-        invoke.getArguments().add(instanceRef);
-        invoke.getArguments().addAll(arguments.subList(1, arguments.size()));
-        return invoke;
+        return virtualCallGenerator.generate(method, instance, arguments.subList(1, arguments.size()));
     }
 
     @Override
@@ -971,6 +941,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         @Override
         public WasmGCClassInfoProvider classInfoProvider() {
             return context.classInfoProvider();
+        }
+
+        @Override
+        public WasmGCVirtualTableProvider virtualTables() {
+            return context.virtualTables();
         }
 
         @Override

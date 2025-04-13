@@ -16,6 +16,7 @@
 package org.teavm.vm.spi;
 
 import java.util.Properties;
+import java.util.function.Predicate;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DependencyListener;
@@ -39,6 +40,8 @@ public interface TeaVMHost extends ServiceRepository {
     void add(MethodReference methodRef, BootstrapMethodSubstitutor substitutor);
 
     void add(MethodReference methodRef, DependencyPlugin dependencyPlugin);
+
+    void addVirtualMethods(Predicate<MethodReference> predicate);
 
     <T extends TeaVMHostExtension> T getExtension(Class<T> extensionType);
 

@@ -16,6 +16,8 @@
 package org.teavm.backend.wasm.generate.gc;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -52,6 +54,7 @@ public class WasmGCDeclarationsGenerator {
     private final WasmGCClassGenerator classGenerator;
     private final WasmGCMethodGenerator methodGenerator;
     private List<WasmGCInitializerContributor> initializerContributors = new ArrayList<>();
+    private Collection<MethodReference> additionalMethodsOnCallSites;
 
     public WasmGCDeclarationsGenerator(
             WasmModule module,
@@ -66,10 +69,12 @@ public class WasmGCDeclarationsGenerator {
             List<WasmGCCustomTypeMapperFactory> customTypeMapperFactories,
             Predicate<MethodReference> isVirtual,
             boolean strict,
-            String entryPoint
+            String entryPoint,
+            Collection<MethodReference> additionalMethodsOnCallSites
     ) {
         this.module = module;
         hierarchy = new ClassHierarchy(classes);
+        this.additionalMethodsOnCallSites = additionalMethodsOnCallSites;
         var virtualTables = createVirtualTableProvider(classes, isVirtual);
         functionTypes = new WasmFunctionTypes(module);
         var names = new WasmGCNameProvider();
@@ -159,10 +164,11 @@ public class WasmGCDeclarationsGenerator {
         }
     }
 
-    private static WasmGCVirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes,
+    private WasmGCVirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes,
             Predicate<MethodReference> isVirtual) {
-        return new WasmGCVirtualTableProvider(classes, VirtualTableBuilder.getMethodsUsedOnCallSites(classes, true),
-                isVirtual);
+        var methodsOnCallSites = new LinkedHashSet<>(VirtualTableBuilder.getMethodsUsedOnCallSites(classes, true));
+        methodsOnCallSites.addAll(additionalMethodsOnCallSites);
+        return new WasmGCVirtualTableProvider(classes, methodsOnCallSites, isVirtual);
     }
 
     public WasmFunction dummyInitializer() {

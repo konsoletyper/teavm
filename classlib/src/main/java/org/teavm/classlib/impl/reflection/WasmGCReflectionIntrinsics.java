@@ -20,6 +20,7 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfo;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCReflectionProvider;
+import org.teavm.backend.wasm.generate.gc.methods.WasmGCVirtualCallGenerator;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmArray;
@@ -496,7 +497,8 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
 
         var classInfo = context.classInfoProvider().getClassInfo(method.getOwnerName());
         var args = new ArrayList<WasmExpression>();
-        WasmFunction callee;
+        WasmFunction callee = null;
+        var virtual = false;
         if (method.hasModifier(ElementModifier.STATIC)) {
             initClass(context, classInfo, method.getOwnerName(), function);
             callee = context.functions().forStaticMethod(method.getReference());
@@ -514,10 +516,15 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 ));
                 args.add(new WasmGetLocal(instanceVar));
             } else {
-                var castInstance = new WasmCast(new WasmGetLocal(thisVar), classInfo.getType());
-                args.add(castInstance);
+                virtual = !method.hasModifier(ElementModifier.FINAL) && method.getLevel() != AccessLevel.PRIVATE;
+                if (!virtual) {
+                    var castInstance = new WasmCast(new WasmGetLocal(thisVar), classInfo.getType());
+                    args.add(castInstance);
+                }
             }
-            callee = context.functions().forInstanceMethod(method.getReference());
+            if (!virtual) {
+                callee = context.functions().forInstanceMethod(method.getReference());
+            }
         }
 
         var dataType = (WasmType.CompositeReference) dataField.getUnpackedType();
@@ -527,7 +534,13 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
             args.add(unboxIfNecessary(context, rawArg, method.parameterType(i)));
         }
 
-        var call = new WasmCall(callee, args.toArray(new WasmExpression[0]));
+        WasmExpression call;
+        if (virtual) {
+            var callGen = new WasmGCVirtualCallGenerator(context.virtualTables(), context.classInfoProvider());
+            call = callGen.generate(method.getReference(), thisVar, args);
+        } else {
+            call = new WasmCall(callee, args.toArray(new WasmExpression[0]));
+        }
         function.getBody().add(boxIfNecessary(context, call, method.getResultType()));
         if (method.getResultType() == ValueType.VOID) {
             if (method.getName().equals("<init>")) {

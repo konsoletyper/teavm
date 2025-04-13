@@ -20,6 +20,7 @@ import org.teavm.ast.Expr;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
 import org.teavm.backend.wasm.gc.PreciseTypeInference;
+import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.ExpressionCache;
 import org.teavm.backend.wasm.generate.TemporaryVariablePool;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
@@ -52,6 +53,8 @@ public interface WasmGCIntrinsicContext {
     WasmGCTypeMapper typeMapper();
 
     WasmGCClassInfoProvider classInfoProvider();
+
+    WasmGCVirtualTableProvider virtualTables();
 
     TemporaryVariablePool tempVars();
 

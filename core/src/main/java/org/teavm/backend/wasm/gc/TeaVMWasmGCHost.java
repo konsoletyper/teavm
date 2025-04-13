@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.wasm.gc;
 
+import java.util.Collection;
+import java.util.function.Supplier;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCCustomTypeMapperFactory;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerator;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGeneratorFactory;
@@ -35,4 +37,6 @@ public interface TeaVMWasmGCHost extends TeaVMHostExtension {
     void addCustomTypeMapperFactory(WasmGCCustomTypeMapperFactory customTypeMapperFactory);
 
     void addClassConsumer(WasmGCClassConsumer consumer);
+
+    void addMethodsOnCallSites(Supplier<Collection<MethodReference>> methodsOnCallSites);
 }

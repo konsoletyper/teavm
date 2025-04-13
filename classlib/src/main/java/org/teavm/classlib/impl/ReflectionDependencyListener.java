@@ -18,6 +18,8 @@ package org.teavm.classlib.impl;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,7 +32,9 @@ import org.teavm.classlib.impl.reflection.FieldInfo;
 import org.teavm.classlib.impl.reflection.MethodInfo;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyConsumer;
 import org.teavm.dependency.DependencyNode;
+import org.teavm.dependency.DependencyType;
 import org.teavm.dependency.FieldDependency;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.AccessLevel;
@@ -77,6 +81,8 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private Set<String> classesWithReflectableMethods = new LinkedHashSet<>();
     private DependencyNode allClasses;
     private DependencyNode typesInReflectableSignaturesNode;
+    private Set<MethodReference> virtualMethods = new HashSet<>();
+    private Set<MethodReference> virtualCallSites = new HashSet<>();
 
     private boolean getReached;
     private boolean setReached;
@@ -84,6 +90,14 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
 
     public ReflectionDependencyListener(List<ReflectionSupplier> reflectionSuppliers) {
         this.reflectionSuppliers = reflectionSuppliers;
+    }
+
+    public boolean isVirtual(MethodReference methodRef) {
+        return virtualMethods.contains(methodRef);
+    }
+
+    public Collection<MethodReference> getVirtualCallSites() {
+        return virtualCallSites;
     }
 
     @Override
@@ -349,19 +363,80 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                     continue;
                 }
                 MethodReader calledMethod = cls.getMethod(methodDescriptor);
-                MethodDependency calledMethodDep = agent.linkMethod(calledMethod.getReference()).addLocation(location);
-                calledMethodDep.use();
-                for (int i = 0; i < calledMethod.parameterCount(); ++i) {
-                    propagateSet(agent, methodDescriptor.parameterType(i), method.getVariable(2).getArrayItem(),
-                            calledMethodDep.getVariable(i + 1), location);
+                if (calledMethod.hasModifier(ElementModifier.STATIC)
+                        || calledMethod.hasModifier(ElementModifier.FINAL)
+                        || calledMethod.getLevel() == AccessLevel.PRIVATE) {
+                    var calledMethodDep = agent.linkMethod(calledMethod.getReference()).addLocation(location);
+                    calledMethodDep.use();
+                    for (int i = 0; i < calledMethod.parameterCount(); ++i) {
+                        propagateSet(agent, methodDescriptor.parameterType(i), method.getVariable(2).getArrayItem(),
+                                calledMethodDep.getVariable(i + 1), location);
+                    }
+                    propagateSet(agent, ValueType.object(reflectedType.getName()), method.getVariable(1),
+                            calledMethodDep.getVariable(0), location);
+                    propagateGet(agent, calledMethod.getResultType(), calledMethodDep.getResult(),
+                            method.getResult(), location);
+                    linkClassIfNecessary(agent, calledMethod, location);
+                } else {
+                    virtualCallSites.add(calledMethod.getReference());
+                    method.getVariable(1).addConsumer(new VirtualCallConsumer(agent, calledMethod.getOwnerName(),
+                            calledMethod.getDescriptor(), method, location));
                 }
-                propagateSet(agent, ValueType.object(reflectedType.getName()), method.getVariable(1),
-                        calledMethodDep.getVariable(0), location);
-                propagateGet(agent, calledMethod.getResultType(), calledMethodDep.getResult(),
-                        method.getResult(), location);
-                linkClassIfNecessary(agent, calledMethod, location);
             }
         });
+    }
+
+    private class VirtualCallConsumer implements DependencyConsumer {
+        private final DependencyAgent agent;
+        private final String classFilter;
+        private final MethodDescriptor methodDesc;
+        private final MethodDependency invokeDep;
+        private final CallLocation location;
+
+        private Set<DependencyType> knownTypes = new HashSet<>();
+
+        VirtualCallConsumer(DependencyAgent agent, String classFilter, MethodDescriptor methodDesc,
+                MethodDependency invokeDep, CallLocation location) {
+            this.agent = agent;
+            this.classFilter = classFilter;
+            this.methodDesc = methodDesc;
+            this.invokeDep = invokeDep;
+            this.location = location;
+        }
+
+        @Override
+        public void consume(DependencyType type) {
+            if (!knownTypes.add(type)) {
+                return;
+            }
+
+            var className = type.getName();
+
+            if (className.startsWith("[")) {
+                className = "java.lang.Object";
+            }
+
+            if (!agent.getClassHierarchy().isSuperType(classFilter, className, false)) {
+                return;
+            }
+
+            var methodDep = agent.linkMethod(className, methodDesc);
+            methodDep.addLocation(location);
+
+            if (!methodDep.isMissing()) {
+                methodDep.use();
+                virtualMethods.add(methodDep.getReference());
+                methodDep.getVariable(0).propagate(type);
+                for (var i = 0; i < methodDesc.parameterCount(); ++i) {
+                    propagateSet(agent, methodDesc.parameterType(i), invokeDep.getVariable(2).getArrayItem(),
+                            methodDep.getVariable(i + 1), location);
+                }
+                if (methodDep.getResult() != null) {
+                    propagateGet(agent, methodDesc.getResultType(), methodDep.getResult(),
+                            invokeDep.getResult(), location);
+                }
+            }
+        }
     }
 
     private void linkType(DependencyAgent agent, ValueType type) {

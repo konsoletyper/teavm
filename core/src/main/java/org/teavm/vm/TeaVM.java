@@ -197,6 +197,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
     }
 
+    @Override
     public void addVirtualMethods(Predicate<MethodReference> virtualMethods) {
         additionalVirtualMethods.add(virtualMethods);
     }

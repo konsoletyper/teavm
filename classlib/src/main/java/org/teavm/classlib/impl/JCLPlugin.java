@@ -182,6 +182,7 @@ public class JCLPlugin implements TeaVMPlugin {
                 reflectionSuppliers.add(supplier);
             }
             ReflectionDependencyListener reflection = new ReflectionDependencyListener(reflectionSuppliers);
+            host.addVirtualMethods(reflection::isVirtual);
             host.registerService(ReflectionDependencyListener.class, reflection);
             host.add(reflection);
 
@@ -305,6 +306,7 @@ public class JCLPlugin implements TeaVMPlugin {
             ReflectionDependencyListener reflectionDependencyListener) {
         wasmGCHost.addCustomTypeMapperFactory(context -> new WasmGCReflectionTypeMapper(
                 context.classInfoProvider(), context.functionTypes()));
+        wasmGCHost.addMethodsOnCallSites(reflectionDependencyListener::getVirtualCallSites);
 
         var intrinsics = new WasmGCReflectionIntrinsics(reflectionDependencyListener);
 

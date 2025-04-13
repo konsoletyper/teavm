@@ -90,6 +90,19 @@ public class MethodTest {
     }
 
     @Test
+    public void virtualInvoke() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        var obj = new SubclassVirtualMethod();
+        var method = SuperclassVirtualMethod.class.getDeclaredMethod("f");
+        var result = method.invoke(obj);
+        assertEquals("sub", result);
+
+        var privateMethod = SuperclassVirtualMethod.class.getDeclaredMethod("g");
+        privateMethod.setAccessible(true);
+        result = privateMethod.invoke(obj);
+        assertEquals("super", result);
+    }
+
+    @Test
     public void staticInitializerCalled() throws NoSuchMethodException, InvocationTargetException,
             IllegalAccessException {
         Method method = WithInitializer.class.getMethod("f");
@@ -175,6 +188,30 @@ public class MethodTest {
 
         @Reflectable public static void f() {
             log += "f();";
+        }
+    }
+
+    static class SuperclassVirtualMethod {
+        @Reflectable
+        public String f() {
+            return "super";
+        }
+
+        @Reflectable
+        private String g() {
+            return "super";
+        }
+    }
+
+    static class SubclassVirtualMethod extends SuperclassVirtualMethod {
+        @Override
+        public String f() {
+            return "sub";
+        }
+
+        @Reflectable
+        private String g() {
+            return "sub";
         }
     }
 }

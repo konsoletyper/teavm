@@ -19,11 +19,14 @@ import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.teavm.backend.wasm.debug.CompositeDebugLines;
 import org.teavm.backend.wasm.debug.DebugLines;
 import org.teavm.backend.wasm.debug.ExternalDebugFile;
@@ -106,6 +109,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private List<WasmGCCustomGeneratorFactory> customGeneratorFactories = new ArrayList<>();
     private EntryPointTransformation entryPointTransformation = new EntryPointTransformation();
     private List<WasmGCClassConsumer> classConsumers = new ArrayList<>();
+    private List<Supplier<Collection<MethodReference>>> additionalMethodsOnCallSites = new ArrayList<>();
 
     public void setObfuscated(boolean obfuscated) {
         this.obfuscated = obfuscated;
@@ -175,6 +179,11 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     @Override
     public void addClassConsumer(WasmGCClassConsumer consumer) {
         classConsumers.add(consumer);
+    }
+
+    @Override
+    public void addMethodsOnCallSites(Supplier<Collection<MethodReference>> methodsOnCallSites) {
+        additionalMethodsOnCallSites.add(methodsOnCallSites);
     }
 
     @Override
@@ -259,6 +268,10 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
                 controller.getProperties());
         var intrinsics = new WasmGCIntrinsics(classes, controller.getServices(), intrinsicFactories, customIntrinsics);
         var debugInfoBuilder = new GCDebugInfoBuilder();
+        var methodsOnCallSites = new LinkedHashSet<MethodReference>();
+        for (var provider : additionalMethodsOnCallSites) {
+            methodsOnCallSites.addAll(provider.get());
+        }
         var declarationsGenerator = new WasmGCDeclarationsGenerator(
                 module,
                 classes,
@@ -272,7 +285,8 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
                 customTypeMapperFactories,
                 controller::isVirtual,
                 strict,
-                controller.getEntryPoint()
+                controller.getEntryPoint(),
+                methodsOnCallSites
         );
         declarationsGenerator.setFriendlyToDebugger(controller.isFriendlyToDebugger());
         declarationsGenerator.setCompactMode(compactMode);

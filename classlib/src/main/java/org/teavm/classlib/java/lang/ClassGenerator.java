@@ -282,11 +282,18 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         if (method.getResultType() != ValueType.VOID) {
             writer.append("return ");
         }
-        writer.appendMethod(method.getReference());
+        var receiverWritten = false;
+        if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.FINAL)
+                && method.getLevel() != AccessLevel.PRIVATE) {
+            writer.append("obj.").appendVirtualMethod(method.getDescriptor());
+            receiverWritten = true;
+        } else {
+            writer.appendMethod(method.getReference());
+        }
 
         writer.append('(');
         boolean first = true;
-        if (!method.hasModifier(ElementModifier.STATIC)) {
+        if (!receiverWritten && !method.hasModifier(ElementModifier.STATIC)) {
             writer.append("obj").ws();
             first = false;
         }
