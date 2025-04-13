@@ -235,7 +235,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
         for (var className : reflection.getClassesWithReflectableFields()) {
             var cls = context.hierarchy().getClassSource().get(className);
             if (cls == null || cls.getFields().isEmpty()) {
-                return;
+                continue;
             }
             var skipPrivates = ReflectionDependencyListener.shouldSkipPrivates(cls);
 
@@ -299,7 +299,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
         for (var className : reflection.getClassesWithReflectableMethods()) {
             var cls = context.hierarchy().getClassSource().get(className);
             if (cls == null || cls.getMethods().isEmpty()) {
-                return;
+                continue;
             }
             var skipPrivates = ReflectionDependencyListener.shouldSkipPrivates(cls);
 

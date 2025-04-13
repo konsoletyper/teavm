@@ -78,6 +78,14 @@ public class MethodTest {
     }
 
     @Test
+    public void methodsEnumeratedWhenClassImplementEmptyInterface() {
+        callMethods();
+
+        String text = collectMethods(EmptyInterfaceImplementor.class.getMethods());
+        assertEquals("public void EmptyInterfaceImplementor.f();", text);
+    }
+
+    @Test
     public void bridgeMethodNotFound() throws NoSuchMethodException {
         callMethods();
 
@@ -134,6 +142,7 @@ public class MethodTest {
         new InterfaceImplementor().f();
         new InterfaceImplementor().g();
         new InterfaceImplementor().h();
+        new EmptyInterfaceImplementor().f();
     }
 
     private String collectMethods(Method[] methods) {
@@ -247,6 +256,15 @@ public class MethodTest {
 
         @Reflectable
         public void h() {
+        }
+    }
+
+    interface EmptySuperInterface {
+    }
+
+    static class EmptyInterfaceImplementor implements EmptySuperInterface {
+        @Reflectable
+        public void f() {
         }
     }
 }
