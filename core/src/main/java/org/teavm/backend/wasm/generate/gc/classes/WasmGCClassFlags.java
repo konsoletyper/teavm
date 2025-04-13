@@ -16,26 +16,32 @@
 package org.teavm.backend.wasm.generate.gc.classes;
 
 public final class WasmGCClassFlags {
-    public static final int ABSTRACT = 1;
-    public static final int INTERFACE = 1 << 1;
-    public static final int FINAL = 1 << 2;
-    public static final int ENUM = 1 << 3;
-    public static final int ANNOTATION = 1 << 4;
-    public static final int SYNTHETIC = 1 << 5;
-    public static final int BRIDGE = 1 << 6;
-    public static final int DEPRECATED = 1 << 7;
+    public static final int PUBLIC = 1;
+    public static final int PRIVATE = 1 << 1;
+    public static final int PROTECTED = 1 << 2;
+    public static final int STATIC = 1 << 3;
+    public static final int FINAL = 1 << 4;
+    public static final int SYNCHRONIZED = 1 << 5;
+    public static final int VOLATILE = 1 << 6;
+    public static final int TRANSIENT = 1 << 7;
     public static final int NATIVE = 1 << 8;
-    public static final int STATIC = 1 << 9;
-    public static final int STRICT = 1 << 10;
-    public static final int SYNCHRONIZED = 1 << 11;
-    public static final int TRANSIENT = 1 << 12;
-    public static final int VARARGS = 1 << 13;
-    public static final int VOLATILE = 1 << 14;
-    public static final int PRIMITIVE = 1 << 15;
-    public static final int ARRAY = 1 << 16;
-    public static final int INHERITED_ANNOTATIONS = 1 << 17;
+    public static final int INTERFACE = 1 << 9;
+    public static final int ABSTRACT = 1 << 10;
+    public static final int STRICT = 1 << 11;
 
-    public static final int PRIMITIVE_KIND_SHIFT = 18;
+    public static final int JVM_FLAGS_MASK = (1 << 12) - 1;
+
+    public static final int ENUM = 1 << 12;
+    public static final int ANNOTATION = 1 << 13;
+    public static final int SYNTHETIC = 1 << 14;
+    public static final int BRIDGE = 1 << 15;
+    public static final int DEPRECATED = 1 << 16;
+    public static final int VARARGS = 1 << 17;
+    public static final int PRIMITIVE = 1 << 18;
+    public static final int ARRAY = 1 << 19;
+    public static final int INHERITED_ANNOTATIONS = 1 << 20;
+
+    public static final int PRIMITIVE_KIND_SHIFT = 21;
     public static final int PRIMITIVE_BOOLEAN = 0;
     public static final int PRIMITIVE_BYTE = 1;
     public static final int PRIMITIVE_SHORT = 2;

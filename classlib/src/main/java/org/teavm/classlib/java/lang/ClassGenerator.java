@@ -284,7 +284,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         }
         var receiverWritten = false;
         if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.FINAL)
-                && method.getLevel() != AccessLevel.PRIVATE) {
+                && method.getLevel() != AccessLevel.PRIVATE && !method.getName().equals("<init>")) {
             writer.append("obj.").appendVirtualMethod(method.getDescriptor());
             receiverWritten = true;
         } else {

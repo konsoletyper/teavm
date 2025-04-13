@@ -65,6 +65,19 @@ public class MethodTest {
     }
 
     @Test
+    public void methodsInheritedFromInterfaceEnumerated() {
+        callMethods();
+
+        String text = collectMethods(InterfaceImplementor.class.getMethods());
+        assertEquals(""
+                + "public default void SuperInterface.g();"
+                + "public void InterfaceImplementor.f();"
+                + "public void InterfaceImplementor.h();",
+                text
+        );
+    }
+
+    @Test
     public void bridgeMethodNotFound() throws NoSuchMethodException {
         callMethods();
 
@@ -118,6 +131,9 @@ public class MethodTest {
         new SubClass().g();
         new SuperClassWithBridge().f();
         new SubClassWithBridge().f();
+        new InterfaceImplementor().f();
+        new InterfaceImplementor().g();
+        new InterfaceImplementor().h();
     }
 
     private String collectMethods(Method[] methods) {
@@ -212,6 +228,25 @@ public class MethodTest {
         @Reflectable
         private String g() {
             return "sub";
+        }
+    }
+
+    interface SuperInterface {
+        @Reflectable
+        void f();
+
+        @Reflectable
+        default void g() {
+        }
+    }
+
+    static class InterfaceImplementor implements SuperInterface {
+        @Override
+        public void f() {
+        }
+
+        @Reflectable
+        public void h() {
         }
     }
 }

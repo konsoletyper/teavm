@@ -84,11 +84,22 @@ public class TModifier {
     }
 
     public static String toString(int mod) {
+       return toString(mod, false);
+    }
+
+    public static String toString(int mod, boolean abstractExpected) {
         StringBuilder sb = new StringBuilder();
         String[] modifierNames = getModifierNames();
         int index = 0;
         for (int modifier : canonicalOrder) {
-            if ((mod & modifier) != 0) {
+            if (modifier == ABSTRACT && abstractExpected) {
+                if ((mod & ABSTRACT) == 0) {
+                    if (sb.length() > 0) {
+                        sb.append(' ');
+                    }
+                    sb.append("default");
+                }
+            } else if ((mod & modifier) != 0) {
                 if (sb.length() > 0) {
                     sb.append(' ');
                 }

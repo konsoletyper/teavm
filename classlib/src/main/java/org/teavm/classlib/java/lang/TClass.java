@@ -752,9 +752,15 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
     }
 
     public int getModifiers() {
-        int flags = platformClass.getMetadata().getFlags();
-        int accessLevel = platformClass.getMetadata().getAccessLevel();
-        return Flags.getModifiers(flags, accessLevel);
+        if (PlatformDetector.isJavaScript()) {
+            int flags = platformClass.getMetadata().getFlags();
+            int accessLevel = platformClass.getMetadata().getAccessLevel();
+            return Flags.getModifiers(flags, accessLevel);
+        } else if (PlatformDetector.isWebAssemblyGC()) {
+            return getWasmGCFlags() & WasmGCClassFlags.JVM_FLAGS_MASK;
+        } else {
+            return 0;
+        }
     }
 
     public boolean desiredAssertionStatus() {

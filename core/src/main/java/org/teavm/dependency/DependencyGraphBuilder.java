@@ -500,7 +500,7 @@ class DependencyGraphBuilder {
                 ClassReader cls = dependencyAnalyzer.getClassSource().get(className);
                 if (cls != null) {
                     for (String iface : cls.getInterfaces()) {
-                        receiverNode.getClassValueNode().propagate(dependencyAnalyzer.getType(iface));
+                        receiverNode.getArrayItem().getClassValueNode().propagate(dependencyAnalyzer.getType(iface));
                     }
                 }
 

@@ -766,6 +766,19 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
 
     private int getFlags(ClassReader cls) {
         var flags = 0;
+        switch (cls.getLevel()) {
+            case PUBLIC:
+                flags |= WasmGCClassFlags.PUBLIC;
+                break;
+            case PRIVATE:
+                flags |= WasmGCClassFlags.PRIVATE;
+                break;
+            case PROTECTED:
+                flags |= WasmGCClassFlags.PROTECTED;
+                break;
+            case PACKAGE_PRIVATE:
+                break;
+        }
         if (cls.hasModifier(ElementModifier.ABSTRACT)) {
             flags |= WasmGCClassFlags.ABSTRACT;
         }
@@ -1978,7 +1991,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 standardClasses.classClass().getStructure(),
                 new WasmGetLocal(targetVar),
                 classFlagsOffset,
-                new WasmInt32Constant(WasmGCClassFlags.FINAL)
+                new WasmInt32Constant(WasmGCClassFlags.FINAL | WasmGCClassFlags.PUBLIC)
         ));
         function.getBody().add(new WasmStructSet(
                 standardClasses.classClass().getStructure(),

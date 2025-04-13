@@ -74,11 +74,11 @@ public class TMethod extends TAccessibleObject implements TMember {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(TModifier.toString(getModifiers()));
+        sb.append(TModifier.toString(getModifiers(), (getDeclaringClass().getModifiers() & TModifier.INTERFACE) != 0));
         if (sb.length() > 0) {
             sb.append(' ');
         }
-        sb.append(getReturnType().getName()).append(' ').append(declaringClass.getName()).append('.')
+        sb.append(getReturnType().getName()).append(' ').append(getDeclaringClass().getName()).append('.')
                 .append(name).append('(');
         TClass<?>[] parameterTypes = getParameterTypes();
         if (parameterTypes.length > 0) {
