@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.wasm.model.expression;
 
+import java.util.Set;
+
 public class WasmReturn extends WasmExpression {
     private WasmExpression value;
 
@@ -40,7 +42,7 @@ public class WasmReturn extends WasmExpression {
     }
 
     @Override
-    public boolean isTerminating() {
+    protected boolean isTerminating(Set<WasmBlock> blocks) {
         return true;
     }
 }

@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.model.expression;
 
 import java.util.Objects;
+import java.util.Set;
 import org.teavm.backend.wasm.model.WasmType;
 
 public class WasmConditional extends WasmExpression {
@@ -60,7 +61,12 @@ public class WasmConditional extends WasmExpression {
     }
 
     @Override
-    public boolean isTerminating() {
-        return thenBlock.isTerminating() && elseBlock.isTerminating();
+    protected boolean isTerminating(Set<WasmBlock> blocks) {
+        blocks.add(thenBlock);
+        blocks.add(elseBlock);
+        var result = thenBlock.isTerminating(blocks) && elseBlock.isTerminating(blocks);
+        blocks.remove(elseBlock);
+        blocks.remove(thenBlock);
+        return result;
     }
 }

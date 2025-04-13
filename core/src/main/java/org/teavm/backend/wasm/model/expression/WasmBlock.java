@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.model.expression;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.teavm.backend.wasm.model.WasmType;
 
 public class WasmBlock extends WasmExpression {
@@ -54,10 +55,36 @@ public class WasmBlock extends WasmExpression {
     }
 
     @Override
-    public boolean isTerminating() {
+    protected boolean isTerminating(Set<WasmBlock> blocks) {
         if (loop) {
             return false;
         }
-        return !body.isEmpty() && body.get(body.size() - 1).isTerminating();
+        if (body.isEmpty()) {
+            return false;
+        }
+        blocks.add(this);
+        var result = body.get(body.size() - 1).isTerminating(blocks);
+        if (result) {
+            var breakFinder = new BreakFinder();
+            breakFinder.target = this;
+            acceptVisitor(breakFinder);
+            if (breakFinder.found) {
+                result = false;
+            }
+        }
+        blocks.remove(this);
+        return result;
+    }
+
+    private static class BreakFinder extends WasmDefaultExpressionVisitor {
+        private WasmBlock target;
+        private boolean found;
+
+        @Override
+        public void visit(WasmBreak expression) {
+            if (expression.getTarget() == target) {
+                found = true;
+            }
+        }
     }
 }

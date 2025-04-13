@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.model.expression;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class WasmSwitch extends WasmExpression {
     private WasmExpression selector;
@@ -57,7 +58,12 @@ public class WasmSwitch extends WasmExpression {
     }
 
     @Override
-    public boolean isTerminating() {
-        return true;
+    protected boolean isTerminating(Set<WasmBlock> blocks) {
+        for (var target : targets) {
+            if (blocks.contains(target)) {
+                return false;
+            }
+        }
+        return !blocks.contains(defaultTarget);
     }
 }

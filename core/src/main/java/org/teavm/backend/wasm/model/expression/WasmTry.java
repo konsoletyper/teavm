@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.model.expression;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.teavm.backend.wasm.model.WasmType;
 
 public class WasmTry extends WasmExpression {
@@ -46,7 +47,7 @@ public class WasmTry extends WasmExpression {
     }
 
     @Override
-    public boolean isTerminating() {
-        return !body.isEmpty() && body.get(body.size() - 1).isTerminating();
+    protected boolean isTerminating(Set<WasmBlock> blocks) {
+        return !body.isEmpty() && body.get(body.size() - 1).isTerminating(blocks);
     }
 }

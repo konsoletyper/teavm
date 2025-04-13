@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.model.expression;
 
 import java.util.Objects;
+import java.util.Set;
 
 public class WasmBreak extends WasmExpression {
     private WasmBlock target;
@@ -49,7 +50,7 @@ public class WasmBreak extends WasmExpression {
     }
 
     @Override
-    public boolean isTerminating() {
-        return true;
+    protected boolean isTerminating(Set<WasmBlock> blocks) {
+        return !blocks.contains(target);
     }
 }

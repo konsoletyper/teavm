@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.wasm.model.expression;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.model.TextLocation;
 
@@ -34,7 +36,11 @@ public abstract class WasmExpression {
 
     public abstract void acceptVisitor(WasmExpressionVisitor visitor);
 
-    public boolean isTerminating() {
+    public final boolean isTerminating() {
+        return isTerminating(new HashSet<>());
+    }
+
+    protected boolean isTerminating(Set<WasmBlock> blocks) {
         return false;
     }
 
