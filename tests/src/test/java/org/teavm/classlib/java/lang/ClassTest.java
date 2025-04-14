@@ -128,7 +128,20 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    public void instanceCreatedThroughReflectionWithCalculatedName() throws Exception {
+        Runnable instance = (Runnable) Class.forName(getClassNameToFind()).newInstance();
+        instance.run();
+        assertEquals(TestObject.class, instance.getClass());
+        assertEquals(1, ((TestObject) instance).getCounter());
+    }
+
+    private static String getClassNameToFind() {
+        return TestObject.class.getName();
+    }
+
+    @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void instanceCreatedThroughReflection() throws Exception {
         Runnable instance = (Runnable) Class.forName(TestObject.class.getName()).newInstance();
         instance.run();
@@ -137,7 +150,7 @@ public class ClassTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void instanceCreatedThoughReflectionWithConstantName() throws Exception {
         var cls = Class.forName("org.teavm.classlib.java.lang.ClassTest$ClassReferredByConstantName");
         assertArrayEquals(new Class<?>[] { Supplier.class }, cls.getInterfaces());

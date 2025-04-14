@@ -49,7 +49,9 @@ import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
+import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
+import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Import;
@@ -438,6 +440,14 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             var erase = new WasmSetGlobal(classInfo.getInitializerPointer(),
                     new WasmFunctionReference(getDummyInitializer()));
             function.getBody().add(erase);
+            if (classInfoProvider.getClassInitializerOffset() >= 0) {
+                function.getBody().add(new WasmStructSet(
+                        standardClasses.classClass().getStructure(),
+                        new WasmGetGlobal(classInfo.getPointer()),
+                        classInfoProvider.getClassInitializerOffset(),
+                        new WasmFunctionReference(getDummyInitializer())
+                ));
+            }
         }
     }
 

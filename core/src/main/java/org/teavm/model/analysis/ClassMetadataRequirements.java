@@ -56,7 +56,9 @@ public class ClassMetadataRequirements {
     private boolean hasEnumConstants;
     private boolean hasSuperclass;
     private boolean hasIsAssignable;
+    private boolean hasArrayNewInstance;
     private boolean hasNewInstance;
+    private boolean hasClassInit;
     private boolean hasEnclosingClass;
     private boolean hasDeclaringClass;
     private boolean hasSimpleName;
@@ -123,7 +125,7 @@ public class ClassMetadataRequirements {
 
         var newArrayMethod = dependencyInfo.getMethod(NEW_ARRAY);
         if (newArrayMethod != null) {
-            hasNewInstance = true;
+            hasArrayNewInstance = true;
             var classNames = newArrayMethod.getVariable(1).getClassValueNode().getTypes();
             for (var className : classNames) {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).newArray = true;
@@ -223,6 +225,15 @@ public class ClassMetadataRequirements {
         if (newInstance != null && newInstance.isUsed()) {
             hasNewInstance = true;
         }
+
+        var classInit = dependencyInfo.getMethod(new MethodReference(Class.class, "initialize", void.class));
+        if (classInit != null && classInit.isUsed()) {
+            hasClassInit = true;
+            var classNames = classInit.getVariable(0).getClassValueNode().getTypes();
+            for (var className : classNames) {
+                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).classInit = true;
+            }
+        }
     }
 
     public Info getInfo(String className) {
@@ -262,7 +273,7 @@ public class ClassMetadataRequirements {
     }
 
     public boolean hasArrayNewInstance() {
-        return hasNewInstance;
+        return hasArrayNewInstance;
     }
 
     public boolean hasEnclosingClass() {
@@ -301,6 +312,10 @@ public class ClassMetadataRequirements {
         return hasNewInstance;
     }
 
+    public boolean hasClassInit() {
+        return hasClassInit;
+    }
+
     private void addClassesRequiringName(Map<ValueType, ClassInfo> target, String[] source) {
         for (String typeName : source) {
             target.computeIfAbsent(decodeType(typeName), k -> new ClassInfo()).name = true;
@@ -332,6 +347,7 @@ public class ClassMetadataRequirements {
         boolean enumConstants;
         boolean annotations;
         boolean interfaces;
+        boolean classInit;
 
         @Override
         public boolean name() {
@@ -402,6 +418,11 @@ public class ClassMetadataRequirements {
         public boolean interfaces() {
             return interfaces;
         }
+
+        @Override
+        public boolean classInit() {
+            return classInit;
+        }
     }
 
     public interface Info {
@@ -432,5 +453,7 @@ public class ClassMetadataRequirements {
         boolean annotations();
 
         boolean interfaces();
+
+        boolean classInit();
     }
 }

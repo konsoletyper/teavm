@@ -83,6 +83,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private DependencyNode typesInReflectableSignaturesNode;
     private Set<MethodReference> virtualMethods = new HashSet<>();
     private Set<MethodReference> virtualCallSites = new HashSet<>();
+    private Set<String> classesFoundByName = new HashSet<>();
 
     private boolean getReached;
     private boolean setReached;
@@ -126,6 +127,22 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 .propagate(agent.getType("java.lang.Class"));
         agent.linkMethod(new MethodReference(ClassList.class, "get", int.class, Class.class)).getResult()
                 .propagate(agent.getType("java.lang.Class"));
+
+        var context = new ReflectionContextImpl(agent);
+        for (var reflectionSupplier : reflectionSuppliers) {
+            for (var className : reflectionSupplier.getClassesFoundByName(context)) {
+                if (classesFoundByName.add(className)) {
+                    agent.linkClass(className);
+                }
+            }
+        }
+        if (!classesFoundByName.isEmpty()) {
+            var getName = agent.linkMethod(new MethodReference(Class.class, "getName", String.class));
+            getName.getVariable(0).propagate(agent.getType("java.lang.Class"));
+            for (var className : classesFoundByName) {
+                getName.getVariable(0).getClassValueNode().propagate(agent.getType(className));
+            }
+        }
     }
 
     public boolean isGetReached() {
@@ -217,7 +234,10 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 }
             });
         } else if (method.getReference().equals(forName) || method.getReference().equals(forNameShort)) {
-            allClasses.connect(method.getResult().getClassValueNode());
+            method.getResult().propagate(agent.getType("java.lang.Class"));
+            for (var className : classesFoundByName) {
+                method.getResult().getClassValueNode().propagate(agent.getType(className));
+            }
         } else if (method.getReference().equals(fieldGetType) || method.getReference().equals(methodGetReturnType)) {
             method.getResult().propagate(agent.getType("java.lang.Class"));
             typesInReflectableSignaturesNode.connect(method.getResult().getClassValueNode());

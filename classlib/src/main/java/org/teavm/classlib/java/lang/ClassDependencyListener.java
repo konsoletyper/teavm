@@ -38,6 +38,13 @@ public class ClassDependencyListener implements DependencyPlugin {
             case "getNameCacheLowLevel":
                 method.getResult().propagate(agent.getType("java.lang.String"));
                 break;
+            case "getNameImpl":
+                method.getResult().propagate(agent.getType("java.lang.String"));
+                break;
+            case "last":
+            case "previous":
+                method.getResult().propagate(agent.getType("java.lang.Class"));
+                break;
         }
     }
 }
