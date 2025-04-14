@@ -20,7 +20,9 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCGenerationUtil;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewFixed;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
+import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
@@ -90,6 +92,16 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
                 return generateGetDeclaredFields(invocation, context);
             case "getDeclaredMethodsImpl":
                 return generateGetDeclaredMethods(invocation, context);
+            case "last":
+                return new WasmGetGlobal(context.classInfoProvider().getLastRegularClassGlobal());
+            case "previous":
+                return new WasmStructGet(
+                        context.classInfoProvider().getClassInfo("java.lang.Class").getStructure(),
+                        context.generate(invocation.getArguments().get(0)),
+                        context.classInfoProvider().getPreviousRegularClassOffset()
+                );
+            case "initializeImpl":
+                return generateInitialize(invocation, context);
             default:
                 throw new IllegalArgumentException("Unsupported invocation method: " + invocation.getMethod());
         }
@@ -180,7 +192,6 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
         return new WasmStructGet(classCls.getStructure(), arg, fieldIndex);
     }
 
-
     private WasmExpression generateGetDeclaredMethods(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         var fieldIndex = context.classInfoProvider().getClassMethodsOffset();
         if (fieldIndex < 0) {
@@ -189,5 +200,18 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
         var arg = context.generate(invocation.getArguments().get(0));
         var classCls = context.classInfoProvider().getClassInfo("java.lang.Class");
         return new WasmStructGet(classCls.getStructure(), arg, fieldIndex);
+    }
+
+    private WasmExpression generateInitialize(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        var block = new WasmBlock(false);
+        var classCls = context.classInfoProvider().getClassInfo("java.lang.Class");
+        var getField = new WasmStructGet(
+                classCls.getStructure(),
+                context.generate(invocation.getArguments().get(0)),
+                context.classInfoProvider().getClassInitializerOffset()
+        );
+        var br = new WasmNullBranch(WasmNullCondition.NULL, getField, block);
+        block.getBody().add(new WasmCallReference(br, context.functionTypes().of(null)));
+        return block;
     }
 }

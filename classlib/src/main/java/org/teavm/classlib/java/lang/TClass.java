@@ -61,6 +61,7 @@ import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
 public final class TClass<T> extends TObject implements TAnnotatedElement, TType {
+    private static Map<String, TClass<?>> nameMap;
     String name;
     String simpleName;
     String canonicalName;
@@ -825,12 +826,35 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
     }
 
     public static TClass<?> forName(TString name) throws TClassNotFoundException {
-        PlatformClass cls = Platform.lookupClass(name.toString());
-        if (cls == null) {
-            throw new TClassNotFoundException();
+        if (PlatformDetector.isJavaScript()) {
+            PlatformClass cls = Platform.lookupClass(name.toString());
+            if (cls == null) {
+                throw new TClassNotFoundException();
+            }
+            return getClass(cls);
+        } else {
+            if (nameMap == null) {
+                fillNameMap();
+            }
+            return nameMap.get((String) (Object) name);
         }
-        return getClass(cls);
     }
+
+    private static void fillNameMap() {
+        nameMap = new HashMap<>();
+        var cls = last();
+        while (cls != null) {
+            var name = cls.getNameImpl();
+            if (name != null) {
+                nameMap.put(name, cls);
+            }
+            cls = cls.previous();
+        }
+    }
+
+    private static native TClass<?> last();
+
+    private native TClass<?> previous();
 
     @SuppressWarnings("unused")
     public static TClass<?> forName(TString name, boolean initialize, TClassLoader loader)
@@ -840,8 +864,14 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
 
     @PluggableDependency(ClassDependencyListener.class)
     void initialize() {
-        Platform.initClass(platformClass);
+        if (PlatformDetector.isJavaScript()) {
+            Platform.initClass(platformClass);
+        } else {
+            initializeImpl();
+        }
     }
+
+    private native void initializeImpl();
 
     @SuppressWarnings({ "unchecked", "unused" })
     public T newInstance() throws TInstantiationException, TIllegalAccessException {

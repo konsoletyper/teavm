@@ -16,10 +16,19 @@
 package org.teavm.classlib;
 
 import java.util.Collection;
+import java.util.Collections;
 import org.teavm.model.MethodDescriptor;
 
 public interface ReflectionSupplier {
-    Collection<String> getAccessibleFields(ReflectionContext context, String className);
+    default Collection<String> getAccessibleFields(ReflectionContext context, String className) {
+        return Collections.emptyList();
+    }
 
-    Collection<MethodDescriptor> getAccessibleMethods(ReflectionContext context, String className);
+    default Collection<MethodDescriptor> getAccessibleMethods(ReflectionContext context, String className) {
+        return Collections.emptyList();
+    }
+
+    default Collection<String> getClassesFoundByName(ReflectionContext context) {
+        return Collections.emptyList();
+    }
 }

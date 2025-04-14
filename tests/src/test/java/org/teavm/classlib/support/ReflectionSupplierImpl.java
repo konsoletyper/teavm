@@ -19,6 +19,7 @@ import java.lang.invoke.SerializedLambda;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.teavm.classlib.ReflectionContext;
 import org.teavm.classlib.ReflectionSupplier;
@@ -60,5 +61,10 @@ public class ReflectionSupplierImpl implements ReflectionSupplier {
             }
         }
         return methods;
+    }
+
+    @Override
+    public Collection<String> getClassesFoundByName(ReflectionContext context) {
+        return List.of("org.teavm.classlib.java.lang.TestObject");
     }
 }

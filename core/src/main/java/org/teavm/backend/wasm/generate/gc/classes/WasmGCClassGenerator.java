@@ -144,6 +144,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private final WasmGCSupertypeFunctionGenerator supertypeGenerator;
     private final WasmGCNewArrayFunctionGenerator newArrayGenerator;
     private String arrayDataFieldName;
+    private WasmGlobal lastRegularClassGlobal;
 
     private int classTagOffset;
     private int classFlagsOffset = -1;
@@ -163,6 +164,8 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private int classFieldsOffset = -1;
     private int classMethodsOffset = -1;
     private int classInstantiatorOffset = -1;
+    private int classInitializerOffset = -1;
+    private int previousRegularClassOffset = -1;
     private int enumConstantsFunctionOffset = -1;
     private int arrayLengthOffset = -1;
     private int arrayGetOffset = -1;
@@ -582,6 +585,21 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     }
 
     @Override
+    public int getClassInitializerOffset() {
+        return classInitializerOffset;
+    }
+
+    @Override
+    public int getPreviousRegularClassOffset() {
+        return previousRegularClassOffset;
+    }
+
+    @Override
+    public WasmGlobal getLastRegularClassGlobal() {
+        return lastRegularClassGlobal;
+    }
+
+    @Override
     public int getNewArrayFunctionOffset() {
         standardClasses.classClass().getStructure().init();
         return classNewArrayOffset;
@@ -727,6 +745,10 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 var initFunction = functionProvider.forStaticMethod(new MethodReference(name, CLINIT_METHOD_DESC));
                 initFunction.setReferenced(true);
                 classInfo.initializerPointer.setInitialValue(new WasmFunctionReference(initFunction));
+                if (classInitializerOffset >= 0 && metadataReq != null && metadataReq.classInit()) {
+                    target.add(setClassField(classInfo, classInitializerOffset,
+                            new WasmFunctionReference(initFunction)));
+                }
             }
         };
         annotationsGenerator.addClassAnnotations(name, classInfo);
@@ -1685,6 +1707,18 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 var instantiatorType = functionTypes.of(standardClasses.objectClass().getType()).getReference();
                 fields.add(createClassField(instantiatorType.asStorage(), "instantiator"));
             }
+            if (metadataRequirements.hasClassInit()) {
+                classInitializerOffset = fields.size();
+                var instantiatorType = functionTypes.of(null).getReference();
+                fields.add(createClassField(instantiatorType.asStorage(), "initializer"));
+            }
+            previousRegularClassOffset = fields.size();
+            fields.add(createClassField(standardClasses.classClass().getType().asStorage(), "previous"));
+
+            lastRegularClassGlobal = new WasmGlobal(names.topLevel("teavm.lastRegularClass"),
+                    standardClasses.classClass().getType(),
+                    new WasmNullConstant(standardClasses.classClass().getType()));
+            module.globals.add(lastRegularClassGlobal);
         }
     }
 
@@ -1877,6 +1911,14 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 classNewArrayOffset,
                 new WasmFunctionReference(newArrayFunction)
         ));
+
+        function.getBody().add(new WasmStructSet(
+                standardClasses.classClass().getStructure(),
+                new WasmGetLocal(targetVar),
+                previousRegularClassOffset,
+                new WasmGetGlobal(lastRegularClassGlobal)
+        ));
+        function.getBody().add(new WasmSetGlobal(lastRegularClassGlobal, new WasmGetLocal(targetVar)));
 
         return function;
     }

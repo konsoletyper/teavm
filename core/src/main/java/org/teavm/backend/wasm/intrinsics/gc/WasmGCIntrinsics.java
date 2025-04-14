@@ -107,6 +107,9 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         add(new MethodReference(Class.class, "setCanonicalNameCache", String.class, void.class), intrinsic);
         add(new MethodReference(Class.class, "getDeclaredAnnotationsImpl", Annotation[].class), intrinsic);
         add(new MethodReference(Class.class, "getInterfacesImpl", Class[].class), intrinsic);
+        add(new MethodReference(Class.class, "previous", Class.class), intrinsic);
+        add(new MethodReference(Class.class, "last", Class.class), intrinsic);
+        add(new MethodReference(Class.class, "initializeImpl", void.class), intrinsic);
         add(new MethodReference("java.lang.Class", "getDeclaredFieldsImpl",
                 ValueType.object("org.teavm.classlib.impl.reflection.FieldInfoList")), intrinsic);
         add(new MethodReference("java.lang.Class", "getDeclaredMethodsImpl",
