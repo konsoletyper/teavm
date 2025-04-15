@@ -77,4 +77,15 @@ public class Int32Array extends TypedArray {
 
     @JSBody(params = "buffer", script = "return buffer;")
     public static native Int32Array fromJavaBuffer(@JSBuffer(JSBufferType.INT32) Buffer buffer);
+
+    @JSBody(params = "array", script = "return array;")
+    public static native Int32Array copyFromJavaArray(@JSByRef(optional = true) int[] array);
+
+    @JSBody(script = "return this;")
+    @JSByRef(optional = true)
+    public native int[] copyToJavaArray();
+
+    @JSBody(script = "return this;")
+    @JSByRef
+    public native int[] toJavaArray();
 }

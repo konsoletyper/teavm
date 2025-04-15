@@ -71,4 +71,15 @@ public class Int8Array extends TypedArray {
 
     @JSBody(params = "buffer", script = "return buffer")
     public static native Int8Array fromJavaBuffer(@JSBuffer(JSBufferType.INT8) Buffer buffer);
+
+    @JSBody(params = "array", script = "return array;")
+    public static native Int8Array copyFromJavaArray(@JSByRef(optional = true) byte[] array);
+
+    @JSBody(script = "return this;")
+    @JSByRef(optional = true)
+    public native byte[] copyToJavaArray();
+
+    @JSBody(script = "return this;")
+    @JSByRef
+    public native byte[] toJavaArray();
 }

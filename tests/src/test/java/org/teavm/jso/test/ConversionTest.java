@@ -30,6 +30,13 @@ import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSString;
+import org.teavm.jso.typedarrays.BigInt64Array;
+import org.teavm.jso.typedarrays.Float32Array;
+import org.teavm.jso.typedarrays.Float64Array;
+import org.teavm.jso.typedarrays.Int16Array;
+import org.teavm.jso.typedarrays.Int32Array;
+import org.teavm.jso.typedarrays.Int8Array;
+import org.teavm.jso.typedarrays.Uint16Array;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.SkipJVM;
@@ -84,6 +91,101 @@ public class ConversionTest {
         assertArrayEquals(new double[] { 6.5 }, arrays.getG(), 0.01);
         assertArrayEquals(new String[] { "foo" }, arrays.getH());
         assertArrayEquals(new long[] { 7L }, arrays.getI());
+    }
+
+    @Test
+    public void convertsPrimitiveTypedArraysToJava() {
+        PrimitiveArrays arrays = getPrimitiveTypedArrays();
+
+        boolean[] booleanArray = arrays.getA();
+        assertEquals(1, booleanArray.length);
+        assertTrue(booleanArray[0]);
+
+        assertArrayEquals(new byte[] { 2 }, arrays.getB());
+        assertArrayEquals(new short[] { 3 }, arrays.getC());
+        assertArrayEquals(new char[] { '@' }, arrays.getD());
+        assertArrayEquals(new int[] { 4 }, arrays.getE());
+        assertArrayEquals(new float[] { 5.5F }, arrays.getF(), 0.01F);
+        assertArrayEquals(new double[] { 6.5 }, arrays.getG(), 0.01);
+        assertArrayEquals(new String[] { "foo" }, arrays.getH());
+        assertArrayEquals(new long[] { 7L }, arrays.getI());
+    }
+
+    @Test
+    public void convertsLargeByteArrayToJava() {
+        var array = new byte[16384];
+        for (var i = 0; i < array.length; ++i) {
+            array[i] = (byte) i;
+        }
+        var typedArray = Int8Array.copyFromJavaArray(array);
+        var arrayCopy = typedArray.copyToJavaArray();
+        assertArrayEquals(array, arrayCopy);
+    }
+
+    @Test
+    public void convertsLargeShortArrayToJava() {
+        var array = new short[16384];
+        for (var i = 0; i < array.length; ++i) {
+            array[i] = (short) i;
+        }
+        var typedArray = Int16Array.copyFromJavaArray(array);
+        var arrayCopy = typedArray.copyToJavaArray();
+        assertArrayEquals(array, arrayCopy);
+    }
+
+    @Test
+    public void convertsLargeCharArrayToJava() {
+        var array = new char[16384];
+        for (var i = 0; i < array.length; ++i) {
+            array[i] = (char) i;
+        }
+        var typedArray = Uint16Array.copyFromJavaArray(array);
+        var arrayCopy = typedArray.copyToJavaArray();
+        assertArrayEquals(array, arrayCopy);
+    }
+
+    @Test
+    public void convertsLargeIntArrayToJava() {
+        var array = new int[16384];
+        for (var i = 0; i < array.length; ++i) {
+            array[i] = i;
+        }
+        var typedArray = Int32Array.copyFromJavaArray(array);
+        var arrayCopy = typedArray.copyToJavaArray();
+        assertArrayEquals(array, arrayCopy);
+    }
+
+    @Test
+    public void convertsLargeLongArrayToJava() {
+        var array = new long[16384];
+        for (var i = 0; i < array.length; ++i) {
+            array[i] = i;
+        }
+        var typedArray = BigInt64Array.copyFromJavaArray(array);
+        var arrayCopy = typedArray.copyToJavaArray();
+        assertArrayEquals(array, arrayCopy);
+    }
+
+    @Test
+    public void convertsLargeFloatArrayToJava() {
+        var array = new float[16384];
+        for (var i = 0; i < array.length; ++i) {
+            array[i] = i;
+        }
+        var typedArray = Float32Array.copyFromJavaArray(array);
+        var arrayCopy = typedArray.copyToJavaArray();
+        assertArrayEquals(array, arrayCopy, 0.1f);
+    }
+
+    @Test
+    public void convertsLargeDoubleArrayToJava() {
+        var array = new double[16384];
+        for (var i = 0; i < array.length; ++i) {
+            array[i] = i;
+        }
+        var typedArray = Float64Array.copyFromJavaArray(array);
+        var arrayCopy = typedArray.copyToJavaArray();
+        assertArrayEquals(array, arrayCopy, 0.1);
     }
 
     @Test
@@ -195,6 +297,19 @@ public class ConversionTest {
     @JSBody(script = "return { a: [true], b: [2], c: [3], d: [64], e: [4], f: [5.5], "
             + "g: [6.5], h: ['foo'], i: [BigInt(7)] };")
     private static native PrimitiveArrays getPrimitiveArrays();
+
+    @JSBody(script = "return { "
+            + "a: [true], "
+            + "b: new Int8Array([2]), "
+            + "c: new Int16Array([3]), "
+            + "d: new Uint16Array([64]), "
+            + "e: new Int32Array([4]), "
+            + "f: new Float32Array([5.5]), "
+            + "g: new Float64Array([6.5]), "
+            + "h: ['foo'], "
+            + "i: new BigInt64Array([BigInt(7)])"
+            + "};")
+    private static native PrimitiveArrays getPrimitiveTypedArrays();
 
     @JSBody(params = { "a", "b", "c", "d", "e", "f", "g", "h", "i" }, script = ""
             + "return '' + a[0][0] + ':' + b[0][0] + ':' + c[0][0] + ':' + d[0][0] + ':' + e[0][0] + ':' "

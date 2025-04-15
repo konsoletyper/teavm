@@ -71,4 +71,15 @@ public class Float32Array extends TypedArray {
 
     @JSBody(params = "buffer", script = "return buffer;")
     public static native Float32Array fromJavaBuffer(@JSBuffer(JSBufferType.FLOAT32) Buffer buffer);
+
+    @JSBody(params = "array", script = "return array;")
+    public static native Float32Array copyFromJavaArray(@JSByRef(optional = true) float[] array);
+
+    @JSBody(script = "return this;")
+    @JSByRef(optional = true)
+    public native float[] copyToJavaArray();
+
+    @JSBody(script = "return this;")
+    @JSByRef
+    public native float[] toJavaArray();
 }

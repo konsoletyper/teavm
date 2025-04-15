@@ -71,4 +71,15 @@ public class Uint16Array extends TypedArray {
 
     @JSBody(params = "buffer", script = "return buffer;")
     public static native Uint16Array fromJavaBuffer(@JSBuffer(JSBufferType.UINT16) Buffer buffer);
+
+    @JSBody(params = "array", script = "return array;")
+    public static native Uint16Array copyFromJavaArray(@JSByRef(optional = true) char[] array);
+
+    @JSBody(script = "return this;")
+    @JSByRef(optional = true)
+    public native char[] copyToJavaArray();
+
+    @JSBody(script = "return this;")
+    @JSByRef
+    public native char[] toJavaArray();
 }

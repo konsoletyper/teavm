@@ -51,4 +51,15 @@ public class BigInt64Array extends TypedArray {
 
     @JSBody(params = "array", script = "return array;")
     public static native BigInt64Array fromJavaArray(@JSByRef long[] array);
+
+    @JSBody(params = "array", script = "return array;")
+    public static native BigInt64Array copyFromJavaArray(@JSByRef(optional = true) long[] array);
+
+    @JSBody(script = "return this;")
+    @JSByRef(optional = true)
+    public native long[] copyToJavaArray();
+
+    @JSBody(script = "return this;")
+    @JSByRef
+    public native long[] toJavaArray();
 }

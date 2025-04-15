@@ -18,6 +18,7 @@ package org.teavm.jso.impl;
 import java.lang.reflect.Array;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
@@ -248,8 +249,23 @@ public final class JS {
             return null;
         }
         var result = new Int8Array(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, array[i]);
+        if (PlatformDetector.isWebAssemblyGC()) {
+            for (var i = 0; i < array.length; i += WasmBufferUtil.BUFFER_SIZE) {
+                var upper = Math.min(array.length, i + WasmBufferUtil.BUFFER_SIZE);
+                var sz = upper - i;
+                var ptr = WasmBufferUtil.buffer;
+                for (var j = 0; j < sz; ++j) {
+                    ptr.putByte(array[i + j]);
+                    ptr = ptr.add(1);
+                }
+                var dest = new Int8Array(result.getBuffer(), result.getByteOffset() + i, sz);
+                var src = new Int8Array(WasmBufferUtil.getLinearMemory(), WasmBufferUtil.buffer.toInt(), sz);
+                dest.set(src);
+            }
+        } else {
+            for (int i = 0; i < array.length; ++i) {
+                result.set(i, array[i]);
+            }
         }
         return result;
     }
@@ -263,8 +279,24 @@ public final class JS {
             return null;
         }
         var result = new Int16Array(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, array[i]);
+        if (PlatformDetector.isWebAssemblyGC()) {
+            var count = WasmBufferUtil.BUFFER_SIZE / 2;
+            for (var i = 0; i < array.length; i += count) {
+                var upper = Math.min(array.length, i + count);
+                var sz = upper - i;
+                var ptr = WasmBufferUtil.buffer;
+                for (var j = 0; j < sz; ++j) {
+                    ptr.putShort(array[i + j]);
+                    ptr = ptr.add(2);
+                }
+                var dest = new Int16Array(result.getBuffer(), result.getByteOffset() + i * 2, sz);
+                var src = new Int16Array(WasmBufferUtil.getLinearMemory(), WasmBufferUtil.buffer.toInt(), sz);
+                dest.set(src);
+            }
+        } else {
+            for (int i = 0; i < array.length; ++i) {
+                result.set(i, array[i]);
+            }
         }
         return result;
     }
@@ -278,8 +310,24 @@ public final class JS {
             return null;
         }
         var result = new Uint16Array(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, array[i]);
+        if (PlatformDetector.isWebAssemblyGC()) {
+            var count = WasmBufferUtil.BUFFER_SIZE / 2;
+            for (var i = 0; i < array.length; i += count) {
+                var upper = Math.min(array.length, i + count);
+                var sz = upper - i;
+                var ptr = WasmBufferUtil.buffer;
+                for (var j = 0; j < sz; ++j) {
+                    ptr.putChar(array[i + j]);
+                    ptr = ptr.add(2);
+                }
+                var dest = new Uint16Array(result.getBuffer(), result.getByteOffset() + i * 2, sz);
+                var src = new Uint16Array(WasmBufferUtil.getLinearMemory(), WasmBufferUtil.buffer.toInt(), sz);
+                dest.set(src);
+            }
+        } else {
+            for (int i = 0; i < array.length; ++i) {
+                result.set(i, array[i]);
+            }
         }
         return result;
     }
@@ -293,8 +341,24 @@ public final class JS {
             return null;
         }
         var result = new Int32Array(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, array[i]);
+        if (PlatformDetector.isWebAssemblyGC()) {
+            var count = WasmBufferUtil.BUFFER_SIZE / 4;
+            for (var i = 0; i < array.length; i += count) {
+                var upper = Math.min(array.length, i + count);
+                var sz = upper - i;
+                var ptr = WasmBufferUtil.buffer;
+                for (var j = 0; j < sz; ++j) {
+                    ptr.putInt(array[i + j]);
+                    ptr = ptr.add(4);
+                }
+                var dest = new Int32Array(result.getBuffer(), result.getByteOffset() + i * 4, sz);
+                var src = new Int32Array(WasmBufferUtil.getLinearMemory(), WasmBufferUtil.buffer.toInt(), sz);
+                dest.set(src);
+            }
+        } else {
+            for (int i = 0; i < array.length; ++i) {
+                result.set(i, array[i]);
+            }
         }
         return result;
     }
@@ -308,8 +372,24 @@ public final class JS {
             return null;
         }
         var result = new BigInt64Array(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, array[i]);
+        if (PlatformDetector.isWebAssemblyGC()) {
+            var count = WasmBufferUtil.BUFFER_SIZE / 8;
+            for (var i = 0; i < array.length; i += count) {
+                var upper = Math.min(array.length, i + count);
+                var sz = upper - i;
+                var ptr = WasmBufferUtil.buffer;
+                for (var j = 0; j < sz; ++j) {
+                    ptr.putLong(array[i + j]);
+                    ptr = ptr.add(8);
+                }
+                var dest = new BigInt64Array(result.getBuffer(), result.getByteOffset() + i * 8, sz);
+                var src = new BigInt64Array(WasmBufferUtil.getLinearMemory(), WasmBufferUtil.buffer.toInt(), sz);
+                dest.set(src);
+            }
+        } else {
+            for (int i = 0; i < array.length; ++i) {
+                result.set(i, array[i]);
+            }
         }
         return result;
     }
@@ -339,8 +419,24 @@ public final class JS {
             return null;
         }
         var result = new Float32Array(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, array[i]);
+        if (PlatformDetector.isWebAssemblyGC()) {
+            var count = WasmBufferUtil.BUFFER_SIZE / 4;
+            for (var i = 0; i < array.length; i += count) {
+                var upper = Math.min(array.length, i + count);
+                var sz = upper - i;
+                var ptr = WasmBufferUtil.buffer;
+                for (var j = 0; j < sz; ++j) {
+                    ptr.putFloat(array[i + j]);
+                    ptr = ptr.add(4);
+                }
+                var dest = new Float32Array(result.getBuffer(), result.getByteOffset() + i * 4, sz);
+                var src = new Float32Array(WasmBufferUtil.getLinearMemory(), WasmBufferUtil.buffer.toInt(), sz);
+                dest.set(src);
+            }
+        } else {
+            for (int i = 0; i < array.length; ++i) {
+                result.set(i, array[i]);
+            }
         }
         return result;
     }
@@ -354,8 +450,24 @@ public final class JS {
             return null;
         }
         var result = new Float64Array(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, array[i]);
+        if (PlatformDetector.isWebAssemblyGC()) {
+            var count = WasmBufferUtil.BUFFER_SIZE / 8;
+            for (var i = 0; i < array.length; i += count) {
+                var upper = Math.min(array.length, i + count);
+                var sz = upper - i;
+                var ptr = WasmBufferUtil.buffer;
+                for (var j = 0; j < sz; ++j) {
+                    ptr.putDouble(array[i + j]);
+                    ptr = ptr.add(8);
+                }
+                var dest = new Float64Array(result.getBuffer(), result.getByteOffset() + i * 8, sz);
+                var src = new Float64Array(WasmBufferUtil.getLinearMemory(), WasmBufferUtil.buffer.toInt(), sz);
+                dest.set(src);
+            }
+        } else {
+            for (int i = 0; i < array.length; ++i) {
+                result.set(i, array[i]);
+            }
         }
         return result;
     }
@@ -403,6 +515,21 @@ public final class JS {
             return null;
         }
         boolean[] result = new boolean[array.getLength()];
+        if (PlatformDetector.isWebAssemblyGC() && array instanceof Int8Array) {
+            var typedArray = (Int8Array) array;
+            for (int i = 0; i < result.length; i += WasmBufferUtil.BUFFER_SIZE) {
+                var upper = Math.min(i + WasmBufferUtil.BUFFER_SIZE, result.length);
+                var sz = upper - i;
+                var part = new Int8Array(typedArray.getBuffer(), typedArray.getByteOffset() + i, sz);
+                var ptr = WasmBufferUtil.buffer;
+                new Int8Array(WasmBufferUtil.getLinearMemory(), ptr.toInt(), upper - i).set(part);
+                for (var j = 0; j < sz; ++j) {
+                    result[i + j] = ptr.getByte() != 0;
+                    ptr = ptr.add(1);
+                }
+            }
+            return result;
+        }
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).booleanValue();
         }
@@ -418,6 +545,21 @@ public final class JS {
             return null;
         }
         byte[] result = new byte[array.getLength()];
+        if (PlatformDetector.isWebAssemblyGC() && array instanceof Int8Array) {
+            var typedArray = (Int8Array) array;
+            for (int i = 0; i < result.length; i += WasmBufferUtil.BUFFER_SIZE) {
+                var upper = Math.min(i + WasmBufferUtil.BUFFER_SIZE, result.length);
+                var sz = upper - i;
+                var part = new Int8Array(typedArray.getBuffer(), typedArray.getByteOffset() + i, sz);
+                var ptr = WasmBufferUtil.buffer;
+                new Int8Array(WasmBufferUtil.getLinearMemory(), ptr.toInt(), upper - i).set(part);
+                for (var j = 0; j < sz; ++j) {
+                    result[i + j] = ptr.getByte();
+                    ptr = ptr.add(1);
+                }
+            }
+            return result;
+        }
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).byteValue();
         }
@@ -433,6 +575,22 @@ public final class JS {
             return null;
         }
         short[] result = new short[array.getLength()];
+        if (PlatformDetector.isWebAssemblyGC() && array instanceof Int16Array) {
+            var typedArray = (Int16Array) array;
+            var elemCount = WasmBufferUtil.BUFFER_SIZE / 2;
+            for (int i = 0; i < result.length; i += elemCount) {
+                var upper = Math.min(i + elemCount, result.length);
+                var sz = upper - i;
+                var part = new Int16Array(typedArray.getBuffer(), typedArray.getByteOffset() + i * 2, sz);
+                var ptr = WasmBufferUtil.buffer;
+                new Int16Array(WasmBufferUtil.getLinearMemory(), ptr.toInt(), upper - i).set(part);
+                for (var j = 0; j < sz; ++j) {
+                    result[i + j] = ptr.getShort();
+                    ptr = ptr.add(2);
+                }
+            }
+            return result;
+        }
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).shortValue();
         }
@@ -448,6 +606,22 @@ public final class JS {
             return null;
         }
         int[] result = new int[array.getLength()];
+        if (PlatformDetector.isWebAssemblyGC() && array instanceof Int32Array) {
+            var typedArray = (Int32Array) array;
+            var elemCount = WasmBufferUtil.BUFFER_SIZE / 4;
+            for (int i = 0; i < result.length; i += elemCount) {
+                var upper = Math.min(i + elemCount, result.length);
+                var sz = upper - i;
+                var part = new Int32Array(typedArray.getBuffer(), typedArray.getByteOffset() + i * 4, sz);
+                var ptr = WasmBufferUtil.buffer;
+                new Int32Array(WasmBufferUtil.getLinearMemory(), ptr.toInt(), upper - i).set(part);
+                for (var j = 0; j < sz; ++j) {
+                    result[i + j] = ptr.getInt();
+                    ptr = ptr.add(4);
+                }
+            }
+            return result;
+        }
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).intValue();
         }
@@ -463,6 +637,22 @@ public final class JS {
             return null;
         }
         var result = new long[array.getLength()];
+        if (PlatformDetector.isWebAssemblyGC() && array instanceof BigInt64Array) {
+            var typedArray = (BigInt64Array) array;
+            var elemCount = WasmBufferUtil.BUFFER_SIZE / 8;
+            for (int i = 0; i < result.length; i += elemCount) {
+                var upper = Math.min(i + elemCount, result.length);
+                var sz = upper - i;
+                var part = new BigInt64Array(typedArray.getBuffer(), typedArray.getByteOffset() + i * 8, sz);
+                var ptr = WasmBufferUtil.buffer;
+                new BigInt64Array(WasmBufferUtil.getLinearMemory(), ptr.toInt(), upper - i).set(part);
+                for (var j = 0; j < sz; ++j) {
+                    result[i + j] = ptr.getLong();
+                    ptr = ptr.add(8);
+                }
+            }
+            return result;
+        }
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).longValue();
         }
@@ -478,6 +668,22 @@ public final class JS {
             return null;
         }
         char[] result = new char[array.getLength()];
+        if (PlatformDetector.isWebAssemblyGC() && array instanceof Uint16Array) {
+            var typedArray = (Uint16Array) array;
+            var elemCount = WasmBufferUtil.BUFFER_SIZE / 2;
+            for (int i = 0; i < result.length; i += elemCount) {
+                var upper = Math.min(i + elemCount, result.length);
+                var sz = upper - i;
+                var part = new Uint16Array(typedArray.getBuffer(), typedArray.getByteOffset() + i * 2, sz);
+                var ptr = WasmBufferUtil.buffer;
+                new Uint16Array(WasmBufferUtil.getLinearMemory(), ptr.toInt(), upper - i).set(part);
+                for (var j = 0; j < sz; ++j) {
+                    result[i + j] = ptr.getChar();
+                    ptr = ptr.add(2);
+                }
+            }
+            return result;
+        }
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).charValue();
         }
@@ -493,6 +699,22 @@ public final class JS {
             return null;
         }
         float[] result = new float[array.getLength()];
+        if (PlatformDetector.isWebAssemblyGC() && array instanceof Float32Array) {
+            var typedArray = (Float32Array) array;
+            var elemCount = WasmBufferUtil.BUFFER_SIZE / 4;
+            for (int i = 0; i < result.length; i += elemCount) {
+                var upper = Math.min(i + elemCount, result.length);
+                var sz = upper - i;
+                var part = new Float32Array(typedArray.getBuffer(), typedArray.getByteOffset() + i * 4, sz);
+                var ptr = WasmBufferUtil.buffer;
+                new Float32Array(WasmBufferUtil.getLinearMemory(), ptr.toInt(), upper - i).set(part);
+                for (var j = 0; j < sz; ++j) {
+                    result[i + j] = ptr.getFloat();
+                    ptr = ptr.add(4);
+                }
+            }
+            return result;
+        }
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).floatValue();
         }
@@ -508,6 +730,22 @@ public final class JS {
             return null;
         }
         double[] result = new double[array.getLength()];
+        if (PlatformDetector.isWebAssemblyGC() && array instanceof Float64Array) {
+            var typedArray = (Float64Array) array;
+            var elemCount = WasmBufferUtil.BUFFER_SIZE / 8;
+            for (int i = 0; i < result.length; i += elemCount) {
+                var upper = Math.min(i + elemCount, result.length);
+                var sz = upper - i;
+                var part = new Float64Array(typedArray.getBuffer(), typedArray.getByteOffset() + i * 8, sz);
+                var ptr = WasmBufferUtil.buffer;
+                new Float64Array(WasmBufferUtil.getLinearMemory(), ptr.toInt(), upper - i).set(part);
+                for (var j = 0; j < sz; ++j) {
+                    result[i + j] = ptr.getDouble();
+                    ptr = ptr.add(8);
+                }
+            }
+            return result;
+        }
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).doubleValue();
         }

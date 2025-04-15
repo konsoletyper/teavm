@@ -71,4 +71,15 @@ public class Int16Array extends TypedArray {
 
     @JSBody(params = "buffer", script = "return buffer;")
     public static native Int16Array fromJavaBuffer(@JSBuffer(JSBufferType.INT16) Buffer buffer);
+
+    @JSBody(params = "array", script = "return array;")
+    public static native Int16Array copyFromJavaArray(@JSByRef(optional = true) short[] array);
+
+    @JSBody(script = "return this;")
+    @JSByRef(optional = true)
+    public native short[] copyToJavaArray();
+
+    @JSBody(script = "return this;")
+    @JSByRef
+    public native short[] toJavaArray();
 }
