@@ -44,6 +44,8 @@ public class ClassMetadataRequirements {
             "newInstance", Class.class, int.class, Object.class);
     private static final MethodReference ARRAY_GET = new MethodReference(Array.class,
             "get", Object.class, int.class, Object.class);
+    private static final MethodReference ARRAY_SET = new MethodReference(Array.class,
+            "set", Object.class, int.class, Object.class, void.class);
     private static final MethodReference ARRAY_LENGTH = new MethodReference(Array.class,
             "getLength", Object.class, int.class);
     private static final MethodReference ARRAY_COPY = new MethodReference(System.class,
@@ -51,6 +53,7 @@ public class ClassMetadataRequirements {
     private static final ClassInfo EMPTY_INFO = new ClassInfo();
     private Map<ValueType, ClassInfo> requirements = new HashMap<>();
     private boolean hasArrayGet;
+    private boolean hasArraySet;
     private boolean hasArrayLength;
     private boolean hasArrayCopy;
     private boolean hasEnumConstants;
@@ -138,6 +141,15 @@ public class ClassMetadataRequirements {
             var classNames = arrayGet.getVariable(1).getTypes();
             for (var className : classNames) {
                 requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).arrayGet = true;
+            }
+        }
+
+        var arraySet = dependencyInfo.getMethod(ARRAY_SET);
+        if (arraySet != null) {
+            hasArraySet = arraySet.isUsed();
+            var classNames = arraySet.getVariable(1).getTypes();
+            for (var className : classNames) {
+                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).arraySet = true;
             }
         }
 
@@ -252,6 +264,10 @@ public class ClassMetadataRequirements {
         return hasArrayGet;
     }
 
+    public boolean hasArraySet() {
+        return hasArraySet;
+    }
+
     public boolean hasArrayLength() {
         return hasArrayLength;
     }
@@ -342,6 +358,7 @@ public class ClassMetadataRequirements {
         boolean newArray;
         boolean arrayLength;
         boolean arrayGet;
+        boolean arraySet;
         boolean arrayCopy;
         boolean cloneMethod;
         boolean enumConstants;
@@ -400,6 +417,11 @@ public class ClassMetadataRequirements {
         }
 
         @Override
+        public boolean arraySet() {
+            return arraySet;
+        }
+
+        @Override
         public boolean cloneMethod() {
             return cloneMethod;
         }
@@ -443,6 +465,8 @@ public class ClassMetadataRequirements {
         boolean arrayLength();
 
         boolean arrayGet();
+
+        boolean arraySet();
 
         boolean arrayCopy();
 

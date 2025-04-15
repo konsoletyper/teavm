@@ -171,6 +171,7 @@ public class WasmGCIntrinsics implements WasmGCIntrinsicProvider {
         var intrinsic = new ArrayIntrinsic();
         add(new MethodReference(Array.class, "getLength", Object.class, int.class), intrinsic);
         add(new MethodReference(Array.class, "getImpl", Object.class, int.class, Object.class), intrinsic);
+        add(new MethodReference(Array.class, "setImpl", Object.class, int.class, Object.class, void.class), intrinsic);
     }
 
     private void fillString() {

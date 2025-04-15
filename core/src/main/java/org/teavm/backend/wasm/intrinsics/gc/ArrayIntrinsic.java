@@ -33,6 +33,8 @@ public class ArrayIntrinsic implements WasmGCIntrinsic {
                 return arrayLength(invocation, context);
             case "getImpl":
                 return arrayGet(invocation, context);
+            case "setImpl":
+                return arraySet(invocation, context);
             default:
                 throw new IllegalArgumentException("Unknown method: " + invocation.getMethod());
         }
@@ -44,6 +46,10 @@ public class ArrayIntrinsic implements WasmGCIntrinsic {
 
     private WasmExpression arrayGet(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         return arrayVirtualCall(invocation, context, context.classInfoProvider().getArrayGetOffset());
+    }
+
+    private WasmExpression arraySet(InvocationExpr invocation, WasmGCIntrinsicContext context) {
+        return arrayVirtualCall(invocation, context, context.classInfoProvider().getArraySetOffset());
     }
 
     private WasmExpression arrayVirtualCall(InvocationExpr invocation, WasmGCIntrinsicContext context,

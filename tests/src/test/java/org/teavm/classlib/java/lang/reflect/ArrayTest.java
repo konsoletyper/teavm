@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.EachTestCompiledSeparately;
@@ -46,7 +45,7 @@ public class ArrayTest {
     }
 
     @Test
-    @Ignore
+    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.C})
     public void getWorks() {
         var intArray = new int[] { 23, 42 };
         var stringArray = new String[] { "asd", "qwe" };
@@ -64,7 +63,7 @@ public class ArrayTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void setWorks() {
         Object array = Array.newInstance(String.class, 2);
         Array.set(array, 0, "foo");
@@ -73,7 +72,7 @@ public class ArrayTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC})
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void setPrimitiveWorks() {
         Object array = Array.newInstance(int.class, 2);
         Array.set(array, 0, 23);
