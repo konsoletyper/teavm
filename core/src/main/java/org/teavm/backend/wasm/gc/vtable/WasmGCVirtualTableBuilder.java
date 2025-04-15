@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -339,9 +340,11 @@ class WasmGCVirtualTableBuilder {
                 }
             }
 
+            var entriesFromInterfaces = new LinkedHashMap<MethodDescriptor, MethodReference>();
             for (var itfName : table.cls.getInterfaces()) {
-                fillFromInterfaces(itfName, table);
+                fillFromInterfaces(itfName, table, entriesFromInterfaces);
             }
+            table.currentImplementors.putAll(entriesFromInterfaces);
         }
 
         var group = groupedMethodsAtCallSites.get(table.cls.getName());
@@ -362,13 +365,16 @@ class WasmGCVirtualTableBuilder {
         }
     }
 
-    private void fillFromInterfaces(String itfName, Table table) {
+    private void fillFromInterfaces(String itfName, Table table, Map<MethodDescriptor, MethodReference> result) {
         if (!table.interfaces.add(itfName)) {
             return;
         }
         var cls = classes.get(itfName);
         if (cls == null) {
             return;
+        }
+        for (var superItf : cls.getInterfaces()) {
+            fillFromInterfaces(superItf, table, result);
         }
         for (var method : cls.getMethods()) {
             if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)) {
@@ -379,12 +385,9 @@ class WasmGCVirtualTableBuilder {
                     continue;
                 }
                 if (table.currentImplementors.get(method.getDescriptor()) == null) {
-                    table.currentImplementors.put(method.getDescriptor(), method.getReference());
+                    result.put(method.getDescriptor(), method.getReference());
                 }
             }
-        }
-        for (var superItf : cls.getInterfaces()) {
-            fillFromInterfaces(superItf, table);
         }
     }
 
