@@ -467,6 +467,15 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         } else {
             typesInReflectableSignaturesNode.propagate(agent.getType("~" + type));
         }
+        linkClass(agent, type);
+    }
+
+    private void linkClass(DependencyAgent agent, ValueType type) {
+        if (type instanceof ValueType.Object) {
+            agent.linkClass(((ValueType.Object) type).getClassName());
+        } else if (type instanceof ValueType.Array) {
+            linkClass(agent, ((ValueType.Array) type).getItemType());
+        }
     }
 
     private void linkClassIfNecessary(DependencyAgent agent, MemberReader member, CallLocation location) {

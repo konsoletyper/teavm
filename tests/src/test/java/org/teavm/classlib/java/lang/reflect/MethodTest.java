@@ -16,11 +16,14 @@
 package org.teavm.classlib.java.lang.reflect;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
@@ -129,6 +132,15 @@ public class MethodTest {
         Method method = WithInitializer.class.getMethod("f");
         method.invoke(null);
         assertEquals("init;f();", WithInitializer.log);
+    }
+
+    @Test
+    public void enumMethodWithUnusedParameterType() {
+        var methods = ClassWithMethodReferringToUnusedInterface.class.getDeclaredMethods();
+        assertEquals(1, methods.length);
+        assertEquals("f", methods[0].getName());
+        assertEquals("java.util.function.Consumer", methods[0].getParameterTypes()[0].getName());
+        assertTrue(methods[0].getReturnType().getComponentType().isInterface());
     }
 
     private void callMethods() {
@@ -265,6 +277,13 @@ public class MethodTest {
     static class EmptyInterfaceImplementor implements EmptySuperInterface {
         @Reflectable
         public void f() {
+        }
+    }
+
+    static class ClassWithMethodReferringToUnusedInterface {
+        @Reflectable
+        public Function<Object, Object>[] f(Consumer<String> s) {
+            return null;
         }
     }
 }
