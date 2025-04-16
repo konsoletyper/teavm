@@ -30,7 +30,9 @@ import java.nio.LongBuffer;
 import java.nio.ReadOnlyBufferException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class LongBufferTest {
@@ -49,6 +51,17 @@ public class LongBufferTest {
         } catch (InvalidMarkException e) {
             // ok
         }
+    }
+
+    @Test
+    @SkipPlatform({ TestPlatform.WASI, TestPlatform.WEBASSEMBLY})
+    public void bulkTransferDirect() {
+        var buffer = ByteBuffer.allocateDirect(40).asLongBuffer();
+        var longs = new long[] { 1, 2, 3 };
+        buffer.put(0, longs);
+        var longsCopy = new long[longs.length];
+        buffer.get(0, longsCopy);
+        assertArrayEquals(longs, longsCopy);
     }
 
     @Test(expected = IllegalArgumentException.class)

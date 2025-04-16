@@ -55,6 +55,17 @@ public class ByteBufferTest {
         }
     }
 
+    @Test
+    @SkipPlatform({TestPlatform.WASI, TestPlatform.WEBASSEMBLY})
+    public void bulkTransferDirect() {
+        var buffer = ByteBuffer.allocateDirect(10);
+        var bytes = new byte[] { 1, 2, 3 };
+        buffer.put(0, bytes);
+        var bytesCopy = new byte[bytes.length];
+        buffer.get(0, bytesCopy);
+        assertArrayEquals(bytes, bytesCopy);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void errorIfAllocatingDirectOfNegativeSize() {
         ByteBuffer.allocateDirect(-2);

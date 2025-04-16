@@ -20,13 +20,13 @@ import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.BigInt64Array;
 
 class TLongBufferNative extends TLongBufferImpl implements TArrayBufferViewProvider {
-    private long[] array;
-    private boolean readOnly;
+    long[] array;
+    boolean readOnly;
     @TNativeBufferObjectMarker
     protected final Object base;
-    private final Address address;
-    private int capacity;
-    private boolean swap;
+    final Address address;
+    int capacity;
+    boolean swap;
 
     TLongBufferNative(long[] array, int position, int limit, boolean readOnly,
             Object base, Address address, int capacity, boolean swap) {
@@ -100,7 +100,7 @@ class TLongBufferNative extends TLongBufferImpl implements TArrayBufferViewProvi
                 addr = addr.add(8);
             }
         } else {
-            TByteBufferNative.copy(addr, Address.ofData(dst).add(offset * 8), length * 8);
+            copy(addr, dst, offset, length);
         }
     }
 
@@ -113,7 +113,7 @@ class TLongBufferNative extends TLongBufferImpl implements TArrayBufferViewProvi
                 addr = addr.add(8);
             }
         } else {
-            TByteBufferNative.copy(Address.ofData(src).add(offset * 8), addr, length * 8);
+            copy(src, offset, addr, length);
         }
     }
 
@@ -163,5 +163,13 @@ class TLongBufferNative extends TLongBufferImpl implements TArrayBufferViewProvi
     @Override
     public int elementSize() {
         return 8;
+    }
+
+    void copy(long[] from, int fromOffset, Address to, int count) {
+        TByteBufferNative.copy(Address.ofData(from).add(fromOffset * 8), to, count * 8);
+    }
+
+    void copy(Address from, long[] to, int toOffset, int count) {
+        TByteBufferNative.copy(from, Address.ofData(to).add(toOffset * 8), count * 8);
     }
 }

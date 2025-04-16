@@ -59,7 +59,7 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
             if (addr == null) {
                 throw new TOutOfMemoryError();
             }
-            var result = new TByteBufferNative(null, 0, null, addr, capacity, false);
+            var result = new TByteBufferWasmGC(null, 0, null, addr, capacity, false);
             result.limit = capacity;
             TJSBufferHelper.WasmGC.register(result, addr);
             return result;
@@ -134,6 +134,10 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
         return this;
     }
 
+    public TByteBuffer get(int index, byte[] dst) {
+        return get(index, dst, 0, dst.length);
+    }
+
     public TByteBuffer get(int index, byte[] dst, int offset, int length) {
         if (length < 0 || offset < 0 || offset + length > dst.length || index < 0 || index + length > limit()) {
             throw new IndexOutOfBoundsException();
@@ -190,6 +194,10 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
         return put(src, 0, src.length);
     }
 
+    public TByteBuffer put(int index, byte[] src) {
+        return put(index, src, 0, src.length);
+    }
+
     public TByteBuffer put(int index, byte[] src, int offset, int length) {
         if (length == 0) {
             return this;
@@ -200,7 +208,7 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
         if (length < 0 || offset < 0 || offset + length > src.length || index < 0 || index + length > limit()) {
             throw new IndexOutOfBoundsException();
         }
-        putImpl(src, offset, length, length);
+        putImpl(src, offset, index, length);
         return this;
     }
 

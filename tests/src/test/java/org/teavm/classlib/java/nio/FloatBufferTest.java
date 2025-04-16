@@ -30,7 +30,9 @@ import java.nio.InvalidMarkException;
 import java.nio.ReadOnlyBufferException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class FloatBufferTest {
@@ -49,6 +51,17 @@ public class FloatBufferTest {
         } catch (InvalidMarkException e) {
             // ok
         }
+    }
+
+    @Test
+    @SkipPlatform({ TestPlatform.WASI, TestPlatform.WEBASSEMBLY })
+    public void bulkTransferDirect() {
+        var buffer = ByteBuffer.allocateDirect(40).asFloatBuffer();
+        var floats = new float[] { 1, 2, 3 };
+        buffer.put(0, floats);
+        var floatsCopy = new float[floats.length];
+        buffer.get(0, floatsCopy);
+        assertArrayEquals(floats, floatsCopy, 0.1f);
     }
 
     @Test(expected = IllegalArgumentException.class)

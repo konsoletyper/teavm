@@ -20,14 +20,14 @@ import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Int8Array;
 
 class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider {
-    private byte[] array;
-    private int arrayOffset;
+    byte[] array;
+    int arrayOffset;
     @TNativeBufferObjectMarker
-    private Object base;
-    private Address address;
-    private int capacity;
-    private boolean readOnly;
-    private boolean swap;
+    Object base;
+    Address address;
+    int capacity;
+    boolean readOnly;
+    boolean swap;
 
     TByteBufferNative(byte[] array, int arrayOffset, Object base, Address address, int capacity, boolean readOnly) {
         this.array = array;
@@ -76,7 +76,7 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider 
 
     @Override
     void getImpl(int index, byte[] dst, int offset, int length) {
-        copy(address.add(index), Address.ofData(dst).add(offset), length);
+        copy(address.add(index), dst, offset, length);
     }
 
     @Override
@@ -85,8 +85,7 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider 
             var srcImpl = (TByteBufferNative) src;
             copy(srcImpl.address.add(offset), address.add(index), length);
         } else if (src.hasArray()) {
-            copy(Address.ofData(src.array()).add(offset + src.arrayOffset() + offset),
-                    address.add(index), length);
+            copy(src.array(), offset + src.arrayOffset() + offset, address.add(index), length);
         } else {
             var addr = address.add(index);
             while (length-- > 0) {
@@ -98,7 +97,7 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider 
 
     @Override
     void putImpl(byte[] src, int srcOffset, int destOffset, int length) {
-        copy(Address.ofData(src).add(srcOffset), address.add(destOffset), length);
+        copy(src, srcOffset, address.add(destOffset), length);
     }
 
     @Override
@@ -525,6 +524,14 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider 
     public TDoubleBuffer asDoubleBuffer() {
         int sz = remaining() / 8;
         return new TDoubleBufferNative(null, 0, sz, readOnly, base, address.add(position), sz, swap);
+    }
+
+    void copy(byte[] from, int fromOffset, Address to, int count) {
+        copy(Address.ofData(from).add(fromOffset), to, count);
+    }
+
+    void copy(Address from, byte[] to, int toOffset, int count) {
+        copy(from, Address.ofData(to).add(toOffset), count);
     }
 
     static void copy(Address from, Address to, int count) {

@@ -31,7 +31,9 @@ import java.nio.InvalidMarkException;
 import java.nio.ReadOnlyBufferException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 public class CharBufferTest {
@@ -50,6 +52,17 @@ public class CharBufferTest {
         } catch (InvalidMarkException e) {
             // ok
         }
+    }
+
+    @Test
+    @SkipPlatform({ TestPlatform.WASI, TestPlatform.WEBASSEMBLY})
+    public void bulkTransferDirect() {
+        var buffer = ByteBuffer.allocateDirect(10).asCharBuffer();
+        var chars = new char[] { 1, 2, 3 };
+        buffer.put(0, chars);
+        var charsCopy = new char[chars.length];
+        buffer.get(0, charsCopy);
+        assertArrayEquals(chars, charsCopy);
     }
 
     @Test(expected = IllegalArgumentException.class)
