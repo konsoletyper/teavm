@@ -19,5 +19,5 @@ import java.beans.PropertyChangeEvent;
 import java.util.EventListener;
 
 public interface TPropertyChangeListener extends EventListener {
-    public void propertyChange(final PropertyChangeEvent propertyChangeEvent);
+    void propertyChange(PropertyChangeEvent propertyChangeEvent);
 }

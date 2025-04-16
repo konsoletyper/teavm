@@ -19,7 +19,6 @@ import java.beans.IndexedPropertyChangeEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeListenerProxy;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,8 +38,10 @@ public class TPropertyChangeSupport {
             return;
         }
         if (propertyChangeListener instanceof PropertyChangeListenerProxy) {
-            PropertyChangeListenerProxy propertyChangeListenerProxy = (PropertyChangeListenerProxy) propertyChangeListener;
-            addPropertyChangeListener(propertyChangeListenerProxy.getPropertyName(), propertyChangeListenerProxy.getListener());
+            PropertyChangeListenerProxy propertyChangeListenerProxy =
+                    (PropertyChangeListenerProxy) propertyChangeListener;
+            addPropertyChangeListener(propertyChangeListenerProxy.getPropertyName(),
+                    propertyChangeListenerProxy.getListener());
         } else {
             addToMap(null, propertyChangeListener);
         }
@@ -51,8 +52,10 @@ public class TPropertyChangeSupport {
             return;
         }
         if (propertyChangeListener instanceof PropertyChangeListenerProxy) {
-            PropertyChangeListenerProxy propertyChangeListenerProxy = (PropertyChangeListenerProxy) propertyChangeListener;
-            removePropertyChangeListener(propertyChangeListenerProxy.getPropertyName(), propertyChangeListenerProxy.getListener());
+            PropertyChangeListenerProxy propertyChangeListenerProxy =
+                    (PropertyChangeListenerProxy) propertyChangeListener;
+            removePropertyChangeListener(propertyChangeListenerProxy.getPropertyName(),
+                    propertyChangeListenerProxy.getListener());
         } else {
             removeFromMap(null, propertyChangeListener);
         }
@@ -66,14 +69,16 @@ public class TPropertyChangeSupport {
         return propertyChangeListeners.toArray(new PropertyChangeListener[propertyChangeListeners.size()]);
     }
 
-    public synchronized void addPropertyChangeListener(final String propertyName, final PropertyChangeListener propertyChangeListener) {
+    public synchronized void addPropertyChangeListener(final String propertyName,
+            final PropertyChangeListener propertyChangeListener) {
         if (propertyName == null || propertyChangeListener == null) {
             return;
         }
         addToMap(propertyName, unwrap(propertyChangeListener));
     }
 
-    public synchronized void removePropertyChangeListener(final String propertyName, final PropertyChangeListener propertyChangeListener) {
+    public synchronized void removePropertyChangeListener(final String propertyName,
+            final PropertyChangeListener propertyChangeListener) {
         if (propertyName == null || propertyChangeListener == null) {
             return;
         }
@@ -104,7 +109,8 @@ public class TPropertyChangeSupport {
     }
 
     public synchronized void firePropertyChange(final PropertyChangeEvent event) {
-        if (event == null || event.getOldValue() == null || event.getNewValue() == null || event.getOldValue().equals(event.getNewValue()) == false) {
+        if (event == null || event.getOldValue() == null || event.getNewValue() == null
+                || !event.getOldValue().equals(event.getNewValue())) {
             List<PropertyChangeListener> fireList = new ArrayList<>();
             if (eventToListenerMap.get(null) != null) {
                 fireList.addAll(eventToListenerMap.get(null));
@@ -118,20 +124,24 @@ public class TPropertyChangeSupport {
         }
     }
 
-    public void fireIndexedPropertyChange(final String propertyName, final int index, final Object oldValue, final Object newValue) {
+    public void fireIndexedPropertyChange(final String propertyName, final int index,
+            final Object oldValue, final Object newValue) {
         firePropertyChange(new IndexedPropertyChangeEvent(sourceBean, propertyName, oldValue, newValue, index));
     }
 
-    public void fireIndexedPropertyChange(final String propertyName, final int index, final int oldValue, final int newValue) {
+    public void fireIndexedPropertyChange(final String propertyName, final int index,
+            final int oldValue, final int newValue) {
         fireIndexedPropertyChange(propertyName, index, oldValue, newValue);
     }
 
-    public void fireIndexedPropertyChange(final String propertyName, final int index, final boolean oldValue, final boolean newValue) {
+    public void fireIndexedPropertyChange(final String propertyName, final int index,
+            final boolean oldValue, final boolean newValue) {
         fireIndexedPropertyChange(propertyName, index, oldValue, newValue);
     }
 
     public synchronized boolean hasListeners(final String propertyName) {
-        return propertyName != null && eventToListenerMap.get(propertyName) != null && eventToListenerMap.get(propertyName).size() != 0;
+        return propertyName != null && eventToListenerMap.get(propertyName)
+                != null && eventToListenerMap.get(propertyName).size() != 0;
     }
 
     private void addToMap(final String key, final PropertyChangeListener propertyChangeListener) {

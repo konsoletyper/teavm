@@ -21,7 +21,8 @@ public class TIndexedPropertyChangeEvent extends PropertyChangeEvent {
 
     private final int index;
 
-    public TIndexedPropertyChangeEvent(final Object source, final String propertyName, final Object oldValue, final Object newValue, final int index) {
+    public TIndexedPropertyChangeEvent(final Object source, final String propertyName,
+            final Object oldValue, final Object newValue, final int index) {
         super(source, propertyName, oldValue, newValue);
         this.index = index;
     }

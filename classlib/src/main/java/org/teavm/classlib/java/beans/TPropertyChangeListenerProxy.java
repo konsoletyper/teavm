@@ -19,11 +19,13 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.EventListenerProxy;
 
-public class TPropertyChangeListenerProxy extends EventListenerProxy<PropertyChangeListener> implements PropertyChangeListener {
+public class TPropertyChangeListenerProxy extends EventListenerProxy<PropertyChangeListener>
+        implements PropertyChangeListener {
 
     private final String propertyName;
 
-    public TPropertyChangeListenerProxy(final String propertyName, final PropertyChangeListener propertyChangeListener) {
+    public TPropertyChangeListenerProxy(final String propertyName,
+            final PropertyChangeListener propertyChangeListener) {
         super(propertyChangeListener);
         this.propertyName = propertyName;
     }
