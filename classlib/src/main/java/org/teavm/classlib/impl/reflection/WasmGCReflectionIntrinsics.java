@@ -268,7 +268,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 fieldInit.getInitializers().add(renderType(context, field.getType()));
 
                 if (accessibleFields != null && accessibleFields.contains(field.getName())
-                        && reflection.isGetReached()) {
+                        && reflection.isGetReached() && reflection.isRead(field.getReference())) {
                     var getter = generateGetter(context, field);
                     fieldInit.getInitializers().add(new WasmFunctionReference(getter));
                 } else {
@@ -276,7 +276,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                     fieldInit.getInitializers().add(new WasmNullConstant(getterType.getReference()));
                 }
                 if (accessibleFields != null && accessibleFields.contains(field.getName())
-                        && reflection.isSetReached()) {
+                        && reflection.isSetReached() && reflection.isWritten(field.getReference())) {
                     var setter = generateSetter(context, field);
                     fieldInit.getInitializers().add(new WasmFunctionReference(setter));
                 } else {
@@ -341,7 +341,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 methodInit.getInitializers().add(parametersArray);
 
                 if (accessibleMethods != null && accessibleMethods.contains(method.getDescriptor())
-                        && reflection.isCallReached()) {
+                        && reflection.isCallReached() && reflection.isCalled(method.getReference())) {
                     var caller = generateCaller(context, method);
                     methodInit.getInitializers().add(new WasmFunctionReference(caller));
                 } else {

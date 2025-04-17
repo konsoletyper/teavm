@@ -84,6 +84,9 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private Set<MethodReference> virtualMethods = new HashSet<>();
     private Set<MethodReference> virtualCallSites = new HashSet<>();
     private Set<String> classesFoundByName = new HashSet<>();
+    private Set<MethodReference> calledMethods = new HashSet<>();
+    private Set<FieldReference> readFields = new HashSet<>();
+    private Set<FieldReference> writtenFields = new HashSet<>();
 
     private boolean getReached;
     private boolean setReached;
@@ -99,6 +102,18 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
 
     public Collection<MethodReference> getVirtualCallSites() {
         return virtualCallSites;
+    }
+
+    public boolean isCalled(MethodReference methodRef) {
+        return calledMethods.contains(methodRef);
+    }
+
+    public boolean isRead(FieldReference fieldRef) {
+        return readFields.contains(fieldRef);
+    }
+
+    public boolean isWritten(FieldReference fieldRef) {
+        return writtenFields.contains(fieldRef);
     }
 
     @Override
@@ -271,7 +286,13 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 FieldReader field = cls.getField(fieldName);
                 FieldDependency fieldDep = agent.linkField(field.getReference())
                         .addLocation(location);
-                propagateGet(agent, field.getType(), fieldDep.getValue(), method.getResult(), location);
+                if (field.hasModifier(ElementModifier.STATIC)) {
+                    readFields.add(field.getReference());
+                    propagateGet(agent, field.getType(), fieldDep.getValue(), method.getResult(), location);
+                } else {
+                    method.getVariable(1).addConsumer(new InstanceGetConsumer(agent, field.getReference(),
+                            method, location));
+                }
                 linkClassIfNecessary(agent, field, location);
             }
         });
@@ -293,7 +314,13 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             for (String fieldName : accessibleFields) {
                 FieldReader field = cls.getField(fieldName);
                 FieldDependency fieldDep = agent.linkField(field.getReference()).addLocation(location);
-                propagateSet(agent, field.getType(), method.getVariable(2), fieldDep.getValue(), location);
+                if (field.hasModifier(ElementModifier.STATIC)) {
+                    writtenFields.add(field.getReference());
+                    propagateSet(agent, field.getType(), method.getVariable(2), fieldDep.getValue(), location);
+                } else {
+                    method.getVariable(1).addConsumer(new InstanceSetConsumer(agent, field.getReference(),
+                            method, location));
+                }
                 linkClassIfNecessary(agent, field, location);
             }
         });
@@ -383,9 +410,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                     continue;
                 }
                 MethodReader calledMethod = cls.getMethod(methodDescriptor);
-                if (calledMethod.hasModifier(ElementModifier.STATIC)
-                        || calledMethod.hasModifier(ElementModifier.FINAL)
-                        || calledMethod.getLevel() == AccessLevel.PRIVATE) {
+                if (calledMethod.hasModifier(ElementModifier.STATIC)) {
                     var calledMethodDep = agent.linkMethod(calledMethod.getReference()).addLocation(location);
                     calledMethodDep.use();
                     for (int i = 0; i < calledMethod.parameterCount(); ++i) {
@@ -397,31 +422,34 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                     propagateGet(agent, calledMethod.getResultType(), calledMethodDep.getResult(),
                             method.getResult(), location);
                     linkClassIfNecessary(agent, calledMethod, location);
+                    calledMethods.add(calledMethod.getReference());
                 } else {
-                    virtualCallSites.add(calledMethod.getReference());
-                    method.getVariable(1).addConsumer(new VirtualCallConsumer(agent, calledMethod.getOwnerName(),
-                            calledMethod.getDescriptor(), method, location));
+                    var virtual = !calledMethod.hasModifier(ElementModifier.FINAL)
+                            && calledMethod.getLevel() != AccessLevel.PRIVATE;
+                    method.getVariable(1).addConsumer(new InstanceCallConsumer(agent, calledMethod.getReference(),
+                            method, location, virtual));
                 }
             }
         });
     }
 
-    private class VirtualCallConsumer implements DependencyConsumer {
+    private class InstanceCallConsumer implements DependencyConsumer {
         private final DependencyAgent agent;
-        private final String classFilter;
-        private final MethodDescriptor methodDesc;
+        private final MethodReference methodRef;
         private final MethodDependency invokeDep;
         private final CallLocation location;
+        private final boolean virtual;
 
         private Set<DependencyType> knownTypes = new HashSet<>();
+        private Set<MethodReference> knownMethods = new HashSet<>();
 
-        VirtualCallConsumer(DependencyAgent agent, String classFilter, MethodDescriptor methodDesc,
-                MethodDependency invokeDep, CallLocation location) {
+        InstanceCallConsumer(DependencyAgent agent, MethodReference methodRef, MethodDependency invokeDep,
+                CallLocation location, boolean virtual) {
             this.agent = agent;
-            this.classFilter = classFilter;
-            this.methodDesc = methodDesc;
+            this.methodRef = methodRef;
             this.invokeDep = invokeDep;
             this.location = location;
+            this.virtual = virtual;
         }
 
         @Override
@@ -436,25 +464,119 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 className = "java.lang.Object";
             }
 
-            if (!agent.getClassHierarchy().isSuperType(classFilter, className, false)) {
+            if (!agent.getClassHierarchy().isSuperType(methodRef.getClassName(), className, false)) {
                 return;
             }
 
-            var methodDep = agent.linkMethod(className, methodDesc);
+            var methodDep = virtual
+                    ? agent.linkMethod(className, methodRef.getDescriptor())
+                    : agent.linkMethod(methodRef);
             methodDep.addLocation(location);
+            if (!knownMethods.add(methodDep.getReference())) {
+                return;
+            }
 
             if (!methodDep.isMissing()) {
+                virtualCallSites.add(methodRef);
+                calledMethods.add(methodRef);
                 methodDep.use();
                 virtualMethods.add(methodDep.getReference());
-                methodDep.getVariable(0).propagate(type);
-                for (var i = 0; i < methodDesc.parameterCount(); ++i) {
-                    propagateSet(agent, methodDesc.parameterType(i), invokeDep.getVariable(2).getArrayItem(),
+                invokeDep.getVariable(1).connect(methodDep.getVariable(0));
+                for (var i = 0; i < methodRef.parameterCount(); ++i) {
+                    propagateSet(agent, methodRef.parameterType(i), invokeDep.getVariable(2).getArrayItem(),
                             methodDep.getVariable(i + 1), location);
                 }
                 if (methodDep.getResult() != null) {
-                    propagateGet(agent, methodDesc.getResultType(), methodDep.getResult(),
+                    propagateGet(agent, methodRef.getReturnType(), methodDep.getResult(),
                             invokeDep.getResult(), location);
                 }
+            }
+        }
+    }
+
+    private class InstanceGetConsumer implements DependencyConsumer {
+        private final DependencyAgent agent;
+        private final FieldReference fieldRef;
+        private final MethodDependency readDep;
+        private final CallLocation location;
+
+        private Set<DependencyType> knownTypes = new HashSet<>();
+        private boolean done;
+
+        InstanceGetConsumer(DependencyAgent agent, FieldReference fieldRef, MethodDependency readDep,
+                CallLocation location) {
+            this.agent = agent;
+            this.fieldRef = fieldRef;
+            this.readDep = readDep;
+            this.location = location;
+        }
+
+        @Override
+        public void consume(DependencyType type) {
+            if (done || !knownTypes.add(type)) {
+                return;
+            }
+
+            var className = type.getName();
+
+            if (className.startsWith("[")) {
+                className = "java.lang.Object";
+            }
+
+            if (!agent.getClassHierarchy().isSuperType(fieldRef.getClassName(), className, false)) {
+                return;
+            }
+
+            var fieldDep = agent.linkField(fieldRef);
+            done = true;
+
+            if (!fieldDep.isMissing()) {
+                readFields.add(fieldRef);
+                propagateGet(agent, fieldDep.getField().getType(), fieldDep.getValue(), readDep.getResult(), location);
+            }
+        }
+    }
+
+    private class InstanceSetConsumer implements DependencyConsumer {
+        private final DependencyAgent agent;
+        private final FieldReference fieldRef;
+        private final MethodDependency readDep;
+        private final CallLocation location;
+
+        private Set<DependencyType> knownTypes = new HashSet<>();
+        private boolean done;
+
+        InstanceSetConsumer(DependencyAgent agent, FieldReference fieldRef, MethodDependency readDep,
+                CallLocation location) {
+            this.agent = agent;
+            this.fieldRef = fieldRef;
+            this.readDep = readDep;
+            this.location = location;
+        }
+
+        @Override
+        public void consume(DependencyType type) {
+            if (done || !knownTypes.add(type)) {
+                return;
+            }
+
+            var className = type.getName();
+
+            if (className.startsWith("[")) {
+                className = "java.lang.Object";
+            }
+
+            if (!agent.getClassHierarchy().isSuperType(fieldRef.getClassName(), className, false)) {
+                return;
+            }
+
+            var fieldDep = agent.linkField(fieldRef);
+            done = true;
+
+            if (!fieldDep.isMissing()) {
+                writtenFields.add(fieldRef);
+                propagateSet(agent, fieldDep.getField().getType(), readDep.getVariable(2), fieldDep.getValue(),
+                        location);
             }
         }
     }
@@ -577,7 +699,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                     unboxMethod = new MethodReference(Float.class, "floatValue", float.class);
                     break;
                 case DOUBLE:
-                    unboxMethod = new MethodReference(Double.class, "doubleOf", double.class);
+                    unboxMethod = new MethodReference(Double.class, "doubleValue", double.class);
                     break;
                 default:
                     throw new AssertionError(type.toString());

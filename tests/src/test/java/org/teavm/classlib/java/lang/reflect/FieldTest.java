@@ -18,6 +18,8 @@ package org.teavm.classlib.java.lang.reflect;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
@@ -125,6 +127,21 @@ public class FieldTest {
         assertEquals(123, ((Foo) instance.c).getValue());
     }
 
+    @Test
+    public void unusedReflectableField() throws IllegalAccessException {
+        var fields = new ArrayList<Field>();
+        for (var cls : List.of(FirstClassWithPrimitiveField.class, SecondClassWithPrimitiveField.class)) {
+            fields.addAll(List.of(cls.getDeclaredFields()));
+        }
+        var instance = new SecondClassWithPrimitiveField();
+        for (var field : fields) {
+            if (field.getDeclaringClass().isInstance(instance)) {
+                field.set(instance, 23L);
+            }
+        }
+        assertEquals(23, instance.b);
+    }
+
     static class ReflectableType {
         @Reflectable public int a;
         @Reflectable private boolean b;
@@ -156,5 +173,15 @@ public class FieldTest {
         public int getValue() {
             return value;
         }
+    }
+
+    static class FirstClassWithPrimitiveField {
+        @Reflectable
+        double a;
+    }
+
+    static class SecondClassWithPrimitiveField {
+        @Reflectable
+        long b;
     }
 }

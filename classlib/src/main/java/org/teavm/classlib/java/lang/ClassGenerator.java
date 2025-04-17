@@ -161,7 +161,8 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
             appendProperty(writer, "type", false, () -> context.typeToClassString(writer, field.getType()));
 
             appendProperty(writer, "getter", false, () -> {
-                if (accessibleFields != null && accessibleFields.contains(field.getName())) {
+                if (accessibleFields != null && accessibleFields.contains(field.getName())
+                        && reflection.isRead(field.getReference())) {
                     renderGetter(context, writer, field);
                 } else {
                     writer.append("null");
@@ -169,7 +170,8 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
             });
 
             appendProperty(writer, "setter", false, () -> {
-                if (accessibleFields != null && accessibleFields.contains(field.getName())) {
+                if (accessibleFields != null && accessibleFields.contains(field.getName())
+                        && reflection.isWritten(field.getReference())) {
                     renderSetter(context, writer, field);
                 } else {
                     writer.append("null");
@@ -209,7 +211,8 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
             });
 
             appendProperty(writer, "callable", false, () -> {
-                if (accessibleMethods != null && accessibleMethods.contains(method.getDescriptor())) {
+                if (accessibleMethods != null && accessibleMethods.contains(method.getDescriptor())
+                        && reflection.isCalled(method.getReference())) {
                     renderCallable(context, writer, method);
                 } else {
                     writer.append("null");

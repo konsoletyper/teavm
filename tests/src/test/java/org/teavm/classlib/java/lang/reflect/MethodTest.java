@@ -143,6 +143,22 @@ public class MethodTest {
         assertTrue(methods[0].getReturnType().getComponentType().isInterface());
     }
 
+    @Test
+    public void avoidCallingVirtualMethod() throws InvocationTargetException, IllegalAccessException {
+        var methods = new ArrayList<Method>();
+        for (var cls : List.of(FirstClassWithVirtualMethod.class, SecondClassWithVirtualMethod.class)) {
+            methods.addAll(List.of(cls.getDeclaredMethods()));
+        }
+        var o = new SecondClassWithVirtualMethod();
+        var sb = new StringBuilder();
+        for (var method : methods) {
+            if (method.getDeclaringClass().isInstance(o)) {
+                sb.append(method.invoke(o, (short) 23));
+            }
+        }
+        assertEquals("g:23", sb.toString());
+    }
+
     private void callMethods() {
         new Foo().bar(null);
         new Foo().baz();
@@ -284,6 +300,20 @@ public class MethodTest {
         @Reflectable
         public Function<Object, Object>[] f(Consumer<String> s) {
             return null;
+        }
+    }
+
+    static class FirstClassWithVirtualMethod {
+        @Reflectable
+        public String f(int x) {
+            return "f:" + x;
+        }
+    }
+
+    static class SecondClassWithVirtualMethod {
+        @Reflectable
+        public String g(short x) {
+            return "g:" + x;
         }
     }
 }
