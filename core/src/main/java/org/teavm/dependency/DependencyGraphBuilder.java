@@ -452,6 +452,8 @@ class DependencyGraphBuilder {
                 String typeName = t.getName().substring(1);
                 if (typeName.charAt(0) == 'L') {
                     typeName = ((ValueType.Object) ValueType.parse(typeName)).getClassName();
+                } else {
+                    typeName = "~" + typeName;
                 }
                 receiverNode.getClassValueNode().propagate(dependencyAnalyzer.getType(typeName));
 

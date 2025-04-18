@@ -79,4 +79,12 @@ public class ArrayTest {
         Array.set(array, 1, 42);
         assertArrayEquals(new int[] { 23, 42 }, (int[]) array);
     }
+
+    @Test
+    public void getArrayTypeDependency() {
+        var cls = float[].class.getComponentType();
+        var array = Array.newInstance(cls, 3);
+        Array.set(array, 0, 1f);
+        assertArrayEquals(new float[] { 1, 0, 0 }, (float[]) array, 0.1f);
+    }
 }
