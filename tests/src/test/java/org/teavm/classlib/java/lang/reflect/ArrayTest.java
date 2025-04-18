@@ -81,6 +81,7 @@ public class ArrayTest {
     }
 
     @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void getArrayTypeDependency() {
         var cls = float[].class.getComponentType();
         var array = Array.newInstance(cls, 3);
