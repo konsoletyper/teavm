@@ -47,10 +47,10 @@ public class Int32Array extends TypedArray {
     public native void set(int index, int value);
 
     @Override
-    public native void set(@JSByRef int[] data, int offset);
+    public native void set(@JSByRef(optional = true) int[] data, int offset);
 
     @Override
-    public native void set(@JSByRef int[] data);
+    public native void set(@JSByRef(optional = true) int[] data);
 
     @JSBody(params = "length", script = "return new Int32Array(length);")
     @Deprecated

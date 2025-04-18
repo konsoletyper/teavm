@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.webgl;
 
+import java.nio.Buffer;
 import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
@@ -626,6 +627,9 @@ public interface WebGLRenderingContext extends JSObject {
 
     void texImage2D(int target, int level, int internalformat, int width, int height, int border, int format,
             int type, ArrayBufferView pixels);
+
+    void texImage2D(int target, int level, int internalformat, int width, int height, int border, int format,
+            int type, Buffer pixels);
 
     void texImage2D(int target, int level, int internalformat, int format, int type, ImageData pixels);
 
