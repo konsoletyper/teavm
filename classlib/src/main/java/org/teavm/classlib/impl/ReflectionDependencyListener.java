@@ -358,7 +358,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                             calledMethodDep.getVariable(i + 1), location);
                 }
                 calledMethodDep.getVariable(0).propagate(reflectedType);
-                linkClassIfNecessary(agent, calledMethod, location);
+                calledMethods.add(calledMethod.getReference());
             }
 
             method.getResult().propagate(reflectedType);
