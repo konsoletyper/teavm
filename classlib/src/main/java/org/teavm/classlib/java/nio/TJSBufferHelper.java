@@ -71,38 +71,38 @@ final class TJSBufferHelper {
     }
 
     static Int8Array toInt8Array(ArrayBufferView view) {
-        return new Int8Array(view.getBuffer(), view.getByteOffset(), view.getLength());
+        return new Int8Array(view.getBuffer(), view.getByteOffset(), view.getByteLength());
     }
 
     static Uint8Array toUint8Array(ArrayBufferView view) {
-        return new Uint8Array(view.getBuffer(), view.getByteOffset(), view.getLength());
+        return new Uint8Array(view.getBuffer(), view.getByteOffset(), view.getByteLength());
     }
 
     static Int16Array toInt16Array(ArrayBufferView view) {
-        return new Int16Array(view.getBuffer(), view.getByteOffset(), view.getLength());
+        return new Int16Array(view.getBuffer(), view.getByteOffset(), view.getByteLength() / 2);
     }
 
     static Uint16Array toUint16Array(ArrayBufferView view) {
-        return new Uint16Array(view.getBuffer(), view.getByteOffset(), view.getLength());
+        return new Uint16Array(view.getBuffer(), view.getByteOffset(), view.getByteLength() / 2);
     }
 
     static Int32Array toInt32Array(ArrayBufferView view) {
-        return new Int32Array(view.getBuffer(), view.getByteOffset(), view.getLength());
+        return new Int32Array(view.getBuffer(), view.getByteOffset(), view.getByteLength() / 4);
     }
 
     static BigInt64Array toBigInt64Array(ArrayBufferView view) {
-        return new BigInt64Array(view.getBuffer(), view.getByteOffset(), view.getLength());
+        return new BigInt64Array(view.getBuffer(), view.getByteOffset(), view.getByteLength() / 8);
     }
 
     static Float32Array toFloat32Array(ArrayBufferView view) {
-        return new Float32Array(view.getBuffer(), view.getByteOffset(), view.getLength());
+        return new Float32Array(view.getBuffer(), view.getByteOffset(), view.getByteLength() / 4);
     }
 
     static Float64Array toFloat64Array(ArrayBufferView view) {
-        return new Float64Array(view.getBuffer(), view.getByteOffset(), view.getLength());
+        return new Float64Array(view.getBuffer(), view.getByteOffset(), view.getByteLength() / 8);
     }
 
     static DataView toDataView(ArrayBufferView view) {
-        return new DataView(view.getBuffer(), view.getByteOffset(), view.getLength());
+        return new DataView(view.getBuffer(), view.getByteOffset(), view.getByteLength());
     }
 }

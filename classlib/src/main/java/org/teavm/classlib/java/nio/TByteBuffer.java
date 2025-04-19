@@ -139,7 +139,7 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
     }
 
     public TByteBuffer get(int index, byte[] dst, int offset, int length) {
-        if (length < 0 || offset < 0 || offset + length > dst.length || index < 0 || index + length > limit()) {
+        if (length < 0 || offset < 0 || offset + length > dst.length || index < 0 || index + length > capacity()) {
             throw new IndexOutOfBoundsException();
         }
         getImpl(index, dst, offset, length);
@@ -163,7 +163,7 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
         if (isReadOnly()) {
             throw new TReadOnlyBufferException();
         }
-        if (length < 0 || offset < 0 || offset + length > src.limit() || index < 0 || index + length > limit()) {
+        if (length < 0 || offset < 0 || offset + length > src.limit() || index < 0 || index + length > capacity()) {
             throw new IndexOutOfBoundsException();
         }
         putImpl(index, src, offset, length);
@@ -205,7 +205,7 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
         if (isReadOnly()) {
             throw new TReadOnlyBufferException();
         }
-        if (length < 0 || offset < 0 || offset + length > src.length || index < 0 || index + length > limit()) {
+        if (length < 0 || offset < 0 || offset + length > src.length || index < 0 || index + length > capacity()) {
             throw new IndexOutOfBoundsException();
         }
         putImpl(src, offset, index, length);

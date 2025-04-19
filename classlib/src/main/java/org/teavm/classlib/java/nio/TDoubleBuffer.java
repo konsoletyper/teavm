@@ -93,7 +93,7 @@ public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubl
     }
 
     public TDoubleBuffer get(int index, double[] dst, int offset, int length) {
-        if (length < 0 || offset < 0 || offset + length > dst.length || index < 0 || index + length > limit()) {
+        if (length < 0 || offset < 0 || offset + length > dst.length || index < 0 || index + length > capacity()) {
             throw new IndexOutOfBoundsException();
         }
         getImpl(index, dst, offset, length);
@@ -114,7 +114,7 @@ public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubl
         if (isReadOnly()) {
             throw new TReadOnlyBufferException();
         }
-        if (index < 0 || index > limit() || offset < 0 || offset + length > limit()) {
+        if (index < 0 || index > limit() || offset < 0 || offset + length > capacity()) {
             throw new IndexOutOfBoundsException();
         }
         putImpl(index, src, offset, length);
@@ -154,7 +154,7 @@ public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubl
         if (isReadOnly()) {
             throw new TReadOnlyBufferException();
         }
-        if (length < 0 || offset < 0 || offset + length > src.length || index < 0 || index + length > limit()) {
+        if (length < 0 || offset < 0 || offset + length > src.length || index < 0 || index + length > capacity()) {
             throw new IndexOutOfBoundsException();
         }
         putImpl(index, src, offset, length);
