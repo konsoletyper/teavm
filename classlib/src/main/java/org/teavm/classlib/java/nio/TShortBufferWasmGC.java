@@ -43,4 +43,9 @@ class TShortBufferWasmGC extends TShortBufferNative {
     TShortBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
         return new TShortBufferWasmGC(array, position, limit, readOnly, base, address.add(start * 2), capacity, swap);
     }
+
+    @Override
+    int getArrayOffset() {
+        throw new UnsupportedOperationException();
+    }
 }

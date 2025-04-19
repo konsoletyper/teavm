@@ -43,4 +43,9 @@ class TLongBufferWasmGC extends TLongBufferNative {
     TLongBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
         return new TLongBufferWasmGC(array, position, limit, readOnly, base, address.add(start * 8), capacity, swap);
     }
+
+    @Override
+    int getArrayOffset() {
+        throw new UnsupportedOperationException();
+    }
 }

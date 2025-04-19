@@ -51,4 +51,9 @@ class TCharBufferWasmGC extends TCharBufferNative {
     void copy(Address from, double[] to, int toOffset, int count) {
         TByteBufferNative.copy(from, Address.ofData(to).add(toOffset * 8), count * 8);
     }
+
+    @Override
+    int getArrayOffset() {
+        throw new UnsupportedOperationException();
+    }
 }

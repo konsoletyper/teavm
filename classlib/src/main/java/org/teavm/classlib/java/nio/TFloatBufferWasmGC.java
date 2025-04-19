@@ -43,4 +43,9 @@ class TFloatBufferWasmGC extends TFloatBufferNative {
     TFloatBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
         return new TFloatBufferWasmGC(array, position, limit, readOnly, base, address.add(start * 4), capacity, swap);
     }
+
+    @Override
+    int getArrayOffset() {
+        throw new UnsupportedOperationException();
+    }
 }
