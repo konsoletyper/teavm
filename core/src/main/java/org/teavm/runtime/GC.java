@@ -591,7 +591,9 @@ public final class GC {
                 var fieldOffset = cls.enumValues.toInt();
                 var fieldAddress = buffer.toAddress().add(fieldOffset).add(Address.sizeOf());
                 var dataAddress = fieldAddress.getAddress();
-                free(dataAddress);
+                if (dataAddress == null) {
+                    free(dataAddress);
+                }
                 return;
             }
             cls = cls.parent;

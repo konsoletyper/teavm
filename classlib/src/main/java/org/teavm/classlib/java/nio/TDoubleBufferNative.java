@@ -15,16 +15,19 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.backend.c.runtime.Memory;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Address;
 import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Float64Array;
+import org.teavm.runtime.heap.Heap;
 
-class TDoubleBufferNative extends TDoubleBufferImpl implements TArrayBufferViewProvider {
+class TDoubleBufferNative extends TDoubleBufferImpl implements TArrayBufferViewProvider, TNativeBuffer {
     double[] array;
     boolean readOnly;
     @TNativeBufferObjectMarker
     protected final Object base;
-    final Address address;
+    Address address;
     int capacity;
     boolean swap;
 
@@ -37,6 +40,18 @@ class TDoubleBufferNative extends TDoubleBufferImpl implements TArrayBufferViewP
         this.address = address;
         this.capacity = capacity;
         this.swap = swap;
+    }
+
+    @Override
+    public void release() {
+        if (address != Address.fromInt(0)) {
+            if (PlatformDetector.isWebAssemblyGC()) {
+                Heap.release(address);
+            } else if (PlatformDetector.isC()) {
+                Memory.free(address);
+            }
+            address = Address.fromInt(0);
+        }
     }
 
     @Override

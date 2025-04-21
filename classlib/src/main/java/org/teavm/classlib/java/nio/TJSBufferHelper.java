@@ -33,8 +33,8 @@ import org.teavm.jso.typedarrays.Uint16Array;
 import org.teavm.jso.typedarrays.Uint8Array;
 import org.teavm.runtime.heap.Heap;
 
-final class TJSBufferHelper {
-    static class WasmGC {
+public final class TJSBufferHelper {
+    public static class WasmGC {
         private WasmGC() {
         }
 
@@ -46,6 +46,10 @@ final class TJSBufferHelper {
 
         static void register(Object object, Address address) {
             registry.register(object, JSNumber.valueOf(address.toInt()));
+        }
+
+        public static void unregister(Object object) {
+            registry.unregister(object);
         }
 
         @Import(module = "teavm", name = "linearMemory")
