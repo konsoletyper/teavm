@@ -13,20 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.nio;
+package org.teavm.classlib.java.nio;
 
-import java.nio.Buffer;
+import org.teavm.jso.JSClass;
+import org.teavm.jso.JSObject;
 
-public final class Buffers {
-    private Buffers() {
+@JSClass(name = "FinalizationRegistry")
+class TBufferFinalizationRegistry implements JSObject {
+    TBufferFinalizationRegistry(TBufferFinalizationRegistryConsumer consumer) {
     }
 
-    public static void free(Buffer buffer) {
-        if (!buffer.isDirect()) {
-            throw new IllegalArgumentException("Can only free direct buffer");
-        }
-        releaseNative(buffer);
-    }
+    native void register(JSObject obj, JSObject token, JSObject unregister);
 
-    private static native void releaseNative(Buffer buffer);
+    native void unregister(JSObject obj);
 }

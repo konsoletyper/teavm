@@ -27,7 +27,9 @@ public class JSFinalizationRegistry implements JSObject {
 
     public native void register(Object obj, Object token);
 
-    public native void unregister(Object obj);
+    public native void register(Object obj, Object token, Object unregisterToken);
+
+    public native boolean unregister(Object obj);
 
     @JSBody(params = "consumer", script = "return new FinalizationRegistry(consumer);")
     @Deprecated

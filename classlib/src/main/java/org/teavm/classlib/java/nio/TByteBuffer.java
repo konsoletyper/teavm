@@ -22,6 +22,7 @@ import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TOutOfMemoryError;
 import org.teavm.interop.Address;
+import org.teavm.jso.core.JSObjects;
 import org.teavm.jso.typedarrays.Int8Array;
 import org.teavm.runtime.GC;
 import org.teavm.runtime.heap.Heap;
@@ -60,8 +61,10 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
                 throw new TOutOfMemoryError();
             }
             var result = new TByteBufferWasmGC(null, 0, null, addr, capacity, false);
+            result.regKey = JSObjects.create();
+            result.regToken = JSObjects.create();
             result.limit = capacity;
-            TJSBufferHelper.WasmGC.register(result, addr);
+            TJSBufferHelper.WasmGC.register(result.regKey, addr, result.regToken);
             return result;
         }
         return new TByteBufferImpl(capacity, true);

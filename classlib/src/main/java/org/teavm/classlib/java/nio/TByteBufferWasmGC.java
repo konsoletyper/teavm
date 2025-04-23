@@ -16,11 +16,25 @@
 package org.teavm.classlib.java.nio;
 
 import org.teavm.interop.Address;
+import org.teavm.jso.JSObject;
 
 class TByteBufferWasmGC extends TByteBufferNative {
+    JSObject regKey;
+    JSObject regToken;
+
     TByteBufferWasmGC(byte[] array, int arrayOffset, Object base, Address address, int capacity,
             boolean readOnly) {
         super(array, arrayOffset, base, address, capacity, readOnly);
+    }
+
+    @Override
+    public void release() {
+        if (regKey != null) {
+            TJSBufferHelper.WasmGC.unregister(regToken);
+            regKey = null;
+            regToken = null;
+        }
+        super.release();
     }
 
     @Override

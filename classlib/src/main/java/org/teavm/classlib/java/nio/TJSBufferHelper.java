@@ -18,7 +18,7 @@ package org.teavm.classlib.java.nio;
 import java.nio.Buffer;
 import org.teavm.interop.Address;
 import org.teavm.interop.Import;
-import org.teavm.jso.core.JSFinalizationRegistry;
+import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.ArrayBufferView;
@@ -38,17 +38,17 @@ public final class TJSBufferHelper {
         private WasmGC() {
         }
 
-        private static final JSFinalizationRegistry registry = new JSFinalizationRegistry(address -> {
+        private static final TBufferFinalizationRegistry registry = new TBufferFinalizationRegistry(address -> {
             var addr = Address.fromInt(((JSNumber) address).intValue());
             Heap.release(addr);
         });
 
 
-        static void register(Object object, Address address) {
-            registry.register(object, JSNumber.valueOf(address.toInt()));
+        static void register(JSObject object, Address address, JSObject token) {
+            registry.register(object, JSNumber.valueOf(address.toInt()), token);
         }
 
-        public static void unregister(Object object) {
+        public static void unregister(JSObject object) {
             registry.unregister(object);
         }
 
@@ -66,11 +66,6 @@ public final class TJSBufferHelper {
         }
         var provider = (TArrayBufferViewProvider) buffer;
         var result = provider.getArrayBufferView();
-        if (buffer.position() != 0 || buffer.capacity() != buffer.limit()) {
-            var elemSize = provider.elementSize();
-            result = new DataView(result.getBuffer(), result.getByteOffset() + elemSize * buffer.position(),
-                    buffer.limit() * elemSize);
-        }
         return result;
     }
 
