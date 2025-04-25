@@ -20,6 +20,7 @@ import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.BigInt64Array;
 
 class TLongBufferNative extends TLongBufferImpl implements TArrayBufferViewProvider {
+    Object gcRef;
     long[] array;
     boolean readOnly;
     @TNativeBufferObjectMarker
@@ -28,9 +29,10 @@ class TLongBufferNative extends TLongBufferImpl implements TArrayBufferViewProvi
     int capacity;
     boolean swap;
 
-    TLongBufferNative(long[] array, int position, int limit, boolean readOnly,
+    TLongBufferNative(Object gcRef, long[] array, int position, int limit, boolean readOnly,
             Object base, Address address, int capacity, boolean swap) {
         super(position, limit);
+        this.gcRef = gcRef;
         this.array = array;
         this.readOnly = readOnly;
         this.base = base;
@@ -77,7 +79,8 @@ class TLongBufferNative extends TLongBufferImpl implements TArrayBufferViewProvi
 
     @Override
     TLongBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        return new TLongBufferNative(array, position, limit, readOnly, base, address.add(start * 8), capacity, swap);
+        return new TLongBufferNative(gcRef, array, position, limit, readOnly, base, address.add(start * 8),
+                capacity, swap);
     }
 
     @Override

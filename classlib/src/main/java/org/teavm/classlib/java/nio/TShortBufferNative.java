@@ -20,6 +20,7 @@ import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Int16Array;
 
 class TShortBufferNative extends TShortBufferImpl implements TArrayBufferViewProvider {
+    Object gcRef;
     short[] array;
     boolean readOnly;
     @TNativeBufferObjectMarker
@@ -28,9 +29,10 @@ class TShortBufferNative extends TShortBufferImpl implements TArrayBufferViewPro
     int capacity;
     boolean swap;
 
-    TShortBufferNative(short[] array, int position, int limit, boolean readOnly,
+    TShortBufferNative(Object gcRef, short[] array, int position, int limit, boolean readOnly,
             Object base, Address address, int capacity, boolean swap) {
         super(position, limit);
+        this.gcRef = gcRef;
         this.array = array;
         this.readOnly = readOnly;
         this.base = base;
@@ -77,7 +79,8 @@ class TShortBufferNative extends TShortBufferImpl implements TArrayBufferViewPro
 
     @Override
     TShortBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        return new TShortBufferNative(array, position, limit, readOnly, base, address.add(start * 2), capacity, swap);
+        return new TShortBufferNative(this, array, position, limit, readOnly, base, address.add(start * 2),
+                capacity, swap);
     }
 
     @Override

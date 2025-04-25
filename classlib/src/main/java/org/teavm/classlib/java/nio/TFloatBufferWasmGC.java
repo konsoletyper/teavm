@@ -18,9 +18,9 @@ package org.teavm.classlib.java.nio;
 import org.teavm.interop.Address;
 
 class TFloatBufferWasmGC extends TFloatBufferNative {
-    TFloatBufferWasmGC(float[] array, int position, int limit, boolean readOnly, Object base, Address address,
-            int capacity, boolean swap) {
-        super(array, position, limit, readOnly, base, address, capacity, swap);
+    TFloatBufferWasmGC(Object gcRef, float[] array, int position, int limit, boolean readOnly, Object base,
+            Address address, int capacity, boolean swap) {
+        super(gcRef, array, position, limit, readOnly, base, address, capacity, swap);
     }
 
     @Override
@@ -41,7 +41,8 @@ class TFloatBufferWasmGC extends TFloatBufferNative {
 
     @Override
     TFloatBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        return new TFloatBufferWasmGC(array, position, limit, readOnly, base, address.add(start * 4), capacity, swap);
+        return new TFloatBufferWasmGC(gcRef, array, position, limit, readOnly, base, address.add(start * 4),
+                capacity, swap);
     }
 
     @Override

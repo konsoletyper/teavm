@@ -20,6 +20,7 @@ import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Float32Array;
 
 class TFloatBufferNative extends TFloatBufferImpl implements TArrayBufferViewProvider {
+    Object gcRef;
     float[] array;
     boolean readOnly;
     @TNativeBufferObjectMarker
@@ -28,9 +29,10 @@ class TFloatBufferNative extends TFloatBufferImpl implements TArrayBufferViewPro
     int capacity;
     boolean swap;
 
-    TFloatBufferNative(float[] array, int position, int limit, boolean readOnly,
+    TFloatBufferNative(Object gcRef, float[] array, int position, int limit, boolean readOnly,
             Object base, Address address, int capacity, boolean swap) {
         super(position, limit);
+        this.gcRef = gcRef;
         this.array = array;
         this.readOnly = readOnly;
         this.base = base;
@@ -77,7 +79,8 @@ class TFloatBufferNative extends TFloatBufferImpl implements TArrayBufferViewPro
 
     @Override
     TFloatBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        return new TFloatBufferNative(array, position, limit, readOnly, base, address.add(start * 4), capacity, swap);
+        return new TFloatBufferNative(gcRef, array, position, limit, readOnly, base, address.add(start * 4),
+                capacity, swap);
     }
 
     @Override

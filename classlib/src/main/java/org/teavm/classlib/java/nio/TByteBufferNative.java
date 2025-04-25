@@ -21,6 +21,7 @@ import org.teavm.jso.typedarrays.Int8Array;
 import org.teavm.runtime.heap.Heap;
 
 class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider, TNativeBuffer {
+    Object gcRef;
     byte[] array;
     int arrayOffset;
     @TNativeBufferObjectMarker
@@ -30,7 +31,9 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider,
     boolean readOnly;
     boolean swap;
 
-    TByteBufferNative(byte[] array, int arrayOffset, Object base, Address address, int capacity, boolean readOnly) {
+    TByteBufferNative(Object gcRef, byte[] array, int arrayOffset, Object base, Address address, int capacity,
+            boolean readOnly) {
+        this.gcRef = gcRef != null ? gcRef : this;
         this.array = array;
         this.arrayOffset = arrayOffset;
         this.base = base;
@@ -112,7 +115,7 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider,
     @Override
     public TByteBuffer slice() {
         var newData = address.add(position);
-        var result = new TByteBufferNative(array, arrayOffset + position, base, newData, remaining(), readOnly);
+        var result = new TByteBufferNative(gcRef, array, arrayOffset + position, base, newData, remaining(), readOnly);
         result.position = 0;
         result.limit = result.capacity();
         result.order = TByteOrder.BIG_ENDIAN;
@@ -121,7 +124,7 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider,
 
     @Override
     public TByteBuffer duplicate() {
-        var result = new TByteBufferNative(array, arrayOffset + position, base, address, capacity, readOnly);
+        var result = new TByteBufferNative(gcRef, array, arrayOffset + position, base, address, capacity, readOnly);
         result.position = position;
         result.limit = limit;
         result.mark = mark;
@@ -131,7 +134,7 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider,
 
     @Override
     public TByteBuffer asReadOnlyBuffer() {
-        var result = new TByteBufferNative(array, arrayOffset + position, base, address, capacity, true);
+        var result = new TByteBufferNative(gcRef, array, arrayOffset + position, base, address, capacity, true);
         result.position = position;
         result.limit = limit;
         result.mark = mark;
@@ -251,7 +254,7 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider,
     @Override
     public TCharBuffer asCharBuffer() {
         int sz = remaining() / 2;
-        return new TCharBufferNative(null, 0, sz, readOnly, base, address.add(position), sz, swap);
+        return new TCharBufferNative(gcRef, null, 0, sz, readOnly, base, address.add(position), sz, swap);
     }
 
     @Override
@@ -301,7 +304,7 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider,
     @Override
     public TShortBuffer asShortBuffer() {
         int sz = remaining() / 2;
-        return new TShortBufferNative(null, 0, sz, readOnly, base, address.add(position), sz, swap);
+        return new TShortBufferNative(gcRef, null, 0, sz, readOnly, base, address.add(position), sz, swap);
     }
 
     @Override
@@ -351,7 +354,7 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider,
     @Override
     public TIntBuffer asIntBuffer() {
         int sz = remaining() / 4;
-        return new TIntBufferNative(null, 0, sz, readOnly, base, address.add(position), sz, swap);
+        return new TIntBufferNative(gcRef, null, 0, sz, readOnly, base, address.add(position), sz, swap);
     }
 
     @Override
@@ -520,19 +523,19 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider,
     @Override
     public TLongBuffer asLongBuffer() {
         int sz = remaining() / 8;
-        return new TLongBufferNative(null, 0, sz, readOnly, base, address.add(position), sz, swap);
+        return new TLongBufferNative(gcRef, null, 0, sz, readOnly, base, address.add(position), sz, swap);
     }
 
     @Override
     public TFloatBuffer asFloatBuffer() {
         int sz = remaining() / 4;
-        return new TFloatBufferNative(null, 0, sz, readOnly, base, address.add(position), sz, swap);
+        return new TFloatBufferNative(gcRef, null, 0, sz, readOnly, base, address.add(position), sz, swap);
     }
 
     @Override
     public TDoubleBuffer asDoubleBuffer() {
         int sz = remaining() / 8;
-        return new TDoubleBufferNative(null, 0, sz, readOnly, base, address.add(position), sz, swap);
+        return new TDoubleBufferNative(gcRef, null, 0, sz, readOnly, base, address.add(position), sz, swap);
     }
 
     void copy(byte[] from, int fromOffset, Address to, int count) {

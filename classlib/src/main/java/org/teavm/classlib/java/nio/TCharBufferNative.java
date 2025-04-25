@@ -20,6 +20,7 @@ import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Uint16Array;
 
 class TCharBufferNative extends TCharBufferImpl implements TArrayBufferViewProvider {
+    Object gcRef;
     char[] array;
     boolean readOnly;
     @TNativeBufferObjectMarker
@@ -28,7 +29,7 @@ class TCharBufferNative extends TCharBufferImpl implements TArrayBufferViewProvi
     int capacity;
     boolean swap;
 
-    TCharBufferNative(char[] array, int position, int limit, boolean readOnly,
+    TCharBufferNative(Object gcRef, char[] array, int position, int limit, boolean readOnly,
             Object base, Address address, int capacity, boolean swap) {
         super(position, limit);
         this.array = array;
@@ -77,7 +78,8 @@ class TCharBufferNative extends TCharBufferImpl implements TArrayBufferViewProvi
 
     @Override
     TCharBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        return new TCharBufferNative(array, position, limit, readOnly, base, address.add(start * 2), capacity, swap);
+        return new TCharBufferNative(gcRef, array, position, limit, readOnly, base, address.add(start * 2), capacity,
+                swap);
     }
 
     @Override

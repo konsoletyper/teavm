@@ -18,9 +18,9 @@ package org.teavm.classlib.java.nio;
 import org.teavm.interop.Address;
 
 class TDoubleBufferWasmGC extends TDoubleBufferNative {
-    TDoubleBufferWasmGC(double[] array, int position, int limit, boolean readOnly, Object base, Address address,
-            int capacity, boolean swap) {
-        super(array, position, limit, readOnly, base, address, capacity, swap);
+    TDoubleBufferWasmGC(Object gcRef, double[] array, int position, int limit, boolean readOnly, Object base,
+            Address address, int capacity, boolean swap) {
+        super(gcRef, array, position, limit, readOnly, base, address, capacity, swap);
     }
 
     @Override
@@ -41,7 +41,8 @@ class TDoubleBufferWasmGC extends TDoubleBufferNative {
 
     @Override
     TDoubleBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        return new TDoubleBufferWasmGC(array, position, limit, readOnly, base, address.add(start * 8), capacity, swap);
+        return new TDoubleBufferWasmGC(gcRef, array, position, limit, readOnly, base, address.add(start * 8),
+                capacity, swap);
     }
 
     @Override

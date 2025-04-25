@@ -18,9 +18,9 @@ package org.teavm.classlib.java.nio;
 import org.teavm.interop.Address;
 
 class TLongBufferWasmGC extends TLongBufferNative {
-    TLongBufferWasmGC(long[] array, int position, int limit, boolean readOnly, Object base, Address address,
-            int capacity, boolean swap) {
-        super(array, position, limit, readOnly, base, address, capacity, swap);
+    TLongBufferWasmGC(Object gcRef, long[] array, int position, int limit, boolean readOnly, Object base,
+            Address address, int capacity, boolean swap) {
+        super(gcRef, array, position, limit, readOnly, base, address, capacity, swap);
     }
 
     @Override
@@ -41,7 +41,8 @@ class TLongBufferWasmGC extends TLongBufferNative {
 
     @Override
     TLongBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        return new TLongBufferWasmGC(array, position, limit, readOnly, base, address.add(start * 8), capacity, swap);
+        return new TLongBufferWasmGC(gcRef, array, position, limit, readOnly, base, address.add(start * 8),
+                capacity, swap);
     }
 
     @Override

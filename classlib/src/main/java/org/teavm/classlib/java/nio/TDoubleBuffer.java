@@ -35,7 +35,8 @@ public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubl
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
             var array = new double[capacity];
-            return new TDoubleBufferNative(array, 0, capacity, false, array, Address.ofData(array), capacity, false);
+            return new TDoubleBufferNative(null, array, 0, capacity, false, array, Address.ofData(array),
+                    capacity, false);
         }
         return new TDoubleBufferOverArray(capacity);
     }
@@ -49,7 +50,7 @@ public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubl
             return result;
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
-            var result = new TDoubleBufferNative(array, 0, array.length, false, array, Address.ofData(array),
+            var result = new TDoubleBufferNative(null, array, 0, array.length, false, array, Address.ofData(array),
                     array.length, false);
             result.position = offset;
             result.limit = offset + length;

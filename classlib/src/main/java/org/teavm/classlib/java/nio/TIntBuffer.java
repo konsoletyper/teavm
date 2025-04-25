@@ -35,7 +35,8 @@ public abstract class TIntBuffer extends TBuffer implements Comparable<TIntBuffe
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
             var array = new int[capacity];
-            return new TIntBufferNative(array, 0, capacity, false, array, Address.ofData(array), capacity, false);
+            return new TIntBufferNative(null, array, 0, capacity, false, array, Address.ofData(array),
+                    capacity, false);
         }
         return new TIntBufferOverArray(capacity);
     }
@@ -48,7 +49,7 @@ public abstract class TIntBuffer extends TBuffer implements Comparable<TIntBuffe
             return result;
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
-            var result = new TIntBufferNative(array, 0, array.length, false, array, Address.ofData(array),
+            var result = new TIntBufferNative(null, array, 0, array.length, false, array, Address.ofData(array),
                     array.length, false);
             result.position = offset;
             result.limit = offset + length;

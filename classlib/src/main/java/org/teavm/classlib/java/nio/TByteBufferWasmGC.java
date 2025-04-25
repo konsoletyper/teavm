@@ -22,9 +22,9 @@ class TByteBufferWasmGC extends TByteBufferNative {
     JSObject regKey;
     JSObject regToken;
 
-    TByteBufferWasmGC(byte[] array, int arrayOffset, Object base, Address address, int capacity,
+    TByteBufferWasmGC(Object gcRef, byte[] array, int arrayOffset, Object base, Address address, int capacity,
             boolean readOnly) {
-        super(array, arrayOffset, base, address, capacity, readOnly);
+        super(gcRef, array, arrayOffset, base, address, capacity, readOnly);
     }
 
     @Override
@@ -56,7 +56,7 @@ class TByteBufferWasmGC extends TByteBufferNative {
     @Override
     public TByteBuffer slice() {
         var newData = address.add(position);
-        var result = new TByteBufferWasmGC(array, arrayOffset + position, base, newData, remaining(), readOnly);
+        var result = new TByteBufferWasmGC(gcRef, array, arrayOffset + position, base, newData, remaining(), readOnly);
         result.position = 0;
         result.limit = result.capacity();
         result.order = TByteOrder.BIG_ENDIAN;
@@ -65,7 +65,7 @@ class TByteBufferWasmGC extends TByteBufferNative {
 
     @Override
     public TByteBuffer duplicate() {
-        var result = new TByteBufferWasmGC(array, arrayOffset + position, base, address, capacity, readOnly);
+        var result = new TByteBufferWasmGC(gcRef, array, arrayOffset + position, base, address, capacity, readOnly);
         result.position = position;
         result.limit = limit;
         result.mark = mark;
@@ -75,7 +75,7 @@ class TByteBufferWasmGC extends TByteBufferNative {
 
     @Override
     public TByteBuffer asReadOnlyBuffer() {
-        var result = new TByteBufferWasmGC(array, arrayOffset + position, base, address, capacity, true);
+        var result = new TByteBufferWasmGC(gcRef, array, arrayOffset + position, base, address, capacity, true);
         result.position = position;
         result.limit = limit;
         result.mark = mark;
@@ -86,36 +86,36 @@ class TByteBufferWasmGC extends TByteBufferNative {
     @Override
     public TCharBuffer asCharBuffer() {
         int sz = remaining() / 2;
-        return new TCharBufferWasmGC(null, 0, sz, readOnly, base, address.add(position), sz, swap);
+        return new TCharBufferWasmGC(gcRef, null, 0, sz, readOnly, base, address.add(position), sz, swap);
     }
 
     @Override
     public TShortBuffer asShortBuffer() {
         int sz = remaining() / 2;
-        return new TShortBufferWasmGC(null, 0, sz, readOnly, base, address.add(position), sz, swap);
+        return new TShortBufferWasmGC(gcRef, null, 0, sz, readOnly, base, address.add(position), sz, swap);
     }
 
     @Override
     public TIntBuffer asIntBuffer() {
         int sz = remaining() / 4;
-        return new TIntBufferWasmGC(null, 0, sz, readOnly, base, address.add(position), sz, swap);
+        return new TIntBufferWasmGC(gcRef, null, 0, sz, readOnly, base, address.add(position), sz, swap);
     }
 
     @Override
     public TLongBuffer asLongBuffer() {
         int sz = remaining() / 8;
-        return new TLongBufferWasmGC(null, 0, sz, readOnly, base, address.add(position), sz, swap);
+        return new TLongBufferWasmGC(gcRef, null, 0, sz, readOnly, base, address.add(position), sz, swap);
     }
 
     @Override
     public TFloatBuffer asFloatBuffer() {
         int sz = remaining() / 4;
-        return new TFloatBufferWasmGC(null, 0, sz, readOnly, base, address.add(position), sz, swap);
+        return new TFloatBufferWasmGC(gcRef, null, 0, sz, readOnly, base, address.add(position), sz, swap);
     }
 
     @Override
     public TDoubleBuffer asDoubleBuffer() {
         int sz = remaining() / 8;
-        return new TDoubleBufferWasmGC(null, 0, sz, readOnly, base, address.add(position), sz, swap);
+        return new TDoubleBufferWasmGC(gcRef, null, 0, sz, readOnly, base, address.add(position), sz, swap);
     }
 }

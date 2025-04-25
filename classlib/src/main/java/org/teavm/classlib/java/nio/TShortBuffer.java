@@ -35,7 +35,8 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
             var array = new short[capacity];
-            return new TShortBufferNative(array, 0, capacity, false, array, Address.ofData(array), capacity, false);
+            return new TShortBufferNative(null, array, 0, capacity, false, array, Address.ofData(array),
+                    capacity, false);
         }
         return new TShortBufferOverArray(capacity);
     }
@@ -48,7 +49,7 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
             return result;
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
-            var result = new TShortBufferNative(array, 0, array.length, false, array, Address.ofData(array),
+            var result = new TShortBufferNative(null, array, 0, array.length, false, array, Address.ofData(array),
                     array.length, false);
             result.position = offset;
             result.limit = offset + length;

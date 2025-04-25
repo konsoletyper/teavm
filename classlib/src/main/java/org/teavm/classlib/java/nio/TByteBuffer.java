@@ -44,14 +44,14 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
         }
         if (PlatformDetector.isC()) {
             var memory = Memory.malloc(capacity);
-            var result = new TByteBufferNative(null, 0, null, memory, capacity, false);
+            var result = new TByteBufferNative(null, null, 0, null, memory, capacity, false);
             GC.registerDirectBuffer(Address.ofObject(result).toStructure());
             result.limit = capacity;
             return result;
         }
         if (PlatformDetector.isWebAssembly()) {
             var array = new byte[capacity];
-            var result = new TByteBufferNative(array, 0, array, Address.ofData(array), array.length, false);
+            var result = new TByteBufferNative(null, array, 0, array, Address.ofData(array), array.length, false);
             result.limit = capacity;
             return result;
         }
@@ -60,7 +60,7 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
             if (addr == null) {
                 throw new TOutOfMemoryError();
             }
-            var result = new TByteBufferWasmGC(null, 0, null, addr, capacity, false);
+            var result = new TByteBufferWasmGC(null, null, 0, null, addr, capacity, false);
             result.regKey = JSObjects.create();
             result.regToken = JSObjects.create();
             result.limit = capacity;
@@ -82,7 +82,7 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
             var array = new byte[capacity];
-            var result = new TByteBufferNative(array, 0, array, Address.ofData(array), array.length, false);
+            var result = new TByteBufferNative(null, array, 0, array, Address.ofData(array), array.length, false);
             result.limit = capacity;
             return result;
         }
@@ -99,7 +99,7 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
             return result;
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
-            var result = new TByteBufferNative(array, 0, array, Address.ofData(array), array.length, false);
+            var result = new TByteBufferNative(null, array, 0, array, Address.ofData(array), array.length, false);
             result.position = offset;
             result.limit = offset + length;
             return result;

@@ -18,9 +18,9 @@ package org.teavm.classlib.java.nio;
 import org.teavm.interop.Address;
 
 class TShortBufferWasmGC extends TShortBufferNative {
-    TShortBufferWasmGC(short[] array, int position, int limit, boolean readOnly, Object base, Address address,
-            int capacity, boolean swap) {
-        super(array, position, limit, readOnly, base, address, capacity, swap);
+    TShortBufferWasmGC(Object gcRef, short[] array, int position, int limit, boolean readOnly, Object base,
+            Address address, int capacity, boolean swap) {
+        super(gcRef, array, position, limit, readOnly, base, address, capacity, swap);
     }
 
     @Override
@@ -41,7 +41,8 @@ class TShortBufferWasmGC extends TShortBufferNative {
 
     @Override
     TShortBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        return new TShortBufferWasmGC(array, position, limit, readOnly, base, address.add(start * 2), capacity, swap);
+        return new TShortBufferWasmGC(gcRef, array, position, limit, readOnly, base, address.add(start * 2),
+                capacity, swap);
     }
 
     @Override

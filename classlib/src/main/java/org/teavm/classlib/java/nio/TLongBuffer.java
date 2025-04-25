@@ -35,7 +35,8 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
             var array = new long[capacity];
-            return new TLongBufferNative(array, 0, capacity, false, array, Address.ofData(array), capacity, false);
+            return new TLongBufferNative(null, array, 0, capacity, false, array, Address.ofData(array),
+                    capacity, false);
         }
         return new TLongBufferOverArray(capacity);
     }
@@ -49,7 +50,7 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
             return result;
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
-            var result = new TLongBufferNative(array, 0, array.length, false, array, Address.ofData(array),
+            var result = new TLongBufferNative(null, array, 0, array.length, false, array, Address.ofData(array),
                     array.length, false);
             result.position = offset;
             result.limit = offset + length;

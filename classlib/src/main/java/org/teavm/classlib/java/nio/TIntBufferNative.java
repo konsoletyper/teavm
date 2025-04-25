@@ -20,6 +20,7 @@ import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Int32Array;
 
 class TIntBufferNative extends TIntBufferImpl implements TArrayBufferViewProvider {
+    Object gcRef;
     int[] array;
     boolean readOnly;
     @TNativeBufferObjectMarker
@@ -28,9 +29,10 @@ class TIntBufferNative extends TIntBufferImpl implements TArrayBufferViewProvide
     int capacity;
     boolean swap;
 
-    TIntBufferNative(int[] array, int position, int limit, boolean readOnly,
+    TIntBufferNative(Object gcRef, int[] array, int position, int limit, boolean readOnly,
             Object base, Address address, int capacity, boolean swap) {
         super(position, limit);
+        this.gcRef = gcRef;
         this.array = array;
         this.readOnly = readOnly;
         this.base = base;
@@ -77,7 +79,8 @@ class TIntBufferNative extends TIntBufferImpl implements TArrayBufferViewProvide
 
     @Override
     TIntBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        return new TIntBufferNative(array, position, limit, readOnly, base, address.add(start * 4), capacity, swap);
+        return new TIntBufferNative(gcRef, array, position, limit, readOnly, base, address.add(start * 4),
+                capacity, swap);
     }
 
     @Override

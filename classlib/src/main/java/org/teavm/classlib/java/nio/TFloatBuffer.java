@@ -35,7 +35,8 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
             var array = new float[capacity];
-            return new TFloatBufferNative(array, 0, capacity, false, array, Address.ofData(array), capacity, false);
+            return new TFloatBufferNative(null, array, 0, capacity, false, array, Address.ofData(array),
+                    capacity, false);
         }
         return new TFloatBufferOverArray(capacity);
     }
@@ -49,7 +50,7 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
             return result;
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
-            var result = new TFloatBufferNative(array, 0, array.length, false, array, Address.ofData(array),
+            var result = new TFloatBufferNative(null, array, 0, array.length, false, array, Address.ofData(array),
                     array.length, false);
             result.position = offset;
             result.limit = offset + length;

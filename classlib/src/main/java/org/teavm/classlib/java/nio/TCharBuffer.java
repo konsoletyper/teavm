@@ -43,7 +43,8 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
             var array = new char[capacity];
-            return new TCharBufferNative(array, 0, capacity, false, array, Address.ofData(array), capacity, false);
+            return new TCharBufferNative(null, array, 0, capacity, false, array, Address.ofData(array),
+                    capacity, false);
         }
         return new TCharBufferOverArray(capacity);
     }
@@ -59,7 +60,7 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
             return result;
         }
         if (PlatformDetector.isC() || PlatformDetector.isWebAssembly()) {
-            var result = new TCharBufferNative(array, 0, array.length, false, array, Address.ofData(array),
+            var result = new TCharBufferNative(null, array, 0, array.length, false, array, Address.ofData(array),
                     array.length, false);
             result.position = offset;
             result.limit = offset + length;
