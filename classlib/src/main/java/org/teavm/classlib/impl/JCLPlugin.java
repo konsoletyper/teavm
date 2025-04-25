@@ -172,6 +172,13 @@ public class JCLPlugin implements TeaVMPlugin {
         if (!isBootstrap()) {
             host.add(new ScalaHacks());
             host.add(new KotlinHacks());
+            host.add(new MethodReference("scala.runtime.LambdaDeserialize", "bootstrap",
+                            ValueType.object("java.lang.invoke.MethodHandles$Lookup"),
+                            ValueType.object("java.lang.String"),
+                            ValueType.object("java.lang.invoke.MethodType"),
+                            ValueType.arrayOf(ValueType.object("java.lang.invoke.MethodHandle")),
+                            ValueType.object("java.lang.invoke.CallSite")),
+                    new EmptyBootstrapSubstitutor());
         }
 
         host.add(new NumericClassTransformer());
