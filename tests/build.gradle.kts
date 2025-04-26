@@ -18,6 +18,7 @@ plugins {
     `java-library`
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
+    scala
 }
 
 description = "Tests"
@@ -30,6 +31,10 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
+}
+
+scala {
+    scalaVersion = libs.versions.scala.get()
 }
 
 dependencies {

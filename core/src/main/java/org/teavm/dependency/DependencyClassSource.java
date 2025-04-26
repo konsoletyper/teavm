@@ -18,10 +18,12 @@ package org.teavm.dependency;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.BasicBlock;
@@ -64,6 +66,8 @@ class DependencyClassSource implements ClassHolderSource {
     private String entryPoint;
     Map<MethodReference, BootstrapMethodSubstitutor> bootstrapMethodSubstitutors = new HashMap<>();
     private boolean disposed;
+    private Set<MethodReference> usedMethods = new HashSet<>();
+    private Map<MethodReference, List<Runnable>> pendingErrors = new HashMap<>();
 
     DependencyClassSource(DependencyAgent agent, ClassReaderSource innerSource, Diagnostics diagnostics,
             IncrementalDependencyRegistration dependencyRegistration, String[] platformTags) {
@@ -192,8 +196,7 @@ class DependencyClassSource implements ClassHolderSource {
                     nullInsn.setLocation(indy.getLocation());
                     insn.replace(nullInsn);
                     CallLocation location = new CallLocation(method.getReference(), insn.getLocation());
-                    diagnostics.error(location, "Substitutor for bootstrap method {{m0}} was not found",
-                            bootstrapMethod);
+                    reportError(location, "Bootstrap method {{m0}} was not found", bootstrapMethod);
                     continue;
                 }
 
@@ -225,6 +228,26 @@ class DependencyClassSource implements ClassHolderSource {
             }
         }
         splitter.fixProgram();
+    }
+
+    private void reportError(CallLocation location, String message, Object... args) {
+        if (usedMethods.contains(location.getMethod())) {
+            diagnostics.error(location, message, args);
+        } else {
+            pendingErrors.computeIfAbsent(location.getMethod(), m -> new ArrayList<>())
+                    .add(() -> diagnostics.error(location, message, args));
+        }
+    }
+
+    public void use(MethodReference method) {
+        usedMethods.add(method);
+        var errors = pendingErrors.remove(method);
+        if (errors != null) {
+            for (var error : errors) {
+                error.run();
+            }
+        }
+        referenceResolver.use(method);
     }
 
     final ClassHolderTransformerContext transformContext = new ClassHolderTransformerContext() {
