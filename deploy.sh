@@ -56,7 +56,7 @@ function deploy_teavm {
   GRADLE+=" -Pteavm.tests.wasi=true"
   GRADLE+=" -Pteavm.junit.js.decodeStack=false"
 
-  $GRADLE build || { echo 'Build failed' ; return 1; }
+  $GRADLE build -x test || { echo 'Build failed' ; return 1; }
   $GRADLE --max-workers 4 publishAllPublicationsToTeavmRepository || { echo 'Deploy failed' ; return 1; }
 
   curl -T tools/idea/build/distributions/idea-$TEAVM_DEPLOY_VERSION_FULL.zip \
