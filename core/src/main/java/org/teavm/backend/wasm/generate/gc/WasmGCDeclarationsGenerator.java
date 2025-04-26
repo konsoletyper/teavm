@@ -33,8 +33,10 @@ import org.teavm.backend.wasm.generate.gc.methods.WasmGCCustomGeneratorProvider;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCIntrinsicProvider;
 import org.teavm.backend.wasm.generate.gc.methods.WasmGCMethodGenerator;
 import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
+import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
+import org.teavm.backend.wasm.model.WasmStructure;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
@@ -145,6 +147,22 @@ public class WasmGCDeclarationsGenerator {
     }
 
     public void generate() {
+        var lastTypeIndex = 0;
+        do {
+            generateRound();
+            for (var i = lastTypeIndex; i < module.types.size(); ++i) {
+                var type = module.types.get(i);
+                if (type instanceof WasmStructure) {
+                    ((WasmStructure) type).init();
+                } else if (type instanceof WasmArray) {
+                    ((WasmArray) type).init();
+                }
+            }
+            lastTypeIndex = module.types.size();
+        } while (methodGenerator.hasSomethingToGenerate() || classGenerator.hasSomethingToGenerate());
+    }
+
+    private void generateRound() {
         boolean somethingGenerated;
         do {
             somethingGenerated = false;

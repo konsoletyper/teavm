@@ -294,6 +294,10 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
         return true;
     }
 
+    public boolean hasSomethingToGenerate() {
+        return !queue.isEmpty();
+    }
+
     private void initStructures() {
         if (nonInitializedStructures.isEmpty()) {
             return;

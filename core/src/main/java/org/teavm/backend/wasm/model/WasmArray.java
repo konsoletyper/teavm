@@ -34,11 +34,15 @@ public class WasmArray extends WasmCompositeType {
     }
 
     public WasmStorageType getElementType() {
+        init();
+        return elementType;
+    }
+
+    public void init() {
         if (elementType == null) {
             elementType = elementTypeSupplier.get();
             elementTypeSupplier = null;
         }
-        return elementType;
     }
 
     public boolean isImmutable() {

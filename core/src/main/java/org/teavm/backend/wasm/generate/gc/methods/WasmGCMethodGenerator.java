@@ -176,6 +176,10 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         return true;
     }
 
+    public boolean hasSomethingToGenerate() {
+        return !queue.isEmpty();
+    }
+
     @Override
     public WasmFunction forStaticMethod(MethodReference methodReference) {
         return staticMethods.computeIfAbsent(methodReference, this::createStaticFunction);
