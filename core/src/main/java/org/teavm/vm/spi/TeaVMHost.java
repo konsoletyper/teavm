@@ -43,6 +43,8 @@ public interface TeaVMHost extends ServiceRepository {
 
     void addVirtualMethods(Predicate<MethodReference> predicate);
 
+    void addClassFilter(ClassFilter filter);
+
     <T extends TeaVMHostExtension> T getExtension(Class<T> extensionType);
 
     <T> void registerService(Class<T> type, T instance);

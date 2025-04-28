@@ -99,6 +99,7 @@ import org.teavm.model.transformation.ClassInitializerInsertionTransformer;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.RegisterAllocator;
+import org.teavm.vm.spi.ClassFilter;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMHostExtension;
 import org.teavm.vm.spi.TeaVMPlugin;
@@ -200,6 +201,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     @Override
     public void addVirtualMethods(Predicate<MethodReference> virtualMethods) {
         additionalVirtualMethods.add(virtualMethods);
+    }
+
+    @Override
+    public void addClassFilter(ClassFilter filter) {
+        dependencyAnalyzer.addClassFilter(filter);
     }
 
     @Override

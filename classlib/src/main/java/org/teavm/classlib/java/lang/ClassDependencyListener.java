@@ -19,7 +19,10 @@ import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
+import org.teavm.interop.Address;
 import org.teavm.model.CallLocation;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public class ClassDependencyListener implements DependencyPlugin {
     @Override
@@ -45,6 +48,23 @@ public class ClassDependencyListener implements DependencyPlugin {
             case "previous":
                 method.getResult().propagate(agent.getType("java.lang.Class"));
                 break;
+            case "newInstanceImpl": {
+                var location = new CallLocation(method.getReference());
+                method.getVariable(0).getClassValueNode().addConsumer(type -> {
+                    if (!type.getName().startsWith("[") && !type.getName().startsWith("~")) {
+                        if (type.getName().equals(Address.class.getName())) {
+                            System.out.println("!");
+                        }
+                        var ref = new MethodReference(type.getName(), "<init>", ValueType.VOID);
+                        var methodDep = agent.linkMethod(ref);
+                        methodDep.addLocation(location);
+                        methodDep.getVariable(0).propagate(type);
+                        methodDep.use();
+                        method.getResult().propagate(type);
+                    }
+                });
+                break;
+            }
         }
     }
 }

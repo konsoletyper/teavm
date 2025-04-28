@@ -51,6 +51,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructNew;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.classlib.impl.ReflectionDependencyListener;
+import org.teavm.interop.Address;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
@@ -366,6 +367,9 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
             if (type.startsWith("~") || type.startsWith("!")) {
                 continue;
             }
+            if (type.equals(Address.class.getName())) {
+                continue;
+            }
             var cls = context.hierarchy().getClassSource().get(type);
             if (cls == null) {
                 continue;
@@ -379,6 +383,9 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
             }
 
             var classInfo = context.classInfoProvider().getClassInfo(cls.getName());
+            if (classInfo.getStructure() == null) {
+                continue;
+            }
             var instantiator = generateInstantiator(context, method);
 
             function.getBody().add(new WasmStructSet(

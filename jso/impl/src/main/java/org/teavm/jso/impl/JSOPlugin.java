@@ -24,6 +24,8 @@ import org.teavm.model.MethodReference;
 import org.teavm.platform.plugin.PlatformPlugin;
 import org.teavm.vm.TeaVMPluginUtil;
 import org.teavm.vm.spi.After;
+import org.teavm.vm.spi.ClassFilter;
+import org.teavm.vm.spi.ClassFilterContext;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
@@ -44,6 +46,20 @@ public class JSOPlugin implements TeaVMPlugin {
         JSDependencyListener dependencyListener = new JSDependencyListener(repository);
         host.add(dependencyListener);
         host.add(new JSExceptionsDependencyListener());
+        host.addClassFilter(new ClassFilter() {
+            JSTypeHelper helper;
+
+            @Override
+            public boolean accept(ClassFilterContext context, String className) {
+                if (helper == null) {
+                    helper = new JSTypeHelper(context.classes());
+                }
+                if (helper.isJavaScriptClass(className) && !helper.isJavaScriptImplementation(className)) {
+                    return false;
+                }
+                return true;
+            }
+        });
 
         var wrapperDependency = new JSWrapperDependency();
         host.add(wrapperDependency);

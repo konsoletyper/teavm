@@ -57,7 +57,7 @@ public class DependencyNode implements ValueDependencyInfo {
     }
 
     public void propagate(DependencyType type) {
-        if (!hasType(type) && filter(type)) {
+        if (!hasType(type) && filter(type) && dependencyAnalyzer.filterType(type.getName())) {
             propagateCount++;
             moveToSeparateDomain();
             typeSet.addType(type);
@@ -104,7 +104,7 @@ public class DependencyNode implements ValueDependencyInfo {
         boolean copied = false;
         for (int i = 0; i < newTypes.length; ++i) {
             DependencyType type = newTypes[i];
-            if (!hasType(type) && filter(type)) {
+            if (!hasType(type) && filter(type) && dependencyAnalyzer.filterType(type.getName())) {
                 newTypes[j++] = type;
             } else if (!copied) {
                 copied = true;

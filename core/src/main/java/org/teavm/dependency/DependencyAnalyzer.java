@@ -62,6 +62,8 @@ import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.parsing.Parser;
+import org.teavm.vm.spi.ClassFilter;
+import org.teavm.vm.spi.ClassFilterContext;
 
 public abstract class DependencyAnalyzer implements DependencyInfo {
     private static final int PROPAGATION_STACK_THRESHOLD = 50;
@@ -104,6 +106,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private ReferenceCache referenceCache;
     private Set<String> generatedClassNames = new HashSet<>();
     DependencyType classType;
+    private List<ClassFilter> classFilters = new ArrayList<>();
 
     DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics, ReferenceCache referenceCache, String[] platformTags) {
@@ -131,6 +134,10 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         classCache = new CachedFunction<>(this::createClassDependency);
 
         classType = getType("java.lang.Class");
+    }
+
+    public void addClassFilter(ClassFilter filter) {
+        classFilters.add(filter);
     }
 
     public void setEntryPoint(String entryPoint) {
@@ -287,6 +294,9 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private int propagationDepth;
 
     void schedulePropagation(DependencyConsumer consumer, DependencyType type) {
+        if (!filterType(type.getName())) {
+            return;
+        }
         if (propagationDepth < PROPAGATION_STACK_THRESHOLD) {
             ++propagationDepth;
             consumer.consume(type);
@@ -298,6 +308,9 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     void schedulePropagation(Transition consumer, DependencyType type) {
         if (!consumer.destination.filter(type)) {
+            return;
+        }
+        if (!filterType(type.getName())) {
             return;
         }
 
@@ -353,17 +366,32 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         if (propagationDepth < PROPAGATION_STACK_THRESHOLD) {
             ++propagationDepth;
             for (DependencyType type : types) {
-                consumer.consume(type);
+                if (filterType(type.getName())) {
+                    consumer.consume(type);
+                }
             }
             --propagationDepth;
         } else {
             tasks.add(() -> {
                 for (DependencyType type : types) {
-                    consumer.consume(type);
+                    if (filterType(type.getName())) {
+                        consumer.consume(type);
+                    }
                 }
             });
         }
     }
+
+    boolean filterType(String type) {
+        return classFilters.stream().allMatch(filter -> filter.accept(filterContext, type));
+    }
+
+    private ClassFilterContext filterContext = new ClassFilterContext() {
+        @Override
+        public ClassReaderSource classes() {
+            return unprocessedClassSource;
+        }
+    };
 
     public void defer(Runnable task) {
         deferredTasks.add(task);
