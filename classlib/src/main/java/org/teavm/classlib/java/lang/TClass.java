@@ -837,7 +837,11 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
             if (nameMap == null) {
                 fillNameMap();
             }
-            return nameMap.get((String) (Object) name);
+            var result = nameMap.get((String) (Object) name);
+            if (result == null) {
+                throw new TClassNotFoundException((String) (Object) name);
+            }
+            return result;
         }
     }
 
