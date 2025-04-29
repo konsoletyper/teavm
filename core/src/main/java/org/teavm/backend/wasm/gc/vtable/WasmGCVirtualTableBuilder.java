@@ -178,7 +178,7 @@ class WasmGCVirtualTableBuilder {
                 table.liftedInterfaces.addAll(accumulatedInterfaces);
                 var parent = table.parent;
                 var accumulatedInterfacesToAdd = new LinkedHashSet<Table>();
-                for (var iter = accumulatedInterfaces.iterator(); iter.hasNext(); ) {
+                for (var iter = accumulatedInterfaces.iterator(); iter.hasNext();) {
                     var itf = iter.next();
                     if (itf.commonImplementor == parent) {
                         iter.remove();
