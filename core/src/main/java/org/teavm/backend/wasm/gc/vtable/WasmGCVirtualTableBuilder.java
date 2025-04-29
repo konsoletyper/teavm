@@ -177,7 +177,15 @@ class WasmGCVirtualTableBuilder {
                 }
                 table.liftedInterfaces.addAll(accumulatedInterfaces);
                 var parent = table.parent;
-                accumulatedInterfaces.removeIf(itf -> itf.commonImplementor == parent);
+                var accumulatedInterfacesToAdd = new LinkedHashSet<Table>();
+                for (var iter = accumulatedInterfaces.iterator(); iter.hasNext(); ) {
+                    var itf = iter.next();
+                    if (itf.commonImplementor == parent) {
+                        iter.remove();
+                        addNextInterfaces(itf, parent, new HashSet<>(), accumulatedInterfacesToAdd);
+                    }
+                }
+                accumulatedInterfaces.addAll(accumulatedInterfacesToAdd);
                 if (accumulatedInterfaces.isEmpty()) {
                     break;
                 }
@@ -189,6 +197,22 @@ class WasmGCVirtualTableBuilder {
                 table.liftedInterfaces.removeIf(itf -> itf.commonImplementor != table.parent);
                 if (table.liftedInterfaces.isEmpty()) {
                     table.liftedInterfaces = null;
+                }
+            }
+        }
+    }
+
+    private void addNextInterfaces(Table itf, Table parent, Set<Table> visited, Set<Table> result) {
+        if (!visited.add(itf)) {
+            return;
+        }
+        if (itf.commonImplementor != parent) {
+            result.add(itf);
+        } else {
+            for (var superItfName : itf.cls.getInterfaces()) {
+                var superItf = tableMap.get(superItfName);
+                if (superItf != null) {
+                    addNextInterfaces(superItf, parent, visited, result);
                 }
             }
         }

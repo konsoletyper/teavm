@@ -676,6 +676,42 @@ public class VMTest {
     }
 
     @Test
+    public void virtualTableCase1() {
+        interface I {
+            String f();
+        }
+        interface J extends I {
+            String g();
+        }
+        class A {
+        }
+        class C extends A implements J {
+            @Override
+            public String f() {
+                return "C.f";
+            }
+            @Override
+            public String g() {
+                return "C.g";
+            }
+        }
+        class D implements I {
+            @Override
+            public String f() {
+                return "D.f";
+            }
+        }
+        
+        var list = List.<I>of(new C(), new D());
+        var sb = new StringBuilder();
+        for (var item : list) {
+            sb.append(item.f()).append(";");
+        }
+        
+        assertEquals("C.f;D.f;", sb.toString());
+    }
+
+    @Test
     public void typeInferenceForArrayMerge() {
         int[][] a = falseBoolean() ? null : array();
         assertEquals(23, a[0][0]);
