@@ -20,6 +20,7 @@ import java.io.StringWriter;
 import org.teavm.backend.wasm.disasm.Disassembler;
 import org.teavm.backend.wasm.disasm.DisassemblyHTMLWriter;
 import org.teavm.backend.wasm.disasm.DisassemblyWriter;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSExport;
 
 public class DisassemblerTool {
@@ -27,7 +28,7 @@ public class DisassemblerTool {
     }
 
     @JSExport
-    public static String disassemble(byte[] data) {
+    public static String disassemble(@JSByRef(optional = true) byte[] data) {
         var out = new StringWriter();
         var writer = new PrintWriter(out);
         var htmlWriter = new DisassemblyHTMLWriter(writer) {
