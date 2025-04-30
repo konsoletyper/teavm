@@ -28,7 +28,7 @@ class TeaVMTestConfigurator {
     static void configure(Project project, TeaVMTests tests) {
         project.getTasks().withType(Test.class).configureEach(test -> {
             test.getSystemProperties().putIfAbsent("teavm.junit.target",
-                    new File(project.getBuildDir(), "tests/teavm"));
+                    new File(project.getLayout().getProjectDirectory().getAsFile(), "tests/teavm"));
             test.getSystemProperties().putIfAbsent("teavm.junit.threads", "1");
 
             test.getSystemProperties().putIfAbsent("teavm.junit.js",

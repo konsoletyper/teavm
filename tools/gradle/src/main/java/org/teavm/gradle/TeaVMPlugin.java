@@ -19,10 +19,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedDependencyResult;
@@ -208,7 +210,7 @@ public class TeaVMPlugin implements Plugin<Project> {
 
     private void registerWasiTask(Project project, Configuration configuration) {
         var extension = project.getExtensions().getByType(TeaVMExtension.class);
-        project.getTasks().create(WASI_TASK_NAME, GenerateWasiTask.class, task -> {
+        project.getTasks().register(WASI_TASK_NAME, GenerateWasiTask.class, task -> {
             var wasi = extension.getWasi();
             applyToTask(wasi, task, configuration);
             task.getExceptionsUsed().convention(wasi.getExceptionsUsed());
@@ -220,10 +222,7 @@ public class TeaVMPlugin implements Plugin<Project> {
 
     private void registerWasmGCTask(Project project, Configuration configuration) {
         var extension = project.getExtensions().getByType(TeaVMExtension.class);
-        var buildTask = project.getTasks().create(BUILD_WASM_GC_TASK_NAME, task -> {
-            task.setGroup(TASK_GROUP);
-        });
-        project.getTasks().create(WASM_GC_TASK_NAME, GenerateWasmGCTask.class, task -> {
+        var genTask = project.getTasks().register(WASM_GC_TASK_NAME, GenerateWasmGCTask.class, task -> {
             var wasmGC = extension.getWasmGC();
             applyToTask(wasmGC, task, configuration);
             task.getTargetFileName().convention(wasmGC.getTargetFileName());
@@ -234,49 +233,52 @@ public class TeaVMPlugin implements Plugin<Project> {
             task.getMinDirectBuffersSize().convention(wasmGC.getMinDirectBuffersSize());
             task.getMaxDirectBuffersSize().convention(wasmGC.getMaxDirectBuffersSize());
             setupSources(task.getSourceFiles(), project);
-            buildTask.dependsOn(task);
-        });
-        project.getTasks().create(WASM_GC_COPY_RUNTIME_TASK_NAME, CopyWasmGCRuntimeTask.class, task -> {
-            task.setGroup(TASK_GROUP);
-            task.onlyIf(t -> extension.getWasmGC().getCopyRuntime().getOrElse(false));
-            var fileName = extension.getWasmGC().getTargetFileName().map(x -> x + "-runtime.js");
-            task.getOutputFile().convention(extension.getWasmGC().getOutputDir()
-                    .flatMap(d -> d.dir(extension.getWasmGC().getRelativePathInOutputDir()))
-                    .flatMap(d -> d.file(fileName)));
-            task.getDeobfuscator().convention(extension.getWasmGC().getDebugInformation());
-            var deobfuscatorFileName = extension.getWasmGC().getTargetFileName()
-                    .map(x -> x + "-deobfuscator.wasm");
-            task.getDeobfuscatorOutputFile().convention(extension.getWasmGC().getOutputDir()
-                    .flatMap(d -> d.dir(extension.getWasmGC().getRelativePathInOutputDir()))
-                    .flatMap(d -> d.file(deobfuscatorFileName)));
-            task.getModular().convention(extension.getWasmGC().getModularRuntime());
-            task.getObfuscated().convention(extension.getWasmGC().getObfuscated());
-            buildTask.dependsOn(task);
-        });
-        project.getTasks().create(WASM_GC_DISASSEMBLY_TASK_NAME, DisasmWebAssemblyTask.class, task -> {
-            task.setGroup(TASK_GROUP);
-            var genTask = (GenerateWasmGCTask) project.getTasks().getByName(WASM_GC_TASK_NAME);
-            task.dependsOn(genTask);
-            task.onlyIf(t -> extension.getWasmGC().getDisassembly().getOrElse(false));
-            task.getHtml().set(true);
-            task.getInputFile().convention(project.getLayout().dir(genTask.getOutputDir())
-                    .flatMap(x -> x.file(genTask.getTargetFileName())));
-            var fileName = extension.getWasmGC().getTargetFileName().map(x -> {
-                if (x.endsWith(".wasm")) {
-                    x = x.substring(0, x.length() - 5);
-                }
-                return x + ".wast.html";
-            });
-            task.getOutputFile().convention(project.getLayout().dir(genTask.getOutputDir())
-                    .flatMap(d -> d.file(fileName)));
-            buildTask.dependsOn(task);
-        });
+        }).get();
 
+        var copyRuntimeTask = project.getTasks().register(WASM_GC_COPY_RUNTIME_TASK_NAME, CopyWasmGCRuntimeTask.class,
+                task -> {
+                    task.setGroup(TASK_GROUP);
+                    task.onlyIf(t -> extension.getWasmGC().getCopyRuntime().getOrElse(false));
+                    var fileName = extension.getWasmGC().getTargetFileName().map(x -> x + "-runtime.js");
+                    task.getOutputFile().convention(extension.getWasmGC().getOutputDir()
+                            .flatMap(d -> d.dir(extension.getWasmGC().getRelativePathInOutputDir()))
+                            .flatMap(d -> d.file(fileName)));
+                    task.getDeobfuscator().convention(extension.getWasmGC().getDebugInformation());
+                    var deobfuscatorFileName = extension.getWasmGC().getTargetFileName()
+                            .map(x -> x + "-deobfuscator.wasm");
+                    task.getDeobfuscatorOutputFile().convention(extension.getWasmGC().getOutputDir()
+                            .flatMap(d -> d.dir(extension.getWasmGC().getRelativePathInOutputDir()))
+                            .flatMap(d -> d.file(deobfuscatorFileName)));
+                    task.getModular().convention(extension.getWasmGC().getModularRuntime());
+                    task.getObfuscated().convention(extension.getWasmGC().getObfuscated());
+                });
+        var disasmTask = project.getTasks().register(WASM_GC_DISASSEMBLY_TASK_NAME, DisasmWebAssemblyTask.class,
+                task -> {
+                    task.setGroup(TASK_GROUP);
+                    task.dependsOn(genTask);
+                    task.onlyIf(t -> extension.getWasmGC().getDisassembly().getOrElse(false));
+                    task.getHtml().set(true);
+                    task.getInputFile().convention(project.getLayout().dir(genTask.getOutputDir())
+                            .flatMap(x -> x.file(genTask.getTargetFileName())));
+                    var fileName = extension.getWasmGC().getTargetFileName().map(x -> {
+                        if (x.endsWith(".wasm")) {
+                            x = x.substring(0, x.length() - 5);
+                        }
+                        return x + ".wast.html";
+                    });
+                    task.getOutputFile().convention(project.getLayout().dir(genTask.getOutputDir())
+                            .flatMap(d -> d.file(fileName)));
+                });
+
+        project.getTasks().register(BUILD_WASM_GC_TASK_NAME, task -> {
+            task.setGroup(TASK_GROUP);
+            task.dependsOn(genTask, copyRuntimeTask, disasmTask);
+        });
     }
 
     private void registerCTask(Project project, Configuration configuration) {
         var extension = project.getExtensions().getByType(TeaVMExtension.class);
-        project.getTasks().create(C_TASK_NAME, GenerateCTask.class, task -> {
+        project.getTasks().register(C_TASK_NAME, GenerateCTask.class, task -> {
             var c = extension.getC();
             applyToTask(c, task, configuration);
             task.getMinHeapSize().convention(c.getMinHeapSize());
@@ -394,7 +396,9 @@ public class TeaVMPlugin implements Plugin<Project> {
                     var tmpConfig = project.getConfigurations().detachedConfiguration(sourcesDep);
                     tmpConfig.setTransitive(false);
                     if (!tmpConfig.getResolvedConfiguration().hasError()) {
-                        result.addAll(tmpConfig.getResolvedConfiguration().getLenientConfiguration().getFiles());
+                        result.addAll(tmpConfig.getResolvedConfiguration().getLenientConfiguration().getArtifacts()
+                                .stream()
+                                .map(ResolvedArtifact::getFile).collect(Collectors.toList()));
                     }
                 }
             }
