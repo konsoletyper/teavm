@@ -346,6 +346,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
 
             Set<MethodDescriptor> accessibleMethods = getAccessibleMethods(agent, reflectedType.getName());
 
+            var hasConstructors = false;
             for (MethodDescriptor methodDescriptor : accessibleMethods) {
                 if (!methodDescriptor.getName().equals("<init>")) {
                     continue;
@@ -359,9 +360,12 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 }
                 calledMethodDep.getVariable(0).propagate(reflectedType);
                 calledMethods.add(calledMethod.getReference());
+                hasConstructors = true;
             }
 
-            method.getResult().propagate(reflectedType);
+            if (hasConstructors) {
+                method.getResult().propagate(reflectedType);
+            }
         });
     }
 
