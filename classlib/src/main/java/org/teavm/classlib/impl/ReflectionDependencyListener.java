@@ -151,6 +151,16 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 }
             }
         }
+        allClasses.addConsumer(type -> {
+            var className = type.getName();
+            if (!className.startsWith("[") && !className.startsWith("~")) {
+                if (reflectionSuppliers.stream().anyMatch(s -> s.isClassFoundByName(context, className))) {
+                    if (classesFoundByName.add(className)) {
+                        agent.linkClass(className);
+                    }
+                }
+            }
+        });
         if (!classesFoundByName.isEmpty()) {
             var getName = agent.linkMethod(new MethodReference(Class.class, "getName", String.class));
             getName.getVariable(0).propagate(agent.getType("java.lang.Class"));

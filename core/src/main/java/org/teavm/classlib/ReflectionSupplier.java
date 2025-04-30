@@ -28,7 +28,12 @@ public interface ReflectionSupplier {
         return Collections.emptyList();
     }
 
+    @Deprecated
     default Collection<String> getClassesFoundByName(ReflectionContext context) {
         return Collections.emptyList();
+    }
+
+    default boolean isClassFoundByName(ReflectionContext context, String name) {
+        return false;
     }
 }
