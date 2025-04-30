@@ -37,12 +37,7 @@ public final class DeobfuscatorFactory {
             if (result == null || result.getLength() != 1) {
                 return null;
             }
-            var data = new Int8Array(result.get(0));
-            var bytes = new byte[data.getLength()];
-            for (var i = 0; i < data.getLength(); ++i) {
-                bytes[i] = data.get(i);
-            }
-            return bytes;
+            return new Int8Array(result.get(0)).copyToJavaArray();
         });
         var lineInfo = parser.getLineInfo();
         return lineInfo != null ? new Deobfuscator(parser.getLineInfo()) : null;
