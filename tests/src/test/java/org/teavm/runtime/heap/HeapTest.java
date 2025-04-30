@@ -16,6 +16,7 @@
 package org.teavm.runtime.heap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Set;
@@ -110,6 +111,20 @@ public class HeapTest {
         dump();
         assertEquals(2162712, c.diff(Heap.getStart()));
         check();
+    }
+
+    @Test
+    public void growAfterFullAllocation() {
+        var initialSize = Heap.getCurrentSize();
+        var size = Heap.getCurrentSize() - 8;
+        var a = Heap.alloc(size);
+        dump();
+        assertEquals(8, a.diff(Heap.getStart()));
+        assertEquals(initialSize, Heap.getCurrentSize());
+
+        var b = Heap.alloc(256);
+        assertEquals(16 + size, b.diff(Heap.getStart()));
+        assertTrue(initialSize < Heap.getCurrentSize());
     }
 
     @Test

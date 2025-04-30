@@ -93,9 +93,15 @@ public final class Heap {
             return false;
         }
         currentSize += grownBytes;
-        delete(last);
-        last.size += grownBytes;
-        insert(last);
+        if (last != null) {
+            delete(last);
+            last.size += grownBytes;
+            insert(last);
+        } else {
+            var newEmpty = (HeapNode) end.toStructure();
+            newEmpty.size = grownBytes - Structure.sizeOf(HeapRecord.class);
+            insert(newEmpty);
+        }
         end = start.add(currentSize);
         maxSize = Math.max(currentSize, maxSize);
         return grownBytes >= bytes;
