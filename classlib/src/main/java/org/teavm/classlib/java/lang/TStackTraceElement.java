@@ -26,11 +26,8 @@ public final class TStackTraceElement extends TObject implements TSerializable {
     private int lineNumber;
 
     public TStackTraceElement(String declaringClass, String methodName, String fileName, int lineNumber) {
-        if (declaringClass == null || methodName == null) {
-            throw new TNullPointerException();
-        }
-        this.declaringClass = declaringClass;
-        this.methodName = methodName;
+        this.declaringClass = Objects.requireNonNull(declaringClass);
+        this.methodName = Objects.requireNonNull(methodName);
         this.fileName = fileName;
         this.lineNumber = lineNumber;
     }
@@ -78,8 +75,7 @@ public final class TStackTraceElement extends TObject implements TSerializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        int index = declaringClass.lastIndexOf('.');
-        sb.append(declaringClass.substring(index + 1)).append('.').append(methodName).append('(');
+        sb.append(declaringClass).append('.').append(methodName).append('(');
         if (fileName != null) {
             sb.append(fileName).append(':').append(lineNumber);
         } else {
