@@ -26,8 +26,15 @@ public final class TStackTraceElement extends TObject implements TSerializable {
     private int lineNumber;
 
     public TStackTraceElement(String declaringClass, String methodName, String fileName, int lineNumber) {
-        this.declaringClass = Objects.requireNonNull(declaringClass);
-        this.methodName = Objects.requireNonNull(methodName);
+        // For some reason Wasm BE does not produce proper string constants.
+        // When these constants go through Objects.requireNonNull, they need to be
+        // cast to String, which fails
+        // TODO: fix and rewrite with Objects.requireNonNull
+        if (declaringClass == null || methodName == null) {
+            throw new TNullPointerException();
+        }
+        this.declaringClass = declaringClass;
+        this.methodName = methodName;
         this.fileName = fileName;
         this.lineNumber = lineNumber;
     }
