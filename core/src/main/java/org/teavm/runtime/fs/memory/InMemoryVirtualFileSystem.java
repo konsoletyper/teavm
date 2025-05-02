@@ -45,4 +45,9 @@ public class InMemoryVirtualFileSystem implements VirtualFileSystem {
     public String canonicalize(String path) {
         return path;
     }
+
+    @Override
+    public String[] getRoots() {
+        return new String[] { "" };
+    }
 }

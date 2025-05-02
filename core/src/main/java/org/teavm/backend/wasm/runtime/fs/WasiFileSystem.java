@@ -98,6 +98,11 @@ public class WasiFileSystem implements VirtualFileSystem {
         return path;
     }
 
+    @Override
+    public String[] getRoots() {
+        return new String[] { "" };
+    }
+
     private List<Preopened> getPreopenedList() {
         if (preopenedList == null) {
             preopenedList = createPreopenedList();

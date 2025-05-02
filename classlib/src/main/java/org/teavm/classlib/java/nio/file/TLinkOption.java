@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Jonathan Coates.
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,14 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.nio.channels;
+package org.teavm.classlib.java.nio.file;
 
-import java.io.IOException;
-import org.teavm.classlib.java.io.TCloseable;
-
-public interface TChannel extends TCloseable {
-    boolean isOpen();
-
-    @Override
-    void close() throws IOException;
+public enum TLinkOption {
+    NOFOLLOW_LINKS
 }

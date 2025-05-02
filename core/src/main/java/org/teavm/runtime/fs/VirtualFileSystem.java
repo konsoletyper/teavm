@@ -23,4 +23,6 @@ public interface VirtualFileSystem {
     boolean isWindows();
 
     String canonicalize(String path);
+
+    String[] getRoots();
 }

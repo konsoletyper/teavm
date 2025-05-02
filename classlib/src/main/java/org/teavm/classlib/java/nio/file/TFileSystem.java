@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Jonathan Coates.
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,14 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.nio.channels;
+package org.teavm.classlib.java.nio.file;
 
-import java.io.IOException;
-import org.teavm.classlib.java.io.TCloseable;
+import java.io.Closeable;
+import java.util.Set;
 
-public interface TChannel extends TCloseable {
-    boolean isOpen();
+public abstract class TFileSystem implements Closeable {
+    public abstract TPath getPath(String first, String... more);
 
-    @Override
-    void close() throws IOException;
+    public abstract boolean isOpen();
+
+    public abstract boolean isReadOnly();
+
+    public abstract String getSeparator();
+
+    public abstract Iterable<TPath> getRootDirectories();
+
+    public abstract Set<String> supportedFileAttributeViews();
 }

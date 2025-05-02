@@ -100,6 +100,11 @@ public class CFileSystem implements VirtualFileSystem {
         return new String(chars);
     }
 
+    @Override
+    public String[] getRoots() {
+        return isWindows() ? new String[] { "C:" } : new String[] { "" };
+    }
+
     static class Entry extends WeakReference<CVirtualFile> {
         String path;
 
