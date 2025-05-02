@@ -1,6 +1,6 @@
 [versions]
 
-asm = "9.7.1"
+asm = "9.8"
 jackson = "2.18.2"
 jetty = "9.4.56.v20240826"
 shadow = "8.3.5"
