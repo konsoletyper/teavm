@@ -15,13 +15,25 @@
  */
 package org.teavm.classlib.java.nio.file;
 
+import java.nio.file.FileSystemNotFoundException;
+import org.teavm.classlib.java.net.TURI;
 import org.teavm.classlib.java.nio.file.impl.TDefaultFileSystem;
+import org.teavm.classlib.java.nio.file.spi.TFileSystemProvider;
 
 public final class TFileSystems {
     private TFileSystems() {
     }
 
     public static TFileSystem getDefault() {
-        return TDefaultFileSystem.DEFAULT;
+        return TDefaultFileSystem.INSTANCE;
+    }
+
+    public static TFileSystem getFileSystem(TURI uri) {
+        for (var provider : TFileSystemProvider.installedProviders()) {
+            if (provider.getScheme().equals(uri.getScheme())) {
+                return provider.getFileSystem(uri);
+            }
+        }
+        throw new FileSystemNotFoundException();
     }
 }

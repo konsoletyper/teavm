@@ -140,6 +140,9 @@ public class VirtualFileImpl implements VirtualFile {
                 next = path.length();
             }
 
+            if (!file.isDirectory()) {
+                return null;
+            }
             file = file.getChildFile(path.substring(i, next));
             if (file == null) {
                 break;

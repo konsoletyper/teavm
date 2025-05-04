@@ -15,22 +15,11 @@
  */
 package org.teavm.classlib.java.nio.file;
 
-import java.io.Closeable;
-import java.util.Set;
-import org.teavm.classlib.java.nio.file.spi.TFileSystemProvider;
+import java.io.IOException;
+import java.util.ConcurrentModificationException;
 
-public abstract class TFileSystem implements Closeable {
-    public abstract TPath getPath(String first, String... more);
-
-    public abstract boolean isOpen();
-
-    public abstract boolean isReadOnly();
-
-    public abstract String getSeparator();
-
-    public abstract Iterable<TPath> getRootDirectories();
-
-    public abstract Set<String> supportedFileAttributeViews();
-
-    public abstract TFileSystemProvider provider();
+public class TDirectoryIteratorException extends ConcurrentModificationException {
+    public TDirectoryIteratorException(IOException cause) {
+        super(cause);
+    }
 }

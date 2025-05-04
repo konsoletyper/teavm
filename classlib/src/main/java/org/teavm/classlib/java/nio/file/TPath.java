@@ -17,10 +17,15 @@ package org.teavm.classlib.java.nio.file;
 
 import java.io.File;
 import java.io.IOException;
+import org.teavm.classlib.java.net.TURI;
 
 public interface TPath extends Comparable<TPath>, Iterable<TPath> {
     static TPath of(String first, String... more) {
         return TFileSystems.getDefault().getPath(first, more);
+    }
+
+    static TPath of(TURI uri) {
+        return TFileSystems.getFileSystem(uri).provider().getPath(uri);
     }
 
     TFileSystem getFileSystem();

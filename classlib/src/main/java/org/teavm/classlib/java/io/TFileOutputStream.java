@@ -24,7 +24,7 @@ import org.teavm.runtime.fs.VirtualFile;
 import org.teavm.runtime.fs.VirtualFileAccessor;
 
 public class TFileOutputStream extends OutputStream {
-    private static final byte[] ONE_BYTE_BUFER = new byte[1];
+    private static final byte[] ONE_BYTE_BUFFER = new byte[1];
     private VirtualFileAccessor accessor;
 
     public TFileOutputStream(TFile file) throws FileNotFoundException {
@@ -62,6 +62,10 @@ public class TFileOutputStream extends OutputStream {
         }
     }
 
+    public TFileOutputStream(VirtualFileAccessor accessor) {
+        this.accessor = accessor;
+    }
+
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
         Objects.requireNonNull(b);
@@ -89,7 +93,7 @@ public class TFileOutputStream extends OutputStream {
     @Override
     public void write(int b) throws IOException {
         ensureOpened();
-        byte[] buffer = ONE_BYTE_BUFER;
+        byte[] buffer = ONE_BYTE_BUFFER;
         buffer[0] = (byte) b;
         accessor.write(buffer, 0, 1);
     }

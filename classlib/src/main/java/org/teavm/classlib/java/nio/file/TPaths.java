@@ -15,22 +15,17 @@
  */
 package org.teavm.classlib.java.nio.file;
 
-import java.io.Closeable;
-import java.util.Set;
-import org.teavm.classlib.java.nio.file.spi.TFileSystemProvider;
+import org.teavm.classlib.java.net.TURI;
 
-public abstract class TFileSystem implements Closeable {
-    public abstract TPath getPath(String first, String... more);
+public final class TPaths {
+    private TPaths() {
+    }
 
-    public abstract boolean isOpen();
+    public static TPath get(String first, String... more) {
+        return TPath.of(first, more);
+    }
 
-    public abstract boolean isReadOnly();
-
-    public abstract String getSeparator();
-
-    public abstract Iterable<TPath> getRootDirectories();
-
-    public abstract Set<String> supportedFileAttributeViews();
-
-    public abstract TFileSystemProvider provider();
+    public static TPath get(TURI uri) {
+        return TPath.of(uri);
+    }
 }

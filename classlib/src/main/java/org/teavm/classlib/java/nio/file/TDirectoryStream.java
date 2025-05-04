@@ -16,21 +16,15 @@
 package org.teavm.classlib.java.nio.file;
 
 import java.io.Closeable;
-import java.util.Set;
-import org.teavm.classlib.java.nio.file.spi.TFileSystemProvider;
+import java.io.IOException;
+import java.util.Iterator;
 
-public abstract class TFileSystem implements Closeable {
-    public abstract TPath getPath(String first, String... more);
+public interface TDirectoryStream<T> extends Closeable, Iterable<T> {
+    @Override
+    Iterator<T> iterator();
 
-    public abstract boolean isOpen();
-
-    public abstract boolean isReadOnly();
-
-    public abstract String getSeparator();
-
-    public abstract Iterable<TPath> getRootDirectories();
-
-    public abstract Set<String> supportedFileAttributeViews();
-
-    public abstract TFileSystemProvider provider();
+    @FunctionalInterface
+    interface Filter<T> {
+        boolean accept(T entry) throws IOException;
+    }
 }

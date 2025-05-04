@@ -178,19 +178,19 @@ public final class TSystem extends TObject {
     private static void initPropertiesIfNeeded() {
         if (properties == null) {
             Properties defaults = new Properties();
-            defaults.put("java.version", "1.8");
+            defaults.put("java.version", "1.21");
             defaults.put("os.name", "TeaVM");
-            defaults.put("file.separator", "/");
-            defaults.put("path.separator", ":");
+            defaults.put("file.separator", VirtualFileSystemProvider.getInstance().isWindows() ? "\\" : "/");
+            defaults.put("path.separator", VirtualFileSystemProvider.getInstance().isWindows() ? ";" : ":");
             defaults.put("line.separator", lineSeparator());
             defaults.put("java.io.tmpdir", getTempDir());
-            defaults.put("java.vm.version", "1.8");
+            defaults.put("java.vm.version", "1.21");
             defaults.put("user.home", getHomeDir());
             properties = new Properties(defaults);
         }
     }
 
-    private static String getTempDir() {
+    public static String getTempDir() {
         if (!PlatformDetector.isC()) {
             return "/tmp";
         }
