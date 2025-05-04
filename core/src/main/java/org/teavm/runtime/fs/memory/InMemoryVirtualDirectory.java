@@ -44,7 +44,13 @@ public class InMemoryVirtualDirectory extends AbstractInMemoryVirtualFile {
 
     @Override
     public AbstractInMemoryVirtualFile getChildFile(String fileName) {
-        return children.get(fileName);
+        if (fileName.equals(".")) {
+            return this;
+        } else if (fileName.equals("..")) {
+            return parent;
+        } else {
+            return children.get(fileName);
+        }
     }
 
     @Override

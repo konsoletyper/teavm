@@ -58,7 +58,7 @@ public class TSpecializedConcatLongStream extends TSimpleLongStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         RuntimeException suppressed = null;
         try {
             first.close();

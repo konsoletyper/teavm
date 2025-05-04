@@ -20,12 +20,13 @@ import java.util.List;
 import java.util.Set;
 import org.teavm.classlib.java.nio.file.TFileSystem;
 import org.teavm.classlib.java.nio.file.TPath;
+import org.teavm.classlib.java.nio.file.spi.TFileSystemProvider;
 import org.teavm.runtime.fs.VirtualFileSystem;
 import org.teavm.runtime.fs.VirtualFileSystemProvider;
 
 public class TDefaultFileSystem extends TFileSystem {
     public final VirtualFileSystem vfs;
-    public static final TDefaultFileSystem DEFAULT = new TDefaultFileSystem();
+    public static final TDefaultFileSystem INSTANCE = new TDefaultFileSystem();
 
     private TDefaultFileSystem() {
         this.vfs = VirtualFileSystemProvider.getInstance();
@@ -103,6 +104,11 @@ public class TDefaultFileSystem extends TFileSystem {
     @Override
     public Set<String> supportedFileAttributeViews() {
         return Set.of();
+    }
+
+    @Override
+    public TFileSystemProvider provider() {
+        return TDefaultFileSystemProvider.INSTANCE;
     }
 
     @Override

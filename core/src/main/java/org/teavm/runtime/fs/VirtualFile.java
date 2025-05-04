@@ -24,6 +24,10 @@ public interface VirtualFile {
 
     boolean isFile();
 
+    default boolean exists() {
+        return isDirectory() || isFile();
+    }
+
     String[] listFiles();
 
     VirtualFileAccessor createAccessor(boolean readable, boolean writable, boolean append);

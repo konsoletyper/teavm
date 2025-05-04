@@ -55,4 +55,9 @@ public class TDropWhileIntStream extends TSimpleIntStreamImpl {
         }
         return sourceStream.next(consumer);
     }
+
+    @Override
+    public void close() {
+        sourceStream.close();
+    }
 }

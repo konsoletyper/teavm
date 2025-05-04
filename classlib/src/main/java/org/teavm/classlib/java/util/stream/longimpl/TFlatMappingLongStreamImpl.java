@@ -76,7 +76,7 @@ public class TFlatMappingLongStreamImpl extends TSimpleLongStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         current = null;
         iterator = null;
         sourceStream.close();

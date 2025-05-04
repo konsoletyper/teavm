@@ -139,6 +139,11 @@ public class CFileSystem implements VirtualFileSystem {
     @Unmanaged
     static native boolean isFile(char[] name, int nameSize);
 
+    @Import(name = "teavm_file_exists")
+    @RuntimeInclude("file.h")
+    @Unmanaged
+    static native boolean exists(char[] name, int nameSize);
+
     @Import(name = "teavm_file_canRead")
     @RuntimeInclude("file.h")
     @Unmanaged
@@ -228,6 +233,11 @@ public class CFileSystem implements VirtualFileSystem {
     @RuntimeInclude("file.h")
     @Unmanaged
     static native int write(long file, byte[] data, int offset, int count);
+
+    @Import(name = "teavm_file_truncate")
+    @RuntimeInclude("file.h")
+    @Unmanaged
+    static native boolean truncate(long file, int size);
 
     @Import(name = "teavm_file_isWindows")
     @RuntimeInclude("file.h")

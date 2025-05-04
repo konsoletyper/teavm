@@ -32,4 +32,7 @@ public interface TBaseStream<T, S extends TBaseStream<T, S>> extends AutoCloseab
     S unordered();
 
     S onClose(Runnable closeHandler);
+
+    @Override
+    void close();
 }

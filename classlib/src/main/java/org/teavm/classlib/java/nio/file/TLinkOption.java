@@ -15,6 +15,6 @@
  */
 package org.teavm.classlib.java.nio.file;
 
-public enum TLinkOption {
+public enum TLinkOption implements TOpenOption, TCopyOption {
     NOFOLLOW_LINKS
 }

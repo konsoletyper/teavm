@@ -77,7 +77,7 @@ public class TFlatMappingDoubleStreamImpl extends TSimpleDoubleStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         current = null;
         iterator = null;
         sourceStream.close();

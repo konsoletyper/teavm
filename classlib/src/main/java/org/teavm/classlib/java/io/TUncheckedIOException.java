@@ -27,4 +27,9 @@ public class TUncheckedIOException extends RuntimeException {
     public TUncheckedIOException(String message, IOException cause) {
         super(message, cause);
     }
+
+    @Override
+    public IOException getCause() {
+        return (IOException) super.getCause();
+    }
 }

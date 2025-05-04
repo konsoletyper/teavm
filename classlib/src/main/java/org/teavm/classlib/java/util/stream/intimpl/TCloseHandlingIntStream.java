@@ -32,7 +32,7 @@ public class TCloseHandlingIntStream extends TSimpleIntStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         RuntimeException previousException = null;
         try {
             closeHandler.run();

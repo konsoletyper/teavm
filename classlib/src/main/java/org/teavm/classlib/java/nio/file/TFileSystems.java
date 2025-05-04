@@ -15,13 +15,56 @@
  */
 package org.teavm.classlib.java.nio.file;
 
+import java.io.IOException;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.ProviderNotFoundException;
+import java.util.Map;
+import org.teavm.classlib.java.net.TURI;
 import org.teavm.classlib.java.nio.file.impl.TDefaultFileSystem;
+import org.teavm.classlib.java.nio.file.spi.TFileSystemProvider;
 
 public final class TFileSystems {
     private TFileSystems() {
     }
 
     public static TFileSystem getDefault() {
-        return TDefaultFileSystem.DEFAULT;
+        return TDefaultFileSystem.INSTANCE;
+    }
+
+    public static TFileSystem getFileSystem(TURI uri) {
+        for (var provider : TFileSystemProvider.installedProviders()) {
+            if (provider.getScheme().equals(uri.getScheme())) {
+                return provider.getFileSystem(uri);
+            }
+        }
+        throw new FileSystemNotFoundException();
+    }
+
+    public static TFileSystem newFileSystem(TURI uri, Map<String, ?> env) throws IOException {
+        for (var provider : TFileSystemProvider.installedProviders()) {
+            if (provider.getScheme().equals(uri.getScheme())) {
+                return provider.newFileSystem(uri, env);
+            }
+        }
+        throw new FileSystemNotFoundException();
+    }
+
+    public static TFileSystem newFileSystem(TURI uri, Map<String, ?> env, ClassLoader loader) throws IOException {
+        return newFileSystem(uri, env);
+    }
+
+    public static TFileSystem newFileSystem(TPath path, ClassLoader loader) throws IOException {
+        return newFileSystem(path, Map.of(), loader);
+    }
+
+    public static TFileSystem newFileSystem(TPath path, Map<String, ?> env, ClassLoader loader) throws IOException {
+        for (var provider : TFileSystemProvider.installedProviders()) {
+            try {
+                return provider.newFileSystem(path, env);
+            } catch (UnsupportedOperationException e) {
+                // continue
+            }
+        }
+        throw new ProviderNotFoundException();
     }
 }

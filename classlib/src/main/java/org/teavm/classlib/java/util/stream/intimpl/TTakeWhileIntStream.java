@@ -46,4 +46,9 @@ public class TTakeWhileIntStream extends TSimpleIntStreamImpl {
         }
         return result;
     }
+
+    @Override
+    public void close() {
+        sourceStream.close();
+    }
 }

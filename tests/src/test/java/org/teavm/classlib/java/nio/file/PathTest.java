@@ -54,7 +54,6 @@ public class PathTest {
     }
 
     @Test
-    @SkipJVM
     @SkipPlatform({ TestPlatform.C, TestPlatform.WASI })
     public void parent() {
         var path = FileSystems.getDefault().getPath("/a", "b", "c");

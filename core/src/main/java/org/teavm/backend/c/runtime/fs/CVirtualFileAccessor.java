@@ -79,6 +79,8 @@ public class CVirtualFileAccessor implements VirtualFileAccessor {
                 write(zeros, 0, bytesToWrite);
                 position += bytesToWrite;
             }
+        } else if (!CFileSystem.truncate(file, size)) {
+            throw new IOException();
         }
     }
 

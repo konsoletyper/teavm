@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Objects;
+import org.teavm.classlib.java.lang.TSystem;
 import org.teavm.classlib.java.util.TRandom;
 import org.teavm.runtime.fs.VirtualFile;
 import org.teavm.runtime.fs.VirtualFileSystem;
@@ -519,7 +520,7 @@ public class TFile implements Serializable, Comparable<TFile> {
         String newSuffix = suffix == null ? ".tmp" : suffix;
         TFile tmpDirFile;
         if (directory == null) {
-            String tmpDir = System.getProperty("java.io.tmpdir", ".");
+            var tmpDir = TSystem.getTempDir();
             tmpDirFile = new TFile(tmpDir);
             if (!tmpDirFile.mkdirs()) {
                 throw new IOException("Could not access temp dir");

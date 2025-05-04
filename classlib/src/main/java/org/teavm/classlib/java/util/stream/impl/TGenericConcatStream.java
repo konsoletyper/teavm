@@ -56,7 +56,7 @@ public class TGenericConcatStream<T> extends TSimpleStreamImpl<T> {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         Exception suppressed = null;
         try {
             first.close();

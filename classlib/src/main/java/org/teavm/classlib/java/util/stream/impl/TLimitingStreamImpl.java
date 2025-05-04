@@ -52,7 +52,7 @@ public class TLimitingStreamImpl<T> extends TSimpleStreamImpl<T> {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         sourceStream.close();
     }
 }

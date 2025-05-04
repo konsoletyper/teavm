@@ -17,9 +17,14 @@ package org.teavm.classlib.java.nio.file;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
@@ -91,5 +96,24 @@ public class FileSystemTest {
 
         path = FileSystems.getDefault().getPath("/a", "/", "/");
         assertEquals("/a", path.toString());
+    }
+
+    @Test
+    public void provider() throws URISyntaxException {
+        var provider = FileSystems.getDefault().provider();
+        assertEquals("file", provider.getScheme());
+        
+        assertThrows(FileSystemAlreadyExistsException.class, () -> {
+            provider.newFileSystem(new URI("file:///"), null);
+        });
+
+        assertEquals(FileSystems.getDefault(), provider.getFileSystem(new URI("file:///")));
+        assertThrows(IllegalArgumentException.class, () -> {
+            provider.getFileSystem(new URI("file:///hello/world"));
+        });
+        assertThrows(IllegalArgumentException.class, () -> {
+            provider.getFileSystem(new URI("http://localhost:8080"));
+        });
+        assertEquals(Path.of("/foo", "bar"), provider.getPath(new URI("file:///foo/bar")));
     }
 }

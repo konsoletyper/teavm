@@ -37,7 +37,7 @@ public abstract class TWrappingStreamImpl<T, S> extends TSimpleStreamImpl<T> {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         sourceStream.close();
     }
 }

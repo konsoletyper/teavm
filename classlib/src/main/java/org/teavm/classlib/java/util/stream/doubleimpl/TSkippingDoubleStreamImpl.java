@@ -45,7 +45,7 @@ public class TSkippingDoubleStreamImpl extends TSimpleDoubleStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         sourceStream.close();
     }
 }
