@@ -459,18 +459,21 @@ public class Inlining {
 
                 if (implementations.size() == 1) {
                     var implementation = implementations.iterator().next();
-                    invoke.setType(InvocationType.SPECIAL);
-                    invoke.setMethod(implementation);
+                    var implementationMethod = getMethod(implementation);
+                    if (implementationMethod != null && !implementationMethod.hasModifier(ElementModifier.ABSTRACT)) {
+                        invoke.setType(InvocationType.SPECIAL);
+                        invoke.setMethod(implementation);
 
-                    if (!implementation.getName().equals(invoke.getMethod().getClassName())) {
-                        var cast = new CastInstruction();
-                        cast.setWeak(true);
-                        cast.setValue(invoke.getInstance());
-                        cast.setReceiver(program.createVariable());
-                        cast.setLocation(invoke.getLocation());
-                        cast.setTargetType(ValueType.object(implementation.getClassName()));
-                        invoke.insertPrevious(cast);
-                        invoke.setInstance(cast.getReceiver());
+                        if (!implementation.getName().equals(invoke.getMethod().getClassName())) {
+                            var cast = new CastInstruction();
+                            cast.setWeak(true);
+                            cast.setValue(invoke.getInstance());
+                            cast.setReceiver(program.createVariable());
+                            cast.setLocation(invoke.getLocation());
+                            cast.setTargetType(ValueType.object(implementation.getClassName()));
+                            invoke.insertPrevious(cast);
+                            invoke.setInstance(cast.getReceiver());
+                        }
                     }
                 }
             }
