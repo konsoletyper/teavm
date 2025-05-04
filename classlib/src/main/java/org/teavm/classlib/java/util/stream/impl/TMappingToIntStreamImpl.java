@@ -34,7 +34,7 @@ public class TMappingToIntStreamImpl<T> extends TSimpleIntStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         source.close();
     }
 

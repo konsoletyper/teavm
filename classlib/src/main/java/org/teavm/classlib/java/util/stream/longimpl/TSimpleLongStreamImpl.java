@@ -312,7 +312,7 @@ public abstract class TSimpleLongStreamImpl implements TLongStream {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
     }
 
     protected int estimateSize() {

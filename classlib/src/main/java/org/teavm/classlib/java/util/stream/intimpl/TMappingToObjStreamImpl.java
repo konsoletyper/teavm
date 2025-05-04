@@ -34,7 +34,7 @@ public class TMappingToObjStreamImpl<T> extends TSimpleStreamImpl<T> {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         source.close();
     }
 

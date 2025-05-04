@@ -45,7 +45,7 @@ public class TSkippingIntStreamImpl extends TSimpleIntStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         sourceStream.close();
     }
 }

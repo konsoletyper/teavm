@@ -37,7 +37,7 @@ public abstract class TWrappingDoubleStreamImpl extends TSimpleDoubleStreamImpl 
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         sourceStream.close();
     }
 }

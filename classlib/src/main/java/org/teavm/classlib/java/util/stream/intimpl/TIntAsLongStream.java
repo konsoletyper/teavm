@@ -41,7 +41,7 @@ public class TIntAsLongStream extends TSimpleLongStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         source.close();
     }
 }

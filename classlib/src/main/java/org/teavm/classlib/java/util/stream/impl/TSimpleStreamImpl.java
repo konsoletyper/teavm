@@ -326,7 +326,7 @@ public abstract class TSimpleStreamImpl<T> implements TStream<T> {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
     }
 
     protected int estimateSize() {

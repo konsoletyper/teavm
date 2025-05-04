@@ -46,4 +46,9 @@ public class TTakeWhileLongStream extends TSimpleLongStreamImpl {
         }
         return result;
     }
+
+    @Override
+    public void close() {
+        sourceStream.close();
+    }
 }

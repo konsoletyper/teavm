@@ -317,7 +317,7 @@ public abstract class TSimpleIntStreamImpl implements TIntStream {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
     }
 
     protected int estimateSize() {

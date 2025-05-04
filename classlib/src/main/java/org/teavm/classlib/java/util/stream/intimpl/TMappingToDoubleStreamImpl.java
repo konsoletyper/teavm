@@ -34,7 +34,7 @@ public class TMappingToDoubleStreamImpl extends TSimpleDoubleStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         source.close();
     }
 

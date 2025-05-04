@@ -46,4 +46,9 @@ public class TTakeWhileDoubleStream extends TSimpleDoubleStreamImpl {
         }
         return result;
     }
+
+    @Override
+    public void close() {
+        sourceStream.close();
+    }
 }

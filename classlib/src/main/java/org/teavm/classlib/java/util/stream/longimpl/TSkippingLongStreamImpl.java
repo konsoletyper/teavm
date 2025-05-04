@@ -45,7 +45,7 @@ public class TSkippingLongStreamImpl extends TSimpleLongStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         sourceStream.close();
     }
 }

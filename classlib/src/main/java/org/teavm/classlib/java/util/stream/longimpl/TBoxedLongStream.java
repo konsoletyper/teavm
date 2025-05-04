@@ -29,4 +29,9 @@ public class TBoxedLongStream extends TSimpleStreamImpl<Long> {
     public boolean next(Predicate<? super Long> consumer) {
         return source.next(consumer::test);
     }
+
+    @Override
+    public void close() {
+        source.close();
+    }
 }

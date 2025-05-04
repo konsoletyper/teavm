@@ -306,7 +306,7 @@ public abstract class TSimpleDoubleStreamImpl implements TDoubleStream {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
     }
 
     protected int estimateSize() {

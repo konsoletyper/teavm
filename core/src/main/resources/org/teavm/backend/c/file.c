@@ -99,6 +99,14 @@ int32_t teavm_file_isDir(char16_t* name, int32_t nameSize) {
     return S_ISDIR(s.st_mode);
 }
 
+int32_t teavm_file_exists(char16_t* name, int32_t nameSize) {
+    struct stat s;
+    char* mbName = teavm_char16ToMb(name, nameSize);
+    int statResult = stat(mbName, &s);
+    free(mbName);
+    return statResult == 0;
+}
+
 int32_t teavm_file_canRead(char16_t* name, int32_t nameSize) {
     char* mbName = teavm_char16ToMb(name, nameSize);
     int result = access(mbName, R_OK);
@@ -323,6 +331,11 @@ int32_t teavm_file_write(int64_t file, int8_t* data, int32_t offset, int32_t siz
     return (int32_t) fwrite(data + offset, 1, size, handle);
 }
 
+int32_t teavm_file_truncate(int64_t file, int32_t size) {
+    FILE* handle = (FILE*) file;
+    return (int32_t) !ftruncate(fileno(handle), size);
+}
+
 int32_t teavm_file_isWindows() {
     return 0;
 }
@@ -383,6 +396,11 @@ int32_t teavm_file_isFile(char16_t* name, int32_t nameSize) {
 int32_t teavm_file_isDir(char16_t* name, int32_t nameSize) {
     DWORD attributes = teavm_file_getAttributes(name, nameSize);
     return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
+}
+
+int32_t teavm_file_exists(char16_t* name, int32_t nameSize) {
+    DWORD attributes = teavm_file_getAttributes(name, nameSize);
+    return attributes != INVALID_FILE_ATTRIBUTES;
 }
 
 static int32_t teavm_file_checkExistingFileAccess(char16_t* name, int32_t nameSize, DWORD desiredAccess) {
@@ -584,6 +602,13 @@ int32_t teavm_file_write(int64_t file, int8_t* data, int32_t offset, int32_t siz
   DWORD numWritten = 0;
   DWORD result = WriteFile((HANDLE) file, data + offset, size, &numWritten, 0);
   return result ? numWritten : 0;
+}
+
+int32_t teavm_file_truncate(int64_t file, int32_t size) {
+  if (SetFilePointer((HANDLE) file, size, 0, where) == INVALID_SET_FILE_POINTER) {
+    return 0;
+  }
+  return SetEndOfFile((HANDLE) file);
 }
 
 int32_t teavm_file_isWindows() {

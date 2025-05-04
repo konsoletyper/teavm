@@ -62,6 +62,7 @@ public class TFlatMappingToIntStreamImpl<T> extends TSimpleIntStreamImpl {
             if (castCurrent.next(consumer)) {
                 return true;
             }
+            current.close();
             current = null;
         } else {
             iterator = current.iterator();
@@ -71,6 +72,7 @@ public class TFlatMappingToIntStreamImpl<T> extends TSimpleIntStreamImpl {
                     return true;
                 }
             }
+            current.close();
             iterator = null;
             current = null;
         }
@@ -78,7 +80,7 @@ public class TFlatMappingToIntStreamImpl<T> extends TSimpleIntStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         current = null;
         iterator = null;
         sourceStream.close();

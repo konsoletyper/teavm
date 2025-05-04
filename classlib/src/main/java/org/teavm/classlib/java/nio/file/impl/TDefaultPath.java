@@ -17,6 +17,7 @@ package org.teavm.classlib.java.nio.file.impl;
 
 import java.io.IOException;
 import java.util.Iterator;
+import org.teavm.classlib.java.net.TURI;
 import org.teavm.classlib.java.nio.file.TLinkOption;
 import org.teavm.classlib.java.nio.file.TPath;
 
@@ -276,6 +277,11 @@ public class TDefaultPath implements TPath {
         result.append(pathString);
 
         return result.toString();
+    }
+
+    @Override
+    public TURI toUri() {
+        return new TURI("file", null, toAbsolutePathString(), null, null);
     }
 
     @Override

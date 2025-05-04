@@ -55,4 +55,9 @@ public class TDropWhileDoubleStream extends TSimpleDoubleStreamImpl {
         }
         return sourceStream.next(consumer);
     }
+
+    @Override
+    public void close() {
+        sourceStream.close();
+    }
 }

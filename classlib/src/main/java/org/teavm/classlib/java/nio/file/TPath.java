@@ -17,10 +17,15 @@ package org.teavm.classlib.java.nio.file;
 
 import java.io.File;
 import java.io.IOException;
+import org.teavm.classlib.java.net.TURI;
 
 public interface TPath extends Comparable<TPath>, Iterable<TPath> {
     static TPath of(String first, String... more) {
         return TFileSystems.getDefault().getPath(first, more);
+    }
+
+    static TPath of(TURI uri) {
+        return TFileSystems.getFileSystem(uri).provider().getPath(uri);
     }
 
     TFileSystem getFileSystem();
@@ -69,6 +74,8 @@ public interface TPath extends Comparable<TPath>, Iterable<TPath> {
 
     TPath relativize(TPath other);
 
+    TURI toUri();
+
     TPath toAbsolutePath();
 
     TPath toRealPath(TLinkOption... options) throws IOException;
@@ -77,6 +84,9 @@ public interface TPath extends Comparable<TPath>, Iterable<TPath> {
     int compareTo(TPath o);
 
     default File toFile() {
+        if (getFileSystem() != TFileSystems.getDefault()) {
+            throw new UnsupportedOperationException();
+        }
         return new File(toString());
     }
 }

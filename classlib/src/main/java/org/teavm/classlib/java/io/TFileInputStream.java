@@ -42,6 +42,10 @@ public class TFileInputStream extends InputStream {
         this(new TFile(path));
     }
 
+    public TFileInputStream(VirtualFileAccessor accessor) {
+        this.accessor = accessor;
+    }
+
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
         Objects.requireNonNull(b);

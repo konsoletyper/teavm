@@ -57,11 +57,11 @@ public class TFlatMappingStreamImpl<T, S> extends TSimpleStreamImpl<T> {
             }
         }
         if (current instanceof TSimpleStreamImpl) {
-            @SuppressWarnings("unchecked")
-            TSimpleStreamImpl<? extends T> castCurrent = (TSimpleStreamImpl<? extends T>) current;
+            var castCurrent = (TSimpleStreamImpl<? extends T>) current;
             if (castCurrent.next(consumer)) {
                 return true;
             }
+            current.close();
             current = null;
         } else {
             iterator = current.iterator();
@@ -71,6 +71,7 @@ public class TFlatMappingStreamImpl<T, S> extends TSimpleStreamImpl<T> {
                     return true;
                 }
             }
+            current.close();
             iterator = null;
             current = null;
         }
@@ -78,7 +79,7 @@ public class TFlatMappingStreamImpl<T, S> extends TSimpleStreamImpl<T> {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         current = null;
         iterator = null;
         sourceStream.close();

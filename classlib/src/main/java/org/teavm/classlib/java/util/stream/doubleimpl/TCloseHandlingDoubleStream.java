@@ -32,7 +32,7 @@ public class TCloseHandlingDoubleStream extends TSimpleDoubleStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         RuntimeException previousException = null;
         try {
             closeHandler.run();

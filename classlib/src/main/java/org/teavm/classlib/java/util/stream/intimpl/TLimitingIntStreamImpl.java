@@ -52,7 +52,7 @@ public class TLimitingIntStreamImpl extends TSimpleIntStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         sourceStream.close();
     }
 }

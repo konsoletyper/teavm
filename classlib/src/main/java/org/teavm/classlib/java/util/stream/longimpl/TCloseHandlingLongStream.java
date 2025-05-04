@@ -32,7 +32,7 @@ public class TCloseHandlingLongStream extends TSimpleLongStreamImpl {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         RuntimeException previousException = null;
         try {
             closeHandler.run();
