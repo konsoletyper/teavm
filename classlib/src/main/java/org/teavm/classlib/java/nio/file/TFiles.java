@@ -13,13 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.nio.channels;
+package org.teavm.classlib.java.nio.file;
 
 import java.io.IOException;
 import java.io.InputStream;
 import org.teavm.classlib.java.io.TFileInputStream;
-import org.teavm.classlib.java.nio.file.TOpenOption;
-import org.teavm.classlib.java.nio.file.TPath;
 import org.teavm.classlib.java.nio.file.impl.TDefaultPath;
 
 public final class TFiles {
