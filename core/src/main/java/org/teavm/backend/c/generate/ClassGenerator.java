@@ -39,11 +39,13 @@ import org.teavm.cache.EmptyMethodNodeCache;
 import org.teavm.cache.MethodNodeCache;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
+import org.teavm.interop.Import;
 import org.teavm.interop.NoGcRoot;
 import org.teavm.interop.Structure;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
@@ -307,6 +309,11 @@ public class ClassGenerator {
                     if (needsVirtualTable) {
                         addToVirtualTable(method);
                     }
+                } else if (context.getIntrinsic(method.getReference()) == null
+                        && method.getAnnotations().get(Import.class.getName()) == null) {
+                    context.getDiagnostics().error(new CallLocation(method.getReference()),
+                            "Method {{m0}} is native but has no {{c1}} annotation on it",
+                            method.getReference(), Import.class.getName());
                 }
                 continue;
             } else if (method.getProgram() == null) {
