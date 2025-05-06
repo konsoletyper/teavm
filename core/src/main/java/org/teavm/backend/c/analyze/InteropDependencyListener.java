@@ -17,7 +17,9 @@ package org.teavm.backend.c.analyze;
 
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.MethodDependency;
+import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 import org.teavm.interop.Structure;
 import org.teavm.model.AnnotationReader;
@@ -41,8 +43,8 @@ public class InteropDependencyListener extends AbstractDependencyListener {
     private void reachFields(DependencyAgent agent, ClassReader cls) {
         for (FieldReader field : cls.getFields()) {
             if (!field.hasModifier(ElementModifier.STATIC)) {
-                agent.linkField(field.getReference());
-                reachType(agent, field.getType());
+                var fieldDep = agent.linkField(field.getReference());
+                reachType(agent, field.getType(), fieldDep.getValue());
             }
         }
     }
@@ -64,15 +66,31 @@ public class InteropDependencyListener extends AbstractDependencyListener {
         }
 
         for (int i = 0; i < reference.parameterCount(); ++i) {
-            reachType(agent, reference.parameterType(i));
+            reachType(agent, reference.parameterType(i), method.getVariable(i + 1));
         }
     }
 
-    private void reachType(DependencyAgent agent, ValueType type) {
+    private void reachType(DependencyAgent agent, ValueType type, DependencyNode node) {
         if (type instanceof ValueType.Object) {
-            String fieldClassName = ((ValueType.Object) type).getClassName();
-            if (agent.getClassHierarchy().isSuperType(Structure.class.getName(), fieldClassName, false)) {
-                agent.linkClass(fieldClassName);
+            String className = ((ValueType.Object) type).getClassName();
+            if (agent.getClassHierarchy().isSuperType(Structure.class.getName(), className, false)) {
+                agent.linkClass(className);
+            }
+            switch (className) {
+                case "java.nio.Buffer":
+                case "java.nio.ByteBuffer":
+                case "java.nio.ShortBuffer":
+                case "java.nio.CharBuffer":
+                case "java.nio.IntBuffer":
+                case "java.nio.LongBuffer":
+                case "java.nio.FloatBuffer":
+                case "java.nio.DoubleBuffer":
+                    var getAddressMethod = agent.linkMethod(new MethodReference("java.nio.NativeBufferUtil",
+                            "getAddress", ValueType.object("java.nio.Buffer"),
+                            ValueType.object(Address.class.getName())));
+                    node.addConsumer(getAddressMethod.getVariable(1)::propagate);
+                    getAddressMethod.use();
+                    break;
             }
         }
     }

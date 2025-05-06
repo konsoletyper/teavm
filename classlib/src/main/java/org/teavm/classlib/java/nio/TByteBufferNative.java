@@ -15,12 +15,13 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.classlib.java.nio.file.TAddressBasedBuffer;
 import org.teavm.interop.Address;
 import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Int8Array;
 import org.teavm.runtime.heap.Heap;
 
-class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider, TNativeBuffer {
+class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider, TNativeBuffer, TAddressBasedBuffer {
     Object gcRef;
     byte[] array;
     int arrayOffset;
@@ -41,6 +42,11 @@ class TByteBufferNative extends TByteBuffer implements TArrayBufferViewProvider,
         this.capacity = capacity;
         this.readOnly = readOnly;
         updateSwap();
+    }
+
+    @Override
+    public Address getDataAddress() {
+        return address;
     }
 
     @Override

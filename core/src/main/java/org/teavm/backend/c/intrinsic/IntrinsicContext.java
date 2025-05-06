@@ -46,4 +46,6 @@ public interface IntrinsicContext {
     void importMethod(MethodReference method, boolean isStatic);
 
     boolean isIncremental();
+
+    void emitCallSite();
 }

@@ -728,13 +728,13 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 arguments.get(i).acceptVisitor(this);
                 writer.print(", ").printStrictType(((ValueType.Array) type).getItemType()).print(")");
             } else if (isPrimitiveBuffer(type)) {
-                writer.print("TEAVM_ARRAY_DATA(TEAVM_FIELD(");
-                String typeName = ((ValueType.Object) type).getClassName();
+                withCallSite();
+                writer.print(names.forMethod(new MethodReference("java.nio.NativeBufferUtil",
+                        "getAddress", ValueType.object("java.nio.Buffer"),
+                        ValueType.object(Address.class.getName()))));
+                writer.print("(");
                 arguments.get(i).acceptVisitor(this);
-                includes.includeClass(typeName);
-                writer.print(", ").print(names.forClass(typeName)).print(", ")
-                        .print(names.forMemberField(new FieldReference(typeName, "array"))).print(")");
-                writer.print(", ").print(BUFFER_TYPES.get(typeName)).print(")");
+                writer.print("))");
             } else {
                 arguments.get(i).acceptVisitor(this);
             }
@@ -1586,6 +1586,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         @Override
         public void importMethod(MethodReference method, boolean isStatic) {
             classContext.importMethod(method, isStatic);
+        }
+
+        @Override
+        public void emitCallSite() {
+            withCallSite();
         }
     };
 

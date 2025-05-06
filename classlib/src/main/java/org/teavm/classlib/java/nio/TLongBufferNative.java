@@ -15,11 +15,12 @@
  */
 package org.teavm.classlib.java.nio;
 
+import org.teavm.classlib.java.nio.file.TAddressBasedBuffer;
 import org.teavm.interop.Address;
 import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.BigInt64Array;
 
-class TLongBufferNative extends TLongBufferImpl implements TArrayBufferViewProvider {
+class TLongBufferNative extends TLongBufferImpl implements TArrayBufferViewProvider, TAddressBasedBuffer {
     Object gcRef;
     long[] array;
     boolean readOnly;
@@ -39,6 +40,11 @@ class TLongBufferNative extends TLongBufferImpl implements TArrayBufferViewProvi
         this.address = address;
         this.capacity = capacity;
         this.swap = swap;
+    }
+
+    @Override
+    public Address getDataAddress() {
+        return address;
     }
 
     @Override

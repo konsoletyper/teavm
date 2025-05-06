@@ -215,10 +215,20 @@ public class AddressIntrinsic implements Intrinsic {
                 context.writer().print("sizeof(void*)");
                 break;
             case "ofData": {
-                var type = (ValueType.Array) invocation.getMethod().parameterType(0);
-                context.writer().print("TEAVM_ARRAY_DATA(");
-                context.emit(invocation.getArguments().get(0));
-                context.writer().print(", ").printType(type.getItemType()).print(")");
+                if (invocation.getMethod().parameterType(0) instanceof ValueType.Object) {
+                    context.emitCallSite();
+                    context.writer().print(context.names().forMethod(new MethodReference("java.nio.NativeBufferUtil",
+                            "getAddress", ValueType.object("java.nio.Buffer"),
+                            ValueType.object(Address.class.getName()))));
+                    context.writer().print("(");
+                    context.emit(invocation.getArguments().get(0));
+                    context.writer().print("))");
+                } else {
+                    var type = (ValueType.Array) invocation.getMethod().parameterType(0);
+                    context.writer().print("TEAVM_ARRAY_DATA(");
+                    context.emit(invocation.getArguments().get(0));
+                    context.writer().print(", ").printType(type.getItemType()).print(")");
+                }
                 break;
             }
 

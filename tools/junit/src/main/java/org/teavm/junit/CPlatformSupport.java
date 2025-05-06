@@ -21,8 +21,12 @@ import static org.teavm.junit.PropertyNames.C_LINE_NUMBERS;
 import static org.teavm.junit.PropertyNames.OPTIMIZED;
 import static org.teavm.junit.TestUtil.resourceToFile;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -88,8 +92,55 @@ class CPlatformSupport extends TestPlatformSupport<CTarget> {
                 throw new RuntimeException(e);
             }
         };
-        return compile(configuration, this::createCTarget, TestNativeEntryPoint.class.getName(), path, "",
+        var result = compile(configuration, this::createCTarget, TestNativeEntryPoint.class.getName(), path, "",
                 postBuild, additionalProcessing, baseName);
+        if (result.success) {
+            includeAndAttachAdditionalFiles(element, result.file);
+        }
+        return result;
+    }
+
+    private void includeAndAttachAdditionalFiles(AnnotatedElement element, File baseFile) {
+        var cls = element instanceof Method ? ((Method) element).getDeclaringClass() : (Class<?>) element;
+        var attachC = element.getAnnotation(AttachC.class);
+        if (attachC != null) {
+            var fileNamesToAdd = new ArrayList<String>();
+            for (var resourceName : attachC.value()) {
+                var fileName = "custom-src/" + resourceName.substring(resourceName.lastIndexOf('/') + 1);
+                fileNamesToAdd.add(fileName);
+                var outputFile = new File(baseFile, fileName);
+                outputFile.getParentFile().mkdirs();
+                try (var input = cls.getClassLoader().getResourceAsStream(resourceName);
+                        var output = new FileOutputStream(outputFile)) {
+                    input.transferTo(output);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            try (var output = new FileWriter(new File(baseFile, "all.c"), StandardCharsets.UTF_8, true)) {
+                output.append("\n");
+                for (var fileName : fileNamesToAdd) {
+                    output.append("#include \"").append(fileName).append("\"\n");
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        var includeC = element.getAnnotation(IncludeC.class);
+        if (includeC != null) {
+            for (var resourceName : includeC.value()) {
+                var fileName = "custom-include/" + resourceName.substring(resourceName.lastIndexOf('/') + 1);
+                var outputFile = new File(baseFile, fileName);
+                outputFile.getParentFile().mkdirs();
+                try (var input = cls.getClassLoader().getResourceAsStream(resourceName);
+                        var output = new FileOutputStream(outputFile)) {
+                    input.transferTo(output);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     private CTarget createCTarget() {
