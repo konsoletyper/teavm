@@ -732,6 +732,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 writer.print(names.forMethod(new MethodReference("java.nio.NativeBufferUtil",
                         "getAddress", ValueType.object("java.nio.Buffer"),
                         ValueType.object(Address.class.getName()))));
+                includes.includeClass("java.nio.NativeBufferUtil");
                 writer.print("(");
                 arguments.get(i).acceptVisitor(this);
                 writer.print("))");
