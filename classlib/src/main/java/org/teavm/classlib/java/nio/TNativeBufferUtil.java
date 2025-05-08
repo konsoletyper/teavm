@@ -23,6 +23,9 @@ public class TNativeBufferUtil {
     }
 
     public static Address getAddress(TBuffer buffer) {
+        if (buffer == null) {
+            return null;
+        }
         var provider = (TAddressBasedBuffer) buffer;
         return provider.getDataAddress();
     }

@@ -16,6 +16,7 @@
 package org.teavm.cinterop;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.DoubleBuffer;
@@ -44,16 +45,17 @@ public class ConvertParametersTest {
     public void passByteBuffer() {
         var buffer = ByteBuffer.allocate(5);
         buffer.put(new byte[] { 1, 2, 3, 4, 5 });
-        incrementAllBytes(buffer, buffer.capacity());
+        assertEquals(1, incrementAllBytes(buffer, buffer.capacity()));
 
         var result = new byte[5];
         buffer.get(0, result);
         assertArrayEquals(new byte[] { 2, 3, 4, 5, 6 }, result);
+        assertEquals(0, incrementAllBytes(null, 0));
     }
 
     @Import(name = "incrementAllBytes")
     @Include("convert-params.h")
-    private static native void incrementAllBytes(ByteBuffer buffer, int count);
+    private static native int incrementAllBytes(ByteBuffer buffer, int count);
 
     @Test
     public void passShortBuffer() {

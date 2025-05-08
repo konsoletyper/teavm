@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-void incrementAllBytes(int8_t* data, int32_t count);
+int incrementAllBytes(int8_t* data, int32_t count);
 void incrementAllShorts(int16_t* data, int32_t count);
 void incrementAllChars(uint16_t* data, int32_t count);
 void incrementAllInts(int32_t* data, int32_t count);
