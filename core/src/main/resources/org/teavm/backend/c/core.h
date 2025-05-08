@@ -211,3 +211,17 @@ extern void* teavm_fillIntArray(void* array, ...);
 extern void* teavm_fillLongArray(void* array, ...);
 extern void* teavm_fillFloatArray(void* array, ...);
 extern void* teavm_fillDoubleArray(void* array, ...);
+
+#if HAVE_VISIBILITY && BUILDING_TEAVM_LIB
+ #define TEAVM_EXPORTED __attribute__((__visibility__("default")))
+#elif (defined _WIN32 && !defined __CYGWIN__) && @BUILDING_SHARED@ && BUILDING_TEAVM_LIB
+ #if defined DLL_EXPORT
+  #define TEAVM_EXPORTED __declspec(dllexport)
+ #else
+  #define TEAVM_EXPORTED
+#endif
+#elif (defined _WIN32 && !defined __CYGWIN__) && @BUILDING_SHARED@
+ #define TEAVM_EXPORTED __declspec(dllimport)
+#else
+ #define TEAVM_EXPORTED
+#endif

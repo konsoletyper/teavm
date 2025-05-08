@@ -20,6 +20,7 @@ import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.interop.Export;
 import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
+import org.teavm.interop.Unmanaged;
 
 @StaticInit
 public final class EventQueue {
@@ -65,6 +66,7 @@ public final class EventQueue {
         }
     }
 
+    @Unmanaged
     public static void process() {
         while (size > 0 && !finished) {
             next();

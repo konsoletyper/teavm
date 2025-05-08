@@ -17,6 +17,7 @@ package org.teavm.runtime;
 
 import java.util.Arrays;
 import org.teavm.interop.AsyncCallback;
+import org.teavm.interop.Function;
 import org.teavm.interop.Platforms;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Unmanaged;
@@ -252,6 +253,7 @@ public class Fiber {
 
     static native void setCurrentThread(Thread thread);
 
+    @Unmanaged
     public static void start(FiberRunner runner, boolean daemon) {
         new Fiber(runner, daemon).start();
     }

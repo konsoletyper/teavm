@@ -43,6 +43,7 @@ import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.backend.c.generate.FileNameProvider;
 import org.teavm.backend.c.generate.GenerationContext;
 import org.teavm.backend.c.generate.IncludeManager;
+import org.teavm.backend.c.generate.LibraryExportGenerator;
 import org.teavm.backend.c.generate.OutputFileUtil;
 import org.teavm.backend.c.generate.SimpleFileNameProvider;
 import org.teavm.backend.c.generate.SimpleIncludeManager;
@@ -92,6 +93,7 @@ import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.interop.Address;
+import org.teavm.interop.Export;
 import org.teavm.interop.Platforms;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
@@ -698,7 +700,15 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         includes.includePath("strings.h");
 
         generateArrayOfClassReferences(context, writer, includes, types);
-        generateMain(context, writer, includes, classes, types);
+        generateInitVM(context, writer, includes, classes, types);
+        var mainClass = classes.get(controller.getEntryPoint());
+        if (mainClass != null) {
+            if (mainClass.getMethod(new MethodDescriptor("main", String[].class, void.class)) != null) {
+                generateMain(context, writer, includes);
+            }
+            var libraryExportsGenerator = new LibraryExportGenerator(context, writer, includes);
+            libraryExportsGenerator.generate(mainClass);
+        }
         OutputFileUtil.write(writer, "main.c", buildTarget);
     }
 
@@ -782,18 +792,15 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         writer.println("int32_t teavm_classReferencesCount = " + types.size() + ";");
     }
 
-    private void generateMain(GenerationContext context, CodeWriter writer, IncludeManager includes,
+    private void generateInitVM(GenerationContext context, CodeWriter writer, IncludeManager includes,
             ListableClassHolderSource classes, List<? extends ValueType> types) {
-        var mainFunctionName = controller.getEntryPointName();
-        if (mainFunctionName == null) {
-            mainFunctionName = "main";
-        }
-
         ClassGenerationContext classContext = new ClassGenerationContext(context, includes, writer.fragment(),
                 null, null);
 
-        writer.println("int " + mainFunctionName + "(int argc, char** argv) {").indent();
-
+        writer.println("static void teavm_initVM() {").indent();
+        writer.println("static char teavm_initialized = 0;");
+        writer.println("if (teavm_initialized) return;");
+        writer.println("teavm_initialized = 1;");
         writer.println("teavm_beforeInit();");
         writer.println("teavm_initHeap(" + minHeapSize + ", " + maxHeapSize + ");");
         generateVirtualTableHeaders(context, writer);
@@ -804,13 +811,15 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         }
         writer.println("teavm_afterInitClasses();");
         generateStaticInitializerCalls(classContext, writer, classes);
-        if (context.getClassInitializerInfo().isDynamicInitializer("java.lang.String")) {
-            writer.println(context.getNames().forClassInitializer("java.lang.String") + "();");
-        }
+        writer.outdent().println("}");
+    }
+
+    private void generateMain(GenerationContext context, CodeWriter writer, IncludeManager includes) {
+        var classContext = new ClassGenerationContext(context, includes, writer.fragment(),
+                null, null);
+        writer.println("int main(int argc, char** argv) {").indent();
         generateFiberStart(classContext, writer);
-
         writer.println("return 0;");
-
         writer.outdent().println("}");
     }
 
