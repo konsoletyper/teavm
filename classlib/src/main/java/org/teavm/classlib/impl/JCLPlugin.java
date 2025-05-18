@@ -86,7 +86,8 @@ public class JCLPlugin implements TeaVMPlugin {
         host.add(new BuffersTransformer());
 
         if (!isBootstrap()) {
-            ServiceLoaderSupport serviceLoaderSupport = new ServiceLoaderSupport(host.getClassLoader());
+            ServiceLoaderSupport serviceLoaderSupport = new ServiceLoaderSupport(host.getClassLoader(),
+                    host.getResourceProvider());
             host.add(serviceLoaderSupport);
             host.registerService(ServiceLoaderInformation.class, serviceLoaderSupport);
             MethodReference loadServicesMethod = new MethodReference(ServiceLoader.class, "loadServices",

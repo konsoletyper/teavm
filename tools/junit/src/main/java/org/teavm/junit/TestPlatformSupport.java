@@ -32,6 +32,7 @@ import org.teavm.diagnostics.Problem;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ReferenceCache;
+import org.teavm.parsing.ClasspathResourceProvider;
 import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.vm.DirectoryBuildTarget;
 import org.teavm.vm.TeaVM;
@@ -83,6 +84,7 @@ abstract class TestPlatformSupport<T extends TeaVMTarget> {
             TeaVM vm = new TeaVMBuilder(target)
                     .setClassLoader(classLoader)
                     .setClassSource(classSource)
+                    .setResourceProvider(new ClasspathResourceProvider(classLoader))
                     .setReferenceCache(referenceCache)
                     .setDependencyAnalyzerFactory(dependencyAnalyzerFactory)
                     .setStrict(true)

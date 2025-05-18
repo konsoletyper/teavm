@@ -44,6 +44,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -81,9 +83,9 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
-import org.teavm.parsing.ClasspathResourceMapper;
-import org.teavm.parsing.resource.ClasspathResourceReader;
+import org.teavm.parsing.RenamingResourceMapper;
 import org.teavm.parsing.resource.ResourceClassHolderMapper;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.tooling.EmptyTeaVMToolLog;
 import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMToolLog;
@@ -865,9 +867,9 @@ public class CodeServlet extends HttpServlet {
 
         DebugInformationBuilder debugInformationBuilder = new DebugInformationBuilder(referenceCache);
         ClassLoader classLoader = initClassLoader();
-        ClasspathResourceReader reader = new ClasspathResourceReader(classLoader);
+        var reader = ResourceProvider.ofClassPath(Stream.of(classPath).map(File::new).collect(Collectors.toList()));
         ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader, referenceCache);
-        Function<String, ClassHolder> classPathMapper = new ClasspathResourceMapper(classLoader, referenceCache,
+        Function<String, ClassHolder> classPathMapper = new RenamingResourceMapper(reader, referenceCache,
                 rawMapper);
         classSource.setProvider(name -> PreOptimizingClassHolderSource.optimize(classPathMapper, name));
 
@@ -878,6 +880,7 @@ public class CodeServlet extends HttpServlet {
                 .setReferenceCache(referenceCache)
                 .setClassLoader(classLoader)
                 .setClassSource(classSource)
+                .setResourceProvider(reader)
                 .setDependencyAnalyzerFactory(FastDependencyAnalyzer::new)
                 .setClassSourcePacker(this::packClasses)
                 .setStrict(true)
@@ -914,6 +917,7 @@ public class CodeServlet extends HttpServlet {
         generateDebug(debugInformationBuilder);
 
         postBuild(vm, startTime);
+        reader.close();
     }
 
     private void emptyBuild() {

@@ -21,6 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
+import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -465,9 +466,12 @@ public final class TeaVMRunner {
             return;
         }
         URL[] urls = new URL[classPath.length];
+        var files = new File[classPath.length];
         for (int i = 0; i < classPath.length; ++i) {
+            var file = new File(classPath[i]);
+            files[i] = file;
             try {
-                urls[i] = new File(classPath[i]).toURI().toURL();
+                urls[i] = file.toURI().toURL();
             } catch (MalformedURLException e) {
                 System.err.println("Illegal classpath entry: " + classPath[i]);
                 System.exit(-1);
@@ -476,6 +480,7 @@ public final class TeaVMRunner {
         }
 
         tool.setClassLoader(new URLClassLoader(urls, TeaVMRunner.class.getClassLoader()));
+        tool.setClassPath(List.of(files));
     }
 
     class ProgressListenerImpl implements TeaVMProgressListener {

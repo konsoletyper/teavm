@@ -15,14 +15,9 @@
  */
 package org.teavm.parsing;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,13 +29,14 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.ReferenceCache;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.parsing.substitution.ClassExclusions;
 import org.teavm.parsing.substitution.ClassMappings;
 import org.teavm.parsing.substitution.OrderedProperties;
 import org.teavm.parsing.substitution.PrefixMapping;
 import org.teavm.vm.spi.ElementFilter;
 
-public class ClasspathResourceMapper implements Function<String, ClassHolder>, ClassDateProvider {
+public class RenamingResourceMapper implements Function<String, ClassHolder>, ClassDateProvider {
     private static final String STRIP_PREFIX_FROM_PREFIX = "stripPrefixFrom";
     private static final String STRIP_PREFIX_FROM_PACKAGE_HIERARCHY_PREFIX =
             STRIP_PREFIX_FROM_PREFIX + "PackageHierarchyClasses";
@@ -56,7 +52,7 @@ public class ClasspathResourceMapper implements Function<String, ClassHolder>, C
     private static final Date VOID_DATE = new Date(0);
     private Function<String, ClassHolder> innerMapper;
     private ClassRefsRenamer renamer;
-    private ClassLoader classLoader;
+    private ResourceProvider resourceProvider;
     private Map<String, Date> modificationDates = new HashMap<>();
     private List<ElementFilter> elementFilters = new ArrayList<>();
     private ClassMappings classMappings = new ClassMappings();
@@ -66,15 +62,14 @@ public class ClasspathResourceMapper implements Function<String, ClassHolder>, C
     private ClassMappings reverseClassMappings = new ClassMappings();
     private ClassMappings reversePackageMappings = new ClassMappings();
 
-    public ClasspathResourceMapper(ClassLoader classLoader, ReferenceCache referenceCache,
+    public RenamingResourceMapper(ResourceProvider resourceProvider, ReferenceCache referenceCache,
             Function<String, ClassHolder> provider) {
         this.innerMapper = provider;
         try {
-            Enumeration<URL> resources = classLoader.getResources("META-INF/teavm.properties");
-            while (resources.hasMoreElements()) {
-                URL resource = resources.nextElement();
+            for (var iter = resourceProvider.getResources("META-INF/teavm.properties"); iter.hasNext();) {
+                var resource = iter.next();
                 Properties properties = new OrderedProperties();
-                try (InputStream input = resource.openStream()) {
+                try (var input = resource.open()) {
                     properties.load(input);
                 }
                 loadProperties(properties);
@@ -88,10 +83,10 @@ public class ClasspathResourceMapper implements Function<String, ClassHolder>, C
             elementFilters.add(elementFilter);
         }
 
-        this.classLoader = classLoader;
+        this.resourceProvider = resourceProvider;
     }
 
-    public ClasspathResourceMapper(Properties properties, ReferenceCache referenceCache,
+    public RenamingResourceMapper(Properties properties, ReferenceCache referenceCache,
             Function<String, ClassHolder> innerMapper) {
         this.innerMapper = innerMapper;
         loadProperties(properties);
@@ -182,29 +177,11 @@ public class ClasspathResourceMapper implements Function<String, ClassHolder>, C
     }
 
     private Date getOriginalModificationDate(String className) {
-        if (classLoader == null) {
+        if (resourceProvider == null) {
             return null;
         }
-        URL url = classLoader.getResource(className.replace('.', '/') + ".class");
-        if (url == null) {
-            return null;
-        }
-        if (url.getProtocol().equals("file")) {
-            try {
-                File file = new File(url.toURI());
-                return file.exists() ? new Date(file.lastModified()) : null;
-            } catch (URISyntaxException e) {
-                // If URI is invalid, we just report that class should be reparsed
-                return null;
-            }
-        } else if (url.getProtocol().equals("jar") && url.getPath().startsWith("file:")) {
-            int exclIndex = url.getPath().indexOf('!');
-            String jarFileName = exclIndex >= 0 ? url.getPath().substring(0, exclIndex) : url.getPath();
-            File file = new File(jarFileName.substring("file:".length()));
-            return file.exists() ? new Date(file.lastModified()) : null;
-        } else {
-            return null;
-        }
+        var res = resourceProvider.getResource(className.replace('.', '/') + ".class");
+        return res == null ? null : res.getModificationDate();
     }
 
     private void loadProperties(Properties properties) {

@@ -16,7 +16,6 @@
 package org.teavm.parsing.resource;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.function.Function;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
@@ -26,10 +25,10 @@ import org.teavm.parsing.Parser;
 
 public class ResourceClassHolderMapper implements Function<String, ClassHolder> {
     private Parser parser;
-    private ResourceReader resourceReader;
+    private ResourceProvider resourceProvider;
 
-    public ResourceClassHolderMapper(ResourceReader resourceReader, ReferenceCache referenceCache) {
-        this.resourceReader = resourceReader;
+    public ResourceClassHolderMapper(ResourceProvider resourceProvider, ReferenceCache referenceCache) {
+        this.resourceProvider = resourceProvider;
         parser = new Parser(referenceCache);
     }
 
@@ -37,10 +36,11 @@ public class ResourceClassHolderMapper implements Function<String, ClassHolder> 
     public ClassHolder apply(String name) {
         ClassNode clsNode = new ClassNode();
         String resourceName = name.replace('.', '/') + ".class";
-        if (!resourceReader.hasResource(resourceName)) {
+        var resource = resourceProvider.getResource(resourceName);
+        if (resource == null) {
             return null;
         }
-        try (InputStream input = resourceReader.openResource(resourceName)) {
+        try (var input = resource.open()) {
             ClassReader reader = new ClassReader(input);
             reader.accept(clsNode, 0);
         } catch (IOException e) {

@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 import org.teavm.backend.javascript.JSModuleType;
 import org.teavm.backend.wasm.WasmDebugInfoLevel;
 import org.teavm.backend.wasm.WasmDebugInfoLocation;
@@ -282,6 +283,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setTargetFileName(targetFileName);
         var classLoader = buildClassLoader();
         tool.setClassLoader(classLoader);
+        tool.setClassPath(classPathEntries.stream().map(File::new).collect(Collectors.toList()));
         tool.setOptimizationLevel(optimizationLevel);
         tool.setFastDependencyAnalysis(fastDependencyAnalysis);
 

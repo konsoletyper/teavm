@@ -20,12 +20,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -40,6 +38,7 @@ import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public class ServiceLoaderSupport extends AbstractDependencyListener implements ServiceLoaderInformation {
     private static final MethodReference LOAD_METHOD = new MethodReference(ServiceLoader.class, "load", Class.class,
@@ -47,9 +46,11 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
     private static final MethodDescriptor INIT_METHOD = new MethodDescriptor("<init>", void.class);
     private Map<String, List<String>> serviceMap = new HashMap<>();
     private ClassLoader classLoader;
+    private ResourceProvider resourceProvider;
 
-    public ServiceLoaderSupport(ClassLoader classLoader) {
+    public ServiceLoaderSupport(ClassLoader classLoader, ResourceProvider resourceProvider) {
         this.classLoader = classLoader;
+        this.resourceProvider = resourceProvider;
     }
 
     @Override
@@ -93,10 +94,10 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
     private Set<String> getImplementations(String type) {
         Set<String> result = new LinkedHashSet<>();
         try {
-            Enumeration<URL> resources = classLoader.getResources("META-INF/services/" + type);
-            while (resources.hasMoreElements()) {
-                URL resource = resources.nextElement();
-                try (InputStream stream = resource.openStream()) {
+            var resources = resourceProvider.getResources("META-INF/services/" + type);
+            while (resources.hasNext()) {
+                var resource = resources.next();
+                try (InputStream stream = resource.open()) {
                     parseServiceFile(stream, result);
                 }
             }

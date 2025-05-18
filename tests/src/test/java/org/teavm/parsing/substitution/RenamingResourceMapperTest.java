@@ -38,7 +38,7 @@ import org.teavm.parsing.substitution.java.subpackage.subsubpackage.SubSubPackag
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
-public class ClasspathResourceMapperTest {
+public class RenamingResourceMapperTest {
     @Test
     public void classesInPackageHierarchyMappingAreSubstituted() {
         assertEquals("RootPackageClass1Substitute", new RootPackageClass1().getIdentifier());

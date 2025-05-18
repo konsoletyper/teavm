@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.cache.InMemoryMethodNodeCache;
@@ -43,9 +45,9 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
-import org.teavm.parsing.ClasspathResourceMapper;
-import org.teavm.parsing.resource.ClasspathResourceReader;
+import org.teavm.parsing.RenamingResourceMapper;
 import org.teavm.parsing.resource.ResourceClassHolderMapper;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.tooling.EmptyTeaVMToolLog;
 import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMToolLog;
@@ -311,10 +313,10 @@ public class IncrementalCBuilder {
         fireBuildStarted();
         reportProgress(0);
 
-        ClassLoader classLoader = initClassLoader();
-        ClasspathResourceReader reader = new ClasspathResourceReader(classLoader);
+        var classLoader = initClassLoader();
+        var reader = ResourceProvider.ofClassPath(Stream.of(classPath).map(File::new).collect(Collectors.toList()));
         ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader, referenceCache);
-        Function<String, ClassHolder> classPathMapper = new ClasspathResourceMapper(classLoader, referenceCache,
+        Function<String, ClassHolder> classPathMapper = new RenamingResourceMapper(reader, referenceCache,
                 rawMapper);
         classSource.setProvider(name -> PreOptimizingClassHolderSource.optimize(classPathMapper, name));
 
@@ -326,6 +328,7 @@ public class IncrementalCBuilder {
                 .setReferenceCache(referenceCache)
                 .setClassLoader(classLoader)
                 .setClassSource(classSource)
+                .setResourceProvider(reader)
                 .setDependencyAnalyzerFactory(FastDependencyAnalyzer::new)
                 .setClassSourcePacker(this::packClasses)
                 .setStrict(true)
@@ -356,6 +359,7 @@ public class IncrementalCBuilder {
         vm.build(buildTarget, "");
 
         postBuild(vm, startTime);
+        reader.close();
 
         runExternalTool();
     }

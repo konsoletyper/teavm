@@ -99,6 +99,7 @@ import org.teavm.model.transformation.ClassInitializerInsertionTransformer;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.RegisterAllocator;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.vm.spi.ClassFilter;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMHostExtension;
@@ -141,6 +142,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private final DependencyAnalyzer dependencyAnalyzer;
     private final AccumulationDiagnostics diagnostics = new AccumulationDiagnostics();
     private final ClassLoader classLoader;
+    private final ResourceProvider resourceProvider;
     private String entryPoint;
     private String entryPointName = "main";
     private final Set<String> preservedClasses = new HashSet<>();
@@ -170,6 +172,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     TeaVM(TeaVMBuilder builder) {
         target = builder.target;
         classLoader = builder.classLoader;
+        resourceProvider = builder.resourceProvider;
         classSourcePacker = builder.classSourcePacker;
         dependencyAnalyzer = builder.dependencyAnalyzerFactory.create(builder.classSource, classLoader,
                 this, diagnostics, builder.referenceCache, target.getPlatformTags());
@@ -231,6 +234,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     @Override
     public ClassLoader getClassLoader() {
         return classLoader;
+    }
+
+    @Override
+    public ResourceProvider getResourceProvider() {
+        return resourceProvider;
     }
 
     /**

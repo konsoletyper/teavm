@@ -22,11 +22,14 @@ import org.teavm.interop.PlatformMarker;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
+import org.teavm.parsing.ClasspathResourceProvider;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public class TeaVMBuilder {
     TeaVMTarget target;
     ClassReaderSource classSource;
     ClassLoader classLoader;
+    ResourceProvider resourceProvider;
     ReferenceCache referenceCache = new ReferenceCache();
     DependencyAnalyzerFactory dependencyAnalyzerFactory = PreciseDependencyAnalyzer::new;
     ClassSourcePacker classSourcePacker = (src, names) -> src;
@@ -36,7 +39,10 @@ public class TeaVMBuilder {
     public TeaVMBuilder(TeaVMTarget target) {
         this.target = target;
         classLoader = TeaVMBuilder.class.getClassLoader();
-        classSource = !isBootstrap() ? new ClasspathClassHolderSource(classLoader, referenceCache) : name -> null;
+        resourceProvider = !isBootstrap() ? new ClasspathResourceProvider(classLoader) : null;
+        classSource = !isBootstrap()
+                ? new ClasspathClassHolderSource(resourceProvider, referenceCache)
+                : name -> null;
     }
 
     public ClassReaderSource getClassSource() {
@@ -54,6 +60,15 @@ public class TeaVMBuilder {
 
     public TeaVMBuilder setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
+        return this;
+    }
+
+    public ResourceProvider getResourceProvider() {
+        return resourceProvider;
+    }
+
+    public TeaVMBuilder setResourceProvider(ResourceProvider resourceProvider) {
+        this.resourceProvider = resourceProvider;
         return this;
     }
 

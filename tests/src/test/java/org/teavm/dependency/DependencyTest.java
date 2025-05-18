@@ -50,6 +50,7 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.parsing.ClasspathClassHolderSource;
+import org.teavm.parsing.ClasspathResourceProvider;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMBuilder;
 import org.teavm.vm.TeaVMPhase;
@@ -64,8 +65,8 @@ public class DependencyTest {
 
     @BeforeClass
     public static void prepare() {
-        classSource = new ClasspathClassHolderSource(DependencyTest.class.getClassLoader(),
-                new ReferenceCache());
+        classSource = new ClasspathClassHolderSource(new ClasspathResourceProvider(
+                DependencyTest.class.getClassLoader()), new ReferenceCache());
     }
 
     @AfterClass
@@ -118,6 +119,7 @@ public class DependencyTest {
         TeaVM vm = new TeaVMBuilder(new JavaScriptTarget())
                 .setClassLoader(DependencyTest.class.getClassLoader())
                 .setClassSource(classSource)
+                .setResourceProvider(new ClasspathResourceProvider(DependencyTest.class.getClassLoader()))
                 .build();
         vm.setProgressListener(new TeaVMProgressListener() {
             @Override

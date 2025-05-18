@@ -63,6 +63,8 @@ import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 import org.teavm.parsing.ClasspathClassHolderSource;
+import org.teavm.parsing.ClasspathResourceProvider;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMTarget;
 
@@ -93,6 +95,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private List<TestRun> runsInCurrentClass = new ArrayList<>();
     private static List<TestPlatformSupport<?>> platforms = new ArrayList<>();
     private List<TestPlatformSupport<?>> participatingPlatforms = new ArrayList<>();
+    private ResourceProvider resourceProvider;
 
     static {
         classLoader = TeaVMTestRunner.class.getClassLoader();
@@ -917,7 +920,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     }
 
     private static ClassHolderSource getClassSource(ClassLoader classLoader) {
-        return new PreOptimizingClassHolderSource(new ClasspathClassHolderSource(classLoader, referenceCache));
+        var resourceProvider = new ClasspathResourceProvider(classLoader);
+        return new PreOptimizingClassHolderSource(new ClasspathClassHolderSource(resourceProvider, referenceCache));
     }
 
     @Override

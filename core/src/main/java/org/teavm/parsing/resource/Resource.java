@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,25 +15,11 @@
  */
 package org.teavm.parsing.resource;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 
-public class DirectoryResourceReader implements ResourceReader {
-    private File baseDir;
+public interface Resource {
+    InputStream open();
 
-    public DirectoryResourceReader(File baseDir) {
-        this.baseDir = baseDir;
-    }
-
-    @Override
-    public boolean hasResource(String name) {
-        return new File(baseDir, name).isFile();
-    }
-
-    @Override
-    public InputStream openResource(String name) throws IOException {
-        return new FileInputStream(new File(baseDir, name));
-    }
+    Date getModificationDate();
 }

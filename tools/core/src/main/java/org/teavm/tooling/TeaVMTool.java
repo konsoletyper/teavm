@@ -66,6 +66,8 @@ import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.transformation.AssertionRemoval;
 import org.teavm.parsing.ClasspathClassHolderSource;
+import org.teavm.parsing.ClasspathResourceProvider;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.tooling.sources.DefaultSourceFileResolver;
 import org.teavm.tooling.sources.SourceFileProvider;
 import org.teavm.vm.BuildTarget;
@@ -96,6 +98,7 @@ public class TeaVMTool {
     private List<String> classesToPreserve = new ArrayList<>();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private ClassLoader classLoader = TeaVMTool.class.getClassLoader();
+    private List<File> classPath;
     private DiskCachedClassReaderSource cachedClassSource;
     private DiskProgramCache programCache;
     private DiskMethodNodeCache astCache;
@@ -286,6 +289,10 @@ public class TeaVMTool {
         this.classLoader = classLoader;
     }
 
+    public void setClassPath(List<File> classPath) {
+        this.classPath = classPath;
+    }
+
     public WasmBinaryVersion getWasmVersion() {
         return wasmVersion;
     }
@@ -440,7 +447,7 @@ public class TeaVMTool {
     }
 
     public void generate() throws TeaVMToolException {
-        try {
+        try (var resourceProvider = createResourceProvider()) {
             cancelled = false;
             log.info("Running TeaVM");
             referenceCache = new ReferenceCache();
@@ -452,7 +459,7 @@ public class TeaVMTool {
                 symbolTable = new FileSymbolTable(new File(cacheDirectory, "symbols"));
                 fileTable = new FileSymbolTable(new File(cacheDirectory, "files"));
                 variableTable = new FileSymbolTable(new File(cacheDirectory, "variables"));
-                ClasspathClassHolderSource innerClassSource = new ClasspathClassHolderSource(classLoader,
+                ClasspathClassHolderSource innerClassSource = new ClasspathClassHolderSource(resourceProvider,
                         referenceCache);
                 ClassHolderSource classSource = new PreOptimizingClassHolderSource(innerClassSource);
                 cachedClassSource = new DiskCachedClassReaderSource(cacheDirectory, referenceCache, symbolTable,
@@ -475,10 +482,11 @@ public class TeaVMTool {
                 cacheStatus = cachedClassSource;
             } else {
                 vmBuilder.setClassLoader(classLoader).setClassSource(new PreOptimizingClassHolderSource(
-                        new ClasspathClassHolderSource(classLoader, referenceCache)));
+                        new ClasspathClassHolderSource(resourceProvider, referenceCache)));
                 cacheStatus = AlwaysStaleCacheStatus.INSTANCE;
             }
 
+            vmBuilder.setResourceProvider(resourceProvider);
             vmBuilder.setDependencyAnalyzerFactory(fastDependencyAnalysis
                     ? FastDependencyAnalyzer::new
                     : PreciseDependencyAnalyzer::new);
@@ -567,6 +575,12 @@ public class TeaVMTool {
         } catch (IOException e) {
             throw new TeaVMToolException("IO error occurred", e);
         }
+    }
+
+    private ResourceProvider createResourceProvider() {
+        return classPath != null
+                ? ResourceProvider.ofClassPath(classPath)
+                : new ClasspathResourceProvider(classLoader);
     }
 
     private String getResolvedTargetFileName() {

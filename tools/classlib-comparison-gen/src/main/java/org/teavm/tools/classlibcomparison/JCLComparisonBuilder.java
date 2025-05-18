@@ -39,6 +39,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
 import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
+import org.teavm.parsing.ClasspathResourceProvider;
 
 public class JCLComparisonBuilder {
     private static final String CLASS_SUFFIX = ".class";
@@ -119,7 +120,8 @@ public class JCLComparisonBuilder {
 
     private List<JCLPackage> buildModel() throws IOException {
         var packageMap = new HashMap<String, JCLPackage>();
-        var classSource = new ClasspathClassHolderSource(classLoader, new ReferenceCache());
+        var resourceProvider = new ClasspathResourceProvider(classLoader);
+        var classSource = new ClasspathClassHolderSource(resourceProvider, new ReferenceCache());
         visitor = new JCLComparisonVisitor(classSource, packageMap);
         for (var moduleName : List.of("java.base", "java.logging")) {
             try {
