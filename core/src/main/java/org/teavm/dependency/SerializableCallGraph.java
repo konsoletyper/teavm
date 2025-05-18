@@ -23,7 +23,6 @@ import org.teavm.model.TextLocation;
 class SerializableCallGraph implements Serializable {
     int[] nodeIndexes;
     int[] fieldAccessIndexes;
-    int[] classAccessIndexes;
     Node[] nodes;
     CallSite[] callSites;
     FieldAccess[] fieldAccessList;

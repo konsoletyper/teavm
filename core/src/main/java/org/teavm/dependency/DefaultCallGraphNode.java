@@ -85,6 +85,17 @@ class DefaultCallGraphNode implements CallGraphNode {
         return safeCallersCallSites;
     }
 
+    void addCallSite(DefaultCallSite callSite) {
+        if (callSiteMap == null) {
+            if (singleCallSite == null) {
+                singleCallSite = callSite;
+                return;
+            }
+            callSiteMap = new LinkedHashMap<>();
+        }
+        callSiteMap.put(callSite.method, callSite);
+    }
+
     DefaultCallSite addCallSite(MethodReference method) {
         DefaultCallGraphNode callee = graph.getNode(method);
 

@@ -70,7 +70,6 @@ class DefaultCallGraph implements CallGraph, Serializable {
         List<SerializableCallGraph.Node> nodes = new ArrayList<>();
         ObjectIntMap<DefaultCallGraphNode> nodeToIndex = new ObjectIntHashMap<>();
         List<SerializableCallGraph.CallSite> callSites = new ArrayList<>();
-        List<DefaultCallSite> originalCallSites = new ArrayList<>();
         ObjectIntMap<DefaultCallSite> callSiteToIndex = new ObjectIntHashMap<>();
         List<SerializableCallGraph.FieldAccess> fieldAccessList = new ArrayList<>();
         ObjectIntMap<DefaultFieldAccessSite> fieldAccessToIndex = new ObjectIntHashMap<>();
@@ -229,6 +228,21 @@ class DefaultCallGraph implements CallGraph, Serializable {
             }
             for (SerializableCallGraph.FieldAccess sfa : scg.fieldAccessList) {
                 fieldAccessList.add(new DefaultFieldAccessSite(sfa.location, nodes.get(sfa.callee), sfa.field));
+            }
+
+            for (int i = 0; i < scg.nodes.length; ++i) {
+                var node = scg.nodes[i];
+                var resultNode = nodes.get(i);
+                if (node.callSites != null) {
+                    for (int callSiteIndex : node.callSites) {
+                        resultNode.addCallSite(callSites.get(callSiteIndex));
+                    }
+                }
+                if (node.callerCallSites != null) {
+                    for (int callerCallSiteIndex : node.callerCallSites) {
+                        resultNode.addCaller(callSites.get(callerCallSiteIndex));
+                    }
+                }
             }
 
             for (int index : scg.nodeIndexes) {

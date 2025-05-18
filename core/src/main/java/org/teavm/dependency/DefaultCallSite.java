@@ -28,7 +28,7 @@ import org.teavm.callgraph.CallSite;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 
-public class DefaultCallSite implements CallSite, Serializable {
+class DefaultCallSite implements CallSite, Serializable {
     private Map<CallGraphNode, Set<TextLocation>> locations;
     private TextLocation singleLocation;
     MethodReference method;
