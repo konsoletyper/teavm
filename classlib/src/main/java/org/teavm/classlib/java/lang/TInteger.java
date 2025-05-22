@@ -396,4 +396,12 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     @InjectedBy(IntegerNativeGenerator.class)
     @NoSideEffects
     public static native int compareUnsigned(int a, int b);
+
+    public static int min(int a, int b) {
+        return TMath.min(a, b);
+    }
+
+    public static int max(int a, int b) {
+        return TMath.max(a, b);
+    }
 }

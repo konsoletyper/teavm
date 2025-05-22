@@ -968,4 +968,82 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         }
         return TString.fromArray(chars);
     }
+
+    public TString translateEscapes() {
+        for (var i = 0; i < length(); ++i) {
+            var c = charAt(i);
+            if (c == '\\') {
+                return translateEscapesImpl();
+            }
+        }
+        return this;
+    }
+
+    private TString translateEscapesImpl() {
+        var chars = new char[length()];
+        var j = 0;
+        for (var i = 0; i < length(); ++i) {
+            var c = charAt(i);
+            if (c == '\\') {
+                ++i;
+                if (i == length()) {
+                    break;
+                }
+                switch (charAt(i)) {
+                    case 'b':
+                        chars[j++] = '\b';
+                        break;
+                    case 't':
+                        chars[j++] = '\t';
+                        break;
+                    case 'n':
+                        chars[j++] = '\n';
+                        break;
+                    case 'f':
+                        chars[j++] = '\f';
+                        break;
+                    case 'r':
+                        chars[j++] = '\r';
+                        break;
+                    case 's':
+                        chars[j++] = ' ';
+                        break;
+                    case '"':
+                        chars[j++] = '"';
+                        break;
+                    case '\'':
+                        chars[j++] = '\'';
+                        break;
+                    case '\\':
+                        chars[j++] = '\\';
+                        break;
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7': {
+                        var value = 0;
+                        var max = Math.min(3, length() - i);
+                        for (var k = 0; k < max; ++k) {
+                            c = charAt(i);
+                            if (c >= '0' && c <= '7') {
+                                value = (value << 3) + (c - '0');
+                                ++i;
+                            } else {
+                                break;
+                            }
+                        }
+                        chars[j++] = (char) value;
+                        break;
+                    }
+                }
+            } else {
+                chars[j++] = c;
+            }
+        }
+        return new TString(chars, 0, j);
+    }
 }

@@ -393,4 +393,10 @@ public class StringTest {
                 .codePoints().toArray());
         assertArrayEquals(new int[] { 56178 }, String.valueOf((char) 56178).codePoints().toArray());
     }
+    
+    @Test
+    public void translateEscapes() {
+        assertEquals("abc", "abc".translateEscapes());
+        assertEquals("\n\r\t\n", "\\n\\r\\t\\12".translateEscapes());
+    }
 }
