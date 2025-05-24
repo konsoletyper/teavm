@@ -1046,4 +1046,65 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         }
         return new TString(chars, 0, j);
     }
+
+    public TString stripIndent() {
+        var bestIndentation = Integer.MAX_VALUE;
+        var i = 0;
+        outer: while (i < length()) {
+            var currentIndentation = 0;
+            char c;
+            while (true) {
+                c = charAt(i);
+                if (!Character.isWhitespace(c) || c == '\n' || c == '\r') {
+                    break;
+                }
+                ++currentIndentation;
+                if (++i == length()) {
+                    break outer;
+                }
+            }
+            if (currentIndentation == 0) {
+                return this;
+            }
+            bestIndentation = Math.min(bestIndentation, currentIndentation);
+            while (i < length()) {
+                c = charAt(i++);
+                if (c == '\r') {
+                    if (i < length() && charAt(i) == '\n') {
+                        ++i;
+                    }
+                    break;
+                } else if (c == '\n') {
+                    break;
+                }
+            }
+        }
+        if (bestIndentation == Integer.MAX_VALUE) {
+            return EMPTY;
+        }
+
+        var result = new char[length()];
+        var outIndex = 0;
+        i = 0;
+        while (i < length()) {
+            char c;
+            i += bestIndentation;
+            while (i < length()) {
+                c = charAt(i++);
+                if (c == '\r') {
+                    if (i < length() && charAt(i) == '\n') {
+                        ++i;
+                    }
+                    result[outIndex++] = '\n';
+                    break;
+                } else if (c == '\n') {
+                    result[outIndex++] = '\n';
+                    break;
+                } else {
+                    result[outIndex++] = c;
+                }
+            }
+        }
+        return new TString(result, 0, outIndex);
+    }
 }

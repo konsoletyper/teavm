@@ -399,4 +399,15 @@ public class StringTest {
         assertEquals("abc", "abc".translateEscapes());
         assertEquals("\n\r\t\n", "\\n\\r\\t\\12".translateEscapes());
     }
+    
+    @Test
+    public void stripIndent() {
+        assertEquals("abc", "abc".stripIndent());
+        assertEquals("abc", "  abc".stripIndent());
+        assertEquals("abc\ndef", " abc\n def".stripIndent());
+        assertEquals("abc\n\ndef\n", " abc\n \n def\n ".stripIndent());
+        assertEquals("abc\n\ndef\n", " abc\r\n \n def\r ".stripIndent());
+        assertEquals("", " ".stripIndent());
+        assertEquals("\n", " \n ".stripIndent());
+    }
 }
