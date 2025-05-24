@@ -20,6 +20,7 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
@@ -63,6 +64,22 @@ public class LongBufferTest {
         buffer.get(0, longsCopy);
         assertArrayEquals(longs, longsCopy);
     }
+
+    @Test
+    public void bulkTransferRelative() {
+        var arr = new long[5];
+        var buffer = LongBuffer.wrap(arr);
+        var src = LongBuffer.wrap(new long[] { 1L, 2L, 3L });
+        buffer.put(src);
+        assertArrayEquals(new long[] { 1L, 2L, 3L, 0L, 0L }, arr);
+        assertEquals(3, buffer.position());
+        assertEquals(3, src.position());
+
+        assertThrows(BufferOverflowException.class, () -> buffer.put(LongBuffer.wrap(new long[] { 4L, 5L, 6L })));
+        assertThrows(ReadOnlyBufferException.class, () -> buffer.rewind().asReadOnlyBuffer()
+                .put(LongBuffer.wrap(new long[] { 4L, 5L, 6L })));
+    }
+
 
     @Test(expected = IllegalArgumentException.class)
     public void errorIfAllocatingBufferOfNegativeSize() {

@@ -20,6 +20,7 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.nio.BufferOverflowException;
@@ -63,6 +64,22 @@ public class CharBufferTest {
         var charsCopy = new char[chars.length];
         buffer.get(0, charsCopy);
         assertArrayEquals(chars, charsCopy);
+    }
+
+
+    @Test
+    public void bulkTransferRelative() {
+        var arr = new char[5];
+        var buffer = CharBuffer.wrap(arr);
+        var src = CharBuffer.wrap(new char[] { 1, 2, 3 });
+        buffer.put(src);
+        assertArrayEquals(new char[] { 1, 2, 3, 0, 0 }, arr);
+        assertEquals(3, buffer.position());
+        assertEquals(3, src.position());
+
+        assertThrows(BufferOverflowException.class, () -> buffer.put(CharBuffer.wrap(new char[] { 4, 5, 6 })));
+        assertThrows(ReadOnlyBufferException.class, () -> buffer.rewind().asReadOnlyBuffer()
+                .put(CharBuffer.wrap(new char[] { 4, 5, 6 })));
     }
 
     @Test(expected = IllegalArgumentException.class)

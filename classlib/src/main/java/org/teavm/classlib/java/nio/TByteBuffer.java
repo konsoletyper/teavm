@@ -156,7 +156,20 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
     }
 
     public TByteBuffer put(TByteBuffer src) {
-        return put(position(), src, src.position(), src.remaining());
+        if (src == this) {
+            throw new IllegalArgumentException();
+        }
+        var bytesToTransfer = src.remaining();
+        if (bytesToTransfer > remaining()) {
+            throw new TBufferOverflowException();
+        }
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        putImpl(position(), src, src.position(), bytesToTransfer);
+        position += bytesToTransfer;
+        src.position += bytesToTransfer;
+        return this;
     }
 
     public TByteBuffer put(int index, TByteBuffer src, int offset, int length) {
