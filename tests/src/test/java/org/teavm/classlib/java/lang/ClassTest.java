@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -266,6 +267,13 @@ public class ClassTest {
         assertFalse(annotationSet.stream().anyMatch(a -> a instanceof TestAnnot));
 
         assertEquals(0, ASub.class.getDeclaredAnnotations().length);
+    }
+
+    @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    public void isAnnotation() {
+        assertTrue(Documented.class.isAnnotation());
+        assertFalse(ClassTest.class.isAnnotation());
     }
 
     private static class SuperclassWithoutInterfaces {

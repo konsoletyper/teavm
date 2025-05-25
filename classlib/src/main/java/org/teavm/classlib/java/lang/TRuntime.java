@@ -94,7 +94,14 @@ public class TRuntime {
         return Navigator.hardwareConcurrency();
     }
 
+    public Version version() {
+        return new Version();
+    }
+
     public static final class Version implements Comparable<Version> {
+        private Version() {
+        }
+
         public int feature() {
             return 21;
         }

@@ -330,7 +330,13 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
             return (getWasmGCFlags() & WasmGCClassFlags.INTERFACE) != 0;
         }
         return (platformClass.getMetadata().getFlags() & Flags.INTERFACE) != 0;
-
+    }
+    
+    public boolean isAnnotation() {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return (getWasmGCFlags() & WasmGCClassFlags.ANNOTATION) != 0;
+        }
+        return (platformClass.getMetadata().getFlags() & Flags.ANNOTATION) != 0;
     }
 
     public boolean isLocalClass() {
