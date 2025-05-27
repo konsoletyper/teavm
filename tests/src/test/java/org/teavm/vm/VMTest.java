@@ -20,10 +20,20 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.interop.Async;
@@ -715,6 +725,33 @@ public class VMTest {
     public void typeInferenceForArrayMerge() {
         int[][] a = falseBoolean() ? null : array();
         assertEquals(23, a[0][0]);
+    }
+
+    @Test
+    public void test111() throws IOException {
+        System.out.println(testMethod111(Path.of("foo"), FileSystems.getDefault().provider()));
+    }
+    
+    private Object testMethod111(Path p, FileSystemProvider fsp) {
+        if (fsp == null) {
+            System.out.println("1");
+            return null;
+        }
+        try (FileSystem fs = fsp.newFileSystem(p, Map.of())) {
+            Path mf = fs.getPath("META-INF/MANIFEST.MF");
+            if (Files.exists(mf)) {
+                try (InputStream in = Files.newInputStream(mf)) {
+                    System.out.println("4");
+                }
+            }
+        } catch (RuntimeException e) {
+            System.out.println("3");
+            return null;
+        } catch (IOException e) {
+            System.out.println("4");
+            return null;
+        }
+        return "5";
     }
 
     private boolean falseBoolean() {
