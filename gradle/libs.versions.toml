@@ -11,6 +11,7 @@ maven = "3.5.4"
 maven-tools = "3.7.1"
 kotlin = "2.1.0"
 scala = "3.6.4"
+jreleaser = "1.18.0"
 
 [libraries]
 
@@ -49,6 +50,8 @@ maven-embedder = { module = "org.apache.maven:maven-embedder", version.ref = "ma
 maven-compat = { module = "org.apache.maven:maven-compat", version.ref = "maven" }
 
 kotlin-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.8.0" }
+
+jreleaser = { module = "org.jreleaser:org.jreleaser.gradle.plugin", version.ref = "jreleaser"}
 
 [libraries.maven-plugin-tools-api]
 module = "org.apache.maven.plugin-tools:maven-plugin-tools-api"

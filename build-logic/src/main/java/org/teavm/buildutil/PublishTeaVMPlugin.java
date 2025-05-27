@@ -24,8 +24,9 @@ import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 import org.gradle.api.publish.plugins.PublishingPlugin;
 import org.gradle.api.tasks.javadoc.Javadoc;
 import org.gradle.external.javadoc.CoreJavadocOptions;
-import org.gradle.plugins.signing.SigningExtension;
-import org.gradle.plugins.signing.SigningPlugin;
+import org.jreleaser.gradle.plugin.JReleaserExtension;
+import org.jreleaser.gradle.plugin.JReleaserPlugin;
+import org.jreleaser.model.Active;
 
 public abstract class PublishTeaVMPlugin implements Plugin<Project> {
     private static final String EXTENSION_NAME = "teavmPublish";
@@ -38,7 +39,7 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
         var publish = Boolean.parseBoolean(target.getProviders().gradleProperty("teavm.mavenCentral.publish")
                 .getOrElse("false"));
         if (publish) {
-            target.getPlugins().apply(SigningPlugin.class);
+            target.getPlugins().apply(JReleaserPlugin.class);
         }
 
         var extension = new ExtensionImpl();
@@ -56,8 +57,23 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
                 customizePublication(target, (MavenPublication) pluginMavenPublication, extension, false);
             }
             if (publish) {
-                var signing = target.getExtensions().getByType(SigningExtension.class);
-                publishing.getPublications().configureEach(signing::sign);
+                var jreleaser = target.getExtensions().getByType(JReleaserExtension.class);
+                jreleaser.signing(signing -> {
+                    signing.getActive().set(Active.ALWAYS);
+                    signing.getArmored().set(true);
+                    signing.getPublicKey().set(target.getProviders().gradleProperty("gradle.publish.key"));
+                    signing.getSecretKey().set(target.getProviders().gradleProperty("gradle.publish.secret"));
+                });
+                jreleaser.deploy(deploy -> {
+                    deploy.maven(maven -> {
+                        var sonatype = maven.getMavenCentral().maybeCreate("sonatype");
+                        sonatype.getActive().set(Active.ALWAYS);
+                        sonatype.getUrl().set("https://central.sonatype.com/api/v1/publisher");
+                        sonatype.getStagingRepositories().add("target/staging-deploy");
+                        sonatype.getUsername().set(target.getProviders().gradleProperty("ossrhUsername"));
+                        sonatype.getPassword().set(target.getProviders().gradleProperty("ossrhPassword"));
+                    });
+                });
             }
             publishing.repositories(repositories -> {
                 var url = target.getProviders().gradleProperty("teavm.publish.url");
@@ -69,16 +85,6 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
                                 "teavm.publish.username").get());
                         repository.getCredentials().setPassword(target.getProviders().gradleProperty(
                                 "teavm.publish.password").get());
-                    });
-                }
-                if (publish) {
-                    repositories.maven(repository -> {
-                        repository.setName("OSSRH");
-                        repository.setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2");
-                        repository.getCredentials().setUsername(target.getProviders().gradleProperty(
-                                "ossrhUsername").get());
-                        repository.getCredentials().setPassword(target.getProviders().gradleProperty(
-                                "ossrhPassword").get());
                     });
                 }
             });

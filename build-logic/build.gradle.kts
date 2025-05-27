@@ -32,6 +32,7 @@ dependencies {
     implementation(libs.maven.plugin.tools.annotations)
     implementation(libs.maven.embedder)
     implementation(libs.maven.compat)
+    implementation(libs.jreleaser)
 }
 
 gradlePlugin {
