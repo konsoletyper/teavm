@@ -662,7 +662,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         var wasmSourceType = context.classInfoProvider().getClassInfo("java.lang.Throwable").getType();
         var br = new WasmCastBranch(WasmCastCondition.SUCCESS, new WasmGetLocal(exceptionVar),
                 wasmSourceType, wasmType, targetBlock);
-        target.add(br);
+        target.add(new WasmDrop(br));
     }
 
     @Override
