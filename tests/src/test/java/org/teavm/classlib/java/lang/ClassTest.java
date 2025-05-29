@@ -246,6 +246,13 @@ public class ClassTest {
 
     @Test
     @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
+    public void annotationEnumFields() {
+        var annot = WithEnumArrayAnnotation.class.getAnnotation(AnnotationWithEnumArray.class);
+        assertArrayEquals(new EnumForAnnotation[] { EnumForAnnotation.FOO, EnumForAnnotation.BAZ }, annot.value());
+    }
+
+    @Test
+    @SkipPlatform({TestPlatform.C, TestPlatform.WEBASSEMBLY, TestPlatform.WASI})
     public void getInterfaces() {
         assertEquals(0, SuperclassWithoutInterfaces.class.getInterfaces().length);
         assertEquals(Set.of(TestInterface1.class, TestInterface2.class),
@@ -312,6 +319,10 @@ public class ClassTest {
     private static class D {
     }
 
+    @AnnotationWithEnumArray({ EnumForAnnotation.FOO, EnumForAnnotation.BAZ })
+    private static class WithEnumArrayAnnotation {
+    }
+
     @Retention(RetentionPolicy.RUNTIME)
     @interface TestAnnot {
     }
@@ -355,6 +366,17 @@ public class ClassTest {
         String[] m();
 
         Class<?> n();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface AnnotationWithEnumArray {
+        EnumForAnnotation[] value();
+    }
+
+    enum EnumForAnnotation {
+        FOO,
+        BAR,
+        BAZ
     }
 
     static class InnerClass {

@@ -26,6 +26,7 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
+import org.teavm.model.FieldReader;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.ValueType;
@@ -34,7 +35,6 @@ import org.teavm.model.emit.ValueEmitter;
 
 public abstract class BaseAnnotationDependencyListener extends AbstractDependencyListener {
     public static final String ANNOTATION_IMPLEMENTOR_SUFFIX = "$$_impl";
-    private static final ValueType ENUM_TYPE = ValueType.parse(Enum.class);
     private boolean enumsAsInts;
 
     public BaseAnnotationDependencyListener(boolean enumsAsInts) {
@@ -85,9 +85,25 @@ public abstract class BaseAnnotationDependencyListener extends AbstractDependenc
             FieldHolder field = new FieldHolder("$" + methodDecl.getName());
             var type = methodDecl.getResultType();
             var isEnum = false;
-            if (enumsAsInts && hierarchy.isSuperType(ENUM_TYPE, type, false)) {
-                type = ValueType.INTEGER;
-                isEnum = true;
+            var degree = 0;
+            String enumCacheType = null;
+            if (enumsAsInts) {
+                while (type instanceof ValueType.Array) {
+                    type = ((ValueType.Array) type).getItemType();
+                    ++degree;
+                }
+                if (type instanceof ValueType.Object) {
+                    var typeName = ((ValueType.Object) type).getClassName();
+                    var cls = hierarchy.getClassSource().get(typeName);
+                    if (cls != null && cls.hasModifier(ElementModifier.ENUM)) {
+                        enumCacheType = typeName;
+                        type = ValueType.INTEGER;
+                        isEnum = true;
+                    }
+                }
+                for (var i = 0; i < degree; ++i) {
+                    type = ValueType.arrayOf(type);
+                }
             }
             field.setType(type);
             field.setLevel(AccessLevel.PRIVATE);
@@ -102,13 +118,8 @@ public abstract class BaseAnnotationDependencyListener extends AbstractDependenc
                 cacheField.getModifiers().add(ElementModifier.STATIC);
                 implementor.addField(cacheField);
 
-                cacheField.setType(ValueType.arrayOf(methodDecl.getResultType()));
-                var enumType = ((ValueType.Object) methodDecl.getResultType()).getClassName();
-                pe.when(pe.getField(cacheField.getReference(), cacheField.getType()).isNull()).thenDo(() -> {
-                    pe.setField(cacheField.getReference(), pe.invoke(enumType, "values", cacheField.getType()));
-                });
-                var result = thisVal.getField(field.getName(), field.getType());
-                pe.getField(cacheField.getReference(), cacheField.getType()).getElement(result).returnValue();
+                cacheField.setType(ValueType.arrayOf(ValueType.object(enumCacheType)));
+                decodeEnumOrEnumArray(pe, thisVal, cacheField, enumCacheType, field, accessor.getResultType());
             } else {
                 ValueEmitter result = thisVal.getField(field.getName(), field.getType());
                 if (field.getType() instanceof ValueType.Array) {
@@ -144,5 +155,47 @@ public abstract class BaseAnnotationDependencyListener extends AbstractDependenc
         implementor.addMethod(annotTypeMethod);
 
         return implementor;
+    }
+
+    private void decodeEnumOrEnumArray(ProgramEmitter pe, ValueEmitter thisVal, FieldReader cacheField,
+            String enumCacheType, FieldReader field, ValueType type) {
+        pe.when(pe.getField(cacheField.getReference(), cacheField.getType()).isNull()).thenDo(() -> {
+            pe.setField(cacheField.getReference(), pe.invoke(enumCacheType, "values", cacheField.getType()));
+        });
+        var source = thisVal.getField(field.getName(), field.getType());
+        decodeEnumArrayRec(pe, source, cacheField, type).returnValue();
+    }
+
+    private ValueEmitter decodeEnumArrayRec(ProgramEmitter pe, ValueEmitter source, FieldReader cacheField,
+            ValueType type) {
+        if (type instanceof ValueType.Array) {
+            var header = pe.prepareBlock();
+            var body = pe.prepareBlock();
+            var exit = pe.prepareBlock();
+
+            var itemType = ((ValueType.Array) type).getItemType();
+            var targetArray = pe.constructArray(itemType, source.arrayLength());
+            var initialIndex = pe.constant(0);
+            var index = pe.phi(ValueType.INTEGER, header);
+            initialIndex.propagateTo(index);
+            pe.jump(header);
+
+            pe.enter(header);
+            pe.when(index.getValue().isLessThan(source.arrayLength()))
+                    .thenDo(() -> pe.jump(body))
+                    .elseDo(() -> pe.jump(exit));
+
+            pe.enter(body);
+            var mappedValue = decodeEnumArrayRec(pe, source.getElement(index.getValue()), cacheField, itemType);
+            targetArray.setElement(index.getValue(), mappedValue);
+            index.getValue().add(1).propagateTo(index);
+            pe.jump(header);
+
+            pe.enter(exit);
+
+            return targetArray;
+        } else {
+            return pe.getField(cacheField.getReference(), cacheField.getType()).getElement(source);
+        }
     }
 }
