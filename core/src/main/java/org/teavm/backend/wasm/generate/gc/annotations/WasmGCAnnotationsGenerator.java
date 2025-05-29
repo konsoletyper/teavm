@@ -145,7 +145,15 @@ public class WasmGCAnnotationsGenerator {
             case AnnotationValue.LIST: {
                 var util = new WasmGCGenerationUtil(classInfoProvider);
                 var itemType = ((ValueType.Array) type).getItemType();
-                return util.allocateArrayWithElements(itemType, () -> value.getList()
+                var arrayItemType = itemType;
+                if (itemType instanceof ValueType.Object) {
+                    var itemClassName = ((ValueType.Object) itemType).getClassName();
+                    var itemClass = classes.get(itemClassName);
+                    if (itemClass != null && itemClass.hasModifier(ElementModifier.ENUM)) {
+                        arrayItemType = ValueType.INTEGER;
+                    }
+                }
+                return util.allocateArrayWithElements(arrayItemType, () -> value.getList()
                         .stream()
                         .map(elem -> generateAnnotationValue(elem, itemType))
                         .collect(Collectors.toList()));
