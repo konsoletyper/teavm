@@ -37,7 +37,7 @@ function release_teavm {
   GRADLE+=" -Pteavm.idea.publishToken=$TEAVM_INTELLIJ_TOKEN"
 
   $GRADLE build -x test || { echo 'Build failed' ; return 1; }
-  $GRADLE publishAllPublicationsToTeavmRepository jreleaserSign jreleaserDeploy || { echo 'Release failed' ; return 1; }
+  $GRADLE publishAllPublicationsToTeavmRepository jreleaserSign jreleaserDeploy publishPlugin publishPlugins || { echo 'Release failed' ; return 1; }
 
   return 0
 }
