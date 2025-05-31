@@ -16,6 +16,7 @@
 package org.teavm.metaprogramming.impl;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.dependency.DependencyAgent;
@@ -25,6 +26,7 @@ import org.teavm.metaprogramming.Diagnostics;
 import org.teavm.metaprogramming.InvocationHandler;
 import org.teavm.metaprogramming.LazyComputation;
 import org.teavm.metaprogramming.ReflectClass;
+import org.teavm.metaprogramming.Resource;
 import org.teavm.metaprogramming.SourceLocation;
 import org.teavm.metaprogramming.Value;
 import org.teavm.metaprogramming.impl.optimization.Optimizations;
@@ -58,12 +60,14 @@ import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.util.TransitionExtractor;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public final class MetaprogrammingImpl {
     static String suffix;
     static Map<String, Integer> proxySuffixGenerators = new HashMap<>();
     static ClassLoader classLoader;
     static ClassReaderSource classSource;
+    static ResourceProvider resourceProvider;
     static ClassHierarchy hierarchy;
     static IncrementalDependencyRegistration incrementalDependencies;
     static ReflectContext reflectContext;
@@ -452,6 +456,22 @@ public final class MetaprogrammingImpl {
             @Override
             public void warning(CallLocation location, String error, Object... params) {
                 agent.getDiagnostics().warning(location, error, params);
+            }
+        };
+    }
+
+    public static Iterator<Resource> getResources(String name) {
+        var underlyingResources = resourceProvider.getResources(name);
+        return new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return underlyingResources.hasNext();
+            }
+
+            @Override
+            public Resource next() {
+                var resource = underlyingResources.next();
+                return resource::open;
             }
         };
     }

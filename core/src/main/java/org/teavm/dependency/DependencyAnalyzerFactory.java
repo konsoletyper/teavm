@@ -19,8 +19,10 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ReferenceCache;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public interface DependencyAnalyzerFactory {
-    DependencyAnalyzer create(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
-            Diagnostics diagnostics, ReferenceCache referenceCache, String[] platformTags);
+    DependencyAnalyzer create(ClassReaderSource classSource, ResourceProvider resourceProvider,
+            ClassLoader classLoader, ServiceRepository services, Diagnostics diagnostics,
+            ReferenceCache referenceCache, String[] platformTags);
 }

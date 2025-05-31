@@ -32,6 +32,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ProgramReader;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public class FastDependencyAnalyzer extends DependencyAnalyzer {
     DependencyNode instancesNode;
@@ -39,10 +40,10 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
     private Map<MethodReference, FastVirtualCallConsumer> virtualCallConsumers = new HashMap<>();
     private Map<String, DependencyNode> subtypeNodes = new HashMap<>();
 
-    public FastDependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader,
-            ServiceRepository services, Diagnostics diagnostics, ReferenceCache referenceCache,
-            String[] platformTags) {
-        super(classSource, classLoader, services, diagnostics, referenceCache, platformTags);
+    public FastDependencyAnalyzer(ClassReaderSource classSource, ResourceProvider resourceProvider,
+            ClassLoader classLoader, ServiceRepository services, Diagnostics diagnostics,
+            ReferenceCache referenceCache, String[] platformTags) {
+        super(classSource, resourceProvider, classLoader, services, diagnostics, referenceCache, platformTags);
 
         instancesNode = new DependencyNode(this, null);
         classesNode = new DependencyNode(this, null);

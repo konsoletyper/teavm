@@ -62,6 +62,7 @@ import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.parsing.Parser;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.vm.spi.ClassFilter;
 import org.teavm.vm.spi.ClassFilterContext;
 
@@ -74,6 +75,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     static final boolean dependencyReport = System.getProperty("org.teavm.dependencyReport", "false").equals("true");
     private int classNameSuffix;
     private ClassReaderSource unprocessedClassSource;
+    private ResourceProvider resourceProvider;
     private DependencyClassSource classSource;
     ClassReaderSource agentClassSource;
     private ClassLoader classLoader;
@@ -108,9 +110,11 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     DependencyType classType;
     private List<ClassFilter> classFilters = new ArrayList<>();
 
-    DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
-            Diagnostics diagnostics, ReferenceCache referenceCache, String[] platformTags) {
+    DependencyAnalyzer(ClassReaderSource classSource, ResourceProvider resourceProvider, ClassLoader classLoader,
+            ServiceRepository services, Diagnostics diagnostics, ReferenceCache referenceCache,
+            String[] platformTags) {
         this.unprocessedClassSource = classSource;
+        this.resourceProvider = resourceProvider;
         this.diagnostics = diagnostics;
         this.referenceCache = referenceCache;
         agent = new DependencyAgent(this);
@@ -171,6 +175,10 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     public boolean wasInterrupted() {
         return interrupted;
+    }
+
+    public ResourceProvider getResourceProvider() {
+        return resourceProvider;
     }
 
     public DependencyType getType(String name) {

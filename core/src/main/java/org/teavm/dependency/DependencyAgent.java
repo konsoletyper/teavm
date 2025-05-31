@@ -21,6 +21,7 @@ import org.teavm.callgraph.CallGraph;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public class DependencyAgent implements DependencyInfo, ServiceRepository {
     private DependencyAnalyzer analyzer;
@@ -90,6 +91,10 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
     @Override
     public ClassReaderSource getClassSource() {
         return analyzer.agentClassSource;
+    }
+
+    public ResourceProvider getResourceProvider() {
+        return analyzer.getResourceProvider();
     }
 
     public ClassReaderSource getUnprocessedClassSource() {

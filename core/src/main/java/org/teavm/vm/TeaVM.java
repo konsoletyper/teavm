@@ -174,8 +174,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         classLoader = builder.classLoader;
         resourceProvider = builder.resourceProvider;
         classSourcePacker = builder.classSourcePacker;
-        dependencyAnalyzer = builder.dependencyAnalyzerFactory.create(builder.classSource, classLoader,
-                this, diagnostics, builder.referenceCache, target.getPlatformTags());
+        dependencyAnalyzer = builder.dependencyAnalyzerFactory.create(builder.classSource, resourceProvider,
+                classLoader, this, diagnostics, builder.referenceCache, target.getPlatformTags());
         dependencyAnalyzer.setObfuscated(builder.obfuscated);
         dependencyAnalyzer.setStrict(builder.strict);
         progressListener = new TeaVMProgressListener() {

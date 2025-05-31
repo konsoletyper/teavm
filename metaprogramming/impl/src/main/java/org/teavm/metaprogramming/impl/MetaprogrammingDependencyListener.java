@@ -47,6 +47,7 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
 
         MetaprogrammingImpl.classLoader = proxyClassLoader;
         MetaprogrammingImpl.classSource = agent.getUnprocessedClassSource();
+        MetaprogrammingImpl.resourceProvider = agent.getResourceProvider();
         MetaprogrammingImpl.hierarchy = new ClassHierarchy(agent.getUnprocessedClassSource());
         MetaprogrammingImpl.incrementalDependencies = agent.getIncrementalCache();
         MetaprogrammingImpl.agent = agent;
@@ -57,6 +58,7 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
     public void complete() {
         MetaprogrammingImpl.classLoader = null;
         MetaprogrammingImpl.classSource = null;
+        MetaprogrammingImpl.resourceProvider = null;
         MetaprogrammingImpl.hierarchy = null;
         MetaprogrammingImpl.incrementalDependencies = null;
         MetaprogrammingImpl.agent = null;

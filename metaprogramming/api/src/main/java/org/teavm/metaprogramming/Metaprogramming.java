@@ -15,6 +15,8 @@
  */
 package org.teavm.metaprogramming;
 
+import java.util.Iterator;
+
 @SuppressWarnings("unused")
 public final class Metaprogramming {
     private Metaprogramming() {
@@ -95,6 +97,12 @@ public final class Metaprogramming {
     }
 
     public static Diagnostics getDiagnostics() {
+        unsupported();
+        return null;
+    }
+
+
+    public static Iterator<Resource> getResources(String name) {
         unsupported();
         return null;
     }

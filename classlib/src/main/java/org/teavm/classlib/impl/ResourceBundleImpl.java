@@ -18,7 +18,7 @@ package org.teavm.classlib.impl;
 import static org.teavm.metaprogramming.Metaprogramming.emit;
 import static org.teavm.metaprogramming.Metaprogramming.exit;
 import static org.teavm.metaprogramming.Metaprogramming.findClass;
-import static org.teavm.metaprogramming.Metaprogramming.getClassLoader;
+import static org.teavm.metaprogramming.Metaprogramming.getResources;
 import static org.teavm.metaprogramming.Metaprogramming.lazy;
 import static org.teavm.metaprogramming.Metaprogramming.lazyFragment;
 import static org.teavm.metaprogramming.Metaprogramming.proxy;
@@ -26,10 +26,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -53,13 +51,11 @@ public class ResourceBundleImpl {
     @Meta
     public static native Map<String, Supplier<ResourceBundle>> createBundleMap(boolean b);
     private static void createBundleMap(Value<Boolean> b) throws IOException {
-        ClassLoader loader = getClassLoader();
-
-        Enumeration<URL> urls = loader.getResources("META-INF/services/java.util.ResourceBundle");
+        var resources = getResources("META-INF/services/java.util.ResourceBundle");
         Set<String> implementations = new LinkedHashSet<>();
-        while (urls.hasMoreElements()) {
-            URL url = urls.nextElement();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(),
+        while (resources.hasNext()) {
+            var resource = resources.next();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.open(),
                     StandardCharsets.UTF_8))) {
                 while (true) {
                     String line = reader.readLine();
@@ -79,7 +75,6 @@ public class ResourceBundleImpl {
         Value<Map<String, Supplier<ResourceBundle>>> result = emit(() -> new HashMap<>());
 
         for (String implementation : implementations) {
-            String path = implementation.replace('.', '/');
             ReflectClass<?> cls = findClass(implementation);
             Value<? extends ResourceBundle> lazyResource;
             if (cls != null) {
@@ -89,35 +84,39 @@ public class ResourceBundleImpl {
                 } else {
                     continue;
                 }
-            } else if (loader.getResource(path + ".properties") != null) {
-                lazyResource = lazyFragment(() -> {
-                    Properties properties = new Properties();
-                    try (InputStream input = loader.getResourceAsStream(path + ".properties")) {
-                        properties.load(input);
-                    } catch (IOException e) {
-                        // do nothing
-                    }
-
-                    return proxy(ListResourceBundle.class, (instance, methodName, args) -> {
-                        Value<List<Object[]>> contentsBuilder = emit(() -> new ArrayList<>());
-                        for (Object propertyName : properties.keySet()) {
-                            if (!(propertyName instanceof String)) {
-                                continue;
-                            }
-                            String key = (String) propertyName;
-                            String value = properties.getProperty(key);
-                            if (value == null) {
-                                continue;
-                            }
-
-                            emit(() -> contentsBuilder.get().add(new Object[] { key, value }));
+            } else {
+                var path = implementation.replace('.', '/');
+                var iter = getResources(path + ".properties");
+                if (iter.hasNext()) {
+                    lazyResource = lazyFragment(() -> {
+                        Properties properties = new Properties();
+                        try (InputStream input = iter.next().open()) {
+                            properties.load(input);
+                        } catch (IOException e) {
+                            // do nothing
                         }
 
-                        exit(() -> contentsBuilder.get().toArray(new Object[0][]));
+                        return proxy(ListResourceBundle.class, (instance, methodName, args) -> {
+                            Value<List<Object[]>> contentsBuilder = emit(() -> new ArrayList<>());
+                            for (Object propertyName : properties.keySet()) {
+                                if (!(propertyName instanceof String)) {
+                                    continue;
+                                }
+                                String key = (String) propertyName;
+                                String value = properties.getProperty(key);
+                                if (value == null) {
+                                    continue;
+                                }
+
+                                emit(() -> contentsBuilder.get().add(new Object[] { key, value }));
+                            }
+
+                            exit(() -> contentsBuilder.get().toArray(new Object[0][]));
+                        });
                     });
-                });
-            } else {
-                continue;
+                } else {
+                    continue;
+                }
             }
 
             @SuppressWarnings("rawtypes")
