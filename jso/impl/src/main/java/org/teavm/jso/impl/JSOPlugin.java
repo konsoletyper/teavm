@@ -17,6 +17,7 @@ package org.teavm.jso.impl;
 
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
 import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
+import org.teavm.interop.PlatformMarker;
 import org.teavm.jso.JSExceptions;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.impl.wasmgc.WasmGCJso;
@@ -64,7 +65,9 @@ public class JSOPlugin implements TeaVMPlugin {
         var wrapperDependency = new JSWrapperDependency();
         host.add(wrapperDependency);
 
-        TeaVMPluginUtil.handleNatives(host, JS.class);
+        if (!isBootstrap()) {
+            TeaVMPluginUtil.handleNatives(host, JS.class);
+        }
 
         if (jsHost != null) {
             installForJS(jsHost);
@@ -114,5 +117,10 @@ public class JSOPlugin implements TeaVMPlugin {
                 wrapperGenerator);
         jsHost.add(new MethodReference(JSWrapper.class, "jsToWrapper", JSObject.class, JSWrapper.class),
                 wrapperGenerator);
+    }
+
+    @PlatformMarker
+    private static boolean isBootstrap() {
+        return false;
     }
 }

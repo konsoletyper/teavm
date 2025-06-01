@@ -61,7 +61,6 @@ import org.teavm.model.util.BasicBlockMapper;
 import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.TransitionExtractor;
-import org.teavm.runtime.Fiber;
 
 public class Inlining {
     private IntArrayList depthsByBlock;
@@ -370,8 +369,8 @@ public class Inlining {
                     continue;
                 }
 
-                if (invoke.getMethod().getClassName().equals(Fiber.class.getName())
-                        != method.getClassName().equals(Fiber.class.getName())) {
+                if (invoke.getMethod().getClassName().equals("org.teavm.runtime.Fiber")
+                        != method.getClassName().equals("org.teavm.runtime.Fiber")) {
                     continue;
                 }
                 if (!filter.apply(invoke.getMethod())) {
