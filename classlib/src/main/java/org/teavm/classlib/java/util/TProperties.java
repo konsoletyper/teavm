@@ -255,9 +255,10 @@ public class TProperties extends THashtable<Object, Object> {
                         mode = IGNORE; // Ignore whitespace on the next line
                         continue;
                     }
+                    // CHECKSTYLE.OFF: FallThrough
                     // fall into the next case
-                    break;
                 case '\r':
+                    // CHECKSTYLE.ON: FallThrough
                     if (mode == CONTINUE) { // Part of a \r\n sequence
                         mode = IGNORE; // Ignore whitespace on the next line
                         continue;
