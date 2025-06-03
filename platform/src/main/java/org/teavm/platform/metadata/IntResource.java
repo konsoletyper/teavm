@@ -17,6 +17,4 @@ package org.teavm.platform.metadata;
 
 public interface IntResource extends Resource {
     int getValue();
-
-    void setValue(int value);
 }

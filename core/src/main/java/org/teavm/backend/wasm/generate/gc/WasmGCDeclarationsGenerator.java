@@ -48,6 +48,7 @@ import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableBuilder;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public class WasmGCDeclarationsGenerator {
     public final ClassHierarchy hierarchy;
@@ -62,6 +63,7 @@ public class WasmGCDeclarationsGenerator {
             WasmModule module,
             ListableClassHolderSource classes,
             ClassReaderSource originalClasses,
+            ResourceProvider resources,
             ClassLoader classLoader,
             ClassInitializerInfo classInitializerInfo,
             DependencyInfo dependencyInfo,
@@ -84,6 +86,7 @@ public class WasmGCDeclarationsGenerator {
                 module,
                 hierarchy,
                 classes,
+                resources,
                 classLoader,
                 virtualTables,
                 classInitializerInfo,

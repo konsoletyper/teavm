@@ -35,6 +35,7 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
     private RenderingContext context;
@@ -287,6 +288,11 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
     @Override
     public ListableClassReaderSource getClassSource() {
         return context.getClassSource();
+    }
+
+    @Override
+    public ResourceProvider getResourceProvider() {
+        return context.getResourceProvider();
     }
 
     @Override

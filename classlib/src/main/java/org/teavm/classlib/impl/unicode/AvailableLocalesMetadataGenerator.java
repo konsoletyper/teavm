@@ -17,16 +17,19 @@ package org.teavm.classlib.impl.unicode;
 
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.*;
+import org.teavm.platform.metadata.builders.ResourceArrayBuilder;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.StringResourceBuilder;
 
 public class AvailableLocalesMetadataGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         CLDRReader reader = context.getService(CLDRReader.class);
-        ResourceArray<StringResource> result = context.createResourceArray();
+        var result = new ResourceArrayBuilder<StringResourceBuilder>();
         for (String locale : reader.getAvailableLocales()) {
-            StringResource localeRes = context.createResource(StringResource.class);
-            localeRes.setValue(locale);
-            result.add(localeRes);
+            var localeRes = new StringResourceBuilder();
+            localeRes.value = locale;
+            result.values.add(localeRes);
         }
         return result;
     }

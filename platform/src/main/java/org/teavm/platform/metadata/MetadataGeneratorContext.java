@@ -18,9 +18,7 @@ package org.teavm.platform.metadata;
 import java.util.Properties;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassReaderSource;
-import org.teavm.model.FieldReference;
-import org.teavm.platform.Platform;
-import org.teavm.platform.plugin.ResourceTypeDescriptor;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.vm.TeaVM;
 
 /**
@@ -43,27 +41,12 @@ public interface MetadataGeneratorContext extends ServiceRepository {
      */
     ClassLoader getClassLoader();
 
+    ResourceProvider getResourceProvider();
+
     /**
      * Gets properties that were specified to {@link TeaVM}.
      *
      * @return properties.
      */
     Properties getProperties();
-
-    <T extends Resource> T createResource(Class<T> resourceType);
-
-    /**
-     * Creates a new resource that represents static field. Client code then may use
-     * {@link Platform#objectFromResource(StaticFieldResource)} to get actual field value.
-     *
-     * @param field field for which to create resource.
-     * @return a new resource.
-     */
-    StaticFieldResource createFieldResource(FieldReference field);
-
-    <T extends Resource> ResourceArray<T> createResourceArray();
-
-    <T extends Resource> ResourceMap<T> createResourceMap();
-
-    ResourceTypeDescriptor getTypeDescriptor(Class<? extends Resource> type);
 }

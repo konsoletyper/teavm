@@ -15,13 +15,17 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-import java.util.Map;
 import org.teavm.model.MethodReference;
-import org.teavm.platform.metadata.*;
+import org.teavm.platform.metadata.MetadataGenerator;
+import org.teavm.platform.metadata.MetadataGeneratorContext;
+import org.teavm.platform.metadata.builders.ResourceArrayBuilder;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceMapBuilder;
+import org.teavm.platform.metadata.builders.StringResourceBuilder;
 
 public class DateSymbolsMetadataGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         switch (method.getName()) {
             case "getErasMap":
                 return generateSymbols(context, locale -> locale.getEras());
@@ -40,16 +44,16 @@ public class DateSymbolsMetadataGenerator implements MetadataGenerator {
         }
     }
 
-    private Resource generateSymbols(MetadataGeneratorContext context, ResourceExtractor extractor) {
+    private ResourceBuilder generateSymbols(MetadataGeneratorContext context, ResourceExtractor extractor) {
         CLDRReader reader = context.getService(CLDRReader.class);
-        ResourceMap<ResourceArray<StringResource>> result = context.createResourceMap();
-        for (Map.Entry<String, CLDRLocale> localeEntry : reader.getKnownLocales().entrySet()) {
-            ResourceArray<StringResource> symbolsRes = context.createResourceArray();
-            result.put(localeEntry.getKey(), symbolsRes);
+        var result = new ResourceMapBuilder<ResourceArrayBuilder<StringResourceBuilder>>();
+        for (var localeEntry : reader.getKnownLocales().entrySet()) {
+            var symbolsRes = new ResourceArrayBuilder<StringResourceBuilder>();
+            result.values.put(localeEntry.getKey(), symbolsRes);
             for (String symbol : extractor.extract(localeEntry.getValue())) {
-                StringResource symbolRes = context.createResource(StringResource.class);
-                symbolRes.setValue(symbol);
-                symbolsRes.add(symbolRes);
+                var symbolRes = new StringResourceBuilder();
+                symbolRes.value = symbol;
+                symbolsRes.values.add(symbolRes);
             }
         }
         return result;

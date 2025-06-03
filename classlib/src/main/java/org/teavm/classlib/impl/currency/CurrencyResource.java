@@ -20,13 +20,7 @@ import org.teavm.platform.metadata.Resource;
 public interface CurrencyResource extends Resource {
     String getCode();
 
-    void setCode(String code);
-
     int getNumericCode();
 
-    void setNumericCode(int code);
-
     int getFractionDigits();
-
-    void setFractionDigits(int fractionDigits);
 }

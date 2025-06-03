@@ -45,6 +45,7 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.analysis.ClassInitializerInfo;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmModule module;
@@ -55,6 +56,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
     private WasmGCTypeMapper typeMapper;
     private WasmFunctionTypes functionTypes;
     private ListableClassReaderSource classes;
+    private ResourceProvider resources;
     private ClassLoader classLoader;
     private ClassHierarchy hierarchy;
     private BaseWasmFunctionRepository functions;
@@ -76,11 +78,11 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
 
     public WasmGCGenerationContext(WasmModule module, WasmGCVirtualTableProvider virtualTables,
             WasmGCTypeMapper typeMapper, WasmFunctionTypes functionTypes, ListableClassReaderSource classes,
-            ClassLoader classLoader, ClassHierarchy hierarchy, BaseWasmFunctionRepository functions,
-            WasmGCSupertypeFunctionProvider supertypeFunctions, WasmGCClassInfoProvider classInfoProvider,
-            WasmGCStandardClasses standardClasses, WasmGCStringProvider strings,
-            WasmGCCustomGeneratorProvider customGenerators, WasmGCIntrinsicProvider intrinsics,
-            WasmGCNameProvider names, boolean strict, String entryPoint,
+            ResourceProvider resources, ClassLoader classLoader, ClassHierarchy hierarchy,
+            BaseWasmFunctionRepository functions, WasmGCSupertypeFunctionProvider supertypeFunctions,
+            WasmGCClassInfoProvider classInfoProvider, WasmGCStandardClasses standardClasses,
+            WasmGCStringProvider strings, WasmGCCustomGeneratorProvider customGenerators,
+            WasmGCIntrinsicProvider intrinsics, WasmGCNameProvider names, boolean strict, String entryPoint,
             Consumer<WasmGCInitializerContributor> initializerContributors,
             Diagnostics diagnostics, ClassInitializerInfo classInitInfo, DependencyInfo dependency) {
         this.module = module;
@@ -88,6 +90,7 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
         this.typeMapper = typeMapper;
         this.functionTypes = functionTypes;
         this.classes = classes;
+        this.resources = resources;
         this.classLoader = classLoader;
         this.hierarchy = hierarchy;
         this.functions = functions;
@@ -170,6 +173,11 @@ public class WasmGCGenerationContext implements BaseWasmGenerationContext {
 
     public ClassLoader classLoader() {
         return classLoader;
+    }
+
+    @Override
+    public ResourceProvider resources() {
+        return resources;
     }
 
     public ClassHierarchy hierarchy() {

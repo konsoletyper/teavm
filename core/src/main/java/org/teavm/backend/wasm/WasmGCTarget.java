@@ -276,6 +276,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
                 module,
                 classes,
                 controller.getUnprocessedClassSource(),
+                controller.getResourceProvider(),
                 controller.getClassLoader(),
                 controller.getClassInitializerInfo(),
                 controller.getDependencyInfo(),

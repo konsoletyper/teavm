@@ -22,13 +22,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.teavm.common.IntegerArray;
 
 public final class UnicodeSupport {
-    private static AtomicBoolean filled = new AtomicBoolean();
-    private static volatile CountDownLatch latch = new CountDownLatch(1);
     private static int[] digitValues;
     private static byte[] classes;
     private static int[] titleCaseMapping;
@@ -67,6 +63,7 @@ public final class UnicodeSupport {
         classMap.put("So", Character.OTHER_SYMBOL);
         classMap.put("Pi", Character.INITIAL_QUOTE_PUNCTUATION);
         classMap.put("Pf", Character.FINAL_QUOTE_PUNCTUATION);
+        parseUnicodeData();
     }
 
     private UnicodeSupport() {
@@ -200,46 +197,24 @@ public final class UnicodeSupport {
         return value;
     }
 
-    private static void ensureUnicodeData() {
-        if (filled.compareAndSet(false, true)) {
-            parseUnicodeData();
-            latch.countDown();
-            latch = null;
-        } else {
-            CountDownLatch latchCopy = latch;
-            if (latchCopy != null) {
-                try {
-                    latchCopy.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
-            }
-        }
-    }
 
     public static int[] getDigitValues() {
-        ensureUnicodeData();
         return digitValues;
     }
 
     public static byte[] getClasses() {
-        ensureUnicodeData();
         return classes;
     }
 
     public static int[] getTitleCaseMapping() {
-        ensureUnicodeData();
         return titleCaseMapping;
     }
 
     public static int[] getUpperCaseMapping() {
-        ensureUnicodeData();
         return upperCaseMapping;
     }
 
     public static int[] getLowerCaseMapping() {
-        ensureUnicodeData();
         return lowerCaseMapping;
     }
 }

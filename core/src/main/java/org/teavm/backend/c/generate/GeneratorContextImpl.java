@@ -23,6 +23,7 @@ import org.teavm.backend.c.generators.GeneratorContext;
 import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
@@ -64,6 +65,11 @@ class GeneratorContextImpl implements GeneratorContext {
     @Override
     public ClassReaderSource classSource() {
         return context.getClassSource();
+    }
+
+    @Override
+    public ClassHierarchy hierarchy() {
+        return context.getHierarchy();
     }
 
     @Override

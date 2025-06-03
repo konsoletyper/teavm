@@ -506,8 +506,9 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             exceptionTag = new WasmTag(functionTypes.of(null, WasmType.INT32));
             module.tags.add(exceptionTag);
         }
-        var context = new WasmGenerationContext(classes, module, functionTypes, functions, controller.getDiagnostics(),
-                vtableProvider, tagRegistry, stringPool, names, characteristics, exceptionTag);
+        var context = new WasmGenerationContext(classes, hierarchy, controller.getResourceProvider(), module,
+                functionTypes, functions, controller.getDiagnostics(), vtableProvider, tagRegistry, stringPool, names,
+                characteristics, exceptionTag);
 
         var initFunction = new WasmFunction(functionTypes.of(null));
 

@@ -106,6 +106,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.ClassInitializerInfo;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     private WasmGCGenerationContext context;
@@ -901,6 +902,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         public WasmExpression generate(Expr expr) {
             accept(expr);
             return result;
+        }
+
+        @Override
+        public ResourceProvider resources() {
+            return context.resources();
         }
 
         @Override

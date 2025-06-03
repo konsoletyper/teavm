@@ -36,6 +36,7 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.MethodReference;
 import org.teavm.model.analysis.ClassInitializerInfo;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public interface WasmGCIntrinsicContext {
     WasmExpression generate(Expr expr);
@@ -65,6 +66,8 @@ public interface WasmGCIntrinsicContext {
     WasmGCStringProvider strings();
 
     ClassLoader classLoader();
+
+    ResourceProvider resources();
 
     WasmTag exceptionTag();
 

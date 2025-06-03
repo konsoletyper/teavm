@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,25 +13,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform.plugin;
+package org.teavm.platform.metadata.builders;
 
-import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.model.FieldReference;
-import org.teavm.platform.metadata.StaticFieldResource;
+import org.teavm.platform.metadata.IntResource;
+import org.teavm.platform.metadata.Resource;
 
-class BuildTimeStaticFieldResource implements StaticFieldResource, ResourceWriter {
-    private FieldReference field;
+public class IntResourceBuilder extends ObjectResourceBuilder {
+    public int value;
 
-    public BuildTimeStaticFieldResource(FieldReference field) {
-        this.field = field;
-    }
-
-    public FieldReference getField() {
-        return field;
+    @Override
+    public Object getValue(int index) {
+        if (index != 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        return value;
     }
 
     @Override
-    public void write(SourceWriter writer) {
-        writer.appendField(field);
+    public String[] fieldNames() {
+        return new String[] { "value" };
+    }
+
+    @Override
+    public Class<? extends Resource> getOutputClass() {
+        return IntResource.class;
     }
 }

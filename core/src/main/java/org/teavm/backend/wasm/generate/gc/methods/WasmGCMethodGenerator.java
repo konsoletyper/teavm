@@ -73,11 +73,13 @@ import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.RegisterAllocator;
 import org.teavm.model.util.UsageExtractor;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private WasmModule module;
     private ClassHierarchy hierarchy;
     private ListableClassHolderSource classes;
+    private ResourceProvider resources;
     private ClassLoader classLoader;
     private WasmGCVirtualTableProvider virtualTables;
     private ClassInitializerInfo classInitInfo;
@@ -108,6 +110,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             WasmModule module,
             ClassHierarchy hierarchy,
             ListableClassHolderSource classes,
+            ResourceProvider resources,
             ClassLoader classLoader,
             WasmGCVirtualTableProvider virtualTables,
             ClassInitializerInfo classInitInfo,
@@ -124,6 +127,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         this.module = module;
         this.hierarchy = hierarchy;
         this.classes = classes;
+        this.resources = resources;
         this.classLoader = classLoader;
         this.virtualTables = virtualTables;
         this.classInitInfo = classInitInfo;
@@ -470,6 +474,7 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                     typeMapper,
                     functionTypes,
                     classes,
+                    resources,
                     classLoader,
                     hierarchy,
                     this,

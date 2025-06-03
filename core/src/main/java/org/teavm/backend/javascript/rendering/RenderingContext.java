@@ -40,11 +40,13 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.ClassInitializerInfo;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public abstract class RenderingContext {
     private final DebugInformationEmitter debugEmitter;
     private ClassReaderSource initialClassSource;
     private ListableClassReaderSource classSource;
+    private ResourceProvider resourceProvider;
     private ClassLoader classLoader;
     private ServiceRepository services;
     private Properties properties;
@@ -62,6 +64,7 @@ public abstract class RenderingContext {
 
     public RenderingContext(DebugInformationEmitter debugEmitter,
             ClassReaderSource initialClassSource, ListableClassReaderSource classSource,
+            ResourceProvider resourceProvider,
             ClassLoader classLoader, ServiceRepository services, Properties properties,
             NamingStrategy naming, DependencyInfo dependencyInfo,
             Predicate<MethodReference> virtualPredicate,
@@ -71,6 +74,7 @@ public abstract class RenderingContext {
         this.debugEmitter = debugEmitter;
         this.initialClassSource = initialClassSource;
         this.classSource = classSource;
+        this.resourceProvider = resourceProvider;
         this.classLoader = classLoader;
         this.services = services;
         this.properties = properties;
@@ -88,6 +92,10 @@ public abstract class RenderingContext {
 
     public ListableClassReaderSource getClassSource() {
         return classSource;
+    }
+
+    public ResourceProvider getResourceProvider() {
+        return resourceProvider;
     }
 
     public ClassLoader getClassLoader() {

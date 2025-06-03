@@ -15,31 +15,30 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-import java.util.Map;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
-import org.teavm.platform.metadata.Resource;
-import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceMapBuilder;
 
 public class DecimalMetadataGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         CLDRReader reader = context.getService(CLDRReader.class);
-        ResourceMap<DecimalData> map = context.createResourceMap();
-        for (Map.Entry<String, CLDRLocale> entry : reader.getKnownLocales().entrySet()) {
+        var map = new ResourceMapBuilder<DecimalDataBuilder>();
+        for (var entry : reader.getKnownLocales().entrySet()) {
             CLDRDecimalData data = entry.getValue().getDecimalData();
-            DecimalData dataRes = context.createResource(DecimalData.class);
-            dataRes.setDecimalSeparator(data.getDecimalSeparator());
-            dataRes.setExponentSeparator(data.getExponentSeparator());
-            dataRes.setGroupingSeparator(data.getGroupingSeparator());
-            dataRes.setInfinity(data.getInfinity());
-            dataRes.setListSeparator(data.getListSeparator());
-            dataRes.setMinusSign(data.getMinusSign());
-            dataRes.setNaN(data.getNaN());
-            dataRes.setPercent(data.getPercent());
-            dataRes.setPerMille(data.getPerMille());
-            map.put(entry.getKey(), dataRes);
+            var dataRes = new DecimalDataBuilder();
+            dataRes.decimalSeparator = data.getDecimalSeparator();
+            dataRes.exponentSeparator = data.getExponentSeparator();
+            dataRes.groupingSeparator = data.getGroupingSeparator();
+            dataRes.infinity = data.getInfinity();
+            dataRes.listSeparator = data.getListSeparator();
+            dataRes.minusSign = data.getMinusSign();
+            dataRes.nan = data.getNaN();
+            dataRes.percent = data.getPercent();
+            dataRes.perMille = data.getPerMille();
+            map.values.put(entry.getKey(), dataRes);
         }
         return map;
     }

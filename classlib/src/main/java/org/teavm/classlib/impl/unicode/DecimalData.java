@@ -20,37 +20,19 @@ import org.teavm.platform.metadata.Resource;
 public interface DecimalData extends Resource {
     int getGroupingSeparator();
 
-    void setGroupingSeparator(int value);
-
     int getDecimalSeparator();
-
-    void setDecimalSeparator(int value);
 
     int getListSeparator();
 
-    void setListSeparator(int value);
-
     int getPerMille();
-
-    void setPerMille(int value);
 
     int getPercent();
 
-    void setPercent(int value);
-
     String getNaN();
-
-    void setNaN(String nan);
 
     String getInfinity();
 
-    void setInfinity(String infinity);
-
     int getMinusSign();
 
-    void setMinusSign(int value);
-
     String getExponentSeparator();
-
-    void setExponentSeparator(String value);
 }

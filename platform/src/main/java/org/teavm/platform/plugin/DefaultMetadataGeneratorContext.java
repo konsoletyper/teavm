@@ -15,37 +15,31 @@
  */
 package org.teavm.platform.plugin;
 
-import java.lang.reflect.Proxy;
 import java.util.Properties;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassReaderSource;
-import org.teavm.model.FieldReference;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
-import org.teavm.platform.metadata.Resource;
-import org.teavm.platform.metadata.ResourceArray;
-import org.teavm.platform.metadata.ResourceMap;
-import org.teavm.platform.metadata.StaticFieldResource;
 
 public class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     private ClassReaderSource classSource;
+    private ResourceProvider resourceProvider;
     private ClassLoader classLoader;
     private Properties properties;
-    private BuildTimeResourceProxyBuilder proxyBuilder;
     private ServiceRepository services;
 
-    public DefaultMetadataGeneratorContext(ClassReaderSource classSource, ClassLoader classLoader,
-            Properties properties, ServiceRepository services) {
+    public DefaultMetadataGeneratorContext(ClassReaderSource classSource, ResourceProvider resourceProvider,
+            ClassLoader classLoader, Properties properties, ServiceRepository services) {
         this.classSource = classSource;
+        this.resourceProvider = resourceProvider;
         this.classLoader = classLoader;
         this.properties = properties;
         this.services = services;
     }
 
-    private BuildTimeResourceProxyBuilder getProxyBuilder() {
-        if (proxyBuilder == null) {
-            proxyBuilder = new BuildTimeResourceProxyBuilder();
-        }
-        return proxyBuilder;
+    @Override
+    public ResourceProvider getResourceProvider() {
+        return resourceProvider;
     }
 
     @Override
@@ -61,33 +55,6 @@ public class DefaultMetadataGeneratorContext implements MetadataGeneratorContext
     @Override
     public Properties getProperties() {
         return new Properties(properties);
-    }
-
-    @Override
-    public <T extends Resource> T createResource(Class<T> resourceType) {
-        return resourceType.cast(Proxy.newProxyInstance(classLoader,
-                new Class<?>[] { resourceType, ResourceWriter.class, ResourceTypeDescriptorProvider.class },
-                getProxyBuilder().buildProxy(resourceType)));
-    }
-
-    @Override
-    public ResourceTypeDescriptor getTypeDescriptor(Class<? extends Resource> type) {
-        return getProxyBuilder().getProxyFactory(type).typeDescriptor;
-    }
-
-    @Override
-    public <T extends Resource> ResourceArray<T> createResourceArray() {
-        return new BuildTimeResourceArray<>();
-    }
-
-    @Override
-    public StaticFieldResource createFieldResource(FieldReference field) {
-        return new BuildTimeStaticFieldResource(field);
-    }
-
-    @Override
-    public <T extends Resource> ResourceMap<T> createResourceMap() {
-        return new BuildTimeResourceMap<>();
     }
 
     @Override

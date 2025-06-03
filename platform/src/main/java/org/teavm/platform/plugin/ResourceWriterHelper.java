@@ -15,34 +15,76 @@
  */
 package org.teavm.platform.plugin;
 
-import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.RenderingUtil;
+import org.teavm.platform.metadata.builders.ObjectResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceArrayBuilder;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceMapBuilder;
 
 final class ResourceWriterHelper {
     private ResourceWriterHelper() {
     }
 
-    public static void write(SourceWriter writer, Object resource) {
-        if (resource == null) {
-            writer.append("null");
-        } else {
-            if (resource instanceof ResourceWriter) {
-                ((ResourceWriter) resource).write(writer);
-            } else if (resource instanceof Number) {
-                writer.append(resource.toString());
-            } else if (resource instanceof Boolean) {
-                writer.append(resource == Boolean.TRUE ? "true" : "false");
-            } else if (resource instanceof String) {
-                RenderingUtil.writeString(writer, (String) resource);
-            } else {
-                throw new RuntimeException("Error compiling resources. Value of illegal type found: "
-                        + resource.getClass());
+    public static void write(SourceWriter writer, ResourceBuilder resource) {
+        if (resource instanceof ResourceArrayBuilder<?>) {
+            var data = (ResourceArrayBuilder<?>) resource;
+            writer.append('[').tokenBoundary();
+            for (int i = 0; i < data.values.size(); ++i) {
+                if (i > 0) {
+                    writer.append(',').ws();
+                }
+                write(writer, data.values.get(i));
             }
+            writer.append(']').tokenBoundary();
+        } else if (resource instanceof ResourceMapBuilder<?>) {
+            var data = (ResourceMapBuilder<?>) resource;
+            writer.append('{');
+            boolean first = true;
+            for (var entry : data.values.entrySet()) {
+                if (!first) {
+                    writer.append(",").ws();
+                }
+                first = false;
+                RenderingUtil.writeString(writer, entry.getKey());
+                writer.append(':').ws();
+                write(writer, entry.getValue());
+            }
+            writer.append('}').tokenBoundary();
+        } else if (resource instanceof ObjectResourceBuilder) {
+            var data = (ObjectResourceBuilder) resource;
+            writer.append('{');
+            var fieldNames = data.fieldNames();
+            for (int i = 0; i < fieldNames.length; ++i) {
+                if (i > 0) {
+                    writer.append(',').ws();
+                }
+                writeIdentifier(writer, fieldNames[i]);
+                writer.ws().append(':').ws();
+                writeValue(writer, data.getValue(i));
+            }
+            writer.append('}').tokenBoundary();
+        } else {
+            throw new RuntimeException("Error compiling resources. Value of illegal type found: "
+                    + resource.getClass());
         }
     }
 
-    public static void writeIdentifier(SourceWriter writer, String id) throws IOException {
+    public static void writeValue(SourceWriter writer, Object value) {
+        if (value instanceof ResourceBuilder) {
+            write(writer, (ResourceBuilder) value);
+        } else if (value instanceof Number) {
+            writer.append(value.toString());
+        } else if (value instanceof Boolean) {
+            writer.append(value == Boolean.TRUE ? "true" : "false");
+        } else if (value instanceof String) {
+            RenderingUtil.writeString(writer, (String) value);
+        } else if (value == null) {
+            writer.append("null");
+        }
+    }
+
+    public static void writeIdentifier(SourceWriter writer, String id) {
         if (id.isEmpty() || !isIdentifierStart(id.charAt(0))) {
             RenderingUtil.writeString(writer, id);
             return;

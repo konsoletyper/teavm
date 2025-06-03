@@ -24,6 +24,7 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public interface GeneratorContext extends ServiceRepository {
     String getParameterName(int index);
@@ -31,6 +32,8 @@ public interface GeneratorContext extends ServiceRepository {
     String importModule(String name);
 
     ClassReaderSource getInitialClassSource();
+
+    ResourceProvider getResourceProvider();
 
     ListableClassReaderSource getClassSource();
 

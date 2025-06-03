@@ -928,6 +928,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         @Override
+        public ResourceProvider getResourceProvider() {
+            return resourceProvider;
+        }
+
+        @Override
         public CacheStatus getCacheStatus() {
             return cacheStatus;
         }

@@ -21,6 +21,4 @@ import org.teavm.platform.metadata.StringResource;
 
 public interface TimeZoneLocalization extends Resource {
     ResourceMap<ResourceMap<StringResource>> getTimeZones();
-
-    void setTimeZones(ResourceMap<ResourceMap<StringResource>> timeZones);
 }

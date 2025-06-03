@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,10 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform.metadata;
+package org.teavm.platform.metadata.builders;
 
-public interface ShortResource extends Resource {
-    short getValue();
+import java.util.ArrayList;
+import java.util.List;
 
-    void setValue(short value);
+public class ResourceArrayBuilder<T extends ResourceBuilder> extends ResourceBuilder {
+    public final List<T> values = new ArrayList<>();
 }

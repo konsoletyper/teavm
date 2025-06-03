@@ -243,8 +243,10 @@ public class JCLPlugin implements TeaVMPlugin {
         reg.register(new MethodReference(DateTimeZoneProvider.class, "getResource", ResourceMap.class),
                 new TimeZoneGenerator());
 
-        reg.register(new MethodReference(CurrencyHelper.class, "getCurrencies", ResourceArray.class),
-                new CurrenciesGenerator());
+        if (!isBootstrap()) {
+            reg.register(new MethodReference(CurrencyHelper.class, "getCurrencies", ResourceArray.class),
+                    new CurrenciesGenerator());
+        }
         reg.register(new MethodReference(CurrencyHelper.class, "getCountryToCurrencyMap", ResourceMap.class),
                 new CountriesGenerator());
 

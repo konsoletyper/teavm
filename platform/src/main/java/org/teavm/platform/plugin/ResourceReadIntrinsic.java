@@ -15,7 +15,6 @@
  */
 package org.teavm.platform.plugin;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +45,9 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.interop.Address;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.platform.metadata.Resource;
@@ -60,12 +61,10 @@ public class ResourceReadIntrinsic implements WasmIntrinsic {
             "resourceMapKeys", Address.class, String[].class);
 
     private ClassReaderSource classSource;
-    private ClassLoader classLoader;
     private Map<String, StructureDescriptor> typeDescriptorCache = new HashMap<>();
 
-    public ResourceReadIntrinsic(ClassReaderSource classSource, ClassLoader classLoader) {
+    public ResourceReadIntrinsic(ClassReaderSource classSource) {
         this.classSource = classSource;
-        this.classLoader = classLoader;
     }
 
     @Override
@@ -81,7 +80,7 @@ public class ResourceReadIntrinsic implements WasmIntrinsic {
             return applyForResourceArray(manager, invocation);
         }
 
-        StructureDescriptor typeDescriptor = getTypeDescriptor(invocation.getMethod().getClassName());
+        var typeDescriptor = getTypeDescriptor(manager.getClassHierarchy(), invocation.getMethod().getClassName());
         PropertyDescriptor property = typeDescriptor.layout.get(invocation.getMethod());
 
         WasmExpression base = manager.generate(invocation.getArguments().get(0));
@@ -170,17 +169,11 @@ public class ResourceReadIntrinsic implements WasmIntrinsic {
         }
     }
 
-    private StructureDescriptor getTypeDescriptor(String className) {
+    private StructureDescriptor getTypeDescriptor(ClassHierarchy hierarchy, String className) {
         return typeDescriptorCache.computeIfAbsent(className, n -> {
-            Class<?> cls;
-            try {
-                cls = Class.forName(className, false, classLoader);
-            } catch (ClassNotFoundException e) {
-                throw new AssertionError("Class " + className + " should exist", e);
-            }
-
+            var cls = hierarchy.getClassSource().get(className);
             StructureDescriptor structureDescriptor = new StructureDescriptor();
-            structureDescriptor.typeDescriptor = new ResourceTypeDescriptor(cls);
+            structureDescriptor.typeDescriptor = new ResourceTypeDescriptor(hierarchy, cls);
             calculateLayout(structureDescriptor.typeDescriptor, structureDescriptor.layout);
             return structureDescriptor;
         });
@@ -194,8 +187,8 @@ public class ResourceReadIntrinsic implements WasmIntrinsic {
             propertyIndexes.put(propertyNames.get(i), i);
         }
 
-        Method[] methods = new Method[typeDescriptor.getPropertyTypes().size()];
-        for (Method method : typeDescriptor.getMethods().keySet()) {
+        var methods = new MethodReader[typeDescriptor.getPropertyTypes().size()];
+        for (var method : typeDescriptor.getMethods().keySet()) {
             ResourceMethodDescriptor methodDescriptor = typeDescriptor.getMethods().get(method);
             if (methodDescriptor.getType() == ResourceAccessorType.SETTER) {
                 continue;
@@ -206,16 +199,15 @@ public class ResourceReadIntrinsic implements WasmIntrinsic {
         }
 
         int currentOffset = 0;
-        for (Method method : methods) {
-            MethodReference methodRef = MethodReference.parse(method);
-            ValueType propertyType = methodRef.getReturnType();
+        for (var method : methods) {
+            ValueType propertyType = method.getResultType();
             int size = WasmClassGenerator.getTypeSize(propertyType);
             currentOffset = BinaryWriter.align(currentOffset, size);
 
             PropertyDescriptor propertyDescriptor = new PropertyDescriptor();
             propertyDescriptor.offset = currentOffset;
             propertyDescriptor.type = propertyType;
-            layout.put(methodRef, propertyDescriptor);
+            layout.put(method.getReference(), propertyDescriptor);
 
             currentOffset += size;
         }

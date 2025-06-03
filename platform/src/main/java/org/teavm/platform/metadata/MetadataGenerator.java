@@ -16,6 +16,7 @@
 package org.teavm.platform.metadata;
 
 import org.teavm.model.MethodReference;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
 
 public interface MetadataGenerator {
     /**
@@ -25,5 +26,5 @@ public interface MetadataGenerator {
      * @param method method which will be used to access the generated resources at run time.
      * @return resource to be attached to method at run time.
      */
-    Resource generateMetadata(MetadataGeneratorContext context, MethodReference method);
+    ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method);
 }

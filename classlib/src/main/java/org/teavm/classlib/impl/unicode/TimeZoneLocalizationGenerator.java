@@ -15,31 +15,30 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-import java.util.Map;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.*;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceMapBuilder;
+import org.teavm.platform.metadata.builders.StringResourceBuilder;
 
 public class TimeZoneLocalizationGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         CLDRReader cldr = context.getService(CLDRReader.class);
-        ResourceMap<TimeZoneLocalization> localizations = context.createResourceMap();
-        for (Map.Entry<String, CLDRLocale> locale : cldr.getKnownLocales().entrySet()) {
-            TimeZoneLocalization localization = context.createResource(TimeZoneLocalization.class);
-            ResourceMap<ResourceMap<StringResource>> map = context.createResourceMap();
-            localization.setTimeZones(map);
-            localizations.put(locale.getKey(), localization);
+        var localizations = new ResourceMapBuilder<TimeZoneLocalizationBuilder>();
+        for (var locale : cldr.getKnownLocales().entrySet()) {
+            var localization = new TimeZoneLocalizationBuilder();
+            localizations.values.put(locale.getKey(), localization);
 
             for (CLDRTimeZone tz : locale.getValue().getTimeZones()) {
-                ResourceMap<StringResource> area;
-                if (!map.has(tz.getArea())) {
-                    area = context.createResourceMap();
-                    map.put(tz.getArea(), area);
+                var area = localization.timeZones.values.get(tz.getArea());
+                if (area == null) {
+                    area = new ResourceMapBuilder<>();
+                    localization.timeZones.values.put(tz.getArea(), area);
                 }
-                area = map.get(tz.getArea());
-                StringResource name = context.createResource(StringResource.class);
-                name.setValue(tz.getName());
-                area.put(tz.getLocation(), name);
+                var name = new StringResourceBuilder();
+                name.value = tz.getName();
+                area.values.put(tz.getLocation(), name);
             }
         }
         return localizations;

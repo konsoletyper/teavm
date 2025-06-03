@@ -15,19 +15,22 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-import java.util.Map;
 import org.teavm.model.MethodReference;
-import org.teavm.platform.metadata.*;
+import org.teavm.platform.metadata.MetadataGenerator;
+import org.teavm.platform.metadata.MetadataGeneratorContext;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceMapBuilder;
+import org.teavm.platform.metadata.builders.StringResourceBuilder;
 
 public class LikelySubtagsMetadataGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         CLDRReader reader = context.getService(CLDRReader.class);
-        ResourceMap<StringResource> map = context.createResourceMap();
-        for (Map.Entry<String, String> entry : reader.getLikelySubtags().entrySet()) {
-            StringResource subtagRes = context.createResource(StringResource.class);
-            subtagRes.setValue(entry.getValue());
-            map.put(entry.getKey(), subtagRes);
+        var map = new ResourceMapBuilder<StringResourceBuilder>();
+        for (var entry : reader.getLikelySubtags().entrySet()) {
+            var subtagRes = new StringResourceBuilder();
+            subtagRes.value = entry.getValue();
+            map.values.put(entry.getKey(), subtagRes);
         }
         return map;
     }

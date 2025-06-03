@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,12 +13,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.unicode;
+package org.teavm.platform.metadata.builders;
 
 import org.teavm.platform.metadata.Resource;
+import org.teavm.platform.metadata.StringResource;
 
-public interface CurrencyLocalization extends Resource {
-    String getName();
+public class StringResourceBuilder extends ObjectResourceBuilder {
+    public String value;
 
-    String getSymbol();
+    @Override
+    public Object getValue(int index) {
+        if (index != 0) {
+            throw new IndexOutOfBoundsException();
+        }
+        return value;
+    }
+
+    @Override
+    public String[] fieldNames() {
+        return new String[] { "value" };
+    }
+
+    @Override
+    public Class<? extends Resource> getOutputClass() {
+        return StringResource.class;
+    }
 }

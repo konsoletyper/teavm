@@ -25,6 +25,7 @@ import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.analysis.ClassInitializerInfo;
@@ -41,6 +42,7 @@ public class GenerationContext {
     private FileNameProvider fileNames;
     private Diagnostics diagnostics;
     private ClassReaderSource classSource;
+    private ClassHierarchy hierarchy;
     private List<Intrinsic> intrinsics;
     private List<Generator> generators;
     private Map<MethodReference, Intrinsic> intrinsicCache = new HashMap<>();
@@ -54,10 +56,10 @@ public class GenerationContext {
 
     public GenerationContext(VirtualTableProvider virtualTableProvider, Characteristics characteristics,
             DependencyInfo dependencies, StringPool stringPool, NameProvider names, FileNameProvider fileNames,
-            Diagnostics diagnostics, ClassReaderSource classSource, List<Intrinsic> intrinsics,
-            List<Generator> generators, Predicate<MethodReference> asyncMethods, BuildTarget buildTarget,
-            ClassInitializerInfo classInitializerInfo, boolean incremental, boolean vmAssertions,
-            boolean heapDump, boolean obfuscated) {
+            Diagnostics diagnostics, ClassReaderSource classSource, ClassHierarchy hierarchy,
+            List<Intrinsic> intrinsics, List<Generator> generators, Predicate<MethodReference> asyncMethods,
+            BuildTarget buildTarget, ClassInitializerInfo classInitializerInfo, boolean incremental,
+            boolean vmAssertions, boolean heapDump, boolean obfuscated) {
         this.virtualTableProvider = virtualTableProvider;
         this.characteristics = characteristics;
         this.dependencies = dependencies;
@@ -66,6 +68,7 @@ public class GenerationContext {
         this.fileNames = fileNames;
         this.diagnostics = diagnostics;
         this.classSource = classSource;
+        this.hierarchy = hierarchy;
         this.intrinsics = new ArrayList<>(intrinsics);
         this.generators = new ArrayList<>(generators);
         this.asyncMethods = asyncMethods;
@@ -115,6 +118,10 @@ public class GenerationContext {
 
     public ClassReaderSource getClassSource() {
         return classSource;
+    }
+
+    public ClassHierarchy getHierarchy() {
+        return hierarchy;
     }
 
     public Intrinsic getIntrinsic(MethodReference method) {

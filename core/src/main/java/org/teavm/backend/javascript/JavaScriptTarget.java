@@ -371,7 +371,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         var methodContributorContext = new MethodContributorContextImpl(classes);
         RenderingContext renderingContext = new RenderingContext(debugEmitterToUse,
-                controller.getUnprocessedClassSource(), classes,
+                controller.getUnprocessedClassSource(), classes, controller.getResourceProvider(),
                 controller.getClassLoader(), controller.getServices(), controller.getProperties(), naming,
                 controller.getDependencyInfo(),
                 m -> isVirtual(methodContributorContext, m),

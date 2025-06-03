@@ -29,6 +29,7 @@ import org.teavm.interop.Import;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.JSBody;
 import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.StringResource;
 
 public final class DateTimeZoneProvider {
     private static Map<String, DateTimeZone> cache = new HashMap<>();
@@ -44,11 +45,11 @@ public final class DateTimeZoneProvider {
     }
 
     private static DateTimeZone createTimeZone(String id) {
-        TimeZoneResource res = getTimeZoneResource(id);
+        var res = getTimeZoneResource(id);
         if (res == null) {
             return null;
         }
-        String data = res.getData();
+        String data = res.getValue();
         CharFlow flow = new CharFlow(data.toCharArray());
         if (Base46.decodeUnsigned(flow) == StorableDateTimeZone.ALIAS) {
             String aliasId = data.substring(flow.pointer);
@@ -61,7 +62,7 @@ public final class DateTimeZoneProvider {
     public static String[] getIds() {
         List<String> ids = new ArrayList<>();
         for (String areaName : getResource().keys()) {
-            ResourceMap<TimeZoneResource> area = getResource().get(areaName);
+            var area = getResource().get(areaName);
             for (String id : area.keys()) {
                 if (!areaName.isEmpty()) {
                     id = areaName + "/" + id;
@@ -69,7 +70,7 @@ public final class DateTimeZoneProvider {
                 ids.add(id);
             }
         }
-        return ids.toArray(new String[ids.size()]);
+        return ids.toArray(new String[0]);
     }
 
     public static DateTimeZone detectTimezone() {
@@ -88,14 +89,9 @@ public final class DateTimeZoneProvider {
             zones.add(new Score(tz));
         }
 
-        List<Score> scoreTable = new ArrayList<>();
-        scoreTable.addAll(zones);
+        List<Score> scoreTable = new ArrayList<>(zones);
         Map<Long, List<Score>> zoneMap = new HashMap<>();
-        PriorityQueue<Long> queue = new PriorityQueue<>(zones.size(), new Comparator<Long>() {
-            @Override public int compare(Long o1, Long o2) {
-                return o2.compareTo(o1);
-            }
-        });
+        PriorityQueue<Long> queue = new PriorityQueue<>(zones.size(), Comparator.reverseOrder());
         Set<Long> timeInQueue = new HashSet<>();
         long last = time;
         queue.add(time);
@@ -163,7 +159,7 @@ public final class DateTimeZoneProvider {
         }
     }
 
-    private static TimeZoneResource getTimeZoneResource(String id) {
+    private static StringResource getTimeZoneResource(String id) {
         String areaName;
         String locationName;
         int sepIndex = id.indexOf('/');
@@ -177,7 +173,7 @@ public final class DateTimeZoneProvider {
         if (!getResource().has(areaName)) {
             return null;
         }
-        ResourceMap<TimeZoneResource> area = getResource().get(areaName);
+        var area = getResource().get(areaName);
         return area.has(locationName) ? area.get(locationName) : null;
     }
 
@@ -186,5 +182,5 @@ public final class DateTimeZoneProvider {
     @Unmanaged
     private static native int getNativeOffset(double instant);
 
-    private static native ResourceMap<ResourceMap<TimeZoneResource>> getResource();
+    private static native ResourceMap<ResourceMap<StringResource>> getResource();
 }

@@ -15,28 +15,27 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-import java.util.Map;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
-import org.teavm.platform.metadata.Resource;
-import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceMapBuilder;
 
 public class CurrencyLocalizationMetadataGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         CLDRReader reader = context.getService(CLDRReader.class);
-        ResourceMap<ResourceMap<CurrencyLocalization>> map = context.createResourceMap();
-        for (Map.Entry<String, CLDRLocale> localeEntry : reader.getKnownLocales().entrySet()) {
+        var map = new ResourceMapBuilder<ResourceMapBuilder<CurrencyLocalizationBuilder>>();
+        for (var localeEntry : reader.getKnownLocales().entrySet()) {
             CLDRLocale locale = localeEntry.getValue();
-            ResourceMap<CurrencyLocalization> currencies = context.createResourceMap();
-            map.put(localeEntry.getKey(), currencies);
-            for (Map.Entry<String, CLDRCurrency> currencyEntry : locale.getCurrencies().entrySet()) {
+            var currencies = new ResourceMapBuilder<CurrencyLocalizationBuilder>();
+            map.values.put(localeEntry.getKey(), currencies);
+            for (var currencyEntry : locale.getCurrencies().entrySet()) {
                 CLDRCurrency currency = currencyEntry.getValue();
-                CurrencyLocalization localization = context.createResource(CurrencyLocalization.class);
-                localization.setName(currency.getName());
-                localization.setSymbol(currency.getSymbol() != null ? currency.getSymbol() : "");
-                currencies.put(currencyEntry.getKey(), localization);
+                var localization = new CurrencyLocalizationBuilder();
+                localization.name = currency.getName();
+                localization.symbol = currency.getSymbol() != null ? currency.getSymbol() : "";
+                currencies.values.put(currencyEntry.getKey(), localization);
             }
         }
         return map;

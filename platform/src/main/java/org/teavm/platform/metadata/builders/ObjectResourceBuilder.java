@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,10 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform.metadata;
+package org.teavm.platform.metadata.builders;
 
-public interface DependentTestResource extends Resource {
-    String getBar();
+import org.teavm.platform.metadata.Resource;
 
-    void setBar(String bar);
+public abstract class ObjectResourceBuilder extends ResourceBuilder {
+    public abstract Object getValue(int index);
+
+    public abstract String[] fieldNames();
+
+    public abstract Class<? extends Resource> getOutputClass();
 }

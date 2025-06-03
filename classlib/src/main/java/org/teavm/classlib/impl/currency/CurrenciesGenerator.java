@@ -25,17 +25,17 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
-import org.teavm.platform.metadata.Resource;
-import org.teavm.platform.metadata.ResourceArray;
+import org.teavm.platform.metadata.builders.ResourceArrayBuilder;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 public class CurrenciesGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         Document doc;
-        try (InputStream input = context.getClassLoader().getResourceAsStream(
-                "org/teavm/classlib/impl/currency/iso4217.xml")) {
+        try (InputStream input = context.getResourceProvider().getResource(
+                "org/teavm/classlib/impl/currency/iso4217.xml").open()) {
             DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = builderFactory.newDocumentBuilder();
             doc = builder.parse(new BufferedInputStream(input));
@@ -43,51 +43,50 @@ public class CurrenciesGenerator implements MetadataGenerator {
             throw new RuntimeException("Error reading ISO 4217 medata from file");
         }
 
-        ResourceArray<CurrencyResource> currencies = context.createResourceArray();
+        var currencies = new ResourceArrayBuilder<CurrencyResourceBuilder>();
         Element root = doc.getDocumentElement();
         for (Element elem : childElements(root)) {
             if (elem.getTagName().equals("CcyTbl")) {
-                parseCurrencies(context, elem, currencies);
+                parseCurrencies(elem, currencies);
             }
         }
         return currencies;
     }
 
-    private void parseCurrencies(MetadataGeneratorContext context, Element tableElem,
-            ResourceArray<CurrencyResource> currencies) {
+    private void parseCurrencies(Element tableElem, ResourceArrayBuilder<CurrencyResourceBuilder> currencies) {
         for (Element currencyElem : childElements(tableElem)) {
             if (!currencyElem.getTagName().equals("CcyNtry")) {
                 continue;
             }
-            CurrencyResource currency = context.createResource(CurrencyResource.class);
+            var currency = new CurrencyResourceBuilder();
             for (Element propertyElem : childElements(currencyElem)) {
                 switch (propertyElem.getTagName()) {
                     case "Ccy":
-                        currency.setCode(getText(propertyElem));
+                        currency.code = getText(propertyElem);
                         break;
                     case "CcyNbr":
-                        currency.setNumericCode(Integer.parseInt(getText(propertyElem)));
+                        currency.numericCode = Integer.parseInt(getText(propertyElem));
                         break;
                     case "CcyMnrUnts":
                         String value = getText(propertyElem);
                         if (value.equals("N.A.")) {
-                            currency.setFractionDigits(-1);
+                            currency.fractionDigits = -1;
                         } else {
-                            currency.setFractionDigits(Integer.parseInt(value));
+                            currency.fractionDigits = Integer.parseInt(value);
                         }
                         break;
                 }
             }
-            currencies.add(currency);
+            currencies.values.add(currency);
         }
     }
 
     private Iterable<Element> childElements(final Element parent) {
-        return new Iterable<Element>() {
+        return new Iterable<>() {
             NodeList nodes = parent.getChildNodes();
             @Override
             public Iterator<Element> iterator() {
-                return new Iterator<Element>() {
+                return new Iterator<>() {
                     int index = -1;
                     {
                         following();

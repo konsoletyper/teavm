@@ -15,98 +15,72 @@
  */
 package org.teavm.platform.plugin;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import org.teavm.platform.metadata.Resource;
-import org.teavm.platform.metadata.ResourceArray;
-import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ClassReader;
+import org.teavm.model.MethodReader;
+import org.teavm.model.ValueType;
 
 public class ResourceTypeDescriptor {
-    private static Set<Class<?>> allowedPropertyTypes = new HashSet<>(Arrays.asList(
-            boolean.class, byte.class, short.class, int.class, float.class, double.class,
-            String.class, ResourceArray.class, ResourceMap.class));
-    private Class<?> rootIface;
-    private Map<String, Class<?>> getters = new HashMap<>();
-    private Map<String, Class<?>> setters = new HashMap<>();
-    private Map<Method, ResourceMethodDescriptor> methods = new LinkedHashMap<>();
-    private Map<String, Class<?>> propertyTypes = new LinkedHashMap<>();
+    private static Set<ValueType> allowedPropertyTypes = Set.of(
+            ValueType.BOOLEAN,
+            ValueType.BYTE,
+            ValueType.SHORT,
+            ValueType.INTEGER,
+            ValueType.FLOAT,
+            ValueType.DOUBLE,
+            ValueType.object("java.lang.String"),
+            ValueType.object("org.teavm.platform.metadata.ResourceArray"),
+            ValueType.object("org.teavm.platform.metadata.ResourceMap")
+    );
+    private ClassHierarchy hierarchy;
+    private ClassReader rootIface;
+    private Map<String, ValueType> getters = new HashMap<>();
+    private Map<MethodReader, ResourceMethodDescriptor> methods = new LinkedHashMap<>();
+    private Map<String, ValueType> propertyTypes = new LinkedHashMap<>();
 
-    public ResourceTypeDescriptor(Class<?> iface) {
+    public ResourceTypeDescriptor(ClassHierarchy hierarchy, ClassReader iface) {
+        this.hierarchy = hierarchy;
         this.rootIface = iface;
-        if (!rootIface.isInterface()) {
-            throw new IllegalArgumentException("Error creating a new resource of type " + rootIface.getName()
-                    + " that is not an interface");
-        }
         scanIface(rootIface);
     }
 
-    public Class<?> getRootInterface() {
+    public ClassReader getRootInterface() {
         return rootIface;
     }
 
-    public Map<Method, ResourceMethodDescriptor> getMethods() {
+    public Map<MethodReader, ResourceMethodDescriptor> getMethods() {
         return methods;
     }
 
-    public Map<String, Class<?>> getPropertyTypes() {
+    public Map<String, ValueType> getPropertyTypes() {
         return propertyTypes;
     }
 
-    private void scanIface(Class<?> iface) {
-        if (!Resource.class.isAssignableFrom(iface)) {
-            throw new IllegalArgumentException("Error creating a new resource of type " + iface.getName() + "."
-                    + " This type does not implement the " + Resource.class.getName() + " interface");
-        }
-
+    private void scanIface(ClassReader iface) {
         // Scan methods
         getters.clear();
-        setters.clear();
-        for (Method method : iface.getDeclaredMethods()) {
+        for (var method : iface.getMethods()) {
             if (method.getName().startsWith("get")) {
                 scanGetter(method);
             } else if (method.getName().startsWith("is")) {
                 scanBooleanGetter(method);
-            } else if (method.getName().startsWith("set")) {
-                scanSetter(method);
             } else {
                 throwInvalidMethod(method);
             }
         }
 
-        // Verify consistency of getters and setters
-        for (Map.Entry<String, Class<?>> property : getters.entrySet()) {
-            String propertyName = property.getKey();
-            Class<?> getterType = property.getValue();
-            Class<?> setterType = setters.get(propertyName);
-            if (setterType == null) {
-                throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName
-                        + " has a getter, but does not have a setter");
-            }
-            if (!setterType.equals(getterType)) {
-                throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName
-                        + " has a getter and a setter of different types");
-            }
-        }
-        for (String propertyName : setters.keySet()) {
-            if (!getters.containsKey(propertyName)) {
-                throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName
-                        + " has a setter, but does not have a getter");
-            }
-        }
-
         // Verify types of properties
-        for (Map.Entry<String, Class<?>> property : getters.entrySet()) {
+        for (var property : getters.entrySet()) {
             String propertyName = property.getKey();
-            Class<?> propertyType = property.getValue();
+            var propertyType = property.getValue();
             if (!allowedPropertyTypes.contains(propertyType)) {
-                if (!propertyType.isInterface() || !Resource.class.isAssignableFrom(propertyType)) {
+                if (!isAllowedCustomType(propertyType)) {
                     throw new IllegalArgumentException("Property " + rootIface.getName() + "." + propertyName
-                            + " has an illegal type " + propertyType.getName());
+                            + " has an illegal type " + propertyType);
                 }
             }
             if (!propertyTypes.containsKey(propertyName)) {
@@ -115,53 +89,52 @@ public class ResourceTypeDescriptor {
         }
 
         // Scan superinterfaces
-        for (Class<?> superIface : iface.getInterfaces()) {
-            scanIface(superIface);
+        for (var superIfaceName : iface.getInterfaces()) {
+            var superIface = hierarchy.getClassSource().get(superIfaceName);
+            if (superIface != null) {
+                scanIface(superIface);
+            }
         }
     }
 
-    private void throwInvalidMethod(Method method) {
-        throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "."
+    private boolean isAllowedCustomType(ValueType type) {
+        if (!(type instanceof ValueType.Object)) {
+            return false;
+        }
+        var className = ((ValueType.Object) type).getClassName();
+        var cls = hierarchy.getClassSource().get(className);
+        return cls != null;
+    }
+
+    private void throwInvalidMethod(MethodReader method) {
+        throw new IllegalArgumentException("Method " + method.getOwnerName() + "."
                 + method.getName() + " is not likely to be either getter or setter");
     }
 
-    private void scanGetter(Method method) {
+    private void scanGetter(MethodReader method) {
         String propertyName = extractPropertyName(method.getName().substring(3));
-        if (propertyName == null || method.getReturnType().equals(void.class)
+        if (propertyName == null || method.getResultType() == ValueType.VOID
                 || method.getParameterTypes().length > 0) {
             throwInvalidMethod(method);
         }
-        if (getters.put(propertyName, method.getReturnType()) != null) {
-            throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "."
+        if (getters.put(propertyName, method.getResultType()) != null) {
+            throw new IllegalArgumentException("Method " + method.getOwnerName() + "."
                     + method.getName() + " is a duplicate getter for property " + propertyName);
         }
         methods.put(method, new ResourceMethodDescriptor(propertyName, ResourceAccessorType.GETTER));
     }
 
-    private void scanBooleanGetter(Method method) {
+    private void scanBooleanGetter(MethodReader method) {
         String propertyName = extractPropertyName(method.getName().substring(2));
-        if (propertyName == null || !method.getReturnType().equals(boolean.class)
+        if (propertyName == null || method.getResultType() != ValueType.BOOLEAN
                 || method.getParameterTypes().length > 0) {
             throwInvalidMethod(method);
         }
-        if (getters.put(propertyName, method.getReturnType()) != null) {
-            throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "."
+        if (getters.put(propertyName, method.getResultType()) != null) {
+            throw new IllegalArgumentException("Method " + method.getOwnerName() + "."
                     + method.getName() + " is a duplicate getter for property " + propertyName);
         }
         methods.put(method, new ResourceMethodDescriptor(propertyName, ResourceAccessorType.GETTER));
-    }
-
-    private void scanSetter(Method method) {
-        String propertyName = extractPropertyName(method.getName().substring(3));
-        if (propertyName == null || !method.getReturnType().equals(void.class)
-                || method.getParameterTypes().length != 1) {
-            throwInvalidMethod(method);
-        }
-        if (setters.put(propertyName, method.getParameterTypes()[0]) != null) {
-            throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "."
-                    + method.getName() + " is a duplicate setter for property " + propertyName);
-        }
-        methods.put(method, new ResourceMethodDescriptor(propertyName, ResourceAccessorType.SETTER));
     }
 
     private String extractPropertyName(String propertyName) {

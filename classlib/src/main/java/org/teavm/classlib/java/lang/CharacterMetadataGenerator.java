@@ -20,12 +20,12 @@ import org.teavm.classlib.impl.unicode.UnicodeSupport;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
-import org.teavm.platform.metadata.Resource;
-import org.teavm.platform.metadata.StringResource;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.StringResourceBuilder;
 
 public class CharacterMetadataGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         switch (method.getName()) {
             case "obtainDigitMapping":
                 return generateObtainDigitMapping(context);
@@ -42,33 +42,33 @@ public class CharacterMetadataGenerator implements MetadataGenerator {
         }
     }
 
-    private Resource generateObtainDigitMapping(MetadataGeneratorContext context) {
-        StringResource res = context.createResource(StringResource.class);
-        res.setValue(UnicodeHelper.encodeIntPairsDiff(UnicodeSupport.getDigitValues()));
+    private ResourceBuilder generateObtainDigitMapping(MetadataGeneratorContext context) {
+        var res = new StringResourceBuilder();
+        res.value = UnicodeHelper.encodeIntPairsDiff(UnicodeSupport.getDigitValues());
         return res;
     }
 
-    private Resource generateObtainClasses(MetadataGeneratorContext context) {
-        StringResource res = context.createResource(StringResource.class);
-        res.setValue(UnicodeHelper.compressRle(UnicodeSupport.getClasses()));
+    private ResourceBuilder generateObtainClasses(MetadataGeneratorContext context) {
+        var res = new StringResourceBuilder();
+        res.value = UnicodeHelper.compressRle(UnicodeSupport.getClasses());
         return res;
     }
 
-    private Resource generateAcquireTitleCaseMapping(MetadataGeneratorContext context) {
-        StringResource res = context.createResource(StringResource.class);
-        res.setValue(UnicodeHelper.encodeCaseMapping(UnicodeSupport.getTitleCaseMapping()));
+    private ResourceBuilder generateAcquireTitleCaseMapping(MetadataGeneratorContext context) {
+        var res = new StringResourceBuilder();
+        res.value = UnicodeHelper.encodeCaseMapping(UnicodeSupport.getTitleCaseMapping());
         return res;
     }
 
-    private Resource generateAcquireUpperCaseMapping(MetadataGeneratorContext context) {
-        StringResource res = context.createResource(StringResource.class);
-        res.setValue(UnicodeHelper.encodeCaseMapping(UnicodeSupport.getUpperCaseMapping()));
+    private ResourceBuilder generateAcquireUpperCaseMapping(MetadataGeneratorContext context) {
+        var res = new StringResourceBuilder();
+        res.value = UnicodeHelper.encodeCaseMapping(UnicodeSupport.getUpperCaseMapping());
         return res;
     }
 
-    private Resource generateAcquireLowerCaseMapping(MetadataGeneratorContext context) {
-        StringResource res = context.createResource(StringResource.class);
-        res.setValue(UnicodeHelper.encodeCaseMapping(UnicodeSupport.getLowerCaseMapping()));
+    private ResourceBuilder generateAcquireLowerCaseMapping(MetadataGeneratorContext context) {
+        var res = new StringResourceBuilder();
+        res.value = UnicodeHelper.encodeCaseMapping(UnicodeSupport.getLowerCaseMapping());
         return res;
     }
 }

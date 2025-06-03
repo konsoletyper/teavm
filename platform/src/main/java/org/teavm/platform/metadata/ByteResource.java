@@ -17,6 +17,4 @@ package org.teavm.platform.metadata;
 
 public interface ByteResource extends Resource {
     byte getValue();
-
-    void setValue(byte value);
 }

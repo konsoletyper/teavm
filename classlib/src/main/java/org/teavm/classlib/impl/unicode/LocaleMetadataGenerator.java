@@ -17,21 +17,25 @@ package org.teavm.classlib.impl.unicode;
 
 import java.util.Map;
 import org.teavm.model.MethodReference;
-import org.teavm.platform.metadata.*;
+import org.teavm.platform.metadata.MetadataGenerator;
+import org.teavm.platform.metadata.MetadataGeneratorContext;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceMapBuilder;
+import org.teavm.platform.metadata.builders.StringResourceBuilder;
 
 public abstract class LocaleMetadataGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
-        ResourceMap<ResourceMap<StringResource>> result = context.createResourceMap();
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+        var result = new ResourceMapBuilder<ResourceMapBuilder<StringResourceBuilder>>();
         CLDRReader reader = context.getService(CLDRReader.class);
-        for (Map.Entry<String, CLDRLocale> entry : reader.getKnownLocales().entrySet()) {
+        for (var entry : reader.getKnownLocales().entrySet()) {
             CLDRLocale locale = entry.getValue();
-            ResourceMap<StringResource> names = context.createResourceMap();
-            result.put(entry.getKey(), names);
-            for (Map.Entry<String, String> nameEntry : getNameMap(locale).entrySet()) {
-                StringResource name = context.createResource(StringResource.class);
-                name.setValue(nameEntry.getValue());
-                names.put(nameEntry.getKey(), name);
+            var names = new ResourceMapBuilder<StringResourceBuilder>();
+            result.values.put(entry.getKey(), names);
+            for (var nameEntry : getNameMap(locale).entrySet()) {
+                var name = new StringResourceBuilder();
+                name.value = nameEntry.getValue();
+                names.values.put(nameEntry.getKey(), name);
             }
         }
         return result;

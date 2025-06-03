@@ -20,17 +20,9 @@ import org.teavm.platform.metadata.Resource;
 public interface DateFormatCollection extends Resource {
     String getShortFormat();
 
-    void setShortFormat(String format);
-
     String getMediumFormat();
-
-    void setMediumFormat(String format);
 
     String getLongFormat();
 
-    void setLongFormat(String format);
-
     String getFullFormat();
-
-    void setFullFormat(String format);
 }

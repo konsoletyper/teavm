@@ -15,19 +15,18 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-import java.util.Map;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
-import org.teavm.platform.metadata.Resource;
-import org.teavm.platform.metadata.ResourceMap;
-import org.teavm.platform.metadata.StringResource;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceMapBuilder;
+import org.teavm.platform.metadata.builders.StringResourceBuilder;
 
 public class NumberFormatMetadataGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         CLDRReader reader = context.getService(CLDRReader.class);
-        ResourceMap<StringResource> result = context.createResourceMap();
+        var result = new ResourceMapBuilder<StringResourceBuilder>();
         FormatAccessor accessor;
         switch (method.getName()) {
             case "getNumberFormatMap":
@@ -42,10 +41,10 @@ public class NumberFormatMetadataGenerator implements MetadataGenerator {
             default:
                 throw new AssertionError();
         }
-        for (Map.Entry<String, CLDRLocale> entry : reader.getKnownLocales().entrySet()) {
-            StringResource format = context.createResource(StringResource.class);
-            format.setValue(accessor.getFormat(entry.getValue()));
-            result.put(entry.getKey(), format);
+        for (var entry : reader.getKnownLocales().entrySet()) {
+            var format = new StringResourceBuilder();
+            format.value = accessor.getFormat(entry.getValue());
+            result.values.put(entry.getKey(), format);
         }
         return result;
     }

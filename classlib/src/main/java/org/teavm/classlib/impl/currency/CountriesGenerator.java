@@ -26,26 +26,25 @@ import java.util.List;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
-import org.teavm.platform.metadata.Resource;
-import org.teavm.platform.metadata.ResourceMap;
-import org.teavm.platform.metadata.StringResource;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceMapBuilder;
+import org.teavm.platform.metadata.builders.StringResourceBuilder;
 
 public class CountriesGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
-        try (InputStream input = new BufferedInputStream(context.getClassLoader().getResourceAsStream(
-                "org/teavm/classlib/impl/currency/iso3166.csv"))) {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
-                return readIso3166(context, reader);
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+        try (InputStream input = new BufferedInputStream(context.getResourceProvider().getResource(
+                "org/teavm/classlib/impl/currency/iso3166.csv").open())) {
+            try (var reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
+                return readIso3166(reader);
             }
         } catch (IOException e) {
             throw new RuntimeException("Error reading ISO 3166 table", e);
         }
     }
 
-    private ResourceMap<StringResource> readIso3166(MetadataGeneratorContext context, BufferedReader reader)
-            throws IOException {
-        ResourceMap<StringResource> result = context.createResourceMap();
+    private ResourceMapBuilder<StringResourceBuilder> readIso3166(BufferedReader reader) throws IOException {
+        var result = new ResourceMapBuilder<StringResourceBuilder>();
         int index = 0;
         while (true) {
             String line = reader.readLine();
@@ -56,9 +55,9 @@ public class CountriesGenerator implements MetadataGenerator {
                 continue;
             }
             String[] cells = readCsvRow(index - 1, line);
-            StringResource currency = context.createResource(StringResource.class);
-            currency.setValue(cells[7]);
-            result.put(cells[10], currency);
+            var currency = new StringResourceBuilder();
+            currency.value = cells[7];
+            result.values.put(cells[10], currency);
         }
         return result;
     }

@@ -22,6 +22,7 @@ import org.teavm.backend.c.generate.StringPool;
 import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
@@ -36,6 +37,8 @@ public interface GeneratorContext {
     Diagnostics diagnotics();
 
     ClassReaderSource classSource();
+
+    ClassHierarchy hierarchy();
 
     DependencyInfo dependencies();
 

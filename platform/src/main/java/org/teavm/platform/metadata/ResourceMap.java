@@ -20,7 +20,5 @@ public interface ResourceMap<T extends Resource> extends Resource {
 
     T get(String key);
 
-    void put(String key, T value);
-
     String[] keys();
 }

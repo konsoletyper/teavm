@@ -18,16 +18,20 @@ package org.teavm.classlib.impl;
 import java.util.Map;
 import org.teavm.classlib.impl.unicode.CLDRReader;
 import org.teavm.model.MethodReference;
-import org.teavm.platform.metadata.*;
+import org.teavm.platform.metadata.MetadataGenerator;
+import org.teavm.platform.metadata.MetadataGeneratorContext;
+import org.teavm.platform.metadata.builders.IntResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceMapBuilder;
 
 public abstract class WeekMetadataGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
-        ResourceMap<IntResource> map = context.createResourceMap();
-        for (Map.Entry<String, Integer> entry : getWeekData(context.getService(CLDRReader.class)).entrySet()) {
-            IntResource valueRes = context.createResource(IntResource.class);
-            valueRes.setValue(entry.getValue());
-            map.put(entry.getKey(), valueRes);
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+        var map = new ResourceMapBuilder<IntResourceBuilder>();
+        for (var entry : getWeekData(context.getService(CLDRReader.class)).entrySet()) {
+            var valueRes = new IntResourceBuilder();
+            valueRes.value = entry.getValue();
+            map.values.put(entry.getKey(), valueRes);
         }
         return map;
     }

@@ -31,6 +31,7 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Import;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReader;
@@ -42,9 +43,12 @@ import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.model.lowlevel.Characteristics;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public class WasmGenerationContext implements BaseWasmGenerationContext {
     private ClassReaderSource classSource;
+    private ClassHierarchy classHierarchy;
+    private ResourceProvider resources;
     public final WasmModule module;
     private final WasmFunctionTypes functionTypes;
     private final WasmFunctionRepository functions;
@@ -62,11 +66,14 @@ public class WasmGenerationContext implements BaseWasmGenerationContext {
     private WasmTag exceptionTag;
     private final List<CallSiteDescriptor> callSites = new ArrayList<>();
 
-    public WasmGenerationContext(ClassReaderSource classSource, WasmModule module, WasmFunctionTypes functionTypes,
+    public WasmGenerationContext(ClassReaderSource classSource, ClassHierarchy classHierarchy,
+            ResourceProvider resources, WasmModule module, WasmFunctionTypes functionTypes,
             WasmFunctionRepository functions, Diagnostics diagnostics, VirtualTableProvider vtableProvider,
             TagRegistry tagRegistry, WasmStringPool stringPool, NameProvider names, Characteristics characteristics,
             WasmTag exceptionTag) {
         this.classSource = classSource;
+        this.classHierarchy = classHierarchy;
+        this.resources = resources;
         this.module = module;
         this.functionTypes = functionTypes;
         this.functions = functions;
@@ -92,6 +99,15 @@ public class WasmGenerationContext implements BaseWasmGenerationContext {
     @Override
     public ClassReaderSource classes() {
         return classSource;
+    }
+
+    @Override
+    public ResourceProvider resources() {
+        return resources;
+    }
+
+    public ClassHierarchy getClassHierarchy() {
+        return classHierarchy;
     }
 
     public List<CallSiteDescriptor> callSites() {

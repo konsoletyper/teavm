@@ -77,6 +77,7 @@ import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
@@ -86,6 +87,7 @@ import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.model.lowlevel.CallSiteLocation;
 import org.teavm.model.lowlevel.ExceptionHandlerDescriptor;
 import org.teavm.model.lowlevel.ExceptionHandlingUtil;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.ExceptionHandling;
 import org.teavm.runtime.RuntimeArray;
@@ -1034,6 +1036,16 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
         public WasmExpression generate(Expr expr) {
             accept(expr);
             return result;
+        }
+
+        @Override
+        public ResourceProvider getResourceProvider() {
+            return context.resources();
+        }
+
+        @Override
+        public ClassHierarchy getClassHierarchy() {
+            return context.getClassHierarchy();
         }
 
         @Override

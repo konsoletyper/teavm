@@ -15,13 +15,14 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-import java.util.Map;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.*;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceMapBuilder;
 
 public class DateFormatMetadataGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         switch (method.getName()) {
             case "getDateFormatMap":
                 return getDateFormatMap(context, locale -> locale.getDateFormats());
@@ -34,17 +35,17 @@ public class DateFormatMetadataGenerator implements MetadataGenerator {
         }
     }
 
-    private Resource getDateFormatMap(MetadataGeneratorContext context, FormatExtractor extractor) {
+    private ResourceBuilder getDateFormatMap(MetadataGeneratorContext context, FormatExtractor extractor) {
         CLDRReader reader = context.getService(CLDRReader.class);
-        ResourceMap<DateFormatCollection> result = context.createResourceMap();
-        for (Map.Entry<String, CLDRLocale> entry : reader.getKnownLocales().entrySet()) {
-            DateFormatCollection formatRes = context.createResource(DateFormatCollection.class);
-            CLDRDateFormats formats = extractor.extract(entry.getValue());
-            formatRes.setShortFormat(formats.getShortFormat());
-            formatRes.setMediumFormat(formats.getMediumFormat());
-            formatRes.setLongFormat(formats.getLongFormat());
-            formatRes.setFullFormat(formats.getFullFormat());
-            result.put(entry.getKey(), formatRes);
+        var result = new ResourceMapBuilder<DateFormatCollectionBuilder>();
+        for (var entry : reader.getKnownLocales().entrySet()) {
+            var formatRes = new DateFormatCollectionBuilder();
+            var formats = extractor.extract(entry.getValue());
+            formatRes.shortFormat = formats.getShortFormat();
+            formatRes.mediumFormat = formats.getMediumFormat();
+            formatRes.longFormat = formats.getLongFormat();
+            formatRes.fullFormat = formats.getFullFormat();
+            result.values.put(entry.getKey(), formatRes);
         }
         return result;
     }

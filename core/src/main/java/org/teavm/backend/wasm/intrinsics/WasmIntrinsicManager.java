@@ -27,13 +27,19 @@ import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public interface WasmIntrinsicManager {
     WasmExpression generate(Expr expr);
+
+    ResourceProvider getResourceProvider();
+
+    ClassHierarchy getClassHierarchy();
 
     BinaryWriter getBinaryWriter();
 

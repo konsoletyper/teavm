@@ -94,11 +94,11 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
             if (cHost != null) {
                 installC(host, cHost);
             }
+        }
 
-            var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
-            if (wasmGCHost != null) {
-                installWasmGC(host, wasmGCHost);
-            }
+        var wasmGCHost = host.getExtension(TeaVMWasmGCHost.class);
+        if (wasmGCHost != null) {
+            installWasmGC(host, wasmGCHost);
         }
 
         var isJs = host.getExtension(TeaVMJavaScriptHost.class) != null;
@@ -126,7 +126,7 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
             wasmHost.add(ctx -> new MetadataIntrinsic(ctx.getClassSource(), ctx.getClassLoader(),
                     ctx.getServices(), ctx.getProperties(), constructor, method, generator));
         });
-        wasmHost.add(ctx -> new ResourceReadIntrinsic(ctx.getClassSource(), ctx.getClassLoader()));
+        wasmHost.add(ctx -> new ResourceReadIntrinsic(ctx.getClassSource()));
 
         wasmHost.add(ctx -> new WasmIntrinsic() {
             @Override
@@ -147,7 +147,7 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
         host.add(new ResourceLowLevelTransformer());
         MetadataCIntrinsic metadataCIntrinsic = new MetadataCIntrinsic();
         cHost.addGenerator(ctx -> {
-            metadataCIntrinsic.init(ctx.getClassSource(), ctx.getClassLoader(),
+            metadataCIntrinsic.init(ctx.getClassSource(), ctx.getResourceProvider(), ctx.getClassLoader(),
                     ctx.getServices(), ctx.getProperties());
             return metadataCIntrinsic;
         });

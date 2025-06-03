@@ -17,6 +17,4 @@ package org.teavm.platform.metadata;
 
 public interface StringResource extends Resource {
     String getValue();
-
-    void setValue(String value);
 }

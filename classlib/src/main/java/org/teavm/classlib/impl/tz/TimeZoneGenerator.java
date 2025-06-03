@@ -24,10 +24,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.teavm.interop.PlatformMarker;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
-import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.builders.ResourceMapBuilder;
+import org.teavm.platform.metadata.builders.StringResourceBuilder;
 
 public class TimeZoneGenerator implements MetadataGenerator {
     public static final String TIMEZONE_DB_VERSION = "2025b";
@@ -68,15 +70,19 @@ public class TimeZoneGenerator implements MetadataGenerator {
     }
 
     @Override
-    public ResourceMap<ResourceMap<TimeZoneResource>> generateMetadata(
+    public ResourceMapBuilder<ResourceMapBuilder<StringResourceBuilder>> generateMetadata(
             MetadataGeneratorContext context, MethodReference method) {
-        ResourceMap<ResourceMap<TimeZoneResource>> result = context.createResourceMap();
+        var result = new ResourceMapBuilder<ResourceMapBuilder<StringResourceBuilder>>();
         Collection<StorableDateTimeZone> zones;
-        try (InputStream input = context.getClassLoader().getResourceAsStream("org/teavm/classlib/impl/tz/cache")) {
+        try (InputStream input = context.getResourceProvider().getResource("org/teavm/classlib/impl/tz/cache")
+                .open()) {
             if (input != null) {
                 TimeZoneCache cache = new TimeZoneCache();
                 zones = cache.read(new BufferedInputStream(input)).values();
             } else {
+                if (isBootstrap()) {
+                    throw new IllegalStateException("timezone info not found");
+                }
                 ZoneInfoCompiler compiler = new ZoneInfoCompiler();
                 compile(compiler, context.getClassLoader());
                 zones = compiler.compile().values();
@@ -96,19 +102,24 @@ public class TimeZoneGenerator implements MetadataGenerator {
                 areaName = id.substring(0, sepIndex);
                 locationName = id.substring(sepIndex + 1);
             }
-            ResourceMap<TimeZoneResource> area = result.get(areaName);
+            ResourceMapBuilder<StringResourceBuilder> area = result.values.get(areaName);
             if (area == null) {
-                area = context.createResourceMap();
-                result.put(areaName, area);
+                area = new ResourceMapBuilder<>();
+                result.values.put(areaName, area);
             }
 
-            TimeZoneResource tzRes = context.createResource(TimeZoneResource.class);
+            var tzRes = new StringResourceBuilder();
             StringBuilder data = new StringBuilder();
             tz.write(data);
-            tzRes.setData(data.toString());
-            area.put(locationName, tzRes);
+            tzRes.value = data.toString();
+            area.values.put(locationName, tzRes);
         }
 
         return result;
+    }
+
+    @PlatformMarker
+    private static boolean isBootstrap() {
+        return false;
     }
 }

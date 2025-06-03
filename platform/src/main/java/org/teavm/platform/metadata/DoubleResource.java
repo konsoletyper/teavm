@@ -17,6 +17,4 @@ package org.teavm.platform.metadata;
 
 public interface DoubleResource extends Resource {
     double getValue();
-
-    void setValue(double value);
 }

@@ -18,14 +18,14 @@ package org.teavm.classlib.impl.unicode;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
-import org.teavm.platform.metadata.Resource;
-import org.teavm.platform.metadata.StringResource;
+import org.teavm.platform.metadata.builders.ResourceBuilder;
+import org.teavm.platform.metadata.builders.StringResourceBuilder;
 
 public class DefaultLocaleMetadataGenerator implements MetadataGenerator {
     @Override
-    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
-        StringResource result = context.createResource(StringResource.class);
-        result.setValue(context.getProperties().getProperty("java.util.Locale.default", "en_GB"));
+    public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+        var result = new StringResourceBuilder();
+        result.value = context.getProperties().getProperty("java.util.Locale.default", "en_GB");
         return result;
     }
 }

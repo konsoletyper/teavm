@@ -25,6 +25,7 @@ dependencies {
     compileOnly(project(":core"))
     compileOnly(libs.commons.io)
     compileOnly(libs.asm)
+    compileOnly(libs.hppc)
 
     implementation(project(":jso:apis"))
 }

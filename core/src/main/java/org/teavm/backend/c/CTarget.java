@@ -398,8 +398,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         boolean gcStats = Boolean.parseBoolean(System.getProperty("teavm.c.gcStats", "false"));
         GenerationContext context = new GenerationContext(vtableProvider, characteristics,
                 controller.getDependencyInfo(), stringPool, nameProvider, fileNames,
-                controller.getDiagnostics(), classes, intrinsics, generators, asyncMethods::contains, buildTarget,
-                controller.getClassInitializerInfo(), incremental,
+                controller.getDiagnostics(), classes, hierarchy, intrinsics, generators, asyncMethods::contains,
+                buildTarget, controller.getClassInitializerInfo(), incremental,
                 vmAssertions, vmAssertions || heapDump, obfuscated);
 
         BufferedCodeWriter specialWriter = new BufferedCodeWriter(false);
@@ -428,9 +428,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         if (!context.isIncremental()) {
             classGenerator.setCallSites(callSites);
         }
-        IntrinsicFactoryContextImpl intrinsicFactoryContext = new IntrinsicFactoryContextImpl(
-                controller.getUnprocessedClassSource(), controller.getClassLoader(), controller.getServices(),
-                controller.getProperties());
+        var intrinsicFactoryContext = new IntrinsicFactoryContextImpl(
+                controller.getUnprocessedClassSource(), controller.getResourceProvider(), controller.getClassLoader(),
+                controller.getServices(), controller.getProperties());
         for (IntrinsicFactory intrinsicFactory : intrinsicFactories) {
             context.addIntrinsic(intrinsicFactory.createIntrinsic(intrinsicFactoryContext));
         }

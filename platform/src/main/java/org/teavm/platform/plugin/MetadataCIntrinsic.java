@@ -25,12 +25,18 @@ import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.generators.GeneratorContext;
 import org.teavm.common.HashUtils;
 import org.teavm.common.ServiceRepository;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
+import org.teavm.parsing.resource.ResourceProvider;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.builders.ObjectResourceBuilder;
+import org.teavm.platform.metadata.builders.ResourceArrayBuilder;
+import org.teavm.platform.metadata.builders.ResourceMapBuilder;
 
 class MetadataCIntrinsic implements Generator {
     private Set<String> writtenStructures = new HashSet<>();
@@ -38,9 +44,10 @@ class MetadataCIntrinsic implements Generator {
     private DefaultMetadataGeneratorContext metadataContext;
     private Map<MethodReference, MethodGenerator> generatorMap = new HashMap<>();
 
-    void init(ClassReaderSource classSource, ClassLoader classLoader,
+    void init(ClassReaderSource classSource, ResourceProvider resourceProvider, ClassLoader classLoader,
             ServiceRepository services, Properties properties) {
-        metadataContext = new DefaultMetadataGeneratorContext(classSource, classLoader, properties, services);
+        metadataContext = new DefaultMetadataGeneratorContext(classSource, resourceProvider,
+                classLoader, properties, services);
     }
 
     public void addGenerator(MethodReference constructor, MethodReference method, MetadataGenerator generator) {
@@ -86,39 +93,38 @@ class MetadataCIntrinsic implements Generator {
         } else if (value instanceof Byte || value instanceof Short || value instanceof Float
                 || value instanceof Double) {
             context.writerBefore().print(value.toString());
-        } else if (value instanceof ResourceTypeDescriptorProvider && value instanceof Resource) {
-            writeResource(context, (ResourceTypeDescriptorProvider) value);
-        } else if (value instanceof ResourceMap) {
-            writeResourceMap(context, (ResourceMap<?>) value);
-        } else if (value instanceof ResourceArray) {
-            writeResourceArray(context, (ResourceArray<?>) value);
+        } else if (value instanceof ObjectResourceBuilder) {
+            writeResource(context, (ObjectResourceBuilder) value);
+        } else if (value instanceof ResourceMapBuilder) {
+            writeResourceMap(context, (ResourceMapBuilder<?>) value);
+        } else if (value instanceof ResourceArrayBuilder) {
+            writeResourceArray(context, (ResourceArrayBuilder<?>) value);
         } else {
             throw new IllegalArgumentException("Don't know how to write resource: " + value);
         }
     }
 
-    private void writeResource(GeneratorContext context, ResourceTypeDescriptorProvider resourceType) {
-        writeResourceStructure(context, resourceType.getDescriptor());
+    private void writeResource(GeneratorContext context, ObjectResourceBuilder value) {
+        writeResourceStructure(context, value.getOutputClass().getName());
+        var resourceType = value.getOutputClass().getName();
 
-        String structureName = context.names().forClass(resourceType.getDescriptor().getRootInterface().getName());
-        Object[] propertyValues = resourceType.getValues();
+        String structureName = context.names().forClass(resourceType);
         context.writerBefore().print("&(" + structureName + ") {").indent();
         boolean first = true;
-        for (String propertyName : resourceType.getDescriptor().getPropertyTypes().keySet()) {
+        var names = value.fieldNames();
+        for (var i = 0; i < names.length; ++i) {
             if (!first) {
                 context.writerBefore().print(",");
             }
             first = false;
-            context.writerBefore().println().print(".").print(propertyName).print(" = ");
-            int index = resourceType.getPropertyIndex(propertyName);
-            Object propertyValue = propertyValues[index];
+            context.writerBefore().println().print(".").print(names[i]).print(" = ");
+            Object propertyValue = value.getValue(i);
             writeValue(context, propertyValue);
         }
         context.writerBefore().println().outdent().print("}");
     }
 
-    private void writeResourceStructure(GeneratorContext context, ResourceTypeDescriptor structure) {
-        String className = structure.getRootInterface().getName();
+    private void writeResourceStructure(GeneratorContext context, String className) {
         String fileName = "resources/" + context.escapeFileName(className) + ".h";
         context.includes().includePath(fileName);
 
@@ -126,12 +132,12 @@ class MetadataCIntrinsic implements Generator {
             return;
         }
 
-        for (Class<?> propertyType : structure.getPropertyTypes().values()) {
-            if (Resource.class.isAssignableFrom(propertyType) && !ResourceMap.class.isAssignableFrom(propertyType)
-                    && !ResourceArray.class.isAssignableFrom(propertyType)) {
-                ResourceTypeDescriptor propertyStructure = metadataContext.getTypeDescriptor(
-                        propertyType.asSubclass(Resource.class));
-                writeResourceStructure(context, propertyStructure);
+        var cls = context.classSource().get(className);
+        var hierarchy = context.hierarchy();
+        var descriptor = new ResourceTypeDescriptor(context.hierarchy(), cls);
+        for (var propertyType : descriptor.getPropertyTypes().values()) {
+            if (isResourceStructureType(hierarchy, propertyType)) {
+                writeResourceStructure(context, ((ValueType.Object) propertyType).getClassName());
             }
         }
 
@@ -141,58 +147,49 @@ class MetadataCIntrinsic implements Generator {
         file.writer().println("typedef struct " + structureName + " {").indent();
         file.includes().includePath("runtime.h");
 
-        for (String propertyName : structure.getPropertyTypes().keySet()) {
-            Class<?> propertyType = structure.getPropertyTypes().get(propertyName);
-            file.writer().println(typeToString(propertyType) + " " + propertyName + ";");
+        for (var entry : descriptor.getPropertyTypes().entrySet()) {
+            var propertyName = entry.getKey();
+            var propertyType = entry.getValue();
+            file.writer().printType(propertyType).print(" " + propertyName + ";").println();
         }
 
         file.writer().outdent().println("} " + structureName + ";");
     }
 
-    private String typeToString(Class<?> cls) {
-        if (cls == boolean.class || cls == byte.class) {
-            return "int8_t";
-        } else if (cls == short.class || cls == char.class) {
-            return "int16_t";
-        } else if (cls == int.class) {
-            return "int32_t";
-        } else if (cls == float.class) {
-            return "float";
-        } else if (cls == long.class) {
-            return "int64_t";
-        } else if (cls == double.class) {
-            return "double";
-        } else if (Resource.class.isAssignableFrom(cls)) {
-            return "void*";
-        } else if (cls == String.class) {
-            return "TeaVM_Object**";
-        } else {
-            throw new IllegalArgumentException("Don't know how to write resource type " + cls);
+    private boolean isResourceStructureType(ClassHierarchy hierarchy, ValueType type) {
+        if (!(type instanceof ValueType.Object)) {
+            return false;
         }
+        var className = ((ValueType.Object) type).getClassName();
+        if (className.equals(ResourceArray.class.getName()) || className.equals(ResourceMap.class.getName())) {
+            return false;
+        }
+        return hierarchy.isSuperType(Resource.class.getName(), className, false);
     }
 
-    private void writeResourceArray(GeneratorContext context, ResourceArray<?> resourceArray) {
-        context.writerBefore().println("&(struct { int32_t size; void* data[" + resourceArray.size() + "]; }) {")
+    private void writeResourceArray(GeneratorContext context, ResourceArrayBuilder<?> resourceArray) {
+        context.writerBefore().println("&(struct { int32_t size; void* data[" + resourceArray.values.size()
+                        + "]; }) {")
                 .indent();
-        context.writerBefore().println(".size = " + resourceArray.size() + ",");
+        context.writerBefore().println(".size = " + resourceArray.values.size() + ",");
         context.writerBefore().print(".data = {").indent();
 
         boolean first = true;
-        for (int i = 0; i < resourceArray.size(); ++i) {
+        for (int i = 0; i < resourceArray.values.size(); ++i) {
             if (!first) {
                 context.writerBefore().print(",");
             }
             context.writerBefore().println();
             first = false;
-            writeValue(context, resourceArray.get(i));
+            writeValue(context, resourceArray.values.get(i));
         }
 
         context.writerBefore().println().outdent().println("}");
         context.writerBefore().outdent().print("}");
     }
 
-    private void writeResourceMap(GeneratorContext context, ResourceMap<?> resourceMap) {
-        String[] bestTable = HashUtils.createHashTable(resourceMap.keys());
+    private void writeResourceMap(GeneratorContext context, ResourceMapBuilder<?> resourceMap) {
+        String[] bestTable = HashUtils.createHashTable(resourceMap.values.keySet().toArray(new String[0]));
         context.includes().includePath("resource.h");
         context.writerBefore().println("&(struct { int32_t size; TeaVM_ResourceMapEntry entries["
                 + bestTable.length + "]; }) {").indent();
@@ -211,7 +208,7 @@ class MetadataCIntrinsic implements Generator {
             } else {
                 context.writerBefore().print("{ TEAVM_GET_STRING_ADDRESS("
                         + context.stringPool().getStringIndex(key) + "), ");
-                writeValue(context, resourceMap.get(key));
+                writeValue(context, resourceMap.values.get(key));
                 context.writerBefore().print("}");
             }
         }
@@ -245,7 +242,7 @@ class MetadataCIntrinsic implements Generator {
             if (generator == null) {
                 context.writerBefore().print("NULL");
             } else {
-                Resource resource = generator.generateMetadata(metadataContext, targetMethod);
+                var resource = generator.generateMetadata(metadataContext, targetMethod);
                 writeValue(context, resource);
             }
             context.writerBefore().println(";");
