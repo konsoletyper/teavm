@@ -178,6 +178,8 @@ public class JCLPlugin implements TeaVMPlugin {
         host.add(new NumericClassTransformer());
         host.add(new SystemClassTransformer());
 
+        host.add(new PlatformMarkerSupport(host.getPlatformTags()));
+
         if (!isBootstrap()) {
             List<ReflectionSupplier> reflectionSuppliers = new ArrayList<>();
             for (ReflectionSupplier supplier : ServiceLoader.load(ReflectionSupplier.class, host.getClassLoader())) {
@@ -187,8 +189,6 @@ public class JCLPlugin implements TeaVMPlugin {
             host.addVirtualMethods(reflection::isVirtual);
             host.registerService(ReflectionDependencyListener.class, reflection);
             host.add(reflection);
-
-            host.add(new PlatformMarkerSupport(host.getPlatformTags()));
 
             TeaVMCHost cHost = host.getExtension(TeaVMCHost.class);
             if (cHost != null) {

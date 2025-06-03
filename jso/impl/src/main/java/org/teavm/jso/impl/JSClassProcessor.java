@@ -15,6 +15,10 @@
  */
 package org.teavm.jso.impl;
 
+import static org.teavm.jso.impl.JSMethods.JS_CLASS;
+import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
+import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
+import static org.teavm.jso.impl.JSMethods.OBJECT;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -40,7 +44,6 @@ import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSFunctor;
-import org.teavm.jso.JSObject;
 import org.teavm.jso.JSPrimitiveType;
 import org.teavm.jso.JSTopLevel;
 import org.teavm.model.AnnotationContainerReader;
@@ -233,7 +236,7 @@ class JSClassProcessor {
         for (int i = 0; i < signature.length; ++i) {
             staticSignature[i + 1] = signature[i];
         }
-        staticSignature[0] = ValueType.object(JSObject.class.getName());
+        staticSignature[0] = JS_OBJECT;
         return staticSignature;
     }
 
@@ -372,7 +375,7 @@ class JSClassProcessor {
                             changed = true;
                             var wrap = new InvokeInstruction();
                             wrap.setType(InvocationType.SPECIAL);
-                            wrap.setMethod(new MethodReference(JSWrapper.class, "wrap", JSObject.class, Object.class));
+                            wrap.setMethod(new MethodReference(JS_WRAPPER_CLASS, "wrap", JS_OBJECT, OBJECT));
                             wrap.setArguments(incoming.getValue());
                             wrap.setReceiver(program.createVariable());
                             incoming.getSource().getLastInstruction().insertPrevious(wrap);
@@ -450,7 +453,7 @@ class JSClassProcessor {
             if (wasmGC) {
                 var invoke = new InvokeInstruction();
                 invoke.setType(InvocationType.SPECIAL);
-                invoke.setMethod(new MethodReference(JS.class, "jsArrayItem", Object.class, int.class, Object.class));
+                invoke.setMethod(new MethodReference(JS_CLASS, "jsArrayItem", OBJECT, ValueType.INTEGER, OBJECT));
                 invoke.setReceiver(insn.getReceiver());
                 invoke.setArguments(insn.getArray(), insn.getIndex());
                 invoke.setLocation(insn.getLocation());
@@ -517,7 +520,7 @@ class JSClassProcessor {
             call.setLocation(instruction.getLocation());
             var conditionVar = program.createVariable();
             if (first == JSType.NULL || second == JSType.NULL) {
-                call.setMethod(new MethodReference(JS.class, "isNull", JSObject.class, boolean.class));
+                call.setMethod(new MethodReference(JS_CLASS, "isNull", JS_OBJECT, ValueType.BOOLEAN));
                 call.setArguments(first == JSType.NULL
                         ? instruction.getSecondOperand()
                         : instruction.getFirstOperand());
@@ -532,8 +535,7 @@ class JSClassProcessor {
                 if (second != JSType.JS) {
                     secondOperand = convertToJs(secondOperand, instruction);
                 }
-                call.setMethod(new MethodReference(JS.class, "sameRef", JSObject.class, JSObject.class,
-                        boolean.class));
+                call.setMethod(new MethodReference(JS_CLASS, "sameRef", JS_OBJECT, JS_OBJECT, ValueType.BOOLEAN));
                 call.setArguments(firstOperand, secondOperand);
                 call.setReceiver(conditionVar);
                 instruction.insertPrevious(call);
@@ -572,7 +574,7 @@ class JSClassProcessor {
             var call = new InvokeInstruction();
             call.setType(InvocationType.SPECIAL);
             call.setLocation(instruction.getLocation());
-            call.setMethod(new MethodReference(JS.class, "isNull", JSObject.class, boolean.class));
+            call.setMethod(new MethodReference(JS_CLASS, "isNull", JS_OBJECT, ValueType.BOOLEAN));
             call.setArguments(instruction.getOperand());
             call.setReceiver(program.createVariable());
             instruction.insertPrevious(call);
@@ -584,7 +586,7 @@ class JSClassProcessor {
     private Variable convertToJs(Variable value, Instruction instruction) {
         var call = new InvokeInstruction();
         call.setType(InvocationType.SPECIAL);
-        call.setMethod(new MethodReference(JS.class, "directJavaToJs", Object.class, JSObject.class));
+        call.setMethod(new MethodReference(JS_CLASS, "directJavaToJs", OBJECT, JS_OBJECT));
         call.setArguments(value);
         call.setReceiver(program.createVariable());
         call.setLocation(instruction.getLocation());
@@ -612,7 +614,7 @@ class JSClassProcessor {
             return originalType;
         }
 
-        type = ValueType.object(degree > 0 ? Object.class.getName() : JSWrapper.class.getName());
+        type = degree > 0 ? OBJECT : ValueType.object(JS_WRAPPER_CLASS);
         while (degree-- > 0) {
             type = ValueType.arrayOf(type);
         }
@@ -1296,11 +1298,11 @@ class JSClassProcessor {
         // generate parameter types for proxy method
         ValueType[] proxyParamTypes = new ValueType[paramCount + 1];
         for (int i = 0; i < paramCount; ++i) {
-            proxyParamTypes[i] = ValueType.parse(JSObject.class);
+            proxyParamTypes[i] = JS_OBJECT;
         }
         proxyParamTypes[paramCount] = methodToProcess.getResultType() == ValueType.VOID
                 ? ValueType.VOID
-                : ValueType.parse(JSObject.class);
+                : JS_OBJECT;
 
         ClassReader ownerClass = classSource.get(methodToProcess.getOwnerName());
         int methodIndex = indexOfMethod(ownerClass, methodToProcess);

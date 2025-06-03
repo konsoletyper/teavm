@@ -25,7 +25,6 @@ import org.mozilla.javascript.ast.NodeVisitor;
 import org.mozilla.javascript.ast.PropertyGet;
 import org.mozilla.javascript.ast.StringLiteral;
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.jso.JSObject;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
@@ -120,10 +119,9 @@ class JavaInvocationProcessor implements NodeVisitor {
         }
         ValueType[] signature = new ValueType[paramCount + 1];
         for (int i = 0; i < paramCount; ++i) {
-            signature[i] = ValueType.object(JSObject.class.getName());
+            signature[i] = JSMethods.JS_OBJECT;
         }
-        signature[paramCount] = method.getResultType() == ValueType.VOID ? ValueType.VOID
-                : ValueType.object(JSObject.class.getName());
+        signature[paramCount] = method.getResultType() == ValueType.VOID ? ValueType.VOID : JSMethods.JS_OBJECT;
         return new MethodReference(location.getMethod().getClassName(),
                 method.getName() + "$jsocb$_" + idGenerator++, signature);
     }

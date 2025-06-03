@@ -15,16 +15,19 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
+import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
+import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
+import static org.teavm.jso.impl.JSMethods.OBJECT;
+import static org.teavm.jso.impl.JSMethods.WASM_GC_JS_RUNTIME_CLASS;
 import static org.teavm.jso.impl.wasmgc.WasmGCJSConstants.JS_TO_STRING;
 import static org.teavm.jso.impl.wasmgc.WasmGCJSConstants.STRING_TO_JS;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.jso.JSObject;
 import org.teavm.jso.impl.JS;
 import org.teavm.jso.impl.JSBodyDelegate;
-import org.teavm.jso.impl.JSWrapper;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 class WasmGCJSDependencies extends AbstractDependencyListener {
     @Override
@@ -51,9 +54,9 @@ class WasmGCJSDependencies extends AbstractDependencyListener {
                     method.getThrown().propagate(agent.getType(WasmGCExceptionWrapper.class.getName()));
                     break;
             }
-        } else if (methodReader.getOwnerName().equals(JSWrapper.class.getName())) {
+        } else if (methodReader.getOwnerName().equals(JS_WRAPPER_CLASS)) {
             if (methodReader.getName().equals("wrap")) {
-                agent.linkMethod(new MethodReference(JSWrapper.class, "createWrapper", JSObject.class, Object.class))
+                agent.linkMethod(new MethodReference(JS_WRAPPER_CLASS, "createWrapper", JS_OBJECT, OBJECT))
                         .use();
             }
         } else if (methodReader.getAnnotations().get(JSBodyDelegate.class.getName()) != null) {
@@ -75,9 +78,9 @@ class WasmGCJSDependencies extends AbstractDependencyListener {
         jsToString.getResult().propagate(agent.getType("java.lang.String"));
         jsToString.use();
 
-        agent.linkMethod(new MethodReference(WasmGCJSRuntime.class, "wrapException", JSObject.class, Throwable.class))
-                .use();
-        agent.linkMethod(new MethodReference(WasmGCJSRuntime.class, "extractException", Throwable.class,
-                JSObject.class)).use();
+        agent.linkMethod(new MethodReference(WASM_GC_JS_RUNTIME_CLASS, "wrapException", JS_OBJECT,
+                ValueType.object("java.lang.Throwable"))).use();
+        agent.linkMethod(new MethodReference(WASM_GC_JS_RUNTIME_CLASS, "extractException",
+                ValueType.object("java.lang.Throwable"), JS_OBJECT)).use();
     }
 }

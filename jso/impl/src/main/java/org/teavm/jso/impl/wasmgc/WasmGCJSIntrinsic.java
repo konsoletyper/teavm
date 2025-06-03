@@ -15,6 +15,9 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
+import static org.teavm.jso.impl.JSMethods.JS_CLASS;
+import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
+import static org.teavm.jso.impl.JSMethods.STRING;
 import static org.teavm.jso.impl.wasmgc.WasmGCJSConstants.JS_TO_STRING;
 import static org.teavm.jso.impl.wasmgc.WasmGCJSConstants.STRING_TO_JS;
 import org.teavm.ast.ConstantExpr;
@@ -33,8 +36,6 @@ import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmIsNull;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
-import org.teavm.jso.JSObject;
-import org.teavm.jso.impl.JS;
 import org.teavm.jso.impl.JSMethods;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
@@ -159,8 +160,8 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
         if (globalFunction == null) {
             globalFunction = new WasmFunction(context.functionTypes().of(WasmType.Reference.EXTERN,
                     WasmType.Reference.EXTERN));
-            globalFunction.setName(context.names().suggestForMethod(new MethodReference(JS.class,
-                    "global", String.class, JSObject.class)));
+            globalFunction.setName(context.names().suggestForMethod(new MethodReference(JS_CLASS,
+                    "global", STRING, JS_OBJECT)));
             globalFunction.setImportName("global");
             globalFunction.setImportModule("teavmJso");
             context.module().functions.add(globalFunction);

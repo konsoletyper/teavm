@@ -15,6 +15,8 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
+import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
+import static org.teavm.jso.impl.JSMethods.WASM_GC_JS_RUNTIME_CLASS;
 import static org.teavm.jso.impl.wasmgc.WasmGCJSConstants.STRING_TO_JS;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,7 +42,6 @@ import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.jso.JSClass;
-import org.teavm.jso.JSObject;
 import org.teavm.jso.impl.AliasCollector;
 import org.teavm.jso.impl.JSBodyAstEmitter;
 import org.teavm.jso.impl.JSBodyBloatedEmitter;
@@ -184,12 +185,12 @@ class WasmGCJsoCommonGenerator {
             return;
         }
         rethrowExported = true;
-        var fn = context.functions().forStaticMethod(new MethodReference(WasmGCJSRuntime.class, "wrapException",
-                JSObject.class, Throwable.class));
+        var fn = context.functions().forStaticMethod(new MethodReference(WASM_GC_JS_RUNTIME_CLASS, "wrapException",
+                JS_OBJECT, ValueType.object("java.lang.Throwable")));
         fn.setExportName("teavm.js.wrapException");
 
-        fn = context.functions().forStaticMethod(new MethodReference(WasmGCJSRuntime.class, "extractException",
-                Throwable.class, JSObject.class));
+        fn = context.functions().forStaticMethod(new MethodReference(WASM_GC_JS_RUNTIME_CLASS, "extractException",
+                ValueType.object("java.lang.Throwable"), JS_OBJECT));
         fn.setExportName("teavm.js.extractException");
 
         createThrowExceptionFunction(context);

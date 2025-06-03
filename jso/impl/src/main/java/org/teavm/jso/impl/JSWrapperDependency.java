@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.impl;
 
+import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyNode;
@@ -38,10 +39,10 @@ public class JSWrapperDependency extends AbstractDependencyListener {
 
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
-        if (method.getMethod().getOwnerName().equals(JSWrapper.class.getName())) {
+        if (method.getMethod().getOwnerName().equals(JS_WRAPPER_CLASS)) {
             switch (method.getMethod().getName()) {
                 case "jsToWrapper":
-                    method.getResult().propagate(agent.getType(JSWrapper.class.getName()));
+                    method.getResult().propagate(agent.getType(JS_WRAPPER_CLASS));
                     break;
                 case "dependencyJavaToJs":
                 case "marshallJavaToJs":
@@ -52,7 +53,7 @@ public class JSWrapperDependency extends AbstractDependencyListener {
                     externalClassesNode.connect(method.getResult());
                     break;
                 case "wrap":
-                    method.getResult().propagate(agent.getType(JSWrapper.class.getName()));
+                    method.getResult().propagate(agent.getType(JS_WRAPPER_CLASS));
                     externalClassesNode.connect(method.getResult());
                     break;
             }

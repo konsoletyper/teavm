@@ -15,6 +15,10 @@
  */
 package org.teavm.jso.impl;
 
+import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
+import static org.teavm.jso.impl.JSMethods.JS_OBJECT_CLASS;
+import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
+import static org.teavm.jso.impl.JSMethods.OBJECT;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.diagnostics.Diagnostics;
@@ -22,7 +26,6 @@ import org.teavm.jso.JSBufferType;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSModule;
-import org.teavm.jso.JSObject;
 import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHierarchy;
@@ -44,10 +47,10 @@ import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 
 class JSValueMarshaller {
-    private static final MethodReference JS_TO_JAVA = new MethodReference(JSWrapper.class, "jsToJava",
-            JSObject.class, Object.class);
-    private static final MethodReference LIGHTWEIGHT_JS_TO_JAVA = new MethodReference(JSWrapper.class,
-            "dependencyJsToJava", JSObject.class, Object.class);
+    private static final MethodReference JS_TO_JAVA = new MethodReference(JS_WRAPPER_CLASS, "jsToJava",
+            JS_OBJECT, OBJECT);
+    private static final MethodReference LIGHTWEIGHT_JS_TO_JAVA = new MethodReference(JS_WRAPPER_CLASS,
+            "dependencyJsToJava", JS_OBJECT, OBJECT);
     private static final ValueType stringType = ValueType.parse(String.class);
     private ReferenceCache referenceCache = new ReferenceCache();
     private Diagnostics diagnostics;
@@ -139,8 +142,7 @@ class JSValueMarshaller {
                     var unwrapNative = new InvokeInstruction();
                     unwrapNative.setLocation(location);
                     unwrapNative.setType(InvocationType.SPECIAL);
-                    unwrapNative.setMethod(new MethodReference(JSWrapper.class,
-                            "javaToJs", Object.class, JSObject.class));
+                    unwrapNative.setMethod(new MethodReference(JS_WRAPPER_CLASS, "javaToJs", OBJECT, JS_OBJECT));
                     unwrapNative.setArguments(var);
                     unwrapNative.setReceiver(program.createVariable());
                     replacement.add(unwrapNative);
@@ -157,8 +159,8 @@ class JSValueMarshaller {
                     var unwrapNative = new InvokeInstruction();
                     unwrapNative.setLocation(location);
                     unwrapNative.setType(InvocationType.SPECIAL);
-                    unwrapNative.setMethod(new MethodReference(JSWrapper.class,
-                            "dependencyJavaToJs", Object.class, JSObject.class));
+                    unwrapNative.setMethod(new MethodReference(JS_WRAPPER_CLASS,
+                            "dependencyJavaToJs", OBJECT, JS_OBJECT));
                     unwrapNative.setArguments(var);
                     unwrapNative.setReceiver(program.createVariable());
                     replacement.add(unwrapNative);
@@ -335,7 +337,7 @@ class JSValueMarshaller {
             if (type.isObject(String.class)) {
                 return type;
             } else if (typeHelper.isJavaScriptClass(((ValueType.Object) type).getClassName())) {
-                return JSMethods.JS_OBJECT;
+                return JS_OBJECT;
             } else {
                 return JSMethods.OBJECT;
             }
@@ -345,7 +347,7 @@ class JSValueMarshaller {
     }
 
     private ValueType getWrapperType() {
-        return JSMethods.JS_OBJECT;
+        return JS_OBJECT;
     }
 
     private MethodReference getWrapperFunction(ValueType type) {
@@ -421,28 +423,28 @@ class JSValueMarshaller {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
-                    return unwrap(var, "unwrapBoolean", JSMethods.JS_OBJECT, ValueType.BOOLEAN,
+                    return unwrap(var, "unwrapBoolean", JS_OBJECT, ValueType.BOOLEAN,
                             location.getSourceLocation());
                 case BYTE:
-                    return unwrap(var, "unwrapByte", JSMethods.JS_OBJECT, ValueType.BYTE,
+                    return unwrap(var, "unwrapByte", JS_OBJECT, ValueType.BYTE,
                             location.getSourceLocation());
                 case SHORT:
-                    return unwrap(var, "unwrapShort", JSMethods.JS_OBJECT, ValueType.SHORT,
+                    return unwrap(var, "unwrapShort", JS_OBJECT, ValueType.SHORT,
                             location.getSourceLocation());
                 case INTEGER:
-                    return unwrap(var, "unwrapInt", JSMethods.JS_OBJECT, ValueType.INTEGER,
+                    return unwrap(var, "unwrapInt", JS_OBJECT, ValueType.INTEGER,
                             location.getSourceLocation());
                 case CHARACTER:
-                    return unwrap(var, "unwrapCharacter", JSMethods.JS_OBJECT, ValueType.CHARACTER,
+                    return unwrap(var, "unwrapCharacter", JS_OBJECT, ValueType.CHARACTER,
                             location.getSourceLocation());
                 case DOUBLE:
-                    return unwrap(var, "unwrapDouble", JSMethods.JS_OBJECT, ValueType.DOUBLE,
+                    return unwrap(var, "unwrapDouble", JS_OBJECT, ValueType.DOUBLE,
                             location.getSourceLocation());
                 case FLOAT:
-                    return unwrap(var, "unwrapFloat", JSMethods.JS_OBJECT, ValueType.FLOAT,
+                    return unwrap(var, "unwrapFloat", JS_OBJECT, ValueType.FLOAT,
                             location.getSourceLocation());
                 case LONG:
-                    return unwrap(var, "unwrapLong", JSMethods.JS_OBJECT, ValueType.LONG,
+                    return unwrap(var, "unwrapLong", JS_OBJECT, ValueType.LONG,
                             location.getSourceLocation());
             }
         } else if (type instanceof ValueType.Object) {
@@ -456,10 +458,10 @@ class JSValueMarshaller {
                 wrapNative.setReceiver(program.createVariable());
                 replacement.add(wrapNative);
                 return wrapNative.getReceiver();
-            } else if (className.equals(JSObject.class.getName())) {
+            } else if (className.equals(JS_OBJECT_CLASS)) {
                 return var;
             } else if (className.equals("java.lang.String")) {
-                return unwrap(var, "unwrapString", JSMethods.JS_OBJECT, stringType, location.getSourceLocation());
+                return unwrap(var, "unwrapString", JS_OBJECT, stringType, location.getSourceLocation());
             } else if (typeHelper.isJavaScriptClass(className)) {
                 return var;
             } else {

@@ -15,6 +15,10 @@
  */
 package org.teavm.jso.impl;
 
+import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
+import static org.teavm.jso.impl.JSMethods.JS_OBJECT_CLASS;
+import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
+import static org.teavm.jso.impl.JSMethods.OBJECT;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,7 +31,6 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSExport;
 import org.teavm.jso.JSMethod;
-import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
@@ -162,7 +165,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
                 --paramCount;
             }
             var exportedMethodSignature = new ValueType[paramCount + 2];
-            Arrays.fill(exportedMethodSignature, JSMethods.JS_OBJECT);
+            Arrays.fill(exportedMethodSignature, JS_OBJECT);
             if (methodRef.getReturnType() == ValueType.VOID && !isConstructor) {
                 exportedMethodSignature[exportedMethodSignature.length - 1] = ValueType.VOID;
             }
@@ -213,8 +216,8 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
                 unmarshalledInstance.setType(InvocationType.SPECIAL);
                 unmarshalledInstance.setReceiver(program.createVariable());
                 unmarshalledInstance.setArguments(program.variableAt(1));
-                unmarshalledInstance.setMethod(new MethodReference(JSWrapper.class,
-                        "unmarshallJavaFromJs", JSObject.class, Object.class));
+                unmarshalledInstance.setMethod(new MethodReference(JS_WRAPPER_CLASS,
+                        "unmarshallJavaFromJs", JS_OBJECT, OBJECT));
                 basicBlock.add(unmarshalledInstance);
 
                 var castInstance = new CastInstruction();
@@ -280,7 +283,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             }
             var callLocation = new CallLocation(method.getReference());
             var exportedMethodSignature = new ValueType[paramCount + 1];
-            Arrays.fill(exportedMethodSignature, JSMethods.JS_OBJECT);
+            Arrays.fill(exportedMethodSignature, JS_OBJECT);
             if (method.getResultType() == ValueType.VOID) {
                 exportedMethodSignature[exportedMethodSignature.length - 1] = ValueType.VOID;
             }
@@ -477,7 +480,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     }
 
     private boolean addInterface(ExposedClass exposedCls, ClassReader cls) {
-        if (cls.getName().equals(JSObject.class.getName())) {
+        if (cls.getName().equals(JS_OBJECT_CLASS)) {
             return true;
         }
         return addInterfaces(exposedCls, cls);
@@ -563,7 +566,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
 
         FieldHolder field = new FieldHolder("$$jso_functor$$");
         field.setLevel(AccessLevel.PUBLIC);
-        field.setType(ValueType.parse(JSObject.class));
+        field.setType(JS_OBJECT);
         cls.addField(field);
 
         AnnotationHolder annot = new AnnotationHolder(FunctorImpl.class.getName());

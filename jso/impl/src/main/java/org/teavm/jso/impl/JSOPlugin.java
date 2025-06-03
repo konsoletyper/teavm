@@ -15,13 +15,17 @@
  */
 package org.teavm.jso.impl;
 
+import static org.teavm.jso.impl.JSMethods.JS_EXCEPTIONS_CLASS;
+import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
+import static org.teavm.jso.impl.JSMethods.JS_WRAPPER;
+import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
+import static org.teavm.jso.impl.JSMethods.OBJECT;
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
 import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
 import org.teavm.interop.PlatformMarker;
-import org.teavm.jso.JSExceptions;
-import org.teavm.jso.JSObject;
 import org.teavm.jso.impl.wasmgc.WasmGCJso;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.platform.plugin.PlatformPlugin;
 import org.teavm.vm.TeaVMPluginUtil;
 import org.teavm.vm.spi.After;
@@ -91,32 +95,22 @@ public class JSOPlugin implements TeaVMPlugin {
         jsHost.addForcedFunctionMethods(new JSExportedMethodAsFunction());
 
         var exceptionsGenerator = new JSExceptionsGenerator();
-        jsHost.add(new MethodReference(JSExceptions.class, "getJavaException", JSObject.class, Throwable.class),
-                exceptionsGenerator);
-        jsHost.add(new MethodReference(JSExceptions.class, "getJSException", Throwable.class, JSObject.class),
-                exceptionsGenerator);
+        jsHost.add(new MethodReference(JS_EXCEPTIONS_CLASS, "getJavaException", JS_OBJECT,
+                ValueType.object("java.lang.Throwable")), exceptionsGenerator);
+        jsHost.add(new MethodReference(JS_EXCEPTIONS_CLASS, "getJSException", ValueType.object("java.lang.Throwable"), 
+                JS_OBJECT), exceptionsGenerator);
 
         var wrapperGenerator = new JSWrapperGenerator();
-        jsHost.add(new MethodReference(JSWrapper.class, "directJavaToJs", Object.class, JSObject.class),
-                wrapperGenerator);
-        jsHost.add(new MethodReference(JSWrapper.class, "directJsToJava", JSObject.class, Object.class),
-                wrapperGenerator);
-        jsHost.add(new MethodReference(JSWrapper.class, "dependencyJavaToJs", Object.class, JSObject.class),
-                wrapperGenerator);
-        jsHost.add(new MethodReference(JSWrapper.class, "dependencyJsToJava", JSObject.class, Object.class),
-                wrapperGenerator);
-        jsHost.add(new MethodReference(JSWrapper.class, "marshallJavaToJs", Object.class, JSObject.class),
-                wrapperGenerator);
-        jsHost.add(new MethodReference(JSWrapper.class, "unmarshallJavaFromJs", JSObject.class, Object.class),
-                wrapperGenerator);
-        jsHost.add(new MethodReference(JSWrapper.class, "isJava", Object.class, boolean.class),
-                wrapperGenerator);
-        jsHost.add(new MethodReference(JSWrapper.class, "isJava", JSObject.class, boolean.class),
-                wrapperGenerator);
-        jsHost.add(new MethodReference(JSWrapper.class, "wrapperToJs", JSWrapper.class, JSObject.class),
-                wrapperGenerator);
-        jsHost.add(new MethodReference(JSWrapper.class, "jsToWrapper", JSObject.class, JSWrapper.class),
-                wrapperGenerator);
+        jsHost.add(new MethodReference(JS_WRAPPER_CLASS, "directJavaToJs", OBJECT, JS_OBJECT), wrapperGenerator);
+        jsHost.add(new MethodReference(JS_WRAPPER_CLASS, "directJsToJava", JS_OBJECT, OBJECT), wrapperGenerator);
+        jsHost.add(new MethodReference(JS_WRAPPER_CLASS, "dependencyJavaToJs", OBJECT, JS_OBJECT), wrapperGenerator);
+        jsHost.add(new MethodReference(JS_WRAPPER_CLASS, "dependencyJsToJava", JS_OBJECT, OBJECT), wrapperGenerator);
+        jsHost.add(new MethodReference(JS_WRAPPER_CLASS, "marshallJavaToJs", OBJECT, JS_OBJECT), wrapperGenerator);
+        jsHost.add(new MethodReference(JS_WRAPPER_CLASS, "unmarshallJavaFromJs", JS_OBJECT, OBJECT), wrapperGenerator);
+        jsHost.add(new MethodReference(JS_WRAPPER_CLASS, "isJava", OBJECT, ValueType.BOOLEAN), wrapperGenerator);
+        jsHost.add(new MethodReference(JS_WRAPPER_CLASS, "isJava", JS_OBJECT, ValueType.BOOLEAN), wrapperGenerator);
+        jsHost.add(new MethodReference(JS_WRAPPER_CLASS, "wrapperToJs", JS_WRAPPER, JS_OBJECT), wrapperGenerator);
+        jsHost.add(new MethodReference(JS_WRAPPER_CLASS, "jsToWrapper", JS_OBJECT, JS_WRAPPER), wrapperGenerator);
     }
 
     @PlatformMarker

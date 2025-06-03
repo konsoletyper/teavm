@@ -15,13 +15,24 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
+import static org.teavm.jso.impl.JSMethods.GET;
+import static org.teavm.jso.impl.JSMethods.GET_PURE;
+import static org.teavm.jso.impl.JSMethods.GLOBAL;
+import static org.teavm.jso.impl.JSMethods.IMPORT_MODULE;
+import static org.teavm.jso.impl.JSMethods.JS_CLASS;
+import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
+import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
+import static org.teavm.jso.impl.JSMethods.OBJECT;
+import static org.teavm.jso.impl.JSMethods.STRING;
+import static org.teavm.jso.impl.JSMethods.THROW_CCE_IF_FALSE;
+import static org.teavm.jso.impl.JSMethods.WASM_GC_JS_RUNTIME_CLASS;
+import static org.teavm.jso.impl.JSMethods.WRAP;
+import static org.teavm.jso.impl.JSMethods.WRAP_STRING;
 import org.teavm.backend.wasm.gc.TeaVMWasmGCHost;
-import org.teavm.jso.JSObject;
-import org.teavm.jso.impl.JS;
 import org.teavm.jso.impl.JSBodyRepository;
 import org.teavm.jso.impl.JSClassObjectToExpose;
-import org.teavm.jso.impl.JSWrapper;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.vm.spi.TeaVMHost;
 
 public final class WasmGCJso {
@@ -44,31 +55,25 @@ public final class WasmGCJso {
         });
 
         var jsIntrinsic = new WasmGCJSIntrinsic(commonGen, jsFunctions);
-        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "wrap", String.class, JSObject.class), jsIntrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "unwrapString", JSObject.class, String.class),
+        wasmGCHost.addIntrinsic(WRAP_STRING, jsIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JS_CLASS, "unwrapString", JS_OBJECT, STRING), jsIntrinsic);
+        wasmGCHost.addIntrinsic(GLOBAL, jsIntrinsic);
+        wasmGCHost.addIntrinsic(THROW_CCE_IF_FALSE, jsIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JS_CLASS, "isNull", JS_OBJECT, ValueType.BOOLEAN), jsIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JS_CLASS, "jsArrayItem", OBJECT, ValueType.INTEGER, OBJECT),
                 jsIntrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "global", String.class, JSObject.class), jsIntrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "throwCCEIfFalse", boolean.class, JSObject.class,
-                JSObject.class), jsIntrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "isNull", JSObject.class, boolean.class), jsIntrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "jsArrayItem", Object.class, int.class, Object.class),
-                jsIntrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "get", JSObject.class, JSObject.class, JSObject.class),
-                jsIntrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "getPure", JSObject.class, JSObject.class,
-                JSObject.class), jsIntrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(JS.class, "importModule", String.class, JSObject.class),
-                jsIntrinsic);
+        wasmGCHost.addIntrinsic(GET, jsIntrinsic);
+        wasmGCHost.addIntrinsic(GET_PURE, jsIntrinsic);
+        wasmGCHost.addIntrinsic(IMPORT_MODULE, jsIntrinsic);
 
         var wrapperIntrinsic = new WasmGCJSWrapperIntrinsic();
-        wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "wrap", JSObject.class, Object.class),
-                wrapperIntrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(JSWrapper.class, "isJava", JSObject.class, boolean.class),
+        wasmGCHost.addIntrinsic(WRAP, wrapperIntrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(JS_WRAPPER_CLASS, "isJava", JS_OBJECT, ValueType.BOOLEAN),
                 wrapperIntrinsic);
 
         var runtimeInstrinsic = new WasmGCJSRuntimeIntrinsic(commonGen);
-        wasmGCHost.addIntrinsic(new MethodReference(WasmGCJSRuntime.class, "wrapObject", Object.class,
-                JSObject.class), runtimeInstrinsic);
+        wasmGCHost.addIntrinsic(new MethodReference(WASM_GC_JS_RUNTIME_CLASS, "wrapObject", OBJECT,
+                JS_OBJECT), runtimeInstrinsic);
         wasmGCHost.addIntrinsic(new MethodReference(WasmGCJSRuntime.CharArrayData.class, "of", String.class,
                 WasmGCJSRuntime.CharArrayData.class), runtimeInstrinsic);
         wasmGCHost.addIntrinsic(new MethodReference(WasmGCJSRuntime.CharArrayData.class, "asString", String.class),
@@ -77,7 +82,7 @@ public final class WasmGCJso {
                 WasmGCJSRuntime.CharArrayData.class), runtimeInstrinsic);
         wasmGCHost.addIntrinsic(new MethodReference(WasmGCJSRuntime.CharArrayData.class, "put", int.class,
                 char.class, void.class), runtimeInstrinsic);
-        wasmGCHost.addIntrinsic(new MethodReference(WasmGCJSRuntime.NonNullExternal.class, "toNullable",
-                JSObject.class), runtimeInstrinsic);
+        var nonNullExternal = "org.teavm.jso.impl.wasmgc.WasmGCJSRuntime$NonNullExternal";
+        wasmGCHost.addIntrinsic(new MethodReference(nonNullExternal, "toNullable", JS_OBJECT), runtimeInstrinsic);
     }
 }

@@ -15,6 +15,9 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
+import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
+import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
+import static org.teavm.jso.impl.JSMethods.OBJECT;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
@@ -25,8 +28,6 @@ import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmExternConversion;
 import org.teavm.backend.wasm.model.expression.WasmExternConversionType;
 import org.teavm.backend.wasm.model.expression.WasmTest;
-import org.teavm.jso.JSObject;
-import org.teavm.jso.impl.JSWrapper;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -61,7 +62,7 @@ class WasmGCJSWrapperIntrinsic implements WasmGCIntrinsic {
             context.module().functions.add(wrapFunction);
 
             var createWrapperFunction = context.functions().forStaticMethod(new MethodReference(
-                    JSWrapper.class, "createWrapper", JSObject.class, Object.class));
+                    JS_WRAPPER_CLASS, "createWrapper", JS_OBJECT, OBJECT));
             createWrapperFunction.setExportName("teavm.jso.createWrapper");
         }
         return wrapFunction;

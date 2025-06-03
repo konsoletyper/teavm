@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.impl;
 
+import static org.teavm.jso.impl.JSMethods.JS_WRAPPER_CLASS;
 import org.teavm.backend.javascript.rendering.Precedence;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
@@ -57,7 +58,7 @@ public class JSWrapperGenerator implements Injector, DependencyPlugin {
     public void methodReached(DependencyAgent agent, MethodDependency method) {
         switch (method.getMethod().getName()) {
             case "jsToWrapper":
-                method.getResult().propagate(agent.getType(JSWrapper.class.getName()));
+                method.getResult().propagate(agent.getType(JS_WRAPPER_CLASS));
                 break;
             case "dependencyJavaToJs":
                 method.getVariable(1).connect(getExternalClassesNode(agent));

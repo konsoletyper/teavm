@@ -15,10 +15,10 @@
  */
 package org.teavm.jso.impl;
 
+import static org.teavm.jso.impl.JSMethods.JS_OBJECT_CLASS;
 import java.util.HashMap;
 import java.util.Map;
 import org.teavm.jso.JSClass;
-import org.teavm.jso.JSObject;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
@@ -31,7 +31,7 @@ public class JSTypeHelper {
 
     public JSTypeHelper(ClassReaderSource classSource) {
         this.classSource = classSource;
-        knownJavaScriptClasses.put(JSObject.class.getName(), true);
+        knownJavaScriptClasses.put(JS_OBJECT_CLASS, true);
     }
 
     public JSType mapType(ValueType type) {

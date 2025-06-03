@@ -15,15 +15,17 @@
  */
 package org.teavm.jso.impl.wasmgc;
 
-import org.teavm.jso.JSObject;
+import static org.teavm.jso.impl.JSMethods.JS_OBJECT;
+import static org.teavm.jso.impl.JSMethods.STRING;
+import static org.teavm.jso.impl.JSMethods.WASM_GC_JS_RUNTIME_CLASS;
 import org.teavm.model.MethodReference;
 
 final class WasmGCJSConstants {
     private WasmGCJSConstants() {
     }
 
-    static final MethodReference STRING_TO_JS = new MethodReference(WasmGCJSRuntime.class,
-            "stringToJs", String.class, JSObject.class);
-    static final MethodReference JS_TO_STRING = new MethodReference(WasmGCJSRuntime.class,
-            "jsToString", JSObject.class, String.class);
+    static final MethodReference STRING_TO_JS = new MethodReference(WASM_GC_JS_RUNTIME_CLASS,
+            "stringToJs", STRING, JS_OBJECT);
+    static final MethodReference JS_TO_STRING = new MethodReference(WASM_GC_JS_RUNTIME_CLASS,
+            "jsToString", JS_OBJECT, STRING);
 }
