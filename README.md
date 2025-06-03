@@ -4,7 +4,7 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.teavm/teavm-maven-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.teavm/teavm-maven-plugin) 
 [![Download](https://teavm.org/maven/latestBadge.svg)](https://teavm.org/maven/_latest)
 [![Discord](https://img.shields.io/discord/1368634309849911386
-)](https://discord.gg/ursVpWuq)
+)](https://discord.gg/QvcBHmdE5J)
 
 See documentation at the [project web site](https://teavm.org/).
 
