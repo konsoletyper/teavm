@@ -117,9 +117,9 @@ public class JCLPlugin implements TeaVMPlugin {
             }
         }
 
+        host.registerService(CLDRReader.class, CLDRReader.getInstance(host.getProperties(),
+                host.getResourceProvider()));
         if (!isBootstrap()) {
-            host.registerService(CLDRReader.class, CLDRReader.getInstance(host.getProperties(), host.getClassLoader()));
-
             host.add(new ReflectionTransformer());
         }
 

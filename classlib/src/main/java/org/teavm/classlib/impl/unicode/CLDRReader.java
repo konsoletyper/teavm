@@ -37,6 +37,7 @@ import org.teavm.common.json.JsonValueParserVisitor;
 import org.teavm.common.json.JsonValueProvider;
 import org.teavm.common.json.JsonVisitingConsumer;
 import org.teavm.common.json.JsonVisitor;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public class CLDRReader {
     private static final String[] weekdayKeys = { "sun", "mon", "tue", "wed", "thu", "fri", "sat" };
@@ -49,19 +50,19 @@ public class CLDRReader {
     private Set<String> availableLanguages = new LinkedHashSet<>();
     private Set<String> availableCountries = new LinkedHashSet<>();
     private boolean initialized;
-    private ClassLoader classLoader;
+    private ResourceProvider resources;
     private String availableLocalesString;
 
-    private CLDRReader(ClassLoader classLoader, String availableLocalesString) {
-        this.classLoader = classLoader;
+    private CLDRReader(ResourceProvider resources, String availableLocalesString) {
+        this.resources = resources;
         this.availableLocalesString = availableLocalesString;
     }
 
-    public static CLDRReader getInstance(Properties properties, ClassLoader classLoader) {
+    public static CLDRReader getInstance(Properties properties, ResourceProvider resources) {
         String availableLocalesString = properties.getProperty("java.util.Locale.available", "en_EN").trim();
         if (lastInstance == null || !lastInstance.availableLocalesString.equals(availableLocalesString)
-                || lastInstance.classLoader != classLoader) {
-            lastInstance = new CLDRReader(classLoader, availableLocalesString);
+                || lastInstance.resources != resources) {
+            lastInstance = new CLDRReader(resources, availableLocalesString);
         }
         return lastInstance;
     }
@@ -70,7 +71,7 @@ public class CLDRReader {
         if (!initialized) {
             initialized = true;
             findAvailableLocales();
-            readCLDR(classLoader);
+            readCLDR(resources);
         }
     }
 
@@ -91,9 +92,9 @@ public class CLDRReader {
         }
     }
 
-    private void readCLDR(ClassLoader classLoader) {
-        try (ZipInputStream input = new ZipInputStream(new BufferedInputStream(classLoader.getResourceAsStream(
-                "org/teavm/classlib/impl/unicode/cldr-json.zip")))) {
+    private void readCLDR(ResourceProvider resources) {
+        try (ZipInputStream input = new ZipInputStream(new BufferedInputStream(resources.getResource(
+                "org/teavm/classlib/impl/unicode/cldr-json.zip").open()))) {
             while (true) {
                 ZipEntry entry = input.getNextEntry();
                 if (entry == null) {

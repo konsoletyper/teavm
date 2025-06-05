@@ -74,8 +74,7 @@ public class TimeZoneGenerator implements MetadataGenerator {
             MetadataGeneratorContext context, MethodReference method) {
         var result = new ResourceMapBuilder<ResourceMapBuilder<StringResourceBuilder>>();
         Collection<StorableDateTimeZone> zones;
-        try (InputStream input = context.getResourceProvider().getResource("org/teavm/classlib/impl/tz/cache")
-                .open()) {
+        try (var input = context.getResourceProvider().getResource("org/teavm/classlib/impl/tz/cache").open()) {
             if (input != null) {
                 TimeZoneCache cache = new TimeZoneCache();
                 zones = cache.read(new BufferedInputStream(input)).values();
