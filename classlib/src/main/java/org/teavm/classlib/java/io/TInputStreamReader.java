@@ -137,6 +137,7 @@ public class TInputStreamReader extends TReader {
                 break;
             }
             if (!fillReadBuffer()) {
+                decoder.decode(inBuffer, outBuffer, true);
                 break;
             }
         }
