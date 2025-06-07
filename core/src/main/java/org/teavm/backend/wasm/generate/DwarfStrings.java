@@ -18,7 +18,7 @@ package org.teavm.backend.wasm.generate;
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.nio.charset.StandardCharsets;
-import org.teavm.backend.wasm.blob.Blob;
+import org.teavm.common.binary.Blob;
 
 public class DwarfStrings {
     final Blob blob = new Blob();

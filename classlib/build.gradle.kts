@@ -49,8 +49,19 @@ tasks {
         mainClass = "org.teavm.classlib.impl.tz.TimeZoneCache"
         args(outputFile.get().asFile.absolutePath)
     }
+    val generateIso4217 by registering(JavaExec::class) {
+        val outputFile = generatedClassesDir.map { it.file("org/teavm/classlib/impl/currency/iso4217.bin") }
+        val inputFile = layout.projectDirectory.file("src/main/data/iso4217.xml")
+        classpath(sourceSets.main.get().runtimeClasspath, sourceSets.main.get().compileClasspath)
+        outputs.file(outputFile)
+        inputs.files(sourceSets.main.get().runtimeClasspath)
+        inputs.file(inputFile)
+        dependsOn(compileJava)
+        mainClass = "org.teavm.classlib.impl.currency.CurrenciesGenerator"
+        args(inputFile.asFile.absolutePath, outputFile.get().asFile.absolutePath)
+    }
     jar {
-        dependsOn(generateTzCache)
+        dependsOn(generateTzCache, generateIso4217)
         from(generatedClassesDir)
         exclude("html/**")
         exclude("org/teavm/classlib/impl/tz/tzdata*.zip")
@@ -62,7 +73,7 @@ tasks {
         exclude("**/iso*.csv")
     }
     withType<ShadowJar> {
-        dependsOn(generateTzCache)
+        dependsOn(generateTzCache, generateIso4217)
         from(generatedClassesDir)
         exclude("html/**")
         exclude("org/teavm/classlib/impl/tz/tzdata*.zip")

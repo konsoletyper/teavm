@@ -1,5 +1,5 @@
 /*
- *  Copyright 2022 Alexey Andreev.
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,8 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.blob;
+package org.teavm.common.binary;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -122,6 +123,12 @@ public class Blob {
             }
         }
         return write(buffer, 0, ptr);
+    }
+
+    public Blob writeString(String value) {
+        writeLEB(value.length());
+        write(value.getBytes(StandardCharsets.UTF_8));
+        return this;
     }
 
     private void nextChunkIfNeeded() {

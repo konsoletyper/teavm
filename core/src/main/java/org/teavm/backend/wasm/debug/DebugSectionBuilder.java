@@ -15,8 +15,8 @@
  */
 package org.teavm.backend.wasm.debug;
 
-import org.teavm.backend.wasm.blob.BinaryDataConsumer;
-import org.teavm.backend.wasm.blob.Blob;
+import org.teavm.common.binary.BinaryDataConsumer;
+import org.teavm.common.binary.Blob;
 
 public class DebugSectionBuilder {
     private String name;

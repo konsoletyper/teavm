@@ -16,7 +16,7 @@
 package org.teavm.backend.wasm.dwarf;
 
 import java.util.function.Consumer;
-import org.teavm.backend.wasm.blob.Blob;
+import org.teavm.common.binary.Blob;
 
 public class DwarfAbbreviation {
     int tag;

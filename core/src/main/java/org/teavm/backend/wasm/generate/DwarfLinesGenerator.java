@@ -28,8 +28,8 @@ import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.HashMap;
 import java.util.Map;
-import org.teavm.backend.wasm.blob.Blob;
-import org.teavm.backend.wasm.blob.Marker;
+import org.teavm.common.binary.Blob;
+import org.teavm.common.binary.Marker;
 
 class DwarfLinesGenerator {
     private static final int MIN_INSN_LEN = 1;

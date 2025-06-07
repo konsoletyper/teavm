@@ -29,10 +29,10 @@ import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_OP_WASM_LOCATION;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_FORMAL_PARAMETER;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_SUBPROGRAM;
 import static org.teavm.backend.wasm.dwarf.DwarfConstants.DW_TAG_VARIABLE;
-import org.teavm.backend.wasm.blob.Blob;
 import org.teavm.backend.wasm.debug.info.VariableType;
 import org.teavm.backend.wasm.dwarf.DwarfAbbreviation;
 import org.teavm.backend.wasm.dwarf.DwarfInfoWriter;
+import org.teavm.common.binary.Blob;
 
 public class DwarfFunctionGenerator {
     private DwarfClassGenerator classGen;

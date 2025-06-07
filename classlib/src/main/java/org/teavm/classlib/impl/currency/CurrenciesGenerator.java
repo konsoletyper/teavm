@@ -16,41 +16,93 @@
 package org.teavm.classlib.impl.currency;
 
 import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Iterator;
-import javax.xml.parsers.DocumentBuilder;
+import java.util.List;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import org.teavm.common.binary.BinaryParser;
+import org.teavm.common.binary.Blob;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
 import org.teavm.platform.metadata.builders.ResourceArrayBuilder;
 import org.teavm.platform.metadata.builders.ResourceBuilder;
-import org.w3c.dom.*;
+import org.w3c.dom.CharacterData;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.EntityReference;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 public class CurrenciesGenerator implements MetadataGenerator {
     @Override
     public ResourceBuilder generateMetadata(MetadataGeneratorContext context, MethodReference method) {
-        Document doc;
+        byte[] bytes;
         try (InputStream input = context.getResourceProvider().getResource(
-                "org/teavm/classlib/impl/currency/iso4217.xml").open()) {
-            DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = builderFactory.newDocumentBuilder();
+                "org/teavm/classlib/impl/currency/iso4217.bin").open()) {
+            bytes = input.readAllBytes();
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading ISO 4217 metadata from file");
+        }
+        return parseBinaryData(bytes);
+    }
+
+    public static void main(String[] args) throws IOException {
+        Document doc;
+        try (var input = new FileInputStream(args[0])) {
+            var builderFactory = DocumentBuilderFactory.newInstance();
+            var builder = builderFactory.newDocumentBuilder();
             doc = builder.parse(new BufferedInputStream(input));
-        } catch (IOException | ParserConfigurationException | SAXException e) {
-            throw new RuntimeException("Error reading ISO 4217 medata from file");
+        } catch (ParserConfigurationException | SAXException e) {
+            throw new RuntimeException("Error reading ISO 4217 metadata from file");
         }
 
-        var currencies = new ResourceArrayBuilder<CurrencyResourceBuilder>();
-        Element root = doc.getDocumentElement();
-        for (Element elem : childElements(root)) {
-            if (elem.getTagName().equals("CcyTbl")) {
-                parseCurrencies(elem, currencies);
+        var binaryData = convertToBinary(doc);
+
+        try (var output = new FileOutputStream(args[1])) {
+            output.write(binaryData);
+        }
+    }
+
+    private static void extractCurrencyData(Element tableElem, List<CurrencyData> currencies) {
+        for (var currencyElem : childElements(tableElem)) {
+            if (!currencyElem.getTagName().equals("CcyNtry")) {
+                continue;
+            }
+
+            var currency = new CurrencyData();
+            boolean hasCode = false;
+
+            for (Element propertyElem : childElements(currencyElem)) {
+                switch (propertyElem.getTagName()) {
+                    case "Ccy":
+                        currency.code = getText(propertyElem);
+                        hasCode = true;
+                        break;
+                    case "CcyNbr":
+                        currency.numericCode = Integer.parseInt(getText(propertyElem));
+                        break;
+                    case "CcyMnrUnts":
+                        var value = getText(propertyElem);
+                        if (value.equals("N.A.")) {
+                            currency.fractionDigits = -1;
+                        } else {
+                            currency.fractionDigits = Integer.parseInt(value);
+                        }
+                        break;
+                }
+            }
+
+            if (hasCode) {
+                currencies.add(currency);
             }
         }
-        return currencies;
     }
 
     private void parseCurrencies(Element tableElem, ResourceArrayBuilder<CurrencyResourceBuilder> currencies) {
@@ -81,7 +133,7 @@ public class CurrenciesGenerator implements MetadataGenerator {
         }
     }
 
-    private Iterable<Element> childElements(final Element parent) {
+    private static Iterable<Element> childElements(final Element parent) {
         return new Iterable<>() {
             NodeList nodes = parent.getChildNodes();
             @Override
@@ -117,7 +169,7 @@ public class CurrenciesGenerator implements MetadataGenerator {
         };
     }
 
-    private String getText(Element element) {
+    private static String getText(Element element) {
         StringBuilder sb = new StringBuilder();
         NodeList nodes = element.getChildNodes();
         for (int i = 0; i < nodes.getLength(); ++i) {
@@ -135,5 +187,50 @@ public class CurrenciesGenerator implements MetadataGenerator {
             }
         }
         return sb.toString();
+    }
+
+    private static byte[] convertToBinary(Document doc) {
+        var output = new Blob();
+        var currencies = new ArrayList<CurrencyData>();
+
+        var root = doc.getDocumentElement();
+        for (var elem : childElements(root)) {
+            if (elem.getTagName().equals("CcyTbl")) {
+                extractCurrencyData(elem, currencies);
+            }
+        }
+
+        output.writeLEB(currencies.size());
+
+        for (CurrencyData currency : currencies) {
+            output.writeString(currency.code);
+            output.writeLEB(currency.numericCode);
+            output.writeLEB(currency.fractionDigits + 1);
+        }
+
+        return output.toArray();
+    }
+
+    private static ResourceBuilder parseBinaryData(byte[] data) {
+        var currencies = new ResourceArrayBuilder<CurrencyResourceBuilder>();
+        var input = new BinaryParser();
+        input.data = data;
+
+        int count = input.readLEB();
+        for (int i = 0; i < count; i++) {
+            var currency = new CurrencyResourceBuilder();
+            currency.code = input.readString();
+            currency.numericCode = input.readLEB();
+            currency.fractionDigits = input.readLEB() - 1;
+            currencies.values.add(currency);
+        }
+
+        return currencies;
+    }
+
+    private static class CurrencyData {
+        String code;
+        int numericCode;
+        int fractionDigits;
     }
 }

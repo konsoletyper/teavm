@@ -15,15 +15,13 @@
  */
 package org.teavm.backend.wasm.debug.parser;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import org.teavm.common.binary.BinaryParser;
 
-public abstract class DebugSectionParser {
+public abstract class DebugSectionParser extends BinaryParser {
     private String name;
     private List<DebugSectionParser> dependantSections = new ArrayList<>();
-    byte[] data;
-    int ptr;
     private boolean ready;
     private int unsatisfiedDependencies;
 
@@ -62,42 +60,4 @@ public abstract class DebugSectionParser {
     }
 
     protected abstract void doParse();
-
-    protected int readLEB() {
-        var result = 0;
-        var shift = 0;
-        while (true) {
-            var b = data[ptr++];
-            result |= (b & 0x7F) << shift;
-            if ((b & 0x80) == 0) {
-                break;
-            }
-            shift += 7;
-        }
-        return result;
-    }
-
-    protected int readSignedLEB() {
-        var result = 0;
-        var shift = 0;
-        while (true) {
-            var b = data[ptr++];
-            result |= (b & 0x7F) << shift;
-            if ((b & 0x80) == 0) {
-                if ((b & 0x40) != 0) {
-                    result |= -1 << (shift + 7);
-                }
-                break;
-            }
-            shift += 7;
-        }
-        return result;
-    }
-
-    protected String readString() {
-        var length = readLEB();
-        var result = new String(data, ptr, length, StandardCharsets.UTF_8);
-        ptr += length;
-        return result;
-    }
 }

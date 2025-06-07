@@ -15,7 +15,7 @@
  */
 package org.teavm.backend.wasm.dwarf;
 
-import org.teavm.backend.wasm.blob.Blob;
+import org.teavm.common.binary.Blob;
 
 public interface DwarfPlaceholderWriter {
     void write(Blob blob, int actualValue);
