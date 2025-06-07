@@ -662,17 +662,20 @@ async function wrapImports(wasmModule, imports) {
     await Promise.all(promises);
 }
 
-async function load(path, options) {
+async function load(src, options) {
     if (!options) {
         options = {};
     }
 
     let deobfuscatorOptions = options.stackDeobfuscator || {};
     let debugInfoLocation = deobfuscatorOptions.infoLocation || "auto";
+    let compilationPromise = typeof src === "string"
+        ? WebAssembly.compileStreaming(fetch(src), { builtins: ["js-string"] })
+        : WebAssembly.compile(src, { builtins: ["js-string"] });
     let [deobfuscatorFactory, module, debugInfo] = await Promise.all([
-        deobfuscatorOptions.enabled ? getDeobfuscator(path, deobfuscatorOptions) : Promise.resolve(null),
-        WebAssembly.compileStreaming(fetch(path), { builtins: ["js-string"] }),
-        fetchExternalDebugInfo(path, debugInfoLocation, deobfuscatorOptions)
+        deobfuscatorOptions.enabled ? getDeobfuscator(src, deobfuscatorOptions) : Promise.resolve(null),
+        compilationPromise,
+        fetchExternalDebugInfo(src, debugInfoLocation, deobfuscatorOptions)
     ]);
 
     const importObj = {};
@@ -729,6 +732,9 @@ function hasStringBuiltins() {
 }
 
 async function getDeobfuscator(path, options) {
+    if (typeof path !== "string") {
+        return null;
+    }
     try {
         const importObj = {};
         const defaultsResult = defaults(importObj, {});
@@ -777,7 +783,7 @@ function createDeobfuscator(module, externalData, deobfuscatorFactory) {
 }
 
 async function fetchExternalDebugInfo(path, debugInfoLocation, options) {
-    if (!options.enabled) {
+    if (!options.enabled || typeof path !== "string") {
         return null;
     }
     if (debugInfoLocation !== "auto" && debugInfoLocation !== "external") {
