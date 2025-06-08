@@ -51,7 +51,7 @@ public abstract class CopyWasmGCRuntimeTask extends DefaultTask {
     public void copyRuntime() throws IOException {
         var name = new StringBuilder("wasm-gc");
         if (getModular().get()) {
-            name.append("-modular");
+            name.append("-module");
         }
         name.append("-runtime");
         if (getObfuscated().get()) {
