@@ -40,6 +40,7 @@ jobs:
           fi
         done
         args+=("-Pteavm.localNodeJS=true")
+        args+=("-Dorg.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m")
         echo "${args[@]}"
         ./gradlew "${args[@]}" --stacktrace test
     - uses: actions/upload-artifact@v4
@@ -58,4 +59,6 @@ jobs:
           distribution: adopt
       - uses: gradle/gradle-build-action@v2
       - run: |
-          ./gradlew check -x test
+          args=()
+          args+=("-Dorg.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m")
+          ./gradlew "${args[@]}" check -x test
