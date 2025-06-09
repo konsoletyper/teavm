@@ -109,7 +109,7 @@ class TeaVMBaseExtensionImpl implements TeaVMBaseExtension {
             if (result != null) {
                 return result;
             }
-            return project.getRootProject().getProviders().gradleProperty(gradleName).getOrElse(null);
+            return project.getProviders().gradleProperty(gradleName).getOrElse(null);
         }));
     }
 
