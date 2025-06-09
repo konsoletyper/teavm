@@ -56,6 +56,7 @@ import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 
@@ -560,6 +561,11 @@ public abstract class BaseTypeInference<T> {
         @Override
         public void visit(CastInstruction insn) {
             push(insn.getValue(), insn.getTargetType());
+        }
+
+        @Override
+        public void visit(RaiseInstruction insn) {
+            push(insn.getException(), ValueType.object("java.lang.Throwable"));
         }
 
         private void push(Variable variable, ValueType type) {
