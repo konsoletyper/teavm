@@ -356,6 +356,7 @@ public class TeaVMPlugin implements Plugin<Project> {
         if (sourceSets != null) {
             task.getClasspath().from(sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME).getOutput());
             task.getClasspath().from(sourceSets.getByName(SOURCE_SET_NAME).getOutput());
+            task.getClasspath().from(sourceSets.getByName(SOURCE_SET_NAME).getRuntimeClasspath());
         }
 
         task.setGroup(TASK_GROUP);
