@@ -110,6 +110,7 @@ public class LoopInvariantAnalyzer extends AbstractInstructionVisitor {
     @Override
     public void visit(CastInstruction insn) {
         canMove = true;
+        sideEffect = true;
     }
 
     @Override
