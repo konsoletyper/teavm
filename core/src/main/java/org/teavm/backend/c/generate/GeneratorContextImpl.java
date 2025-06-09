@@ -68,6 +68,11 @@ class GeneratorContextImpl implements GeneratorContext {
     }
 
     @Override
+    public ClassReaderSource initialClassSource() {
+        return context.getInitialClassSource();
+    }
+
+    @Override
     public ClassHierarchy hierarchy() {
         return context.getHierarchy();
     }

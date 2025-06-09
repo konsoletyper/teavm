@@ -38,6 +38,8 @@ public interface GeneratorContext {
 
     ClassReaderSource classSource();
 
+    ClassReaderSource initialClassSource();
+
     ClassHierarchy hierarchy();
 
     DependencyInfo dependencies();

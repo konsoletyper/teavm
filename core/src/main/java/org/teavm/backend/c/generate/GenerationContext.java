@@ -42,6 +42,7 @@ public class GenerationContext {
     private FileNameProvider fileNames;
     private Diagnostics diagnostics;
     private ClassReaderSource classSource;
+    private ClassReaderSource initialClassSource;
     private ClassHierarchy hierarchy;
     private List<Intrinsic> intrinsics;
     private List<Generator> generators;
@@ -56,10 +57,11 @@ public class GenerationContext {
 
     public GenerationContext(VirtualTableProvider virtualTableProvider, Characteristics characteristics,
             DependencyInfo dependencies, StringPool stringPool, NameProvider names, FileNameProvider fileNames,
-            Diagnostics diagnostics, ClassReaderSource classSource, ClassHierarchy hierarchy,
-            List<Intrinsic> intrinsics, List<Generator> generators, Predicate<MethodReference> asyncMethods,
-            BuildTarget buildTarget, ClassInitializerInfo classInitializerInfo, boolean incremental,
-            boolean vmAssertions, boolean heapDump, boolean obfuscated) {
+            Diagnostics diagnostics, ClassReaderSource classSource, ClassReaderSource initialClassSource,
+            ClassHierarchy hierarchy, List<Intrinsic> intrinsics, List<Generator> generators,
+            Predicate<MethodReference> asyncMethods, BuildTarget buildTarget,
+            ClassInitializerInfo classInitializerInfo, boolean incremental, boolean vmAssertions, boolean heapDump,
+            boolean obfuscated) {
         this.virtualTableProvider = virtualTableProvider;
         this.characteristics = characteristics;
         this.dependencies = dependencies;
@@ -68,6 +70,7 @@ public class GenerationContext {
         this.fileNames = fileNames;
         this.diagnostics = diagnostics;
         this.classSource = classSource;
+        this.initialClassSource = initialClassSource;
         this.hierarchy = hierarchy;
         this.intrinsics = new ArrayList<>(intrinsics);
         this.generators = new ArrayList<>(generators);
@@ -118,6 +121,10 @@ public class GenerationContext {
 
     public ClassReaderSource getClassSource() {
         return classSource;
+    }
+
+    public ClassReaderSource getInitialClassSource() {
+        return initialClassSource;
     }
 
     public ClassHierarchy getHierarchy() {

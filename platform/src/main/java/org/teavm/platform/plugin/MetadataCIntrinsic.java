@@ -132,7 +132,7 @@ class MetadataCIntrinsic implements Generator {
             return;
         }
 
-        var cls = context.classSource().get(className);
+        var cls = context.initialClassSource().get(className);
         var hierarchy = context.hierarchy();
         var descriptor = new ResourceTypeDescriptor(context.hierarchy(), cls);
         for (var propertyType : descriptor.getPropertyTypes().values()) {

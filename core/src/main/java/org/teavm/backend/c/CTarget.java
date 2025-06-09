@@ -398,8 +398,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         boolean gcStats = Boolean.parseBoolean(System.getProperty("teavm.c.gcStats", "false"));
         GenerationContext context = new GenerationContext(vtableProvider, characteristics,
                 controller.getDependencyInfo(), stringPool, nameProvider, fileNames,
-                controller.getDiagnostics(), classes, hierarchy, intrinsics, generators, asyncMethods::contains,
-                buildTarget, controller.getClassInitializerInfo(), incremental,
+                controller.getDiagnostics(), classes, controller.getUnprocessedClassSource(), hierarchy, intrinsics,
+                generators, asyncMethods::contains, buildTarget, controller.getClassInitializerInfo(), incremental,
                 vmAssertions, vmAssertions || heapDump, obfuscated);
 
         BufferedCodeWriter specialWriter = new BufferedCodeWriter(false);

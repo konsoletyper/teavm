@@ -215,7 +215,7 @@ class MetadataIntrinsic implements WasmIntrinsic {
 
     private ResourceTypeDescriptor getDescriptor(ClassHierarchy hierarchy, Class<?> cls) {
         return descriptors.computeIfAbsent(cls, t -> {
-            var classReader = hierarchy.getClassSource().get(t.getName());
+            var classReader = classSource.get(t.getName());
             return new ResourceTypeDescriptor(hierarchy, classReader);
         });
     }

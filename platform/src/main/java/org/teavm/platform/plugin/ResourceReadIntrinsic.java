@@ -171,7 +171,7 @@ public class ResourceReadIntrinsic implements WasmIntrinsic {
 
     private StructureDescriptor getTypeDescriptor(ClassHierarchy hierarchy, String className) {
         return typeDescriptorCache.computeIfAbsent(className, n -> {
-            var cls = hierarchy.getClassSource().get(className);
+            var cls = classSource.get(className);
             StructureDescriptor structureDescriptor = new StructureDescriptor();
             structureDescriptor.typeDescriptor = new ResourceTypeDescriptor(hierarchy, cls);
             calculateLayout(structureDescriptor.typeDescriptor, structureDescriptor.layout);
