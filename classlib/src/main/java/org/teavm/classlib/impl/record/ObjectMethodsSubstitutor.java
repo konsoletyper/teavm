@@ -97,12 +97,11 @@ public class ObjectMethodsSubstitutor implements BootstrapMethodSubstitutor {
                 case SHORT:
                 case CHARACTER:
                 case INTEGER:
-                case LONG:
                     return a.isEqualTo(b);
+                case LONG:
                 case FLOAT:
-                    return pe.invoke(Float.class, "compare", int.class, a, b).isEqualTo(pe.constant(0));
                 case DOUBLE:
-                    return pe.invoke(Double.class, "compare", int.class, a, b).isEqualTo(pe.constant(0));
+                    return a.compareTo(b).isEqualTo(pe.constant(0));
             }
         }
         return pe.invoke(Objects.class, "equals", boolean.class, a.cast(Object.class), b.cast(Object.class)).isTrue();
