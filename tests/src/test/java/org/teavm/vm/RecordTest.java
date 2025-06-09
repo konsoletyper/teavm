@@ -33,6 +33,13 @@ public class RecordTest {
         assertEquals(new A(2, "q"), new A(2, "q"));
         assertNotEquals(new A(2, "q"), new A(3, "q"));
         assertNotEquals(new A(2, "q"), new A(2, "w"));
+
+        assertEquals(new WithLong(23), new WithLong(23));
+        assertNotEquals(new WithLong(23), new WithLong(24));
+        assertNotEquals(new WithLong(23), new WithFloat(23));
+
+        assertEquals(new WithFloat(1.23f), new WithFloat(1.23f));
+        assertNotEquals(new WithFloat(1.23f), new WithFloat(1.24f));
     }
 
     @Test
@@ -73,5 +80,11 @@ public class RecordTest {
     }
 
     record B(int a, String b, Long c, byte d, short e) {
+    }
+
+    record WithLong(long a) {
+    }
+
+    record WithFloat(float a) {
     }
 }
