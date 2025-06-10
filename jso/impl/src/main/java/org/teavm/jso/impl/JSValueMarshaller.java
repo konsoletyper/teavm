@@ -472,7 +472,15 @@ class JSValueMarshaller {
                 wrapNative.setArguments(var);
                 wrapNative.setReceiver(program.createVariable());
                 replacement.add(wrapNative);
-                return wrapNative.getReceiver();
+
+                var cast = new CastInstruction();
+                cast.setLocation(location.getSourceLocation());
+                cast.setValue(wrapNative.getReceiver());
+                cast.setTargetType(type);
+                cast.setReceiver(program.createVariable());
+                replacement.add(cast);
+
+                return cast.getReceiver();
             }
         } else if (type instanceof ValueType.Array) {
             return unwrapArray(location, var, (ValueType.Array) type);
