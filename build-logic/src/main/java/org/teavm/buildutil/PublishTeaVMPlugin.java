@@ -109,9 +109,9 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
                         repository.setName("teavm");
                         repository.setUrl(url.get());
                         repository.getCredentials().setUsername(target.getProviders().gradleProperty(
-                                "ossrhUsername").get());
+                                "teavm.publish.username").get());
                         repository.getCredentials().setPassword(target.getProviders().gradleProperty(
-                                "ossrhPassword").get());
+                                "teavm.publish.password").get());
                     });
                 } else {
                     repositories.maven(repository -> {
