@@ -18,11 +18,13 @@ package org.teavm.classlib.impl.unicode;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.common.IntegerArray;
+import org.teavm.parsing.resource.ResourceProvider;
 
 public final class UnicodeSupport {
     private static int[] digitValues;
@@ -31,6 +33,7 @@ public final class UnicodeSupport {
     private static int[] upperCaseMapping;
     private static int[] lowerCaseMapping;
     private static Map<String, Byte> classMap = new HashMap<>();
+    private static ResourceProvider lastResourceProvider;
 
     static {
         classMap.put("Cn", Character.UNASSIGNED);
@@ -63,20 +66,27 @@ public final class UnicodeSupport {
         classMap.put("So", Character.OTHER_SYMBOL);
         classMap.put("Pi", Character.INITIAL_QUOTE_PUNCTUATION);
         classMap.put("Pf", Character.FINAL_QUOTE_PUNCTUATION);
-        parseUnicodeData();
     }
 
     private UnicodeSupport() {
     }
 
-    private static void parseUnicodeData() {
+    public static void init(ResourceProvider resourceProvider) {
+        if (lastResourceProvider == resourceProvider) {
+            return;
+        }
+        lastResourceProvider = resourceProvider;
+        parseUnicodeData(resourceProvider);
+    }
+
+    private static void parseUnicodeData(ResourceProvider resourceProvider) {
         IntegerArray digitValues = new IntegerArray(4096);
         IntegerArray classes = new IntegerArray(65536);
         IntegerArray titleCaseMapping = new IntegerArray(256);
         IntegerArray upperCaseMapping = new IntegerArray(256);
         IntegerArray lowerCaseMapping = new IntegerArray(256);
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(UnicodeHelper.class
-                .getResourceAsStream("UnicodeData.txt")))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resourceProvider
+                .getResource("org/teavm/classlib/impl/unicode/UnicodeData.txt").open(), StandardCharsets.UTF_8))) {
             while (true) {
                 String line = reader.readLine();
                 if (line == null) {
@@ -198,23 +208,28 @@ public final class UnicodeSupport {
     }
 
 
-    public static int[] getDigitValues() {
+    public static int[] getDigitValues(ResourceProvider resourceProvider) {
+        init(resourceProvider);
         return digitValues;
     }
 
-    public static byte[] getClasses() {
+    public static byte[] getClasses(ResourceProvider resourceProvider) {
+        init(resourceProvider);
         return classes;
     }
 
-    public static int[] getTitleCaseMapping() {
+    public static int[] getTitleCaseMapping(ResourceProvider resourceProvider) {
+        init(resourceProvider);
         return titleCaseMapping;
     }
 
-    public static int[] getUpperCaseMapping() {
+    public static int[] getUpperCaseMapping(ResourceProvider resourceProvider) {
+        init(resourceProvider);
         return upperCaseMapping;
     }
 
-    public static int[] getLowerCaseMapping() {
+    public static int[] getLowerCaseMapping(ResourceProvider resourceProvider) {
+        init(resourceProvider);
         return lowerCaseMapping;
     }
 }

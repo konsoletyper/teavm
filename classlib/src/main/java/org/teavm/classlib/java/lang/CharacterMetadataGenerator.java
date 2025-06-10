@@ -44,31 +44,31 @@ public class CharacterMetadataGenerator implements MetadataGenerator {
 
     private ResourceBuilder generateObtainDigitMapping(MetadataGeneratorContext context) {
         var res = new StringResourceBuilder();
-        res.value = UnicodeHelper.encodeIntPairsDiff(UnicodeSupport.getDigitValues());
+        res.value = UnicodeHelper.encodeIntPairsDiff(UnicodeSupport.getDigitValues(context.getResourceProvider()));
         return res;
     }
 
     private ResourceBuilder generateObtainClasses(MetadataGeneratorContext context) {
         var res = new StringResourceBuilder();
-        res.value = UnicodeHelper.compressRle(UnicodeSupport.getClasses());
+        res.value = UnicodeHelper.compressRle(UnicodeSupport.getClasses(context.getResourceProvider()));
         return res;
     }
 
     private ResourceBuilder generateAcquireTitleCaseMapping(MetadataGeneratorContext context) {
         var res = new StringResourceBuilder();
-        res.value = UnicodeHelper.encodeCaseMapping(UnicodeSupport.getTitleCaseMapping());
+        res.value = UnicodeHelper.encodeCaseMapping(UnicodeSupport.getTitleCaseMapping(context.getResourceProvider()));
         return res;
     }
 
     private ResourceBuilder generateAcquireUpperCaseMapping(MetadataGeneratorContext context) {
         var res = new StringResourceBuilder();
-        res.value = UnicodeHelper.encodeCaseMapping(UnicodeSupport.getUpperCaseMapping());
+        res.value = UnicodeHelper.encodeCaseMapping(UnicodeSupport.getUpperCaseMapping(context.getResourceProvider()));
         return res;
     }
 
     private ResourceBuilder generateAcquireLowerCaseMapping(MetadataGeneratorContext context) {
         var res = new StringResourceBuilder();
-        res.value = UnicodeHelper.encodeCaseMapping(UnicodeSupport.getLowerCaseMapping());
+        res.value = UnicodeHelper.encodeCaseMapping(UnicodeSupport.getLowerCaseMapping(context.getResourceProvider()));
         return res;
     }
 }
