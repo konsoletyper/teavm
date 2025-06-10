@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSClass;
+import org.teavm.jso.JSExport;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
@@ -100,6 +101,12 @@ public class FunctorTest {
     public void propsWithFunction() {
         var o = PropsObjectWithFunctor.create((a, b) -> a + 10 * b);
         assertEquals(123, acceptPropsObjectWithFunctor(o));
+    }
+
+    @Test
+    public void functorTakingJavaClassWithExportedMembers() {
+        var result = acceptJavaClass(obj -> "(" + obj.getFoo() + ")", new JavaClassWithExportedMembers());
+        assertEquals("(fromJava: foo): js", result);
     }
 
     @JSBody(params = { "f", "a", "b" }, script = "return '(' + f(a, b) + ')';")
@@ -185,4 +192,20 @@ public class FunctorTest {
 
     @JSBody(params = "obj", script = "return 100 + obj.foo(3, 2);")
     private static native int acceptPropsObjectWithFunctor(JSObject obj);
+
+    @JSBody(params = { "functor", "obj" }, script = "return functor(obj) + ': js';")
+    private static native String acceptJavaClass(FunctorTakingJavaClass functor, Object obj);
+
+    @JSFunctor
+    interface FunctorTakingJavaClass extends JSObject {
+        String accept(JavaClassWithExportedMembers obj);
+    }
+
+    static class JavaClassWithExportedMembers {
+        @JSProperty
+        @JSExport
+        String getFoo() {
+            return "fromJava: foo";
+        }
+    }
 }
