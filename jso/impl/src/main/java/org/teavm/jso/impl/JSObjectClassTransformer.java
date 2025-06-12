@@ -498,7 +498,8 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     }
 
     private void addExportedMethod(ExposedClass exposedCls, MethodReader method) {
-        if (!exposedCls.inheritedMethods.contains(method.getDescriptor())) {
+        if (method.getDescriptor().getName().equals("<init>")
+                || !exposedCls.inheritedMethods.contains(method.getDescriptor())) {
             exposedCls.methods.put(method.getDescriptor(), createMethodExport(method));
         }
     }
