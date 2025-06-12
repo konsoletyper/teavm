@@ -343,18 +343,6 @@ function jsoImports(imports, context) {
         createClass(name, parent, constructor) {
             name = sanitizeName(name || "JavaObject");
             let action;
-            if (parent === null) {
-                action = function (javaObject) {
-                    this[javaObjectSymbol] = javaObject;
-                    this[functionsSymbol] = null;
-                };
-            } else {
-                action = function (javaObject) {
-                    parent.call(this, javaObject);
-                };
-                fn.prototype = Object.create(parent);
-                fn.prototype.constructor = parent;
-            }
             let fn = renameConstructor(name, function (marker, javaObject) {
                 if (marker === wrapperCallMarkerSymbol) {
                     action.call(this, javaObject);
@@ -368,7 +356,17 @@ function jsoImports(imports, context) {
                     }
                 }
             });
-            fn.prototype = Object.create(parent || Object.prototype);
+            if (parent === null) {
+                action = function (javaObject) {
+                    this[javaObjectSymbol] = javaObject;
+                    this[functionsSymbol] = null;
+                };
+            } else {
+                action = function (javaObject) {
+                    parent.call(this, javaObject);
+                };
+            }
+            fn.prototype = Object.create(parent ? parent.prototype : Object.prototype);
             fn.prototype.constructor = fn;
             let boundFn = renameConstructor(name, function(javaObject) {
                 return fn.call(this, wrapperCallMarkerSymbol, javaObject);

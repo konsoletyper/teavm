@@ -125,6 +125,11 @@ public class ExportTest {
         testExport("exportedClassInitializesModule", ModuleWithExportedClasses.class, true);
     }
 
+    @Test
+    public void exportedClassInheritance() {
+        testExport("exportClassInheritance", ModuleWithClassInheritance.class);
+    }
+
     private void testExport(String name, Class<?> moduleClass) {
         testExport(name, moduleClass, false);
     }
