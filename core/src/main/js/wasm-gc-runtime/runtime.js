@@ -730,7 +730,7 @@ function hasStringBuiltins() {
 }
 
 async function getDeobfuscator(path, options) {
-    if (typeof path !== "string") {
+    if (typeof path !== "string" && !options.path) {
         return null;
     }
     try {
