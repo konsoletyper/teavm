@@ -21,6 +21,7 @@ import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -42,6 +43,12 @@ public class EnumDependencySupport extends AbstractDependencyListener {
             return;
         }
         allEnums.propagate(agent.getType(className));
+        for (var innerClassName : cls.getInnerClasses()) {
+            var innerClass = agent.getClassSource().get(innerClassName);
+            if (innerClass != null && innerClass.hasModifier(ElementModifier.ENUM)) {
+                allEnums.propagate(agent.getType(innerClassName));
+            }
+        }
     }
 
     @Override

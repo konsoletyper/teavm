@@ -75,6 +75,10 @@ public class ClassIO {
         for (MethodReader method : cls.getMethods()) {
             writeMethod(output, method);
         }
+        output.writeUnsigned(cls.getInnerClasses().size());
+        for (var innerClass : cls.getInnerClasses()) {
+            output.writeUnsigned(symbolTable.lookup(innerClass));
+        }
     }
 
     public ClassReader readClass(InputStream stream, String name) throws IOException {
@@ -115,6 +119,11 @@ public class ClassIO {
             methods.put(method.reference.getDescriptor(), method);
         }
         cls.methods = methods;
+
+        int innerClassCount = input.readUnsigned();
+        for (int i = 0; i < innerClassCount; ++i) {
+            cls.innerClasses.add(symbolTable.at(input.readUnsigned()));
+        }
 
         return cls;
     }

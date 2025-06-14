@@ -15,7 +15,9 @@
  */
 package org.teavm.cache;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.model.ClassReader;
@@ -36,6 +38,7 @@ class CachedClassReader extends CachedElement implements ClassReader {
     Set<GenericValueType.Object> genericInterfaces;
     Map<MethodDescriptor, CachedMethod> methods;
     Map<String, CachedField> fields;
+    List<String> innerClasses = new ArrayList<>();
 
     @Override
     public GenericTypeParameter[] getGenericParameters() {
@@ -95,5 +98,10 @@ class CachedClassReader extends CachedElement implements ClassReader {
     @Override
     public String getDeclaringClassName() {
         return declaringClass;
+    }
+
+    @Override
+    public List<? extends String> getInnerClasses() {
+        return innerClasses;
     }
 }

@@ -312,8 +312,7 @@ public class Parser {
             parseSignature(cls, node.signature);
         }
 
-        for (Object obj : node.fields) {
-            FieldNode fieldNode = (FieldNode) obj;
+        for (var fieldNode : node.fields) {
             FieldHolder field = parseField(fieldNode);
             cls.addField(field);
             field.updateReference(referenceCache);
@@ -332,6 +331,7 @@ public class Parser {
 
         if (node.innerClasses != null && !node.innerClasses.isEmpty()) {
             for (InnerClassNode innerClassNode : node.innerClasses) {
+                cls.getInnerClasses().add(referenceCache.getCached(innerClassNode.name.replace('/', '.')));
                 if (node.name.equals(innerClassNode.name)) {
                     if (innerClassNode.outerName != null) {
                         cls.setDeclaringClassName(innerClassNode.outerName.replace('/', '.'));
@@ -340,6 +340,9 @@ public class Parser {
                     cls.setSimpleName(innerClassNode.innerName);
                     break;
                 }
+            }
+            for (var innerClassNode : node.innerClasses) {
+                cls.getInnerClasses().add(referenceCache.getCached(innerClassNode.name.replace('/', '.')));
             }
         }
 

@@ -51,6 +51,7 @@ public final class ModelUtils {
         target.setOwnerName(original.getOwnerName());
         target.setDeclaringClassName(original.getDeclaringClassName());
         target.setSimpleName(original.getSimpleName());
+        target.getInnerClasses().addAll(original.getInnerClasses());
         copyAnnotations(original.getAnnotations(), target.getAnnotations());
         return target;
     }

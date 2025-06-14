@@ -16,6 +16,7 @@
 package org.teavm.model;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 public interface ClassReader extends ElementReader {
@@ -42,4 +43,6 @@ public interface ClassReader extends ElementReader {
     String getSimpleName();
 
     String getDeclaringClassName();
+
+    List<? extends String> getInnerClasses();
 }
