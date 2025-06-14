@@ -390,6 +390,16 @@ public class EnumSetTest {
         assertFalse("Should return false", set.contains(EnumFoo.b));
     }
 
+    @Test
+    public void innerClassWithMethod() {
+        var set = EnumSet.noneOf(EnumWithInnerClassAndMethod.class);
+        set.add(EnumWithInnerClassAndMethod.A);
+        assertEquals("A.foo", set.iterator().next().foo());
+        set.clear();
+        set.add(EnumWithInnerClassAndMethod.B);
+        assertEquals("B.foo", set.iterator().next().foo());
+    }
+
     enum EnumWithInnerClass {
         a, b, c, d, e, f {
         },
@@ -418,5 +428,22 @@ public class EnumSetTest {
     enum L {
         E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E16, E17, E18, E19, E20, E21, E22, E23,
         E24, E25, E26, E27, E28, E29, E30, E31, E32, E33, E34, E35, E36
+    }
+
+    enum EnumWithInnerClassAndMethod {
+        A {
+            @Override
+            String foo() {
+                return "A.foo";
+            }
+        },
+        B {
+            @Override
+            String foo() {
+                return "B.foo";
+            }
+        };
+
+        abstract String foo();
     }
 }

@@ -110,6 +110,10 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
 
         renamedCls.setGenericParameters(cls.getGenericParameters());
 
+        for (var innerClass : cls.getInnerClasses()) {
+            renamedCls.getInnerClasses().add(classNameMapper.apply(innerClass));
+        }
+
         return renamedCls;
     }
 

@@ -28,6 +28,7 @@ public class ClassHolder extends ElementHolder implements ClassReader {
     private String ownerName;
     private String simpleName;
     private String declaringClassName;
+    private List<String> innerClasses = new ArrayList<>();
 
     public ClassHolder(String name) {
         super(name);
@@ -157,5 +158,10 @@ public class ClassHolder extends ElementHolder implements ClassReader {
 
     public void setDeclaringClassName(String declaringClassName) {
         this.declaringClassName = declaringClassName;
+    }
+
+    @Override
+    public List<String> getInnerClasses() {
+        return innerClasses;
     }
 }
