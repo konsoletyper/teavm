@@ -56,6 +56,10 @@ public class FloatTest {
         assertEquals(4499999285F, Float.parseFloat("4499999285"), 100F);
         assertEquals(0.4499999285F, Float.parseFloat("0.4499999285"), 1E-9F);
         assertEquals(Float.POSITIVE_INFINITY, Float.parseFloat("1e50"), 1E-9F);
+        assertEquals(23, Float.parseFloat("23f"), 0.1f);
+        assertEquals(23, Float.parseFloat("23F"), 0.1f);
+        assertEquals(23, Float.parseFloat("23d"), 0.1f);
+        assertEquals(23, Float.parseFloat("23D"), 0.1f);
     }
 
     @Test
