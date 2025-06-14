@@ -94,6 +94,10 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         while (string.charAt(end - 1) <= ' ') {
             --end;
         }
+        if (string.charAt(end - 1) == 'f' || string.charAt(end - 1) == 'F'
+                || string.charAt(end - 1) == 'd' || string.charAt(end - 1) == 'D') {
+            --end;
+        }
 
         boolean negative = false;
         int index = start;
