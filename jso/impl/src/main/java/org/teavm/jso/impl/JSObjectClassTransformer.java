@@ -107,29 +107,31 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         var hasStaticMethods = false;
         var hasMemberMethods = false;
 
+        MethodReference functorMethod = null;
         if (!cls.hasModifier(ElementModifier.ABSTRACT)) {
-            MethodReference functorMethod = processor.isFunctor(cls.getName());
+            functorMethod = processor.isFunctor(cls.getName());
             if (functorMethod != null) {
                 if (processor.isFunctor(cls.getParent()) != null) {
                     functorMethod = null;
                 }
             }
-
-            ClassReader originalClass = hierarchy.getClassSource().get(cls.getName());
-            ExposedClass exposedClass;
-            if (originalClass != null) {
-                exposedClass = getExposedClass(cls.getName());
-            } else {
-                exposedClass = new ExposedClass();
-                createExposedClass(cls, exposedClass);
-            }
-
-            exposeMethods(cls, exposedClass, context.getDiagnostics(), functorMethod);
-            if (!exposedClass.methods.isEmpty()) {
-                hasMemberMethods = true;
-                cls.getAnnotations().add(new AnnotationHolder(JSClassToExpose.class.getName()));
-            }
         }
+
+        ClassReader originalClass = hierarchy.getClassSource().get(cls.getName());
+        ExposedClass exposedClass;
+        if (originalClass != null) {
+            exposedClass = getExposedClass(context.getDiagnostics(), cls.getName());
+        } else {
+            exposedClass = new ExposedClass();
+            createExposedClass(context.getDiagnostics(), cls, exposedClass);
+        }
+
+        exposeMethods(cls, exposedClass, context.getDiagnostics(), functorMethod);
+        if (!exposedClass.methods.isEmpty()) {
+            hasMemberMethods = true;
+            cls.getAnnotations().add(new AnnotationHolder(JSClassToExpose.class.getName()));
+        }
+
         hasStaticMethods = exportStaticMethods(cls, context.getDiagnostics(), context.getEntryPoint());
         if (hasMemberMethods || hasStaticMethods) {
             cls.getAnnotations().add(new AnnotationHolder(JSClassObjectToExpose.class.getName()));
@@ -339,7 +341,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
 
             classHolder.addMethod(exportedMethod);
 
-            var export = createMethodExport(method);
+            var export = createMethodExport(diagnostics, classHolder, method);
             exportedMethod.getAnnotations().add(createExportAnnotation(export));
         }
         return hasMethods;
@@ -387,36 +389,36 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         return annot;
     }
 
-    private ExposedClass getExposedClass(String name) {
+    private ExposedClass getExposedClass(Diagnostics diagnostics, String name) {
         ExposedClass cls = exposedClasses.get(name);
         if (cls == null) {
-            cls = createExposedClass(name);
+            cls = createExposedClass(diagnostics, name);
             exposedClasses.put(name, cls);
         }
         return cls;
     }
 
-    private ExposedClass createExposedClass(String name) {
+    private ExposedClass createExposedClass(Diagnostics diagnostics, String name) {
         ClassReader cls = hierarchy.getClassSource().get(name);
         ExposedClass exposedCls = new ExposedClass();
         if (cls != null) {
-            createExposedClass(cls, exposedCls);
+            createExposedClass(diagnostics, cls, exposedCls);
         }
         return exposedCls;
     }
 
-    private void createExposedClass(ClassReader cls, ExposedClass exposedCls) {
+    private void createExposedClass(Diagnostics diagnostics, ClassReader cls, ExposedClass exposedCls) {
         if (cls.hasModifier(ElementModifier.INTERFACE)) {
             return;
         }
         if (cls.getParent() != null) {
-            ExposedClass parent = getExposedClass(cls.getParent());
+            ExposedClass parent = getExposedClass(diagnostics, cls.getParent());
             exposedCls.inheritedMethods.addAll(parent.inheritedMethods);
             exposedCls.inheritedMethods.addAll(parent.methods.keySet());
             exposedCls.implementedInterfaces.addAll(parent.implementedInterfaces);
         }
-        if (!addInterfaces(exposedCls, cls)) {
-            addExportedMethods(exposedCls, cls);
+        if (!addInterfaces(diagnostics, exposedCls, cls)) {
+            addExportedMethods(diagnostics, exposedCls, cls);
         }
     }
 
@@ -450,7 +452,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         return cls.getInterfaces().stream().anyMatch(typeHelper::isJavaScriptClass);
     }
 
-    private boolean addInterfaces(ExposedClass exposedCls, ClassReader cls) {
+    private boolean addInterfaces(Diagnostics diagnostics, ExposedClass exposedCls, ClassReader cls) {
         boolean added = false;
         for (String ifaceName : cls.getInterfaces()) {
             if (exposedCls.implementedInterfaces.contains(ifaceName)) {
@@ -460,52 +462,57 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             if (iface == null) {
                 continue;
             }
-            if (addInterface(exposedCls, iface)) {
+            if (addInterface(diagnostics, exposedCls, iface)) {
                 added = true;
                 for (MethodReader method : iface.getMethods()) {
                     if (method.hasModifier(ElementModifier.STATIC)
                             || (method.getProgram() != null && method.getProgram().basicBlockCount() > 0)) {
                         continue;
                     }
-                    addExportedMethod(exposedCls, method);
+                    addExportedMethod(diagnostics, exposedCls, cls, method);
                 }
             } else {
-                addExportedMethods(exposedCls, iface);
+                addExportedMethods(diagnostics, exposedCls, iface);
             }
         }
         return added;
     }
 
-    private boolean addInterface(ExposedClass exposedCls, ClassReader cls) {
+    private boolean addInterface(Diagnostics diagnostics, ExposedClass exposedCls, ClassReader cls) {
         if (cls.getName().equals(JSObject.class.getName())) {
             return true;
         }
-        return addInterfaces(exposedCls, cls);
+        return addInterfaces(diagnostics, exposedCls, cls);
     }
 
-    private void addExportedMethods(ExposedClass exposedCls, ClassReader cls) {
+    private void addExportedMethods(Diagnostics diagnostics, ExposedClass exposedCls, ClassReader cls) {
         for (var method : cls.getMethods()) {
             if (method.hasModifier(ElementModifier.STATIC)) {
                 continue;
             }
             if (method.getAnnotations().get(JSExport.class.getName()) != null) {
-                addExportedMethod(exposedCls, method);
+                addExportedMethod(diagnostics, exposedCls, cls, method);
             }
         }
     }
 
-    private void addExportedMethod(ExposedClass exposedCls, MethodReader method) {
+    private void addExportedMethod(Diagnostics diagnostics, ExposedClass exposedCls, ClassReader cls,
+            MethodReader method) {
         if (method.getDescriptor().getName().equals("<init>")
                 || !exposedCls.inheritedMethods.contains(method.getDescriptor())) {
-            exposedCls.methods.put(method.getDescriptor(), createMethodExport(method));
+            exposedCls.methods.put(method.getDescriptor(), createMethodExport(diagnostics, cls, method));
         }
     }
 
-    private MethodExport createMethodExport(MethodReader method) {
+    private MethodExport createMethodExport(Diagnostics diagnostics, ClassReader cls, MethodReader method) {
         String name = null;
         MethodKind kind = MethodKind.METHOD;
         if (method.getName().equals("<init>")) {
             kind = MethodKind.CONSTRUCTOR;
+            if (cls.hasModifier(ElementModifier.ABSTRACT)) {
+                diagnostics.error(new CallLocation(method.getReference()), "Can't export constructor {{m0}} of "
+                        + "abstract class {{c0}}", method.getReference(), cls.getName());
+            }
         } else {
             var methodAnnot = method.getAnnotations().get(JSMethod.class.getName());
             if (methodAnnot != null) {

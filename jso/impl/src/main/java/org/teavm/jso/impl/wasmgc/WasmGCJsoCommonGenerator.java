@@ -250,7 +250,12 @@ class WasmGCJsoCommonGenerator {
     }
 
     WasmGlobal getDefinedClass(WasmGCJsoContext context, String className) {
-        return definedClasses.computeIfAbsent(className, n -> defineClass(context, n));
+        var result = definedClasses.get(className);
+        if (result == null) {
+            result = defineClass(context, className);
+            definedClasses.put(className, result);
+        }
+        return result;
     }
 
     private WasmGlobal defineClass(WasmGCJsoContext context, String className) {
