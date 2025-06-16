@@ -19,7 +19,7 @@ export async function test() {
     assertEquals("Base.foo", new BaseClass().foo());
     assertEquals("Sub.foo", new Subclass().foo());
     assertEquals("Sub.bar", new Subclass().bar());
-    //assertEquals("foo", new SubAbstract().foo);
+    assertEquals("foo", new SubAbstract().foo);
     assertEquals(true, new Subclass() instanceof BaseClass);
     assertEquals(false, new BaseClass() instanceof Subclass);
 }
