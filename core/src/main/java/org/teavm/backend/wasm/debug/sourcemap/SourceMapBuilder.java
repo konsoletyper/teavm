@@ -31,6 +31,7 @@ import org.teavm.model.MethodReference;
 
 public class SourceMapBuilder implements DebugLines {
     private static final String BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    private static final String IGNORE_FILE = "__ignore__";
     private List<String> fileNames = new ArrayList<>();
     private ObjectIntMap<String> fileNameIndexes = new ObjectIntHashMap<>();
     private int ptr;
@@ -94,7 +95,12 @@ public class SourceMapBuilder implements DebugLines {
         output.write(",\"names\":[]");
         output.write(",\"mappings\":\"");
         output.write(mappings.toString());
-        output.write("\"}");
+        output.write("\"");
+        var ignoreFileIndex = fileNameIndexes.getOrDefault(IGNORE_FILE, -1);
+        if (ignoreFileIndex > 0) {
+            output.write(",\"x_google_ignoreList\":[" + ignoreFileIndex + "]");
+        }
+        output.write("}");
     }
 
     private List<String> resolveFiles() throws IOException {
@@ -130,6 +136,10 @@ public class SourceMapBuilder implements DebugLines {
 
     @Override
     public void location(String file, int line) {
+        if (file == null) {
+            file = IGNORE_FILE;
+            line = 1;
+        }
         currentFile = file;
         currentLine = line;
         pendingLocation = true;
@@ -137,9 +147,9 @@ public class SourceMapBuilder implements DebugLines {
 
     @Override
     public void emptyLocation() {
-        currentLine = -1;
-        currentFile = null;
-        pendingLocation = false;
+        currentLine = 1;
+        currentFile = IGNORE_FILE;
+        pendingLocation = true;
     }
 
     @Override

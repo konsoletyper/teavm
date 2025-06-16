@@ -423,12 +423,19 @@ public class WasmBinaryRenderer {
             visitor.preprocess(part);
         }
         visitor.setPositionToEmit(code.getPosition());
-        for (var part : function.getBody()) {
+        for (var i = 0; i < function.getBody().size(); ++i) {
+            var part = function.getBody().get(i);
+            if (i == function.getBody().size() - 1) {
+                visitor.pushLocation(part);
+            }
             part.acceptVisitor(visitor);
         }
-        visitor.endLocation();
 
         code.writeByte(0x0B);
+        if (!function.getBody().isEmpty()) {
+            visitor.popLocation();
+        }
+        visitor.endLocation();
 
         if (dwarfSubprogram != null) {
             dwarfSubprogram.endOffset = code.getPosition() + offset;

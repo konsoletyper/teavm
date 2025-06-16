@@ -1071,6 +1071,9 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         }
         if (blockLevel == 0) {
             if (result != null) {
+                if (result.getLocation() == null) {
+                    result.setLocation(statement.getLocation());
+                }
                 resultConsumer.add(result);
             }
         } else {

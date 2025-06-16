@@ -1379,7 +1379,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         writer.writeLEB(depth - blockDepth);
     }
 
-    private void pushLocation(WasmExpression expression) {
+    public void pushLocation(WasmExpression expression) {
         var location = expression.getLocation() != null
                 ? expression.getLocation()
                 : locationStack.isEmpty() ? null : locationStack.get(locationStack.size() - 1);
@@ -1391,7 +1391,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         }
     }
 
-    private void popLocation() {
+    public void popLocation() {
         var location = locationStack.remove(locationStack.size() - 1);
         if (location != null) {
             emitLocation(location);
