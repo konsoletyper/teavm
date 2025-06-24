@@ -30,11 +30,11 @@ public interface CodeListener {
     default void error(int depth) {
     }
 
-    default int startBlock(boolean loop, WasmHollowType type) {
+    default int startBlock(boolean loop, WasmHollowBlockType type) {
         return 0;
     }
 
-    default int startConditionalBlock(WasmHollowType type) {
+    default int startConditionalBlock(WasmHollowBlockType type) {
         return 0;
     }
 

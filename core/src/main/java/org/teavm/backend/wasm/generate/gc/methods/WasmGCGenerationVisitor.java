@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.generate.gc.methods;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.teavm.ast.ArrayFromDataExpr;
@@ -102,6 +103,7 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
@@ -109,20 +111,25 @@ import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.parsing.resource.ResourceProvider;
 
 public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
+    private static final MethodDescriptor CLINIT = new MethodDescriptor("<clinit>", ValueType.VOID);
+
     private WasmGCGenerationContext context;
     private WasmGCGenerationUtil generationUtil;
     private WasmType expectedType;
     private PreciseTypeInference types;
     private WasmGCVirtualCallGenerator virtualCallGenerator;
     private boolean compactMode;
+    private Set<MethodReference> asyncSplitMethods;
 
     public WasmGCGenerationVisitor(WasmGCGenerationContext context, MethodReference currentMethod,
-            WasmFunction function, int firstVariable, boolean async, PreciseTypeInference types) {
+            WasmFunction function, int firstVariable, boolean async, PreciseTypeInference types,
+            Set<MethodReference> asyncSplitMethods) {
         super(context, currentMethod, function, firstVariable, async);
         this.context = context;
         generationUtil = new WasmGCGenerationUtil(context.classInfoProvider());
         virtualCallGenerator = new WasmGCVirtualCallGenerator(context.virtualTables(), context.classInfoProvider());
         this.types = types;
+        this.asyncSplitMethods = asyncSplitMethods;
     }
 
     public void setCompactMode(boolean compactMode) {
@@ -428,7 +435,8 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected WasmExpression generateVirtualCall(WasmLocal instance, MethodReference method,
             List<WasmExpression> arguments) {
-        return virtualCallGenerator.generate(method, instance, arguments.subList(1, arguments.size()));
+        return virtualCallGenerator.generate(method, isAsyncSplit(method), instance,
+                arguments.subList(1, arguments.size()));
     }
 
     @Override
@@ -652,6 +660,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         var pointer = context.classInfoProvider().getClassInfo(className).getInitializerPointer();
         var result = new WasmCallReference(new WasmGetGlobal(pointer),
                 context.functionTypes().of(null));
+        result.setSuspensionPoint(isAsyncSplit(new MethodReference(className, CLINIT)));
         result.setLocation(location);
         return result;
     }
@@ -883,6 +892,60 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         return super.condBlockType(thenType, elseType, conditional);
     }
 
+    @Override
+    protected boolean isAsyncSplit(MethodReference methodRef) {
+        if (!isAsync()) {
+            return false;
+        }
+        return isAsyncSplitImpl(findRealMethod(methodRef));
+    }
+
+    private boolean isAsyncSplitImpl(MethodReference methodRef) {
+        if (asyncSplitMethods.isEmpty()) {
+            return false;
+        }
+        if (asyncSplitMethods.contains(methodRef)) {
+            return true;
+        }
+
+        var cls = context.classes().get(methodRef.getClassName());
+        if (cls == null) {
+            return false;
+        }
+
+        if (cls.getParent() != null) {
+            if (isAsyncSplitImpl(new MethodReference(cls.getParent(), methodRef.getDescriptor()))) {
+                return true;
+            }
+        }
+        for (var itf : cls.getInterfaces()) {
+            if (isAsyncSplitImpl(new MethodReference(itf, methodRef.getDescriptor()))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private MethodReference findRealMethod(MethodReference method) {
+        var clsName = method.getClassName();
+        while (clsName != null) {
+            var cls = context.classes().get(clsName);
+            if (cls == null) {
+                break;
+            }
+            var methodReader = cls.getMethod(method.getDescriptor());
+            if (methodReader != null) {
+                return new MethodReference(clsName, method.getDescriptor());
+            }
+            clsName = cls.getParent();
+            if (clsName != null && clsName.equals(cls.getName())) {
+                break;
+            }
+        }
+        return method;
+    }
+
     private class SimpleCallSite extends CallSiteIdentifier {
         @Override
         public void generateRegister(List<WasmExpression> consumer, TextLocation location) {
@@ -1007,6 +1070,11 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         @Override
         public void addToInitializer(Consumer<WasmFunction> initializerContributor) {
             context.addToInitializer(initializerContributor);
+        }
+
+        @Override
+        public boolean isAsync() {
+            return WasmGCGenerationVisitor.this.isAsync();
         }
     };
 }

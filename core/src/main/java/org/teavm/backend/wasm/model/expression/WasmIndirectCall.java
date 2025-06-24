@@ -24,6 +24,7 @@ public class WasmIndirectCall extends WasmExpression {
     private WasmFunctionType type;
     private WasmExpression selector;
     private List<WasmExpression> arguments = new ArrayList<>();
+    private boolean suspensionPoint;
 
     public WasmIndirectCall(WasmExpression selector, WasmFunctionType type) {
         this.selector = Objects.requireNonNull(selector);
@@ -53,5 +54,13 @@ public class WasmIndirectCall extends WasmExpression {
     @Override
     public void acceptVisitor(WasmExpressionVisitor visitor) {
         visitor.visit(this);
+    }
+
+    public boolean isSuspensionPoint() {
+        return suspensionPoint;
+    }
+
+    public void setSuspensionPoint(boolean suspensionPoint) {
+        this.suspensionPoint = suspensionPoint;
     }
 }

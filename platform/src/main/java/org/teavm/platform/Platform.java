@@ -23,7 +23,6 @@ import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Function;
 import org.teavm.interop.NoSideEffects;
-import org.teavm.interop.PlatformMarker;
 import org.teavm.interop.Platforms;
 import org.teavm.interop.Unmanaged;
 import org.teavm.interop.UnsupportedOn;
@@ -196,18 +195,6 @@ public final class Platform {
         Window.clearTimeout(id);
     }
 
-    public static <T> PlatformQueue<T> createQueue() {
-        if (isLowLevel()) {
-            return new LowLevelQueue<>();
-        } else {
-            return createQueueJs();
-        }
-    }
-
-    @JSBody(script = "return [];")
-    @NoSideEffects
-    private static native  <T> PlatformQueue<T> createQueueJs();
-
     public static PlatformString stringFromCharCode(int charCode) {
         return JSString.fromCharCode(charCode).cast();
     }
@@ -260,10 +247,5 @@ public final class Platform {
     @PluggableDependency(PlatformGenerator.class)
     public static PlatformClass getDeclaringClass(PlatformClass cls) {
         return cls.getMetadata().getDeclaringClass();
-    }
-
-    @PlatformMarker(Platforms.LOW_LEVEL)
-    private static boolean isLowLevel() {
-        return false;
     }
 }

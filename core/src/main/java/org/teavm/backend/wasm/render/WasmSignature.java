@@ -20,16 +20,16 @@ import java.util.Objects;
 import org.teavm.backend.wasm.model.WasmType;
 
 public final class WasmSignature {
-    private WasmType returnType;
+    private List<? extends WasmType> returnTypes;
     private List<? extends WasmType> types;
 
-    public WasmSignature(WasmType returnType, WasmType... parameterTypes) {
-        this.returnType = returnType;
-        this.types = List.of(parameterTypes);
+    public WasmSignature(List<? extends WasmType> returnType, List<? extends WasmType> parameterTypes) {
+        this.returnTypes = Objects.requireNonNull(returnType);
+        this.types = Objects.requireNonNull(parameterTypes);
     }
 
-    public WasmType getReturnType() {
-        return returnType;
+    public List<? extends WasmType> getReturnTypes() {
+        return returnTypes;
     }
 
     public List<? extends WasmType> getParameterTypes() {
@@ -45,11 +45,11 @@ public final class WasmSignature {
             return false;
         }
         WasmSignature that = (WasmSignature) o;
-        return Objects.equals(types, that.types) && Objects.equals(returnType, that.returnType);
+        return Objects.equals(types, that.types) && Objects.equals(returnTypes, that.returnTypes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(types, returnType);
+        return Objects.hash(types, returnTypes);
     }
 }

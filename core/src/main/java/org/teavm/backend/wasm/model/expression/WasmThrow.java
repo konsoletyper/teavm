@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.model.expression;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.teavm.backend.wasm.model.WasmTag;
 
 public class WasmThrow extends WasmExpression {
@@ -42,5 +43,15 @@ public class WasmThrow extends WasmExpression {
     @Override
     public void acceptVisitor(WasmExpressionVisitor visitor) {
         visitor.visit(this);
+    }
+
+    @Override
+    protected boolean isTerminating(Set<WasmBlock> blocks) {
+        return true;
+    }
+
+    @Override
+    public boolean isImmediateTerminating() {
+        return true;
     }
 }

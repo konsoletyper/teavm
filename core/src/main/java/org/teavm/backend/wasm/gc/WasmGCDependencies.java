@@ -22,10 +22,12 @@ import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyAnalyzer;
-import org.teavm.dependency.MethodDependency;
 import org.teavm.interop.Address;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.runtime.EventQueue;
+import org.teavm.runtime.Fiber;
 import org.teavm.runtime.heap.Heap;
 
 public class WasmGCDependencies {
@@ -43,11 +45,11 @@ public class WasmGCDependencies {
         contributeInitializerUtils();
         contributeString();
         contributeBuffers();
+        contributeFiber();
         analyzer.addDependencyListener(new WasmGCReferenceQueueDependency());
         analyzer.addDependencyListener(new WasmGCResourceDependency());
         analyzer.addDependencyListener(new SystemArrayCopyDependencySupport());
         analyzer.addDependencyListener(new WasmGCSignatureDependencyListener());
-        handleReferences();
     }
 
     public void contributeStandardExports() {
@@ -141,12 +143,34 @@ public class WasmGCDependencies {
                 void.class)).use();
     }
 
-    private void handleReferences() {
-        analyzer.addDependencyListener(new AbstractDependencyListener() {
-            @Override
-            public void methodReached(DependencyAgent agent, MethodDependency method) {
-                var ref = method.getMethod().getReference();
-            }
+    private void contributeFiber() {
+        analyzer.linkMethod(new MethodReference(Fiber.class, "isResuming", boolean.class)).use();
+        analyzer.linkMethod(new MethodReference(Fiber.class, "isSuspending", boolean.class)).use();
+        analyzer.linkMethod(new MethodReference(Fiber.class, "current", Fiber.class)).use();
+        analyzer.linkMethod(new MethodReference(Thread.class, "setCurrentThread", Thread.class,
+                void.class)).use();
+
+        var offerMethod = analyzer.linkMethod(new MethodReference(EventQueue.class, "offer", EventQueue.Event.class,
+                long.class, int.class));
+        var runEventMethod = analyzer.linkMethod(new MethodReference(EventQueue.class, "run", EventQueue.Event.class,
+                void.class));
+
+        offerMethod.getVariable(1).addConsumer(type -> {
+            runEventMethod.getVariable(1).propagate(type);
+            runEventMethod.use();
         });
+
+        var fiberClass = analyzer.getClassSource().get(Fiber.class.getName());
+        for (MethodReader method : fiberClass.getMethods()) {
+            if (method.getName().startsWith("pop")) {
+                analyzer.linkMethod(method.getReference())
+                        .propagate(0, Fiber.class)
+                        .use();
+            } else if (method.getName().equals("reversePush")) {
+                analyzer.linkMethod(method.getReference())
+                        .propagate(2, Fiber.class)
+                        .use();
+            }
+        }
     }
 }

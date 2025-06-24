@@ -771,7 +771,7 @@ public class CodeParser extends BaseSectionParser {
     }
 
     private boolean parseBlock(boolean isLoop) {
-        var type = reader.readType();
+        var type = reader.readBlockType();
         var token = codeListener.startBlock(isLoop, type);
         blockStack.add(new Block(token));
         if (!parseExpressions()) {
@@ -785,7 +785,7 @@ public class CodeParser extends BaseSectionParser {
     }
 
     private boolean parseConditional() {
-        var type = reader.readType();
+        var type = reader.readBlockType();
         var token = codeListener.startConditionalBlock(type);
         blockStack.add(new Block(token));
         var hasElse = false;

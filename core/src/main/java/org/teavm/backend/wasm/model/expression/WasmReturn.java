@@ -45,4 +45,9 @@ public class WasmReturn extends WasmExpression {
     protected boolean isTerminating(Set<WasmBlock> blocks) {
         return true;
     }
+
+    @Override
+    public boolean isImmediateTerminating() {
+        return true;
+    }
 }

@@ -63,7 +63,7 @@ public class TThread extends TObject implements TRunnable {
     }
 
     public void start() {
-        if (PlatformDetector.isLowLevel()) {
+        if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
             boolean daemon = this.daemon;
             if (!daemon) {
                 Fiber.userThreadCount++;
@@ -163,7 +163,7 @@ public class TThread extends TObject implements TRunnable {
     static native void switchContext(TThread thread);
 
     private static void switchContext(final TThread thread, final AsyncCallback<Void> callback) {
-        if (PlatformDetector.isLowLevel()) {
+        if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
             EventQueue.offer(() -> {
                 setCurrentThread(thread);
                 callback.complete(null);
@@ -217,7 +217,7 @@ public class TThread extends TObject implements TRunnable {
     private static void sleep(long millis, AsyncCallback<Void> callback) {
         TThread current = currentThread();
         SleepHandler handler = new SleepHandler(current, callback);
-        if (PlatformDetector.isLowLevel()) {
+        if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
             if (current.interruptedFlag) {
                 handler.interrupted();
             } else {
@@ -246,7 +246,7 @@ public class TThread extends TObject implements TRunnable {
         public void interrupted() {
             thread.interruptedFlag = false;
             isInterrupted = true;
-            if (PlatformDetector.isLowLevel()) {
+            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
                 EventQueue.kill(scheduleId);
                 EventQueue.offer(() -> callback.error(new TInterruptedException()));
             } else {

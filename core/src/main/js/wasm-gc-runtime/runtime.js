@@ -42,6 +42,7 @@ function defaults(imports, userExports, options, module) {
     dateImports(imports);
     consoleImports(imports, context);
     coreImports(imports, context, options, module);
+    asyncImports(imports, context);
     jsoImports(imports, context);
     imports.teavmMath = Math;
     return {
@@ -223,6 +224,20 @@ function coreImports(imports, context, options, module) {
         }
         imports.teavm.memory = memoryInstance;
     }
+}
+
+function asyncImports(imports) {
+    imports.teavmAsync = {
+        offer(instance, fn, time) {
+            let dt = Math.max(0, time - Date.now());
+            return setTimeout(() => {
+                fn(instance);
+            }, dt);
+        },
+        kill(id) {
+            clearTimeout(id);
+        }
+    };
 }
 
 function hasImportedMemory(module) {
@@ -553,7 +568,7 @@ function jsoImports(imports, context) {
                 return result;
             }
         },
-        isPrimitive: (value, type) => typeof value === type,
+        isPrimitive: (value, type) => typeof value === type || value === null,
         instanceOf: (value, type) => value instanceof type,
         instanceOfOrNull: (value, type) => value === null || value instanceof type,
         sameRef: (a, b) => a === b,

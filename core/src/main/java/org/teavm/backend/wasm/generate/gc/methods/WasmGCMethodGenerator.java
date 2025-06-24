@@ -20,12 +20,14 @@ import java.io.StringWriter;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
@@ -48,12 +50,21 @@ import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmTag;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmBlock;
+import org.teavm.backend.wasm.model.expression.WasmCatch;
+import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
+import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
+import org.teavm.backend.wasm.model.expression.WasmThrow;
+import org.teavm.backend.wasm.model.expression.WasmTry;
+import org.teavm.backend.wasm.model.expression.WasmUnreachable;
+import org.teavm.backend.wasm.transformation.gc.CoroutineTransformation;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.interop.Async;
 import org.teavm.interop.Import;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHierarchy;
@@ -105,6 +116,9 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private Consumer<WasmGCInitializerContributor> initializerContributors;
     private boolean compactMode;
     private DependencyInfo dependency;
+    private Set<MethodReference> asyncMethods = Set.of();
+    private Set<MethodReference> asyncSplitMethods = Set.of();
+    private CoroutineTransformation coroutineTransformation;
 
     public WasmGCMethodGenerator(
             WasmModule module,
@@ -140,6 +154,14 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         this.strict = strict;
         this.entryPoint = entryPoint;
         this.initializerContributors = initializerContributors;
+    }
+
+    public void setAsyncMethods(Set<MethodReference> asyncMethods) {
+        this.asyncMethods = asyncMethods;
+    }
+
+    public void setAsyncSplitMethods(Set<MethodReference> asyncSplitMethods) {
+        this.asyncSplitMethods = asyncSplitMethods;
     }
 
     public void setCompactMode(boolean compactMode) {
@@ -259,6 +281,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
             e.printStackTrace(printWriter);
             diagnostics.error(new CallLocation(method.getReference()),
                     "Failed generating method body due to internal exception: " + buffer);
+            function.getBody().clear();
+            function.getBody().add(new WasmUnreachable());
         }
     }
 
@@ -315,6 +339,8 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
 
         var nonNullableVars = new boolean[ast.getVariables().size()];
         var preciseTypes = new PreciseValueType[ast.getVariables().size()];
+        var isSuspend = asyncMethods.contains(method.getReference())
+                && method.getAnnotations().get(Async.class.getName()) == null;
         for (var i = firstVar; i < ast.getVariables().size(); ++i) {
             var representative = method.getProgram().variableAt(variableRepresentatives[i]);
             var inferredType = typeInference.typeOf(representative);
@@ -322,9 +348,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
                 inferredType = new PreciseValueType(ValueType.object("java.lang.Object"), false);
             }
             preciseTypes[i] = inferredType;
-            nonNullableVars[i] = inferredType.isArrayUnwrap;
+            nonNullableVars[i] = !isSuspend && inferredType.isArrayUnwrap;
         }
-        calculateNonNullableVars(nonNullableVars, ast);
+        if (!isSuspend) {
+            calculateNonNullableVars(nonNullableVars, ast);
+        }
 
         for (var i = firstVar; i < ast.getVariables().size(); ++i) {
             var localVar = ast.getVariables().get(i);
@@ -344,9 +372,54 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
 
         addInitializerErase(method, function);
         var visitor = new WasmGCGenerationVisitor(getGenerationContext(), method.getReference(),
-                function, firstVar, false, typeInference);
+                function, firstVar, isSuspend, typeInference, asyncSplitMethods);
         visitor.setCompactMode(methodCompact);
-        visitor.generate(ast.getBody(), function.getBody());
+        var target = function.getBody();
+        target = wrapSynchronizedMethod(method, visitor, function, target);
+        visitor.generate(ast.getBody(), target);
+        if (isSuspend) {
+            if (coroutineTransformation == null) {
+                coroutineTransformation = new CoroutineTransformation(functionTypes, this, classInfoProvider);
+            }
+            coroutineTransformation.transform(function);
+        }
+    }
+
+    private List<WasmExpression> wrapSynchronizedMethod(MethodHolder method, WasmGCGenerationVisitor visitor,
+            WasmFunction function, List<WasmExpression> target) {
+        if (!method.hasModifier(ElementModifier.SYNCHRONIZED)) {
+            return target;
+        }
+
+        Supplier<WasmExpression> obj = method.hasModifier(ElementModifier.STATIC)
+                ? () -> new WasmGetGlobal(context.classInfoProvider().getClassInfo(method.getOwnerName()).getPointer())
+                : () -> new WasmGetLocal(function.getLocalVariables().get(0));
+        visitor.monitorEnter(obj.get(), null, target);
+
+        var returnBlock = new WasmBlock(false);
+        returnBlock.setType(context.functionTypes().blockType(function.getType().getReturnTypes()));
+        target.add(returnBlock);
+
+        var tryCatch = new WasmTry();
+        tryCatch.setType(function.getType().getSingleReturnType());
+        returnBlock.getBody().add(tryCatch);
+
+        var catchClause = new WasmCatch(context.getExceptionTag());
+        var catchVar = new WasmLocal(context.classInfoProvider().getClassInfo("java.lang.Throwable").getType());
+        catchClause.getCatchVariables().add(catchVar);
+        function.add(catchVar);
+
+        visitor.monitorExit(obj.get(), null, catchClause.getBody());
+        var rethrow = new WasmThrow(context.getExceptionTag());
+        rethrow.getArguments().add(new WasmGetLocal(catchVar));
+        catchClause.getBody().add(rethrow);
+        tryCatch.getCatches().add(catchClause);
+
+        visitor.monitorExit(obj.get(), null, target);
+
+        visitor.setReturnBlock(returnBlock);
+
+        return tryCatch.getBody();
     }
 
     private void eliminateMultipleNullConstantUsages(Program program) {
@@ -560,6 +633,11 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
         @Override
         public WasmGCStringProvider strings() {
             return context.strings();
+        }
+
+        @Override
+        public WasmGCVirtualTableProvider virtualTables() {
+            return context.virtualTables();
         }
 
         @Override

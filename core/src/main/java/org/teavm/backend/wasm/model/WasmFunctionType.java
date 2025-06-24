@@ -36,6 +36,13 @@ public class WasmFunctionType extends WasmCompositeType {
         this.parameterTypes = parameterTypes;
     }
 
+    public WasmFunctionType(String name, List<? extends WasmType> returnTypes,
+            List<? extends WasmType> parameterTypes) {
+        super(name);
+        this.returnTypes = returnTypes;
+        this.parameterTypes = parameterTypes;
+    }
+
     public WasmFunctionType(String name, Supplier<List<? extends WasmType>> returnTypeSupplier,
             Supplier<List<? extends WasmType>> parameterTypesSupplier) {
         super(name);

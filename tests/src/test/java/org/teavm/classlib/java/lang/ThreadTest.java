@@ -30,20 +30,20 @@ import org.teavm.junit.TestPlatform;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
-@SkipPlatform({TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC})
+@SkipPlatform(TestPlatform.WASI)
 public class ThreadTest {
     @Test
     public void sleeps() throws InterruptedException {
         long start = System.currentTimeMillis();
         Thread.sleep(100);
         long duration = System.currentTimeMillis() - start;
-        assertTrue("Thread.sleep did not wait enough", duration >= 100);
+        assertTrue("Thread.sleep did not wait enough: " + duration, duration >= 100);
     }
 
     @Test
     public void sleepInterrupted() {
         long start = System.currentTimeMillis();
-        final Thread mainThread = Thread.currentThread();
+        var mainThread = Thread.currentThread();
         new Thread(() -> {
             try {
                 Thread.sleep(50);

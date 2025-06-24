@@ -106,20 +106,20 @@ public class Devirtualization {
         ValueDependencyInfo var = methodDep.getVariable(invoke.getInstance().getIndex());
         Set<MethodReference> implementations = getImplementations(var, invoke.getMethod());
         if (implementations.size() == 1) {
-            MethodReference resolvedImplementaiton = implementations.iterator().next();
+            MethodReference resolvedImplementation = implementations.iterator().next();
             if (shouldLog) {
                 System.out.print("DIRECT CALL " + invoke.getMethod() + " resolved to "
-                        + resolvedImplementaiton.getClassName());
+                        + resolvedImplementation.getClassName());
                 if (invoke.getLocation() != null) {
                     System.out.print(" at " + invoke.getLocation().getFileName() + ":"
                             + invoke.getLocation().getLine());
                 }
                 System.out.println();
             }
-            if (!resolvedImplementaiton.getClassName().equals(invoke.getMethod().getClassName())) {
+            if (!resolvedImplementation.getClassName().equals(invoke.getMethod().getClassName())) {
                 var cast = new CastInstruction();
                 cast.setValue(invoke.getInstance());
-                cast.setTargetType(ValueType.object(resolvedImplementaiton.getClassName()));
+                cast.setTargetType(ValueType.object(resolvedImplementation.getClassName()));
                 cast.setWeak(true);
                 cast.setReceiver(program.createVariable());
                 cast.setLocation(invoke.getLocation());
@@ -127,7 +127,7 @@ public class Devirtualization {
                 invoke.setInstance(cast.getReceiver());
             }
             invoke.setType(InvocationType.SPECIAL);
-            invoke.setMethod(resolvedImplementaiton);
+            invoke.setMethod(resolvedImplementation);
             directCallSites++;
         } else {
             virtualMethods.addAll(implementations);

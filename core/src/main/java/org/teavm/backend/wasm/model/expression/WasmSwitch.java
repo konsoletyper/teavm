@@ -66,4 +66,9 @@ public class WasmSwitch extends WasmExpression {
         }
         return !blocks.contains(defaultTarget);
     }
+
+    @Override
+    public boolean isImmediateTerminating() {
+        return true;
+    }
 }

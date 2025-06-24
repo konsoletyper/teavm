@@ -40,7 +40,8 @@ public class WasmGCVirtualCallGenerator {
         this.classInfoProvider = classInfoProvider;
     }
 
-    public WasmExpression generate(MethodReference method, WasmLocal instance, List<WasmExpression> arguments) {
+    public WasmExpression generate(MethodReference method, boolean suspending, WasmLocal instance,
+            List<WasmExpression> arguments) {
         var vtable = virtualTables.lookup(method.getClassName());
         if (vtable == null) {
             return new WasmUnreachable();
@@ -66,6 +67,7 @@ public class WasmGCVirtualCallGenerator {
         var functionRef = new WasmStructGet(vtableStruct, classRef, index);
         var functionTypeRef = (WasmType.CompositeReference) vtableStruct.getFields().get(index).getUnpackedType();
         var invoke = new WasmCallReference(functionRef, (WasmFunctionType) functionTypeRef.composite);
+        invoke.setSuspensionPoint(suspending);
         WasmExpression instanceRef = new WasmGetLocal(instance);
         var instanceType = (WasmType.CompositeReference) instance.getType();
         var instanceStruct = (WasmStructure) instanceType.composite;

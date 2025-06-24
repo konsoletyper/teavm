@@ -1353,7 +1353,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 var call = new WasmCall(function);
                 var instanceParam = new WasmLocal(getClassInfo(virtualTable.getClassName()).getType());
                 wrapperFunction.add(instanceParam);
-                var castTarget = getClassInfo(implementor.getClassName()).getStructure().getNonNullReference();
+                var castTarget = getClassInfo(implementor.getClassName()).getStructure().getReference();
                 call.getArguments().add(new WasmCast(new WasmGetLocal(instanceParam), castTarget));
                 var params = new WasmLocal[entry.getMethod().parameterCount()];
                 for (var i = 0; i < entry.getMethod().parameterCount(); ++i) {

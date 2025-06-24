@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.generators.gc;
 import java.util.function.Consumer;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
 import org.teavm.backend.wasm.WasmFunctionTypes;
+import org.teavm.backend.wasm.gc.vtable.WasmGCVirtualTableProvider;
 import org.teavm.backend.wasm.generate.gc.WasmGCNameProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCTypeMapper;
@@ -52,6 +53,8 @@ public interface WasmGCCustomGeneratorContext {
     WasmGCStringProvider strings();
 
     String entryPoint();
+
+    WasmGCVirtualTableProvider virtualTables();
 
     boolean isCompactMode();
 

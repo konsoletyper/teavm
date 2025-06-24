@@ -29,6 +29,7 @@ import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
+import org.teavm.runtime.EventQueue;
 
 public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
     private List<WasmGCCustomGeneratorFactory> factories;
@@ -52,6 +53,7 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
         fillWeakReference();
         fillString();
         fillResources();
+        fillEventQueue();
         for (var entry : generators.entrySet()) {
             add(entry.getKey(), entry.getValue());
         }
@@ -99,6 +101,12 @@ public class WasmGCCustomGenerators implements WasmGCCustomGeneratorProvider {
     private void fillResources() {
         add(new MethodReference(WasmGCResources.class, "acquireResources", WasmGCResources.Resource[].class),
                 resourcesGenerator);
+    }
+
+    private void fillEventQueue() {
+        var generator = new EventQueueGenerator();
+        add(new MethodReference(EventQueue.class, "offerWasmGC", EventQueue.Event.class, double.class, int.class),
+                generator);
     }
 
     @Override

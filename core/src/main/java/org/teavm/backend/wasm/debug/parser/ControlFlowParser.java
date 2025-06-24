@@ -26,7 +26,7 @@ import org.teavm.backend.wasm.parser.BranchOpcode;
 import org.teavm.backend.wasm.parser.CodeListener;
 import org.teavm.backend.wasm.parser.CodeSectionListener;
 import org.teavm.backend.wasm.parser.Opcode;
-import org.teavm.backend.wasm.parser.WasmHollowType;
+import org.teavm.backend.wasm.parser.WasmHollowBlockType;
 
 public class ControlFlowParser implements CodeSectionListener, CodeListener, AddressListener {
     private int previousAddress;
@@ -60,12 +60,12 @@ public class ControlFlowParser implements CodeSectionListener, CodeListener, Add
     }
 
     @Override
-    public int startBlock(boolean loop, WasmHollowType type) {
+    public int startBlock(boolean loop, WasmHollowBlockType type) {
         return startBlock(loop);
     }
 
     @Override
-    public int startConditionalBlock(WasmHollowType type) {
+    public int startConditionalBlock(WasmHollowBlockType type) {
         return startBlock(false);
     }
 

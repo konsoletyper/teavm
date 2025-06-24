@@ -15,14 +15,11 @@
  */
 package org.teavm.backend.wasm.model.expression;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import org.teavm.backend.wasm.model.WasmStructure;
 
 public class WasmStructNewDefault extends WasmExpression {
     private WasmStructure type;
-    private List<WasmExpression> initializers = new ArrayList<>();
 
     public WasmStructNewDefault(WasmStructure type) {
         this.type = Objects.requireNonNull(type);

@@ -52,6 +52,15 @@ public class WasmBinaryReader {
         }
     }
 
+    public WasmHollowBlockType readBlockType() {
+        if (data[ptr] < 0x40) {
+            return new WasmHollowBlockType.Function(readSignedLEB());
+        } else {
+            var result = readType();
+            return result != null ? new WasmHollowBlockType.Value(result) : null;
+        }
+    }
+
     public WasmHollowType readType() {
         var typeId = data[ptr++];
         switch (typeId) {

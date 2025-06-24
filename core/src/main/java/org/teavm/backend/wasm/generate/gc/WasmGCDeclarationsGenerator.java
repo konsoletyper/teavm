@@ -48,9 +48,11 @@ import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableBuilder;
+import org.teavm.model.util.AsyncMethodFinder;
 import org.teavm.parsing.resource.ResourceProvider;
 
 public class WasmGCDeclarationsGenerator {
+    private final ListableClassHolderSource classes;
     public final ClassHierarchy hierarchy;
     public final WasmModule module;
     public final WasmFunctionTypes functionTypes;
@@ -58,6 +60,7 @@ public class WasmGCDeclarationsGenerator {
     private final WasmGCMethodGenerator methodGenerator;
     private List<WasmGCInitializerContributor> initializerContributors = new ArrayList<>();
     private Collection<MethodReference> additionalMethodsOnCallSites;
+    private AsyncMethodFinder asyncMethodFinder;
 
     public WasmGCDeclarationsGenerator(
             WasmModule module,
@@ -77,6 +80,7 @@ public class WasmGCDeclarationsGenerator {
             Collection<MethodReference> additionalMethodsOnCallSites
     ) {
         this.module = module;
+        this.classes = classes;
         hierarchy = new ClassHierarchy(classes);
         this.additionalMethodsOnCallSites = additionalMethodsOnCallSites;
         var virtualTables = createVirtualTableProvider(classes, isVirtual);
@@ -122,6 +126,7 @@ public class WasmGCDeclarationsGenerator {
         methodGenerator.setSupertypeFunctions(classGenerator.getSupertypeProvider());
         methodGenerator.setStandardClasses(classGenerator.standardClasses);
         methodGenerator.setTypeMapper(classGenerator.typeMapper);
+        asyncMethodFinder = new AsyncMethodFinder(dependencyInfo.getCallGraph(), dependencyInfo);
     }
 
     public void setCompactMode(boolean compactMode) {
@@ -150,6 +155,9 @@ public class WasmGCDeclarationsGenerator {
     }
 
     public void generate() {
+        asyncMethodFinder.find(classes);
+        methodGenerator.setAsyncMethods(asyncMethodFinder.getAsyncMethods());
+        methodGenerator.setAsyncSplitMethods(asyncMethodFinder.getAsyncFamilyMethods());
         var lastTypeIndex = 0;
         do {
             generateRound();

@@ -24,6 +24,7 @@ public class WasmCallReference extends WasmExpression {
     private WasmFunctionType type;
     private WasmExpression functionReference;
     private List<WasmExpression> arguments = new ArrayList<>();
+    private boolean suspensionPoint;
 
     public WasmCallReference(WasmExpression functionReference, WasmFunctionType type) {
         this.functionReference = Objects.requireNonNull(functionReference);
@@ -58,5 +59,13 @@ public class WasmCallReference extends WasmExpression {
     @Override
     public void acceptVisitor(WasmExpressionVisitor visitor) {
         visitor.visit(this);
+    }
+
+    public boolean isSuspensionPoint() {
+        return suspensionPoint;
+    }
+
+    public void setSuspensionPoint(boolean suspensionPoint) {
+        this.suspensionPoint = suspensionPoint;
     }
 }

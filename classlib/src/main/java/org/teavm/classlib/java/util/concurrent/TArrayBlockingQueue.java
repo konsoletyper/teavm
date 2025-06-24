@@ -16,10 +16,12 @@
 package org.teavm.classlib.java.util.concurrent;
 
 import java.lang.reflect.Array;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Queue;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TInterruptedException;
 import org.teavm.classlib.java.lang.TThread;
@@ -30,7 +32,6 @@ import org.teavm.classlib.java.util.TIterator;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.platform.Platform;
-import org.teavm.platform.PlatformQueue;
 import org.teavm.platform.PlatformRunnable;
 import org.teavm.runtime.EventQueue;
 
@@ -38,7 +39,7 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
     private Object[] array;
     private int head;
     private int tail;
-    private PlatformQueue<WaitHandler> waitHandlers;
+    private Queue<WaitHandler> waitHandlers;
 
     public TArrayBlockingQueue(int capacity) {
         this(capacity, false);
@@ -416,7 +417,7 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
         }
         while (!waitHandlers.isEmpty()) {
             WaitHandler handler = waitHandlers.remove();
-            if (PlatformDetector.isLowLevel()) {
+            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
                 EventQueue.offer(handler::changed);
             } else {
                 Platform.postpone(handler::changed);
@@ -430,14 +431,14 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
 
     private void waitForChange(long timeLimit, AsyncCallback<Boolean> callback) {
         if (waitHandlers == null) {
-            waitHandlers = Platform.createQueue();
+            waitHandlers = new ArrayDeque<>();
         }
 
         WaitHandler handler = new WaitHandler(callback);
         waitHandlers.add(handler);
         if (timeLimit > 0) {
             int timeout = Math.max(0, (int) (timeLimit - System.currentTimeMillis()));
-            handler.timerId = PlatformDetector.isLowLevel()
+            handler.timerId = PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()
                     ? EventQueue.offer(handler, timeLimit)
                     : Platform.schedule(handler, timeout);
         } else {
@@ -478,7 +479,7 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
             }
             complete = true;
             if (timerId >= 0) {
-                if (PlatformDetector.isLowLevel()) {
+                if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
                     EventQueue.kill(timerId);
                 } else {
                     Platform.killSchedule(timerId);

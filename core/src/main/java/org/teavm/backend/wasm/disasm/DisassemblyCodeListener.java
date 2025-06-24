@@ -29,6 +29,7 @@ import org.teavm.backend.wasm.parser.BranchOpcode;
 import org.teavm.backend.wasm.parser.CodeListener;
 import org.teavm.backend.wasm.parser.LocalOpcode;
 import org.teavm.backend.wasm.parser.Opcode;
+import org.teavm.backend.wasm.parser.WasmHollowBlockType;
 import org.teavm.backend.wasm.parser.WasmHollowType;
 
 public class DisassemblyCodeListener extends BaseDisassemblyListener implements CodeListener {
@@ -57,7 +58,7 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
     }
 
     @Override
-    public int startBlock(boolean loop, WasmHollowType type) {
+    public int startBlock(boolean loop, WasmHollowBlockType type) {
         writer.address();
         var label = blockIdGen++;
         writer.startLinkTarget("start" + label).startLink("end" + label).write(loop ? "loop" : "block")
@@ -69,7 +70,7 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
     }
 
     @Override
-    public int startConditionalBlock(WasmHollowType type) {
+    public int startConditionalBlock(WasmHollowBlockType type) {
         writer.address();
         var label = blockIdGen++;
         writer.startLinkTarget("start" + label).startLink("end" + label).write("if").endLink().endLinkTarget();
@@ -92,7 +93,10 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
         var label = blockIdGen++;
         writer.startLinkTarget("start" + label).startLink("end" + label).write("try").endLink().endLinkTarget();
         writer.write(" $label_" + label);
-        writeBlockType(type);
+        if (type != null) {
+            writer.write(" ");
+            writeType(type);
+        }
         writer.indent().eol();
         return label;
     }
@@ -645,7 +649,7 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
             boolean nonTrapping) {
         switch (targetType) {
             case INT32:
-                writer.write("i32.");
+                writer.address().write("i32.");
                 switch (sourceType) {
                     case FLOAT32:
                         if (reinterpret) {
@@ -674,7 +678,7 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
                 }
                 break;
             case INT64:
-                writer.write("i64.");
+                writer.address().write("i64.");
                 switch (sourceType) {
                     case FLOAT32:
                         writer.write("trunc_");
@@ -707,7 +711,7 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
                 }
                 break;
             case FLOAT32:
-                writer.write("f32.");
+                writer.address().write("f32.");
                 switch (sourceType) {
                     case INT32:
                         if (reinterpret) {
@@ -734,7 +738,7 @@ public class DisassemblyCodeListener extends BaseDisassemblyListener implements 
                 }
                 break;
             case FLOAT64:
-                writer.write("f64.");
+                writer.address().write("f64.");
                 switch (sourceType) {
                     case INT32:
                         if (signed) {

@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.disasm;
 
+import org.teavm.backend.wasm.parser.WasmHollowBlockType;
 import org.teavm.backend.wasm.parser.WasmHollowStorageType;
 import org.teavm.backend.wasm.parser.WasmHollowType;
 
@@ -27,10 +28,16 @@ public abstract class BaseDisassemblyListener  {
         this.nameProvider = nameProvider;
     }
 
-    protected void writeBlockType(WasmHollowType type) {
+    protected void writeBlockType(WasmHollowBlockType type) {
         if (type != null) {
             writer.write(" ");
-            writeType(type);
+            if (type instanceof WasmHollowBlockType.Value) {
+                writeType(((WasmHollowBlockType.Value) type).type);
+            } else {
+                writer.write("(type ");
+                writeTypeRef(((WasmHollowBlockType.Function) type).ref);
+                writer.write(")");
+            }
         }
     }
 
