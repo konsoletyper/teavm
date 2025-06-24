@@ -356,4 +356,13 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
     public void visit(WasmInt31Get expression) {
         expression.getValue().acceptVisitor(this);
     }
+
+    @Override
+    public void visit(WasmPush expression) {
+        expression.getArgument().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(WasmPop expression) {
+    }
 }

@@ -131,4 +131,8 @@ public interface WasmExpressionVisitor {
     void visit(WasmInt31Reference expression);
 
     void visit(WasmInt31Get expression);
+
+    void visit(WasmPush expression);
+
+    void visit(WasmPop expression);
 }
