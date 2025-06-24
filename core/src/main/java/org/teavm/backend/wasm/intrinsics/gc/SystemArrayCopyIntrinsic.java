@@ -135,6 +135,9 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
         var wasmTargetArrayWrapper = context.generate(invocation.getArguments().get(2));
         var wasmTargetArrayTypeRef = (WasmType.CompositeReference) wasmTargetArrayStruct.getFields()
                 .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
+        if (context.isAsync()) {
+            wasmTargetArrayTypeRef = wasmTargetArrayTypeRef.composite.getReference();
+        }
         var wasmTargetArray = context.exprCache().create(new WasmStructGet(wasmTargetArrayStruct,
                 wasmTargetArrayWrapper, WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET),
                 wasmTargetArrayTypeRef, null, block.getBody());
@@ -146,6 +149,9 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
         var wasmSourceArrayWrapper = context.generate(invocation.getArguments().get(0));
         var wasmSourceArrayTypeRef = (WasmType.CompositeReference) wasmSourceArrayStruct.getFields()
                 .get(WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET).getUnpackedType();
+        if (context.isAsync()) {
+            wasmSourceArrayTypeRef = wasmSourceArrayTypeRef.composite.getReference();
+        }
         var wasmSourceArray = context.exprCache().create(new WasmStructGet(wasmSourceArrayStruct,
                 wasmSourceArrayWrapper, WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET),
                 wasmSourceArrayTypeRef, null, block.getBody());

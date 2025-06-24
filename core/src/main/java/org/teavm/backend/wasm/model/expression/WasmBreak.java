@@ -53,4 +53,9 @@ public class WasmBreak extends WasmExpression {
     protected boolean isTerminating(Set<WasmBlock> blocks) {
         return !blocks.contains(target);
     }
+
+    @Override
+    public boolean isImmediateTerminating() {
+        return true;
+    }
 }

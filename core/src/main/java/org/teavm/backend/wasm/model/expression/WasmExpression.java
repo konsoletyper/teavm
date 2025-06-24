@@ -44,6 +44,10 @@ public abstract class WasmExpression {
         return false;
     }
 
+    public boolean isImmediateTerminating() {
+        return false;
+    }
+
     public static WasmExpression defaultValueOfType(WasmType type) {
         if (type == null) {
             return null;

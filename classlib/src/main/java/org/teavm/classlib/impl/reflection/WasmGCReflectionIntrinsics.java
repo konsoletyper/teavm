@@ -544,7 +544,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
         WasmExpression call;
         if (virtual) {
             var callGen = new WasmGCVirtualCallGenerator(context.virtualTables(), context.classInfoProvider());
-            call = callGen.generate(method.getReference(), thisVar, args);
+            call = callGen.generate(method.getReference(), false, thisVar, args);
         } else {
             call = new WasmCall(callee, args.toArray(new WasmExpression[0]));
         }

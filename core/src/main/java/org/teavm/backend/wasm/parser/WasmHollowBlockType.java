@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 konsoletyper.
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,35 +13,25 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform;
+package org.teavm.backend.wasm.parser;
 
-import java.util.ArrayDeque;
-import java.util.Queue;
-
-public class LowLevelQueue<T> extends PlatformQueue<T> {
-    Queue<T> q = new ArrayDeque<>();
-
-    @Override
-    public int getLength() {
-        return q.size();
+public class WasmHollowBlockType {
+    private WasmHollowBlockType() {
     }
 
-    @Override
-    void push(PlatformObject obj) {
+    public static class Function extends WasmHollowBlockType {
+        public final int ref;
+
+        public Function(int ref) {
+            this.ref = ref;
+        }
     }
 
-    @Override
-    PlatformObject shift() {
-        return null;
-    }
+    public static class Value extends WasmHollowBlockType {
+        public final WasmHollowType type;
 
-    @Override
-    public void add(T e) {
-        q.add(e);
-    }
-
-    @Override
-    public T remove() {
-        return q.remove();
+        public Value(WasmHollowType type) {
+            this.type = type;
+        }
     }
 }

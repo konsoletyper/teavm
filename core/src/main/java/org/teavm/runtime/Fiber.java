@@ -17,13 +17,10 @@ package org.teavm.runtime;
 
 import java.util.Arrays;
 import org.teavm.interop.AsyncCallback;
-import org.teavm.interop.Platforms;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Unmanaged;
-import org.teavm.interop.UnsupportedOn;
 
 @StaticInit
-@UnsupportedOn(Platforms.WEBASSEMBLY_GC)
 public class Fiber {
     public static final int STATE_RUNNING = 0;
     public static final int STATE_SUSPENDING = 1;
@@ -44,6 +41,7 @@ public class Fiber {
     private FiberRunner runner;
     private Object result;
     private Throwable exception;
+    private boolean isPendingResume;
     private boolean daemon;
 
     private static Fiber current;
@@ -99,6 +97,34 @@ public class Fiber {
         objectValues[objectTop++] = value;
     }
 
+    public static void reversePush(int value, Fiber fiber) {
+        fiber.push(value);
+    }
+
+    public static void reversePush(long value, Fiber fiber) {
+        fiber.push(value);
+    }
+
+    public static void reversePush(float value, Fiber fiber) {
+        fiber.push(value);
+    }
+
+    public static void reversePush(double value, Fiber fiber) {
+        fiber.push(value);
+    }
+
+    public static void reversePush(Object value, Fiber fiber) {
+        fiber.push(value);
+    }
+
+    public static void reversePush(PlatformObject value, Fiber fiber) {
+        fiber.push(new PlatformObjectWrapper(value));
+    }
+
+    public static void reversePush(PlatformFunction value, Fiber fiber) {
+        fiber.push(new PlatformFunctionWrapper(value));
+    }
+
     @Unmanaged
     public int popInt() {
         return intValues[--intTop];
@@ -124,6 +150,16 @@ public class Fiber {
         Object result = objectValues[--objectTop];
         objectValues[objectTop] = null;
         return result;
+    }
+
+    public PlatformObject popPlatformObject() {
+        var wrapper = (PlatformObjectWrapper) popObject();
+        return wrapper.object;
+    }
+
+    public PlatformFunction popPlatformFunction() {
+        var wrapper = (PlatformFunctionWrapper) popObject();
+        return wrapper.object;
     }
 
     @Unmanaged
@@ -216,24 +252,36 @@ public class Fiber {
 
         @Override
         public void complete(Object result) {
-            setCurrentThread(javaThread);
-            javaThread = null;
-            Fiber fiber = this.fiber;
-            this.fiber = null;
-            fiber.result = result;
-            removePendingCall();
-            fiber.resume();
+            if (Fiber.current == this.fiber) {
+                fiber.result = result;
+                fiber.isPendingResume = true;
+                removePendingCall();
+            } else {
+                setCurrentThread(javaThread);
+                javaThread = null;
+                Fiber fiber = this.fiber;
+                this.fiber = null;
+                fiber.result = result;
+                removePendingCall();
+                fiber.resume();
+            }
         }
 
         @Override
         public void error(Throwable e) {
-            setCurrentThread(javaThread);
-            javaThread = null;
-            Fiber fiber = this.fiber;
-            this.fiber = null;
-            fiber.exception = e;
-            removePendingCall();
-            fiber.resume();
+            if (Fiber.current == this.fiber) {
+                fiber.exception = e;
+                fiber.isPendingResume = true;
+                removePendingCall();
+            } else {
+                setCurrentThread(javaThread);
+                javaThread = null;
+                Fiber fiber = this.fiber;
+                this.fiber = null;
+                fiber.exception = e;
+                removePendingCall();
+                fiber.resume();
+            }
         }
 
         private void removePendingCall() {
@@ -265,7 +313,14 @@ public class Fiber {
     private void start() {
         Fiber former = current;
         current = this;
-        runner.run();
+        while (true) {
+            runner.run();
+            if (!isPendingResume) {
+                break;
+            }
+            isPendingResume = false;
+            state = STATE_RESUMING;
+        }
         current = former;
         if (!isSuspending() && !daemon && --userThreadCount == 0) {
             EventQueue.stop();
@@ -296,5 +351,27 @@ public class Fiber {
             this.next = null;
             this.previous = previous;
         }
+    }
+
+    public static class PlatformObjectWrapper {
+        public final PlatformObject object;
+
+        PlatformObjectWrapper(PlatformObject object) {
+            this.object = object;
+        }
+    }
+
+    public static class PlatformFunctionWrapper {
+        public final PlatformFunction object;
+
+        PlatformFunctionWrapper(PlatformFunction object) {
+            this.object = object;
+        }
+    }
+
+    public static class PlatformObject {
+    }
+
+    public static class PlatformFunction {
     }
 }

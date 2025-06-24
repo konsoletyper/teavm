@@ -1383,6 +1383,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmPush expression) {
+        expression.getArgument().acceptVisitor(this);
     }
 
     @Override

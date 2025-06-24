@@ -76,7 +76,7 @@ public class ObjectTest {
     }
 
     @Test
-    @SkipPlatform({TestPlatform.WASI, TestPlatform.WEBASSEMBLY_GC})
+    @SkipPlatform(TestPlatform.WASI)
     public void waitWorks() throws InterruptedException {
         long start = System.currentTimeMillis();
         final Object lock = new Object();

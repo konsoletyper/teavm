@@ -891,12 +891,6 @@ class JSClassProcessor {
         }
 
         var isStatic = method.hasModifier(ElementModifier.STATIC);
-        if (isStatic) {
-            switch (method.getOwnerName()) {
-                case "org.teavm.platform.PlatformQueue":
-                    return false;
-            }
-        }
         if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
             if (isStatic) {
                 convertInvokeArgs(invoke, method.getOwnerName());

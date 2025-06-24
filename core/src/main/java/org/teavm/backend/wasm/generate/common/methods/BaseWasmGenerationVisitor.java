@@ -134,6 +134,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
     protected WasmExpression result;
     protected List<WasmExpression> resultConsumer;
     protected int blockLevel;
+    private WasmBlock returnBlock;
 
     public BaseWasmGenerationVisitor(BaseWasmGenerationContext context, MethodReference currentMethod,
             WasmFunction function, int firstVariable, boolean async) {
@@ -145,6 +146,10 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         exprCache = new ExpressionCache(tempVars);
         typeInference = new WasmTypeInference();
         this.async = async;
+    }
+
+    public void setReturnBlock(WasmBlock returnBlock) {
+        this.returnBlock = returnBlock;
     }
 
     public void generate(Statement statement, List<WasmExpression> target) {
@@ -871,6 +876,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
                     : context.functions().forInstanceMethod(reference);
 
             var call = new WasmCall(function);
+            call.setSuspensionPoint(isAsyncSplit(reference));
             var arguments = expr.getArguments();
             for (int i = 0, argumentsSize = arguments.size(); i < argumentsSize; i++) {
                 var argument = arguments.get(i);
@@ -899,6 +905,7 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
             var function = context.functions().forInstanceMethod(expr.getMethod());
             var call = new WasmCall(function);
+            call.setSuspensionPoint(isAsyncSplit(expr.getMethod()));
             call.getArguments().add(new WasmGetLocal(tmp));
             var arguments = expr.getArguments();
             for (int i = 0; i < arguments.size(); i++) {
@@ -1077,6 +1084,11 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
                 }
                 resultConsumer.add(result);
             }
+        } else if (returnBlock != null) {
+            var br = new WasmBreak(returnBlock);
+            br.setLocation(statement.getLocation());
+            br.setResult(result);
+            resultConsumer.add(br);
         } else {
             var wasmStatement = new WasmReturn(result);
             wasmStatement.setLocation(statement.getLocation());
@@ -1304,28 +1316,39 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
 
     @Override
     public void visit(MonitorEnterStatement statement) {
-        var call = new WasmCall(context.functions().forStaticMethod(async ? MONITOR_ENTER : MONITOR_ENTER_SYNC));
-        call.setLocation(statement.getLocation());
         statement.getObjectRef().acceptVisitor(this);
-        call.getArguments().add(result);
+        monitorEnter(result, statement.getLocation(), resultConsumer);
+    }
 
-        var callSiteId = generateCallSiteId(statement.getLocation());
-        callSiteId.generateRegister(resultConsumer, statement.getLocation());
-        resultConsumer.add(call);
-        callSiteId.checkHandlerId(resultConsumer, statement.getLocation());
+    public void monitorEnter(WasmExpression obj, TextLocation location, List<WasmExpression> consumer) {
+        var call = new WasmCall(context.functions().forStaticMethod(async ? MONITOR_ENTER : MONITOR_ENTER_SYNC));
+        call.setLocation(location);
+        call.getArguments().add(obj);
+        if (async) {
+            call.setSuspensionPoint(true);
+        }
+
+        var callSiteId = generateCallSiteId(location);
+        callSiteId.generateRegister(consumer, location);
+        consumer.add(call);
+        callSiteId.checkHandlerId(consumer, location);
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
-        var call = new WasmCall(context.functions().forStaticMethod(async ? MONITOR_EXIT : MONITOR_EXIT_SYNC));
-        call.setLocation(statement.getLocation());
         statement.getObjectRef().acceptVisitor(this);
-        call.getArguments().add(result);
+        monitorExit(result, statement.getLocation(), resultConsumer);
+    }
 
-        var callSiteId = generateCallSiteId(statement.getLocation());
-        callSiteId.generateRegister(resultConsumer, statement.getLocation());
-        resultConsumer.add(call);
-        callSiteId.checkHandlerId(resultConsumer, statement.getLocation());
+    public void monitorExit(WasmExpression obj, TextLocation location, List<WasmExpression> consumer) {
+        var call = new WasmCall(context.functions().forStaticMethod(async ? MONITOR_EXIT : MONITOR_EXIT_SYNC));
+        call.setLocation(location);
+        call.getArguments().add(obj);
+
+        var callSiteId = generateCallSiteId(location);
+        callSiteId.generateRegister(consumer, location);
+        consumer.add(call);
+        callSiteId.checkHandlerId(consumer, location);
     }
 
     @Override
@@ -1554,6 +1577,14 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
         accept(expr.getArray());
         result = unwrapArray(result);
         result.setLocation(expr.getLocation());
+    }
+
+    protected boolean isAsyncSplit(MethodReference methodRef) {
+        return false;
+    }
+
+    protected final boolean isAsync() {
+        return async;
     }
 
     protected abstract class CallSiteIdentifier {

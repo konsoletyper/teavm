@@ -132,7 +132,7 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     @Override
     public void visit(WasmNullBranch expression) {
         if (expression.getResult() != null) {
-            expression.acceptVisitor(this);
+            expression.getResult().acceptVisitor(this);
         } else {
             result = Collections.emptyList();
         }

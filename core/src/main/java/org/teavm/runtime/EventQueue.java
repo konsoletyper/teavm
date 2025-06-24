@@ -17,6 +17,7 @@ package org.teavm.runtime;
 
 import java.util.Arrays;
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Export;
 import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
@@ -31,11 +32,14 @@ public final class EventQueue {
     private EventQueue() {
     }
 
-    public static int offer(Event action) {
-        return offer(action, System.currentTimeMillis());
+    public static void offer(Event action) {
+        offer(action, System.currentTimeMillis());
     }
 
     public static int offer(Event action, long time) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            return offerWasmGC(action, time);
+        }
         ensureCapacity(size + 1);
         int current = size;
         while (current > 0) {
@@ -56,6 +60,12 @@ public final class EventQueue {
         return id;
     }
 
+    private static native int offerWasmGC(Event action, double time);
+
+    private static void run(Event action) {
+        action.run();
+    }
+
     public static void kill(int id) {
         for (int i = 0; i < size; ++i) {
             if (data[i].id == id) {
@@ -64,6 +74,9 @@ public final class EventQueue {
             }
         }
     }
+
+    @Import(name = "kill", module = "teavmAsync")
+    private static native int killWasmGC(int id);
 
     public static void process() {
         while (size > 0 && !finished) {

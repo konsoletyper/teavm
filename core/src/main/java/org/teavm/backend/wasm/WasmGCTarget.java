@@ -45,6 +45,7 @@ import org.teavm.backend.wasm.generate.gc.strings.WasmGCStringProvider;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerator;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGeneratorFactory;
 import org.teavm.backend.wasm.generators.gc.WasmGCCustomGenerators;
+import org.teavm.backend.wasm.intrinsics.gc.WasmGCAsyncTypeMapperFactory;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicFactory;
 import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsics;
@@ -71,6 +72,7 @@ import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.interop.Address;
+import org.teavm.interop.Async;
 import org.teavm.interop.Platforms;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReaderSource;
@@ -80,6 +82,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.lowlevel.LowLevelNullCheckFilter;
+import org.teavm.model.optimization.InliningFilterFactory;
 import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.model.util.VariableCategoryProvider;
@@ -112,6 +115,10 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private List<WasmGCClassConsumer> classConsumers = new ArrayList<>();
     private List<Supplier<Collection<MethodReference>>> additionalMethodsOnCallSites = new ArrayList<>();
     private boolean importedMemory;
+
+    public WasmGCTarget() {
+        customTypeMapperFactories.add(new WasmGCAsyncTypeMapperFactory());
+    }
 
     public void setObfuscated(boolean obfuscated) {
         this.obfuscated = obfuscated;
@@ -262,7 +269,18 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
 
     @Override
     public boolean isAsyncSupported() {
-        return false;
+        return true;
+    }
+
+    @Override
+    public InliningFilterFactory getInliningFilter() {
+        return ignore -> methodRef -> {
+            var method = controller.getUnprocessedClassSource().getMethod(methodRef);
+            if (method == null) {
+                return true;
+            }
+            return method.getAnnotations().get(Async.class.getName()) == null;
+        };
     }
 
     @Override

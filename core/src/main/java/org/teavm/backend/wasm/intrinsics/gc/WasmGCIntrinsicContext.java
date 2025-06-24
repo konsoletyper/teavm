@@ -81,5 +81,7 @@ public interface WasmGCIntrinsicContext {
 
     DependencyInfo dependency();
 
+    boolean isAsync();
+
     void addToInitializer(Consumer<WasmFunction> initializerContributor);
 }

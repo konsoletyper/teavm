@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.util.ArrayDeque;
+import java.util.Queue;
 import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.dependency.PluggableDependency;
@@ -30,7 +32,6 @@ import org.teavm.interop.Unmanaged;
 import org.teavm.jso.browser.TimerHandler;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformObject;
-import org.teavm.platform.PlatformQueue;
 import org.teavm.platform.PlatformRunnable;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.EventQueue;
@@ -45,8 +46,8 @@ public class TObject {
     static class Monitor {
         static final int MASK = 0x80000000;
 
-        PlatformQueue<PlatformRunnable> enteringThreads;
-        PlatformQueue<NotifyListener> notifyListeners;
+        Queue<PlatformRunnable> enteringThreads;
+        Queue<NotifyListener> notifyListeners;
         TThread owner;
         int count;
         int id;
@@ -137,7 +138,7 @@ public class TObject {
 
         Monitor monitor = o.monitor;
         if (monitor.enteringThreads == null) {
-            monitor.enteringThreads = Platform.createQueue();
+            monitor.enteringThreads = new ArrayDeque<>();
         }
         monitor.enteringThreads.add(() -> {
             TThread.setCurrentThread(thread);
@@ -164,7 +165,7 @@ public class TObject {
 
         monitor.owner = null;
         if (monitor.enteringThreads != null && !monitor.enteringThreads.isEmpty()) {
-            if (PlatformDetector.isLowLevel()) {
+            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
                 EventQueue.offer(() -> waitForOtherThreads(o));
             } else {
                 Platform.postpone(() -> waitForOtherThreads(o));
@@ -180,7 +181,7 @@ public class TObject {
         }
         Monitor monitor = o.monitor;
         if (monitor.enteringThreads != null && !monitor.enteringThreads.isEmpty()) {
-            PlatformQueue<PlatformRunnable> enteringThreads = monitor.enteringThreads;
+            var enteringThreads = monitor.enteringThreads;
             PlatformRunnable r = enteringThreads.remove();
             monitor.enteringThreads = null;
             r.run();
@@ -191,10 +192,6 @@ public class TObject {
         Monitor monitor = this.monitor;
         if (monitor == null) {
             return true;
-        }
-        if (PlatformDetector.isWebAssemblyGC()) {
-            // TODO: fix Monitor implementation and remove this block
-            return monitor.owner == null;
         }
         if (monitor.owner == null
                 && (monitor.enteringThreads == null || monitor.enteringThreads.isEmpty())
@@ -210,6 +207,8 @@ public class TObject {
         if (PlatformDetector.isLowLevel()) {
             int id = monitor.id;
             setHashCodeLowLevel(this, id);
+        } else if (PlatformDetector.isWebAssemblyGC()) {
+            setWasmGCIdentity(monitor.id);
         } else {
             monitor = null;
         }
@@ -394,14 +393,14 @@ public class TObject {
         if (!holdsLock(this)) {
             throw new TIllegalMonitorStateException();
         }
-        PlatformQueue<NotifyListener> listeners = monitor.notifyListeners;
+        var listeners = monitor.notifyListeners;
         if (listeners == null) {
             return;
         }
         while (!listeners.isEmpty()) {
             NotifyListener listener = listeners.remove();
             if (!listener.expired()) {
-                if (PlatformDetector.isLowLevel()) {
+                if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
                     EventQueue.offer(listener);
                 } else {
                     Platform.postpone(listener);
@@ -419,14 +418,14 @@ public class TObject {
         if (!holdsLock(this)) {
             throw new TIllegalMonitorStateException();
         }
-        PlatformQueue<NotifyListener> listeners = monitor.notifyListeners;
+        var listeners = monitor.notifyListeners;
         if (listeners == null) {
             return;
         }
         while (!listeners.isEmpty()) {
             NotifyListener listener = listeners.remove();
             if (!listener.expired()) {
-                if (PlatformDetector.isLowLevel()) {
+                if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
                     EventQueue.offer(listener);
                 } else {
                     Platform.postpone(listener);
@@ -458,15 +457,15 @@ public class TObject {
 
     final void waitImpl(long timeout, int nanos, AsyncCallback<Void> callback) {
         Monitor monitor = this.monitor;
-        final NotifyListenerImpl listener = new NotifyListenerImpl(this, callback, monitor.count);
+        var listener = new NotifyListenerImpl(this, callback, monitor.count);
         if (monitor.notifyListeners == null) {
-            monitor.notifyListeners = Platform.createQueue();
+            monitor.notifyListeners = new ArrayDeque<>();
         }
         monitor.notifyListeners.add(listener);
         TThread.currentThread().interruptHandler = listener;
         if (timeout > 0 || nanos > 0) {
             int timeoutToSchedule = timeout >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) timeout;
-            listener.timerId = PlatformDetector.isLowLevel()
+            listener.timerId = PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()
                     ? EventQueue.offer(listener, timeoutToSchedule + System.currentTimeMillis())
                     : Platform.schedule(listener, timeoutToSchedule);
         }
@@ -498,7 +497,7 @@ public class TObject {
 
         @Override
         public void onTimer() {
-            if (PlatformDetector.isLowLevel()) {
+            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
                 EventQueue.offer(() -> {
                     if (!expired()) {
                         run();
@@ -520,7 +519,7 @@ public class TObject {
             }
             performed = true;
             if (timerId >= 0) {
-                if (PlatformDetector.isLowLevel()) {
+                if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
                     EventQueue.kill(timerId);
                 } else {
                     Platform.killSchedule(timerId);
@@ -538,14 +537,14 @@ public class TObject {
             }
             performed = true;
             if (timerId >= 0) {
-                if (PlatformDetector.isLowLevel()) {
+                if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
                     EventQueue.kill(timerId);
                 } else {
                     Platform.killSchedule(timerId);
                 }
                 timerId = -1;
             }
-            if (PlatformDetector.isLowLevel()) {
+            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
                 EventQueue.offer(() -> callback.error(new TInterruptedException()));
             } else {
                 Platform.postpone(() -> callback.error(new TInterruptedException()));

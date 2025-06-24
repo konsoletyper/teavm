@@ -34,7 +34,6 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.Platform;
-import org.teavm.platform.PlatformQueue;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceArray;
@@ -112,7 +111,6 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
             host.add(new PlatformDependencyListener());
 
             TeaVMPluginUtil.handleNatives(host, Platform.class);
-            TeaVMPluginUtil.handleNatives(host, PlatformQueue.class);
         }
 
         host.registerService(MetadataRegistration.class, this);
