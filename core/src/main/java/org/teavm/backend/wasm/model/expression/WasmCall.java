@@ -24,6 +24,7 @@ import org.teavm.backend.wasm.model.WasmFunction;
 public class WasmCall extends WasmExpression {
     private WasmFunction function;
     private List<WasmExpression> arguments = new ArrayList<>();
+    private boolean suspensionPoint;
 
     public WasmCall(WasmFunction function) {
         this.function = Objects.requireNonNull(function);
@@ -49,5 +50,13 @@ public class WasmCall extends WasmExpression {
     @Override
     public void acceptVisitor(WasmExpressionVisitor visitor) {
         visitor.visit(this);
+    }
+
+    public boolean isSuspensionPoint() {
+        return suspensionPoint;
+    }
+
+    public void setSuspensionPoint(boolean suspensionPoint) {
+        this.suspensionPoint = suspensionPoint;
     }
 }
