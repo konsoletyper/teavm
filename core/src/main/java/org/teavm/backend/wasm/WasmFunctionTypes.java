@@ -34,14 +34,14 @@ public class WasmFunctionTypes {
 
     public WasmFunctionType get(WasmSignature signature) {
         return types.computeIfAbsent(signature, k -> {
-            var type = new WasmFunctionType(null, signature.getReturnType(), signature.getParameterTypes());
+            var type = new WasmFunctionType(null, signature.getReturnTypes(), signature.getParameterTypes());
             module.types.add(type);
             return type;
         });
     }
 
     public WasmFunctionType of(WasmType returnType, WasmType... parameterTypes) {
-        return get(new WasmSignature(returnType, parameterTypes));
+        return get(new WasmSignature(List.of(returnType), List.of(parameterTypes)));
     }
 
     public WasmBlockType blockType(List<? extends WasmType> types) {
