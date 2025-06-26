@@ -63,6 +63,7 @@ include("scala")
 include("web-apis")
 include("software3d")
 include("module-test")
+include("wasm-sab")
 
 gradle.allprojects {
     apply<WarPlugin>()

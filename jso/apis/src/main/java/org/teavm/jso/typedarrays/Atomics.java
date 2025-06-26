@@ -21,7 +21,7 @@ import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSPromise;
 
 @JSClass
-public class Atomics {
+public class Atomics implements JSObject {
     public static final String WAIT_OK = "ok";
     public static final String WAIT_NOT_EQUAL = "not-equal";
     public static final String WAIT_TIMED_OUT = "timed-out";

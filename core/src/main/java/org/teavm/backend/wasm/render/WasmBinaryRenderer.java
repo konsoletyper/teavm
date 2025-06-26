@@ -176,7 +176,7 @@ public class WasmBinaryRenderer {
             section.writeAsciiString(moduleName);
             section.writeAsciiString(module.memoryImportName);
             section.writeByte(EXTERNAL_KIND_MEMORY);
-            section.writeByte(1);
+            section.writeByte(3);
             section.writeLEB(module.getMinMemorySize());
             section.writeLEB(module.getMaxMemorySize());
         }
