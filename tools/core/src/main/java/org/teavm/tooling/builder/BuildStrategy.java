@@ -97,6 +97,8 @@ public interface BuildStrategy {
 
     void setMaxDirectBuffersSize(int maxDirectBuffersSize);
 
+    void setImportedWasmMemory(boolean value);
+
     void setHeapDump(boolean heapDump);
 
     void setShortFileNames(boolean shortFileNames);

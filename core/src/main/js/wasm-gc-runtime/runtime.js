@@ -30,7 +30,7 @@ let setGlobalName = function(name, value) {
     new Function("value", name + " = value;")(value);
 }
 
-function defaults(imports, userExports) {
+function defaults(imports, userExports, options, module) {
     let context = {
         exports: null,
         userExports: userExports,
@@ -41,7 +41,7 @@ function defaults(imports, userExports) {
     }
     dateImports(imports);
     consoleImports(imports, context);
-    coreImports(imports, context);
+    coreImports(imports, context, options, module);
     jsoImports(imports, context);
     imports.teavmMath = Math;
     return {
@@ -138,7 +138,7 @@ function consoleImports(imports) {
     };
 }
 
-function coreImports(imports, context) {
+function coreImports(imports, context, options, module) {
     let finalizationRegistry = new FinalizationRegistry(heldValue => {
         let report = context.exports["teavm.reportGarbageCollectedValue"];
         if (typeof report !== "undefined") {
@@ -208,6 +208,34 @@ function coreImports(imports, context) {
             return context.exports["teavm.memory"].buffer;
         }
     };
+    if (hasImportedMemory(module)) {
+        let memoryOptions = options.memory || {};
+        let memoryInstance = memoryOptions["external"];
+        if (!memoryInstance) {
+            let defaults = getMemoryDefaults(module);
+            let minSize = memoryOptions.minSize || defaults.min || 0;
+            let maxSize = memoryOptions.maxSize || defaults.max;
+            memoryInstance = new WebAssembly.Memory({
+                shared: memoryOptions.shared === true,
+                initial: minSize,
+                maximum: maxSize
+            });
+        }
+        imports.teavm.memory = memoryInstance;
+    }
+}
+
+function hasImportedMemory(module) {
+    return WebAssembly.Module.imports(module)
+        .findIndex(({module, name, kind}) => module === "teavm" && name === "memory" && kind === "memory") >= 0;
+}
+
+function getMemoryDefaults(module) {
+    let sections = WebAssembly.Module.customSections(module, "teavm.memoryRequirements");
+    if (sections.length !== 1) {
+        return {};
+    }
+    return JSON.parse(new TextDecoder().decode(sections[0]));
 }
 
 function jsoImports(imports, context) {
@@ -678,7 +706,7 @@ async function load(src, options) {
 
     const importObj = {};
     let userExports = {};
-    const defaultsResult = defaults(importObj, userExports);
+    const defaultsResult = defaults(importObj, userExports, options, module);
     if (typeof options.installImports !== "undefined") {
         options.installImports(importObj);
     }

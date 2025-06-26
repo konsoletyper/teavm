@@ -43,6 +43,15 @@ public class ImportSectionParser extends BaseSectionParser {
                 listener.function(typeIndex);
                 break;
             }
+            case 2: {
+                var limitsType = reader.data[reader.ptr++];
+                if (limitsType == 0) {
+                    listener.memory(readLEB(), -1);
+                } else {
+                    listener.memory(readLEB(), readLEB());
+                }
+                break;
+            }
             case 3: {
                 var valueType = reader.readType();
                 listener.global(valueType, reader.readLEB() != 0);

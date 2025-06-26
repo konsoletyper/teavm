@@ -225,6 +225,11 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setImportedWasmMemory(boolean value) {
+        request.importedWasmMemory = value;
+    }
+
+    @Override
     public void setHeapDump(boolean heapDump) {
         request.heapDump = heapDump;
     }

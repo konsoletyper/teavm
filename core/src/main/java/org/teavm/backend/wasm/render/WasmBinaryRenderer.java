@@ -91,7 +91,9 @@ public class WasmBinaryRenderer {
         renderImports(module);
         renderFunctions(module);
         renderTable(module);
-        renderMemory(module);
+        if (module.memoryImportName == null) {
+            renderMemory(module);
+        }
         renderTags(module);
         renderGlobals(module);
         renderExport(module);
@@ -155,13 +157,29 @@ public class WasmBinaryRenderer {
             globals.add(global);
         }
 
-        if (functions.isEmpty() && globals.isEmpty()) {
+        if (functions.isEmpty() && globals.isEmpty() && module.memoryImportName == null) {
             return;
         }
 
         WasmBinaryWriter section = new WasmBinaryWriter();
 
-        section.writeLEB(functions.size() + globals.size());
+        var total = functions.size() + globals.size();
+        if (module.memoryImportName != null) {
+            ++total;
+        }
+        section.writeLEB(total);
+        if (module.memoryImportName != null) {
+            String moduleName = module.memoryImportModule;
+            if (moduleName == null) {
+                moduleName = "";
+            }
+            section.writeAsciiString(moduleName);
+            section.writeAsciiString(module.memoryImportName);
+            section.writeByte(EXTERNAL_KIND_MEMORY);
+            section.writeByte(1);
+            section.writeLEB(module.getMinMemorySize());
+            section.writeLEB(module.getMaxMemorySize());
+        }
         for (WasmFunction function : functions) {
             int signatureIndex = module.types.indexOf(function.getType());
             String moduleName = function.getImportModule();
@@ -255,8 +273,6 @@ public class WasmBinaryRenderer {
 
         // https://github.com/WebAssembly/design/blob/master/BinaryEncoding.md#export-section
 
-        WasmBinaryWriter section = new WasmBinaryWriter();
-
         List<WasmFunction> functions = module.functions.stream()
                 .filter(function -> function.getExportName() != null)
                 .collect(Collectors.toList());
@@ -269,7 +285,17 @@ public class WasmBinaryRenderer {
                 .filter(global -> global.getExportName() != null)
                 .collect(Collectors.toList());
 
-        section.writeLEB(functions.size() + tags.size() + globals.size() + 1);
+        var total = functions.size() + tags.size() + globals.size();
+        if (module.memoryExportName != null) {
+            ++total;
+        }
+        if (total == 0) {
+            return;
+        }
+
+        WasmBinaryWriter section = new WasmBinaryWriter();
+
+        section.writeLEB(total);
         for (var function : functions) {
             int functionIndex = module.functions.indexOf(function);
 
@@ -294,9 +320,11 @@ public class WasmBinaryRenderer {
         }
 
         // We also need to export the memory to make it accessible
-        section.writeAsciiString(module.memoryExportName);
-        section.writeByte(EXTERNAL_KIND_MEMORY);
-        section.writeLEB(0);
+        if (module.memoryExportName != null) {
+            section.writeAsciiString(module.memoryExportName);
+            section.writeByte(EXTERNAL_KIND_MEMORY);
+            section.writeLEB(0);
+        }
 
         writeSection(SECTION_EXPORT, "export", section.getData());
     }

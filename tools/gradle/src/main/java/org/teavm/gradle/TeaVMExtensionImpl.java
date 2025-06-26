@@ -131,6 +131,9 @@ class TeaVMExtensionImpl extends TeaVMBaseExtensionImpl implements TeaVMExtensio
         wasmGC.getMaxDirectBuffersSize().convention(property("wasm-gc.maxDirectBuffersSize")
                 .map(Integer::parseInt)
                 .orElse(32));
+        wasmGC.getImportedWasmMemory().convention(property("wasm-gc.importedMemory")
+                .map(Boolean::parseBoolean)
+                .orElse(false));
     }
 
     private void setupWasiDefaults() {

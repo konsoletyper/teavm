@@ -25,6 +25,9 @@ public interface ImportSectionListener {
     default void global(WasmHollowType type, boolean mutable) {
     }
 
+    default void memory(int minSize, int maxSize) {
+    }
+
     default void endEntry() {
     }
 }

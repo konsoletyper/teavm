@@ -163,6 +163,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter(property = "teavm.maxDirectBuffersSize", defaultValue = "32")
     private int maxDirectBuffersSize;
 
+    @Parameter(property = "teavm.importedWasmMemory", defaultValue = "false")
+    private boolean importedWasmMemory;
+
     @Parameter(property = "teavm.outOfProcess", defaultValue = "false")
     private boolean outOfProcess;
 

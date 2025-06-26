@@ -25,6 +25,7 @@ public class DisassemblyImportSectionListener extends BaseDisassemblyListener im
     private String currentName;
     private int functionIndex;
     private int globalIndex;
+    private int memoryIndex;
 
     public DisassemblyImportSectionListener(DisassemblyWriter writer, NameProvider nameProvider,
             WasmHollowFunctionType[] functionTypes) {
@@ -107,7 +108,20 @@ public class DisassemblyImportSectionListener extends BaseDisassemblyListener im
         if (mutable) {
             writer.write(")");
         }
-        writer.write(")").eol();
+        writer.write("))").eol();
         ++globalIndex;
+    }
+
+    @Override
+    public void memory(int minSize, int maxSize) {
+        writer.address().write("(import \"").write(currentModule).write("\" \"").write(currentName).write("\" ");
+        writer.write("(memory ");
+        writer.startLinkTarget("m" + memoryIndex).write("(; " + memoryIndex + " ;) ");
+        writer.write(Integer.toString(minSize));
+        if (maxSize >= 0) {
+            writer.write(" ").write(Integer.toString(maxSize));
+        }
+        writer.write("))").eol();
+        ++memoryIndex;
     }
 }

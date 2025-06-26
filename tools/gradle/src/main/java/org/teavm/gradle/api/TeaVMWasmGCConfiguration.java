@@ -41,4 +41,6 @@ public interface TeaVMWasmGCConfiguration extends TeaVMCommonConfiguration, TeaV
     Property<Integer> getMinDirectBuffersSize();
 
     Property<Integer> getMaxDirectBuffersSize();
+
+    Property<Boolean> getImportedWasmMemory();
 }

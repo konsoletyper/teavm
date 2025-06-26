@@ -18,6 +18,7 @@ package org.teavm.backend.wasm;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -110,6 +111,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private EntryPointTransformation entryPointTransformation = new EntryPointTransformation();
     private List<WasmGCClassConsumer> classConsumers = new ArrayList<>();
     private List<Supplier<Collection<MethodReference>>> additionalMethodsOnCallSites = new ArrayList<>();
+    private boolean importedMemory;
 
     public void setObfuscated(boolean obfuscated) {
         this.obfuscated = obfuscated;
@@ -149,6 +151,10 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
 
     public void setCompactMode(boolean compactMode) {
         this.compactMode = compactMode;
+    }
+
+    public void setImportedMemory(boolean importedMemory) {
+        this.importedMemory = importedMemory;
     }
 
     @Override
@@ -263,6 +269,10 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     public void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException {
         var module = new WasmModule();
         module.memoryExportName = "teavm.memory";
+        if (importedMemory) {
+            module.memoryImportName = "memory";
+            module.memoryImportModule = "teavm";
+        }
         var customGenerators = new WasmGCCustomGenerators(classes, controller.getServices(),
                 customGeneratorFactories, customCustomGenerators,
                 controller.getProperties());
@@ -479,11 +489,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
                 null, null, debugLines, null, WasmBinaryStatsCollector.EMPTY);
         optimizeIndexes(module);
         module.prepareForRendering();
-        if (debugLocation == WasmDebugInfoLocation.EMBEDDED && debugInfo) {
-            binaryRenderer.render(module, debugInfoBuilder::build);
-        } else {
-            binaryRenderer.render(module);
-        }
+        binaryRenderer.render(module, customSections(debugInfoBuilder, module));
         var data = binaryWriter.getData();
         try (var output = buildTarget.createResource(outputName)) {
             output.write(data);
@@ -496,6 +502,26 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
                 }
             }
         }
+    }
+
+    private Supplier<Collection<? extends WasmCustomSection>> customSections(GCDebugInfoBuilder debugInfoBuilder,
+            WasmModule module) {
+        return () -> {
+            var list = new ArrayList<WasmCustomSection>();
+            if (debugLocation == WasmDebugInfoLocation.EMBEDDED && debugInfo) {
+                list.addAll(debugInfoBuilder.build());
+            }
+            if (importedMemory) {
+                var reqs = writeMemoryRequirements(module);
+                list.add(new WasmCustomSection("teavm.memoryRequirements", reqs));
+            }
+            return list;
+        };
+    }
+
+    private byte[] writeMemoryRequirements(WasmModule module) {
+        var data = "{\"min\":" + module.getMinMemorySize() + ",\"max\":" + module.getMaxMemorySize() + "}";
+        return data.getBytes(StandardCharsets.UTF_8);
     }
 
     private void optimizeIndexes(WasmModule module) {
