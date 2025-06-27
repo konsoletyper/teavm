@@ -22,16 +22,24 @@
 <script type="text/javascript">
     async function waitLoop(buffer) {
         while (true) {
-            await Atomics.waitAsync(buffer, 0, 0, 1000).value;
-            console.log("Value in buffer: " + buffer[1]);
+
         }
     }
+    let buffer;
     function launch() {
         let worker = new Worker("worker.js");
         worker.onmessage = async e => {
-            let buffer = e.data;
-            console.log("Received buffer from worker");
-            waitLoop(buffer);
+            switch (e.data.type) {
+                case "init":
+                    console.log("Received buffer from worker");
+                    buffer = e.data.buffer;
+                    break
+                case "update":
+                    // memory fence
+                    Atomics.load(buffer, 0);
+                    console.log("Value in buffer: " + buffer[1]);
+                    break;
+            }
         };
     }
 </script>

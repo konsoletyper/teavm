@@ -22,6 +22,7 @@ plugins {
 
 dependencies {
     teavm(teavm.libs.jsoApis)
+    compileOnly("jakarta.servlet:jakarta.servlet-api:6.0.0")
 }
 
 teavm.wasmGC {

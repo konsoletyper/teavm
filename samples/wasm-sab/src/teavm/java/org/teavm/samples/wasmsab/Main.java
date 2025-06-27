@@ -16,26 +16,40 @@
 package org.teavm.samples.wasmsab;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSObject;
 import org.teavm.jso.browser.TimerHandler;
 import org.teavm.jso.browser.Window;
+import org.teavm.jso.core.JSMapLike;
+import org.teavm.jso.core.JSObjects;
+import org.teavm.jso.core.JSString;
 import org.teavm.jso.typedarrays.Atomics;
 import org.teavm.jso.typedarrays.Int32Array;
 
 public class Main {
-    private static final IntBuffer buffer = ByteBuffer.allocateDirect(8).asIntBuffer();
+    private static final IntBuffer buffer = ByteBuffer.allocateDirect(8).order(ByteOrder.nativeOrder()).asIntBuffer();
     private static final Int32Array jsBuffer = Int32Array.fromJavaBuffer(buffer);
     private static int lastSentValue;
 
     public static void main(String[] args) {
-        Window.worker().postMessage(jsBuffer);
+        var message = JSObjects.<JSMapLike<JSObject>>create();
+        message.set("type", JSString.valueOf("init"));
+        message.set("buffer", jsBuffer);
+        Window.worker().postMessage(message);
         loop();
     }
 
     private static void loop() {
         buffer.put(1, lastSentValue++);
-        Atomics.notify(jsBuffer, 0, 1);
+
+        // memory fence
+        Atomics.add(jsBuffer, 0, 1);
+        var message = JSObjects.<JSMapLike<JSObject>>create();
+        message.set("type", JSString.valueOf("update"));
+        Window.worker().postMessage(message);
+
         Window.setTimeout(Main::loop, 1000);
     }
 
