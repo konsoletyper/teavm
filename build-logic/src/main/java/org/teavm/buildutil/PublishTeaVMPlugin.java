@@ -92,6 +92,7 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
                             sonatype.getStage().set(MavenCentralMavenDeployer.Stage.FULL);
                             sonatype.getSign().set(true);
                             sonatype.getApplyMavenCentralRules().set(false);
+                            sonatype.getMaxRetries().set(200);
                         });
                     });
                 });
