@@ -59,7 +59,8 @@ public class ArrayIntrinsic implements WasmGCIntrinsic {
         var type = (WasmType.CompositeReference) vtStruct.getFields().get(offset).getUnpackedType();
         var functionType = (WasmFunctionType) type.composite;
         var block = new WasmBlock(false);
-        block.setType(functionType.getReturnType());
+        var returnType = functionType.getSingleReturnType();
+        block.setType(returnType != null ? returnType.asBlock() : null);
 
         var originalObject = context.generate(invocation.getArguments().get(0));
         var object = context.exprCache().create(originalObject, objectStruct.getReference(),

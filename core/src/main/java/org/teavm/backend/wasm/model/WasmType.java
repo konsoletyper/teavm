@@ -22,6 +22,7 @@ public abstract class WasmType {
     public static final WasmType.Number FLOAT64 = new Number(WasmNumType.FLOAT64);
 
     private WasmStorageType.Regular storageType;
+    private WasmBlockType.Value blockType;
 
     private WasmType() {
     }
@@ -31,6 +32,13 @@ public abstract class WasmType {
             storageType = new WasmStorageType.Regular(this);
         }
         return storageType;
+    }
+
+    public WasmBlockType.Value asBlock() {
+        if (blockType == null) {
+            blockType = new WasmBlockType.Value(this);
+        }
+        return blockType;
     }
 
     public static WasmType.Number num(WasmNumType number) {

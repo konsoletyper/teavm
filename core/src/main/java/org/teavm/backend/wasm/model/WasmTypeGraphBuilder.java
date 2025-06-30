@@ -122,8 +122,8 @@ final class WasmTypeGraphBuilder {
             for (var parameter : type.getParameterTypes()) {
                 addEdge(parameter);
             }
-            if (type.getReturnType() != null) {
-                addEdge(type.getReturnType());
+            for (var ret : type.getReturnTypes()) {
+                addEdge(ret);
             }
         }
 

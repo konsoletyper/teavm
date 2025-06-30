@@ -16,7 +16,9 @@
 package org.teavm.backend.wasm;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.teavm.backend.wasm.model.WasmBlockType;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
@@ -40,5 +42,15 @@ public class WasmFunctionTypes {
 
     public WasmFunctionType of(WasmType returnType, WasmType... parameterTypes) {
         return get(new WasmSignature(returnType, parameterTypes));
+    }
+
+    public WasmBlockType blockType(List<? extends WasmType> types) {
+        if (types.isEmpty()) {
+            return null;
+        } else if (types.size() == 1) {
+            return types.get(0).asBlock();
+        } else {
+            return of(null, types.toArray(new WasmType[0])).asBlock();
+        }
     }
 }

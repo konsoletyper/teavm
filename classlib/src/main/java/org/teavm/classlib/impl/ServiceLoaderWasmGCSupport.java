@@ -144,7 +144,7 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
                 WasmFunction function, String implementationName) {
             var implementationInfo = context.classInfoProvider().getClassInfo(implementationName);
             var block = new WasmBlock(false);
-            block.setType(context.typeMapper().mapType(ValueType.parse(Object.class)));
+            block.setType(context.typeMapper().mapType(ValueType.parse(Object.class)).asBlock());
             var tmpVar = new WasmLocal(implementationInfo.getType());
             function.add(tmpVar);
             var structNew = new WasmSetLocal(tmpVar, new WasmStructNewDefault(

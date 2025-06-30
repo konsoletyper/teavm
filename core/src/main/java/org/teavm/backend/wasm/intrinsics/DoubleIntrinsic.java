@@ -88,7 +88,7 @@ public class DoubleIntrinsic implements WasmIntrinsic {
     private WasmExpression testNaN(WasmExpression expression, WasmIntrinsicManager manager) {
         WasmLocal bitsVar = manager.getTemporary(WasmType.INT64);
         WasmBlock block = new WasmBlock(false);
-        block.setType(WasmType.INT32);
+        block.setType(WasmType.INT32.asBlock());
 
         WasmConversion conversion = new WasmConversion(WasmNumType.FLOAT64, WasmNumType.INT64, false, expression);
         conversion.setReinterpret(true);

@@ -187,9 +187,9 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                         var instantiator = new WasmStructGet(classClass.getStructure(), arg,
                                 context.classInfoProvider().getClassInstantiatorOffset());
                         var outerBlock = new WasmBlock(false);
-                        outerBlock.setType(objectClass.getType());
+                        outerBlock.setType(objectClass.getType().asBlock());
                         var innerBlock = new WasmBlock(false);
-                        innerBlock.setType(functionType.getReference());
+                        innerBlock.setType(functionType.getReference().asBlock());
                         var nullBranch = new WasmNullBranch(WasmNullCondition.NOT_NULL, instantiator, innerBlock);
                         innerBlock.getBody().add(nullBranch);
                         var br = new WasmBreak(outerBlock);

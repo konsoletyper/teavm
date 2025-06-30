@@ -146,7 +146,7 @@ public class ResourceReadIntrinsic implements WasmIntrinsic {
             }
             case "get": {
                 WasmBlock block = new WasmBlock(false);
-                block.setType(WasmType.INT32);
+                block.setType(WasmType.INT32.asBlock());
 
                 WasmExpression map = manager.generate(invocation.getArguments().get(0));
                 WasmExpression key = manager.generate(invocation.getArguments().get(1));

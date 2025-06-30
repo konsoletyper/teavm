@@ -34,7 +34,7 @@ public class HeapIntrinsic implements WasmGCIntrinsic {
     public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         var pagesVar = context.tempVars().acquire(WasmType.INT32);
         var block = new WasmBlock(false);
-        block.setType(WasmType.INT32);
+        block.setType(WasmType.INT32.asBlock());
         var bytes = context.generate(invocation.getArguments().get(0));
         WasmExpression pages = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB,
                 bytes, new WasmInt32Constant(1));

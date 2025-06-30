@@ -64,7 +64,7 @@ public class DoubleIntrinsic implements WasmGCIntrinsic {
 
     private WasmExpression testNaN(WasmExpression expression, WasmGCIntrinsicContext context) {
         var block = new WasmBlock(false);
-        block.setType(WasmType.INT32);
+        block.setType(WasmType.INT32.asBlock());
         var cache = context.exprCache().create(expression, WasmType.FLOAT64, expression.getLocation(),
                 block.getBody());
         block.getBody().add(new WasmFloatBinary(WasmFloatType.FLOAT64, WasmFloatBinaryOperation.NE,

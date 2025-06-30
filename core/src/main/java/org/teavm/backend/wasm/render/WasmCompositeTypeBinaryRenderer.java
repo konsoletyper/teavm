@@ -69,11 +69,9 @@ public class WasmCompositeTypeBinaryRenderer implements WasmCompositeTypeVisitor
         for (var inputType : type.getParameterTypes()) {
             section.writeType(inputType, module);
         }
-        if (type.getReturnType() != null) {
-            section.writeByte(1);
-            section.writeType(type.getReturnType(), module);
-        } else {
-            section.writeByte(0);
+        section.writeLEB(type.getReturnTypes().size());
+        for (var outputType :  type.getReturnTypes()) {
+            section.writeType(outputType, module);
         }
     }
 

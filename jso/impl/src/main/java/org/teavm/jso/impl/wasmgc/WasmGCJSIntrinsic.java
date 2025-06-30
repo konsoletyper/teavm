@@ -171,7 +171,7 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
 
     private WasmExpression throwCCEIfFalse(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         var block = new WasmBlock(false);
-        block.setType(WasmType.Reference.EXTERN);
+        block.setType(WasmType.Reference.EXTERN.asBlock());
 
         var innerBlock = new WasmBlock(false);
         block.getBody().add(innerBlock);

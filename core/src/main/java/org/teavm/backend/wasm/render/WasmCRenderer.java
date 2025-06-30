@@ -182,13 +182,13 @@ public class WasmCRenderer {
     }
 
     private void renderFunction(WasmFunction function) {
-        var visitor = new WasmCRenderingVisitor(function.getType().getReturnType(),
+        var visitor = new WasmCRenderingVisitor(function.getType().getSingleReturnType(),
                 function.getLocalVariables().size(), module);
         visitor.setMemoryAccessChecked(memoryAccessChecked);
 
         StringBuilder declaration = new StringBuilder();
         renderFunctionModifiers(declaration, function);
-        declaration.append(WasmCRenderingVisitor.mapType(function.getType().getReturnType())).append(' ');
+        declaration.append(WasmCRenderingVisitor.mapType(function.getType().getSingleReturnType())).append(' ');
         declaration.append(function.getName()).append('(');
         int sz = Math.min(function.getType().getParameterTypes().size(), function.getLocalVariables().size());
         for (int i = 0; i < sz; ++i) {
@@ -217,7 +217,7 @@ public class WasmCRenderer {
                 lines.addAll(visitor.getValue().getLines());
             }
 
-            visitor.setRequiredType(function.getType().getReturnType());
+            visitor.setRequiredType(function.getType().getSingleReturnType());
             body.get(body.size() - 1).acceptVisitor(visitor);
             lines.addAll(visitor.getValue().getLines());
             if (visitor.getValue().getText() != null) {
@@ -237,7 +237,7 @@ public class WasmCRenderer {
     private String functionDeclaration(WasmFunction function) {
         StringBuilder sb = new StringBuilder();
         renderFunctionModifiers(sb, function);
-        sb.append(WasmCRenderingVisitor.mapType(function.getType().getReturnType())).append(' ');
+        sb.append(WasmCRenderingVisitor.mapType(function.getType().getSingleReturnType())).append(' ');
         if (function.getImportName() != null) {
             sb.append(function.getImportModule() != null && !function.getImportModule().isEmpty()
                     ? function.getImportModule() + "_" + function.getImportName()

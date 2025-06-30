@@ -178,7 +178,7 @@ public class WasmGCSupertypeFunctionGenerator implements WasmGCSupertypeFunction
         function.getBody().add(new WasmSetLocal(subtypeVar, getClassField(new WasmGetLocal(subtypeVar), itemOffset)));
 
         var itemTest = new WasmConditional(new WasmIsNull(new WasmGetLocal(subtypeVar)));
-        itemTest.setType(WasmType.INT32);
+        itemTest.setType(WasmType.INT32.asBlock());
         itemTest.getThenBlock().getBody().add(new WasmInt32Constant(0));
 
         function.getBody().add(new WasmSetLocal(thisVar, getClassField(new WasmGetLocal(thisVar), itemOffset)));

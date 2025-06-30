@@ -87,7 +87,7 @@ public class WeakReferenceGenerator implements WasmGCCustomGenerator {
         function.add(thisLocal);
 
         var block = new WasmBlock(false);
-        block.setType(WasmType.Reference.EXTERN);
+        block.setType(WasmType.Reference.EXTERN.asBlock());
         WasmExpression thisRef = new WasmGetLocal(thisLocal);
         if (context.isCompactMode()) {
             thisRef = new WasmCast(thisRef, weakRefStruct.getReference());

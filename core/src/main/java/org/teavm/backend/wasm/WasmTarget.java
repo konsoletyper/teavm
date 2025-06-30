@@ -983,7 +983,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
         var itemTest = new WasmConditional(new WasmIntUnary(WasmIntType.INT32, WasmIntUnaryOperation.EQZ,
                 new WasmGetLocal(subtypeVar)));
-        itemTest.setType(WasmType.INT32);
+        itemTest.setType(WasmType.INT32.asBlock());
         itemTest.getThenBlock().getBody().add(new WasmInt32Constant(0));
 
         WasmCall delegateToItem = new WasmCall(functions.forSupertype(itemType));
@@ -1176,7 +1176,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                     var arg = manager.generate(invocation.getArguments().get(0));
                     if (manager.isManagedMethodCall(entryPoint)) {
                         var block = new WasmBlock(false);
-                        block.setType(WasmType.INT32);
+                        block.setType(WasmType.INT32.asBlock());
                         var callSiteId = manager.generateCallSiteId(invocation.getLocation());
                         callSiteId.generateRegister(block.getBody(), invocation.getLocation());
                         block.getBody().add(arg);

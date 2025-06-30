@@ -155,7 +155,7 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
         var util = new WasmGCGenerationUtil(context.classInfoProvider());
         return util.allocateArray(ValueType.parse(Annotation.class), a -> {
             var block = new WasmBlock(false);
-            block.setType(a.getNonNullReference());
+            block.setType(a.getNonNullReference().asBlock());
             var arg = context.generate(invocation.getArguments().get(0));
             var annotationsData = new WasmStructGet(classCls.getStructure(), arg,
                     context.classInfoProvider().getClassAnnotationsOffset());
@@ -171,7 +171,7 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
         var util = new WasmGCGenerationUtil(context.classInfoProvider());
         return util.allocateArray(ValueType.parse(Class.class), a -> {
             var block = new WasmBlock(false);
-            block.setType(a.getNonNullReference());
+            block.setType(a.getNonNullReference().asBlock());
             var arg = context.generate(invocation.getArguments().get(0));
             var interfacesData = new WasmStructGet(classCls.getStructure(), arg,
                     context.classInfoProvider().getClassInterfacesOffset());

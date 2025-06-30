@@ -187,8 +187,8 @@ public class UnusedTypeElimination {
 
         @Override
         public void visit(WasmFunctionType type) {
-            if (type.getReturnType() != null) {
-                visit(type.getReturnType());
+            for (var ret : type.getReturnTypes()) {
+                visit(ret);
             }
             for (var parameter : type.getParameterTypes()) {
                 visit(parameter);

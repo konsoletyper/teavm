@@ -18,12 +18,12 @@ package org.teavm.backend.wasm.model.expression;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.WasmBlockType;
 
 public class WasmBlock extends WasmExpression {
     private boolean loop;
     private List<WasmExpression> body = new ArrayList<>();
-    private WasmType type;
+    private WasmBlockType type;
 
     public WasmBlock(boolean loop) {
         this.loop = loop;
@@ -41,13 +41,14 @@ public class WasmBlock extends WasmExpression {
         return body;
     }
 
-    public WasmType getType() {
+    public WasmBlockType getType() {
         return type;
     }
 
-    public void setType(WasmType type) {
+    public void setType(WasmBlockType type) {
         this.type = type;
     }
+
 
     @Override
     public void acceptVisitor(WasmExpressionVisitor visitor) {

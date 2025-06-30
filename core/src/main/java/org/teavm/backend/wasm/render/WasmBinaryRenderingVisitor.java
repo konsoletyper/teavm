@@ -25,8 +25,8 @@ import java.util.Objects;
 import java.util.Set;
 import org.teavm.backend.wasm.debug.DebugLines;
 import org.teavm.backend.wasm.generate.DwarfGenerator;
+import org.teavm.backend.wasm.model.WasmBlockType;
 import org.teavm.backend.wasm.model.WasmModule;
-import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
 import org.teavm.backend.wasm.model.expression.WasmArrayLength;
@@ -192,8 +192,17 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         }
     }
 
-    private void writeBlockType(WasmType type) {
-        writer.writeType(type, module);
+    private void writeBlockType(WasmBlockType type) {
+        if (type == null) {
+            writer.writeType(null, module);
+        } else if (type instanceof WasmBlockType.Function) {
+            var functionType = ((WasmBlockType.Function) type).ref;
+            var index = module.types.indexOf(functionType);
+            writer.writeSignedLEB(index);
+        } else {
+            var valueType = ((WasmBlockType.Value) type).type;
+            writer.writeType(valueType, module);
+        }
     }
 
     @Override
@@ -1129,7 +1138,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmTry expression) {
         pushLocation(expression);
         writer.writeByte(0x06);
-        writeBlockType(expression.getType());
+        writer.writeType(expression.getType(), module);
         ++depth;
         for (var part : expression.getBody()) {
             part.acceptVisitor(this);

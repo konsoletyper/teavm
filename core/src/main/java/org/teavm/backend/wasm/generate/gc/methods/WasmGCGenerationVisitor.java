@@ -199,7 +199,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected WasmExpression unwrapArray(WasmExpression array) {
         array.acceptVisitor(typeInference);
-        var arrayType = (WasmType.CompositeReference) typeInference.getResult();
+        var arrayType = (WasmType.CompositeReference) typeInference.getSingleResult();
         var arrayStruct = (WasmStructure) arrayType.composite;
         return new WasmStructGet(arrayStruct, array, WasmGCClassInfoProvider.ARRAY_DATA_FIELD_OFFSET);
     }
@@ -213,7 +213,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     protected WasmExpression storeArrayItem(WasmExpression array, WasmExpression index, Expr value,
             ArrayType type) {
         array.acceptVisitor(typeInference);
-        var arrayRefType = (WasmType.CompositeReference) typeInference.getResult();
+        var arrayRefType = (WasmType.CompositeReference) typeInference.getSingleResult();
         var arrayType = (WasmArray) arrayRefType.composite;
         accept(value, arrayType.getElementType().asUnpackedType());
         var wasmValue = result;
@@ -243,7 +243,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     private WasmExpression storeNormalField(WasmExpression target, FieldReference field, Expr value) {
         target.acceptVisitor(typeInference);
-        var type = (WasmType.CompositeReference) typeInference.getResult();
+        var type = (WasmType.CompositeReference) typeInference.getSingleResult();
         var struct = (WasmStructure) type.composite;
         var fieldIndex = context.classInfoProvider().getFieldIndex(field);
         if (fieldIndex >= 0) {
@@ -347,7 +347,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             return result;
         }
         result.acceptVisitor(typeInference);
-        block.setType(typeInference.getResult());
+        block.setType(typeInference.getSingleResult().asBlock());
         var check = new WasmNullBranch(WasmNullCondition.NOT_NULL, result, block);
         block.getBody().add(check);
 
@@ -389,7 +389,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         if (isNull(expr.getFirstOperand())) {
             accept(expr.getSecondOperand());
             result.acceptVisitor(typeInference);
-            if (typeInference.getResult() == WasmType.INT32) {
+            if (typeInference.getSingleResult() == WasmType.INT32) {
                 result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, result,
                         new WasmInt32Constant(0));
             } else {
@@ -398,7 +398,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         } else if (isNull(expr.getSecondOperand())) {
             accept(expr.getFirstOperand());
             result.acceptVisitor(typeInference);
-            if (typeInference.getResult() == WasmType.INT32) {
+            if (typeInference.getSingleResult() == WasmType.INT32) {
                 result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, result,
                         new WasmInt32Constant(0));
             } else {
@@ -410,7 +410,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             accept(expr.getSecondOperand());
             var second = result;
             first.acceptVisitor(typeInference);
-            if (typeInference.getResult() == WasmType.INT32) {
+            if (typeInference.getSingleResult() == WasmType.INT32) {
                 result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, first, second);
             } else {
                 result = new WasmReferencesEqual(first, second);
@@ -436,7 +436,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             List<WasmExpression> target) {
         var classInfo = context.classInfoProvider().getClassInfo(className);
         var block = new WasmBlock(false);
-        block.setType(classInfo.getType());
+        block.setType(classInfo.getType().asBlock());
         var targetVar = local;
         if (targetVar == null) {
             targetVar = tempVars.acquire(classInfo.getType());
@@ -506,7 +506,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     protected WasmExpression generateInstanceOf(WasmExpression expression, ValueType type) {
         context.classInfoProvider().getClassInfo(type);
         var block = new WasmBlock(false);
-        block.setType(WasmType.INT32);
+        block.setType(WasmType.INT32.asBlock());
         var supertypeCall = new WasmCall(context.supertypeFunctions().getIsSupertypeFunction(type));
         var vtRef = new WasmStructGet(
                 context.standardClasses().objectClass().getStructure(),
@@ -555,7 +555,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         }
 
         result.acceptVisitor(typeInference);
-        var sourceType = (WasmType.Reference) typeInference.getResult();
+        var sourceType = (WasmType.Reference) typeInference.getSingleResult();
         if (sourceType == null) {
             return;
         }
@@ -580,7 +580,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
                 canInsertCast = false;
             } else if (!sourceStruct.isSupertypeOf(targetStruct)) {
                 var block = new WasmBlock(false);
-                block.setType(targetType);
+                block.setType(targetType.asBlock());
                 block.setLocation(expr.getLocation());
                 block.getBody().add(new WasmDrop(result));
                 block.getBody().add(new WasmNullConstant(targetType));
@@ -595,7 +595,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             var block = new WasmBlock(false);
             block.setLocation(expr.getLocation());
             if (canCastNatively(expr.getTarget())) {
-                block.setType(targetType);
+                block.setType(targetType.asBlock());
                 if (!canInsertCast) {
                     return;
                 }
@@ -603,7 +603,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
                         targetType, block));
                 result = block;
             } else {
-                block.setType(sourceType);
+                block.setType(sourceType.asBlock());
                 var nonNullValue = new WasmNullBranch(WasmNullCondition.NULL, result, block);
                 nonNullValue.setResult(new WasmNullConstant(sourceType));
                 var valueToCast = exprCache.create(nonNullValue, sourceType, expr.getLocation(), block.getBody());
@@ -676,7 +676,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         accept(expr.getArray());
         var arrayData = result;
         arrayData.acceptVisitor(typeInference);
-        var arrayTypeRef = (WasmType.CompositeReference) typeInference.getResult();
+        var arrayTypeRef = (WasmType.CompositeReference) typeInference.getSingleResult();
         var arrayType = (WasmArray) arrayTypeRef.composite;
 
         accept(expr.getIndex());
@@ -757,7 +757,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     private WasmExpression forceType(WasmExpression expression, WasmType expectedType) {
         expression.acceptVisitor(typeInference);
-        var actualType = typeInference.getResult();
+        var actualType = typeInference.getSingleResult();
         if (actualType == expectedType || !(actualType instanceof WasmType.CompositeReference)
                 || !(expectedType instanceof WasmType.CompositeReference)) {
             return expression;
@@ -802,7 +802,7 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
 
     private WasmExpression getNormalField(QualificationExpr expr, WasmExpression target) {
         target.acceptVisitor(typeInference);
-        var type = (WasmType.CompositeReference) typeInference.getResult();
+        var type = (WasmType.CompositeReference) typeInference.getSingleResult();
         if (type == null) {
             return new WasmUnreachable();
         }

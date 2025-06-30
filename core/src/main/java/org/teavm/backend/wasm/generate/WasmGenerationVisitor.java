@@ -138,7 +138,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
             rethrowBlock.getBody().addAll(body);
             body.clear();
             target.add(rethrowBlock);
-            var valueToReturn = WasmExpression.defaultValueOfType(function.getType().getReturnType());
+            var valueToReturn = WasmExpression.defaultValueOfType(function.getType().getSingleReturnType());
             if (valueToReturn != null) {
                 target.add(new WasmReturn(valueToReturn));
             }
@@ -712,7 +712,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
 
     private WasmExpression getMonitor(WasmExpression address, TextLocation location) {
         var block = new WasmBlock(false);
-        block.setType(WasmType.INT32);
+        block.setType(WasmType.INT32.asBlock());
         block.setLocation(location);
 
         var tmp = tempVars.acquire(WasmType.INT32);
@@ -725,7 +725,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
         var shiftMonitor = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL,
                 new WasmGetLocal(tmp), new WasmInt32Constant(1));
         var cond = new WasmConditional(isMonitor);
-        cond.setType(WasmType.INT32);
+        cond.setType(WasmType.INT32.asBlock());
         cond.getThenBlock().getBody().add(shiftMonitor);
         cond.getElseBlock().getBody().add(new WasmInt32Constant(0));
         block.getBody().add(cond);
@@ -773,7 +773,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     public void visit(NewArrayExpr expr) {
         var block = new WasmBlock(false);
-        block.setType(mapType(ValueType.arrayOf(expr.getType())));
+        block.setType(mapType(ValueType.arrayOf(expr.getType())).asBlock());
 
         var callSiteId = generateCallSiteId(expr.getLocation());
         callSiteId.generateRegister(block.getBody(), expr.getLocation());
@@ -840,7 +840,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
 
         var wasmArrayType = mapType(ValueType.arrayOf(expr.getType()));
         var block = new WasmBlock(false);
-        block.setType(wasmArrayType);
+        block.setType(wasmArrayType.asBlock());
         var callSiteId = generateCallSiteId(expr.getLocation());
         callSiteId.generateRegister(block.getBody(), expr.getLocation());
 
@@ -949,7 +949,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
 
         var innerCatchBlock = new WasmBlock(false);
         var bodyBlock = new WasmBlock(false);
-        bodyBlock.setType(WasmType.INT32);
+        bodyBlock.setType(WasmType.INT32.asBlock());
 
         var isTopMostTryCatch = lastTryBlock == null;
         if (isTopMostTryCatch) {

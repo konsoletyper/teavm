@@ -15,6 +15,9 @@
  */
 package org.teavm.backend.wasm.render;
 
+import java.util.Collections;
+import java.util.List;
+import org.teavm.backend.wasm.model.WasmBlockType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmArrayCopy;
 import org.teavm.backend.wasm.model.expression.WasmArrayGet;
@@ -81,21 +84,48 @@ import org.teavm.backend.wasm.model.expression.WasmTry;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 
 public class WasmTypeInference implements WasmExpressionVisitor {
-    private WasmType result;
+    private List<? extends WasmType> result;
 
-    public WasmType getResult() {
+    public List<? extends WasmType> getResult() {
         return result;
+    }
+
+    public WasmType getSingleResult() {
+        if (result.isEmpty()) {
+            return null;
+        }
+        if (result.size() != 1) {
+            throw new IllegalStateException("Can't get single result from multi-value expression");
+        }
+        return result.get(0);
+    }
+
+    private void setSingleType(WasmType type) {
+        result = type == null ? Collections.emptyList() : List.of(type);
+    }
+
+    private void setBlockType(WasmBlockType type) {
+        if (type == null) {
+            result = Collections.emptyList();
+        } else if (type instanceof WasmBlockType.Function) {
+            var function = ((WasmBlockType.Function) type).ref;
+            result = function.getReturnTypes();
+        } else {
+            result = List.of(((WasmBlockType.Value) type).type);
+        }
     }
 
     @Override
     public void visit(WasmBlock expression) {
-        result = expression.getType();
+        setBlockType(expression.getType());
     }
 
     @Override
     public void visit(WasmBranch expression) {
         if (expression.getResult() != null) {
             expression.acceptVisitor(this);
+        } else {
+            result = Collections.emptyList();
         }
     }
 
@@ -103,6 +133,8 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     public void visit(WasmNullBranch expression) {
         if (expression.getResult() != null) {
             expression.acceptVisitor(this);
+        } else {
+            result = Collections.emptyList();
         }
     }
 
@@ -110,301 +142,301 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     public void visit(WasmCastBranch expression) {
         switch (expression.getCondition()) {
             case SUCCESS:
-                result = expression.getSourceType();
+                result = List.of(expression.getSourceType());
                 break;
             case FAILURE:
-                result = expression.getType();
+                setSingleType(expression.getType());
                 break;
         }
     }
 
     @Override
     public void visit(WasmBreak expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmSwitch expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmConditional expression) {
-        result = expression.getType();
+        setBlockType(expression.getType());
     }
 
     @Override
     public void visit(WasmReturn expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmUnreachable expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmInt32Constant expression) {
-        result = WasmType.INT32;
+        result = List.of(WasmType.INT32);
     }
 
     @Override
     public void visit(WasmInt64Constant expression) {
-        result = WasmType.INT64;
+        result = List.of(WasmType.INT64);
     }
 
     @Override
     public void visit(WasmFloat32Constant expression) {
-        result = WasmType.FLOAT32;
+        result = List.of(WasmType.FLOAT32);
     }
 
     @Override
     public void visit(WasmFloat64Constant expression) {
-        result = WasmType.FLOAT64;
+        result = List.of(WasmType.FLOAT64);
     }
 
     @Override
     public void visit(WasmGetLocal expression) {
-        result = expression.getLocal().getType();
+        result = List.of(expression.getLocal().getType());
     }
 
     @Override
     public void visit(WasmSetLocal expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmGetGlobal expression) {
-        result = expression.getGlobal().getType();
+        result = List.of(expression.getGlobal().getType());
     }
 
     @Override
     public void visit(WasmSetGlobal expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmIntBinary expression) {
-        result = map(expression.getType());
+        result = List.of(map(expression.getType()));
     }
 
     @Override
     public void visit(WasmFloatBinary expression) {
-        result = map(expression.getType());
+        result = List.of(map(expression.getType()));
     }
 
     @Override
     public void visit(WasmIntUnary expression) {
-        result = map(expression.getType());
+        result = List.of(map(expression.getType()));
     }
 
     @Override
     public void visit(WasmFloatUnary expression) {
-        result = map(expression.getType());
+        result = List.of(map(expression.getType()));
     }
 
     @Override
     public void visit(WasmConversion expression) {
-        result = WasmType.num(expression.getTargetType());
+        result = List.of(WasmType.num(expression.getTargetType()));
     }
 
     @Override
     public void visit(WasmNullConstant expression) {
-        result = expression.type;
+        result = List.of(expression.type);
     }
 
 
     @Override
     public void visit(WasmIsNull expression) {
-        result = WasmType.INT32;
+        result = List.of(WasmType.INT32);
     }
 
     @Override
     public void visit(WasmCall expression) {
         var function = expression.getFunction();
-        result = function == null ? null : function.getType().getReturnType();
+        result = function == null ? null : function.getType().getReturnTypes();
     }
 
     @Override
     public void visit(WasmIndirectCall expression) {
-        result = expression.getType().getReturnType();
+        result = expression.getType().getReturnTypes();
     }
 
     @Override
     public void visit(WasmCallReference expression) {
-        result = expression.getType().getReturnType();
+        result = expression.getType().getReturnTypes();
     }
 
     @Override
     public void visit(WasmDrop expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmLoadInt32 expression) {
-        result = WasmType.INT32;
+        result = List.of(WasmType.INT32);
     }
 
     @Override
     public void visit(WasmLoadInt64 expression) {
-        result = WasmType.INT64;
+        result = List.of(WasmType.INT64);
     }
 
     @Override
     public void visit(WasmLoadFloat32 expression) {
-        result = WasmType.FLOAT32;
+        result = List.of(WasmType.FLOAT32);
     }
 
     @Override
     public void visit(WasmLoadFloat64 expression) {
-        result = WasmType.FLOAT64;
+        result = List.of(WasmType.FLOAT64);
     }
 
     @Override
     public void visit(WasmStoreInt32 expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmStoreInt64 expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmStoreFloat32 expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmStoreFloat64 expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmMemoryGrow expression) {
-        result = WasmType.INT32;
+        result = List.of(WasmType.INT32);
     }
 
     @Override
     public void visit(WasmFill expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmCopy expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmTry expression) {
-        result = expression.getType();
+        result = List.of(expression.getType());
     }
 
     @Override
     public void visit(WasmThrow expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmReferencesEqual expression) {
-        result = WasmType.INT32;
+        result = List.of(WasmType.INT32);
     }
 
     @Override
     public void visit(WasmCast expression) {
-        result = expression.getTargetType();
+        result = List.of(expression.getTargetType());
     }
 
     @Override
     public void visit(WasmTest expression) {
-        result = WasmType.INT32;
+        result = List.of(WasmType.INT32);
     }
 
     @Override
     public void visit(WasmExternConversion expression) {
         switch (expression.getType()) {
             case EXTERN_TO_ANY:
-                result = WasmType.Reference.ANY;
+                result = List.of(WasmType.Reference.ANY);
                 break;
             case ANY_TO_EXTERN:
-                result = WasmType.Reference.EXTERN;
+                result = List.of(WasmType.Reference.EXTERN);
                 break;
         }
     }
 
     @Override
     public void visit(WasmStructNew expression) {
-        result = expression.getType().getReference();
+        result = List.of(expression.getType().getReference());
     }
 
     @Override
     public void visit(WasmStructNewDefault expression) {
-        result = expression.getType().getReference();
+        result = List.of(expression.getType().getReference());
     }
 
     @Override
     public void visit(WasmStructGet expression) {
-        result = expression.getType().getFields().get(expression.getFieldIndex()).getUnpackedType();
+        result = List.of(expression.getType().getFields().get(expression.getFieldIndex()).getUnpackedType());
     }
 
     @Override
     public void visit(WasmStructSet expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmArrayNewDefault expression) {
-        result = expression.getType().getReference();
+        result = List.of(expression.getType().getReference());
     }
 
     @Override
     public void visit(WasmArrayNewFixed expression) {
-        result = expression.getType().getReference();
+        result = List.of(expression.getType().getReference());
     }
 
     @Override
     public void visit(WasmArrayGet expression) {
-        result = expression.getType().getElementType().asUnpackedType();
+        result = List.of(expression.getType().getElementType().asUnpackedType());
     }
 
     @Override
     public void visit(WasmArraySet expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmArrayLength expression) {
-        result = WasmType.INT32;
+        result = List.of(WasmType.INT32);
     }
 
     @Override
     public void visit(WasmArrayCopy expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmFunctionReference expression) {
-        result = expression.getFunction().getType().getReference();
+        result = List.of(expression.getFunction().getType().getReference());
     }
 
     @Override
     public void visit(WasmInt31Get expression) {
-        result = WasmType.INT32;
+        result = List.of(WasmType.INT32);
     }
 
     @Override
     public void visit(WasmInt31Reference expression) {
-        result = WasmType.Reference.I31;
+        result = List.of(WasmType.Reference.I31);
     }
 
     @Override
     public void visit(WasmPush expression) {
-        result = null;
+        result = Collections.emptyList();
     }
 
     @Override
     public void visit(WasmPop expression) {
-        result = expression.getType();
+        result = List.of(expression.getType());
     }
 
     private static WasmType map(WasmIntType type) {

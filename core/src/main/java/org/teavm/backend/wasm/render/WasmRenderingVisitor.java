@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.render;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.teavm.backend.wasm.model.WasmBlockType;
 import org.teavm.backend.wasm.model.WasmCompositeType;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -924,6 +925,14 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         open().append("i31.get_" + (expression.getSignedType() == WasmSignedType.SIGNED ? "s" : "u"));
         line(expression.getValue());
         close();
+    }
+
+    private String type(WasmBlockType type) {
+        if (type instanceof WasmBlockType.Function) {
+            return typeName(((WasmBlockType.Function) type).ref);
+        } else {
+            return type(((WasmBlockType.Value) type).type);
+        }
     }
 
     private String type(WasmType type) {

@@ -787,7 +787,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         WasmType type = requiredType;
         StringBuilder sb = new StringBuilder();
 
-        sb.append("(*(" + mapType(expression.getType().getReturnType()) + " (*)(");
+        sb.append("(*(" + mapType(expression.getType().getSingleReturnType()) + " (*)(");
         for (int i = 0; i < expression.getType().getParameterTypes().size(); ++i) {
             if (i > 0) {
                 sb.append(", ");

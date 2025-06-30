@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.model;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,19 +23,20 @@ import java.util.function.Supplier;
 
 public class WasmFunctionType extends WasmCompositeType {
     private List<? extends WasmType> parameterTypes;
-    private WasmType returnType;
+    private List<? extends WasmType> returnTypes;
     private Supplier<List<? extends WasmType>> parameterTypesSupplier;
-    private Supplier<WasmType> returnTypeSupplier;
+    private Supplier<List<? extends WasmType>> returnTypeSupplier;
     private Set<WasmFunctionType> supertypes = new LinkedHashSet<>();
     private boolean isFinal = true;
+    private WasmBlockType.Function blockType;
 
     public WasmFunctionType(String name, WasmType returnType, List<? extends WasmType> parameterTypes) {
         super(name);
-        this.returnType = returnType;
+        this.returnTypes = returnType != null ? List.of(returnType) : Collections.emptyList();
         this.parameterTypes = parameterTypes;
     }
 
-    public WasmFunctionType(String name, Supplier<WasmType> returnTypeSupplier,
+    public WasmFunctionType(String name, Supplier<List<? extends WasmType>> returnTypeSupplier,
             Supplier<List<? extends WasmType>> parameterTypesSupplier) {
         super(name);
         this.returnTypeSupplier = returnTypeSupplier;
@@ -49,12 +51,22 @@ public class WasmFunctionType extends WasmCompositeType {
         return parameterTypes;
     }
 
-    public WasmType getReturnType() {
+    public List<? extends WasmType> getReturnTypes() {
         if (returnTypeSupplier != null) {
-            returnType = returnTypeSupplier.get();
+            returnTypes = returnTypeSupplier.get();
             returnTypeSupplier = null;
         }
-        return returnType;
+        return returnTypes;
+    }
+
+    public WasmType getSingleReturnType() {
+        if (returnTypes.isEmpty()) {
+            return null;
+        }
+        if (returnTypes.size() != 1) {
+            throw new IllegalStateException("Function produces more that one value");
+        }
+        return returnTypes.get(0);
     }
 
     public Set<WasmFunctionType> getSupertypes() {
@@ -67,6 +79,13 @@ public class WasmFunctionType extends WasmCompositeType {
 
     public void setFinal(boolean aFinal) {
         isFinal = aFinal;
+    }
+
+    public WasmBlockType.Function asBlock() {
+        if (blockType == null) {
+            blockType = new WasmBlockType.Function(this);
+        }
+        return blockType;
     }
 
     @Override

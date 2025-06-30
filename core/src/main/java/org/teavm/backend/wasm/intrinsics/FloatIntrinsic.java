@@ -87,7 +87,7 @@ public class FloatIntrinsic implements WasmIntrinsic {
     private WasmExpression testNaN(WasmExpression expression, WasmIntrinsicManager manager) {
         WasmLocal bitsVar = manager.getTemporary(WasmType.INT32);
         WasmBlock block = new WasmBlock(false);
-        block.setType(WasmType.INT32);
+        block.setType(WasmType.INT32.asBlock());
 
         WasmConversion conversion = new WasmConversion(WasmNumType.FLOAT32, WasmNumType.INT32, false, expression);
         conversion.setReinterpret(true);

@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.optimization;
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import org.teavm.backend.wasm.model.WasmArray;
+import org.teavm.backend.wasm.model.WasmBlockType;
 import org.teavm.backend.wasm.model.WasmCompositeType;
 import org.teavm.backend.wasm.model.WasmCompositeTypeVisitor;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -94,7 +95,9 @@ public class WasmUsageCounter extends WasmDefaultExpressionVisitor implements Wa
 
     @Override
     public void visit(WasmFunctionType type) {
-        addUsage(type.getReturnType());
+        for (var ret : type.getReturnTypes()) {
+            addUsage(ret);
+        }
         for (var param : type.getParameterTypes()) {
             addUsage(param);
         }
@@ -214,6 +217,17 @@ public class WasmUsageCounter extends WasmDefaultExpressionVisitor implements Wa
         super.visit(expression);
         addUsage(expression.getSourceArrayType());
         addUsage(expression.getTargetArrayType());
+    }
+
+    private void addUsage(WasmBlockType type) {
+        if (type == null) {
+            return;
+        }
+        if (type instanceof WasmBlockType.Function) {
+            addUsage(((WasmBlockType.Function) type).ref);
+        } else {
+            addUsage(((WasmBlockType.Value) type).type);
+        }
     }
 
     private void addUsage(WasmType type) {
