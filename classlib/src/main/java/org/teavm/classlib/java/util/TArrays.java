@@ -37,6 +37,8 @@ import org.teavm.classlib.java.util.stream.doubleimpl.TArrayDoubleStreamImpl;
 import org.teavm.classlib.java.util.stream.impl.TArrayStreamImpl;
 import org.teavm.classlib.java.util.stream.intimpl.TArrayIntStreamImpl;
 import org.teavm.classlib.java.util.stream.longimpl.TArrayLongStreamImpl;
+import org.teavm.jso.JSBody;
+import org.teavm.jso.JSByRef;
 
 public class TArrays extends TObject {
     public static char[] copyOf(char[] array, int length) {
@@ -490,8 +492,8 @@ public class TArrays extends TObject {
         }
     }
 
-    @InjectedBy(JSArraysGenerator.class)
-    private static native void sortIntJS(int[] arr);
+    @JSBody(params = "arr", script="arr.sort();")
+    private static native void sortIntJS(@JSByRef int[] arr);
 
     public static void sort(int[] a) {
         if (PlatformDetector.isJavaScript()) {
