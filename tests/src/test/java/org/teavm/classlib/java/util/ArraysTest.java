@@ -32,6 +32,14 @@ import org.teavm.junit.TeaVMTestRunner;
 public class ArraysTest {
     @Test
     public void arraySorted() {
+        int[] intArr = { 2, 5, 7, 3, 5, 6 };
+        Arrays.sort(intArr);
+        assertEquals(2, intArr[0]);
+        assertEquals(3, intArr[1]);
+        assertEquals(5, intArr[2]);
+        assertEquals(5, intArr[3]);
+        assertEquals(6, intArr[4]);
+        assertEquals(7, intArr[5]);
         Integer[] array = { 2, 5, 7, 3, 5, 6 };
         Arrays.sort(array);
         assertEquals(Integer.valueOf(2), array[0]);

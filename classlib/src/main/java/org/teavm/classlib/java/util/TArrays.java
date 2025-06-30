@@ -23,6 +23,8 @@ import java.util.function.IntFunction;
 import java.util.function.IntToDoubleFunction;
 import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
+import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
@@ -488,7 +490,14 @@ public class TArrays extends TObject {
         }
     }
 
+    @InjectedBy(JSArraysGenerator.class)
+    private static native void sortIntJS(int[] arr);
+
     public static void sort(int[] a) {
+        if (PlatformDetector.isJavaScript()) {
+            sortIntJS(a);
+            return;
+        }
         if (a.length == 0) {
             return;
         }
