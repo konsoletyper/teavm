@@ -60,6 +60,8 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmPop;
+import org.teavm.backend.wasm.model.expression.WasmPush;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
@@ -393,6 +395,16 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     @Override
     public void visit(WasmInt31Reference expression) {
         result = WasmType.Reference.I31;
+    }
+
+    @Override
+    public void visit(WasmPush expression) {
+        result = null;
+    }
+
+    @Override
+    public void visit(WasmPop expression) {
+        result = expression.getType();
     }
 
     private static WasmType map(WasmIntType type) {

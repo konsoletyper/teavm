@@ -73,6 +73,8 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmPop;
+import org.teavm.backend.wasm.model.expression.WasmPush;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
@@ -1109,5 +1111,13 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                 return "sqrt";
         }
         throw new AssertionError(operation.toString());
+    }
+
+    @Override
+    public void visit(WasmPush expression) {
+    }
+
+    @Override
+    public void visit(WasmPop expression) {
     }
 }

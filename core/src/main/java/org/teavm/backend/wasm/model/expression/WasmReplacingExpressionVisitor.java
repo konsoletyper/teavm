@@ -432,4 +432,12 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
         expression.getValue().acceptVisitor(this);
         expression.setValue(mapper.apply(expression.getValue()));
     }
+
+    @Override
+    public void visit(WasmPush expression) {
+    }
+
+    @Override
+    public void visit(WasmPop expression) {
+    }
 }

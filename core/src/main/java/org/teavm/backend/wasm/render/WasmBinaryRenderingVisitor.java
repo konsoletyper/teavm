@@ -71,6 +71,8 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmPop;
+import org.teavm.backend.wasm.model.expression.WasmPush;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
@@ -1368,6 +1370,14 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         writer.writeByte(0xfb);
         writer.writeByte(expression.getSignedType() == WasmSignedType.SIGNED ? 29 : 30);
         popLocation();
+    }
+
+    @Override
+    public void visit(WasmPush expression) {
+    }
+
+    @Override
+    public void visit(WasmPop expression) {
     }
 
     private int alignment(int value) {
