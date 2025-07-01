@@ -23,7 +23,7 @@ import java.util.function.IntFunction;
 import java.util.function.IntToDoubleFunction;
 import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
-import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TMath;
@@ -37,8 +37,6 @@ import org.teavm.classlib.java.util.stream.doubleimpl.TArrayDoubleStreamImpl;
 import org.teavm.classlib.java.util.stream.impl.TArrayStreamImpl;
 import org.teavm.classlib.java.util.stream.intimpl.TArrayIntStreamImpl;
 import org.teavm.classlib.java.util.stream.longimpl.TArrayLongStreamImpl;
-import org.teavm.jso.JSBody;
-import org.teavm.jso.JSByRef;
 
 public class TArrays extends TObject {
     public static char[] copyOf(char[] array, int length) {
@@ -492,12 +490,18 @@ public class TArrays extends TObject {
         }
     }
 
-    @JSBody(params = "arr", script="arr.sort();")
-    private static native void sortIntJS(@JSByRef int[] arr);
+    @GeneratedBy(ArraysNativeGenerator.class)
+    private static native void sortJS(Object arr);
+
+    @GeneratedBy(ArraysNativeGenerator.class)
+    private static native <T> void sortJSCmp(T[] arr, TComparator<T> cmp);
+
+    //@JSBody(params = {"arr", "cmp"}, script="arr.sort(cmp);")
+    //private static native void sortJS(@JSByRef Object arr, TComparator<Object> cmp);
 
     public static void sort(int[] a) {
         if (PlatformDetector.isJavaScript()) {
-            sortIntJS(a);
+            sortJS(a);
             return;
         }
         if (a.length == 0) {
@@ -941,6 +945,10 @@ public class TArrays extends TObject {
     }
 
     public static void sort(Object[] a) {
+        if (PlatformDetector.isJavaScript()) {
+            sortJSCmp(a, TComparator.NaturalOrder.instance());
+            return;
+        }
         sort(a, TComparator.NaturalOrder.instance());
     }
 
