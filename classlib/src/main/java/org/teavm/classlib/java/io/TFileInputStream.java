@@ -19,6 +19,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+
+import org.teavm.classlib.java.nio.channels.TFileChannel;
 import org.teavm.runtime.fs.VirtualFile;
 import org.teavm.runtime.fs.VirtualFileAccessor;
 
@@ -102,5 +104,12 @@ public class TFileInputStream extends InputStream {
         if (accessor == null) {
             throw new IOException("This stream is already closed");
         }
+    }
+
+    /**
+     * Returns the unique {@code FileChannel} object associated with this file input stream.
+     */
+    public TFileChannel getChannel() {
+        return null;
     }
 }

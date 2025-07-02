@@ -89,6 +89,15 @@ public class TRuntime {
         return GC.availableBytes();
     }
 
+    /**
+     * Returns the maximum amount of memory that the Java virtual machine will
+     * attempt to use. If there is no inherent limit then the value
+     * Long.MAX_VALUE will be returned.
+     */
+    public long maxMemory() {
+        return Long.MAX_VALUE; 
+    }
+
     @SupportedOn({Platforms.JAVASCRIPT, Platforms.WEBASSEMBLY_GC})
     public int availableProcessors() {
         return Navigator.hardwareConcurrency();
