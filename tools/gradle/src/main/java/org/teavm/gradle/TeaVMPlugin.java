@@ -237,10 +237,11 @@ public class TeaVMPlugin implements Plugin<Project> {
             setupSources(task.getSourceFiles(), project);
         }).get();
 
+        var copyRuntime = extension.getWasmGC().getCopyRuntime();
         var copyRuntimeTask = project.getTasks().register(WASM_GC_COPY_RUNTIME_TASK_NAME, CopyWasmGCRuntimeTask.class,
                 task -> {
                     task.setGroup(TASK_GROUP);
-                    task.onlyIf(t -> extension.getWasmGC().getCopyRuntime().getOrElse(false));
+                    task.onlyIf(t -> copyRuntime.getOrElse(false));
                     var fileName = extension.getWasmGC().getTargetFileName().map(x -> x + "-runtime.js");
                     task.getOutputFile().convention(extension.getWasmGC().getOutputDir()
                             .flatMap(d -> d.dir(extension.getWasmGC().getRelativePathInOutputDir()))
@@ -254,11 +255,13 @@ public class TeaVMPlugin implements Plugin<Project> {
                     task.getModular().convention(extension.getWasmGC().getModularRuntime());
                     task.getObfuscated().convention(extension.getWasmGC().getObfuscated());
                 });
+
+        var disassembly = extension.getWasmGC().getDisassembly();
         var disasmTask = project.getTasks().register(WASM_GC_DISASSEMBLY_TASK_NAME, DisasmWebAssemblyTask.class,
                 task -> {
                     task.setGroup(TASK_GROUP);
                     task.dependsOn(genTask);
-                    task.onlyIf(t -> extension.getWasmGC().getDisassembly().getOrElse(false));
+                    task.onlyIf(t -> disassembly.getOrElse(false));
                     task.getHtml().set(true);
                     task.getInputFile().convention(project.getLayout().dir(genTask.getOutputDir())
                             .flatMap(x -> x.file(genTask.getTargetFileName())));
