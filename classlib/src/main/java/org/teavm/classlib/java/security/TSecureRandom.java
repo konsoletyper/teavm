@@ -42,15 +42,11 @@ public class TSecureRandom extends TRandom {
     }
 
     public String getAlgorithm() {
-        if (PlatformDetector.isJavaScript() && Crypto.isSupported()) {
+        if ((PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) && Crypto.isSupported()) {
             return "NativePRNG";
         } else {
             return "unknown";
         }
-    }
-
-    @Override
-    public void setSeed(@SuppressWarnings("unused") long seed) {
     }
 
     public void setSeed(@SuppressWarnings("unused") byte[] seed) {
@@ -74,7 +70,7 @@ public class TSecureRandom extends TRandom {
 
     @Override
     public void nextBytes(byte[] bytes) {
-        if (PlatformDetector.isJavaScript() && Crypto.isSupported()) {
+        if ((PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) && Crypto.isSupported()) {
             var buffer = new Uint8Array(bytes.length);
             Crypto.current().getRandomValues(buffer);
 
@@ -91,30 +87,20 @@ public class TSecureRandom extends TRandom {
 
     @Override
     public int nextInt() {
-        return next(32);
-    }
-
-    @Override
-    public int nextInt(int n) {
-        if (n <= 0) {
-            throw new IllegalArgumentException();
+        if (PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) {
+            return next(32);
+        } else {
+            return super.nextInt();
         }
-        return (int) (nextDouble() * n);
-    }
-
-    @Override
-    public long nextLong() {
-        return ((long) nextInt() << 32) | nextInt();
-    }
-
-    @Override
-    public float nextFloat() {
-        return (float) nextDouble();
     }
 
     @Override
     public double nextDouble() {
-        return (((long) next(26) << 27) + next(27)) / (double) (1L << 53);
+        if (PlatformDetector.isJavaScript() || PlatformDetector.isWebAssemblyGC()) {
+            return (((long) next(26) << 27) + next(27)) / (double) (1L << 53);
+        } else {
+            return super.nextDouble();
+        }
     }
 
     public static byte[] getSeed(int numBytes) {
