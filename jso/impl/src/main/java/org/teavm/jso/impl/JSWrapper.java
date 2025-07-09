@@ -20,9 +20,9 @@ import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSClass;
+import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSBoolean;
-import org.teavm.jso.core.JSFinalizationRegistry;
 import org.teavm.jso.core.JSMap;
 import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.core.JSObjects;
@@ -41,17 +41,32 @@ public final class JSWrapper {
         private static final JSMap<JSNumber, JSWeakRef<JSObject>> numberWrappers = JSWeakRef.isSupported()
                 ? new JSMap<>() : null;
         private static JSWeakRef<JSObject> undefinedWrapper;
-        private static JSFinalizationRegistry stringFinalizationRegistry;
-        private static JSFinalizationRegistry numberFinalizationRegistry;
+        private static FinalizationRegistry stringFinalizationRegistry;
+        private static FinalizationRegistry numberFinalizationRegistry;
         private static int hashCodeGen;
 
         static {
             stringFinalizationRegistry = stringWrappers != null
-                    ? new JSFinalizationRegistry(token -> stringWrappers.delete((JSString) token))
+                    ? new FinalizationRegistry(token -> stringWrappers.delete((JSString) token))
                     : null;
             numberFinalizationRegistry = numberWrappers != null
-                    ? new JSFinalizationRegistry(token -> numberWrappers.delete((JSNumber) token))
+                    ? new FinalizationRegistry(token -> numberWrappers.delete((JSNumber) token))
                     : null;
+        }
+
+        @JSClass(name = "FinalizationRegistry")
+        static class FinalizationRegistry implements JSObject {
+            FinalizationRegistry(FinalizationRegistryConsumer consumer) {
+            }
+
+            native void register(Object obj, JSObject token);
+
+            native void register(Object obj, JSObject token, Object unregisterToken);
+        }
+
+        @JSFunctor
+        interface FinalizationRegistryConsumer extends JSObject {
+            void accept(JSObject token);
         }
     }
 
@@ -89,7 +104,7 @@ public final class JSWrapper {
                     var wrapper = new JSWrapper(o);
                     var wrapperAsJs = wrapperToJs(wrapper);
                     set(stringWrappers, jsString, createWeakRef(wrapperAsJs));
-                    register(stringFinalizationRegistry, wrapperAsJs, jsString);
+                    stringFinalizationRegistry.register(wrapperAsJs, jsString);
                     return wrapper;
                 } else {
                     return jsToWrapper(existing);
@@ -104,7 +119,7 @@ public final class JSWrapper {
                     var wrapper = new JSWrapper(o);
                     var wrapperAsJs = wrapperToJs(wrapper);
                     set(numberWrappers, jsNumber, createWeakRef(wrapperAsJs));
-                    register(numberFinalizationRegistry, wrapperAsJs, jsNumber);
+                    numberFinalizationRegistry.register(wrapperAsJs, jsNumber);
                     return wrapper;
                 } else {
                     return jsToWrapper(existing);
@@ -132,10 +147,6 @@ public final class JSWrapper {
     @JSBody(params = "target", script = "return target.deref();")
     @NoSideEffects
     private static native JSObject deref(JSWeakRef<JSObject> target);
-
-    @JSBody(params = { "registry", "target", "token" }, script = "return registry.register(target, token);")
-    @NoSideEffects
-    private static native void register(JSFinalizationRegistry registry, JSObject target, JSObject token);
 
     @JSBody(params = { "map", "key" }, script = "return map.get(key);")
     @NoSideEffects
