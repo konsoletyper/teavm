@@ -400,4 +400,17 @@ public class IntStreamTest {
         }).toArray();
         assertArrayEquals(new int[] {1, 2, 2, 3, 3, 3}, mapped);
     }
+
+    @Test
+    public void generateLimit() {
+        var supplier = new IntSupplier() {
+            int index;
+
+            @Override
+            public int getAsInt() {
+                return index++;
+            }
+        };
+        assertArrayEquals(new int[] { 0, 1, 2 }, IntStream.generate(supplier).limit(3).toArray());
+    }
 }

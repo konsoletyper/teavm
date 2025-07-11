@@ -27,6 +27,7 @@ import static org.teavm.classlib.java.util.stream.Helper.testLongStream;
 import java.util.DoubleSummaryStatistics;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
+import java.util.function.DoubleSupplier;
 import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
 import org.junit.Test;
@@ -350,5 +351,19 @@ public class DoubleStreamTest {
         assertEquals(Double.POSITIVE_INFINITY, empty.getMin(), 0.0);
         assertEquals(Double.NEGATIVE_INFINITY, empty.getMax(), 0.0);
         assertEquals(0.0, empty.getSum(), 0.0);
+    }
+
+
+    @Test
+    public void generateLimit() {
+        var supplier = new DoubleSupplier() {
+            int index;
+
+            @Override
+            public double getAsDouble() {
+                return index++;
+            }
+        };
+        assertArrayEquals(new double[] { 0, 1, 2 }, DoubleStream.generate(supplier).limit(3).toArray(), 0.1);
     }
 }
