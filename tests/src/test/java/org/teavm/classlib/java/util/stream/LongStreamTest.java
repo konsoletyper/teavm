@@ -27,6 +27,7 @@ import static org.teavm.classlib.java.util.stream.Helper.testLongStream;
 import java.util.LongSummaryStatistics;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
+import java.util.function.LongSupplier;
 import java.util.stream.LongStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -347,5 +348,18 @@ public class LongStreamTest {
         assertEquals(Long.MAX_VALUE, empty.getMin());
         assertEquals(Long.MIN_VALUE, empty.getMax());
         assertEquals(0L, empty.getSum());
+    }
+    
+    @Test
+    public void generateLimit() {
+        var supplier = new LongSupplier() {
+            int index;
+
+            @Override
+            public long getAsLong() {
+                return index++;
+            }
+        };
+        assertArrayEquals(new long[] { 0, 1, 2 }, LongStream.generate(supplier).limit(3).toArray());
     }
 }

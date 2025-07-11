@@ -34,10 +34,8 @@ public class TLimitingDoubleStreamImpl extends TSimpleDoubleStreamImpl {
             return false;
         }
         boolean result = sourceStream.next(e -> {
-            if (remaining-- == 0) {
-                return false;
-            }
-            return consumer.test(e);
+            var hasRemaining = --remaining > 0;
+            return consumer.test(e) && hasRemaining;
         });
         if (!result) {
             remaining = 0;
