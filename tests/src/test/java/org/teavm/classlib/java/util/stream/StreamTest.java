@@ -507,4 +507,17 @@ public class StreamTest {
         assertEquals(List.of("", "a", "aa", "aaa", "aaaa"), repetitions);
     }
 
+    @Test
+    public void generateLimit() {
+        var supplier = new Supplier<String>() {
+            int index;
+
+            @Override
+            public String get() {
+                return String.valueOf((char) ('a' + index++));
+            }
+        };
+        assertEquals(List.of("a", "b", "c"), Stream.generate(supplier).limit(3).toList());
+        assertEquals(3, supplier.index);
+    }
 }
