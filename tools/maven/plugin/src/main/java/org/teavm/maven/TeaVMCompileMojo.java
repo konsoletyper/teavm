@@ -213,6 +213,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setMaxDirectBuffersSize(maxDirectBuffersSize * 1024 * 1024);
             builder.setShortFileNames(shortFileNames);
             builder.setAssertionsRemoved(assertionsRemoved);
+            builder.setImportedWasmMemory(importedWasmMemory);
         } catch (RuntimeException e) {
             throw new MojoExecutionException("Unexpected error occurred", e);
         }
