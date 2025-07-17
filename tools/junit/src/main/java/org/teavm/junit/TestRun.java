@@ -22,11 +22,16 @@ class TestRun {
     private String name;
     private Method method;
     private String argument;
+    private TestPlatform testPlatform;
+    private TeaVMTestConfiguration<?> configuration;
 
-    public TestRun(String name, Method method, String argument) {
+    public TestRun(String name, Method method, String argument, TestPlatform testPlatform,
+            TeaVMTestConfiguration<?> configuration) {
         this.name = name;
         this.method = method;
         this.argument = argument;
+        this.testPlatform = testPlatform;
+        this.configuration = configuration;
     }
 
     TestRunGroup getGroup() {
@@ -43,5 +48,13 @@ class TestRun {
 
     String getArgument() {
         return argument;
+    }
+
+    TestPlatform getPlatform() {
+        return testPlatform;
+    }
+
+    TeaVMTestConfiguration<?> getConfiguration() {
+        return configuration;
     }
 }
