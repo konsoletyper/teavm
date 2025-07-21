@@ -240,7 +240,9 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
         for (var platform : participatingPlatforms) {
             var runner = runners.get(platform.getPlatform());
-            runner.cleanup();
+            if (runner != null) {
+                runner.cleanup();
+            }
         }
     }
 
@@ -446,11 +448,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             }
 
             notifier.fireTestSuiteFinished(childSuiteDescription);
-        }
-
-        for (var platform : participatingPlatforms) {
-            var strategy = runners.get(platform.getPlatform());
-            strategy.cleanup();
         }
     }
 
