@@ -1134,10 +1134,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                     method, that.method);
         }
 
-        public Method getMethod() {
-            return method;
-        }
-
         @Override
         public int hashCode() {
             return Objects.hash(method, platform, configuration);
