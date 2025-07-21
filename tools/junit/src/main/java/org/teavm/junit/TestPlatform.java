@@ -16,9 +16,20 @@
 package org.teavm.junit;
 
 public enum TestPlatform {
-    JAVASCRIPT,
-    WEBASSEMBLY,
+    JVM,
+    JAVASCRIPT("JS"),
+    WEBASSEMBLY("WASM"),
     WASI,
-    WEBASSEMBLY_GC,
-    C
+    WEBASSEMBLY_GC("WASM-GC"),
+    C;
+
+    private final String shortName;
+
+    TestPlatform(String ...shortName) {
+        this.shortName = shortName.length == 1 ? shortName[0] : name();
+    }
+
+    public String shortName() {
+        return shortName;
+    }
 }
