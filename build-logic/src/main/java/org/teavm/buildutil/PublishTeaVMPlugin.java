@@ -89,7 +89,7 @@ public abstract class PublishTeaVMPlugin implements Plugin<Project> {
                             sonatype.getStagingRepositories().add("build/staging-deploy");
                             sonatype.getUsername().set(target.getProviders().gradleProperty("ossrhUsername"));
                             sonatype.getPassword().set(target.getProviders().gradleProperty("ossrhPassword"));
-                            sonatype.getStage().set(MavenCentralMavenDeployer.Stage.UPLOAD);
+                            sonatype.getStage().set(MavenCentralMavenDeployer.Stage.FULL);
                             sonatype.getSign().set(true);
                             sonatype.getApplyMavenCentralRules().set(false);
                             sonatype.getMaxRetries().set(200);
