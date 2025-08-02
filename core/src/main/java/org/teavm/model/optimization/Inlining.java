@@ -447,7 +447,11 @@ public class Inlining {
                         implementations.addAll(knownImplementations);
                     }
                 } else {
-                    for (String className : classInference.classesOf(invoke.getInstance().getIndex())) {
+                    for (var type : classInference.typesOf(invoke.getInstance().getIndex())) {
+                        if (!(type instanceof ValueType.Object)) {
+                            continue;
+                        }
+                        var className = ((ValueType.Object) type).getClassName();
                         MethodReference rawMethod = new MethodReference(className, invoke.getMethod().getDescriptor());
                         MethodReader resolvedMethod = dependencyInfo.getClassSource().resolveImplementation(rawMethod);
                         if (resolvedMethod != null) {

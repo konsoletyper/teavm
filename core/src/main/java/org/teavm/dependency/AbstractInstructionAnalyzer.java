@@ -67,18 +67,8 @@ abstract class AbstractInstructionAnalyzer extends AbstractInstructionReader {
     public void classConstant(VariableReader receiver, ValueType cst) {
         DependencyNode node = getNode(receiver);
         if (node != null) {
-            node.propagate(getAnalyzer().getType("java.lang.Class"));
-            if (!(cst instanceof ValueType.Primitive)) {
-                StringBuilder sb = new StringBuilder();
-                if (cst instanceof ValueType.Object) {
-                    sb.append(((ValueType.Object) cst).getClassName());
-                } else {
-                    sb.append(cst.toString());
-                }
-                node.getClassValueNode().propagate(getAnalyzer().getType(sb.toString()));
-            } else {
-                node.getClassValueNode().propagate(getAnalyzer().getType("~" + cst.toString()));
-            }
+            node.propagate(getAnalyzer().getClassType("java.lang.Class"));
+            node.getClassValueNode().propagate(getAnalyzer().getType(cst));
         }
         while (cst instanceof ValueType.Array) {
             cst = ((ValueType.Array) cst).getItemType();
@@ -93,7 +83,7 @@ abstract class AbstractInstructionAnalyzer extends AbstractInstructionReader {
     public void stringConstant(VariableReader receiver, String cst) {
         DependencyNode node = getNode(receiver);
         if (node != null) {
-            node.propagate(getAnalyzer().getType("java.lang.String"));
+            node.propagate(getAnalyzer().getClassType("java.lang.String"));
         }
         MethodDependency method = getAnalyzer().linkMethod(STRING_INIT_FROM_CHARS_METHOD);
         method.addLocation(getCallLocation());
@@ -104,7 +94,7 @@ abstract class AbstractInstructionAnalyzer extends AbstractInstructionReader {
     public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
         DependencyNode node = getNode(receiver);
         if (node != null) {
-            node.propagate(getAnalyzer().getType("[" + itemType));
+            node.propagate(getAnalyzer().getType(ValueType.arrayOf(itemType)));
         }
         String className = extractClassName(itemType);
         if (className != null) {
@@ -119,13 +109,7 @@ abstract class AbstractInstructionAnalyzer extends AbstractInstructionReader {
             if (node == null) {
                 break;
             }
-            String itemTypeStr;
-            if (itemType instanceof ValueType.Object) {
-                itemTypeStr = ((ValueType.Object) itemType).getClassName();
-            } else {
-                itemTypeStr = itemType.toString();
-            }
-            node.propagate(getAnalyzer().getType(itemTypeStr));
+            node.propagate(getAnalyzer().getType(itemType));
             node = node.getArrayItem();
             itemType = ((ValueType.Array) itemType).getItemType();
         }
@@ -147,7 +131,7 @@ abstract class AbstractInstructionAnalyzer extends AbstractInstructionReader {
         getAnalyzer().linkClass(type);
         DependencyNode node = getNode(receiver);
         if (node != null) {
-            node.propagate(getAnalyzer().getType(type));
+            node.propagate(getAnalyzer().getClassType(type));
         }
     }
 
@@ -289,7 +273,7 @@ abstract class AbstractInstructionAnalyzer extends AbstractInstructionReader {
     public void boundCheck(VariableReader receiver, VariableReader index, VariableReader array, boolean lower) {
         MethodDependency methodDep = getAnalyzer().linkMethod(AIOOB_INIT_METHOD);
         methodDep.addLocation(getCallLocation());
-        methodDep.getVariable(0).propagate(getAnalyzer().getType(ArrayIndexOutOfBoundsException.class.getName()));
+        methodDep.getVariable(0).propagate(getAnalyzer().getClassType(ArrayIndexOutOfBoundsException.class.getName()));
         methodDep.use();
     }
 

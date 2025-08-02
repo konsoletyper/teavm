@@ -68,13 +68,14 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         switch (method.getReference().getName()) {
             case "newEmptyInstance":
                 method.getVariable(0).getClassValueNode().addConsumer(type -> {
-                    String className = type.getName();
-                    if (!className.startsWith("[") && !className.startsWith("~")) {
-                        ClassReader cls = agent.getClassSource().get(className);
-                        if (cls != null && !cls.hasModifier(ElementModifier.ABSTRACT)
-                                && !cls.hasModifier(ElementModifier.INTERFACE)) {
-                            method.getResult().propagate(type);
-                        }
+                    if (!(type.getValueType() instanceof ValueType.Object)) {
+                        return;
+                    }
+                    var className = ((ValueType.Object) type.getValueType()).getClassName();
+                    var cls = agent.getClassSource().get(className);
+                    if (cls != null && !cls.hasModifier(ElementModifier.ABSTRACT)
+                            && !cls.hasModifier(ElementModifier.INTERFACE)) {
+                        method.getResult().propagate(type);
                     }
                 });
                 break;
@@ -92,31 +93,32 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
 
     private void reachGetSuperclass(DependencyAgent agent, MethodDependency method) {
         method.getVariable(0).getClassValueNode().addConsumer(type -> {
-            String className = type.getName();
-            if (className.startsWith("[")) {
+            if (!(type.getValueType() instanceof ValueType.Object)) {
                 return;
             }
 
-            ClassReader cls = agent.getClassSource().get(className);
+            var className = ((ValueType.Object) type.getValueType()).getClassName();
+            var cls = agent.getClassSource().get(className);
             if (cls != null && cls.getParent() != null) {
-                method.getResult().getClassValueNode().propagate(agent.getType(cls.getParent()));
+                method.getResult().getClassValueNode().propagate(agent.getType(ValueType.object(cls.getParent())));
             }
         });
     }
 
     private void reachGetInterfaces(DependencyAgent agent, MethodDependency method) {
         method.getVariable(0).getClassValueNode().addConsumer(type -> {
-            String className = type.getName();
-            if (className.startsWith("[")) {
+            if (!(type.getValueType() instanceof ValueType.Object)) {
                 return;
             }
 
-            ClassReader cls = agent.getClassSource().get(className);
-            method.getResult().propagate(agent.getType("[java/lang/Class;"));
-            method.getResult().getArrayItem().propagate(agent.getType("java/lang/Class;"));
+            var className = ((ValueType.Object) type.getValueType()).getClassName();
+            var cls = agent.getClassSource().get(className);
+            method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.object("java.lang.Class"))));
+            method.getResult().getArrayItem().propagate(agent.getType(ValueType.object("java.lang.Class")));
             if (cls != null) {
                 for (String iface : cls.getInterfaces()) {
-                    method.getResult().getArrayItem().getClassValueNode().propagate(agent.getType(iface));
+                    method.getResult().getArrayItem().getClassValueNode().propagate(agent.getType(
+                            ValueType.object(iface)));
                 }
             }
         });
@@ -124,14 +126,11 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
 
     private void reachGetComponentType(DependencyAgent agent, MethodDependency method) {
         method.getVariable(0).getClassValueNode().addConsumer(t -> {
-            if (!t.getName().startsWith("[")) {
+            if (!(t.getValueType() instanceof ValueType.Array)) {
                 return;
             }
-            String typeName = t.getName().substring(1);
-            if (typeName.charAt(0) == 'L') {
-                typeName = ((ValueType.Object) ValueType.parse(typeName)).getClassName();
-            }
-            method.getResult().getClassValueNode().propagate(agent.getType(typeName));
+            var itemType = ((ValueType.Array) t.getValueType()).getItemType();
+            method.getResult().getClassValueNode().propagate(agent.getType(itemType));
         });
     }
 

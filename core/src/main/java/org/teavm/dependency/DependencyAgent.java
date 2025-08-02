@@ -43,8 +43,8 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
         return analyzer.createNode();
     }
 
-    public DependencyType getType(String name) {
-        return analyzer.getType(name);
+    public DependencyType getType(ValueType valueType) {
+        return analyzer.getType(valueType);
     }
 
     public String generateClassName() {

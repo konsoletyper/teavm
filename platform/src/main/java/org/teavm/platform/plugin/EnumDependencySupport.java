@@ -24,7 +24,6 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
-import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.platform.Platform;
 
@@ -42,11 +41,11 @@ public class EnumDependencySupport extends AbstractDependencyListener {
         if (cls == null || cls.getParent() == null || !cls.getParent().equals("java.lang.Enum")) {
             return;
         }
-        allEnums.propagate(agent.getType(className));
+        allEnums.propagate(agent.getType(ValueType.object(className)));
         for (var innerClassName : cls.getInnerClasses()) {
             var innerClass = agent.getClassSource().get(innerClassName);
             if (innerClass != null && innerClass.hasModifier(ElementModifier.ENUM)) {
-                allEnums.propagate(agent.getType(innerClassName));
+                allEnums.propagate(agent.getType(ValueType.object(innerClassName)));
             }
         }
     }
@@ -56,18 +55,21 @@ public class EnumDependencySupport extends AbstractDependencyListener {
         if (isEnumSupportClass(method.getMethod().getOwnerName())
                 && method.getReference().getName().equals("getEnumConstants")) {
             allEnums.connect(method.getResult().getArrayItem());
-            final MethodReference ref = method.getReference();
+            var ref = method.getReference();
             allEnums.addConsumer(type -> {
-                ClassReader cls = agent.getClassSource().get(type.getName());
-                MethodReader valuesMethod = cls.getMethod(new MethodDescriptor("values",
-                        ValueType.arrayOf(ValueType.object(cls.getName()))));
-                if (valuesMethod != null) {
-                    MethodDependency valuesDep = agent.linkMethod(valuesMethod.getReference());
-                    valuesDep.addLocation(new CallLocation(ref));
-                    valuesDep.use();
+                if (type.getValueType() instanceof ValueType.Object) {
+                    var className = ((ValueType.Object) type.getValueType()).getClassName();
+                    ClassReader cls = agent.getClassSource().get(className);
+                    MethodReader valuesMethod = cls.getMethod(new MethodDescriptor("values",
+                            ValueType.arrayOf(ValueType.object(cls.getName()))));
+                    if (valuesMethod != null) {
+                        MethodDependency valuesDep = agent.linkMethod(valuesMethod.getReference());
+                        valuesDep.addLocation(new CallLocation(ref));
+                        valuesDep.use();
+                    }
                 }
             });
-            method.getResult().propagate(agent.getType("[Ljava/lang/Enum;"));
+            method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.object("java.lang.Enum"))));
             for (String cls : agent.getReachableClasses()) {
                 classReached(agent, cls);
             }

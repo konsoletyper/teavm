@@ -340,8 +340,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     : null;
             dependencyAnalyzer.linkClass(entryPoint).initClass(null);
             if (mainMethod != null) {
-                mainMethod.getVariable(1).propagate(dependencyAnalyzer.getType("[Ljava/lang/String;"));
-                mainMethod.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getType("java.lang.String"));
+                mainMethod.getVariable(1).propagate(dependencyAnalyzer.getType(ValueType.arrayOf(
+                        ValueType.object("java.lang.String"))));
+                mainMethod.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getClassType("java.lang.String"));
                 mainMethod.use();
             }
         });

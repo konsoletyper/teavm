@@ -25,6 +25,7 @@ import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.interop.Address;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.runtime.heap.Heap;
 
 public class WasmGCDependencies {
@@ -56,20 +57,20 @@ public class WasmGCDependencies {
                 .use();
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "setToStringArray", String[].class,
                         int.class, String.class, void.class))
-                .propagate(1, analyzer.getType("[Ljava/lang/String;"))
-                .propagate(3, analyzer.getType("java.lang.String"))
+                .propagate(1, analyzer.getType(ValueType.arrayOf(ValueType.object("java.lang.String"))))
+                .propagate(3, analyzer.getClassType("java.lang.String"))
                 .use();
         analyzer.linkMethod(new MethodReference(StringBuilder.class, "append", char.class, StringBuilder.class))
-                .propagate(0, analyzer.getType("java.lang.StringBuilder"))
+                .propagate(0, analyzer.getClassType("java.lang.StringBuilder"))
                 .use();
         analyzer.linkMethod(new MethodReference(StringBuilder.class, "toString", String.class))
-                .propagate(0, analyzer.getType("java.lang.StringBuilder"))
+                .propagate(0, analyzer.getClassType("java.lang.StringBuilder"))
                 .use();
         analyzer.linkMethod(new MethodReference(String.class, "length", int.class))
-                .propagate(0, analyzer.getType("java.lang.String"))
+                .propagate(0, analyzer.getClassType("java.lang.String"))
                 .use();
         analyzer.linkMethod(new MethodReference(String.class, "charAt", int.class, char.class))
-                .propagate(0, analyzer.getType("java.lang.String"))
+                .propagate(0, analyzer.getClassType("java.lang.String"))
                 .use();
     }
 

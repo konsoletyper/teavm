@@ -86,8 +86,8 @@ public class ClassInference {
 
     private IntHashSet[] types;
     private boolean[] overflowTypes;
-    private ObjectIntMap<String> typeMap = new ObjectIntHashMap<>();
-    private List<String> typeList = new ArrayList<>();
+    private ObjectIntMap<ValueType> typeMap = new ObjectIntHashMap<>();
+    private List<ValueType> typeList = new ArrayList<>();
 
     private boolean changed = true;
     private boolean[] nodeChanged;
@@ -181,14 +181,14 @@ public class ClassInference {
         return subclassListProvider.getMethods(descriptor);
     }
 
-    public String[] classesOf(int variableIndex) {
+    public ValueType[] typesOf(int variableIndex) {
         IntHashSet typeSet = types[nodeMapping[packNodeAndDegree(variableIndex, 0)]];
         if (typeSet == null) {
-            return new String[0];
+            return new ValueType[0];
         }
 
         int[] typeIndexes = typeSet.toArray();
-        String[] types = new String[typeIndexes.length];
+        var types = new ValueType[typeIndexes.length];
         for (int i = 0; i < typeIndexes.length; ++i) {
             types[i] = typeList.get(typeIndexes[i]);
         }
@@ -514,8 +514,7 @@ public class ClassInference {
                 }
                 if (targetType instanceof ValueType.Object) {
                     String targetClassName = ((ValueType.Object) targetType).getClassName();
-                    List<? extends String> subclasses = subclassListProvider.getSubclasses(
-                            targetClassName, degree > 0);
+                    var subclasses = subclassListProvider.getSubclasses(targetClassName, degree > 0);
                     if (subclasses == null) {
                         types[toNode] = null;
                         overflowTypes[toNode] = true;
@@ -523,14 +522,11 @@ public class ClassInference {
                         changed = true;
                     } else {
                         for (String subclass : subclasses) {
+                            ValueType valueType = ValueType.object(subclass);
                             if (degree > 0) {
-                                StringBuilder sb = new StringBuilder();
-                                for (int i = 0; i < degree; ++i) {
-                                    sb.append('[');
-                                }
-                                subclass = sb.append('L').append(subclass.replace('.', '/')).append(';').toString();
+                                valueType = ValueType.arrayOf(valueType);
                             }
-                            int typeId = getTypeByName(subclass);
+                            int typeId = getTypeByValueType(valueType);
                             if (targetTypes.add(typeId)) {
                                 changed = true;
                                 nodeChanged[toNode] = true;
@@ -543,7 +539,7 @@ public class ClassInference {
                         }
                     }
                 } else {
-                    int typeId = getTypeByName(targetType.toString());
+                    int typeId = getTypeByValueType(targetType);
                     if (targetTypes.add(typeId)) {
                         changed = true;
                         nodeChanged[toNode] = true;
@@ -558,17 +554,7 @@ public class ClassInference {
                     if (targetTypes.contains(cursor.value)) {
                         continue;
                     }
-                    String className = typeList.get(cursor.value);
-
-                    ValueType type;
-                    if (className.startsWith("[")) {
-                        type = ValueType.parseIfPossible(className);
-                        if (type == null) {
-                            type = ValueType.arrayOf(ValueType.object("java.lang.Object"));
-                        }
-                    } else {
-                        type = ValueType.object(className);
-                    }
+                    var type = typeList.get(cursor.value);
 
                     if (hierarchy.isSuperType(cast.targetType, type, false) && targetTypes.add(cursor.value)) {
                         changed = true;
@@ -600,13 +586,11 @@ public class ClassInference {
             List<? extends String> receiverTypes;
             if (overflowTypes[instanceNode]) {
                 callSite.receiverOverflow = true;
-                List<? extends String> subclasses = subclassListProvider.getSubclasses(
-                        callSite.method.getClassName(), true);
+                var subclasses = subclassListProvider.getSubclasses(callSite.method.getClassName(), true);
                 if (subclasses != null) {
                     receiverTypes = subclasses;
                 } else {
-                    List<? extends MethodReference> implementations = subclassListProvider.getMethods(
-                            callSite.method.getDescriptor());
+                    var implementations = subclassListProvider.getMethods(callSite.method.getDescriptor());
                     if (implementations != null) {
                         for (MethodReference methodReference : implementations) {
                             mountVirtualMethod(program, callSite, methodReference);
@@ -615,18 +599,21 @@ public class ClassInference {
                     continue;
                 }
             } else {
-                List<String> instanceNodeTypes = new ArrayList<>();
+                var instanceNodeTypes = new ArrayList<String>();
                 for (IntCursor type : types[instanceNode]) {
                     if (callSite.knownClasses.contains(type.value)) {
                         continue;
                     }
-                    instanceNodeTypes.add(typeList.get(type.value));
+                    var valueType = typeList.get(type.value);
+                    if (valueType instanceof ValueType.Object) {
+                        instanceNodeTypes.add(((ValueType.Object) valueType).getClassName());
+                    }
                 }
                 receiverTypes = instanceNodeTypes;
             }
 
             for (String className : receiverTypes) {
-                int typeId = getTypeByName(className);
+                int typeId = getTypeByValueType(ValueType.object(className));
                 if (!callSite.knownClasses.add(typeId)) {
                     continue;
                 }
@@ -660,8 +647,11 @@ public class ClassInference {
             writeValue(methodDep.getVariable(i + 1), program.variableAt(callSite.arguments[i]));
         }
 
-        for (String thrownTypeName : methodDep.getThrown().getTypes()) {
-            propagateException(thrownTypeName, program.basicBlockAt(callSite.block));
+        for (var thrownType : methodDep.getThrown().getTypes()) {
+            if (thrownType instanceof ValueType.Object) {
+                var thrownTypeName = ((ValueType.Object) thrownType).getClassName();
+                propagateException(thrownTypeName, program.basicBlockAt(callSite.block));
+            }
         }
     }
 
@@ -677,8 +667,11 @@ public class ClassInference {
                 propagateOverflowException(block);
             } else {
                 for (IntCursor type : types[variable]) {
-                    String typeName = typeList.get(type.value);
-                    propagateException(typeName, block);
+                    var valueType = typeList.get(type.value);
+                    if (valueType instanceof ValueType.Object) {
+                        var typeName = ((ValueType.Object) valueType).getClassName();
+                        propagateException(typeName, block);
+                    }
                 }
             }
         }
@@ -694,7 +687,7 @@ public class ClassInference {
                 int exceptionNode = packNodeAndDegree(tryCatch.getHandler().getExceptionVariable().getIndex(), 0);
                 exceptionNode = nodeMapping[exceptionNode];
                 if (!overflowTypes[exceptionNode]) {
-                    int thrownType = getTypeByName(thrownTypeName);
+                    int thrownType = getTypeByValueType(ValueType.object(thrownTypeName));
                     IntHashSet nodeTypes = getNodeTypes(exceptionNode);
                     if (nodeTypes.add(thrownType)) {
                         nodeChanged[exceptionNode] = true;
@@ -729,7 +722,7 @@ public class ClassInference {
             if (thrownTypes != null) {
                 IntHashSet nodeTypes = getNodeTypes(exceptionNode);
                 for (String thrownTypeName : thrownTypes) {
-                    int thrownType = getTypeByName(thrownTypeName);
+                    int thrownType = getTypeByValueType(ValueType.object(thrownTypeName));
                     if (nodeTypes.add(thrownType)) {
                         nodeChanged[exceptionNode] = true;
                         changed = true;
@@ -753,7 +746,7 @@ public class ClassInference {
         return result;
     }
 
-    int getTypeByName(String typeName) {
+    int getTypeByValueType(ValueType typeName) {
         int type = typeMap.getOrDefault(typeName, -1);
         if (type < 0) {
             type = typeList.size();
@@ -791,12 +784,12 @@ public class ClassInference {
 
         @Override
         public void visit(ClassConstantInstruction insn) {
-            addType(insn.getReceiver().getIndex(), 0, "java.lang.Class");
+            addType(insn.getReceiver().getIndex(), 0, ValueType.object("java.lang.Class"));
         }
 
         @Override
         public void visit(StringConstantInstruction insn) {
-            addType(insn.getReceiver().getIndex(), 0, "java.lang.String");
+            addType(insn.getReceiver().getIndex(), 0, ValueType.object("java.lang.String"));
         }
 
         @Override
@@ -818,17 +811,17 @@ public class ClassInference {
 
         @Override
         public void visit(ConstructArrayInstruction insn) {
-            addType(insn.getReceiver().getIndex(), 0, ValueType.arrayOf(insn.getItemType()).toString());
+            addType(insn.getReceiver().getIndex(), 0, ValueType.arrayOf(insn.getItemType()));
         }
 
         @Override
         public void visit(ConstructInstruction insn) {
-            addType(insn.getReceiver().getIndex(), 0, insn.getType());
+            addType(insn.getReceiver().getIndex(), 0, ValueType.object(insn.getType()));
         }
 
         @Override
         public void visit(ConstructMultiArrayInstruction insn) {
-            addType(insn.getReceiver().getIndex(), 0, insn.getItemType().toString());
+            addType(insn.getReceiver().getIndex(), 0, insn.getItemType());
         }
 
         @Override
@@ -916,8 +909,11 @@ public class ClassInference {
                     writeValue(methodDep.getVariable(i + 1), insn.getArguments().get(i));
                 }
 
-                for (String type : methodDep.getThrown().getTypes()) {
-                    propagateException(type, currentBlock);
+                for (var type : methodDep.getThrown().getTypes()) {
+                    if (type instanceof ValueType.Object) {
+                        var classType = (ValueType.Object) type;
+                        propagateException(classType.getClassName(), currentBlock);
+                    }
                 }
             }
         }
@@ -954,8 +950,8 @@ public class ClassInference {
         }
     }
 
-    boolean addType(int variable, int degree, String typeName) {
-        return addTypeImpl(packNodeAndDegree(variable, degree), getTypeByName(typeName));
+    boolean addType(int variable, int degree, ValueType typeName) {
+        return addTypeImpl(packNodeAndDegree(variable, degree), getTypeByValueType(typeName));
     }
 
     boolean addTypeImpl(int node, int typeId) {
@@ -984,8 +980,8 @@ public class ClassInference {
         if (dep.hasMoreTypesThan(overflowLimit)) {
             overflowType(variable, degree);
         } else {
-            String[] types = dep.getTypes();
-            for (String type : types) {
+            var types = dep.getTypes();
+            for (var type : types) {
                 if (addType(variable, degree, type)) {
                     break;
                 }

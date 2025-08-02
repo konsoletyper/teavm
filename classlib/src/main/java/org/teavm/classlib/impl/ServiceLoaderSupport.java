@@ -38,6 +38,7 @@ import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.parsing.resource.ResourceProvider;
 
 public class ServiceLoaderSupport extends AbstractDependencyListener implements ServiceLoaderInformation {
@@ -72,20 +73,24 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals("java.util.ServiceLoader") && ref.getName().equals("loadServices")) {
             List<ServiceLoaderFilter> filters = getFilters(agent);
-            method.getResult().propagate(agent.getType("[Ljava/lang/Object;"));
+            method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.object("java.lang.Object"))));
             DependencyNode sourceNode = agent.linkMethod(LOAD_METHOD).getVariable(1).getClassValueNode();
             sourceNode.connect(method.getResult().getArrayItem());
             sourceNode.addConsumer(type -> {
+                if (!(type.getValueType() instanceof ValueType.Object)) {
+                    return;
+                }
+                var className = ((ValueType.Object) type.getValueType()).getClassName();
                 CallLocation location = new CallLocation(LOAD_METHOD);
-                for (String implementationType : getImplementations(type.getName())) {
-                    if (filters.stream().anyMatch(filter -> !filter.apply(type.getName(), implementationType))) {
+                for (String implementationType : getImplementations(className)) {
+                    if (filters.stream().anyMatch(filter -> !filter.apply(className, implementationType))) {
                         continue;
                     }
-                    serviceMap.computeIfAbsent(type.getName(), k -> new ArrayList<>()).add(implementationType);
+                    serviceMap.computeIfAbsent(className, k -> new ArrayList<>()).add(implementationType);
 
                     MethodReference ctor = new MethodReference(implementationType, INIT_METHOD);
                     agent.linkMethod(ctor).addLocation(location).use();
-                    method.getResult().getArrayItem().propagate(agent.getType(implementationType));
+                    method.getResult().getArrayItem().propagate(agent.getType(ValueType.object(implementationType)));
                 }
             });
         }

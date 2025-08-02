@@ -79,13 +79,14 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Method
         for (int i = 0; i <= paramCount; ++i) {
             method.getVariable(i).connect(asyncMethod.getVariable(i));
         }
-        asyncMethod.getVariable(paramCount + 1).propagate(agent.getType(AsyncCallbackWrapper.class.getName()));
+        asyncMethod.getVariable(paramCount + 1).propagate(agent.getType(ValueType.object(
+                AsyncCallbackWrapper.class.getName())));
 
         MethodDependency completeMethod = agent.linkMethod(
                 new MethodReference(AsyncCallbackWrapper.class, "complete", Object.class, void.class));
         if (method.getResult() != null) {
             completeMethod.getVariable(1).connect(method.getResult(), type -> agent.getClassHierarchy()
-                    .isSuperType(ref.getReturnType(), ValueType.object(type.getName()), false));
+                    .isSuperType(ref.getReturnType(), type.getValueType(), false));
         }
         completeMethod.use();
 

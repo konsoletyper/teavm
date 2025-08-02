@@ -421,8 +421,9 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         dependencyAnalyzer.linkMethod(new MethodReference(Fiber.class, "current", Fiber.class)).use();
         var withArgs = dependencyAnalyzer.linkMethod(new MethodReference(WasmSupport.class, "runWithArgs",
                 String[].class, void.class));
-        withArgs.getVariable(1).propagate(dependencyAnalyzer.getType("[java/lang/String;"));
-        withArgs.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getType("java/lang/String"));
+        withArgs.getVariable(1).propagate(dependencyAnalyzer.getType(ValueType.arrayOf(ValueType.object(
+                "java.lang.String"))));
+        withArgs.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getClassType("java.lang.String"));
         withArgs.use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmSupport.class, "runWithoutArgs", void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(EventQueue.class, "processSingle", void.class)).use();

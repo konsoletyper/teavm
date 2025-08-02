@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 class FastVirtualCallConsumer implements DependencyConsumer {
     private final DependencyNode node;
@@ -39,13 +40,18 @@ class FastVirtualCallConsumer implements DependencyConsumer {
 
     @Override
     public void consume(DependencyType type) {
-        String className = type.getName();
+        var valueType = type.getValueType();
         if (DependencyAnalyzer.shouldLog) {
             System.out.println("Virtual call of " + methodRef + " detected on " + node.getTag() + ". "
-                    + "Target class is " + className);
+                    + "Target class is " + valueType);
         }
-        if (className.startsWith("[")) {
+        String className;
+        if (valueType instanceof ValueType.Object) {
+            className = ((ValueType.Object) valueType).getClassName();
+        } else if (valueType instanceof ValueType.Array) {
             className = "java.lang.Object";
+        } else {
+            return;
         }
 
         MethodDependency methodDep = analyzer.linkMethod(className, methodRef.getDescriptor());

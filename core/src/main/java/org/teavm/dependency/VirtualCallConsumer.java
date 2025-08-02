@@ -20,6 +20,7 @@ import com.carrotsearch.hppc.IntSet;
 import java.util.BitSet;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodDescriptor;
+import org.teavm.model.ValueType;
 
 class VirtualCallConsumer implements DependencyConsumer {
     private static final int SMALL_TYPES_THRESHOLD = 16;
@@ -38,7 +39,7 @@ class VirtualCallConsumer implements DependencyConsumer {
     VirtualCallConsumer(String filterClass, MethodDescriptor methodDesc, DependencyAnalyzer analyzer,
             DependencyNode[] parameters, DependencyNode result, CallLocation location,
             DependencyGraphBuilder.ExceptionConsumer exceptionConsumer) {
-        this.filter = analyzer.getSuperClassFilter(filterClass);
+        this.filter = analyzer.getSuperClassFilter(ValueType.object(filterClass));
         this.methodDesc = methodDesc;
         this.analyzer = analyzer;
         this.parameters = parameters;
@@ -82,10 +83,13 @@ class VirtualCallConsumer implements DependencyConsumer {
             return;
         }
 
-        String className = type.getName();
-
-        if (className.startsWith("[")) {
+        String className;
+        if (type.getValueType() instanceof ValueType.Object) {
+            className = ((ValueType.Object) type.getValueType()).getClassName();
+        } else if (type.getValueType() instanceof ValueType.Array) {
             className = "java.lang.Object";
+        } else {
+            return;
         }
 
         MethodDependency methodDep = analyzer.linkMethod(className, methodDesc);
@@ -105,7 +109,7 @@ class VirtualCallConsumer implements DependencyConsumer {
             DependencyNode[] targetParams = methodDep.getVariables();
             if (parameters[0] != null && targetParams[0] != null) {
                 parameters[0].connect(targetParams[0],
-                        analyzer.getSuperClassFilter(methodDep.getMethod().getOwnerName()));
+                        analyzer.getSuperClassFilter(ValueType.object(methodDep.getMethod().getOwnerName())));
             }
             for (int i = 1; i < parameters.length; ++i) {
                 if (parameters[i] != null && targetParams[i] != null) {

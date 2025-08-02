@@ -246,12 +246,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     public void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
         MethodDependency dep;
 
-        DependencyType stringType = dependencyAnalyzer.getType("java.lang.String");
+        DependencyType stringType = dependencyAnalyzer.getClassType("java.lang.String");
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(Class.class.getName(), "getClass",
                 ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Class.class)));
-        dep.getVariable(0).propagate(dependencyAnalyzer.getType("org.teavm.platform.PlatformClass"));
-        dep.getResult().propagate(dependencyAnalyzer.getType("java.lang.Class"));
+        dep.getVariable(0).propagate(dependencyAnalyzer.getClassType("org.teavm.platform.PlatformClass"));
+        dep.getResult().propagate(dependencyAnalyzer.getClassType("java.lang.Class"));
         dep.use();
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "<init>", Object.class, void.class));
@@ -261,30 +261,31 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         dependencyAnalyzer.linkField(new FieldReference(String.class.getName(), "characters"));
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "toString", String.class));
-        dep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.Object"));
+        dep.getVariable(0).propagate(dependencyAnalyzer.getClassType("java.lang.Object"));
         dep.use();
 
         var exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
                 RuntimeException.class, "<init>", String.class, void.class));
-        exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(RuntimeException.class.getName()));
+        exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getClassType(RuntimeException.class.getName()));
         exceptionCons.getVariable(1).propagate(stringType);
         exceptionCons.use();
 
         if (strict) {
             exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
                     ArrayIndexOutOfBoundsException.class, "<init>", void.class));
-            exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(
+            exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getClassType(
                     ArrayIndexOutOfBoundsException.class.getName()));
             exceptionCons.use();
 
             exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
                     NullPointerException.class, "<init>", void.class));
-            exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NullPointerException.class.getName()));
+            exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getClassType(
+                    NullPointerException.class.getName()));
             exceptionCons.use();
 
             exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
                     ClassCastException.class, "<init>", void.class));
-            exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(ClassCastException.class.getName()));
+            exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getClassType(ClassCastException.class.getName()));
             exceptionCons.use();
         }
 
@@ -312,12 +313,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     public static void includeStackTraceMethods(DependencyAnalyzer dependencyAnalyzer) {
         MethodDependency dep;
 
-        DependencyType stringType = dependencyAnalyzer.getType("java.lang.String");
+        DependencyType stringType = dependencyAnalyzer.getClassType("java.lang.String");
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(
                 StackTraceElement.class, "<init>", String.class, String.class, String.class,
                 int.class, void.class));
-        dep.getVariable(0).propagate(dependencyAnalyzer.getType(StackTraceElement.class.getName()));
+        dep.getVariable(0).propagate(dependencyAnalyzer.getClassType(StackTraceElement.class.getName()));
         dep.getVariable(1).propagate(stringType);
         dep.getVariable(2).propagate(stringType);
         dep.getVariable(3).propagate(stringType);
@@ -325,9 +326,9 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(
                 Throwable.class, "setStackTrace", StackTraceElement[].class, void.class));
-        dep.getVariable(0).propagate(dependencyAnalyzer.getType(Throwable.class.getName()));
-        dep.getVariable(1).propagate(dependencyAnalyzer.getType("[Ljava/lang/StackTraceElement;"));
-        dep.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getType(StackTraceElement.class.getName()));
+        dep.getVariable(0).propagate(dependencyAnalyzer.getClassType(Throwable.class.getName()));
+        dep.getVariable(1).propagate(dependencyAnalyzer.getType(ValueType.parse(StackTraceElement[].class)));
+        dep.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getClassType(StackTraceElement.class.getName()));
         dep.use();
     }
 

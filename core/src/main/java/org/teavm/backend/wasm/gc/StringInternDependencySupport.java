@@ -30,7 +30,7 @@ public class StringInternDependencySupport extends AbstractDependencyListener {
         if (method.getMethod().getReference().equals(STRING_INTERN)) {
             var query = agent.linkMethod(new MethodReference(StringInternPool.class, "query",
                     String.class, String.class));
-            query.getVariable(1).propagate(agent.getType("java.lang.String"));
+            query.getVariable(1).propagate(agent.getType(ValueType.object("java.lang.String")));
             query.use();
 
             var entryTypeName = StringInternPool.class.getName() + "$Entry";
@@ -39,7 +39,7 @@ public class StringInternDependencySupport extends AbstractDependencyListener {
                     "remove",
                     ValueType.object(entryTypeName),
                     ValueType.VOID));
-            remove.getVariable(1).propagate(agent.getType(entryTypeName));
+            remove.getVariable(1).propagate(agent.getType(ValueType.object(entryTypeName)));
             remove.use();
 
             var clinit = agent.linkMethod(new MethodReference(StringInternPool.class, "<clinit>",
@@ -48,7 +48,7 @@ public class StringInternDependencySupport extends AbstractDependencyListener {
 
             var getValue = agent.linkMethod(new MethodReference(StringInternPool.class.getName() + "$Entry",
                     "getValue", ValueType.parse(String.class)));
-            getValue.getResult().propagate(agent.getType(String.class.getName()));
+            getValue.getResult().propagate(agent.getType(ValueType.object(String.class.getName())));
         }
     }
 }

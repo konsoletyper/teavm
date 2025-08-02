@@ -18,7 +18,6 @@ package org.teavm.backend.c.generators;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Set;
 import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.dependency.ValueDependencyInfo;
@@ -76,9 +75,9 @@ public class ArrayGenerator implements Generator {
         MethodDependencyInfo dependency = context.dependencies().getMethod(new MethodReference(Array.class,
                 "getImpl", Object.class, int.class, Object.class));
         ValueDependencyInfo arrayDependency = dependency.getVariable(1);
-        Set<String> types = new HashSet<>(Arrays.asList(arrayDependency.getTypes()));
+        var types = new HashSet<>(Arrays.asList(arrayDependency.getTypes()));
         for (int i = 0; i < primitiveWrappers.length; ++i) {
-            String typeName = ValueType.arrayOf(primitiveTypes[i]).toString();
+            var typeName = ValueType.arrayOf(primitiveTypes[i]);
             if (!types.contains(typeName)) {
                 continue;
             }

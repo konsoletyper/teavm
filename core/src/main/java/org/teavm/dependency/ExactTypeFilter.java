@@ -16,15 +16,16 @@
 package org.teavm.dependency;
 
 import java.util.BitSet;
+import org.teavm.model.ValueType;
 
 class ExactTypeFilter implements DependencyTypeFilter {
     private static final int[] EMPTY = new int[0];
-    String typeName;
+    ValueType valueType;
     int cache = -1;
     int index;
 
     ExactTypeFilter(DependencyType dependencyType) {
-        this.typeName = dependencyType.getName();
+        this.valueType = dependencyType.getValueType();
         index = dependencyType.index;
     }
 
@@ -33,7 +34,7 @@ class ExactTypeFilter implements DependencyTypeFilter {
         if (cache >= 0) {
             return type.index == cache;
         }
-        boolean result = typeName.equals(type.getName());
+        boolean result = valueType.equals(type.getValueType());
         if (result) {
             cache = type.index;
         }

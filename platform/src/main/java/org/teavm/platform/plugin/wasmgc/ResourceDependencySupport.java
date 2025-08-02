@@ -32,13 +32,13 @@ public class ResourceDependencySupport extends AbstractDependencyListener {
         if (annot != null) {
             var type = method.getMethod().getResultType();
             if (type instanceof ValueType.Object) {
-                method.getResult().propagate(agent.getType(((ValueType.Object) type).getClassName()));
+                method.getResult().propagate(agent.getType(type));
             }
         }
         if (metadataMethods.contains(method.getMethod().getReference())) {
             var resultType = method.getMethod().getResultType();
             if (resultType instanceof ValueType.Object) {
-                method.getResult().propagate(agent.getType(((ValueType.Object) resultType).getClassName()));
+                method.getResult().propagate(agent.getType(resultType));
             }
         }
     }

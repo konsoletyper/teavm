@@ -81,10 +81,10 @@ public class ClassMetadataRequirements {
         MethodDependencyInfo getSimpleNameMethod = dependencyInfo.getMethod(GET_SIMPLE_NAME_METHOD);
         if (getSimpleNameMethod != null) {
             hasSimpleName = true;
-            String[] classNames = getSimpleNameMethod.getVariable(0).getClassValueNode().getTypes();
-            addClassesRequiringName(requirements, classNames);
-            for (String className : classNames) {
-                ClassInfo classInfo = requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo());
+            var types = getSimpleNameMethod.getVariable(0).getClassValueNode().getTypes();
+            addClassesRequiringName(requirements, types);
+            for (var type : types) {
+                ClassInfo classInfo = requirements.computeIfAbsent(type, k -> new ClassInfo());
                 classInfo.simpleName = true;
                 classInfo.enclosingClass = true;
             }
@@ -93,89 +93,89 @@ public class ClassMetadataRequirements {
         var getSuperclassMethod = dependencyInfo.getMethod(GET_SUPERCLASS_METHOD);
         if (getSuperclassMethod != null) {
             hasSuperclass = true;
-            var classNames = getSuperclassMethod.getVariable(0).getClassValueNode().getTypes();
-            for (var className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).superclass = true;
+            var types = getSuperclassMethod.getVariable(0).getClassValueNode().getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).superclass = true;
             }
         }
 
         var isAssignableMethod = dependencyInfo.getMethod(IS_ASSIGNABLE_METHOD);
         if (isAssignableMethod != null) {
             hasIsAssignable = true;
-            var classNames = isAssignableMethod.getVariable(0).getClassValueNode().getTypes();
-            for (var className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).isAssignable = true;
+            var types = isAssignableMethod.getVariable(0).getClassValueNode().getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).isAssignable = true;
             }
         }
 
         MethodDependencyInfo getDeclaringClassMethod = dependencyInfo.getMethod(GET_DECLARING_CLASS_METHOD);
         if (getDeclaringClassMethod != null) {
             hasDeclaringClass = true;
-            String[] classNames = getDeclaringClassMethod.getVariable(0).getClassValueNode().getTypes();
-            for (String className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).declaringClass = true;
+            var types = getDeclaringClassMethod.getVariable(0).getClassValueNode().getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).declaringClass = true;
             }
         }
 
         MethodDependencyInfo getEnclosingClassMethod = dependencyInfo.getMethod(GET_ENCLOSING_CLASS_METHOD);
         if (getEnclosingClassMethod != null) {
             hasEnclosingClass = true;
-            String[] classNames = getEnclosingClassMethod.getVariable(0).getClassValueNode().getTypes();
-            for (String className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).enclosingClass = true;
+            var types = getEnclosingClassMethod.getVariable(0).getClassValueNode().getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).enclosingClass = true;
             }
         }
 
         var newArrayMethod = dependencyInfo.getMethod(NEW_ARRAY);
         if (newArrayMethod != null) {
             hasArrayNewInstance = true;
-            var classNames = newArrayMethod.getVariable(1).getClassValueNode().getTypes();
-            for (var className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).newArray = true;
+            var types = newArrayMethod.getVariable(1).getClassValueNode().getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).newArray = true;
             }
         }
 
         var arrayGet = dependencyInfo.getMethod(ARRAY_GET);
         if (arrayGet != null) {
             hasArrayGet = arrayGet.isUsed();
-            var classNames = arrayGet.getVariable(1).getTypes();
-            for (var className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).arrayGet = true;
+            var types = arrayGet.getVariable(1).getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).arrayGet = true;
             }
         }
 
         var arraySet = dependencyInfo.getMethod(ARRAY_SET);
         if (arraySet != null) {
             hasArraySet = arraySet.isUsed();
-            var classNames = arraySet.getVariable(1).getTypes();
-            for (var className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).arraySet = true;
+            var types = arraySet.getVariable(1).getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).arraySet = true;
             }
         }
 
         var arrayLength = dependencyInfo.getMethod(ARRAY_LENGTH);
         if (arrayLength != null) {
             hasArrayLength = arrayLength.isUsed();
-            var classNames = arrayLength.getVariable(1).getTypes();
-            for (var className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).arrayLength = true;
+            var types = arrayLength.getVariable(1).getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).arrayLength = true;
             }
         }
 
         var arrayCopy = dependencyInfo.getMethod(ARRAY_COPY);
         if (arrayCopy != null) {
             hasArrayCopy = arrayCopy.isUsed();
-            var classNames = arrayCopy.getVariable(1).getTypes();
-            for (var className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).arrayCopy = true;
+            var types = arrayCopy.getVariable(1).getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).arrayCopy = true;
             }
         }
 
         var clone = dependencyInfo.getMethod(new MethodReference(Object.class, "cloneObject", Object.class));
         if (clone != null) {
-            var classNames = clone.getVariable(0).getTypes();
-            for (var className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).cloneMethod = true;
+            var types = clone.getVariable(0).getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).cloneMethod = true;
             }
         }
 
@@ -188,9 +188,9 @@ public class ClassMetadataRequirements {
         for (var enumConstantsDep : enumConstants) {
             if (enumConstantsDep != null) {
                 hasEnumConstants = true;
-                var classNames = enumConstantsDep.getVariable(1).getClassValueNode().getTypes();
-                for (var className : classNames) {
-                    requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).enumConstants = true;
+                var types = enumConstantsDep.getVariable(1).getClassValueNode().getTypes();
+                for (var type : types) {
+                    requirements.computeIfAbsent(type, k -> new ClassInfo()).enumConstants = true;
                 }
             }
         }
@@ -199,9 +199,9 @@ public class ClassMetadataRequirements {
                 Annotation[].class));
         if (getAnnotations != null && getAnnotations.isUsed()) {
             hasGetAnnotations = true;
-            var classNames = getAnnotations.getVariable(0).getClassValueNode().getTypes();
-            for (var className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).annotations = true;
+            var types = getAnnotations.getVariable(0).getClassValueNode().getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).annotations = true;
             }
         }
 
@@ -209,9 +209,9 @@ public class ClassMetadataRequirements {
                 Class[].class));
         if (getInterfaces != null && getInterfaces.isUsed()) {
             hasGetInterfaces = true;
-            var classNames = getInterfaces.getVariable(0).getClassValueNode().getTypes();
-            for (var className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).interfaces = true;
+            var types = getInterfaces.getVariable(0).getClassValueNode().getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).interfaces = true;
             }
         }
 
@@ -241,9 +241,9 @@ public class ClassMetadataRequirements {
         var classInit = dependencyInfo.getMethod(new MethodReference(Class.class, "initialize", void.class));
         if (classInit != null && classInit.isUsed()) {
             hasClassInit = true;
-            var classNames = classInit.getVariable(0).getClassValueNode().getTypes();
-            for (var className : classNames) {
-                requirements.computeIfAbsent(decodeType(className), k -> new ClassInfo()).classInit = true;
+            var types = classInit.getVariable(0).getClassValueNode().getTypes();
+            for (var type : types) {
+                requirements.computeIfAbsent(type, k -> new ClassInfo()).classInit = true;
             }
         }
     }
@@ -332,19 +332,9 @@ public class ClassMetadataRequirements {
         return hasClassInit;
     }
 
-    private void addClassesRequiringName(Map<ValueType, ClassInfo> target, String[] source) {
-        for (String typeName : source) {
-            target.computeIfAbsent(decodeType(typeName), k -> new ClassInfo()).name = true;
-        }
-    }
-
-    private ValueType decodeType(String typeName) {
-        if (typeName.startsWith("[")) {
-            return ValueType.parseIfPossible(typeName);
-        } else if (typeName.startsWith("~")) {
-            return ValueType.parseIfPossible(typeName.substring(1));
-        } else {
-            return ValueType.object(typeName);
+    private void addClassesRequiringName(Map<ValueType, ClassInfo> target, ValueType[] source) {
+        for (var typeName : source) {
+            target.computeIfAbsent(typeName, k -> new ClassInfo()).name = true;
         }
     }
 

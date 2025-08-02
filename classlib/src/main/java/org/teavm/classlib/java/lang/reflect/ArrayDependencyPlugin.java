@@ -44,16 +44,14 @@ public class ArrayDependencyPlugin implements DependencyPlugin {
                 break;
             case "newInstance":
                 method.getVariable(1).getClassValueNode().addConsumer(t -> {
-                    String arrayTypeName;
-                    if (t.getName().startsWith("[")) {
-                        arrayTypeName = t.getName();
-                    } else if (t.getName().startsWith("~")) {
-                        arrayTypeName = t.getName().substring(1);
-                    } else {
-                        arrayTypeName = ValueType.object(t.getName()).toString();
+                    var degree = 0;
+                    var type = t.getValueType();
+                    while (type instanceof ValueType.Array) {
+                        type = ((ValueType.Array) type).getItemType();
+                        ++degree;
                     }
-                    if (!arrayTypeName.startsWith("[[[")) {
-                        method.getResult().propagate(agent.getType("[" + arrayTypeName));
+                    if (degree < 3) {
+                        method.getResult().propagate(agent.getType(ValueType.arrayOf(t.getValueType())));
                     }
                 });
                 break;
@@ -68,7 +66,7 @@ public class ArrayDependencyPlugin implements DependencyPlugin {
 
     private void reachGetLength(DependencyAgent agent, MethodDependency method) {
         method.getVariable(1).addConsumer(type -> {
-            if (!type.getName().startsWith("[")) {
+            if (!(type.getValueType() instanceof ValueType.Array)) {
                 MethodReference cons = new MethodReference(IllegalArgumentException.class, "<init>", void.class);
                 agent.linkMethod(cons).use();
             }
@@ -77,16 +75,17 @@ public class ArrayDependencyPlugin implements DependencyPlugin {
     private void reachGet(DependencyAgent agent, MethodDependency method) {
         method.getVariable(1).getArrayItem().connect(method.getResult());
         method.getVariable(1).addConsumer(type -> {
-            if (type.getName().startsWith("[")) {
-                String typeName = type.getName().substring(1);
-                for (int i = 0; i < primitiveTypes.length; ++i) {
-                    if (primitiveTypes[i].toString().equals(typeName)) {
-                        String wrapper = "java.lang." + primitiveWrappers[i];
-                        MethodReference methodRef = new MethodReference(wrapper, "valueOf",
-                                primitiveTypes[i], ValueType.object(wrapper));
-                        agent.linkMethod(methodRef).use();
-                        method.getResult().propagate(agent.getType("java.lang." + primitiveWrappers[i]));
-                    }
+            if (!(type.getValueType() instanceof ValueType.Array)) {
+                return;
+            }
+            var itemType = ((ValueType.Array) type.getValueType()).getItemType();
+            for (int i = 0; i < primitiveTypes.length; ++i) {
+                if (primitiveTypes[i].equals(itemType)) {
+                    String wrapper = "java.lang." + primitiveWrappers[i];
+                    var methodRef = new MethodReference(wrapper, "valueOf",
+                            primitiveTypes[i], ValueType.object(wrapper));
+                    agent.linkMethod(methodRef).use();
+                    method.getResult().propagate(agent.getType(ValueType.object("java.lang." + primitiveWrappers[i])));
                 }
             }
         });
@@ -95,15 +94,16 @@ public class ArrayDependencyPlugin implements DependencyPlugin {
     private void reachSet(DependencyAgent agent, MethodDependency method) {
         method.getVariable(3).connect(method.getVariable(1).getArrayItem());
         method.getVariable(1).addConsumer(type -> {
-            if (type.getName().startsWith("[")) {
-                String typeName = type.getName().substring(1);
-                for (int i = 0; i < primitiveTypes.length; ++i) {
-                    if (primitiveTypes[i].toString().equals(typeName)) {
-                        String wrapper = "java.lang." + primitiveWrappers[i];
-                        MethodReference methodRef = new MethodReference(wrapper,
-                                primitives[i].toLowerCase() + "Value", primitiveTypes[i]);
-                        agent.linkMethod(methodRef).use();
-                    }
+            if (!(type.getValueType() instanceof ValueType.Array)) {
+                return;
+            }
+            var itemType = ((ValueType.Array) type.getValueType()).getItemType();
+            for (int i = 0; i < primitiveTypes.length; ++i) {
+                if (primitiveTypes[i].equals(itemType)) {
+                    String wrapper = "java.lang." + primitiveWrappers[i];
+                    var methodRef = new MethodReference(wrapper,
+                            primitives[i].toLowerCase() + "Value", primitiveTypes[i]);
+                    agent.linkMethod(methodRef).use();
                 }
             }
         });

@@ -31,11 +31,12 @@ public class WasmGCResourceDependency extends AbstractDependencyListener {
         if (method.getMethod().getReference().equals(ACQUIRE_METHOD)) {
             var create = agent.linkMethod(new MethodReference(WasmGCResources.class,
                     "create", String.class, int.class, int.class, WasmGCResources.Resource.class));
-            create.propagate(1, agent.getType("java.lang.String"));
+            create.propagate(1, agent.getType(ValueType.object("java.lang.String")));
             create.use();
             method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.object(
-                    WasmGCResources.Resource.class.getName())).toString()));
-            method.getResult().getArrayItem().propagate(agent.getType(WasmGCResources.Resource.class.getName()));
+                    WasmGCResources.Resource.class.getName()))));
+            method.getResult().getArrayItem().propagate(agent.getType(ValueType.object(
+                    WasmGCResources.Resource.class.getName())));
         }
     }
 }

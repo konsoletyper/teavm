@@ -15,26 +15,18 @@
  */
 package org.teavm.dependency;
 
+import org.teavm.model.ValueType;
+
 public class DependencyType {
-    private DependencyAnalyzer dependencyAnalyzer;
-    private String name;
+    private ValueType valueType;
     int index;
 
-    DependencyType(DependencyAnalyzer dependencyAnalyzer, String name, int index) {
-        this.dependencyAnalyzer = dependencyAnalyzer;
-        this.name = name;
+    DependencyType(ValueType valueType, int index) {
+        this.valueType = valueType;
         this.index = index;
     }
 
-    DependencyAnalyzer getDependencyAnalyzer() {
-        return dependencyAnalyzer;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public DependencyAgent getDependencyAgent() {
-        return dependencyAnalyzer.getAgent();
+    public ValueType getValueType() {
+        return valueType;
     }
 }

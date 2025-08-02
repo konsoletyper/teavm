@@ -18,7 +18,7 @@ package org.teavm.classlib.impl;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.ClassReader;
+import org.teavm.model.ValueType;
 
 public class DeclaringClassDependencyListener extends AbstractDependencyListener {
     @Override
@@ -27,7 +27,11 @@ public class DeclaringClassDependencyListener extends AbstractDependencyListener
             switch (method.getReference().getName()) {
                 case "getEnclosingClass":
                     method.getVariable(0).getClassValueNode().addConsumer(t -> {
-                        ClassReader cls = agent.getClassSource().get(t.getName());
+                        if (!(t.getValueType() instanceof ValueType.Object)) {
+                            return;
+                        }
+                        var className = ((ValueType.Object) t.getValueType()).getClassName();
+                        var cls = agent.getClassSource().get(className);
                         if (cls != null && cls.getOwnerName() != null) {
                             agent.linkClass(cls.getOwnerName());
                         }
@@ -35,7 +39,11 @@ public class DeclaringClassDependencyListener extends AbstractDependencyListener
                     break;
                 case "getDeclaringClass": {
                     method.getVariable(0).getClassValueNode().addConsumer(t -> {
-                        ClassReader cls = agent.getClassSource().get(t.getName());
+                        if (!(t.getValueType() instanceof ValueType.Object)) {
+                            return;
+                        }
+                        var className = ((ValueType.Object) t.getValueType()).getClassName();
+                        var cls = agent.getClassSource().get(className);
                         if (cls != null && cls.getDeclaringClassName() != null) {
                             agent.linkClass(cls.getDeclaringClassName());
                         }

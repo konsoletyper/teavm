@@ -51,7 +51,8 @@ class WasmGCJSDependencies extends AbstractDependencyListener {
                 case "set":
                 case "setPure":
                 case "global":
-                    method.getThrown().propagate(agent.getType(WasmGCExceptionWrapper.class.getName()));
+                    method.getThrown().propagate(agent.getType(ValueType.object(
+                            WasmGCExceptionWrapper.class.getName())));
                     break;
             }
         } else if (methodReader.getOwnerName().equals(JS_WRAPPER_CLASS)) {
@@ -60,10 +61,10 @@ class WasmGCJSDependencies extends AbstractDependencyListener {
                         .use();
             }
         } else if (methodReader.getAnnotations().get(JSBodyDelegate.class.getName()) != null) {
-            method.getThrown().propagate(agent.getType(WasmGCExceptionWrapper.class.getName()));
+            method.getThrown().propagate(agent.getType(ValueType.object(WasmGCExceptionWrapper.class.getName())));
         } else if (methodReader.getOwnerName().equals(WasmGCJSRuntime.CharArrayData.class.getName())) {
             if (method.getMethod().getName().equals("asString")) {
-                method.getResult().propagate(agent.getType(String.class.getName()));
+                method.getResult().propagate(agent.getType(ValueType.object(String.class.getName())));
                 agent.linkMethod(new MethodReference(String.class, "fromArray", char[].class, String.class)).use();
             }
         }
@@ -71,11 +72,11 @@ class WasmGCJSDependencies extends AbstractDependencyListener {
 
     private void reachUtilities(DependencyAgent agent) {
         agent.linkMethod(STRING_TO_JS)
-                .propagate(1, agent.getType("java.lang.String"))
+                .propagate(1, agent.getType(ValueType.object("java.lang.String")))
                 .use();
 
         var jsToString = agent.linkMethod(JS_TO_STRING);
-        jsToString.getResult().propagate(agent.getType("java.lang.String"));
+        jsToString.getResult().propagate(agent.getType(ValueType.object("java.lang.String")));
         jsToString.use();
 
         agent.linkMethod(new MethodReference(WASM_GC_JS_RUNTIME_CLASS, "wrapException", JS_OBJECT,

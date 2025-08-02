@@ -18,6 +18,7 @@ package org.teavm.platform.plugin;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
+import org.teavm.model.ValueType;
 
 class ResourceAccessorDependencyListener extends AbstractDependencyListener {
     @Override
@@ -27,7 +28,7 @@ class ResourceAccessorDependencyListener extends AbstractDependencyListener {
         }
         switch (method.getReference().getName()) {
             case "castToString":
-                method.getResult().propagate(agent.getType("java.lang.String"));
+                method.getResult().propagate(agent.getType(ValueType.object("java.lang.String")));
                 break;
         }
     }

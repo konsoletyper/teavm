@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import org.junit.Test;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMToolLog;
 import org.teavm.vm.TeaVM;
@@ -30,8 +31,8 @@ public class ClassValueTest {
     @Test
     public void simple() {
         ValueDependencyInfo info = runTestWithConsume("simpleSnippet").getClassValueNode();
-        assertTrue("Long must be consumed", info.hasType("java.lang.Long"));
-        assertTrue("String must be consumed", info.hasType("java.lang.String"));
+        assertTrue("Long must be consumed", info.hasType(ValueType.object("java.lang.Long")));
+        assertTrue("String must be consumed", info.hasType(ValueType.object("java.lang.String")));
         assertTrue("Nothing except Long and String expected", info.getTypes().length == 2);
     }
 
@@ -44,8 +45,8 @@ public class ClassValueTest {
     @Test
     public void fromGetClass() {
         ValueDependencyInfo info = runTestWithConsume("fromGetClassSnippet").getClassValueNode();
-        assertTrue("Long must be consumed", info.hasType("java.lang.Long"));
-        assertTrue("String must be consumed", info.hasType("java.lang.String"));
+        assertTrue("Long must be consumed", info.hasType(ValueType.object("java.lang.Long")));
+        assertTrue("String must be consumed", info.hasType(ValueType.object("java.lang.String")));
         assertTrue("Nothing except Long and String expected", info.getTypes().length == 2);
     }
 

@@ -18,16 +18,17 @@ package org.teavm.dependency;
 import com.carrotsearch.hppc.IntIntHashMap;
 import java.util.BitSet;
 import org.teavm.common.OptionalPredicate;
+import org.teavm.model.ValueType;
 
 class SuperClassFilter implements DependencyTypeFilter {
     private static final int SMALL_CACHE_THRESHOLD = 16;
-    private OptionalPredicate<String> predicate;
+    private OptionalPredicate<ValueType> predicate;
     private IntIntHashMap smallCache;
     private BitSet knownTypes;
     private BitSet cache;
 
-    SuperClassFilter(DependencyAnalyzer dependencyAnalyzer, DependencyType superType) {
-        predicate = dependencyAnalyzer.getClassHierarchy().getSuperclassPredicate(superType.getName());
+    SuperClassFilter(DependencyAnalyzer dependencyAnalyzer, String superClass) {
+        predicate = dependencyAnalyzer.getClassHierarchy().getSuperclassPredicate(superClass);
     }
 
     @Override
@@ -36,7 +37,7 @@ class SuperClassFilter implements DependencyTypeFilter {
             if (knownTypes.get(type.index)) {
                 return cache.get(type.index);
             }
-            boolean result = predicate.test(type.getName(), false);
+            boolean result = predicate.test(type.getValueType(), false);
             knownTypes.set(type.index);
             cache.set(type.index, result);
             return result;
@@ -51,7 +52,7 @@ class SuperClassFilter implements DependencyTypeFilter {
             return result != 0;
         }
 
-        var value = predicate.test(type.getName(), false);
+        var value = predicate.test(type.getValueType(), false);
         smallCache.put(type.index, value ? 1 : 0);
         if (smallCache.size() > SMALL_CACHE_THRESHOLD) {
             knownTypes = new BitSet();

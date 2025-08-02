@@ -21,6 +21,7 @@ import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 class TestExceptionDependencyListener extends AbstractDependencyListener {
     private DependencyNode allClasses;
@@ -29,8 +30,12 @@ class TestExceptionDependencyListener extends AbstractDependencyListener {
     public void started(DependencyAgent agent) {
         allClasses = agent.createNode();
         allClasses.addConsumer(c -> {
-            if (agent.getClassSource().isSuperType("java.lang.Throwable", c.getName()).orElse(false)) {
-                MethodDependency methodDep = agent.linkMethod(new MethodReference(c.getName(), GET_MESSAGE));
+            if (!(c.getValueType() instanceof ValueType.Object)) {
+                return;
+            }
+            var className = ((ValueType.Object) c.getValueType()).getClassName();
+            if (agent.getClassSource().isSuperType("java.lang.Throwable", className).orElse(false)) {
+                MethodDependency methodDep = agent.linkMethod(new MethodReference(className, GET_MESSAGE));
                 methodDep.getVariable(0).propagate(c);
                 methodDep.use();
             }
@@ -41,6 +46,6 @@ class TestExceptionDependencyListener extends AbstractDependencyListener {
 
     @Override
     public void classReached(DependencyAgent agent, String className) {
-        allClasses.propagate(agent.getType(className));
+        allClasses.propagate(agent.getType(ValueType.object(className)));
     }
 }

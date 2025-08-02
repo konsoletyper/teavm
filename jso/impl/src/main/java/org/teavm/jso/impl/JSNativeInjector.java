@@ -401,9 +401,13 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
                         DependencyNode node = method.getVariable(i);
                         if (functorParamNodes.add(node)) {
                             node.addConsumer(type -> {
+                                if (!(type.getValueType() instanceof ValueType.Object)) {
+                                    return;
+                                }
+                                var className = ((ValueType.Object) type.getValueType()).getClassName();
                                 if (agent.getClassHierarchy().isSuperType(method.getMethod().getOwnerName(),
-                                        type.getName(), false)) {
-                                    reachFunctorMethods(agent, type.getName());
+                                        className, false)) {
+                                    reachFunctorMethods(agent, className);
                                 }
                             });
                         }
@@ -411,29 +415,29 @@ public class JSNativeInjector implements Injector, DependencyPlugin {
                 }
                 break;
             case "unwrapString":
-                method.getResult().propagate(agent.getType("java.lang.String"));
+                method.getResult().propagate(agent.getType(ValueType.object("java.lang.String")));
                 break;
 
             case "dataToByteArray":
-                method.getResult().propagate(agent.getType("[B"));
+                method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.BYTE)));
                 break;
             case "dataToShortArray":
-                method.getResult().propagate(agent.getType("[S"));
+                method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.SHORT)));
                 break;
             case "dataToCharArray":
-                method.getResult().propagate(agent.getType("[C"));
+                method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.CHARACTER)));
                 break;
             case "dataToIntArray":
-                method.getResult().propagate(agent.getType("[I"));
+                method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.INTEGER)));
                 break;
             case "dataToFloatArray":
-                method.getResult().propagate(agent.getType("[F"));
+                method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.FLOAT)));
                 break;
             case "dataToDoubleArray":
-                method.getResult().propagate(agent.getType("[D"));
+                method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.DOUBLE)));
                 break;
             case "dataToArray":
-                method.getResult().propagate(agent.getType("[Ljava/lang/Object;"));
+                method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.object("java.lang.Object"))));
                 break;
         }
     }

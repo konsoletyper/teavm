@@ -43,7 +43,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     public void methodReached(DependencyAgent agent, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "asJavaClass":
-                method.getResult().propagate(agent.getType("java.lang.Class"));
+                method.getResult().propagate(agent.getType(ValueType.object("java.lang.Class")));
                 return;
             case "clone":
                 method.getVariable(1).connect(method.getResult());
@@ -57,18 +57,18 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 break;
             }
             case "getCurrentThread":
-                method.getResult().propagate(agent.getType("java.lang.Thread"));
+                method.getResult().propagate(agent.getType(ValueType.object("java.lang.Thread")));
                 break;
             case "getEnumConstants":
-                method.getResult().propagate(agent.getType("[Ljava/lang/Enum;"));
+                method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.object("java.lang.Enum"))));
                 break;
             case "getName":
             case "getSimpleName":
-                method.getResult().propagate(agent.getType("java.lang.String"));
+                method.getResult().propagate(agent.getType(ValueType.object("java.lang.String")));
                 break;
             case "getEnclosingClass":
             case "getDeclaringClass":
-                method.getResult().propagate(agent.getType("java.lang.Class"));
+                method.getResult().propagate(agent.getType(ValueType.object("java.lang.Class")));
                 break;
         }
     }
@@ -124,14 +124,18 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 new MethodReference(Platform.class, "newInstanceImpl", PlatformClass.class, Object.class));
         writer.append("let c").ws().append("=").ws().append("'$$constructor$$';").softNewLine();
         if (newInstanceMethod != null) {
-            for (String clsName : newInstanceMethod.getResult().getTypes()) {
-                ClassReader cls = context.getClassSource().get(clsName);
+            for (var type : newInstanceMethod.getResult().getTypes()) {
+                if (!(type instanceof ValueType.Object)) {
+                    continue;
+                }
+                var className = ((ValueType.Object) type).getClassName();
+                ClassReader cls = context.getClassSource().get(className);
                 if (cls == null) {
                     continue;
                 }
                 MethodReader method = cls.getMethod(new MethodDescriptor("<init>", void.class));
                 if (method != null) {
-                    writer.appendClass(clsName).append("[c]").ws().append("=").ws()
+                    writer.appendClass(className).append("[c]").ws().append("=").ws()
                             .appendMethod(method.getReference()).append(";").softNewLine();
                 }
             }

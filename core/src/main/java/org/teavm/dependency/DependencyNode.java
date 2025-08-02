@@ -57,7 +57,7 @@ public class DependencyNode implements ValueDependencyInfo {
     }
 
     public void propagate(DependencyType type) {
-        if (!hasType(type) && filter(type) && dependencyAnalyzer.filterType(type.getName())) {
+        if (!hasType(type) && filter(type) && dependencyAnalyzer.filterType(type.getValueType())) {
             propagateCount++;
             moveToSeparateDomain();
             typeSet.addType(type);
@@ -69,7 +69,7 @@ public class DependencyNode implements ValueDependencyInfo {
         if (DependencyAnalyzer.shouldLog) {
             for (DependencyNode node : typeSet.domain()) {
                 if (node.filter(type)) {
-                    System.out.println(node.tag + " -> " + type.getName());
+                    System.out.println(node.tag + " -> " + type.getValueType());
                 }
             }
         }
@@ -104,7 +104,7 @@ public class DependencyNode implements ValueDependencyInfo {
         boolean copied = false;
         for (int i = 0; i < newTypes.length; ++i) {
             DependencyType type = newTypes[i];
-            if (!hasType(type) && filter(type) && dependencyAnalyzer.filterType(type.getName())) {
+            if (!hasType(type) && filter(type) && dependencyAnalyzer.filterType(type.getValueType())) {
                 newTypes[j++] = type;
             } else if (!copied) {
                 copied = true;
@@ -137,7 +137,7 @@ public class DependencyNode implements ValueDependencyInfo {
             for (var node : typeSet.domain()) {
                 for (DependencyType type : newTypes) {
                     if (node.filter(type)) {
-                        System.out.println(node.tag + " -> " + type.getName());
+                        System.out.println(node.tag + " -> " + type.getValueType());
                     }
                 }
             }
@@ -218,13 +218,7 @@ public class DependencyNode implements ValueDependencyInfo {
             if (typeFilter == null) {
                 cachedTypeFilter = t -> true;
             } else {
-                String superClass;
-                if (typeFilter instanceof ValueType.Object) {
-                    superClass = ((ValueType.Object) typeFilter).getClassName();
-                } else {
-                    superClass = typeFilter.toString();
-                }
-                cachedTypeFilter = dependencyAnalyzer.getSuperClassFilter(superClass);
+                cachedTypeFilter = dependencyAnalyzer.getSuperClassFilter(typeFilter);
             }
         }
         return cachedTypeFilter;
@@ -396,21 +390,21 @@ public class DependencyNode implements ValueDependencyInfo {
     }
 
     @Override
-    public boolean hasType(String type) {
+    public boolean hasType(ValueType type) {
         return hasType(dependencyAnalyzer.getType(type));
     }
 
     @Override
-    public String[] getTypes() {
+    public ValueType[] getTypes() {
         if (typeSet == null) {
-            return new String[0];
+            return new ValueType[0];
         }
         DependencyType[] types = typeSet.getTypes();
-        String[] result = new String[types.length];
+        var result = new ValueType[types.length];
         int i = 0;
         for (DependencyType type : types) {
             if (filter(type)) {
-                result[i++] = type.getName();
+                result[i++] = type.getValueType();
             }
         }
         return i == result.length ? result : Arrays.copyOf(result, i);

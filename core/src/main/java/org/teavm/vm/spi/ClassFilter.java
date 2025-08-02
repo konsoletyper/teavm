@@ -15,6 +15,8 @@
  */
 package org.teavm.vm.spi;
 
+import org.teavm.model.ValueType;
+
 public interface ClassFilter {
-    boolean accept(ClassFilterContext context, String className);
+    boolean accept(ClassFilterContext context, ValueType valueType);
 }

@@ -41,14 +41,18 @@ public class WasmGCAnnotationDependencyListener extends BaseAnnotationDependency
         MethodReference methodRef = method.getMethod().getReference();
         if (methodRef.getClassName().equals("java.lang.Class")
                 && methodRef.getName().equals("getDeclaredAnnotationsImpl")) {
-            method.getResult().propagate(agent.getType("[" + Annotation.class.getName()));
+            method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.object(
+                    Annotation.class.getName()))));
             reachGetAnnotations(agent, method.getVariable(0), method.getResult().getArrayItem());
         }
     }
 
     private void reachGetAnnotations(DependencyAgent agent, DependencyNode inputNode, DependencyNode outputNode) {
         inputNode.getClassValueNode().addConsumer(type -> {
-            var className = type.getName();
+            if (!(type.getValueType() instanceof ValueType.Object)) {
+                return;
+            }
+            var className = ((ValueType.Object) type.getValueType()).getClassName();
             var cls = agent.getClassSource().get(className);
             if (cls == null) {
                 return;
@@ -95,7 +99,7 @@ public class WasmGCAnnotationDependencyListener extends BaseAnnotationDependency
         var implementor = getAnnotationImplementor(agent, annotation.getType());
         if (implementor != null) {
             agent.linkClass(implementor).initClass(null);
-            outputNode.propagate(agent.getType(implementor));
+            outputNode.propagate(agent.getType(ValueType.object(implementor)));
             for (var methodDecl : annotationClass.getMethods()) {
                 if (methodDecl.hasModifier(ElementModifier.STATIC)) {
                     continue;
@@ -114,7 +118,7 @@ public class WasmGCAnnotationDependencyListener extends BaseAnnotationDependency
             DependencyNode outputNode) {
         switch (value.getType()) {
             case AnnotationValue.LIST: {
-                outputNode.propagate(agent.getType(type.toString()));
+                outputNode.propagate(agent.getType(type));
                 var itemType = ((ValueType.Array) type).getItemType();
                 for (var annotationValue : value.getList()) {
                     propagateAnnotationValue(agent, annotationValue, itemType, outputNode.getArrayItem());
@@ -132,13 +136,8 @@ public class WasmGCAnnotationDependencyListener extends BaseAnnotationDependency
                     var className = ((ValueType.Object) cls).getClassName();
                     agent.linkClass(className).initClass(null);
                 }
-                if (value.getJavaClass() instanceof ValueType.Object) {
-                    var className = ((ValueType.Object) value.getJavaClass()).getClassName();
-                    outputNode.getClassValueNode().propagate(agent.getType(className));
-                } else {
-                    outputNode.getClassValueNode().propagate(agent.getType(value.getJavaClass().toString()));
-                }
-                outputNode.propagate(agent.getType("java.lang.Class"));
+                outputNode.getClassValueNode().propagate(agent.getType(value.getJavaClass()));
+                outputNode.propagate(agent.getType(ValueType.object("java.lang.Class")));
                 break;
             }
             case AnnotationValue.ANNOTATION:

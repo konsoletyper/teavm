@@ -38,7 +38,7 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
     DependencyNode instancesNode;
     DependencyNode classesNode;
     private Map<MethodReference, FastVirtualCallConsumer> virtualCallConsumers = new HashMap<>();
-    private Map<String, DependencyNode> subtypeNodes = new HashMap<>();
+    private Map<ValueType, DependencyNode> subtypeNodes = new HashMap<>();
 
     public FastDependencyAnalyzer(ClassReaderSource classSource, ResourceProvider resourceProvider,
             ClassLoader classLoader, ServiceRepository services, Diagnostics diagnostics,
@@ -49,7 +49,7 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
         classesNode = new DependencyNode(this, null);
 
         instancesNode.addConsumer(type -> {
-            getSubtypeNode(type.getName()).propagate(type);
+            getSubtypeNode(type.getValueType()).propagate(type);
         });
     }
 
@@ -126,48 +126,40 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
         return classesNode;
     }
 
-    private DependencyNode getSubtypeNode(String type) {
-        if (type.equals("java.lang.Object")) {
+    private DependencyNode getSubtypeNode(ValueType type) {
+        if (type.isObject("java.lang.Object")) {
             return instancesNode;
         }
         return subtypeNodes.computeIfAbsent(type, key -> {
             DependencyNode node = createNode();
 
             defer(() -> {
+                var k = key;
                 int degree = 0;
-                while (degree < key.length() && key.charAt(degree) == '[') {
-                    degree++;
+                while (k instanceof ValueType.Array) {
+                    ++degree;
+                    k = ((ValueType.Array) k).getItemType();
                 }
-
-                if (degree > 0) {
-                    ValueType fullType = ValueType.parse(key);
-                    if (fullType instanceof ValueType.Object) {
-                        String prefix = key.substring(0, degree) + "L";
-                        String className = ((ValueType.Object) fullType).getClassName();
-                        ClassReader cls = getClassSource().get(className);
-                        if (cls != null) {
-                            if (cls.getParent() != null) {
-                                node.connect(getSubtypeNode(prefix + cls.getParent().replace('.', '/') + ";"));
-                            } else {
-                                node.connect(getSubtypeNode("java.lang.Object"));
-                            }
-                            for (String itf : cls.getInterfaces()) {
-                                node.connect(getSubtypeNode(prefix + itf.replace('.', '/') + ";"));
-                            }
-                        }
-                    } else {
-                        node.connect(getSubtypeNode("java.lang.Object"));
-                    }
-                } else {
-                    ClassReader cls = getClassSource().get(key);
+                if (k instanceof ValueType.Object) {
+                    ClassReader cls = getClassSource().get(((ValueType.Object) k).getClassName());
                     if (cls != null) {
                         if (cls.getParent() != null) {
-                            node.connect(getSubtypeNode(cls.getParent()));
+                            ValueType parentType = ValueType.object(cls.getParent());
+                            for (var i = 0; i < degree; ++i) {
+                                parentType = ValueType.arrayOf(parentType);
+                            }
+                            node.connect(getSubtypeNode(parentType));
                         }
                         for (String itf : cls.getInterfaces()) {
-                            node.connect(getSubtypeNode(itf));
+                            ValueType parentType = ValueType.object(itf);
+                            for (var i = 0; i < degree; ++i) {
+                                parentType = ValueType.arrayOf(parentType);
+                            }
+                            node.connect(getSubtypeNode(parentType));
                         }
                     }
+                } else {
+                    node.connect(getSubtypeNode(ValueType.object("java.lang.Object")));
                 }
             });
 
@@ -179,7 +171,7 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
         return virtualCallConsumers.computeIfAbsent(method, key -> {
             FastVirtualCallConsumer consumer = new FastVirtualCallConsumer(instancesNode, key, this);
             defer(() -> {
-                getSubtypeNode(method.getClassName()).addConsumer(consumer);
+                getSubtypeNode(ValueType.object(method.getClassName())).addConsumer(consumer);
             });
             return consumer;
         });

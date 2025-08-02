@@ -69,7 +69,10 @@ public class JSAnnotationDependencyListener extends BaseAnnotationDependencyList
 
     private void reachGetAnnotations(DependencyAgent agent, DependencyNode node) {
         node.getClassValueNode().addConsumer(type -> {
-            String className = type.getName();
+            if (!(type.getValueType() instanceof ValueType.Object)) {
+                return;
+            }
+            String className = ((ValueType.Object) type.getValueType()).getClassName();
             if (className.endsWith(ANNOTATIONS_READER_SUFFIX)) {
                 return;
             }
@@ -112,12 +115,12 @@ public class JSAnnotationDependencyListener extends BaseAnnotationDependencyList
         agent.submitClass(cls);
 
         MethodDependency ctorDep = agent.linkMethod(ctor.getReference());
-        ctorDep.getVariable(0).propagate(agent.getType(readerClassName));
+        ctorDep.getVariable(0).propagate(agent.getType(ValueType.object(readerClassName)));
         ctorDep.use();
 
         MethodDependency annotationsDep = agent.linkMethod(GET_ANNOTATIONS_METHOD);
         MethodDependency readerDep = agent.linkMethod(reader.getReference());
-        readerDep.getVariable(0).propagate(agent.getType(readerClassName));
+        readerDep.getVariable(0).propagate(agent.getType(ValueType.object(readerClassName)));
         readerDep.getResult().getArrayItem().connect(annotationsDep.getResult().getArrayItem());
         readerDep.use();
     }

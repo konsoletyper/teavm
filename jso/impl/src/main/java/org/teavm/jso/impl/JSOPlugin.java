@@ -55,7 +55,11 @@ public class JSOPlugin implements TeaVMPlugin {
             JSTypeHelper helper;
 
             @Override
-            public boolean accept(ClassFilterContext context, String className) {
+            public boolean accept(ClassFilterContext context, ValueType type) {
+                if (!(type instanceof ValueType.Object)) {
+                    return true;
+                }
+                var className = ((ValueType.Object) type).getClassName();
                 if (helper == null) {
                     helper = new JSTypeHelper(context.classes());
                 }

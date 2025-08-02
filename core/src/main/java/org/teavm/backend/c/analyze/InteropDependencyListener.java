@@ -62,7 +62,7 @@ public class InteropDependencyListener extends AbstractDependencyListener {
 
         MethodReference reference = method.getReference();
         if (reference.getReturnType().isObject("java.lang.String")) {
-            method.getResult().propagate(agent.getType("java.lang.String"));
+            method.getResult().propagate(agent.getType(ValueType.object("java.lang.String")));
         }
 
         for (int i = 0; i < reference.parameterCount(); ++i) {

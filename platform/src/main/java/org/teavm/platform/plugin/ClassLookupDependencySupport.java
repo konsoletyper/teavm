@@ -29,7 +29,7 @@ public class ClassLookupDependencySupport extends AbstractDependencyListener {
 
     @Override
     public void classReached(DependencyAgent agent, String className) {
-        allClasses.propagate(agent.getType(className));
+        allClasses.propagate(agent.getType(ValueType.object(className)));
     }
 
     @Override
@@ -37,7 +37,11 @@ public class ClassLookupDependencySupport extends AbstractDependencyListener {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals(Platform.class.getName()) && ref.getName().equals("lookupClass")) {
             allClasses.addConsumer(type -> {
-                ClassReader cls = agent.getClassSource().get(type.getName());
+                if (!(type.getValueType() instanceof ValueType.Object)) {
+                    return;
+                }
+                var className = ((ValueType.Object) type.getValueType()).getClassName();
+                ClassReader cls = agent.getClassSource().get(className);
                 if (cls == null) {
                     return;
                 }

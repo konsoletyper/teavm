@@ -15,10 +15,12 @@
  */
 package org.teavm.dependency;
 
-public interface ValueDependencyInfo {
-    String[] getTypes();
+import org.teavm.model.ValueType;
 
-    boolean hasType(String type);
+public interface ValueDependencyInfo {
+    ValueType[] getTypes();
+
+    boolean hasType(ValueType type);
 
     boolean hasMoreTypesThan(int limit);
 

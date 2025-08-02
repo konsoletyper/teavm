@@ -92,7 +92,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private Deque<Runnable> tasks = new ArrayDeque<>();
     private Queue<Runnable> deferredTasks = new ArrayDeque<>();
     List<DependencyType> types = new ArrayList<>();
-    private Map<String, DependencyType> typeMap = new HashMap<>();
+    private Map<ValueType, DependencyType> typeMap = new HashMap<>();
     private DependencyAnalyzerInterruptor interruptor;
     private boolean interrupted;
     private Diagnostics diagnostics;
@@ -100,7 +100,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private DependencyAgent agent;
     Map<MethodReference, DependencyPlugin> dependencyPlugins = new HashMap<>();
     private boolean completing;
-    private Map<String, DependencyTypeFilter> superClassFilters = new HashMap<>();
+    private Map<ValueType, DependencyTypeFilter> superClassFilters = new HashMap<>();
     private List<DependencyNode> allNodes = new ArrayList<>();
     private ClassHierarchy classHierarchy;
     IncrementalCache incrementalCache = new IncrementalCache();
@@ -130,14 +130,14 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             }
             FieldDependency node = createFieldNode(preimage, field);
             if (field != null && field.getInitialValue() instanceof String) {
-                node.getValue().propagate(getType("java.lang.String"));
+                node.getValue().propagate(getType(ValueType.object("java.lang.String")));
             }
             return node;
         });
 
         classCache = new CachedFunction<>(this::createClassDependency);
 
-        classType = getType("java.lang.Class");
+        classType = getClassType("java.lang.Class");
     }
 
     public void addClassFilter(ClassFilter filter) {
@@ -181,14 +181,18 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         return resourceProvider;
     }
 
-    public DependencyType getType(String name) {
-        DependencyType type = typeMap.get(name);
+    public DependencyType getType(ValueType valueType) {
+        DependencyType type = typeMap.get(valueType);
         if (type == null) {
-            type = new DependencyType(this, name, types.size());
+            type = new DependencyType(valueType, types.size());
             types.add(type);
-            typeMap.put(name, type);
+            typeMap.put(valueType, type);
         }
         return type;
+    }
+
+    public DependencyType getClassType(String className) {
+        return getType(ValueType.object(className));
     }
 
     public DependencyNode createNode() {
@@ -302,7 +306,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private int propagationDepth;
 
     void schedulePropagation(DependencyConsumer consumer, DependencyType type) {
-        if (!filterType(type.getName())) {
+        if (!filterType(type.getValueType())) {
             return;
         }
         if (propagationDepth < PROPAGATION_STACK_THRESHOLD) {
@@ -318,7 +322,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         if (!consumer.destination.filter(type)) {
             return;
         }
-        if (!filterType(type.getName())) {
+        if (!filterType(type.getValueType())) {
             return;
         }
 
@@ -374,7 +378,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         if (propagationDepth < PROPAGATION_STACK_THRESHOLD) {
             ++propagationDepth;
             for (DependencyType type : types) {
-                if (filterType(type.getName())) {
+                if (filterType(type.getValueType())) {
                     consumer.consume(type);
                 }
             }
@@ -382,7 +386,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         } else {
             tasks.add(() -> {
                 for (DependencyType type : types) {
-                    if (filterType(type.getName())) {
+                    if (filterType(type.getValueType())) {
                         consumer.consume(type);
                     }
                 }
@@ -390,7 +394,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         }
     }
 
-    boolean filterType(String type) {
+    boolean filterType(ValueType type) {
         return classFilters.stream().allMatch(filter -> filter.accept(filterContext, type));
     }
 
@@ -868,31 +872,30 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         return incrementalCache;
     }
 
-    DependencyTypeFilter getSuperClassFilter(String superClass) {
-        DependencyTypeFilter result = superClassFilters.get(superClass);
+    DependencyTypeFilter getSuperClassFilter(ValueType superType) {
+        DependencyTypeFilter result = superClassFilters.get(superType);
         if (result == null) {
-            if (superClass.startsWith("[")) {
-                char second = superClass.charAt(1);
-                if (second == '[') {
-                    result = new SuperArrayFilter(this, getSuperClassFilter(superClass.substring(1)));
-                } else if (second == 'L') {
-                    ValueType.Object itemType = (ValueType.Object) ValueType.parse(superClass.substring(1));
-                    result = new SuperArrayFilter(this, getSuperClassFilter(itemType.getClassName()));
+            if (superType instanceof ValueType.Array) {
+                var superArray = (ValueType.Array) superType;
+                if (superArray.getItemType() instanceof ValueType.Primitive) {
+                    result = new ExactTypeFilter(getType(superType));
                 } else {
-                    result = new ExactTypeFilter(getType(superClass));
+                    result = new SuperArrayFilter(this, getSuperClassFilter(superArray.getItemType()));
                 }
-            } else {
-                if (superClass.equals("java.lang.Object")) {
+            } else if (superType instanceof ValueType.Object) {
+                var superClass = (ValueType.Object) superType;
+                if (superClass.getClassName().equals("java.lang.Object")) {
                     result = t -> true;
                 } else {
-                    result = new SuperClassFilter(this, getType(superClass));
+                    result = new SuperClassFilter(this, superClass.getClassName());
                 }
+            } else {
+                result = t -> false;
             }
-            superClassFilters.put(superClass, result);
+            superClassFilters.put(superType, result);
         }
         return result;
     }
-
 
     static class IncrementalCache implements IncrementalDependencyProvider, IncrementalDependencyRegistration {
         private final String[] emptyArray = new String[0];

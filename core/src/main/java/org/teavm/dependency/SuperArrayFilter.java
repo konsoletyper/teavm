@@ -41,19 +41,12 @@ class SuperArrayFilter implements DependencyTypeFilter {
     }
 
     private boolean matchCacheMiss(DependencyType type) {
-        if (!type.getName().startsWith("[")) {
+        if (!(type.getValueType() instanceof ValueType.Array)) {
             return false;
         }
 
-        String typeName = type.getName().substring(1);
-        ValueType valueType = ValueType.parseIfPossible(typeName);
-        if (valueType == null || valueType instanceof ValueType.Primitive) {
-            return false;
-        }
-        if (valueType instanceof ValueType.Object) {
-            typeName = ((ValueType.Object) valueType).getClassName();
-        }
-        return itemTypeFilter.match(analyzer.getType(typeName));
+        var itemValueType = ((ValueType.Array) type.getValueType()).getItemType();
+        return itemTypeFilter.match(analyzer.getType(itemValueType));
     }
 
     @Override
@@ -64,16 +57,8 @@ class SuperArrayFilter implements DependencyTypeFilter {
         }
 
         for (int i = 0; i < result.length; ++i) {
-            String name = analyzer.types.get(i).getName();
-            int mapped;
-            if (name.startsWith("[")) {
-                mapped = analyzer.getType("[" + name).index;
-            } else if (name.startsWith("~")) {
-                mapped = analyzer.getType("[" + name.substring(1)).index;
-            } else {
-                mapped = analyzer.getType(ValueType.arrayOf(ValueType.object(name)).toString()).index;
-            }
-            result[i] = mapped;
+            var valueType = analyzer.types.get(i).getValueType();
+            result[i] = analyzer.getType(ValueType.arrayOf(valueType)).index;
         }
         return result;
     }

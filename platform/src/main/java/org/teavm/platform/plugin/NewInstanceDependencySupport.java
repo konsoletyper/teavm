@@ -48,7 +48,7 @@ public class NewInstanceDependencySupport extends AbstractDependencyListener {
         }
         MethodReader method = cls.getMethod(INIT_METHOD);
         if (method != null) {
-            allClassesNode.propagate(agent.getType(className));
+            allClassesNode.propagate(agent.getType(ValueType.object(className)));
         }
     }
 
@@ -58,8 +58,12 @@ public class NewInstanceDependencySupport extends AbstractDependencyListener {
         if (reader.getOwnerName().equals(Platform.class.getName()) && reader.getName().equals("newInstanceImpl")) {
             allClassesNode.connect(method.getResult());
             MethodReference methodRef = reader.getReference();
-            method.getResult().addConsumer(type -> attachConstructor(agent, type.getName(),
-                    new CallLocation(methodRef)));
+            method.getResult().addConsumer(type -> {
+                if (type.getValueType() instanceof ValueType.Object) {
+                    var className = ((ValueType.Object) type.getValueType()).getClassName();
+                    attachConstructor(agent, className, new CallLocation(methodRef));
+                }
+            });
         }
     }
 
@@ -67,7 +71,7 @@ public class NewInstanceDependencySupport extends AbstractDependencyListener {
         MethodReference ref = new MethodReference(type, "<init>", ValueType.VOID);
         MethodDependency methodDep = agent.linkMethod(ref);
         methodDep.addLocation(location);
-        methodDep.getVariable(0).propagate(agent.getType(type));
+        methodDep.getVariable(0).propagate(agent.getType(ValueType.object(type)));
         methodDep.use();
     }
 }

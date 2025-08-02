@@ -364,13 +364,13 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
 
         var classClass = context.classInfoProvider().getClassInfo("java.lang.Class");
         for (var type : node.getTypes()) {
-            if (type.startsWith("~") || type.startsWith("!")) {
+            if (!(type instanceof ValueType.Object)) {
                 continue;
             }
-            if (type.equals(Address.class.getName())) {
+            if (type.equals(ValueType.object(Address.class.getName()))) {
                 continue;
             }
-            var cls = context.hierarchy().getClassSource().get(type);
+            var cls = context.hierarchy().getClassSource().get(((ValueType.Object) type).getClassName());
             if (cls == null) {
                 continue;
             }

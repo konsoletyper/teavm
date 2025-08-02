@@ -24,6 +24,7 @@ import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public class JSWrapperGenerator implements Injector, DependencyPlugin {
     private DependencyNode externalClassesNode;
@@ -58,7 +59,7 @@ public class JSWrapperGenerator implements Injector, DependencyPlugin {
     public void methodReached(DependencyAgent agent, MethodDependency method) {
         switch (method.getMethod().getName()) {
             case "jsToWrapper":
-                method.getResult().propagate(agent.getType(JS_WRAPPER_CLASS));
+                method.getResult().propagate(agent.getType(ValueType.object(JS_WRAPPER_CLASS)));
                 break;
             case "dependencyJavaToJs":
                 method.getVariable(1).connect(getExternalClassesNode(agent));

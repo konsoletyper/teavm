@@ -258,8 +258,8 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
                 List<? extends VariableReader> arguments, InvocationType type) {
             if (type == InvocationType.VIRTUAL) {
                 var instanceDep = methodDep.getVariable(instance.getIndex());
-                var implementations = Devirtualization.implementations(hierarchy, dependencyInfo,
-                        instanceDep.getTypes(), method);
+                var types = instanceDep.getTypes();
+                var implementations = Devirtualization.implementations(hierarchy, dependencyInfo, types, method);
                 for (var implementation : implementations) {
                     invokeMethod(implementation);
                 }

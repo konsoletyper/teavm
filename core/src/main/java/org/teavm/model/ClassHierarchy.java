@@ -24,7 +24,7 @@ import org.teavm.common.OptionalPredicate;
 
 public class ClassHierarchy {
     private final ClassReaderSource classSource;
-    private final Map<String, OptionalPredicate<String>> superclassPredicateCache = new HashMap<>();
+    private final Map<String, OptionalPredicate<ValueType>> superclassPredicateCache = new HashMap<>();
     private final Map<String, Map<MethodDescriptor, Optional<MethodReader>>> resolveMethodCache = new HashMap<>();
     private final Map<String, Map<String, Optional<FieldReader>>> resolveFieldCache = new HashMap<>();
 
@@ -62,7 +62,7 @@ public class ClassHierarchy {
         if (subType.equals(superType)) {
             return true;
         }
-        return getSuperclassPredicate(superType).test(subType, defaultValue);
+        return getSuperclassPredicate(superType).test(ValueType.object(subType), defaultValue);
     }
 
     public MethodReader resolve(MethodReference method) {
@@ -126,11 +126,42 @@ public class ClassHierarchy {
         return opt.orElse(null);
     }
 
-    public OptionalPredicate<String> getSuperclassPredicate(String superclass) {
+    public OptionalPredicate<ValueType> getSuperclassPredicate(String superclass) {
+        if (superclass.equals("java.lang.Object")) {
+            return objectPredicate;
+        }
         return superclassPredicateCache.computeIfAbsent(superclass, SuperclassPredicate::new);
     }
 
-    class SuperclassPredicate implements OptionalPredicate<String> {
+    public OptionalPredicate<ValueType> getSupertypePredicate(ValueType supertype) {
+        if (supertype instanceof ValueType.Object) {
+            return getSuperclassPredicate(((ValueType.Object) supertype).getClassName());
+        } else if (supertype instanceof ValueType.Array) {
+            return new SuperArrayPredicate(getSupertypePredicate(((ValueType.Array) supertype).getItemType()));
+        } else {
+            return (value, defaultResult) -> value == supertype;
+        }
+    }
+
+    private static class SuperArrayPredicate implements OptionalPredicate<ValueType> {
+        private OptionalPredicate<ValueType> itemPredicate;
+
+        SuperArrayPredicate(OptionalPredicate<ValueType> itemPredicate) {
+            this.itemPredicate = itemPredicate;
+        }
+
+        @Override
+        public boolean test(ValueType value, boolean defaultResult) {
+            if (value instanceof ValueType.Array) {
+                return itemPredicate.test(((ValueType.Array) value).getItemType(), defaultResult);
+            }
+            return false;
+        }
+    }
+
+    OptionalPredicate<ValueType> objectPredicate = (value, defaultResult) -> !(value instanceof ValueType.Primitive);
+
+    private class SuperclassPredicate implements OptionalPredicate<ValueType> {
         private final String superclass;
         private final ObjectByteMap<String> cache = new ObjectByteHashMap<>(100, 0.5);
 
@@ -139,11 +170,12 @@ public class ClassHierarchy {
         }
 
         @Override
-        public boolean test(String value, boolean defaultResult) {
-            if (value.startsWith("[") || value.startsWith("~")) {
+        public boolean test(ValueType value, boolean defaultResult) {
+            if (!(value instanceof ValueType.Object)) {
                 return false;
             }
-            switch (test(value)) {
+            var className = ((ValueType.Object) value).getClassName();
+            switch (test(className)) {
                 case 1:
                     return true;
                 case 2:

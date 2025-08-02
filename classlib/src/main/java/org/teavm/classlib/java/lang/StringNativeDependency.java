@@ -19,17 +19,18 @@ import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public class StringNativeDependency implements DependencyPlugin {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
         if (method.getReference().getName().equals("intern")) {
             agent.linkMethod(new MethodReference(String.class, "hashCode", int.class))
-                    .propagate(0, agent.getType("java.lang.String"))
+                    .propagate(0, agent.getType(ValueType.object("java.lang.String")))
                     .use();
             agent.linkMethod(new MethodReference(String.class, "equals", Object.class, boolean.class))
-                    .propagate(0, agent.getType("java.lang.String"))
-                    .propagate(1, agent.getType("java.lang.String"))
+                    .propagate(0, agent.getType(ValueType.object("java.lang.String")))
+                    .propagate(1, agent.getType(ValueType.object("java.lang.String")))
                     .use();
         }
     }

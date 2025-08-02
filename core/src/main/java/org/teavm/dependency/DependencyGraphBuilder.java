@@ -155,7 +155,7 @@ class DependencyGraphBuilder {
 
             if (method.hasModifier(ElementModifier.STATIC)) {
                 for (DependencyNode node : syncNodes) {
-                    node.propagate(dependencyAnalyzer.getType("java.lang.Class"));
+                    node.propagate(dependencyAnalyzer.getClassType("java.lang.Class"));
                 }
             } else {
                 for (DependencyNode node : syncNodes) {
@@ -199,7 +199,8 @@ class DependencyGraphBuilder {
         public void consume(DependencyType type) {
             ClassHierarchy hierarchy = analyzer.getClassHierarchy();
             for (int i = 0; i < exceptions.length; ++i) {
-                if (exceptions[i] == null || hierarchy.isSuperType(exceptions[i].getName(), type.getName(), false)) {
+                if (exceptions[i] == null || hierarchy.isSuperType(ValueType.object(exceptions[i].getName()),
+                        type.getValueType(), false)) {
                     if (vars[i] != null) {
                         vars[i].propagate(type);
                     }
@@ -224,7 +225,7 @@ class DependencyGraphBuilder {
         public void cast(VariableReader receiver, VariableReader value, ValueType targetType, boolean weak) {
             super.cast(receiver, value, targetType, weak);
             if (!weak) {
-                currentExceptionConsumer.consume(dependencyAnalyzer.getType("java.lang.ClassCastException"));
+                currentExceptionConsumer.consume(dependencyAnalyzer.getClassType("java.lang.ClassCastException"));
             }
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
@@ -234,7 +235,8 @@ class DependencyGraphBuilder {
                 ClassReader targetClass = classSource.get(targetClsName);
                 if (targetClass != null && !(targetClass.getName().equals("java.lang.Object"))) {
                     if (valueNode != null && receiverNode != null) {
-                        valueNode.connect(receiverNode, dependencyAnalyzer.getSuperClassFilter(targetClass.getName()));
+                        valueNode.connect(receiverNode, dependencyAnalyzer.getSuperClassFilter(
+                                ValueType.object(targetClass.getName())));
                     }
                     return;
                 }
@@ -251,7 +253,7 @@ class DependencyGraphBuilder {
                     }
                 }
                 if (valueNode != null && receiverNode != null) {
-                    valueNode.connect(receiverNode, dependencyAnalyzer.getSuperClassFilter(targetType.toString()));
+                    valueNode.connect(receiverNode, dependencyAnalyzer.getSuperClassFilter(targetType));
                 }
                 return;
             }
@@ -432,7 +434,7 @@ class DependencyGraphBuilder {
                 }
             });
             if (receiver != null) {
-                getNode(receiver).propagate(dependencyAnalyzer.getType("java.lang.Class"));
+                getNode(receiver).propagate(dependencyAnalyzer.getClassType("java.lang.Class"));
             }
             getClassDep.use();
         }
@@ -446,16 +448,11 @@ class DependencyGraphBuilder {
             DependencyNode receiverNode = getNode(receiver);
             receiverNode.propagate(dependencyAnalyzer.classType);
             instanceNode.getClassValueNode().addConsumer(t -> {
-                if (!t.getName().startsWith("[")) {
+                if (!(t.getValueType() instanceof ValueType.Array)) {
                     return;
                 }
-                String typeName = t.getName().substring(1);
-                if (typeName.charAt(0) == 'L') {
-                    typeName = ((ValueType.Object) ValueType.parse(typeName)).getClassName();
-                } else {
-                    typeName = "~" + typeName;
-                }
-                receiverNode.getClassValueNode().propagate(dependencyAnalyzer.getType(typeName));
+                var itemType = ((ValueType.Array) t.getValueType()).getItemType();
+                receiverNode.getClassValueNode().propagate(dependencyAnalyzer.getType(itemType));
 
                 methodDep.getVariable(0).propagate(t);
             });
@@ -470,17 +467,18 @@ class DependencyGraphBuilder {
             DependencyNode receiverNode = getNode(receiver);
             receiverNode.propagate(dependencyAnalyzer.classType);
             instanceNode.getClassValueNode().addConsumer(type -> {
-                String className = type.getName();
-                if (className.startsWith("[")) {
+                var valueType = type.getValueType();
+                if (!(valueType instanceof ValueType.Object)) {
                     return;
                 }
 
+                var className = ((ValueType.Object) valueType).getClassName();
                 ClassReader cls = dependencyAnalyzer.getClassSource().get(className);
                 if (cls != null && cls.getParent() != null) {
-                    receiverNode.getClassValueNode().propagate(dependencyAnalyzer.getType(cls.getParent()));
+                    receiverNode.getClassValueNode().propagate(dependencyAnalyzer.getClassType(cls.getParent()));
                 }
                 methodDep.getVariable(0).getClassValueNode().propagate(type);
-                methodDep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.Class"));
+                methodDep.getVariable(0).propagate(dependencyAnalyzer.getClassType("java.lang.Class"));
             });
         }
 
@@ -491,22 +489,24 @@ class DependencyGraphBuilder {
 
             DependencyNode instanceNode = getNode(instance);
             DependencyNode receiverNode = getNode(receiver);
-            receiverNode.propagate(dependencyAnalyzer.getType("[java/lang/Class;"));
+            receiverNode.propagate(dependencyAnalyzer.getType(ValueType.arrayOf(ValueType.object("java.lang.Class"))));
             receiverNode.getArrayItem().propagate(dependencyAnalyzer.classType);
             instanceNode.getClassValueNode().addConsumer(type -> {
-                String className = type.getName();
-                if (className.startsWith("[")) {
+                var valueType = type.getValueType();
+                if (!(valueType instanceof ValueType.Object)) {
                     return;
                 }
 
+                var className = ((ValueType.Object) valueType).getClassName();
                 ClassReader cls = dependencyAnalyzer.getClassSource().get(className);
                 if (cls != null) {
                     for (String iface : cls.getInterfaces()) {
-                        receiverNode.getArrayItem().getClassValueNode().propagate(dependencyAnalyzer.getType(iface));
+                        receiverNode.getArrayItem().getClassValueNode().propagate(dependencyAnalyzer
+                                .getClassType(iface));
                     }
                 }
 
-                methodDep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.Class"));
+                methodDep.getVariable(0).propagate(dependencyAnalyzer.getClassType("java.lang.Class"));
                 methodDep.getVariable(0).getClassValueNode().propagate(type);
             });
         }
@@ -514,7 +514,7 @@ class DependencyGraphBuilder {
         @Override
         public void nullCheck(VariableReader receiver, VariableReader value) {
             super.nullCheck(receiver, value);
-            currentExceptionConsumer.consume(dependencyAnalyzer.getType("java.lang.NullPointerException"));
+            currentExceptionConsumer.consume(dependencyAnalyzer.getClassType("java.lang.NullPointerException"));
         }
 
         @Override

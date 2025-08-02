@@ -148,11 +148,11 @@ public class MethodDependency implements MethodDependencyInfo {
     }
 
     public MethodDependency propagate(int parameterIndex, Class<?> type) {
-        return propagate(parameterIndex, dependencyAnalyzer.getType(type.getName()));
+        return propagate(parameterIndex, dependencyAnalyzer.getClassType(type.getName()));
     }
 
-    public MethodDependency propagate(int parameterIndex, String type) {
-        return propagate(parameterIndex, dependencyAnalyzer.getType(type));
+    public MethodDependency propagateClass(int parameterIndex, String type) {
+        return propagate(parameterIndex, dependencyAnalyzer.getClassType(type));
     }
 
     public MethodDependency propagate(int parameterIndex, DependencyType type) {
