@@ -306,6 +306,16 @@ public class IntegerTest {
     }
 
     @Test
+    public void toUnsignedString() {
+        assertEquals("0", Integer.toUnsignedString(0));
+        assertEquals("1", Integer.toUnsignedString(1));
+        assertEquals("23", Integer.toUnsignedString(23, 10));
+        assertEquals("17", Integer.toUnsignedString(23, 16));
+        assertEquals("4294967295", Integer.toUnsignedString(-1));
+        assertEquals("fffffffe", Integer.toUnsignedString(-2, 16));
+    }
+
+    @Test
     public void unsignedRightShift() {
         assertEquals(Integer.MIN_VALUE, Integer.MIN_VALUE >>> Integer.parseInt("0"));
     }

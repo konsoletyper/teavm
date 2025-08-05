@@ -162,6 +162,16 @@ public class LongTest {
         assertEquals("-1000000000000000000000000000000000000000000000000000000000000000",
                 Long.toString(Long.MIN_VALUE, 2));
     }
+    
+    @Test
+    public void toUnsignedString() {
+        assertEquals("0", Long.toUnsignedString(0));
+        assertEquals("1", Long.toUnsignedString(1));
+        assertEquals("23", Long.toUnsignedString(23, 10));
+        assertEquals("17", Long.toUnsignedString(23, 16));
+        assertEquals("18446744073709551615", Long.toUnsignedString(-1));
+        assertEquals("fffffffffffffffe", Long.toUnsignedString(-2, 16));
+    }
 
     @Test
     public void reverseBytes() {

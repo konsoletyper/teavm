@@ -183,6 +183,7 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
         return this;
     }
 
+
     protected TAbstractStringBuilder append(float value) {
         return insert(length, value);
     }

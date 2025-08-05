@@ -44,6 +44,40 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         return new TAbstractStringBuilder(20).append(i, radix).toString();
     }
 
+
+    public static String toUnsignedString(int value, int radix) {
+        radix = Math.min(TCharacter.MAX_RADIX, Math.max(radix, TCharacter.MIN_RADIX));
+        int sz = 0;
+        var v = value;
+        while (v != 0L) {
+            v = Integer.divideUnsigned(v, radix);
+            ++sz;
+        }
+        sz = Math.max(sz, 1);
+        var chars = new char[sz];
+        while (sz > 0) {
+            chars[--sz] = TCharacter.forDigit(Integer.remainderUnsigned(value, radix), radix);
+            value = Integer.divideUnsigned(value, radix);
+        }
+        return (String) (Object) TString.fromArray(chars);
+    }
+
+    public static String toUnsignedString(int value) {
+        int sz = 0;
+        var v = value;
+        while (v != 0L) {
+            v = Integer.divideUnsigned(v, 10);
+            ++sz;
+        }
+        sz = Math.max(sz, 1);
+        var chars = new char[sz];
+        while (sz > 0) {
+            chars[--sz] = TCharacter.forDigit(Integer.remainderUnsigned(value, 10), 10);
+            value = Integer.divideUnsigned(value, 10);
+        }
+        return (String) (Object) TString.fromArray(chars);
+    }
+
     public static int hashCode(int value) {
         return value;
     }
