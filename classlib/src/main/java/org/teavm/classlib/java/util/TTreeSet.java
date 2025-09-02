@@ -97,7 +97,7 @@ public class TTreeSet<E> extends TAbstractSet<E> implements TCloneable, TNavigab
 
     @Override
     public boolean add(E e) {
-        return map.put(e, e) != VALUE;
+        return map.put(e, VALUE) == null;
     }
 
     @Override

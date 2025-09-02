@@ -198,4 +198,14 @@ public class TreeSetTest {
             // ok
         }
     }
+
+    @Test
+    public void testRemove() {
+        TreeSet<Integer> set = new TreeSet<>();
+        set.add(1);
+        set.add(2);
+        assertTrue(set.remove(1));
+        assertFalse(set.remove(1));
+        assertFalse(set.remove(3));
+    }
 }
