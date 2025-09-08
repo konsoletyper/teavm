@@ -15,6 +15,6 @@
  */
 package org.teavm.jso.dom.xml;
 
-public interface Text extends Node {
+public interface Text extends CharacterData {
     Text splitText(int offset);
 }
