@@ -445,14 +445,18 @@ class DependencyGraphBuilder {
             methodDep.use();
 
             DependencyNode instanceNode = getNode(instance);
-            DependencyNode receiverNode = getNode(receiver);
-            receiverNode.propagate(dependencyAnalyzer.classType);
+            var receiverNode = receiver != null ? getNode(receiver) : null;
+            if (receiverNode != null) {
+                receiverNode.propagate(dependencyAnalyzer.classType);
+            }
             instanceNode.getClassValueNode().addConsumer(t -> {
                 if (!(t.getValueType() instanceof ValueType.Array)) {
                     return;
                 }
                 var itemType = ((ValueType.Array) t.getValueType()).getItemType();
-                receiverNode.getClassValueNode().propagate(dependencyAnalyzer.getType(itemType));
+                if (receiverNode != null) {
+                    receiverNode.getClassValueNode().propagate(dependencyAnalyzer.getType(itemType));
+                }
 
                 methodDep.getVariable(0).propagate(t);
             });
@@ -464,8 +468,10 @@ class DependencyGraphBuilder {
             methodDep.use();
 
             DependencyNode instanceNode = getNode(instance);
-            DependencyNode receiverNode = getNode(receiver);
-            receiverNode.propagate(dependencyAnalyzer.classType);
+            var receiverNode = receiver != null ? getNode(receiver) : null;
+            if (receiverNode != null) {
+                receiverNode.propagate(dependencyAnalyzer.classType);
+            }
             instanceNode.getClassValueNode().addConsumer(type -> {
                 var valueType = type.getValueType();
                 if (!(valueType instanceof ValueType.Object)) {
@@ -474,7 +480,7 @@ class DependencyGraphBuilder {
 
                 var className = ((ValueType.Object) valueType).getClassName();
                 ClassReader cls = dependencyAnalyzer.getClassSource().get(className);
-                if (cls != null && cls.getParent() != null) {
+                if (cls != null && cls.getParent() != null && receiverNode != null) {
                     receiverNode.getClassValueNode().propagate(dependencyAnalyzer.getClassType(cls.getParent()));
                 }
                 methodDep.getVariable(0).getClassValueNode().propagate(type);
@@ -488,9 +494,11 @@ class DependencyGraphBuilder {
             methodDep.use();
 
             DependencyNode instanceNode = getNode(instance);
-            DependencyNode receiverNode = getNode(receiver);
+            var receiverNode = receiver != null ? getNode(receiver) : null;
             receiverNode.propagate(dependencyAnalyzer.getType(ValueType.arrayOf(ValueType.object("java.lang.Class"))));
-            receiverNode.getArrayItem().propagate(dependencyAnalyzer.classType);
+            if (receiverNode != null) {
+                receiverNode.getArrayItem().propagate(dependencyAnalyzer.classType);
+            }
             instanceNode.getClassValueNode().addConsumer(type -> {
                 var valueType = type.getValueType();
                 if (!(valueType instanceof ValueType.Object)) {
@@ -498,11 +506,13 @@ class DependencyGraphBuilder {
                 }
 
                 var className = ((ValueType.Object) valueType).getClassName();
-                ClassReader cls = dependencyAnalyzer.getClassSource().get(className);
-                if (cls != null) {
-                    for (String iface : cls.getInterfaces()) {
-                        receiverNode.getArrayItem().getClassValueNode().propagate(dependencyAnalyzer
-                                .getClassType(iface));
+                if (receiverNode != null) {
+                    ClassReader cls = dependencyAnalyzer.getClassSource().get(className);
+                    if (cls != null) {
+                        for (String iface : cls.getInterfaces()) {
+                            receiverNode.getArrayItem().getClassValueNode().propagate(dependencyAnalyzer
+                                    .getClassType(iface));
+                        }
                     }
                 }
 
