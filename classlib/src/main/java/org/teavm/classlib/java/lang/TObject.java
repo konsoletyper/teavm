@@ -561,8 +561,4 @@ public class TObject {
             throw new TInterruptedException();
         }
     }
-
-    @Override
-    protected void finalize() throws TThrowable {
-    }
 }
