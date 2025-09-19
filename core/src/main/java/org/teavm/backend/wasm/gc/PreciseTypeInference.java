@@ -53,14 +53,8 @@ public class PreciseTypeInference extends BaseTypeInference<PreciseValueType> {
                 if (a.valueType != b.valueType) {
                     var firstKind = ((ValueType.Primitive) a.valueType).getKind();
                     var secondKind = ((ValueType.Primitive) b.valueType).getKind();
-                    if (firstKind == PrimitiveType.INTEGER) {
-                        if (isIntegerSubtype(secondKind)) {
-                            return new PreciseValueType(ValueType.INTEGER, false);
-                        }
-                    } else if (secondKind == PrimitiveType.INTEGER) {
-                        if (isIntegerSubtype(firstKind)) {
-                            return new PreciseValueType(ValueType.INTEGER, false);
-                        }
+                    if (isIntegerType(firstKind) && isIntegerType(secondKind)) {
+                        return new PreciseValueType(ValueType.INTEGER, false);
                     }
                     return OBJECT_TYPE;
                 } else {
@@ -107,12 +101,13 @@ public class PreciseTypeInference extends BaseTypeInference<PreciseValueType> {
         }
     }
 
-    private boolean isIntegerSubtype(PrimitiveType type) {
+    private boolean isIntegerType(PrimitiveType type) {
         switch (type) {
             case BOOLEAN:
             case BYTE:
             case SHORT:
             case CHARACTER:
+            case INTEGER:
                 return true;
             default:
                 return false;
