@@ -727,10 +727,11 @@ class TAbstractStringBuilder implements TSerializable, TCharSequence {
     }
 
     public int lastIndexOf(TString str) {
-        return lastIndexOf(str, length + 1);
+        return lastIndexOf(str, length);
     }
 
     public int lastIndexOf(TString str, int fromIndex) {
+        fromIndex = Math.min(fromIndex, length - str.length());
         outer: for (int i = fromIndex; i >= 0; --i) {
             for (int j = 0; j < str.length(); ++j) {
                 if (buffer[i + j] != str.charAt(j)) {
