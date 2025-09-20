@@ -33,7 +33,7 @@ public class TFilterOutputStream extends TOutputStream {
     @Override
     public void close() throws IOException {
         try {
-            out.flush();
+            flush();
         } catch (IOException e) {
             // do nothing
         }
