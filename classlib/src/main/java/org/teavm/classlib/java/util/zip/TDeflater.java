@@ -20,8 +20,9 @@ import com.jcraft.jzlib.Deflater;
 import com.jcraft.jzlib.GZIPException;
 import com.jcraft.jzlib.JZlib;
 import java.util.Arrays;
+import org.teavm.classlib.java.lang.TAutoCloseable;
 
-public class TDeflater {
+public class TDeflater implements TAutoCloseable {
     public static final int BEST_COMPRESSION = 9;
     public static final int BEST_SPEED = 1;
     public static final int DEFAULT_COMPRESSION = -1;
@@ -100,11 +101,6 @@ public class TDeflater {
     }
     public void end() {
         impl = null;
-    }
-
-    @Override
-    protected void finalize() {
-        end();
     }
 
     public void finish() {
@@ -219,5 +215,10 @@ public class TDeflater {
             throw new NullPointerException();
         }
         return impl.getTotalOut();
+    }
+
+    @Override
+    public void close() throws Exception {
+        end();
     }
 }

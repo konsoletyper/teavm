@@ -24,9 +24,10 @@ import java.io.RandomAccessFile;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import org.teavm.classlib.java.io.TCloseable;
 import org.teavm.classlib.java.util.zip.TZipEntry.LittleEndianReader;
 
-public class TZipFile implements TZipConstants {
+public class TZipFile implements TZipConstants, TCloseable {
     public static final int OPEN_READ = 1;
     public static final int OPEN_DELETE = 4;
 
@@ -63,10 +64,6 @@ public class TZipFile implements TZipConstants {
     }
 
     @Override
-    protected void finalize() throws IOException {
-        close();
-    }
-
     public void close() throws IOException {
         RandomAccessFile raf = mRaf;
 

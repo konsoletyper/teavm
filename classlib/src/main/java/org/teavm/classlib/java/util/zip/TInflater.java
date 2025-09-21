@@ -20,8 +20,9 @@ import com.jcraft.jzlib.GZIPException;
 import com.jcraft.jzlib.Inflater;
 import com.jcraft.jzlib.JZlib;
 import java.util.Arrays;
+import org.teavm.classlib.java.lang.TAutoCloseable;
 
-public class TInflater {
+public class TInflater implements TAutoCloseable {
     private boolean finished;
     private boolean nowrap;
     int inLength;
@@ -188,5 +189,10 @@ public class TInflater {
         } else {
             throw new ArrayIndexOutOfBoundsException();
         }
+    }
+
+    @Override
+    public void close() throws Exception {
+        end();
     }
 }
