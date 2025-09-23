@@ -202,6 +202,9 @@ public class StringBuilderTest {
         }
         assertEquals(3, sb.lastIndexOf("345"));
         assertEquals(-1, sb.lastIndexOf("35"));
+        assertEquals(1, sb.lastIndexOf("12", 3));
+        assertEquals(-1, sb.lastIndexOf("67", 2));
+        assertEquals(7, sb.lastIndexOf("78", 100));
     }
 
     @Test
