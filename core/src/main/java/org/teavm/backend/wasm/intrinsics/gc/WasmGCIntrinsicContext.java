@@ -83,5 +83,7 @@ public interface WasmGCIntrinsicContext {
 
     boolean isAsync();
 
+    boolean isAsyncMethod(MethodReference method);
+
     void addToInitializer(Consumer<WasmFunction> initializerContributor);
 }

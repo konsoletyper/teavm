@@ -1076,5 +1076,10 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
         public boolean isAsync() {
             return WasmGCGenerationVisitor.this.isAsync();
         }
+
+        @Override
+        public boolean isAsyncMethod(MethodReference method) {
+            return asyncSplitMethods.contains(method);
+        }
     };
 }

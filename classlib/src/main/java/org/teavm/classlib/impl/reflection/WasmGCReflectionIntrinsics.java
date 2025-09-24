@@ -50,6 +50,7 @@ import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructNew;
 import org.teavm.backend.wasm.model.expression.WasmStructNewDefault;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
+import org.teavm.backend.wasm.transformation.gc.CoroutineTransformation;
 import org.teavm.classlib.impl.ReflectionDependencyListener;
 import org.teavm.interop.Address;
 import org.teavm.model.AccessLevel;
@@ -195,7 +196,9 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                         var br = new WasmBreak(outerBlock);
                         br.setResult(new WasmNullConstant(objectClass.getType()));
                         innerBlock.getBody().add(br);
-                        outerBlock.getBody().add(new WasmCallReference(innerBlock, functionType));
+                        var call = new WasmCallReference(innerBlock, functionType);
+                        outerBlock.getBody().add(call);
+                        call.setSuspensionPoint(context.isAsync());
                         return outerBlock;
                     }
                 }
@@ -583,9 +586,20 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 WasmGCClassInfoProvider.VT_FIELD_OFFSET,
                 new WasmGetGlobal(classInfo.getVirtualTablePointer())
         ));
-        instantiator.getBody().add(new WasmCall(context.functions().forInstanceMethod(method.getReference()),
-                new WasmGetLocal(localVar)));
+        var call = new WasmCall(context.functions().forInstanceMethod(method.getReference()),
+                new WasmGetLocal(localVar));
+        instantiator.getBody().add(call);
         instantiator.getBody().add(new WasmGetLocal(localVar));
+
+        if (context.isAsyncMethod(method.getReference())) {
+            call.setSuspensionPoint(true);
+            var transformation = new CoroutineTransformation(
+                    context.functionTypes(),
+                    context.functions(),
+                    context.classInfoProvider()
+            );
+            transformation.transform(instantiator);
+        }
 
         return instantiator;
     }
