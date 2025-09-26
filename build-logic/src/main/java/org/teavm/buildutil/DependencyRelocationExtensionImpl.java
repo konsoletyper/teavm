@@ -228,7 +228,9 @@ class DependencyRelocationExtensionImpl implements DependencyRelocationExtension
         var projectName = "relocated:" + libs + ":" + alias;
         var projectPath = ":" + projectName;
         target.include(projectName);
-        target.project(projectPath).setProjectDir(new File(target.getRootDir(), "relocated/" + libs + "/" + alias));
+        var dir = new File(target.getRootDir(), "relocated/" + libs + "/" + alias);
+        dir.mkdirs();
+        target.project(projectPath).setProjectDir(dir);
         var dependency = new RelocatedDependency(projectPath, libs, alias);
         depsByProjectPath.put(projectPath, dependency);
         action.execute((src, dest) -> {
