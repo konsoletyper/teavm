@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -94,7 +95,8 @@ class DependencyRelocationExtensionImpl implements DependencyRelocationExtension
 
         var config = project.getConfigurations().detachedConfiguration(project.getDependencies().create(library));
         config.setTransitive(false);
-        setupRelocation(project, config, dependency.relocations);
+        var src = project.provider(() -> config.resolve().stream().map(project::zipTree).collect(Collectors.toList()));
+        setupRelocation(project, src, dependency.relocations);
     }
 
     private void replaceArtifacts(Project project, String configurationName, Task task) {

@@ -19,6 +19,12 @@ plugins {
     alias(libs.plugins.intellij)
 }
 
+repositories {
+    intellijPlatform {
+        defaultRepositories()
+    }
+}
+
 javaVersion {
     version = JavaVersion.VERSION_17
 }
@@ -29,32 +35,28 @@ java {
     }
 }
 
-intellij {
-    version = libs.versions.idea.asProvider().get()
-    type = "IC"
-    updateSinceUntilBuild = false
-
-    plugins = listOf(
-            "java",
-            "org.intellij.scala:${libs.versions.idea.scala.get()}",
-            "org.jetbrains.kotlin"
-    )
+intellijPlatform {
+    pluginConfiguration {
+        name = "TeaVM Integration"
+    }
+    publishing {
+        token = providers.gradleProperty("teavm.idea.publishToken")
+    }
 }
 
 dependencies {
     compileOnly(project(":tools:ide-deps"))
     runtimeOnly(project(path = ":tools:ide-deps", configuration = "shadow").setTransitive(false))
+    intellijPlatform {
+        intellijIdeaCommunity(libs.versions.idea.asProvider())
+        bundledPlugin("com.intellij.java")
+        bundledPlugin("org.jetbrains.kotlin")
+        plugin(provider { "org.intellij.scala" }, libs.versions.idea.scala, provider { "com.jetbrains.plugins" })
+    }
 }
 
 tasks {
     instrumentedJar {
         archiveFileName = "teavm-plugin.jar"
-    }
-    buildSearchableOptions {
-        enabled = false
-    }
-
-    publishPlugin {
-        token = providers.gradleProperty("teavm.idea.publishToken")
     }
 }

@@ -55,8 +55,8 @@ teavmPublish {
 components.configureEach {
     if (name == "java") {
         val config = configurations.getByName("shadowRuntimeElements")
-        (this as AdhocComponentWithVariants).withVariantsFromConfiguration(config) {
+        /*(this as AdhocComponentWithVariants).withVariantsFromConfiguration(config) {
             skip()
-        }
+        }*/
     }
 }

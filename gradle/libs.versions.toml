@@ -3,10 +3,10 @@
 asm = "9.8"
 jackson = "2.18.2"
 jetty = "9.4.56.v20240826"
-shadow = "8.3.5"
+shadow = "9.1.0"
 checkstyle = "10.21.0"
-idea = "2022.3.1"
-idea-scala = "2022.3.1"
+idea = "2024.1"
+idea-scala = "2024.1.25"
 maven = "3.5.4"
 maven-tools = "3.7.1"
 kotlin = "2.1.0"
@@ -75,7 +75,7 @@ version.ref = "shadow"
 [plugins]
 
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
-intellij = { id = "org.jetbrains.intellij", version = "1.17.2" }
+intellij = { id = "org.jetbrains.intellij.platform", version = "2.9.0" }
 pluginPublish = { id = "com.gradle.plugin-publish", version = "1.1.0" }
 nodejs = { id = "com.github.node-gradle.node", version = "7.1.0" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
