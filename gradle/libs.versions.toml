@@ -9,7 +9,7 @@ idea = "2024.1"
 idea-scala = "2024.1.25"
 maven = "3.5.4"
 maven-tools = "3.7.1"
-kotlin = "2.1.0"
+kotlin = "2.2.20"
 scala = "3.7.3"
 jreleaser = "1.18.0"
 
