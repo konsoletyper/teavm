@@ -10,7 +10,7 @@ idea-scala = "2024.1.25"
 maven = "3.5.4"
 maven-tools = "3.7.1"
 kotlin = "2.1.0"
-scala = "3.6.4"
+scala = "3.7.3"
 jreleaser = "1.18.0"
 
 [libraries]

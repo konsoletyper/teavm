@@ -1,3 +1,6 @@
+import org.jetbrains.kotlin.gradle.dsl.jvm.JvmTargetValidationMode
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+
 /*
  *  Copyright 2023 Alexey Andreev.
  *
@@ -24,14 +27,19 @@ plugins {
 description = "Tests"
 
 javaVersion {
-    version = JavaVersion.VERSION_21
+    version = JavaVersion.VERSION_25
 }
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
+
+kotlin {
+    jvmToolchain(25)
+}
+
 
 scala {
     scalaVersion = libs.versions.scala.get()
@@ -102,4 +110,8 @@ tasks.test {
 
     maxParallelForks = (Runtime.getRuntime().availableProcessors() * 2 / 3).coerceAtLeast(1)
     maxHeapSize = "800m"
+}
+
+tasks.withType<KotlinJvmCompile>().configureEach {
+    jvmTargetValidationMode.set(JvmTargetValidationMode.IGNORE)
 }
