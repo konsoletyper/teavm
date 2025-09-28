@@ -17,7 +17,6 @@ package org.teavm.vm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.TeaVMTestRunner;
@@ -25,8 +24,6 @@ import org.testng.annotations.Test;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
-@Ignore
-// TODO: fix and unignore
 public class SwitchTest {
     private static int switchWithLogic(Object o) {
         return switch (o) {

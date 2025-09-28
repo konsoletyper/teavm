@@ -15,13 +15,12 @@
  */
 package org.teavm.dependency;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHandle;
 import org.teavm.model.MethodReference;
 import org.teavm.model.RuntimeConstant;
+import org.teavm.model.TextLocation;
 import org.teavm.model.emit.ValueEmitter;
 
 public class DynamicCallSite {
@@ -32,17 +31,19 @@ public class DynamicCallSite {
     private MethodHandle bootstrapMethod;
     private List<RuntimeConstant> bootstrapArguments;
     private DependencyAgent agent;
+    private TextLocation location;
 
     DynamicCallSite(MethodReference caller, MethodDescriptor calledMethod, ValueEmitter instance,
             List<ValueEmitter> arguments, MethodHandle bootstrapMethod, List<RuntimeConstant> bootstrapArguments,
-            DependencyAgent agent) {
+            DependencyAgent agent, TextLocation location) {
         this.caller = caller;
         this.calledMethod = calledMethod;
         this.instance = instance;
-        this.arguments = Collections.unmodifiableList(new ArrayList<>(arguments));
+        this.arguments = List.copyOf(arguments);
         this.bootstrapMethod = bootstrapMethod;
-        this.bootstrapArguments = Collections.unmodifiableList(new ArrayList<>(bootstrapArguments));
+        this.bootstrapArguments = List.copyOf(bootstrapArguments);
         this.agent = agent;
+        this.location = location;
     }
 
     public MethodReference getCaller() {
@@ -71,5 +72,9 @@ public class DynamicCallSite {
 
     public ValueEmitter getInstance() {
         return instance;
+    }
+
+    public TextLocation getLocation() {
+        return location;
     }
 }

@@ -24,6 +24,7 @@ public final class RuntimeConstant {
     public static final byte TYPE = 5;
     public static final byte METHOD = 6;
     public static final byte METHOD_HANDLE = 7;
+    public static final byte DYNAMIC_CONSTANT = 8;
 
     private byte kind;
     private Object value;
@@ -66,6 +67,10 @@ public final class RuntimeConstant {
         this(METHOD_HANDLE, value);
     }
 
+    public RuntimeConstant(DynamicConstant value) {
+        this(DYNAMIC_CONSTANT, value);
+    }
+
     public byte getKind() {
         return kind;
     }
@@ -100,5 +105,9 @@ public final class RuntimeConstant {
 
     public MethodHandle getMethodHandle() {
         return (MethodHandle) value;
+    }
+
+    public DynamicConstant getDynamicConstant() {
+        return (DynamicConstant) value;
     }
 }

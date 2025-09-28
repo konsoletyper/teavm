@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
+import org.objectweb.asm.ConstantDynamic;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -38,6 +39,7 @@ import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.DynamicConstant;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
@@ -605,6 +607,15 @@ public class ProgramParser {
                 }
             } else if (value instanceof Handle) {
                 return new RuntimeConstant(parseHandle((Handle) value));
+            } else if (value instanceof ConstantDynamic) {
+                var cd = (ConstantDynamic) value;
+                var args = new RuntimeConstant[cd.getBootstrapMethodArgumentCount()];
+                for (var i = 0; i < args.length; i++) {
+                    args[i] = convertConstant(cd.getBootstrapMethodArgument(i));
+                }
+                var cst = new DynamicConstant(cd.getName(), ValueType.parse(cd.getDescriptor()),
+                        parseHandle(cd.getBootstrapMethod()), List.of(args));
+                return new RuntimeConstant(cst);
             } else {
                 throw new IllegalArgumentException("Unknown runtime constant: " + value);
             }

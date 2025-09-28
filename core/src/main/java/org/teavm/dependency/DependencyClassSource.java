@@ -215,7 +215,7 @@ class DependencyClassSource implements ClassHolderSource {
                         indy.getInstance() != null ? pe.var(indy.getInstance(),
                                 ValueType.object(method.getOwnerName())) : null,
                         arguments, indy.getBootstrapMethod(), indy.getBootstrapArguments(),
-                        agent);
+                        agent, insn.getLocation());
                 ValueEmitter result = substitutor.substitute(callSite, pe);
                 if (result.getVariable() != null && result.getVariable() != indy.getReceiver()
                         && indy.getReceiver() != null) {
