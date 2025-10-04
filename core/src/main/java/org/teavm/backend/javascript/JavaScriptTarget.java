@@ -102,6 +102,7 @@ import org.teavm.model.util.DefaultVariableCategoryProvider;
 import org.teavm.model.util.VariableCategoryProvider;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.RenderingException;
+import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.TeaVMTargetController;
 import org.teavm.vm.spi.RendererListener;
@@ -422,20 +423,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         renderer.renderStringPool();
         renderer.renderStringConstants();
         renderer.renderCompatibilityStubs();
-
-        var alias = "$rt_export_main";
-        var ref = new MethodReference(controller.getEntryPoint(), "main", ValueType.parse(String[].class),
-                ValueType.parse(void.class));
-        if (classes.resolve(ref) != null) {
-            rememberingWriter.startVariableDeclaration().appendFunction(alias)
-                    .appendFunction("$rt_mainStarter").append("(").appendMethod(ref);
-            rememberingWriter.append(")").endDeclaration();
-            rememberingWriter.appendFunction(alias).append(".")
-                    .append("javaException").ws().append("=").ws().appendFunction("$rt_javaException")
-                    .append(";").newLine();
-            exports.add(new ExportedDeclaration(w -> w.appendFunction(alias),
-                    n -> n.functionName(alias), controller.getEntryPointName()));
-        }
+        emitMainMethod(classes, rememberingWriter);
 
         for (var listener : rendererListeners) {
             listener.complete();
@@ -489,6 +477,43 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         int totalSize = sourceWriter.getOffset() - start;
         printStats(sourceWriter, totalSize);
+    }
+
+    private void emitMainMethod(ClassReaderSource classes, SourceWriter writer) {
+        var alias = "$rt_export_main";
+        var ref = new MethodReference(controller.getEntryPoint(), TeaVM.MAIN_METHOD_DESC);
+        var mainMethod = classes.resolve(ref);
+        var hasMainMethod = false;
+        var instanceEntryPoint = false;
+
+        if (mainMethod != null) {
+            instanceEntryPoint = !mainMethod.hasModifier(ElementModifier.STATIC);
+            hasMainMethod = true;
+        } else {
+            ref = new MethodReference(controller.getEntryPoint(), TeaVM.SHORT_MAIN_METHOD_DESC);
+            mainMethod = classes.resolve(ref);
+            if (mainMethod != null) {
+                instanceEntryPoint = true;
+                hasMainMethod = true;
+            }
+        }
+        if (hasMainMethod) {
+            if (instanceEntryPoint) {
+                writer.startVariableDeclaration().appendFunction(alias)
+                        .appendFunction("$rt_instanceMainStarter").append("(").appendMethod(ref)
+                        .append(",").ws().appendMethod(controller.getEntryPoint(), "<init>", ValueType.VOID)
+                        .append(",").ws().appendClass(controller.getEntryPoint()).append(")").endDeclaration();
+            } else {
+                writer.startVariableDeclaration().appendFunction(alias)
+                        .appendFunction("$rt_mainStarter").append("(").appendMethod(ref);
+                writer.append(")").endDeclaration();
+            }
+            writer.appendFunction(alias).append(".")
+                    .append("javaException").ws().append("=").ws().appendFunction("$rt_javaException")
+                    .append(";").newLine();
+            exports.add(new ExportedDeclaration(w -> w.appendFunction(alias),
+                    n -> n.functionName(alias), controller.getEntryPointName()));
+        }
     }
 
     private void printWrapperStart(SourceWriter writer) {

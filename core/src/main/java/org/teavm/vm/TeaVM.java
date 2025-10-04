@@ -135,8 +135,9 @@ import org.teavm.vm.spi.TeaVMPlugin;
  * @author Alexey Andreev
  */
 public class TeaVM implements TeaVMHost, ServiceRepository {
-    private static final MethodDescriptor MAIN_METHOD_DESC = new MethodDescriptor("main",
+    public static final MethodDescriptor MAIN_METHOD_DESC = new MethodDescriptor("main",
             ValueType.arrayOf(ValueType.object("java.lang.String")), ValueType.VOID);
+    public static final MethodDescriptor SHORT_MAIN_METHOD_DESC = new MethodDescriptor("main", ValueType.VOID);
     private static final MethodDescriptor CLINIT_DESC = new MethodDescriptor("<clinit>", ValueType.VOID);
 
     private final DependencyAnalyzer dependencyAnalyzer;
@@ -334,18 +335,31 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         dependencyAnalyzer.defer(() -> {
-            var mainMethod = cls.getMethod(MAIN_METHOD_DESC) != null
-                    ? dependencyAnalyzer.linkMethod(new MethodReference(entryPoint,
-                    "main", ValueType.parse(String[].class), ValueType.VOID))
-                    : null;
+            var mainMethodReader = cls.getMethod(MAIN_METHOD_DESC);
             dependencyAnalyzer.linkClass(entryPoint).initClass(null);
-            if (mainMethod != null) {
+            if (mainMethodReader != null) {
+                var mainMethod = dependencyAnalyzer.linkMethod(new MethodReference(entryPoint, MAIN_METHOD_DESC));
                 mainMethod.getVariable(1).propagate(dependencyAnalyzer.getType(ValueType.arrayOf(
                         ValueType.object("java.lang.String"))));
                 mainMethod.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getClassType("java.lang.String"));
+                if (!mainMethodReader.hasModifier(ElementModifier.STATIC)) {
+                    mainMethod.getVariable(0).propagate(dependencyAnalyzer.getClassType(entryPoint));
+                    initMainClassConstructor();
+                }
+                mainMethod.use();
+            } else if (cls.getMethod(SHORT_MAIN_METHOD_DESC) != null) {
+                var mainMethod = dependencyAnalyzer.linkMethod(new MethodReference(entryPoint, SHORT_MAIN_METHOD_DESC));
+                initMainClassConstructor();
                 mainMethod.use();
             }
         });
+    }
+
+    private void initMainClassConstructor() {
+        var ctor = dependencyAnalyzer.linkMethod(entryPoint, new MethodDescriptor("<init>",
+                ValueType.VOID));
+        ctor.propagate(0, dependencyAnalyzer.getClassType(entryPoint));
+        ctor.use();
     }
 
     public void preserveType(String className) {

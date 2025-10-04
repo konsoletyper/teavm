@@ -21,12 +21,16 @@ import org.teavm.model.AnnotationValue;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassHolderTransformerContext;
+import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.emit.ProgramEmitter;
+import org.teavm.model.emit.ValueEmitter;
 import org.teavm.runtime.Fiber;
+import org.teavm.vm.TeaVM;
 
 public class EntryPointTransformation implements ClassHolderTransformer {
     private static final MethodDescriptor MAIN_METHOD = new MethodDescriptor("main", String[].class, void.class);
@@ -44,28 +48,27 @@ public class EntryPointTransformation implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         if (cls.getName().equals(entryPoint)) {
-            var mainMethod = cls.getMethod(MAIN_METHOD);
+            var mainMethod = getMainMethod(cls);
             if (mainMethod != null) {
-                var mainMethodCaller = new MethodHolder(mainMethod.getName() + "_$caller", MAIN_METHOD.getSignature());
-                mainMethodCaller.setLevel(AccessLevel.PUBLIC);
-                mainMethodCaller.getModifiers().add(ElementModifier.STATIC);
-
-                cls.addMethod(mainMethodCaller);
-                mainMethodCaller.getAnnotations().add(new AnnotationHolder("org.teavm.jso.JSExport"));
-
-                var methodAnnot = new AnnotationHolder("org.teavm.jso.JSMethod");
-                methodAnnot.getValues().put("value", new AnnotationValue(entryPointName));
-                mainMethodCaller.getAnnotations().add(methodAnnot);
-
-                var pe = ProgramEmitter.create(mainMethodCaller, context.getHierarchy());
-                pe.invoke(Fiber.class, "startMain", pe.var(1, String[].class));
-                pe.exit();
+                generateMainMethodCaller(mainMethod, cls, context);
             }
         } else if (cls.getName().equals(Fiber.class.getName())) {
+            var mainMethod = getMainMethod(context.getHierarchy().getClassSource().get(entryPoint));
+            if (mainMethod == null) {
+                return;
+            }
+
             var runMain = cls.getMethod(new MethodDescriptor("runMain", String[].class, void.class));
             runMain.getModifiers().remove(ElementModifier.NATIVE);
             var pe = ProgramEmitter.create(runMain, context.getHierarchy());
-            pe.invoke(new MethodReference(entryPoint, MAIN_METHOD), pe.var(1, String[].class));
+            var args = mainMethod.parameterCount() == 1
+                    ? new ValueEmitter[] { pe.var(1, String[].class) }
+                    : new ValueEmitter[0];
+            if (mainMethod.hasModifier(ElementModifier.STATIC)) {
+                pe.invoke(new MethodReference(entryPoint, MAIN_METHOD), args);
+            } else {
+                pe.construct(entryPoint).invokeSpecial("main", args);
+            }
             pe.exit();
 
             var setCurrentThread = cls.getMethod(new MethodDescriptor("setCurrentThread", Thread.class, void.class));
@@ -74,5 +77,34 @@ public class EntryPointTransformation implements ClassHolderTransformer {
             pe.invoke(Thread.class, "setCurrentThread", pe.var(1, Thread.class));
             pe.exit();
         }
+    }
+
+    private void generateMainMethodCaller(MethodReader mainMethod, ClassHolder cls,
+            ClassHolderTransformerContext context) {
+        var mainMethodCaller = new MethodHolder(mainMethod.getName() + "_$caller", mainMethod.getSignature());
+        mainMethodCaller.setLevel(AccessLevel.PUBLIC);
+        mainMethodCaller.getModifiers().add(ElementModifier.STATIC);
+
+        cls.addMethod(mainMethodCaller);
+        mainMethodCaller.getAnnotations().add(new AnnotationHolder("org.teavm.jso.JSExport"));
+
+        var methodAnnot = new AnnotationHolder("org.teavm.jso.JSMethod");
+        methodAnnot.getValues().put("value", new AnnotationValue(entryPointName));
+        mainMethodCaller.getAnnotations().add(methodAnnot);
+
+        var pe = ProgramEmitter.create(mainMethodCaller, context.getHierarchy());
+        var arg = mainMethod.parameterCount() == 1
+                ? pe.var(1, String[].class)
+                : pe.constantNull(String[].class);
+        pe.invoke(Fiber.class, "startMain", arg);
+        pe.exit();
+    }
+
+    private MethodReader getMainMethod(ClassReader cls) {
+        var mainMethod = cls.getMethod(TeaVM.MAIN_METHOD_DESC);
+        if (mainMethod != null) {
+            return mainMethod;
+        }
+        return cls.getMethod(TeaVM.SHORT_MAIN_METHOD_DESC);
     }
 }

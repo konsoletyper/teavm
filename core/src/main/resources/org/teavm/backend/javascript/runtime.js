@@ -63,6 +63,31 @@ let $rt_mainStarter = f => (args, callback) => {
     $rt_startThread(() => { f.call(null, javaArgs); }, callback);
 }
 
+let $rt_instanceMainStarter = (f, ctor, mainClass) => (args, callback) => {
+    if (!args) {
+        args = [];
+    }
+    let javaArgs = $rt_createArray($rt_objcls(), args.length);
+    for (let i = 0; i < args.length; ++i) {
+        javaArgs.data[i] = $rt_str(args[i]);
+    }
+    let instance = null;
+    let ctorFinished = false;
+    $rt_startThread(() => {
+        if (instance == null) {
+            instance = new mainClass();
+        }
+        if (!ctorFinished) {
+            ctor(instance);
+            if ($rt_suspending()) {
+                return;
+            }
+            ctorFinished = true;
+        }
+        f.call(null, instance, javaArgs);
+    }, callback);
+}
+
 let $rt_eraseClinit = target => target.$clinit = () => {};
 
 let $dbg_class = obj => {
