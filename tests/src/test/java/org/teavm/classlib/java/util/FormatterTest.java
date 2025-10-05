@@ -17,6 +17,7 @@ package org.teavm.classlib.java.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import java.util.DuplicateFormatFlagsException;
 import java.util.FormatFlagsConversionMismatchException;
@@ -283,5 +284,24 @@ public class FormatterTest {
                 .format(":% .1f:% .1f:", 123f, -123d).toString());
 
         assertEquals("12.050", new Formatter(Locale.US).format("%4.3f", 12.05).toString());
+    }
+    
+    @Test
+    public void formatsEscapePercent() {
+        assertEquals("%", new Formatter().format("%%", "%").toString());
+        
+        try {
+        	String str = new Formatter().format("%").toString();
+    		fail("Should have thrown exception " + str);
+    	} catch (Exception e) {
+    		assertNotNull(e);
+    	}
+        
+        try {
+        	String str = new Formatter().format("%%%").toString();
+    		fail("Should have thrown exception " + str);
+    	} catch (Exception e) {
+    		assertNotNull(e);
+    	}
     }
 }
