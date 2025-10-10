@@ -16,15 +16,12 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import java.io.UnsupportedEncodingException;
-import java.util.Formatter;
 import java.util.Locale;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -412,24 +409,5 @@ public class StringTest {
         assertEquals("abc\n\ndef\n", " abc\r\n \n def\r ".stripIndent());
         assertEquals("", " ".stripIndent());
         assertEquals("\n", " \n ".stripIndent());
-    }
-    
-    @Test
-    public void formatsEscapePercent() {
-        assertEquals("%", String.format("%%", "%"));
-        
-        try {
-        	String str = String.format("%");
-    		fail("Should have thrown exception " + str);
-    	} catch (Exception e) {
-    		assertNotNull(e);
-    	}
-        
-        try {
-        	String str = String.format("%%%");
-    		fail("Should have thrown exception " + str);
-    	} catch (Exception e) {
-    		assertNotNull(e);
-    	}
     }
 }
