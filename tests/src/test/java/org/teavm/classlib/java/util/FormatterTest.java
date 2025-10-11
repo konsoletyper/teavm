@@ -291,17 +291,17 @@ public class FormatterTest {
         assertEquals("%", new Formatter().format("%%", "%").toString());
         
         try {
-        	String str = new Formatter().format("%").toString();
-    		fail("Should have thrown exception " + str);
-    	} catch (Exception e) {
-    		assertNotNull(e);
-    	}
+            String str = new Formatter().format("%").toString();
+            fail("Should have thrown exception " + str);
+        } catch (Exception e) {
+            assertNotNull(e);
+        }
         
         try {
-        	String str = new Formatter().format("%%%").toString();
-    		fail("Should have thrown exception " + str);
-    	} catch (Exception e) {
-    		assertNotNull(e);
-    	}
+            String str = new Formatter().format("%%%").toString();
+            fail("Should have thrown exception " + str);
+        } catch (Exception e) {
+            assertNotNull(e);
+        }
     }
 }

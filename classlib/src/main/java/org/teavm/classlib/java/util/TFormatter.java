@@ -247,7 +247,7 @@ public final class TFormatter implements Closeable, Flushable {
                     break;
 
                 case '%':
-                	out.append("%");
+                    out.append("%");
                     break;
                 default:
                     throw new UnknownFormatConversionException(String.valueOf(specifier));
