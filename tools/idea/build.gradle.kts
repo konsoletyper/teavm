@@ -70,6 +70,9 @@ tasks.whenTaskAdded {
         tasks.prepareTestSandbox {
             dependsOn(t)
         }
+        tasks.prepareSandbox {
+            dependsOn(t)
+        }
     }
 }
 

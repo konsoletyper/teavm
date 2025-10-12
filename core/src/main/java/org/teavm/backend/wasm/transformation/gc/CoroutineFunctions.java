@@ -181,7 +181,7 @@ class CoroutineFunctions {
                 case FLOAT32:
                     return new WasmPush(new WasmCall(popFloat(), new WasmGetLocal(fiberLocal)));
                 case FLOAT64:
-                    new WasmPush(new WasmCall(popDouble(), new WasmGetLocal(fiberLocal)));
+                    return new WasmPush(new WasmCall(popDouble(), new WasmGetLocal(fiberLocal)));
             }
             throw new IllegalArgumentException();
         } else if (type instanceof WasmType.Reference) {

@@ -241,7 +241,9 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmSwitch expression) {
-        stackTypes.removeLast();
+        expression.getSelector().acceptVisitor(this);
+        expression.setSelector(new WasmPop(peekType(0)));
+        popTypes(0);
         resultList.add(expression);
     }
 

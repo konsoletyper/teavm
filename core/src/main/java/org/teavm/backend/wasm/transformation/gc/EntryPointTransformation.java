@@ -53,6 +53,12 @@ public class EntryPointTransformation implements ClassHolderTransformer {
                 generateMainMethodCaller(mainMethod, cls, context);
             }
         } else if (cls.getName().equals(Fiber.class.getName())) {
+            var setCurrentThread = cls.getMethod(new MethodDescriptor("setCurrentThread", Thread.class, void.class));
+            setCurrentThread.getModifiers().remove(ElementModifier.NATIVE);
+            var pe = ProgramEmitter.create(setCurrentThread, context.getHierarchy());
+            pe.invoke(Thread.class, "setCurrentThread", pe.var(1, Thread.class));
+            pe.exit();
+
             var mainMethod = getMainMethod(context.getHierarchy().getClassSource().get(entryPoint));
             if (mainMethod == null) {
                 return;
@@ -60,7 +66,7 @@ public class EntryPointTransformation implements ClassHolderTransformer {
 
             var runMain = cls.getMethod(new MethodDescriptor("runMain", String[].class, void.class));
             runMain.getModifiers().remove(ElementModifier.NATIVE);
-            var pe = ProgramEmitter.create(runMain, context.getHierarchy());
+            pe = ProgramEmitter.create(runMain, context.getHierarchy());
             var args = mainMethod.parameterCount() == 1
                     ? new ValueEmitter[] { pe.var(1, String[].class) }
                     : new ValueEmitter[0];
@@ -69,12 +75,6 @@ public class EntryPointTransformation implements ClassHolderTransformer {
             } else {
                 pe.construct(entryPoint).invokeSpecial("main", args);
             }
-            pe.exit();
-
-            var setCurrentThread = cls.getMethod(new MethodDescriptor("setCurrentThread", Thread.class, void.class));
-            setCurrentThread.getModifiers().remove(ElementModifier.NATIVE);
-            pe = ProgramEmitter.create(setCurrentThread, context.getHierarchy());
-            pe.invoke(Thread.class, "setCurrentThread", pe.var(1, Thread.class));
             pe.exit();
         }
     }

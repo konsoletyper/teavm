@@ -51,11 +51,49 @@ public class AsyncTest {
         assertEquals(3, str.getLength());
         assertEquals("foo", str.stringValue());
     }
+    
+    @Test
+    public void switchAsyncArgument() {
+        var sb = new StringBuilder();
+        for (var i = 0; i < 4; ++i) {
+            switch (returnSamePrimitive(i)) {
+                case 0:
+                    sb.append("zero;");
+                    break;
+                case 1:
+                    sb.append("one;");
+                    break;
+                default:
+                    sb.append("other;");
+                    break;
+            }
+        }
+        assertEquals("zero;one;other;other;", sb.toString());
+    }
+    
+    @Test
+    public void doublePrimitive() {
+        assertEquals(2.5, returnSamePrimitive(2.5), 0.01);
+    }
 
     @Async
     private native JSString getJsString();
 
     private void getJsString(AsyncCallback<JSString> callback) {
         Window.setTimeout(() -> callback.complete(JSString.valueOf("foo")), 0);
+    }
+    
+    @Async
+    private native int returnSamePrimitive(int value);
+    
+    private void returnSamePrimitive(int value, AsyncCallback<Integer> callback) {
+        Window.setTimeout(() -> callback.complete(value), 0);
+    }
+
+    @Async
+    private native double returnSamePrimitive(double value);
+
+    private void returnSamePrimitive(double value, AsyncCallback<Double> callback) {
+        Window.setTimeout(() -> callback.complete(value), 0);
     }
 }
