@@ -274,7 +274,7 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
                 call.setMethod(new MethodReference(Boolean.class, "booleanValue", boolean.class));
                 break;
             case BYTE:
-                call.setMethod(new MethodReference(Byte.class, "byteValue", boolean.class));
+                call.setMethod(new MethodReference(Byte.class, "byteValue", byte.class));
                 break;
             case SHORT:
                 call.setMethod(new MethodReference(Short.class, "shortValue", short.class));
@@ -286,13 +286,13 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
                 call.setMethod(new MethodReference(Integer.class, "intValue", int.class));
                 break;
             case LONG:
-                call.setMethod(new MethodReference(Long.class, "longValue", int.class));
+                call.setMethod(new MethodReference(Long.class, "longValue", long.class));
                 break;
             case FLOAT:
-                call.setMethod(new MethodReference(Float.class, "floatValue", int.class));
+                call.setMethod(new MethodReference(Float.class, "floatValue", float.class));
                 break;
             case DOUBLE:
-                call.setMethod(new MethodReference(Double.class, "doubleValue", int.class));
+                call.setMethod(new MethodReference(Double.class, "doubleValue", double.class));
                 break;
         }
 
