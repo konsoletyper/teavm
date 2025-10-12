@@ -16,6 +16,5 @@
 
 plugins {
     id("org.teavm") version "0.13.0-SNAPSHOT" apply false
-    id("org.wisepersist.gwt") version "1.1.19" apply false
 }
 

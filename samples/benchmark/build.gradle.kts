@@ -18,24 +18,14 @@ plugins {
     java
     war
     id("org.teavm")
-    id("org.wisepersist.gwt")
 }
 
-val gwtVersionNum = "2.10.0"
 var jbox2d = "org.jbox2d:jbox2d-library:2.2.1.1"
 
 dependencies {
     teavm(teavm.libs.jsoApis)
     teavm(teavm.libs.interop)
     teavm(jbox2d)
-    teavm("com.google.gwt:gwt-user:$gwtVersionNum")
-    gwt("$jbox2d:sources")
-}
-
-gwt {
-    gwtVersion = gwtVersionNum
-    modules.add("org.teavm.samples.benchmark.benchmark")
-    devWar = File(buildDir, "gwt-war")
 }
 
 val generatedCSources = File(buildDir, "generated/teavm-c")

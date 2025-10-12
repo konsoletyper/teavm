@@ -23,11 +23,7 @@ plugins {
     id("org.teavm")
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = "11"
-    }
-}
+kotlin.jvmToolchain(21)
 
 teavm.js {
     addedToWebApp = true

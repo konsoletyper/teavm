@@ -36,7 +36,7 @@ pluginManagement {
         gradlePluginPortal()
     }
     plugins {
-        id("org.gretty") version "4.1.6" apply false
+        id("org.gretty") version "4.1.10" apply false
     }
 }
 
@@ -46,7 +46,7 @@ buildscript {
         mavenCentral()
         gradlePluginPortal()
     }
-    dependencies.classpath("org.gretty:org.gretty.gradle.plugin:4.1.6")
+    dependencies.classpath("org.gretty:org.gretty.gradle.plugin:4.1.10")
 }
 
 rootProject.name = "teavmSamples"
