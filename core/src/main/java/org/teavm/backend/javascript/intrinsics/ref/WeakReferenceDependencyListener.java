@@ -43,8 +43,8 @@ public class WeakReferenceDependencyListener extends AbstractDependencyListener 
             case "<init>": {
                 if (method.getParameterCount() == 3) {
                     var field = agent.linkField(new FieldReference(method.getMethod().getOwnerName(), "value"));
-                    method.getVariable(2).connect(field.getValue());
-                    method.getVariable(1).connect(initRef);
+                    method.getVariable(1).connect(field.getValue());
+                    method.getVariable(2).connect(initRef);
                 }
                 break;
             }
