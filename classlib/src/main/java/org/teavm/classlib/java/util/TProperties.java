@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2025 Ashera Cordova
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,8 +35,10 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import org.teavm.classlib.java.io.TBufferedInputStream;
+import org.teavm.classlib.java.io.TBufferedReader;
 import org.teavm.classlib.java.io.TInputStream;
 import org.teavm.classlib.java.io.TPrintStream;
+import org.teavm.classlib.java.io.TReader;
 
 public class TProperties extends THashtable<Object, Object> {
     /**
@@ -146,12 +163,70 @@ public class TProperties extends THashtable<Object, Object> {
             buffer.setLength(0);
         }
     }
+    
+    interface IStreamAndReader {
+        int read() throws IOException;
+        void close() throws IOException;
+    }
+    
+    /**
+     */
+    class MyReader implements IStreamAndReader {
+        private final TBufferedReader reader;
 
-    @SuppressWarnings("fallthrough")
+        MyReader(TReader reader) {
+            this.reader = new TBufferedReader(reader);
+        }
+
+        @Override
+        public int read() throws IOException {
+            return reader.read();
+        }
+
+        @Override
+        public void close() throws IOException {
+            reader.close();
+        }
+    }
+
+    /**
+     */
+    class MyInputStream implements IStreamAndReader {
+        private final TBufferedInputStream in;
+
+        MyInputStream(TInputStream in) {
+            this.in = new TBufferedInputStream(in);
+        }
+
+        @Override
+        public int read() throws IOException {
+            return in.read();
+        }
+
+        @Override
+        public void close() throws IOException {
+            in.close();
+        }
+    }
+    
     public synchronized void load(TInputStream in) throws IOException {
         if (in == null) {
             throw new NullPointerException();
         }
+        MyInputStream myInputStream = new MyInputStream(in);
+        load0(myInputStream);
+    }
+
+    public synchronized void load(TReader reader) throws IOException {
+        if (reader == null) {
+            throw new NullPointerException();
+        }
+        MyReader myReader = new MyReader(reader);
+        load0(myReader);
+    }
+
+    @SuppressWarnings("fallthrough")
+    private synchronized void load0(IStreamAndReader sr) throws IOException {
         int mode = NONE;
         int unicode = 0;
         int count = 0;
@@ -161,10 +236,9 @@ public class TProperties extends THashtable<Object, Object> {
         int keyLength = -1;
         int intVal;
         boolean firstChar = true;
-        TBufferedInputStream bis = new TBufferedInputStream(in);
 
         while (true) {
-            intVal = bis.read();
+            intVal = sr.read();
             if (intVal == -1) {
                 // if mode is UNICODE but has less than 4 hex digits, should
                 // throw an IllegalArgumentException
@@ -237,7 +311,7 @@ public class TProperties extends THashtable<Object, Object> {
                 case '!':
                     if (firstChar) {
                         while (true) {
-                            intVal = bis.read();
+                            intVal = sr.read();
                             if (intVal == -1) {
                                 break;
                             }
