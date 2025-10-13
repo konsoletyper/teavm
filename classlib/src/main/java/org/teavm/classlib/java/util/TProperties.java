@@ -164,14 +164,32 @@ public class TProperties extends THashtable<Object, Object> {
         }
     }
     
-    interface IStreamAndReader {
+    /**
+     * Represents a unified abstraction for reading data either from an input stream or a reader.
+     * This interface provides a common way to handle both binary and character sources.
+     */
+    interface StreamOrReader {
+        /**
+         * Reads the next byte or character of data.
+         *
+         * @return the next byte or character as an integer, or {@code -1} if the end of the stream is reached
+         * @throws IOException if an I/O error occurs during reading
+         */
         int read() throws IOException;
+        
+        /**
+         * Closes the underlying stream or reader and releases any system resources associated with it.
+         *
+         * @throws IOException if an I/O error occurs while closing
+         */
         void close() throws IOException;
     }
     
     /**
+     * Implementation of {@link StreamOrReader} for character-based input using a {@link TReader}.
+     * This class wraps the provided reader with a {@link TBufferedReader} for efficient reading.
      */
-    class MyReader implements IStreamAndReader {
+    class MyReader implements StreamOrReader {
         private final TBufferedReader reader;
 
         MyReader(TReader reader) {
@@ -190,8 +208,10 @@ public class TProperties extends THashtable<Object, Object> {
     }
 
     /**
+     * Implementation of {@link StreamOrReader} for byte-based input using a {@link TInputStream}.
+     * This class wraps the provided stream with a {@link TBufferedInputStream} for efficient reading.
      */
-    class MyInputStream implements IStreamAndReader {
+    class MyInputStream implements StreamOrReader {
         private final TBufferedInputStream in;
 
         MyInputStream(TInputStream in) {
@@ -208,25 +228,37 @@ public class TProperties extends THashtable<Object, Object> {
             in.close();
         }
     }
-    
+
     public synchronized void load(TInputStream in) throws IOException {
         if (in == null) {
             throw new NullPointerException();
         }
         MyInputStream myInputStream = new MyInputStream(in);
-        load0(myInputStream);
+        load(myInputStream);
     }
 
+    /**
+     * Loads key-value pairs from the specified {@link TReader}.
+     * This method wraps the reader in a {@link MyReader} and delegates to the internal
+     * {@link #load(StreamOrReader)} method.
+     *
+     * @param reader the {@link TReader} to read from
+     * @throws IOException if an I/O error occurs
+     * @throws NullPointerException if {@code reader} is {@code null}
+     */
     public synchronized void load(TReader reader) throws IOException {
         if (reader == null) {
             throw new NullPointerException();
         }
         MyReader myReader = new MyReader(reader);
-        load0(myReader);
+        load(myReader);
     }
 
+    /**
+     * Internal method that parses input from a {@link StreamOrReader} and loads key-value pairs.
+     */ 
     @SuppressWarnings("fallthrough")
-    private synchronized void load0(IStreamAndReader sr) throws IOException {
+    private synchronized void load(StreamOrReader sr) throws IOException {
         int mode = NONE;
         int unicode = 0;
         int count = 0;
