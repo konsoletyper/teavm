@@ -57,6 +57,7 @@ public class ImportClassTest {
     @AttachJavaScript("org/teavm/jso/test/classWithConstructor.js")
     public void staticMethod() {
         assertEquals("static method called", ClassWithConstructor.staticMethod());
+        assertEquals("staticPropertyValue", ClassWithConstructor.staticProperty);
     }
 
     @Test
@@ -73,6 +74,7 @@ public class ImportClassTest {
 
         TopLevelDeclarations.setTopLevelProperty("update2");
         assertEquals("update2", ClassWithConstructor.getTopLevelProperty());
+        assertEquals("update2", ClassWithConstructor.topLevelProperty);
     }
 
     @Test
@@ -80,6 +82,13 @@ public class ImportClassTest {
     public void legacyCastMethod() {
         SubclassWithConstructor o = ClassWithConstructor.createClass(true).cast();
         assertEquals("subclass", o.baz());
+    }
+
+    @Test
+    @AttachJavaScript("org/teavm/jso/test/classWithConstructor.js")
+    public void fieldAccess() {
+        var o = new ClassWithConstructor(23);
+        assertEquals(23, o.foo);
     }
 
     @JSBody(script = "return {};")

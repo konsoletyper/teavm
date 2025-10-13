@@ -27,6 +27,8 @@ public class ClassWithConstructor implements JSObject {
 
     public ClassWithConstructor() {
     }
+    
+    public int foo;
 
     @JSProperty
     public native int getFoo();
@@ -48,4 +50,11 @@ public class ClassWithConstructor implements JSObject {
 
     @JSTopLevel
     public static native JSObject createClass(boolean subclass);
+    
+    @JSProperty
+    @JSTopLevel
+    public static String topLevelProperty;
+
+    @JSProperty
+    public static String staticProperty;
 }

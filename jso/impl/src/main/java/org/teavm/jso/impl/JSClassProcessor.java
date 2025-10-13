@@ -45,6 +45,7 @@ import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSClass;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSPrimitiveType;
+import org.teavm.jso.JSProperty;
 import org.teavm.jso.JSTopLevel;
 import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationHolder;
@@ -57,6 +58,7 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
@@ -77,6 +79,7 @@ import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.GetElementInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
@@ -323,8 +326,12 @@ class JSClassProcessor {
                         insn.insertNextAll(replacement);
                         insn.delete();
                     }
+                } else if (insn instanceof GetFieldInstruction) {
+                    var callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
+                    processGetField((GetFieldInstruction) insn, callLocation);
                 } else if (insn instanceof PutFieldInstruction) {
-                    processPutField((PutFieldInstruction) insn);
+                    var callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
+                    processPutField((PutFieldInstruction) insn, callLocation);
                 } else if (insn instanceof GetElementInstruction) {
                     processGetFromArray((GetElementInstruction) insn);
                 } else if (insn instanceof PutElementInstruction) {
@@ -430,8 +437,71 @@ class JSClassProcessor {
         }
     }
 
-    private void processPutField(PutFieldInstruction putField) {
-        putField.setValue(convertValue(putField, putField.getValue(), putField.getFieldType()));
+    private void processGetField(GetFieldInstruction insn, CallLocation callLocation) {
+        if (!isJsField(insn.getField(), insn.getInstance() == null)) {
+            return;
+        }
+
+        replacement.clear();
+        var propertyName = getPropertyName(insn.getField());
+        var result = insn.getReceiver() != null ? program.createVariable() : null;
+        var instance = getCallTarget(insn.getInstance(), insn.getField(), insn.getLocation());
+        addPropertyGet(propertyName, instance, result, insn.getLocation(), true);
+        if (result != null) {
+            result = marshaller.unwrapReturnValue(callLocation, result, insn.getFieldType(), false,
+                    canBeOnlyJava(insn.getReceiver()));
+            copyVar(result, insn.getReceiver(), insn.getLocation());
+        }
+        insn.insertNextAll(replacement);
+        insn.delete();
+    }
+
+    private void processPutField(PutFieldInstruction insn, CallLocation callLocation) {
+        insn.setValue(convertValue(insn, insn.getValue(), insn.getFieldType()));
+        if (!isJsField(insn.getField(), insn.getInstance() == null)) {
+            return;
+        }
+
+        replacement.clear();
+        var propertyName = getPropertyName(insn.getField());
+        var instance = getCallTarget(insn.getInstance(), insn.getField(), insn.getLocation());
+        var value = insn.getValue();
+        value = marshaller.wrapArgument(callLocation, value, insn.getFieldType(), types.typeOf(value), false, null);
+        addPropertySet(propertyName, instance, value, insn.getLocation(), true);
+        insn.insertNextAll(replacement);
+        insn.delete();
+    }
+
+    private boolean isJsField(FieldReference fieldRef, boolean isStatic) {
+        if (!typeHelper.isJavaScriptClass(fieldRef.getClassName())) {
+            return false;
+        }
+        if (!isStatic) {
+            return true;
+        }
+        var cls = classSource.get(fieldRef.getClassName());
+        if (cls == null) {
+            return false;
+        }
+        var field = cls.getField(fieldRef.getFieldName());
+        return field != null && field.getAnnotations().get(JSProperty.class.getName()) != null;
+    }
+
+    private String getPropertyName(FieldReference fieldRef) {
+        var cls = classSource.get(fieldRef.getClassName());
+        if (cls != null) {
+            var field = cls.getField(fieldRef.getFieldName());
+            if (field != null) {
+                var annot = field.getAnnotations().get(JSProperty.class.getName());
+                if (annot != null) {
+                    var value = annot.getValue("value");
+                    if (value != null) {
+                        return value.getString();
+                    }
+                }
+            }
+        }
+        return fieldRef.getFieldName();
     }
 
     private void processGetFromArray(GetElementInstruction insn) {
@@ -1225,6 +1295,22 @@ class JSClassProcessor {
             return marshaller.moduleRef(invoke.getMethod().getClassName(), methodAnnotations, invoke.getLocation());
         } else {
             return marshaller.classRef(invoke.getMethod().getClassName(), invoke.getLocation());
+        }
+    }
+
+    private Variable getCallTarget(Variable instance, FieldReference fieldRef, TextLocation location) {
+        if (instance != null) {
+            return instance;
+        }
+        var cls = classSource.get(fieldRef.getClassName());
+        var field = cls != null ? cls.getField(fieldRef.getFieldName()) : null;
+        var isTopLevel = (cls != null && cls.getAnnotations().get(JSTopLevel.class.getName()) != null)
+                || (field != null && field.getAnnotations().get(JSTopLevel.class.getName()) != null);
+        if (isTopLevel) {
+            var fieldAnnotations = field != null ? field.getAnnotations() : null;
+            return marshaller.moduleRef(fieldRef.getClassName(), fieldAnnotations, location);
+        } else {
+            return marshaller.classRef(fieldRef.getClassName(), location);
         }
     }
 

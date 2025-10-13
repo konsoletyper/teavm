@@ -45,7 +45,7 @@ import java.lang.annotation.Target;
  * @author Alexey Andreev
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.FIELD})
 public @interface JSProperty {
     String value() default "";
 }

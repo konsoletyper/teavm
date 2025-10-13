@@ -30,6 +30,10 @@ class ClassWithConstructor {
     static staticMethod() {
         return "static method called";
     }
+    
+    static get staticProperty() {
+        return "staticPropertyValue";
+    }
 }
 
 class SubclassWithConstructor extends ClassWithConstructor {
