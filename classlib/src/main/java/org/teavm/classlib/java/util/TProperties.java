@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2025 Ashera Cordova
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,8 +35,10 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import org.teavm.classlib.java.io.TBufferedInputStream;
+import org.teavm.classlib.java.io.TBufferedReader;
 import org.teavm.classlib.java.io.TInputStream;
 import org.teavm.classlib.java.io.TPrintStream;
+import org.teavm.classlib.java.io.TReader;
 
 public class TProperties extends THashtable<Object, Object> {
     /**
@@ -146,12 +163,102 @@ public class TProperties extends THashtable<Object, Object> {
             buffer.setLength(0);
         }
     }
+    
+    /**
+     * Represents a unified abstraction for reading data either from an input stream or a reader.
+     * This interface provides a common way to handle both binary and character sources.
+     */
+    interface StreamOrReader {
+        /**
+         * Reads the next byte or character of data.
+         *
+         * @return the next byte or character as an integer, or {@code -1} if the end of the stream is reached
+         * @throws IOException if an I/O error occurs during reading
+         */
+        int read() throws IOException;
+        
+        /**
+         * Closes the underlying stream or reader and releases any system resources associated with it.
+         *
+         * @throws IOException if an I/O error occurs while closing
+         */
+        void close() throws IOException;
+    }
+    
+    /**
+     * Implementation of {@link StreamOrReader} for character-based input using a {@link TReader}.
+     * This class wraps the provided reader with a {@link TBufferedReader} for efficient reading.
+     */
+    class MyReader implements StreamOrReader {
+        private final TBufferedReader reader;
 
-    @SuppressWarnings("fallthrough")
+        MyReader(TReader reader) {
+            this.reader = new TBufferedReader(reader);
+        }
+
+        @Override
+        public int read() throws IOException {
+            return reader.read();
+        }
+
+        @Override
+        public void close() throws IOException {
+            reader.close();
+        }
+    }
+
+    /**
+     * Implementation of {@link StreamOrReader} for byte-based input using a {@link TInputStream}.
+     * This class wraps the provided stream with a {@link TBufferedInputStream} for efficient reading.
+     */
+    class MyInputStream implements StreamOrReader {
+        private final TBufferedInputStream in;
+
+        MyInputStream(TInputStream in) {
+            this.in = new TBufferedInputStream(in);
+        }
+
+        @Override
+        public int read() throws IOException {
+            return in.read();
+        }
+
+        @Override
+        public void close() throws IOException {
+            in.close();
+        }
+    }
+
     public synchronized void load(TInputStream in) throws IOException {
         if (in == null) {
             throw new NullPointerException();
         }
+        MyInputStream myInputStream = new MyInputStream(in);
+        load(myInputStream);
+    }
+
+    /**
+     * Loads key-value pairs from the specified {@link TReader}.
+     * This method wraps the reader in a {@link MyReader} and delegates to the internal
+     * {@link #load(StreamOrReader)} method.
+     *
+     * @param reader the {@link TReader} to read from
+     * @throws IOException if an I/O error occurs
+     * @throws NullPointerException if {@code reader} is {@code null}
+     */
+    public synchronized void load(TReader reader) throws IOException {
+        if (reader == null) {
+            throw new NullPointerException();
+        }
+        MyReader myReader = new MyReader(reader);
+        load(myReader);
+    }
+
+    /**
+     * Internal method that parses input from a {@link StreamOrReader} and loads key-value pairs.
+     */ 
+    @SuppressWarnings("fallthrough")
+    private synchronized void load(StreamOrReader sr) throws IOException {
         int mode = NONE;
         int unicode = 0;
         int count = 0;
@@ -161,10 +268,9 @@ public class TProperties extends THashtable<Object, Object> {
         int keyLength = -1;
         int intVal;
         boolean firstChar = true;
-        TBufferedInputStream bis = new TBufferedInputStream(in);
 
         while (true) {
-            intVal = bis.read();
+            intVal = sr.read();
             if (intVal == -1) {
                 // if mode is UNICODE but has less than 4 hex digits, should
                 // throw an IllegalArgumentException
@@ -237,7 +343,7 @@ public class TProperties extends THashtable<Object, Object> {
                 case '!':
                     if (firstChar) {
                         while (true) {
-                            intVal = bis.read();
+                            intVal = sr.read();
                             if (intVal == -1) {
                                 break;
                             }
