@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2025 Ashera Cordova.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +31,8 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -228,5 +245,127 @@ public class CharacterTest {
         } catch (IndexOutOfBoundsException e) {
             // ok
         }
+    }
+    
+    /**
+     * @tests java.lang.Character#isMirrored(char)
+     */
+    @Test
+    public void test_isMirrored_C() {
+        assertTrue(Character.isMirrored('\u0028'));
+        assertFalse(Character.isMirrored('\uFFFF'));
+    }
+    
+    /**
+     * @tests java.lang.Character#isMirrored(int)
+     */
+    @Test
+    public void test_isMirrored_I() {
+        assertTrue(Character.isMirrored(0x0028));
+        assertFalse(Character.isMirrored(0xFFFF));     
+        assertFalse(Character.isMirrored(0x110000));
+    }
+
+    /**
+     * @tests java.lang.Character#getDirectionality(int)
+     */
+    @Test
+    public void test_isDirectionaliy_I() {
+        assertEquals(Character.DIRECTIONALITY_UNDEFINED, Character
+                .getDirectionality(0xFFFE));
+        assertEquals(Character.DIRECTIONALITY_UNDEFINED, Character
+                .getDirectionality(0x30000));
+        assertEquals(Character.DIRECTIONALITY_UNDEFINED, Character
+                .getDirectionality(0x110000));
+        assertEquals(Character.DIRECTIONALITY_UNDEFINED, Character
+                .getDirectionality(-1));
+        
+        assertEquals(Character.DIRECTIONALITY_LEFT_TO_RIGHT, Character
+                .getDirectionality(0x0041));
+        assertEquals(Character.DIRECTIONALITY_LEFT_TO_RIGHT, Character
+                .getDirectionality(0x10000));
+        assertEquals(Character.DIRECTIONALITY_LEFT_TO_RIGHT, Character
+                .getDirectionality(0x104A9));
+        
+        assertEquals(Character.DIRECTIONALITY_RIGHT_TO_LEFT, Character
+                .getDirectionality(0xFB4F));
+        assertEquals(Character.DIRECTIONALITY_RIGHT_TO_LEFT, Character
+                .getDirectionality(0x10838));
+        // Unicode standard 5.1 changed category of unicode point 0x0600 from AL to AN
+        assertEquals(Character.DIRECTIONALITY_ARABIC_NUMBER, Character
+                .getDirectionality(0x0600));
+        assertEquals(Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC, Character
+                .getDirectionality(0xFEFC));
+        
+        assertEquals(Character.DIRECTIONALITY_EUROPEAN_NUMBER, Character
+                .getDirectionality(0x2070));
+        assertEquals(Character.DIRECTIONALITY_EUROPEAN_NUMBER, Character
+                .getDirectionality(0x1D7FF));
+        
+        //RI fails ,this is non-bug difference between Unicode 4.0 and 4.1
+        assertEquals(Character.DIRECTIONALITY_EUROPEAN_NUMBER_SEPARATOR, Character
+                .getDirectionality(0x002B));
+        assertEquals(Character.DIRECTIONALITY_EUROPEAN_NUMBER_SEPARATOR, Character
+                .getDirectionality(0xFF0B));
+        
+        assertEquals(Character.DIRECTIONALITY_EUROPEAN_NUMBER_TERMINATOR, Character
+                .getDirectionality(0x0023));
+        assertEquals(Character.DIRECTIONALITY_EUROPEAN_NUMBER_TERMINATOR, Character
+                .getDirectionality(0x17DB));
+        
+        assertEquals(Character.DIRECTIONALITY_ARABIC_NUMBER, Character
+                .getDirectionality(0x0660));
+        assertEquals(Character.DIRECTIONALITY_ARABIC_NUMBER, Character
+                .getDirectionality(0x066C));
+        
+        assertEquals(Character.DIRECTIONALITY_COMMON_NUMBER_SEPARATOR, Character
+                .getDirectionality(0x002C));
+        assertEquals(Character.DIRECTIONALITY_COMMON_NUMBER_SEPARATOR, Character
+                .getDirectionality(0xFF1A));
+        
+        assertEquals(Character.DIRECTIONALITY_NONSPACING_MARK, Character
+                .getDirectionality(0x17CE));
+        assertEquals(Character.DIRECTIONALITY_NONSPACING_MARK, Character
+                .getDirectionality(0xE01DB));
+        
+        assertEquals(Character.DIRECTIONALITY_BOUNDARY_NEUTRAL, Character
+                .getDirectionality(0x0000));
+        assertEquals(Character.DIRECTIONALITY_BOUNDARY_NEUTRAL, Character
+                .getDirectionality(0xE007F));
+        
+        assertEquals(Character.DIRECTIONALITY_PARAGRAPH_SEPARATOR, Character
+                .getDirectionality(0x000A));
+        assertEquals(Character.DIRECTIONALITY_PARAGRAPH_SEPARATOR, Character
+                .getDirectionality(0x2029));
+        
+        assertEquals(Character.DIRECTIONALITY_SEGMENT_SEPARATOR, Character
+                .getDirectionality(0x0009));
+        assertEquals(Character.DIRECTIONALITY_SEGMENT_SEPARATOR, Character
+                .getDirectionality(0x001F));
+        
+        assertEquals(Character.DIRECTIONALITY_WHITESPACE, Character
+                .getDirectionality(0x0020));
+        assertEquals(Character.DIRECTIONALITY_WHITESPACE, Character
+                .getDirectionality(0x3000));
+        
+        assertEquals(Character.DIRECTIONALITY_OTHER_NEUTRALS, Character
+                .getDirectionality(0x2FF0));
+        assertEquals(Character.DIRECTIONALITY_OTHER_NEUTRALS, Character
+                .getDirectionality(0x1D356));
+        
+        assertEquals(Character.DIRECTIONALITY_LEFT_TO_RIGHT_EMBEDDING, Character
+                .getDirectionality(0x202A));
+        
+        assertEquals(Character.DIRECTIONALITY_LEFT_TO_RIGHT_OVERRIDE, Character
+                .getDirectionality(0x202D));
+
+        assertEquals(Character.DIRECTIONALITY_RIGHT_TO_LEFT_EMBEDDING, Character
+                .getDirectionality(0x202B));
+        
+        assertEquals(Character.DIRECTIONALITY_RIGHT_TO_LEFT_OVERRIDE, Character
+                .getDirectionality(0x202E));
+        
+        assertEquals(Character.DIRECTIONALITY_POP_DIRECTIONAL_FORMAT, Character
+                .getDirectionality(0x202C));     
     }
 }
