@@ -21,6 +21,7 @@ import java.util.Deque;
 import java.util.Objects;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
+import org.teavm.model.FieldReference;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
@@ -303,6 +304,10 @@ public abstract class BaseTypeInference<T> {
         return mapType(methodRef.getReturnType());
     }
 
+    protected T fieldType(FieldReference fieldRef, ValueType type) {
+        return mapType(type);
+    }
+
     protected T arrayUnwrapType(T type) {
         return type;
     }
@@ -446,7 +451,7 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(GetFieldInstruction insn) {
-            type(insn.getReceiver(), insn.getFieldType());
+            type(insn.getReceiver(), fieldType(insn.getField(), insn.getFieldType()));
         }
 
         @Override

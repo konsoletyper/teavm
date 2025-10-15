@@ -457,8 +457,8 @@ class JSClassProcessor {
     }
 
     private void processPutField(PutFieldInstruction insn, CallLocation callLocation) {
-        insn.setValue(convertValue(insn, insn.getValue(), insn.getFieldType()));
         if (!isJsField(insn.getField(), insn.getInstance() == null)) {
+            insn.setValue(convertValue(insn, insn.getValue(), insn.getFieldType()));
             return;
         }
 

@@ -16,11 +16,13 @@
 package org.teavm.jso.test;
 
 import static org.junit.Assert.assertEquals;
+import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.core.JSNumber;
 import org.teavm.junit.AttachJavaScript;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
@@ -89,6 +91,19 @@ public class ImportClassTest {
     public void fieldAccess() {
         var o = new ClassWithConstructor(23);
         assertEquals(23, o.foo);
+
+        o.javaObject = List.of("a", "b");
+        assertEquals(List.of("a", "b"), o.javaObject);
+
+        o.javaObject = o.foo;
+        assertEquals(23, o.javaObject);
+
+        var p = new ClassWithConstructor(24);
+        p.jsObject = JSNumber.valueOf(25);
+        assertEquals(JSNumber.valueOf(25), p.jsObject);
+
+        o.jsObject = p.jsObject;
+        assertEquals(JSNumber.valueOf(25), o.jsObject);
     }
 
     @JSBody(script = "return {};")

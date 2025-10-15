@@ -57,4 +57,7 @@ public class ClassWithConstructor implements JSObject {
 
     @JSProperty
     public static String staticProperty;
+
+    public Object javaObject;
+    public JSObject jsObject;
 }

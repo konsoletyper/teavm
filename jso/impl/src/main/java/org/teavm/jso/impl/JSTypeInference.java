@@ -17,6 +17,7 @@ package org.teavm.jso.impl;
 
 import org.teavm.jso.JSBody;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
@@ -90,11 +91,23 @@ class JSTypeInference extends BaseTypeInference<JSType> {
         return !wasmGC && isJsMethod(methodRef) ? JSType.MIXED : JSType.JAVA;
     }
 
+    @Override
+    protected JSType fieldType(FieldReference fieldRef, ValueType type) {
+        if (!type.isObject(Object.class)) {
+            return mapType(type);
+        }
+        return !wasmGC && isJsField(fieldRef) ? JSType.MIXED : JSType.JAVA;
+    }
+
     private boolean isJsMethod(MethodReference methodRef) {
         if (typeHelper.isJavaScriptClass(methodRef.getClassName())) {
             return true;
         }
         var method = classes.resolveImplementation(methodRef);
         return method != null && method.getAnnotations().get(JSBody.class.getName()) != null;
+    }
+
+    private boolean isJsField(FieldReference fieldRef) {
+        return typeHelper.isJavaScriptClass(fieldRef.getClassName());
     }
 }
