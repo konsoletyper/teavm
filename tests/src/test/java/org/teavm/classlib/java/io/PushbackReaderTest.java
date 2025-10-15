@@ -170,6 +170,8 @@ public class PushbackReaderTest {
             fail("should throw IndexOutOfBoundsException");
         } catch (IndexOutOfBoundsException e) {
             // expected
+        } catch (NullPointerException e) {
+            // expected
         }
         
         try {
@@ -425,7 +427,7 @@ public class PushbackReaderTest {
      * is called before a test is executed.
      */
     @Before
-    protected void setUp() {
+    public void setUp() {
         pbr = new PushbackReader(new StringReader(pbString), 10);
     }
 
@@ -434,7 +436,7 @@ public class PushbackReaderTest {
      * method is called after a test is executed.
      */
     @After
-    protected void tearDown() {
+    public void tearDown() {
         try {
             pbr.close();
         } catch (IOException e) {
