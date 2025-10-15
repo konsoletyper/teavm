@@ -89,7 +89,8 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
                     serviceMap.computeIfAbsent(className, k -> new ArrayList<>()).add(implementationType);
 
                     MethodReference ctor = new MethodReference(implementationType, INIT_METHOD);
-                    agent.linkMethod(ctor).addLocation(location).use();
+                    var depType = agent.getType(ValueType.object(implementationType));
+                    agent.linkMethod(ctor).propagate(0, depType).addLocation(location).use();
                     method.getResult().getArrayItem().propagate(agent.getType(ValueType.object(implementationType)));
                 }
             });
