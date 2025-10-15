@@ -418,7 +418,7 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
                 getFieldsOfInterfaces(cls, fieldList, new HashSet<>());
             } else {
                 while (cls != null) {
-                    for (TField field : getDeclaredFields()) {
+                    for (TField field : cls.getDeclaredFields()) {
                         if (Modifier.isPublic(field.getModifiers())) {
                             fieldList.add(field);
                         }
