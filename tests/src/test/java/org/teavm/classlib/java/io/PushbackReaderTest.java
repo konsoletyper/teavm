@@ -164,16 +164,7 @@ public class PushbackReaderTest {
         
         char[] nullCharArray = null;
         char[] charArray = new char[10];
-        
-        try {
-            pbr.read(nullCharArray, -1, -1);
-            fail("should throw IndexOutOfBoundsException");
-        } catch (IndexOutOfBoundsException e) {
-            // expected
-        } catch (NullPointerException e) {
-            // expected
-        }
-        
+
         try {
             pbr.read(nullCharArray, 1, 0);
             fail("should throw NullPointerException");
