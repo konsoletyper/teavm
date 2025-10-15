@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
@@ -142,6 +143,24 @@ public class FieldTest {
         assertEquals(23, instance.b);
     }
 
+    @Test
+    public void inheritedFieldsEnumerated() {
+
+        StringBuilder sb = new StringBuilder();
+        
+        Field[] fields = FieldInheritanceSub.class.getFields();
+        assertTrue(fields != null && fields.length == 2);
+
+        Arrays.sort(fields, (a, b) -> a.toString().compareTo(b.toString()));        
+        for (Field field : fields) 
+            sb.append(field.toString()).append(";");
+
+        String shouldBe = "public int org.teavm.classlib.java.lang.reflect.FieldTest$FieldInheritanceBase.base;"
+                + "public java.lang.String org.teavm.classlib.java.lang.reflect.FieldTest$FieldInheritanceSub.sub;";
+        assertTrue(shouldBe.equals(sb.toString()));
+    }
+
+
     static class ReflectableType {
         @Reflectable public int a;
         @Reflectable private boolean b;
@@ -183,5 +202,22 @@ public class FieldTest {
     static class SecondClassWithPrimitiveField {
         @Reflectable
         long b;
+    }
+
+     static class FieldInheritanceBase {
+        @Reflectable
+        public int base;
+        @Reflectable
+        int ignored;
+
+        static {}
+    }
+
+    static class FieldInheritanceSub extends FieldInheritanceBase {
+        @Reflectable
+        public String sub;
+
+        static {}
+
     }
 }
