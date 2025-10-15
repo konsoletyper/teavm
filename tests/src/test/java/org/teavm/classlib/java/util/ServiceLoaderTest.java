@@ -54,4 +54,10 @@ public class ServiceLoaderTest {
         }
         assertEquals("before;class init;log create;log run;service run;", LoadOrderServiceLog.content.toString());
     }
+
+    @Test
+    public void serviceInitInstanceType() {
+        var service = ServiceLoader.load(ServiceConstructor.class).iterator().next();
+        assertEquals("bar", service.foo());
+    }
 }
