@@ -16,9 +16,12 @@
 package org.teavm.classlib.java.lang.reflect;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -142,6 +145,23 @@ public class FieldTest {
         assertEquals(23, instance.b);
     }
 
+    @Test
+    public void inheritedFieldsEnumerated() {
+        var sb = new StringBuilder();
+        
+        var fields = FieldInheritanceSub.class.getFields();
+        assertNotNull(fields);
+        assertEquals(2, fields.length);
+
+        Arrays.sort(fields, Comparator.comparing(Field::toString));
+        for (var field : fields) {
+            sb.append(field.getDeclaringClass().getSimpleName()).append(".").append(field.getName()).append(";");
+        }
+
+        assertEquals("FieldInheritanceBase.base;FieldInheritanceSub.sub;", sb.toString());
+    }
+
+
     static class ReflectableType {
         @Reflectable public int a;
         @Reflectable private boolean b;
@@ -183,5 +203,17 @@ public class FieldTest {
     static class SecondClassWithPrimitiveField {
         @Reflectable
         long b;
+    }
+
+    static class FieldInheritanceBase {
+        @Reflectable
+        public int base;
+        @Reflectable
+        int ignored;
+    }
+
+    static class FieldInheritanceSub extends FieldInheritanceBase {
+        @Reflectable
+        public String sub;
     }
 }

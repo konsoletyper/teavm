@@ -232,6 +232,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                                 }
                             }
                             linkType(agent, field.getType());
+                            agent.linkField(field.getReference());
                         }
                     }
                 }
