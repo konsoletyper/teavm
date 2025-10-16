@@ -261,11 +261,17 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
         var oldStackTypes = stackTypes;
         var elseBlock = new WasmBlock(false);
         var thenBlock = new WasmBlock(false);
-        thenBlock.setType(expression.getType());
-        elseBlock.setType(expression.getType());
+
+        var outputTypes = new ArrayList<>(stackTypes);
+        if (expression.getType() != null) {
+            outputTypes.addAll(expression.getType().getOutputTypes());
+        }
+        thenBlock.setType(functionTypes.blockType(outputTypes));
+        elseBlock.setType(functionTypes.blockType(stackTypes));
+
         var br = new WasmBranch(expression.getCondition(), elseBlock);
         resultList.add(br);
-        stackTypes = new ArrayList<>();
+        stackTypes = new ArrayList<>(oldStackTypes);
         visitMany(expression.getElseBlock().getBody());
         elseBlock.getBody().addAll(resultList);
         resultList.clear();
@@ -273,7 +279,7 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
         if (!elseBlock.getBody().get(elseBlock.getBody().size() - 1).isTerminating()) {
             elseBlock.getBody().add(new WasmBreak(thenBlock));
         }
-        stackTypes = new ArrayList<>();
+        stackTypes = new ArrayList<>(oldStackTypes);
         visitMany(expression.getThenBlock().getBody());
         thenBlock.getBody().addAll(resultList);
         resultList.clear();
@@ -890,7 +896,11 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
         for (var i = 0; i <= last; ++i) {
             var arg = args.get(i);
             if (arg != null) {
-                arg.acceptVisitor(this);
+                if (collector.isSuspending(arg)) {
+                    arg.acceptVisitor(this);
+                } else {
+                    addExpr(arg);
+                }
                 ++depth;
             }
         }
