@@ -16,6 +16,7 @@
 package org.teavm.vm;
 
 import static org.junit.Assert.assertEquals;
+import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.interop.Async;
@@ -74,6 +75,16 @@ public class AsyncTest {
     @Test
     public void doublePrimitive() {
         assertEquals(2.5, returnSamePrimitive(2.5), 0.01);
+    }
+    
+    @Test
+    public void conditionalBranch() {
+        var list = List.of(1, 2);
+        var sb = new StringBuilder();
+        for (var o : list) {
+            sb.append(o.equals(1) ? getPrimitive() : 42).append(";");
+        }
+        assertEquals("23;42;", sb.toString());
     }
 
     @Async

@@ -261,8 +261,13 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
         var oldStackTypes = stackTypes;
         var elseBlock = new WasmBlock(false);
         var thenBlock = new WasmBlock(false);
-        thenBlock.setType(expression.getType());
-        elseBlock.setType(expression.getType());
+
+        var outputTypes = new ArrayList<>(stackTypes);
+        if (expression.getType() != null) {
+            outputTypes.addAll(expression.getType().getOutputTypes());
+        }
+        thenBlock.setType(functionTypes.blockType(outputTypes));
+
         var br = new WasmBranch(expression.getCondition(), elseBlock);
         resultList.add(br);
         stackTypes = new ArrayList<>();
@@ -890,7 +895,11 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
         for (var i = 0; i <= last; ++i) {
             var arg = args.get(i);
             if (arg != null) {
-                arg.acceptVisitor(this);
+                if (collector.isSuspending(arg)) {
+                    arg.acceptVisitor(this);
+                } else {
+                    addExpr(arg);
+                }
                 ++depth;
             }
         }
