@@ -86,6 +86,11 @@ public class AsyncTest {
         }
         assertEquals("23;42;", sb.toString());
     }
+    
+    @Test
+    public void passStringConstant() {
+        assertEquals("foo", returnSamePrimitive("foo"));
+    }
 
     @Async
     private native JSString getJsString();
@@ -105,6 +110,13 @@ public class AsyncTest {
     private native double returnSamePrimitive(double value);
 
     private void returnSamePrimitive(double value, AsyncCallback<Double> callback) {
+        Window.setTimeout(() -> callback.complete(value), 0);
+    }
+    
+    @Async
+    private native String returnSamePrimitive(String value);
+
+    private void returnSamePrimitive(String value, AsyncCallback<String> callback) {
         Window.setTimeout(() -> callback.complete(value), 0);
     }
 }
