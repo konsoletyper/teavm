@@ -40,6 +40,7 @@ public class FunctorTest {
     @Test
     public void functorPassed() {
         assertEquals("(5)", testMethod((a, b) -> a + b, 2, 3));
+        assertEquals("null", testMethod(null, 2, 3));
     }
 
     @Test
@@ -109,7 +110,7 @@ public class FunctorTest {
         assertEquals("(fromJava: foo): js", result);
     }
 
-    @JSBody(params = { "f", "a", "b" }, script = "return '(' + f(a, b) + ')';")
+    @JSBody(params = { "f", "a", "b" }, script = "return f != null ? '(' + f(a, b) + ')' : 'null';")
     private static native String testMethod(JSBiFunction f, int a, int b);
 
     @JSBody(params = { "f", "a", "b" }, script = "return '(' + f(a, b) + ')';")

@@ -502,6 +502,9 @@ function jsoImports(imports, context) {
             return instance[javaObjectSymbol];
         },
         asFunction(instance, propertyName) {
+            if (instance === null || instance === undefined) {
+                return null;
+            }
             let functions = instance[functionsSymbol];
             if (functions === null) {
                 functions = Object.create(null);

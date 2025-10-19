@@ -15,6 +15,9 @@
  */
 
 function jsFunction(self, method) {
+    if (self === null || self === undefined) {
+        return null;
+    }
     let name = 'jso$functor$' + method;
     let result = self[name];
     if (typeof result !== 'function') {
