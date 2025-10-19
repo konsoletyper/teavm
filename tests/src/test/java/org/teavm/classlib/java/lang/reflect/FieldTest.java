@@ -161,6 +161,14 @@ public class FieldTest {
         assertEquals("FieldInheritanceBase.base;FieldInheritanceSub.sub;", sb.toString());
     }
 
+    @Test
+    public void getSetStaticFieldWithoutInitializer() throws Exception {
+        var field = ClassWithoutInitializerWithStaticField.class.getDeclaredField("foo");
+        ClassWithoutInitializerWithStaticField.foo = "q";
+        assertEquals("q", field.get(null));
+        field.set(null, "w");
+        assertEquals("w", ClassWithoutInitializerWithStaticField.foo);
+    }
 
     static class ReflectableType {
         @Reflectable public int a;
@@ -215,5 +223,10 @@ public class FieldTest {
     static class FieldInheritanceSub extends FieldInheritanceBase {
         @Reflectable
         public String sub;
+    }
+
+    static class ClassWithoutInitializerWithStaticField {
+        @Reflectable
+        public static String foo;
     }
 }

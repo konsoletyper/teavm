@@ -158,6 +158,12 @@ public class MethodTest {
         }
         assertEquals("g:23", sb.toString());
     }
+    
+    @Test
+    public void invokeStaticMethodWithoutInitializer() throws Exception {
+        var method = ClassWithoutInitializerWithStaticMethod.class.getDeclaredMethod("foo");
+        assertEquals("result:foo", method.invoke(null));
+    }
 
     private void callMethods() {
         new Foo().bar(null);
@@ -314,6 +320,13 @@ public class MethodTest {
         @Reflectable
         public String g(short x) {
             return "g:" + x;
+        }
+    }
+    
+    static class ClassWithoutInitializerWithStaticMethod {
+        @Reflectable
+        public static String foo() {
+            return "result:foo";
         }
     }
 }

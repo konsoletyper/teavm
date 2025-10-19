@@ -41,6 +41,7 @@ import org.teavm.model.ValueType;
 public class ClassGenerator implements Generator, Injector, DependencyPlugin {
     private static final FieldReference platformClassField =
             new FieldReference(Class.class.getName(), "platformClass");
+    private static final MethodDescriptor CLINIT = new MethodDescriptor("<clinit>", void.class);
 
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
@@ -316,7 +317,9 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
     }
 
     private void initClass(GeneratorContext context, SourceWriter writer, MemberReader member) {
-        if (member.hasModifier(ElementModifier.STATIC) && context.isDynamicInitializer(member.getOwnerName())) {
+        var cls = context.getClassSource().get(member.getOwnerName());
+        if (member.hasModifier(ElementModifier.STATIC) && context.isDynamicInitializer(member.getOwnerName())
+                && cls.getMethod(CLINIT) != null) {
             writer.appendClassInit(member.getOwnerName()).append("();").softNewLine();
         }
     }
