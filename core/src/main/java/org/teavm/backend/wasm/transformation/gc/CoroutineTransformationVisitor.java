@@ -470,9 +470,11 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
                 arg.acceptVisitor(this);
             } else {
                 resultList.add(arg);
+                stackTypes.add(type);
             }
             arguments.set(i, new WasmPop(type));
         }
+        stackTypes.subList(stackTypes.size() - argTypes.size(), stackTypes.size()).clear();
         stackTypes.addAll(argTypes);
         argsSetter.accept(expression, arguments);
 

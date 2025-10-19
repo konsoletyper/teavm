@@ -16,7 +16,10 @@
 package org.teavm.vm;
 
 import static org.junit.Assert.assertEquals;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.interop.Async;
@@ -90,6 +93,41 @@ public class AsyncTest {
     @Test
     public void passStringConstant() {
         assertEquals("foo", returnSamePrimitive("foo"));
+    }
+
+    @Test
+    public void collectionAddAll() {
+        var list = new ArrayList<>() {
+            @Override
+            public boolean add(Object o) {
+                returnSamePrimitive("ignore");
+                return super.add(o);
+            }
+        };
+        var toAdd = new ArrayList<String>() {
+            @NotNull
+            @Override
+            public Iterator<String> iterator() {
+                var underlying = super.iterator();
+                return new Iterator<>() {
+                    @Override
+                    public boolean hasNext() {
+                        returnSamePrimitive("ignore");
+                        return underlying.hasNext();
+                    }
+
+                    @Override
+                    public String next() {
+                        returnSamePrimitive("ignore");
+                        return underlying.next();
+                    }
+                };
+            }
+        };
+        toAdd.add("q");
+        toAdd.add("w");
+        list.addAll(toAdd);
+        assertEquals(List.of("q", "w"), list);
     }
 
     @Async

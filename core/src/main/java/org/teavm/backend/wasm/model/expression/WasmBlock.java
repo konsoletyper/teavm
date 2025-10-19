@@ -98,5 +98,26 @@ public class WasmBlock extends WasmExpression {
                 found = true;
             }
         }
+
+        @Override
+        public void visit(WasmBranch expression) {
+            if (expression.getTarget() == target) {
+                found = true;
+            }
+        }
+
+        @Override
+        public void visit(WasmNullBranch expression) {
+            if (expression.getTarget() == target) {
+                found = true;
+            }
+        }
+
+        @Override
+        public void visit(WasmCastBranch expression) {
+            if (expression.getTarget() == target) {
+                found = true;
+            }
+        }
     }
 }
