@@ -247,7 +247,7 @@ public class Decompiler {
                     TryCatchStatement tryCatchStmt = new TryCatchStatement();
                     tryCatchStmt.setExceptionType(bookmark.exceptionType);
                     tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
-                    Statement handlerStatement = generator.generateJumpStatement(block,
+                    Statement handlerStatement = generator.generateJumpStatement(oldBlock,
                             program.basicBlockAt(bookmark.exceptionHandler));
                     if (handlerStatement != null) {
                         tryCatchStmt.getHandler().add(handlerStatement);

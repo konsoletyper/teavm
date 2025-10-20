@@ -136,6 +136,20 @@ public class VMTest {
     }
 
     @Test
+    public void breakLoopFromCatch() {
+        var caught = false;
+        while (true) {
+            try {
+                "".charAt(-1);
+            } catch (IndexOutOfBoundsException e) {
+                caught = true;
+                break;
+            }
+        }
+        assertTrue(caught);
+    }
+
+    @Test
     @SkipPlatform(TestPlatform.WEBASSEMBLY)
     public void setsVariableBeforeTryCatch() {
         int a = 23;
