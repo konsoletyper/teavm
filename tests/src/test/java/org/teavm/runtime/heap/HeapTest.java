@@ -119,12 +119,15 @@ public class HeapTest {
         var size = Heap.getCurrentSize() - 8;
         var a = Heap.alloc(size);
         dump();
+        check();
         assertEquals(8, a.diff(Heap.getStart()));
         assertEquals(initialSize, Heap.getCurrentSize());
 
         var b = Heap.alloc(256);
+        dump();
         assertEquals(16 + size, b.diff(Heap.getStart()));
         assertTrue(initialSize < Heap.getCurrentSize());
+        check();
     }
 
     @Test
@@ -156,10 +159,14 @@ public class HeapTest {
     public void randomAlloc() {
         var list = new ArrayList<Integer>();
         var random = new Random();
-        for (var i = 0; i < 1000; ++i) {
-            if (random.nextBoolean()) {
-                var size = random.nextInt(2048);
+        for (var i = 0; i < 10000; ++i) {
+            if (random.nextInt(100) > 40) {
+                var size = random.nextInt(1024 * 32);
                 var addr = Heap.alloc(size).toInt();
+                if (addr == 0) {
+                    System.out.println("Could not allocate chunk of " + size + " bytes");
+                    continue;
+                }
                 list.add(addr);
                 System.out.println("Allocated " + size + " at " + (addr - Heap.getStart().toInt()));
                 dump();

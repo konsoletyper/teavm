@@ -75,8 +75,8 @@ public final class Heap {
         bytes = Math.max(bytes, Structure.sizeOf(HeapNode.class) - Structure.sizeOf(HeapRecord.class));
         var result = tryAlloc(bytes);
         if (result == null) {
-            var last = lastFreeRecord();
-            var amountToGrow = bytes - (last != null ? HeapRecord.size(last) : 0);
+            var last = lastRecord();
+            var amountToGrow = bytes - (!HeapRecord.isAllocated(last) ? HeapRecord.size(last) : 0);
             if (amountToGrow > 0 && tryExtend(amountToGrow, last)) {
                 result = tryAlloc(bytes);
             }
@@ -93,13 +93,14 @@ public final class Heap {
             return false;
         }
         currentSize += grownBytes;
-        if (last != null) {
+        if (!HeapRecord.isAllocated(last)) {
             delete(last);
             last.size += grownBytes;
             insert(last);
         } else {
             var newEmpty = (HeapNode) end.toStructure();
             newEmpty.size = grownBytes - Structure.sizeOf(HeapRecord.class);
+            newEmpty.previousSize = HeapRecord.size(last);
             insert(newEmpty);
         }
         end = start.add(currentSize);
@@ -107,12 +108,12 @@ public final class Heap {
         return grownBytes >= bytes;
     }
 
-    private static HeapNode lastFreeRecord() {
+    private static HeapNode lastRecord() {
         HeapRecord record = start.toStructure();
         HeapRecord result = null;
         while (record.toAddress() != end) {
             var size = HeapRecord.size(record);
-            result = HeapRecord.isAllocated(record) ? Address.fromInt(0).toStructure() : record;
+            result = record;
             record = record.toAddress().add(Structure.sizeOf(HeapRecord.class) + size).toStructure();
         }
         return (HeapNode) result;
