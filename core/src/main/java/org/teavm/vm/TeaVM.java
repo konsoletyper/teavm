@@ -622,10 +622,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return cutClasses;
         }
 
-        if (wasCancelled()) {
-            return cutClasses;
-        }
-
         for (String className : dependency.getReachableClasses()) {
             ClassReader clsReader = dependency.getClassSource().get(className);
             if (clsReader != null) {
