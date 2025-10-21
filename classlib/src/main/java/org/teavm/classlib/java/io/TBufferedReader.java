@@ -67,13 +67,19 @@ public class TBufferedReader extends TReader {
         if (index == count && eof) {
             return -1;
         }
+        if (len == 0) {
+            return 0;
+        }
         int charsRead = 0;
-        while (charsRead < len) {
+        while (true) {
             int n = TMath.min(count - index, len - charsRead);
             System.arraycopy(buffer, index, cbuf, off, n);
             off += n;
             index += n;
             charsRead += n;
+            if (charsRead == len) {
+                break;
+            }
             if (charsRead > 0 && !innerReader.ready() || !fillBuffer(0, len - charsRead)) {
                 break;
             }

@@ -125,6 +125,17 @@ public class BufferedReaderTest {
         assertEquals(5, reader.read(buffer));
         assertArrayEquals("PABCD".toCharArray(), Arrays.copyOf(buffer, 5));
     }
+    
+    @Test
+    public void markIsNotDiscarded() throws IOException {
+        var br = new BufferedReader(new StringReader("start" + "test".repeat(17)), 64);
+        br.mark(64);
+        br.read(new char[64]);
+        br.reset();
+        var chars = new char[10];
+        br.read(chars);
+        assertEquals("starttestt", new String(chars));
+    }
 
     private static class TestReader extends Reader {
         int reads;
