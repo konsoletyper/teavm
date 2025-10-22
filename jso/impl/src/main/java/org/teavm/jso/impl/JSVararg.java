@@ -22,5 +22,5 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)
-@interface JSVararg {
+public @interface JSVararg {
 }

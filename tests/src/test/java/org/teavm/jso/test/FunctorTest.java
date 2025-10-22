@@ -109,6 +109,19 @@ public class FunctorTest {
         var result = acceptJavaClass(obj -> "(" + obj.getFoo() + ")", new JavaClassWithExportedMembers());
         assertEquals("(fromJava: foo): js", result);
     }
+    
+    @Test
+    public void varargs() {
+        var result = acceptVarargs((first, remaining) -> {
+            var sb = new StringBuilder();
+            sb.append(first).append("|");
+            for (var rem : remaining) {
+                sb.append(rem).append(";");
+            }
+            return sb.toString();
+        });
+        assertEquals("called:23|foo;bar;", result);
+    }
 
     @JSBody(params = { "f", "a", "b" }, script = "return f != null ? '(' + f(a, b) + ')' : 'null';")
     private static native String testMethod(JSBiFunction f, int a, int b);
@@ -197,6 +210,9 @@ public class FunctorTest {
     @JSBody(params = { "functor", "obj" }, script = "return functor(obj) + ': js';")
     private static native String acceptJavaClass(FunctorTakingJavaClass functor, Object obj);
 
+    @JSBody(params = "functor", script = "return 'called:' + functor(23, 'foo', 'bar');")
+    private static native String acceptVarargs(FunctorWithVarargs functor);
+
     @JSFunctor
     interface FunctorTakingJavaClass extends JSObject {
         String accept(JavaClassWithExportedMembers obj);
@@ -208,5 +224,10 @@ public class FunctorTest {
         String getFoo() {
             return "fromJava: foo";
         }
+    }
+    
+    @JSFunctor
+    interface FunctorWithVarargs extends JSObject {
+        String accept(int first, String... remaining);
     }
 }

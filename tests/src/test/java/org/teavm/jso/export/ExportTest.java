@@ -112,33 +112,29 @@ public class ExportTest {
 
     @Test
     public void varargs() {
-        testExport("varargs", ModuleWithVararg.class, true);
+        testExport("varargs", ModuleWithVararg.class);
     }
 
     @Test
     public void exportClassWithConstructorOnly() {
-        testExport("exportClassWithConstructorOnly", ModuleWithExportedClassWithConstructorOnly.class, true);
+        testExport("exportClassWithConstructorOnly", ModuleWithExportedClassWithConstructorOnly.class);
     }
 
     @Test
     public void exportedClassInitializesModule() {
-        testExport("exportedClassInitializesModule", ModuleWithExportedClasses.class, true);
+        testExport("exportedClassInitializesModule", ModuleWithExportedClasses.class);
     }
 
     @Test
     public void exportedClassInheritance() {
         testExport("exportClassInheritance", ModuleWithClassInheritance.class);
     }
-
+    
     private void testExport(String name, Class<?> moduleClass) {
-        testExport(name, moduleClass, false);
-    }
-
-    private void testExport(String name, Class<?> moduleClass, boolean skipWasmGC) {
         if (jsNeeded) {
             testExportJs(name, moduleClass);
         }
-        if (wasmGCNeeded && !skipWasmGC) {
+        if (wasmGCNeeded) {
             testExportWasmGC(name, moduleClass);
         }
     }

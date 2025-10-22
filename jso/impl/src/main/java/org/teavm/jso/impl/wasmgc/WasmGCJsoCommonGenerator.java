@@ -38,6 +38,7 @@ import org.teavm.backend.wasm.model.expression.WasmExternConversionType;
 import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
+import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
@@ -47,7 +48,9 @@ import org.teavm.jso.impl.JSBodyAstEmitter;
 import org.teavm.jso.impl.JSBodyBloatedEmitter;
 import org.teavm.jso.impl.JSBodyEmitter;
 import org.teavm.jso.impl.JSMarshallable;
+import org.teavm.jso.impl.JSVararg;
 import org.teavm.model.ClassReader;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -315,11 +318,12 @@ class WasmGCJsoCommonGenerator {
                 continue;
             }
             var fn = context.functions().forStaticMethod(aliasEntry.getValue());
+            var methodReader = context.classes().getMethod(aliasEntry.getValue());
             fn.setReferenced(true);
             var methodName = context.strings().getStringConstant(aliasEntry.getKey());
             var jsMethodName = stringToJs(context, new WasmGetGlobal(methodName.global));
             var defineMethod = new WasmCall(defineMethodFunction(context), new WasmGetGlobal(global),
-                    jsMethodName, new WasmFunctionReference(fn));
+                    jsMethodName, new WasmFunctionReference(fn), varargValue(methodReader));
             expressions.add(defineMethod);
         }
     }
@@ -357,6 +361,7 @@ class WasmGCJsoCommonGenerator {
             }
             var fn = context.functions().forStaticMethod(aliasEntry.getValue());
             fn.setReferenced(true);
+            var methodReader = context.classes().getMethod(aliasEntry.getValue());
             if (isModule) {
                 var globalName = context.names().topLevel("teavm.js.export.function@" + aliasEntry.getKey());
                 var functionGlobal = new WasmGlobal(globalName, WasmType.Reference.EXTERN,
@@ -364,15 +369,20 @@ class WasmGCJsoCommonGenerator {
                 functionGlobal.setExportName(aliasEntry.getKey());
                 context.module().globals.add(functionGlobal);
                 fn.setReferenced(true);
-                var exportedFn = new WasmCall(defineFunctionFunction(context), new WasmFunctionReference(fn));
+                var exportedFn = new WasmCall(defineFunctionFunction(context), new WasmFunctionReference(fn),
+                        varargValue(methodReader));
                 expressions.add(new WasmSetGlobal(functionGlobal, exportedFn));
             }
             var methodName = context.strings().getStringConstant(aliasEntry.getKey());
             var jsMethodName = stringToJs(context, new WasmGetGlobal(methodName.global));
             var defineMethod = new WasmCall(defineStaticMethodFunction(context), new WasmGetGlobal(global),
-                    jsMethodName, new WasmFunctionReference(fn));
+                    jsMethodName, new WasmFunctionReference(fn), varargValue(methodReader));
             expressions.add(defineMethod);
         }
+    }
+
+    private WasmExpression varargValue(MethodReader methodReader) {
+        return new WasmInt32Constant(methodReader.getAnnotations().get(JSVararg.class.getName()) != null ? 1 : 0);
     }
 
     private void defineStaticProperties(WasmGCJsoContext context, AliasCollector.Members members, ClassReader cls,
@@ -444,7 +454,7 @@ class WasmGCJsoCommonGenerator {
     private WasmFunction defineFunctionFunction(WasmGCJsoContext context) {
         if (defineFunctionFunction == null) {
             defineFunctionFunction = new WasmFunction(context.functionTypes().of(WasmType.Reference.EXTERN,
-                    WasmType.Reference.FUNC));
+                    WasmType.Reference.FUNC, WasmType.INT32));
             defineFunctionFunction.setName(context.names().suggestForClass("teavm.jso@defineFunction"));
             defineFunctionFunction.setImportName("defineFunction");
             defineFunctionFunction.setImportModule("teavmJso");
@@ -456,7 +466,8 @@ class WasmGCJsoCommonGenerator {
     private WasmFunction defineMethodFunction(WasmGCJsoContext context) {
         if (defineMethodFunction == null) {
             defineMethodFunction = new WasmFunction(context.functionTypes().of(null,
-                    WasmType.Reference.EXTERN, WasmType.Reference.EXTERN, WasmType.Reference.FUNC));
+                    WasmType.Reference.EXTERN, WasmType.Reference.EXTERN, WasmType.Reference.FUNC,
+                    WasmType.INT32));
             defineMethodFunction.setName(context.names().suggestForClass("teavm.jso@defineMethod"));
             defineMethodFunction.setImportName("defineMethod");
             defineMethodFunction.setImportModule("teavmJso");
@@ -468,7 +479,8 @@ class WasmGCJsoCommonGenerator {
     private WasmFunction defineStaticMethodFunction(WasmGCJsoContext context) {
         if (defineStaticMethodFunction == null) {
             defineStaticMethodFunction = new WasmFunction(context.functionTypes().of(null,
-                    WasmType.Reference.EXTERN, WasmType.Reference.EXTERN, WasmType.Reference.FUNC));
+                    WasmType.Reference.EXTERN, WasmType.Reference.EXTERN, WasmType.Reference.FUNC,
+                    WasmType.INT32));
             defineStaticMethodFunction.setName(context.names().suggestForClass("teavm.jso@defineStaticMethod"));
             defineStaticMethodFunction.setImportName("defineStaticMethod");
             defineStaticMethodFunction.setImportModule("teavmJso");

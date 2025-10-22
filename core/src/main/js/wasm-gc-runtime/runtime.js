@@ -342,16 +342,23 @@ function jsoImports(imports, context) {
             rethrowJsAsJava(e);
         }
     }
-    function defineFunction(fn) {
+    function defineFunction(fn, vararg) {
         let params = [];
+        let paramsForString = [];
         for (let i = 0; i < fn.length; ++i) {
-            params.push("p" + i);
+            let name = "p" + i;
+            params.push(name);
+            paramsForString.push(name);
         }
-        let paramsAsString = params.length === 0 ? "" : params.join(", ");
+        if (vararg) {
+            let last = paramsForString.length - 1;
+            paramsForString[last] = "..." + paramsForString[last];
+        }
+        let paramsAsString = paramsForString.join(", ");
         return new Function("rethrowJavaAsJs", "fn",
             `return function(${paramsAsString}) {\n` +
             `    try {\n` +
-            `        return fn(${paramsAsString});\n` +
+            `        return fn(${params.join(', ')});\n` +
             `    } catch (e) {\n` +
             `        rethrowJavaAsJs(e);\n` +
             `    }\n` +
@@ -421,12 +428,19 @@ function jsoImports(imports, context) {
         exportClass(cls) {
             return cls[wrapperCallMarkerSymbol];
         },
-        defineMethod(cls, name, fn) {
+        defineMethod(cls, name, fn, vararg) {
             let params = [];
+            let paramsForString = [];
             for (let i = 1; i < fn.length; ++i) {
-                params.push("p" + i);
+                let name = "p" + i;
+                params.push(name);
+                paramsForString.push(name);
             }
-            let paramsAsString = params.length === 0 ? "" : params.join(", ");
+            if (vararg) {
+                let last = paramsForString.length - 1;
+                paramsForString[last] = "..." + paramsForString[last];
+            }
+            let paramsAsString = paramsForString.join(", ");
             cls.prototype[name] = new Function("rethrowJavaAsJs", "fn",
                 `return function(${paramsAsString}) {\n` +
                 `    try {\n` +
@@ -437,8 +451,8 @@ function jsoImports(imports, context) {
                 `};`
             )(rethrowJavaAsJs, fn);
         },
-        defineStaticMethod(cls, name, fn) {
-            cls[name] = defineFunction(fn);
+        defineStaticMethod(cls, name, fn, vararg) {
+            cls[name] = defineFunction(fn, vararg);
         },
         defineFunction: defineFunction,
         defineProperty(cls, name, getFn, setFn) {

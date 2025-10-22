@@ -160,7 +160,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
 
             var isConstructor = entry.getKey().getName().equals("<init>");
             var paramCount = method.parameterCount();
-            if (export.vararg) {
+            if (export.vararg && !wasmGC) {
                 --paramCount;
             }
             if (isConstructor) {
@@ -193,11 +193,14 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
                 variablesToPass[i] = program.createVariable();
             }
             if (export.vararg) {
-                transformVarargParam(variablesToPass, program, marshallInstructions, exportedMethod, 1);
+                if (!wasmGC) {
+                    transformVarargParam(variablesToPass, program, marshallInstructions, 1);
+                }
+                exportedMethod.getAnnotations().add(new AnnotationHolder(JSVararg.class.getName()));
             }
 
             for (int i = 0; i < method.parameterCount(); ++i) {
-                var byRef = i == method.parameterCount() - 1 && export.vararg
+                var byRef = i == method.parameterCount() - 1 && export.vararg && !wasmGC
                         && typeHelper.isSupportedByRefType(method.parameterType(i));
                 variablesToPass[i] = marshaller.unwrapReturnValue(callLocation, variablesToPass[i],
                         method.parameterType(i), byRef, true);
@@ -280,7 +283,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
 
             var paramCount = method.parameterCount();
             var vararg = method.hasModifier(ElementModifier.VARARGS);
-            if (vararg) {
+            if (vararg && !wasmGC) {
                 --paramCount;
             }
             var callLocation = new CallLocation(method.getReference());
@@ -313,11 +316,14 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
                 variablesToPass[i] = program.createVariable();
             }
             if (vararg) {
-                transformVarargParam(variablesToPass, program, marshallInstructions, exportedMethod, 0);
+                if (!wasmGC) {
+                    transformVarargParam(variablesToPass, program, marshallInstructions, 0);
+                }
+                exportedMethod.getAnnotations().add(new AnnotationHolder(JSVararg.class.getName()));
             }
 
             for (int i = 0; i < method.parameterCount(); ++i) {
-                var byRef = i == method.parameterCount() - 1 && vararg
+                var byRef = i == method.parameterCount() - 1 && vararg && !wasmGC
                         && typeHelper.isSupportedByRefType(method.parameterType(i));
                 variablesToPass[i] = marshaller.unwrapReturnValue(callLocation, variablesToPass[i],
                         method.parameterType(i), byRef, true);
@@ -351,7 +357,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     }
 
     private void transformVarargParam(Variable[] variablesToPass, Program program,
-            List<Instruction> instructions, MethodHolder method, int additionalSkip) {
+            List<Instruction> instructions, int additionalSkip) {
         var last = variablesToPass.length - 1;
 
         var lastConstant = new IntegerConstantInstruction();
@@ -365,8 +371,6 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         extractVarargs.setArguments(lastConstant.getReceiver());
         extractVarargs.setReceiver(variablesToPass[last]);
         instructions.add(extractVarargs);
-
-        method.getAnnotations().add(new AnnotationHolder(JSVararg.class.getName()));
     }
 
     private AnnotationHolder createExportAnnotation(MethodExport export) {
