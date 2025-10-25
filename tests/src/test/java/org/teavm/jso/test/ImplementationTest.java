@@ -49,6 +49,26 @@ public class ImplementationTest {
         wrongInlineCandidate(instance.foo());
         assertEquals(1, instance.counter);
     }
+    
+    @Test
+    public void passClassImpl() {
+        var o = new JsItfImpl();
+        assertEquals("foo", callFoo(o));
+    }
+    
+    interface JsItf extends JSObject {
+        String foo();
+    }
+    
+    static class JsItfImpl implements JsItf {
+        @Override
+        public String foo() {
+            return "foo";
+        }
+    }
+    
+    @JSBody(params = "o", script = "return o.foo();")
+    private static native String callFoo(JsItfImpl o);
 
     @JSBody(params = "a", script = "console.log(a, a);")
     private static native void wrongInlineCandidate(JSObject a);

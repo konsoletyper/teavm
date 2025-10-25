@@ -260,8 +260,7 @@ public class ConversionTest {
         assertEquals(24, mutate(array));
         assertEquals(23, array[0]);
     }
-
-
+    
     @Test
     public void passBuffer() {
         var buffer = ByteBuffer.allocateDirect(8)

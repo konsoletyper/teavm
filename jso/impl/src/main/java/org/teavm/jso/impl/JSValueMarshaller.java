@@ -155,7 +155,7 @@ class JSValueMarshaller {
                 if (hierarchy.isSuperType("java.nio.Buffer", className, false)) {
                     return wrapBuffer(var, className, bufferType, location);
                 }
-                if (!typeHelper.isJavaScriptClass(className) && !typeHelper.isJavaScriptImplementation(className)) {
+                if (!typeHelper.isJavaScriptClass(className)) {
                     var unwrapNative = new InvokeInstruction();
                     unwrapNative.setLocation(location);
                     unwrapNative.setType(InvocationType.SPECIAL);
