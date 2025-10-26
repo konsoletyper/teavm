@@ -131,7 +131,7 @@ public class JSPromise<T> implements JSObject {
                     return;
                 }
                 resolve.accept(JSUndefined.instance());
-            });
+            }).start();
         });
     }
 
@@ -146,7 +146,7 @@ public class JSPromise<T> implements JSObject {
                     return;
                 }
                 resolve.accept(result);
-            });
+            }).start();
         });
     }
 }
