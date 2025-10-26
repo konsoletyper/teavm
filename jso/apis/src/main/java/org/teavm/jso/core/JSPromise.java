@@ -15,9 +15,11 @@
  */
 package org.teavm.jso.core;
 
+import java.util.concurrent.Callable;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSClass;
+import org.teavm.jso.JSExceptions;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
@@ -104,7 +106,7 @@ public class JSPromise<T> implements JSObject {
     @JSMethod("finally")
     public native JSPromise<T> onSettled(JSSupplier<Object> onFinally);
 
-    /** Interface for the return values of {@link #allSettled(JsArrayReader)}. */
+    /** Interface for the return values of {@link #allSettled(JSArrayReader)}. */
     public interface FulfillmentValue<T> extends JSObject {
         @JSProperty
         @NoSideEffects
@@ -117,5 +119,34 @@ public class JSPromise<T> implements JSObject {
         @JSProperty
         @NoSideEffects
         Object getReason();
+    }
+
+    public static JSPromise<JSUndefined> runAsync(Runnable runnable) {
+        return new JSPromise<>((resolve, reject) -> {
+            new Thread(() -> {
+                try {
+                    runnable.run();
+                } catch (Throwable e) {
+                    reject.accept(JSExceptions.getJSException(e));
+                    return;
+                }
+                resolve.accept(JSUndefined.instance());
+            });
+        });
+    }
+
+    public static <T> JSPromise<T> callAsync(Callable<T> callable) {
+        return new JSPromise<>((resolve, reject) -> {
+            new Thread(() -> {
+                T result;
+                try {
+                    result = callable.call();
+                } catch (Throwable e) {
+                    reject.accept(JSExceptions.getJSException(e));
+                    return;
+                }
+                resolve.accept(result);
+            });
+        });
     }
 }
