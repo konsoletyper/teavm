@@ -149,4 +149,8 @@ public class JSPromise<T> implements JSObject {
             }).start();
         });
     }
+
+    public final T await() {
+        return JSPromiseHelper.await(this);
+    }
 }

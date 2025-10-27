@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.browser.Window;
+import org.teavm.jso.core.JSPromise;
 import org.teavm.jso.core.JSString;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
@@ -128,6 +129,14 @@ public class AsyncTest {
         toAdd.add("w");
         list.addAll(toAdd);
         assertEquals(List.of("q", "w"), list);
+    }
+    
+    @Test
+    public void awaitPromise() {
+        var promise = new JSPromise<String>((resolve, _) -> {
+            Window.setTimeout(() -> resolve.accept("ok"), 1);
+        });
+        assertEquals("ok", promise.await());
     }
 
     @Async
