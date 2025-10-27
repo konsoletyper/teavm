@@ -335,7 +335,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
             removeStringEntryFunction.setExportName("teavm.reportGarbageCollectedString");
         }
 
-        var exceptionMessageRef = new MethodReference(Throwable.class, "getMessage", Throwable.class);
+        var exceptionMessageRef = new MethodReference(Throwable.class, "getMessage", String.class);
         if (controller.getDependencyInfo().getMethod(exceptionMessageRef) != null) {
             var exceptionMessageFunction = declarationsGenerator.functions().forInstanceMethod(exceptionMessageRef);
             exceptionMessageFunction.setExportName("teavm.exceptionMessage");

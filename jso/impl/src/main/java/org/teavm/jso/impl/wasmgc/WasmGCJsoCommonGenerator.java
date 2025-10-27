@@ -176,7 +176,11 @@ class WasmGCJsoCommonGenerator {
     }
 
     private WasmFunction stringToJsFunction(WasmGCJsoContext context) {
-        return context.functions().forStaticMethod(STRING_TO_JS);
+        var fun = context.functions().forStaticMethod(STRING_TO_JS);
+        if (fun.getExportName() == null) {
+            fun.setExportName("teavm.stringToJs");
+        }
+        return fun;
     }
 
     WasmExpression stringToJs(WasmGCJsoContext context, WasmExpression str) {

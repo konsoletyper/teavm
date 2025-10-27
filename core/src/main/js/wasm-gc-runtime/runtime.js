@@ -67,10 +67,11 @@ class JavaError extends Error {
     }
     get message() {
         let exceptionMessage = this.#context.exports["teavm.exceptionMessage"];
-        if (typeof exceptionMessage === "function") {
+        let stringToJs = this.#context.exports["teavm.stringToJs"];
+        if (typeof exceptionMessage === "function" && typeof stringToJs === "function") {
             let message = exceptionMessage(this[javaExceptionSymbol]);
             if (message != null) {
-                return message;
+                return stringToJs(message);
             }
         }
         return "(could not fetch message)";
@@ -207,6 +208,14 @@ function coreImports(imports, context, options, module) {
         },
         linearMemory() {
             return context.exports["teavm.memory"].buffer;
+        }
+    };
+    imports.teavmTrace = {
+        suspend() {
+            console.trace("suspend");
+        },
+        resume() {
+            console.trace("resume");
         }
     };
     if (module && hasImportedMemory(module)) {

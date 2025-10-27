@@ -117,6 +117,8 @@ public class WasmGCDependencies {
                 void.class)).use();
         analyzer.linkMethod(new MethodReference(WasmGCSupport.class, "defaultClone", Object.class, Object.class)).use();
         analyzer.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class)).use();
+        analyzer.linkMethod(new MethodReference(Throwable.class, "getMessage", String.class))
+                .propagate(0, Throwable.class).use();
 
         analyzer.addDependencyListener(new AbstractDependencyListener() {
             @Override
