@@ -72,6 +72,7 @@ public class SwitchTest {
             case A, B -> 1;
             case TestEnum e when e.ordinal() % 3 == 0 -> 3;
             case C, D, E, F -> 2;
+            case null -> 4;
         };
     }
 
@@ -81,6 +82,7 @@ public class SwitchTest {
         assertEquals(2, enumSwitchWithLogic(TestEnum.C));
         assertEquals(3, enumSwitchWithLogic(TestEnum.D));
         assertEquals(2, enumSwitchWithLogic(TestEnum.F));
+        assertEquals(4, enumSwitchWithLogic(null));
     }
 
     private static int integerSwitchWithLogic(Integer o) {
@@ -143,6 +145,7 @@ public class SwitchTest {
             case SubclassA a -> 2;
             case Superclass s when s.x == 24 -> 3;
             case SubclassB b -> 4;
+            case null -> 6;
             default -> 5;
         };
     }
@@ -158,6 +161,26 @@ public class SwitchTest {
         assertEquals(5, switchWithHierarchy("foo"));
         assertEquals(5, switchWithHierarchy(new Superclass(1)));
         assertEquals(1, switchWithHierarchy(new Superclass(23)));
+        assertEquals(6, switchWithHierarchy(null));
+    }
+
+    private static int switchWithSealedInterface(SuperInterface i) {
+        return switch (i) {
+            case SubEnum.X -> 13;
+            case SubEnum.Y -> 88;
+            case SubRecord r when r.n == 33 -> 66;
+            case SubRecord r -> r.n;
+            case null -> 99;
+        };
+    }
+
+    @Test
+    public void sealedInterfaceSwitch() {
+        assertEquals(13, switchWithSealedInterface(SubEnum.X));
+        assertEquals(88, switchWithSealedInterface(SubEnum.Y));
+        assertEquals(42, switchWithSealedInterface(new SubRecord(42)));
+        assertEquals(66, switchWithSealedInterface(new SubRecord(33)));
+        assertEquals(99, switchWithSealedInterface(null));
     }
 
     private static class A {
@@ -202,4 +225,10 @@ public class SwitchTest {
             super(x);
         }
     }
+
+    private sealed interface SuperInterface permits SubEnum, SubRecord { }
+
+    private enum SubEnum implements SuperInterface { X, Y }
+
+    private record SubRecord(int n) implements SuperInterface { }
 }
