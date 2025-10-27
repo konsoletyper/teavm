@@ -39,9 +39,11 @@ public interface CanvasRenderingContext2D extends JSObject {
 
     void clearRect(double x, double y, double width, double height);
 
-    void ellipse(double x, double y, double radiusX, double radiusY, double rotation, double startAngle, double endAngle);
+    void ellipse(double x, double y, double radiusX, double radiusY, double rotation, 
+            double startAngle, double endAngle);
 
-    void ellipse(double x, double y, double radiusX, double radiusY, double rotation, double startAngle, double endAngle, double counterclockwise);
+    void ellipse(double x, double y, double radiusX, double radiusY, double rotation, 
+            double startAngle, double endAngle, double counterclockwise);
 
     void moveTo(double x, double y);
 
