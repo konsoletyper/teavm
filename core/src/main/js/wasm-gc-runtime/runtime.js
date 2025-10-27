@@ -210,14 +210,6 @@ function coreImports(imports, context, options, module) {
             return context.exports["teavm.memory"].buffer;
         }
     };
-    imports.teavmTrace = {
-        suspend() {
-            console.trace("suspend");
-        },
-        resume() {
-            console.trace("resume");
-        }
-    };
     if (module && hasImportedMemory(module)) {
         let memoryOptions = options.memory || {};
         let memoryInstance = memoryOptions["external"];

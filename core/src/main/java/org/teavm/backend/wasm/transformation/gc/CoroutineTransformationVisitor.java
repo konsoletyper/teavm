@@ -276,7 +276,7 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
         elseBlock.getBody().addAll(resultList);
         resultList.clear();
         resultList.add(elseBlock);
-        if (!elseBlock.getBody().get(elseBlock.getBody().size() - 1).isTerminating()) {
+        if (!elseBlock.isTerminating()) {
             elseBlock.getBody().add(new WasmBreak(thenBlock));
         }
         stackTypes = new ArrayList<>(oldStackTypes);
