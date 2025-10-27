@@ -87,7 +87,7 @@ public class TReferenceQueue<T> {
 
         @Override
         public void run() {
-            if (PlatformDetector.isLowLevel()) {
+            if (PlatformDetector.isLowLevel() || PlatformDetector.isWebAssemblyGC()) {
                 EventQueue.kill(id);
             } else {
                 Platform.killSchedule(id);
