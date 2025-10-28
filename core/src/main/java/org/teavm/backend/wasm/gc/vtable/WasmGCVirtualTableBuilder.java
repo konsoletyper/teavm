@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -339,6 +338,7 @@ class WasmGCVirtualTableBuilder {
                 indexes.put(entry.method, entry.index);
             }
             table.currentImplementors.putAll(parent.currentImplementors);
+            table.implementorsFromInterfaces.addAll(parent.implementorsFromInterfaces);
             table.interfaces.addAll(parent.interfaces);
         } else {
             table.used = true;
@@ -350,25 +350,27 @@ class WasmGCVirtualTableBuilder {
             classes.addAll(table.mergedClasses);
         }
         if (!table.cls.hasModifier(ElementModifier.INTERFACE)) {
+            for (var itfName : table.cls.getInterfaces()) {
+                fillFromInterfaces(itfName, table);
+            }
             for (var cls : classes) {
                 for (var method : cls.getMethods()) {
-                    if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)) {
-                        if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
-                            continue;
+                    if (!method.hasModifier(ElementModifier.STATIC)) {
+                        if (!method.hasModifier(ElementModifier.ABSTRACT)) {
+                            if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
+                                continue;
+                            }
+                            if (!isVirtual.test(method.getReference()) && !method.getReference().equals(CLONE_METHOD)) {
+                                continue;
+                            }
+                            table.currentImplementors.put(method.getDescriptor(), method.getReference());
+                            table.implementorsFromInterfaces.remove(method.getDescriptor());
+                        } else {
+                            table.currentImplementors.remove(method.getDescriptor());
                         }
-                        if (!isVirtual.test(method.getReference()) && !method.getReference().equals(CLONE_METHOD)) {
-                            continue;
-                        }
-                        table.currentImplementors.put(method.getDescriptor(), method.getReference());
                     }
                 }
             }
-
-            var entriesFromInterfaces = new LinkedHashMap<MethodDescriptor, MethodReference>();
-            for (var itfName : table.cls.getInterfaces()) {
-                fillFromInterfaces(itfName, table, entriesFromInterfaces);
-            }
-            table.currentImplementors.putAll(entriesFromInterfaces);
         }
 
         var group = groupedMethodsAtCallSites.get(table.cls.getName());
@@ -389,7 +391,7 @@ class WasmGCVirtualTableBuilder {
         }
     }
 
-    private void fillFromInterfaces(String itfName, Table table, Map<MethodDescriptor, MethodReference> result) {
+    private void fillFromInterfaces(String itfName, Table table) {
         if (!table.interfaces.add(itfName)) {
             return;
         }
@@ -398,19 +400,22 @@ class WasmGCVirtualTableBuilder {
             return;
         }
         for (var superItf : cls.getInterfaces()) {
-            fillFromInterfaces(superItf, table, result);
+            fillFromInterfaces(superItf, table);
         }
         for (var method : cls.getMethods()) {
             if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)) {
+                if (table.currentImplementors.get(method.getDescriptor()) != null
+                        && !table.implementorsFromInterfaces.contains(method.getDescriptor())) {
+                    continue;
+                }
                 if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
                     continue;
                 }
                 if (!isVirtual.test(method.getReference())) {
                     continue;
                 }
-                if (table.currentImplementors.get(method.getDescriptor()) == null) {
-                    result.put(method.getDescriptor(), method.getReference());
-                }
+                table.currentImplementors.put(method.getDescriptor(), method.getReference());
+                table.implementorsFromInterfaces.add(method.getDescriptor());
             }
         }
     }
@@ -438,6 +443,7 @@ class WasmGCVirtualTableBuilder {
         List<Entry> entries = new ArrayList<>();
         List<MethodReference> implementors = new ArrayList<>();
         Map<MethodDescriptor, MethodReference> currentImplementors = new HashMap<>();
+        Set<MethodDescriptor> implementorsFromInterfaces = new HashSet<>();
         Set<String> interfaces = new HashSet<>();
         private WasmGCVirtualTable buildResult;
         private boolean building;

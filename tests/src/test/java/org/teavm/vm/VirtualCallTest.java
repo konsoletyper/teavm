@@ -210,4 +210,35 @@ public class VirtualCallTest {
             return "q";
         }
     }
+    
+    @Test
+    @SkipPlatform({TestPlatform.WEBASSEMBLY, TestPlatform.WASI, TestPlatform.C})
+    public void subclassOverridesConcreteInheritedMethodWithDefault() {
+        var list = List.of(new SuperclassWithConcreteMethod(), new SubclassWithMethodOverriddenWithInterface());
+        var sb = new StringBuilder();
+        for (var o : list) {
+            sb.append(o.foo()).append(";");
+        }
+        assertEquals("B.foo;O.foo;", sb.toString());
+    }
+
+    interface BaseInterfaceWithDefaultMethod {
+        default String foo() {
+            return "B.foo";
+        }
+    }
+    
+    interface SubInterfaceWithOverriddenDefaultMethod extends BaseInterfaceWithDefaultMethod {
+        @Override
+        default String foo() {
+            return "O.foo";
+        }
+    }
+    
+    static class SuperclassWithConcreteMethod implements BaseInterfaceWithDefaultMethod {
+    }
+    
+    static class SubclassWithMethodOverriddenWithInterface extends SuperclassWithConcreteMethod 
+            implements SubInterfaceWithOverriddenDefaultMethod {
+    }
 }
