@@ -23,6 +23,7 @@ import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
+import org.teavm.vm.subpackage.SubclassWithPrivateOverride;
 
 @RunWith(TeaVMTestRunner.class)
 @EachTestCompiledSeparately
@@ -240,5 +241,25 @@ public class VirtualCallTest {
     
     static class SubclassWithMethodOverriddenWithInterface extends SuperclassWithConcreteMethod 
             implements SubInterfaceWithOverriddenDefaultMethod {
+    }
+    
+    @Test
+    public void privateDoesNotOverrideBaseMethod() {
+        var list = List.of(new BaseClassWithPrivateOverride(), new SubclassWithPrivateOverride());
+        var sb = new StringBuilder();
+        for (var o : list) {
+            sb.append(o.foo()).append(";");
+        }
+        assertEquals("A.foo;A.foo;", sb.toString());
+    }
+
+    public static class BaseClassWithPrivateOverride {
+        public BaseClassWithPrivateOverride() {
+            foo();
+        }
+
+        String foo() {
+            return "A.foo";
+        }
     }
 }

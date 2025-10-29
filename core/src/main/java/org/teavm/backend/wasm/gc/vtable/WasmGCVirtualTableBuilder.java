@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.teavm.common.LCATree;
+import org.teavm.model.AccessLevel;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
@@ -355,7 +356,7 @@ class WasmGCVirtualTableBuilder {
             }
             for (var cls : classes) {
                 for (var method : cls.getMethods()) {
-                    if (!method.hasModifier(ElementModifier.STATIC)) {
+                    if (!method.hasModifier(ElementModifier.STATIC) && method.getLevel() != AccessLevel.PRIVATE) {
                         if (!method.hasModifier(ElementModifier.ABSTRACT)) {
                             if (method.getProgram() == null && !method.hasModifier(ElementModifier.NATIVE)) {
                                 continue;
@@ -403,7 +404,8 @@ class WasmGCVirtualTableBuilder {
             fillFromInterfaces(superItf, table);
         }
         for (var method : cls.getMethods()) {
-            if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)) {
+            if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.ABSTRACT)
+                    && method.getLevel() != AccessLevel.PRIVATE) {
                 if (table.currentImplementors.get(method.getDescriptor()) != null
                         && !table.implementorsFromInterfaces.contains(method.getDescriptor())) {
                     continue;
