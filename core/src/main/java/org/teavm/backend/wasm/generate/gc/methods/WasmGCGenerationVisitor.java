@@ -83,6 +83,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmPop;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
@@ -612,13 +613,15 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
                 result = block;
             } else {
                 block.setType(sourceType.asBlock());
-                var nonNullValue = new WasmNullBranch(WasmNullCondition.NULL, result, block);
-                nonNullValue.setResult(new WasmNullConstant(sourceType));
-                var valueToCast = exprCache.create(nonNullValue, sourceType, expr.getLocation(), block.getBody());
+                var valueToCheck = exprCache.create(result, sourceType, expr.getLocation(), block.getBody());
+                block.getBody().add(new WasmNullConstant(sourceType));
+                var nonNullValue = new WasmNullBranch(WasmNullCondition.NULL, valueToCheck.expr(), block);
+                block.getBody().add(new WasmDrop(nonNullValue));
+                block.getBody().add(new WasmDrop(new WasmPop(sourceType)));
 
-                var supertypeCall = generateInstanceOf(valueToCast.expr(), expr.getTarget());
+                var supertypeCall = generateInstanceOf(valueToCheck.expr(), expr.getTarget());
                 var breakIfPassed = new WasmBranch(supertypeCall, block);
-                breakIfPassed.setResult(valueToCast.expr());
+                breakIfPassed.setResult(valueToCheck.expr());
                 block.getBody().add(new WasmDrop(breakIfPassed));
 
                 result = block;

@@ -62,6 +62,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmNullBranch;
+import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmPop;
 import org.teavm.backend.wasm.model.expression.WasmPush;
@@ -131,10 +132,14 @@ public class WasmTypeInference implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmNullBranch expression) {
-        if (expression.getResult() != null) {
-            expression.getResult().acceptVisitor(this);
+        if (expression.getCondition() == WasmNullCondition.NULL) {
+            expression.getValue().acceptVisitor(this);
         } else {
-            result = Collections.emptyList();
+            if (expression.getResult() != null) {
+                expression.getResult().acceptVisitor(this);
+            } else {
+                result = Collections.emptyList();
+            }
         }
     }
 
