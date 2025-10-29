@@ -55,10 +55,10 @@ public class DefaultSourceFileResolver implements SourceFileResolver {
                         input.transferTo(output);
                     }
                     if (sourceFilePolicy == TeaVMSourceFilePolicy.LINK_LOCAL_FILES) {
-                        return "file://" + outputFile.getCanonicalPath();
+                        return fileToUrl(outputFile);
                     }
                 } else {
-                    return "file://" + sourceFile.getFile().getCanonicalPath();
+                    return fileToUrl(sourceFile.getFile());
                 }
                 break;
             }
@@ -70,5 +70,16 @@ public class DefaultSourceFileResolver implements SourceFileResolver {
         for (var provider : sourceFileProviders) {
             provider.close();
         }
+    }
+
+    // toCanonicalFile().toURI().toString() produces URLs that aren't recognizable by Chrome in Windows
+    private static String fileToUrl(File file) throws IOException {
+        var path = file.getCanonicalPath();
+        if (!path.startsWith("/")) {
+            path = "file:///" + path.replace('\\', '/');
+        } else {
+            path = "file://" + path;
+        }
+        return path;
     }
 }
