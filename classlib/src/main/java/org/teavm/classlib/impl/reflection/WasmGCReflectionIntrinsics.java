@@ -16,6 +16,7 @@
 package org.teavm.classlib.impl.reflection;
 
 import java.util.ArrayList;
+import java.util.Set;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfo;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
@@ -60,9 +61,15 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.runtime.Fiber;
 
 public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
     private ReflectionDependencyListener reflection;
+    private final Set<ValueType> typesToSkip = Set.of(
+            ValueType.parse(Address.class),
+            ValueType.parse(Fiber.PlatformObject.class),
+            ValueType.parse(Fiber.PlatformFunction.class)
+    );
 
     private WasmFunction initReflectionFunction;
 
@@ -370,7 +377,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
             if (!(type instanceof ValueType.Object)) {
                 continue;
             }
-            if (type.equals(ValueType.object(Address.class.getName()))) {
+            if (typesToSkip.contains(type)) {
                 continue;
             }
             var cls = context.hierarchy().getClassSource().get(((ValueType.Object) type).getClassName());
