@@ -141,6 +141,7 @@ function consoleImports(imports) {
 }
 
 function coreImports(imports, context, options, module) {
+    let memoryOptions = options.memory || {};
     let finalizationRegistry = new FinalizationRegistry(heldValue => {
         let report = context.exports["teavm.reportGarbageCollectedValue"];
         if (typeof report !== "undefined") {
@@ -208,10 +209,10 @@ function coreImports(imports, context, options, module) {
         },
         linearMemory() {
             return context.exports["teavm.memory"].buffer;
-        }
+        },
+        notifyHeapResized: memoryOptions.onResize || function() {}
     };
     if (module && hasImportedMemory(module)) {
-        let memoryOptions = options.memory || {};
         let memoryInstance = memoryOptions["external"];
         if (!memoryInstance) {
             let defaults = getMemoryDefaults(module);
