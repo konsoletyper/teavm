@@ -25,6 +25,20 @@ import org.teavm.model.TryCatchBlock;
 import org.teavm.model.util.TransitionExtractor;
 
 public class UnreachableBasicBlockEliminator {
+    public void removeUnreachableInstructions(Program program) {
+        var transitionExtractor = new TransitionExtractor();
+        for (var block : program.getBasicBlocks()) {
+            for (var instruction : block) {
+                instruction.acceptVisitor(transitionExtractor);
+                if (transitionExtractor.getTargets() != null) {
+                    while (instruction.getNext() != null) {
+                        instruction.getNext().delete();
+                    }
+                }
+            }
+        }
+    }
+
     public void optimize(Program program) {
         if (program.basicBlockCount() == 0) {
             return;
