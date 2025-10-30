@@ -635,8 +635,8 @@ public class TeaVMTool {
 
     private void additionalWasmGCOutput() throws IOException {
         if (sourceMapsFileGenerated) {
-            var targetDir = new File(targetDirectory, "src");
-            var resolver = new DefaultSourceFileResolver(targetDir, sourceFileProviders);
+            var resolver = new DefaultSourceFileResolver(targetDirectory, sourceFileProviders);
+            resolver.setSrcSubdir("src");
             resolver.setSourceFilePolicy(sourceFilePolicy);
             resolver.open();
 

@@ -24,12 +24,17 @@ import org.teavm.tooling.TeaVMSourceFilePolicy;
 
 public class DefaultSourceFileResolver implements SourceFileResolver {
     private File targetDir;
+    private String srcSubdir = "";
     private List<SourceFileProvider> sourceFileProviders;
     private TeaVMSourceFilePolicy sourceFilePolicy = TeaVMSourceFilePolicy.DO_NOTHING;
 
     public DefaultSourceFileResolver(File targetDir, List<SourceFileProvider> sourceFileProviders) {
         this.targetDir = targetDir;
         this.sourceFileProviders = sourceFileProviders;
+    }
+
+    public void setSrcSubdir(String srcSubdir) {
+        this.srcSubdir = srcSubdir;
     }
 
     public void setSourceFilePolicy(TeaVMSourceFilePolicy sourceFilePolicy) {
@@ -44,11 +49,12 @@ public class DefaultSourceFileResolver implements SourceFileResolver {
 
     @Override
     public String resolveFile(String file) throws IOException {
+        var outputDir = srcSubdir.isEmpty() ? targetDir : new File(targetDir, srcSubdir);
         for (var provider : sourceFileProviders) {
             var sourceFile = provider.getSourceFile(file);
             if (sourceFile != null) {
                 if (sourceFilePolicy == TeaVMSourceFilePolicy.COPY || sourceFile.getFile() == null) {
-                    var outputFile = new File(targetDir, file);
+                    var outputFile = new File(outputDir, file);
                     outputFile.getParentFile().mkdirs();
                     try (var input = sourceFile.open();
                             var output = new FileOutputStream(outputFile)) {
@@ -56,11 +62,18 @@ public class DefaultSourceFileResolver implements SourceFileResolver {
                     }
                     if (sourceFilePolicy == TeaVMSourceFilePolicy.LINK_LOCAL_FILES) {
                         return fileToUrl(outputFile);
+                    } else {
+                        if (srcSubdir.isEmpty()) {
+                            return file;
+                        } else if (srcSubdir.endsWith("/")) {
+                            return srcSubdir + file;
+                        } else {
+                            return srcSubdir + "/" + file;
+                        }
                     }
                 } else {
                     return fileToUrl(sourceFile.getFile());
                 }
-                break;
             }
         }
         return null;
