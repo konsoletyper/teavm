@@ -16,8 +16,8 @@ jreleaser = "1.18.0"
 [libraries]
 
 hppc = "com.carrotsearch:hppc:0.10.0"
-commons-io = "commons-io:commons-io:2.18.0"
-commons-cli = "commons-cli:commons-cli:1.9.0"
+commons-io = "commons-io:commons-io:2.20.0"
+commons-cli = "commons-cli:commons-cli:1.10.0"
 rhino = "org.mozilla:rhino:1.7.15"
 slf4j = "org.slf4j:slf4j-api:2.0.16"
 javax-servlet = "javax.servlet:javax.servlet-api:3.1.0"
