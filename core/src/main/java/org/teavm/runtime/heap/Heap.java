@@ -106,6 +106,7 @@ public final class Heap {
         }
         end = start.add(currentSize);
         maxSize = Math.max(currentSize, maxSize);
+        notifyHeapResized();
         return grownBytes >= bytes;
     }
 
