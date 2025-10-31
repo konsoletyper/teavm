@@ -2,7 +2,7 @@
   <id>org.teavm.idea</id>
   <name>TeaVM Integration</name>
   <version>${project.version}</version>
-  <vendor email="info@teavm.org" url="http://teavm.org">TeaVM community</vendor>
+  <vendor email="info@teavm.org" url="https://teavm.org">TeaVM community</vendor>
 
   <depends>com.intellij.modules.java</depends>
   <depends optional="true" config-file="kotlin.xml">org.jetbrains.kotlin</depends>

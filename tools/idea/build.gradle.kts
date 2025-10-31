@@ -56,7 +56,7 @@ dependencies {
 }
 
 tasks {
-    instrumentedJar {
+    composedJar {
         archiveFileName = "teavm-plugin.jar"
     }
     build {
