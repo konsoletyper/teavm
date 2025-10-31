@@ -537,6 +537,9 @@ function jsoImports(imports, context) {
             return result;
         },
         functionAsObject(fn, property) {
+            if (fn === null || fn === void 0) {
+                return null;
+            }
             let origin = fn[functionOriginSymbol];
             if (typeof origin !== 'undefined') {
                 let functions = origin[functionsSymbol];

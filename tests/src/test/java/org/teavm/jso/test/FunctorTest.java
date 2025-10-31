@@ -16,6 +16,7 @@
 package org.teavm.jso.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -121,6 +122,12 @@ public class FunctorTest {
             return sb.toString();
         });
         assertEquals("called:23|foo;bar;", result);
+    }
+
+    @Test
+    public void functorFromNull() {
+        var f = nullFunction();
+        assertNull(f);
     }
 
     @JSBody(params = { "f", "a", "b" }, script = "return f != null ? '(' + f(a, b) + ')' : 'null';")
@@ -230,4 +237,7 @@ public class FunctorTest {
     interface FunctorWithVarargs extends JSObject {
         String accept(int first, String... remaining);
     }
+
+    @JSBody(script = "return null")
+    private static native JSBiFunction nullFunction();
 }
