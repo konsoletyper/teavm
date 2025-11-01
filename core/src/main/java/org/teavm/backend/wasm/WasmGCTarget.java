@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.nio.charset.StandardCharsets;
@@ -68,6 +69,7 @@ import org.teavm.backend.wasm.transformation.gc.BaseClassesTransformation;
 import org.teavm.backend.wasm.transformation.gc.ClassLoaderResourceTransformation;
 import org.teavm.backend.wasm.transformation.gc.EntryPointTransformation;
 import org.teavm.backend.wasm.transformation.gc.ReferenceQueueTransformation;
+import org.teavm.common.JsonUtil;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.DependencyListener;
@@ -533,6 +535,7 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
                 var reqs = writeMemoryRequirements(module);
                 list.add(new WasmCustomSection("teavm.memoryRequirements", reqs));
             }
+            list.add(new WasmCustomSection("teavm.imports", writeImportedModules(module)));
             return list;
         };
     }
@@ -540,6 +543,31 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
     private byte[] writeMemoryRequirements(WasmModule module) {
         var data = "{\"min\":" + module.getMinMemorySize() + ",\"max\":" + module.getMaxMemorySize() + "}";
         return data.getBytes(StandardCharsets.UTF_8);
+    }
+
+    private byte[] writeImportedModules(WasmModule module) {
+        var writer = new StringWriter();
+        try {
+            writer.write("[");
+            var first = true;
+            for (var global : module.globals) {
+                if (global.getImportModule() != null && global.getImportName() != null) {
+                    if (!first) {
+                        writer.write(",");
+                    }
+                    first = false;
+                    writer.write("{\"module\":\"");
+                    JsonUtil.writeEscapedString(writer, global.getImportModule());
+                    writer.write("\",\"name\":\"");
+                    JsonUtil.writeEscapedString(writer, global.getImportName());
+                    writer.write("\"}");
+                }
+            }
+            writer.write("]");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return writer.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     private void optimizeIndexes(WasmModule module) {

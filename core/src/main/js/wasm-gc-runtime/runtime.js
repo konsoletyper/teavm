@@ -695,8 +695,8 @@ function wrapImport(importObj) {
 async function wrapImports(wasmModule, imports) {
     let promises = [];
     let propertiesToAdd = {};
-    for (let { module, name, kind } of WebAssembly.Module.imports(wasmModule)) {
-        if (kind !== "global" || module in imports) {
+    for (let { module, name } of extractImports(wasmModule)) {
+        if (module in imports) {
             continue;
         }
         let names = propertiesToAdd[module];
@@ -723,6 +723,14 @@ async function wrapImports(wasmModule, imports) {
         return;
     }
     await Promise.all(promises);
+}
+
+function extractImports(module) {
+    let sections = WebAssembly.Module.customSections(module, "teavm.imports");
+    if (sections.length !== 1) {
+        return WebAssembly.Module.imports(module).filter(importDecl => importDecl.kind === "global");
+    }
+    return JSON.parse(new TextDecoder().decode(sections[0]));
 }
 
 async function load(src, options) {
