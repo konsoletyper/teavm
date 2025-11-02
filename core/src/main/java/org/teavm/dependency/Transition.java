@@ -64,6 +64,7 @@ class Transition {
     }
 
     private void mergeDomains(DependencyType[] types) {
+        destination.dependencyAnalyzer.merging = true;
         destination.moveToSeparateDomain();
         destination.scheduleMultipleTypes(types, () -> {
             var domainToMerge = destination.typeSet.domain();
@@ -73,10 +74,14 @@ class Transition {
             }
             source.typeSet.invalidate();
         });
+        destination.dependencyAnalyzer.merging = false;
     }
 
     private boolean shouldMergeDomains() {
         if (!source.dependencyAnalyzer.domainOptimizationEnabled() || filter != null || !isDestSubsetOfSrc()) {
+            return false;
+        }
+        if (destination.dependencyAnalyzer.merging) {
             return false;
         }
         if (destination.typeSet == null) {

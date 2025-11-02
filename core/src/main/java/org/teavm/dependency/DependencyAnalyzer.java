@@ -109,6 +109,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private Set<String> generatedClassNames = new HashSet<>();
     DependencyType classType;
     private List<ClassFilter> classFilters = new ArrayList<>();
+    boolean merging;
 
     DependencyAnalyzer(ClassReaderSource classSource, ResourceProvider resourceProvider, ClassLoader classLoader,
             ServiceRepository services, Diagnostics diagnostics, ReferenceCache referenceCache,
