@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.Precedence;
 import org.teavm.backend.javascript.rendering.RenderingUtil;
@@ -155,9 +156,12 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         }
 
         writer.appendClass(className).append(".$meta.fields").ws().append('=').ws().append('[').indent();
+        var fieldsToExpose = accessibleFields == null ? cls.getFields() : cls.getFields().stream()
+                .filter(f -> accessibleFields.contains(f.getName()))
+                .collect(Collectors.toSet());
 
         var skipPrivates = ReflectionDependencyListener.shouldSkipPrivates(cls);
-        generateCreateMembers(writer, skipPrivates, cls.getFields(), field -> {
+        generateCreateMembers(writer, skipPrivates, fieldsToExpose, field -> {
             appendProperty(writer, "type", false, () -> context.typeToClassString(writer, field.getType()));
 
             appendProperty(writer, "getter", false, () -> {
@@ -194,7 +198,10 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         writer.appendClass(className).append(".$meta.methods").ws().append('=').ws().append('[').indent();
 
         var skipPrivates = ReflectionDependencyListener.shouldSkipPrivates(cls);
-        generateCreateMembers(writer, skipPrivates, cls.getMethods(), method -> {
+        var methodsToExpose = accessibleMethods == null ? cls.getMethods() : cls.getMethods().stream()
+                .filter(m -> accessibleMethods.contains(m.getDescriptor()))
+                .collect(Collectors.toList());
+        generateCreateMembers(writer, skipPrivates, methodsToExpose, method -> {
             appendProperty(writer, "parameterTypes", false, () -> {
                 writer.append('[');
                 for (int i = 0; i < method.parameterCount(); ++i) {

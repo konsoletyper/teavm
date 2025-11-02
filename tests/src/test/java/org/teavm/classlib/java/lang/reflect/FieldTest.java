@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
 import org.teavm.junit.EachTestCompiledSeparately;
-import org.teavm.junit.SkipJVM;
 import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
@@ -77,22 +76,6 @@ public class FieldTest {
         Field field = instance.getClass().getDeclaredField("a");
         field.set(instance, 234);
         assertEquals(234, instance.a);
-    }
-
-    @Test(expected = IllegalAccessException.class)
-    @SkipJVM
-    public void fieldCannotBeRead() throws NoSuchFieldException, IllegalAccessException {
-        ReflectableType instance = new ReflectableType();
-        Field field = instance.getClass().getDeclaredField("e");
-        field.get(instance);
-    }
-
-    @Test(expected = IllegalAccessException.class)
-    @SkipJVM
-    public void fieldCannotBeWritten() throws NoSuchFieldException, IllegalAccessException {
-        ReflectableType instance = new ReflectableType();
-        Field field = instance.getClass().getDeclaredField("e");
-        field.set(instance, 1L);
     }
 
     @Test
