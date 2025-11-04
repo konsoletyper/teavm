@@ -212,19 +212,25 @@ function coreImports(imports, context, options, module) {
         },
         notifyHeapResized: memoryOptions.onResize || function() {}
     };
-    if (module && hasImportedMemory(module)) {
-        let memoryInstance = memoryOptions["external"];
-        if (!memoryInstance) {
-            let defaults = getMemoryDefaults(module);
-            let minSize = memoryOptions.minSize || defaults.min || 0;
-            let maxSize = memoryOptions.maxSize || defaults.max;
-            memoryInstance = new WebAssembly.Memory({
-                shared: memoryOptions.shared === true,
-                initial: minSize,
-                maximum: maxSize
-            });
+    if (module) {
+        let memDefaults = getMemoryDefaults(module);
+        let imported = memDefaults !== null ? memDefaults.imported : hasImportedMemory(module);
+        if (imported) {
+            let memoryInstance = memoryOptions["external"];
+            if (!memoryInstance) {
+                if (memDefaults === null) {
+                    memDefaults = {};
+                }
+                let minSize = memoryOptions.minSize || memDefaults.min || 0;
+                let maxSize = memoryOptions.maxSize || memDefaults.max;
+                memoryInstance = new WebAssembly.Memory({
+                    shared: memoryOptions.shared === true,
+                    initial: minSize,
+                    maximum: maxSize
+                });
+            }
+            imports.teavm.memory = memoryInstance;
         }
-        imports.teavm.memory = memoryInstance;
     }
 }
 
@@ -250,7 +256,7 @@ function hasImportedMemory(module) {
 function getMemoryDefaults(module) {
     let sections = WebAssembly.Module.customSections(module, "teavm.memoryRequirements");
     if (sections.length !== 1) {
-        return {};
+        return null;
     }
     return JSON.parse(new TextDecoder().decode(sections[0]));
 }

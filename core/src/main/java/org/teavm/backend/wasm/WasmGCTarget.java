@@ -531,17 +531,17 @@ public class WasmGCTarget implements TeaVMTarget, TeaVMWasmGCHost {
             if (debugLocation == WasmDebugInfoLocation.EMBEDDED && debugInfo) {
                 list.addAll(debugInfoBuilder.build());
             }
-            if (importedMemory) {
-                var reqs = writeMemoryRequirements(module);
-                list.add(new WasmCustomSection("teavm.memoryRequirements", reqs));
-            }
+            var reqs = writeMemoryRequirements(module);
+            list.add(new WasmCustomSection("teavm.memoryRequirements", reqs));
             list.add(new WasmCustomSection("teavm.imports", writeImportedModules(module)));
             return list;
         };
     }
 
     private byte[] writeMemoryRequirements(WasmModule module) {
-        var data = "{\"min\":" + module.getMinMemorySize() + ",\"max\":" + module.getMaxMemorySize() + "}";
+        var data = "{\"min\":" + module.getMinMemorySize()
+                + ",\"max\":" + module.getMaxMemorySize()
+                + ",\"imported\":" + importedMemory + "}";
         return data.getBytes(StandardCharsets.UTF_8);
     }
 
