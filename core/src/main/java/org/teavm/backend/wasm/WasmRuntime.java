@@ -48,12 +48,22 @@ public final class WasmRuntime {
 
     @Unmanaged
     public static int compare(float a, float b) {
-        return gt(a, b) ? 1 : lt(a, b) ? -1 : 0;
+        return a == b ? 0 : lt(a, b) ? -1 : 1;
+    }
+
+    @Unmanaged
+    public static int compareLess(float a, float b) {
+        return a == b ? 0 : gt(a, b) ? 1 : -1;
     }
 
     @Unmanaged
     public static int compare(double a, double b) {
-        return gt(a, b) ? 1 : lt(a, b) ? -1 : 0;
+        return a == b ? 0 : lt(a, b) ? -1 : 1;
+    }
+
+    @Unmanaged
+    public static int compareLess(double a, double b) {
+        return a == b ? 0 : gt(a, b) ? 1 : -1;
     }
 
     @Unmanaged

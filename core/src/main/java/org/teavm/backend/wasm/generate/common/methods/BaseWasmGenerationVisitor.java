@@ -241,9 +241,26 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
             case UNSIGNED_RIGHT_SHIFT:
                 generateBinary(WasmIntBinaryOperation.SHR_UNSIGNED, expr);
                 break;
-            case COMPARE: {
+            case COMPARE_GREATER: {
                 var type = convertType(expr.getType());
                 var method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
+                var call = new WasmCall(context.functions().forStaticMethod(method));
+
+                accept(expr.getFirstOperand());
+                call.getArguments().add(result);
+
+                accept(expr.getSecondOperand());
+                call.getArguments().add(result);
+
+                call.setLocation(expr.getLocation());
+                result = call;
+                break;
+            }
+            case COMPARE_LESS: {
+                var type = convertType(expr.getType());
+                var name = expr.getType() == OperationType.INT || expr.getType() == OperationType.LONG
+                        ? "compare" : "compareLess";
+                var method = new MethodReference(WasmRuntime.class, name, type, type, int.class);
                 var call = new WasmCall(context.functions().forStaticMethod(method));
 
                 accept(expr.getFirstOperand());
@@ -1546,14 +1563,6 @@ public abstract class BaseWasmGenerationVisitor implements StatementVisitor, Exp
                 return WasmFloatBinaryOperation.NE;
             case NE:
                 return WasmFloatBinaryOperation.EQ;
-            case LT:
-                return WasmFloatBinaryOperation.GE;
-            case LE:
-                return WasmFloatBinaryOperation.GT;
-            case GT:
-                return WasmFloatBinaryOperation.LE;
-            case GE:
-                return WasmFloatBinaryOperation.LT;
             default:
                 return null;
         }

@@ -430,7 +430,7 @@ public class ProgramIO {
         @Override
         public void negate(VariableReader receiver, VariableReader operand, NumericOperandType type) {
             try {
-                output.writeUnsigned(23);
+                output.writeUnsigned(24);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(type.ordinal());
                 output.writeUnsigned(operand.getIndex());
@@ -442,7 +442,7 @@ public class ProgramIO {
         @Override
         public void assign(VariableReader receiver, VariableReader assignee) {
             try {
-                output.writeUnsigned(24);
+                output.writeUnsigned(25);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(assignee.getIndex());
             } catch (IOException e) {
@@ -453,7 +453,7 @@ public class ProgramIO {
         @Override
         public void cast(VariableReader receiver, VariableReader value, ValueType targetType, boolean weak) {
             try {
-                output.writeUnsigned(25);
+                output.writeUnsigned(26);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(symbolTable.lookup(targetType.toString()));
                 output.writeUnsigned(value.getIndex());
@@ -467,7 +467,7 @@ public class ProgramIO {
         public void cast(VariableReader receiver, VariableReader value, NumericOperandType sourceType,
                 NumericOperandType targetType) {
             try {
-                output.writeUnsigned(26);
+                output.writeUnsigned(27);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(sourceType.ordinal() | (targetType.ordinal() << 2));
                 output.writeUnsigned(value.getIndex());
@@ -480,7 +480,7 @@ public class ProgramIO {
         public void cast(VariableReader receiver, VariableReader value, IntegerSubtype type,
                 CastIntegerDirection direction) {
             try {
-                output.writeUnsigned(27);
+                output.writeUnsigned(28);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(direction.ordinal() | (type.ordinal() << 1));
                 output.writeUnsigned(value.getIndex());
@@ -493,7 +493,7 @@ public class ProgramIO {
         public void jumpIf(BranchingCondition cond, VariableReader operand, BasicBlockReader consequent,
                 BasicBlockReader alternative) {
             try {
-                output.writeUnsigned(28 + cond.ordinal());
+                output.writeUnsigned(29 + cond.ordinal());
                 output.writeUnsigned(operand.getIndex());
                 output.writeUnsigned(consequent.getIndex());
                 output.writeUnsigned(alternative.getIndex());
@@ -506,7 +506,7 @@ public class ProgramIO {
         public void jumpIf(BinaryBranchingCondition cond, VariableReader first, VariableReader second,
                 BasicBlockReader consequent, BasicBlockReader alternative) {
             try {
-                output.writeUnsigned(36 + cond.ordinal());
+                output.writeUnsigned(37 + cond.ordinal());
                 output.writeUnsigned(first.getIndex());
                 output.writeUnsigned(second.getIndex());
                 output.writeUnsigned(consequent.getIndex());
@@ -519,7 +519,7 @@ public class ProgramIO {
         @Override
         public void jump(BasicBlockReader target) {
             try {
-                output.writeUnsigned(40);
+                output.writeUnsigned(41);
                 output.writeUnsigned(target.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -530,7 +530,7 @@ public class ProgramIO {
         public void choose(VariableReader condition, List<? extends SwitchTableEntryReader> table,
                 BasicBlockReader defaultTarget) {
             try {
-                output.writeUnsigned(41);
+                output.writeUnsigned(42);
                 output.writeUnsigned(condition.getIndex());
                 output.writeUnsigned(defaultTarget.getIndex());
                 output.writeUnsigned(table.size());
@@ -547,10 +547,10 @@ public class ProgramIO {
         public void exit(VariableReader valueToReturn) {
             try {
                 if (valueToReturn != null) {
-                    output.writeUnsigned(42);
+                    output.writeUnsigned(43);
                     output.writeUnsigned(valueToReturn.getIndex());
                 } else {
-                    output.writeUnsigned(43);
+                    output.writeUnsigned(44);
                 }
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -560,7 +560,7 @@ public class ProgramIO {
         @Override
         public void raise(VariableReader exception) {
             try {
-                output.writeUnsigned(44);
+                output.writeUnsigned(45);
                 output.writeUnsigned(exception.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -570,7 +570,7 @@ public class ProgramIO {
         @Override
         public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
             try {
-                output.writeUnsigned(45);
+                output.writeUnsigned(46);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(symbolTable.lookup(itemType.toString()));
                 output.writeUnsigned(size.getIndex());
@@ -583,7 +583,7 @@ public class ProgramIO {
         public void createArray(VariableReader receiver, ValueType itemType,
                 List<? extends VariableReader> dimensions) {
             try {
-                output.writeUnsigned(47);
+                output.writeUnsigned(48);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(symbolTable.lookup(itemType.toString()));
                 output.writeUnsigned(dimensions.size());
@@ -598,7 +598,7 @@ public class ProgramIO {
         @Override
         public void create(VariableReader receiver, String type) {
             try {
-                output.writeUnsigned(46);
+                output.writeUnsigned(47);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(symbolTable.lookup(type));
             } catch (IOException e) {
@@ -610,7 +610,7 @@ public class ProgramIO {
         public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
                 ValueType fieldType) {
             try {
-                output.writeUnsigned(instance != null ? 48 : 49);
+                output.writeUnsigned(instance != null ? 49 : 50);
                 output.writeUnsigned(receiver.getIndex());
                 if (instance != null) {
                     output.writeUnsigned(instance.getIndex());
@@ -626,7 +626,7 @@ public class ProgramIO {
         @Override
         public void putField(VariableReader instance, FieldReference field, VariableReader value, ValueType fieldType) {
             try {
-                output.writeUnsigned(instance != null ? 50 : 51);
+                output.writeUnsigned(instance != null ? 51 : 52);
                 if (instance != null) {
                     output.writeUnsigned(instance.getIndex());
                 }
@@ -642,7 +642,7 @@ public class ProgramIO {
         @Override
         public void arrayLength(VariableReader receiver, VariableReader array) {
             try {
-                output.writeUnsigned(52);
+                output.writeUnsigned(53);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(array.getIndex());
             } catch (IOException e) {
@@ -653,7 +653,7 @@ public class ProgramIO {
         @Override
         public void cloneArray(VariableReader receiver, VariableReader array) {
             try {
-                output.writeUnsigned(53);
+                output.writeUnsigned(54);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(array.getIndex());
             } catch (IOException e) {
@@ -664,7 +664,7 @@ public class ProgramIO {
         @Override
         public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) {
             try {
-                output.writeUnsigned(54 + elementType.ordinal());
+                output.writeUnsigned(55 + elementType.ordinal());
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(array.getIndex());
             } catch (IOException e) {
@@ -676,7 +676,7 @@ public class ProgramIO {
         public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
                 ArrayElementType elementType) {
             try {
-                output.writeUnsigned(62 + elementType.ordinal());
+                output.writeUnsigned(63 + elementType.ordinal());
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(array.getIndex());
                 output.writeUnsigned(index.getIndex());
@@ -689,7 +689,7 @@ public class ProgramIO {
         public void putElement(VariableReader array, VariableReader index, VariableReader value,
                 ArrayElementType elementType) {
             try {
-                output.writeUnsigned(70 + elementType.ordinal());
+                output.writeUnsigned(71 + elementType.ordinal());
                 output.writeUnsigned(array.getIndex());
                 output.writeUnsigned(index.getIndex());
                 output.writeUnsigned(value.getIndex());
@@ -704,10 +704,10 @@ public class ProgramIO {
             try {
                 switch (type) {
                     case SPECIAL:
-                        output.writeUnsigned(instance == null ? 78 : 79);
+                        output.writeUnsigned(instance == null ? 79 : 80);
                         break;
                     case VIRTUAL:
-                        output.writeUnsigned(80);
+                        output.writeUnsigned(81);
                         break;
                 }
                 output.writeUnsigned(receiver != null ? receiver.getIndex() + 1 : 0);
@@ -729,7 +729,7 @@ public class ProgramIO {
                 List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
                 List<RuntimeConstant> bootstrapArguments) {
             try {
-                output.writeUnsigned(81);
+                output.writeUnsigned(82);
                 output.writeUnsigned(receiver != null ? receiver.getIndex() + 1 : 0);
                 output.writeUnsigned(instance != null ? instance.getIndex() + 1 : 0);
                 output.writeUnsigned(symbolTable.lookup(method.toString()));
@@ -749,7 +749,7 @@ public class ProgramIO {
         @Override
         public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
             try {
-                output.writeUnsigned(82);
+                output.writeUnsigned(83);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(symbolTable.lookup(type.toString()));
                 output.writeUnsigned(value.getIndex());
@@ -761,7 +761,7 @@ public class ProgramIO {
         @Override
         public void initClass(String className) {
             try {
-                output.writeUnsigned(83);
+                output.writeUnsigned(84);
                 output.writeUnsigned(symbolTable.lookup(className));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -771,7 +771,7 @@ public class ProgramIO {
         @Override
         public void nullCheck(VariableReader receiver, VariableReader value) {
             try {
-                output.writeUnsigned(84);
+                output.writeUnsigned(85);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(value.getIndex());
             } catch (IOException e) {
@@ -782,7 +782,7 @@ public class ProgramIO {
         @Override
         public void monitorEnter(VariableReader objectRef) {
             try {
-                output.writeUnsigned(85);
+                output.writeUnsigned(86);
                 output.writeUnsigned(objectRef.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -792,7 +792,7 @@ public class ProgramIO {
         @Override
         public void monitorExit(VariableReader objectRef) {
             try {
-                output.writeUnsigned(86);
+                output.writeUnsigned(87);
                 output.writeUnsigned(objectRef.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -802,7 +802,7 @@ public class ProgramIO {
         @Override
         public void boundCheck(VariableReader receiver, VariableReader index, VariableReader array, boolean lower) {
             try {
-                output.writeUnsigned(array == null ? 89 : !lower ? 88 : 87);
+                output.writeUnsigned(array == null ? 90 : !lower ? 89 : 88);
                 output.writeUnsigned(receiver.getIndex());
                 output.writeUnsigned(index.getIndex());
                 if (array != null) {
@@ -960,7 +960,8 @@ public class ProgramIO {
             case 19:
             case 20:
             case 21:
-            case 22: {
+            case 22:
+            case 23: {
                 Variable receiver = program.variableAt(input.readUnsigned());
                 BinaryOperation operation = binaryOperations[insnType - 11];
                 NumericOperandType operandType = numericOperandTypes[input.readUnsigned()];
@@ -970,7 +971,7 @@ public class ProgramIO {
                 insn.setSecondOperand(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 23: {
+            case 24: {
                 Variable receiver = program.variableAt(input.readUnsigned());
                 NumericOperandType operandType = numericOperandTypes[input.readUnsigned()];
                 NegateInstruction insn = new NegateInstruction(operandType);
@@ -978,13 +979,13 @@ public class ProgramIO {
                 insn.setOperand(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 24: {
+            case 25: {
                 AssignInstruction insn = new AssignInstruction();
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
                 insn.setAssignee(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 25: {
+            case 26: {
                 CastInstruction insn = new CastInstruction();
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
                 insn.setTargetType(parseValueType(symbolTable.at(input.readUnsigned())));
@@ -992,7 +993,7 @@ public class ProgramIO {
                 insn.setWeak(input.readUnsigned() != 0);
                 return insn;
             }
-            case 26: {
+            case 27: {
                 Variable receiver = program.variableAt(input.readUnsigned());
                 int types = input.readUnsigned();
                 NumericOperandType sourceType = numericOperandTypes[types & 3];
@@ -1002,7 +1003,7 @@ public class ProgramIO {
                 insn.setValue(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 27: {
+            case 28: {
                 Variable receiver = program.variableAt(input.readUnsigned());
                 int types = input.readUnsigned();
                 CastIntegerDirection direction = castIntegerDirections[types & 1];
@@ -1012,25 +1013,25 @@ public class ProgramIO {
                 insn.setValue(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 28:
             case 29:
             case 30:
             case 31:
             case 32:
             case 33:
             case 34:
-            case 35: {
-                BranchingInstruction insn = new BranchingInstruction(branchingConditions[insnType - 28]);
+            case 35:
+            case 36: {
+                BranchingInstruction insn = new BranchingInstruction(branchingConditions[insnType - 29]);
                 insn.setOperand(program.variableAt(input.readUnsigned()));
                 insn.setConsequent(program.basicBlockAt(input.readUnsigned()));
                 insn.setAlternative(program.basicBlockAt(input.readUnsigned()));
                 return insn;
             }
-            case 36:
             case 37:
             case 38:
-            case 39: {
-                BinaryBranchingCondition cond = binaryBranchingConditions[insnType - 36];
+            case 39:
+            case 40: {
+                BinaryBranchingCondition cond = binaryBranchingConditions[insnType - 37];
                 BinaryBranchingInstruction insn = new BinaryBranchingInstruction(cond);
                 insn.setFirstOperand(program.variableAt(input.readUnsigned()));
                 insn.setSecondOperand(program.variableAt(input.readUnsigned()));
@@ -1038,12 +1039,12 @@ public class ProgramIO {
                 insn.setAlternative(program.basicBlockAt(input.readUnsigned()));
                 return insn;
             }
-            case 40: {
+            case 41: {
                 JumpInstruction insn = new JumpInstruction();
                 insn.setTarget(program.basicBlockAt(input.readUnsigned()));
                 return insn;
             }
-            case 41: {
+            case 42: {
                 SwitchInstruction insn = new SwitchInstruction();
                 insn.setCondition(program.variableAt(input.readUnsigned()));
                 insn.setDefaultTarget(program.basicBlockAt(input.readUnsigned()));
@@ -1056,33 +1057,33 @@ public class ProgramIO {
                 }
                 return insn;
             }
-            case 42: {
+            case 43: {
                 ExitInstruction insn = new ExitInstruction();
                 insn.setValueToReturn(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 43: {
+            case 44: {
                 return new ExitInstruction();
             }
-            case 44: {
+            case 45: {
                 RaiseInstruction insn = new RaiseInstruction();
                 insn.setException(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 45: {
+            case 46: {
                 ConstructArrayInstruction insn = new ConstructArrayInstruction();
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
                 insn.setItemType(parseValueType(symbolTable.at(input.readUnsigned())));
                 insn.setSize(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 46: {
+            case 47: {
                 ConstructInstruction insn = new ConstructInstruction();
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
                 insn.setType(symbolTable.at(input.readUnsigned()));
                 return insn;
             }
-            case 47: {
+            case 48: {
                 ConstructMultiArrayInstruction insn = new ConstructMultiArrayInstruction();
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
                 insn.setItemType(parseValueType(symbolTable.at(input.readUnsigned())));
@@ -1092,19 +1093,10 @@ public class ProgramIO {
                 }
                 return insn;
             }
-            case 48: {
-                GetFieldInstruction insn = new GetFieldInstruction();
-                insn.setReceiver(program.variableAt(input.readUnsigned()));
-                insn.setInstance(program.variableAt(input.readUnsigned()));
-                String className = symbolTable.at(input.readUnsigned());
-                String fieldName = symbolTable.at(input.readUnsigned());
-                insn.setField(new FieldReference(className, fieldName));
-                insn.setFieldType(parseValueType(symbolTable.at(input.readUnsigned())));
-                return insn;
-            }
             case 49: {
                 GetFieldInstruction insn = new GetFieldInstruction();
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setInstance(program.variableAt(input.readUnsigned()));
                 String className = symbolTable.at(input.readUnsigned());
                 String fieldName = symbolTable.at(input.readUnsigned());
                 insn.setField(new FieldReference(className, fieldName));
@@ -1112,18 +1104,17 @@ public class ProgramIO {
                 return insn;
             }
             case 50: {
-                PutFieldInstruction insn = new PutFieldInstruction();
-                insn.setInstance(program.variableAt(input.readUnsigned()));
+                GetFieldInstruction insn = new GetFieldInstruction();
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
                 String className = symbolTable.at(input.readUnsigned());
                 String fieldName = symbolTable.at(input.readUnsigned());
-                ValueType type = parseValueType(symbolTable.at(input.readUnsigned()));
                 insn.setField(new FieldReference(className, fieldName));
-                insn.setValue(program.variableAt(input.readUnsigned()));
-                insn.setFieldType(type);
+                insn.setFieldType(parseValueType(symbolTable.at(input.readUnsigned())));
                 return insn;
             }
             case 51: {
                 PutFieldInstruction insn = new PutFieldInstruction();
+                insn.setInstance(program.variableAt(input.readUnsigned()));
                 String className = symbolTable.at(input.readUnsigned());
                 String fieldName = symbolTable.at(input.readUnsigned());
                 ValueType type = parseValueType(symbolTable.at(input.readUnsigned()));
@@ -1133,72 +1124,66 @@ public class ProgramIO {
                 return insn;
             }
             case 52: {
+                PutFieldInstruction insn = new PutFieldInstruction();
+                String className = symbolTable.at(input.readUnsigned());
+                String fieldName = symbolTable.at(input.readUnsigned());
+                ValueType type = parseValueType(symbolTable.at(input.readUnsigned()));
+                insn.setField(new FieldReference(className, fieldName));
+                insn.setValue(program.variableAt(input.readUnsigned()));
+                insn.setFieldType(type);
+                return insn;
+            }
+            case 53: {
                 ArrayLengthInstruction insn = new ArrayLengthInstruction();
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
                 insn.setArray(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 53: {
+            case 54: {
                 CloneArrayInstruction insn = new CloneArrayInstruction();
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
                 insn.setArray(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 54:
             case 55:
             case 56:
             case 57:
             case 58:
             case 59:
             case 60:
-            case 61: {
-                UnwrapArrayInstruction insn = new UnwrapArrayInstruction(arrayElementTypes[insnType - 54]);
+            case 61:
+            case 62: {
+                UnwrapArrayInstruction insn = new UnwrapArrayInstruction(arrayElementTypes[insnType - 55]);
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
                 insn.setArray(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 62:
             case 63:
             case 64:
             case 65:
             case 66:
             case 67:
             case 68:
-            case 69: {
-                GetElementInstruction insn = new GetElementInstruction(arrayElementTypes[insnType - 62]);
+            case 69:
+            case 70: {
+                GetElementInstruction insn = new GetElementInstruction(arrayElementTypes[insnType - 63]);
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
                 insn.setArray(program.variableAt(input.readUnsigned()));
                 insn.setIndex(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 70:
             case 71:
             case 72:
             case 73:
             case 74:
             case 75:
             case 76:
-            case 77: {
-                PutElementInstruction insn = new PutElementInstruction(arrayElementTypes[insnType - 70]);
+            case 77:
+            case 78: {
+                PutElementInstruction insn = new PutElementInstruction(arrayElementTypes[insnType - 71]);
                 insn.setArray(program.variableAt(input.readUnsigned()));
                 insn.setIndex(program.variableAt(input.readUnsigned()));
                 insn.setValue(program.variableAt(input.readUnsigned()));
-                return insn;
-            }
-            case 78: {
-                InvokeInstruction insn = new InvokeInstruction();
-                insn.setType(InvocationType.SPECIAL);
-                int receiverIndex = input.readUnsigned();
-                insn.setReceiver(receiverIndex > 0 ? program.variableAt(receiverIndex - 1) : null);
-                String className = symbolTable.at(input.readUnsigned());
-                MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readUnsigned()));
-                insn.setMethod(createMethodReference(className, methodDesc));
-                int paramCount = insn.getMethod().getDescriptor().parameterCount();
-                Variable[] arguments = new Variable[paramCount];
-                for (int i = 0; i < paramCount; ++i) {
-                    arguments[i] = program.variableAt(input.readUnsigned());
-                }
-                insn.setArguments(arguments);
                 return insn;
             }
             case 79: {
@@ -1206,7 +1191,6 @@ public class ProgramIO {
                 insn.setType(InvocationType.SPECIAL);
                 int receiverIndex = input.readUnsigned();
                 insn.setReceiver(receiverIndex > 0 ? program.variableAt(receiverIndex - 1) : null);
-                insn.setInstance(program.variableAt(input.readUnsigned()));
                 String className = symbolTable.at(input.readUnsigned());
                 MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readUnsigned()));
                 insn.setMethod(createMethodReference(className, methodDesc));
@@ -1219,6 +1203,23 @@ public class ProgramIO {
                 return insn;
             }
             case 80: {
+                InvokeInstruction insn = new InvokeInstruction();
+                insn.setType(InvocationType.SPECIAL);
+                int receiverIndex = input.readUnsigned();
+                insn.setReceiver(receiverIndex > 0 ? program.variableAt(receiverIndex - 1) : null);
+                insn.setInstance(program.variableAt(input.readUnsigned()));
+                String className = symbolTable.at(input.readUnsigned());
+                MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readUnsigned()));
+                insn.setMethod(createMethodReference(className, methodDesc));
+                int paramCount = insn.getMethod().getDescriptor().parameterCount();
+                Variable[] arguments = new Variable[paramCount];
+                for (int i = 0; i < paramCount; ++i) {
+                    arguments[i] = program.variableAt(input.readUnsigned());
+                }
+                insn.setArguments(arguments);
+                return insn;
+            }
+            case 81: {
                 InvokeInstruction insn = new InvokeInstruction();
                 insn.setType(InvocationType.VIRTUAL);
                 int receiverIndex = input.readUnsigned();
@@ -1235,35 +1236,35 @@ public class ProgramIO {
                 insn.setArguments(arguments);
                 return insn;
             }
-            case 82: {
+            case 83: {
                 IsInstanceInstruction insn = new IsInstanceInstruction();
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
                 insn.setType(parseValueType(symbolTable.at(input.readUnsigned())));
                 insn.setValue(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 83: {
+            case 84: {
                 InitClassInstruction insn = new InitClassInstruction();
                 insn.setClassName(symbolTable.at(input.readUnsigned()));
                 return insn;
             }
-            case 84: {
+            case 85: {
                 NullCheckInstruction insn = new NullCheckInstruction();
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
                 insn.setValue(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 85: {
+            case 86: {
                 MonitorEnterInstruction insn = new MonitorEnterInstruction();
                 insn.setObjectRef(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 86: {
+            case 87: {
                 MonitorExitInstruction insn = new MonitorExitInstruction();
                 insn.setObjectRef(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 81: {
+            case 82: {
                 InvokeDynamicInstruction insn = new InvokeDynamicInstruction();
                 int receiver = input.readUnsigned();
                 int instance = input.readUnsigned();
@@ -1281,16 +1282,16 @@ public class ProgramIO {
                 }
                 return insn;
             }
-            case 87:
             case 88:
-            case 89: {
+            case 89:
+            case 90: {
                 BoundCheckInstruction insn = new BoundCheckInstruction();
                 insn.setReceiver(program.variableAt(input.readUnsigned()));
                 insn.setIndex(program.variableAt(input.readUnsigned()));
-                if (insnType != 89) {
+                if (insnType != 90) {
                     insn.setArray(program.variableAt(input.readUnsigned()));
                 }
-                insn.setLower(insnType != 88);
+                insn.setLower(insnType != 89);
                 return insn;
             }
             default:

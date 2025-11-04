@@ -667,7 +667,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 case UNSIGNED_RIGHT_SHIFT:
                     visitBinaryFunction(expr, "Long_shru");
                     break;
-                case COMPARE:
+                case COMPARE_LESS:
+                case COMPARE_GREATER:
                     visitBinaryFunction(expr, "Long_compare");
                     break;
                 case EQUALS:
@@ -739,8 +740,11 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 case LESS_OR_EQUALS:
                     visitBinary(expr, "<=", false);
                     break;
-                case COMPARE:
+                case COMPARE_GREATER:
                     visitBinaryFunction(expr, "$rt_compare");
+                    break;
+                case COMPARE_LESS:
+                    visitBinaryFunction(expr, "$rt_compare_less");
                     break;
                 case OR:
                     visitBinary(expr, "||", false);

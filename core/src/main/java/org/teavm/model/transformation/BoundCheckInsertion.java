@@ -264,7 +264,8 @@ public class BoundCheckInsertion {
                     case SUBTRACT:
                         r = a - b;
                         break;
-                    case COMPARE:
+                    case COMPARE_LESS:
+                    case COMPARE_GREATER:
                         r = Integer.compare(a, b);
                         break;
                     case DIVIDE:
@@ -300,7 +301,8 @@ public class BoundCheckInsertion {
 
                 isConstant[receiver] = true;
                 constantValue[receiver] = r;
-            } else if (insn.getOperation() == BinaryOperation.COMPARE
+            } else if ((insn.getOperation() == BinaryOperation.COMPARE_LESS
+                    || insn.getOperation() == BinaryOperation.COMPARE_GREATER)
                     && insn.getOperandType() == NumericOperandType.INT) {
                 comparisonLeft[receiver] = first;
                 comparisonRight[receiver] = second;

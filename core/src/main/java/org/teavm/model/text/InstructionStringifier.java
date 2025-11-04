@@ -194,7 +194,8 @@ class InstructionStringifier implements InstructionReader {
             case AND:
                 append("&");
                 break;
-            case COMPARE:
+            case COMPARE_GREATER:
+            case COMPARE_LESS:
                 append("compareTo");
                 break;
             case DIVIDE:

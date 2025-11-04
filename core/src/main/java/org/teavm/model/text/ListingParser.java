@@ -531,7 +531,7 @@ public class ListingParser {
             case IDENTIFIER:
                 switch ((String) lexer.getTokenValue()) {
                     case "compareTo":
-                        parseBinary(receiver, variable, BinaryOperation.COMPARE);
+                        parseBinary(receiver, variable, BinaryOperation.COMPARE_GREATER);
                         break;
                     case "instanceOf": {
                         lexer.nextToken();

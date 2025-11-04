@@ -144,7 +144,7 @@ public class CheckInstructionTransformation {
             arrayLength.setReceiver(program.createVariable());
             arrayLength.setLocation(boundCheck.getLocation());
 
-            BinaryInstruction compare = new BinaryInstruction(BinaryOperation.COMPARE, NumericOperandType.INT);
+            BinaryInstruction compare = new BinaryInstruction(BinaryOperation.COMPARE_GREATER, NumericOperandType.INT);
             compare.setFirstOperand(boundCheck.getIndex());
             compare.setSecondOperand(arrayLength.getReceiver());
             compare.setReceiver(program.createVariable());

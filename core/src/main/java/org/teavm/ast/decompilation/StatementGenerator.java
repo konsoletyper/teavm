@@ -169,8 +169,11 @@ class StatementGenerator implements InstructionVisitor {
             case MODULO:
                 binary(insn.getOperandType(), first, second, result, BinaryOperation.MODULO);
                 break;
-            case COMPARE:
-                binary(insn.getOperandType(), first, second, result, BinaryOperation.COMPARE);
+            case COMPARE_GREATER:
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.COMPARE_GREATER);
+                break;
+            case COMPARE_LESS:
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.COMPARE_LESS);
                 break;
             case AND:
                 binary(insn.getOperandType(), first, second, result, BinaryOperation.BITWISE_AND);

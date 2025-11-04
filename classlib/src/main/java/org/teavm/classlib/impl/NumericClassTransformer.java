@@ -62,7 +62,7 @@ public class NumericClassTransformer implements ClassHolderTransformer {
 
         BasicBlock block = program.createBasicBlock();
 
-        BinaryInstruction insn = new BinaryInstruction(BinaryOperation.COMPARE, insnType);
+        BinaryInstruction insn = new BinaryInstruction(BinaryOperation.COMPARE_GREATER, insnType);
         insn.setFirstOperand(firstArg);
         insn.setSecondOperand(secondArg);
         insn.setReceiver(result);

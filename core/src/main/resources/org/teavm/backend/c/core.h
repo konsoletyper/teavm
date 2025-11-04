@@ -139,10 +139,16 @@ static inline int32_t teavm_compare_u64(int64_t a, int64_t b) {
     return (uint64_t) a > (uint64_t) b ? INT32_C(1) : (uint64_t) a < (uint64_t) b ? INT32_C(-1) : INT32_C(0);
 }
 static inline int32_t teavm_compare_float(float a, float b) {
-    return a > b ? INT32_C(1) : a < b ? INT32_C(-1) : a == b ? INT32_C(0) : INT32_C(1);
+    return a == b ? INT32_C(0) : a < b ? INT32_C(-1) : INT32_C(1);
+}
+static inline int32_t teavm_compare_float_less(float a, float b) {
+return a == b ? INT32_C(0) : a > b ? INT32_C(1) : INT32_C(-1);
 }
 static inline int32_t teavm_compare_double(double a, double b) {
-    return a > b ? INT32_C(1) : a < b ? INT32_C(-1) : a == b ? INT32_C(0) : INT32_C(1);
+    return a == b ? INT32_C(0) : a < b ? INT32_C(-1) : INT32_C(1);
+}
+static inline int32_t teavm_compare_double_less(double a, double b) {
+    return a == b ? INT32_C(0) : a > b ? INT32_C(1) : INT32_C(-1);
 }
 
 static inline int32_t teavm_instanceof(void* obj, int32_t (*cls)(TeaVM_Class*)) {

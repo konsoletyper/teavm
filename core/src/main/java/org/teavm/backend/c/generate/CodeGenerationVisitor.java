@@ -41,6 +41,7 @@ import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryExpr;
+import org.teavm.ast.BinaryOperation;
 import org.teavm.ast.BlockStatement;
 import org.teavm.ast.BoundCheckExpr;
 import org.teavm.ast.BreakStatement;
@@ -197,7 +198,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         pushLocation(expr.getLocation());
         try {
             switch (expr.getOperation()) {
-                case COMPARE:
+                case COMPARE_LESS:
+                case COMPARE_GREATER:
                     writer.print("teavm_compare_");
                     switch (expr.getType()) {
                         case INT:
@@ -208,9 +210,15 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                             break;
                         case FLOAT:
                             writer.print("float");
+                            if (expr.getOperation() == BinaryOperation.COMPARE_LESS) {
+                                writer.print("_less");
+                            }
                             break;
                         case DOUBLE:
                             writer.print("double");
+                            if (expr.getOperation() == BinaryOperation.COMPARE_LESS) {
+                                writer.print("_less");
+                            }
                             break;
                     }
                     writer.print("(");

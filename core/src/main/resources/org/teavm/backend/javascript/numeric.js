@@ -48,7 +48,8 @@ let $rt_equalDoubles = (a, b) => {
         && $rt_numberConversionIntArray[1] === $rt_numberConversionIntArray[3];
 }
 
-let $rt_compare = (a, b) => a > b ? 1 : a < b ? -1 : a === b ? 0 : 1;
+let $rt_compare = (a, b) => a === b ? 0 : a < b ? -1 : 1;
+let $rt_compare_less = (a, b) => a === b ? 0 : a > b ? 1 : -1;
 let $rt_imul = teavm_globals.Math.imul || function(a, b) {
     let ah = (a >>> 16) & 0xFFFF;
     let al = a & 0xFFFF;

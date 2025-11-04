@@ -49,6 +49,7 @@ import org.teavm.ast.MonitorExitStatement;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
+import org.teavm.ast.OperationType;
 import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.ReturnStatement;
@@ -104,8 +105,40 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private static boolean isComparison(Expr expr) {
-        return expr instanceof BinaryExpr && ((BinaryExpr) expr).getOperation() == BinaryOperation.COMPARE;
+        if (!(expr instanceof BinaryExpr)) {
+            return false;
+        }
+        var binary = (BinaryExpr) expr;
+        if (binary.getType() != OperationType.INT && binary.getType() != OperationType.LONG) {
+            return false;
+        }
+        return binary.getOperation() == BinaryOperation.COMPARE_LESS
+                || binary.getOperation() == BinaryOperation.COMPARE_GREATER;
     }
+
+    private static boolean isComparisonLess(Expr expr) {
+        if (!(expr instanceof BinaryExpr)) {
+            return false;
+        }
+        var binary = (BinaryExpr) expr;
+        if (binary.getType() != OperationType.FLOAT && binary.getType() != OperationType.DOUBLE) {
+            return false;
+        }
+        return binary.getOperation() == BinaryOperation.COMPARE_LESS;
+    }
+
+
+    private static boolean isComparisonGreater(Expr expr) {
+        if (!(expr instanceof BinaryExpr)) {
+            return false;
+        }
+        var binary = (BinaryExpr) expr;
+        if (binary.getType() != OperationType.FLOAT && binary.getType() != OperationType.DOUBLE) {
+            return false;
+        }
+        return binary.getOperation() == BinaryOperation.COMPARE_GREATER;
+    }
+
 
     private void pushLocation(TextLocation location) {
         locationStack.push(location);
@@ -178,27 +211,121 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                 q = tmp;
                 invert = true;
             }
-            if (isComparison(p) && isZero(q)) {
-                switch (expr.getOperation()) {
-                    case EQUALS:
-                    case NOT_EQUALS:
-                    case LESS:
-                    case LESS_OR_EQUALS:
-                    case GREATER:
-                    case GREATER_OR_EQUALS: {
-                        BinaryExpr comparison = (BinaryExpr) p;
-                        Expr result = BinaryExpr.binary(expr.getOperation(), comparison.getType(),
-                                comparison.getFirstOperand(), comparison.getSecondOperand());
-                        result.setLocation(comparison.getLocation());
-                        result.setVariableIndex(comparison.getVariableIndex());
-                        if (invert) {
-                            result = ExprOptimizer.invert(result);
+            if (isZero(q)) {
+                if (isComparison(p)) {
+                    switch (expr.getOperation()) {
+                        case EQUALS:
+                        case NOT_EQUALS:
+                        case LESS:
+                        case LESS_OR_EQUALS:
+                        case GREATER:
+                        case GREATER_OR_EQUALS: {
+                            BinaryExpr comparison = (BinaryExpr) p;
+                            Expr result = BinaryExpr.binary(expr.getOperation(), comparison.getType(),
+                                    comparison.getFirstOperand(), comparison.getSecondOperand());
+                            result.setLocation(comparison.getLocation());
+                            result.setVariableIndex(comparison.getVariableIndex());
+                            if (invert) {
+                                result = ExprOptimizer.invert(result);
+                            }
+                            resultExpr = result;
+                            return;
                         }
-                        resultExpr = result;
-                        return;
+                        default:
+                            break;
                     }
-                    default:
-                        break;
+                } else if (isComparisonLess(p)) {
+                    switch (expr.getOperation()) {
+                        case EQUALS:
+                        case NOT_EQUALS:
+                        case GREATER:
+                        case GREATER_OR_EQUALS: {
+                            var comparison = (BinaryExpr) p;
+                            var result = BinaryExpr.binary(expr.getOperation(), comparison.getType(),
+                                    comparison.getFirstOperand(), comparison.getSecondOperand());
+                            result.setLocation(comparison.getLocation());
+                            result.setVariableIndex(comparison.getVariableIndex());
+                            if (invert) {
+                                result = ExprOptimizer.invert(result);
+                            }
+                            resultExpr = result;
+                            return;
+                        }
+                        case LESS: {
+                            var comparison = (BinaryExpr) p;
+                            var result = BinaryExpr.invert(BinaryExpr.binary(BinaryOperation.GREATER_OR_EQUALS,
+                                    comparison.getType(), comparison.getFirstOperand(),
+                                    comparison.getSecondOperand()));
+                            result.setLocation(comparison.getLocation());
+                            result.setVariableIndex(comparison.getVariableIndex());
+                            if (invert) {
+                                result = ExprOptimizer.invert(result);
+                            }
+                            resultExpr = result;
+                            return;
+                        }
+                        case LESS_OR_EQUALS: {
+                            var comparison = (BinaryExpr) p;
+                            var result = BinaryExpr.invert(BinaryExpr.binary(BinaryOperation.GREATER,
+                                    comparison.getType(), comparison.getFirstOperand(),
+                                    comparison.getSecondOperand()));
+                            result.setLocation(comparison.getLocation());
+                            result.setVariableIndex(comparison.getVariableIndex());
+                            if (invert) {
+                                result = ExprOptimizer.invert(result);
+                            }
+                            resultExpr = result;
+                            return;
+                        }
+                        default:
+                            break;
+                    }
+                } else if (isComparisonGreater(p)) {
+                    switch (expr.getOperation()) {
+                        case EQUALS:
+                        case NOT_EQUALS:
+                        case LESS:
+                        case LESS_OR_EQUALS: {
+                            var comparison = (BinaryExpr) p;
+                            var result = BinaryExpr.binary(expr.getOperation(), comparison.getType(),
+                                    comparison.getFirstOperand(), comparison.getSecondOperand());
+                            result.setLocation(comparison.getLocation());
+                            result.setVariableIndex(comparison.getVariableIndex());
+                            if (invert) {
+                                result = ExprOptimizer.invert(result);
+                            }
+                            resultExpr = result;
+                            return;
+                        }
+                        case GREATER: {
+                            var comparison = (BinaryExpr) p;
+                            var result = BinaryExpr.invert(BinaryExpr.binary(BinaryOperation.LESS_OR_EQUALS,
+                                    comparison.getType(), comparison.getFirstOperand(),
+                                    comparison.getSecondOperand()));
+                            result.setLocation(comparison.getLocation());
+                            result.setVariableIndex(comparison.getVariableIndex());
+                            if (invert) {
+                                result = ExprOptimizer.invert(result);
+                            }
+                            resultExpr = result;
+                            return;
+                        }
+                        case GREATER_OR_EQUALS: {
+                            var comparison = (BinaryExpr) p;
+                            var result = BinaryExpr.invert(BinaryExpr.binary(BinaryOperation.LESS,
+                                    comparison.getType(), comparison.getFirstOperand(),
+                                    comparison.getSecondOperand()));
+                            result.setLocation(comparison.getLocation());
+                            result.setVariableIndex(comparison.getVariableIndex());
+                            if (invert) {
+                                result = ExprOptimizer.invert(result);
+                            }
+                            resultExpr = result;
+                            return;
+                        }
+                        default:
+                            break;
+                    }
                 }
             }
             expr.setFirstOperand(a);

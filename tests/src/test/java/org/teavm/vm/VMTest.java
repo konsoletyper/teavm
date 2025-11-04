@@ -16,6 +16,7 @@
 package org.teavm.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
@@ -564,6 +565,78 @@ public class VMTest {
     public void typeInferenceForArrayMerge() {
         int[][] a = falseBoolean() ? null : array();
         assertEquals(23, a[0][0]);
+    }
+
+    @Test
+    public void nanComparison() {
+        var d = Double.NaN;
+        assertFalse(d == 1);
+        assertFalse(d > 1);
+        assertFalse(d < 1);
+        assertTrue(d != 1);
+        assertFalse(d == Double.NaN);
+        assertFalse(d > Double.NaN);
+        assertFalse(d < Double.NaN);
+        assertTrue(d != Double.NaN);
+        
+        d = doubleNaN();
+        assertFalse(d == 1);
+        assertFalse(d > 1);
+        assertFalse(d < 1);
+        assertTrue(d != 1);
+        assertFalse(d == Double.NaN);
+        assertFalse(d > Double.NaN);
+        assertFalse(d < Double.NaN);
+        assertTrue(d != Double.NaN);
+
+        assertFalse(doubleNaN() == 1);
+        assertFalse(doubleNaN() > 1);
+        assertFalse(doubleNaN() < 1);
+        assertTrue(doubleNaN() != 1);
+        assertFalse(doubleNaN() == Double.NaN);
+        assertFalse(doubleNaN() > Double.NaN);
+        assertFalse(doubleNaN() < Double.NaN);
+        assertTrue(doubleNaN() != Double.NaN);
+    }
+    
+    @Test
+    public void nanComparisonFloat() {
+        var f = Float.NaN;
+        assertFalse(f == 1);
+        assertFalse(f > 1);
+        assertFalse(f < 1);
+        assertTrue(f != 1);
+        assertFalse(f == Float.NaN);
+        assertFalse(f > Float.NaN);
+        assertFalse(f < Float.NaN);
+        assertTrue(f != Float.NaN);
+
+        f = floatNaN();
+        assertFalse(f == 1);
+        assertFalse(f > 1);
+        assertFalse(f < 1);
+        assertTrue(f != 1);
+        assertFalse(f == Float.NaN);
+        assertFalse(f > Float.NaN);
+        assertFalse(f < Float.NaN);
+        assertTrue(f != Float.NaN);
+
+        assertFalse(floatNaN() == 1);
+        assertFalse(floatNaN() > 1);
+        assertFalse(floatNaN() < 1);
+        assertTrue(floatNaN() != 1);
+        assertFalse(floatNaN() == Float.NaN);
+        assertFalse(floatNaN() > Float.NaN);
+        assertFalse(floatNaN() < Float.NaN);
+        assertTrue(floatNaN() != Float.NaN);
+    }
+    
+    private double doubleNaN() {
+        return Double.NaN;
+    }
+
+    private float floatNaN() {
+        return Float.NaN;
     }
 
     private boolean falseBoolean() {

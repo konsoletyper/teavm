@@ -313,7 +313,7 @@ public class ValueEmitter {
 
     public ValueEmitter compareTo(ValueEmitter other) {
         Pair pair = commonNumeric(other);
-        return binaryOp(BinaryOperation.COMPARE, pair.first, pair.second, ValueType.INTEGER);
+        return binaryOp(BinaryOperation.COMPARE_GREATER, pair.first, pair.second, ValueType.INTEGER);
     }
 
     public ValueEmitter compareTo(int value) {

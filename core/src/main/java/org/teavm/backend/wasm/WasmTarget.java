@@ -333,6 +333,10 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             var method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
             dependencyAnalyzer.linkMethod(method).use();
         }
+        for (Class<?> type : Arrays.asList(float.class, double.class)) {
+            var method = new MethodReference(WasmRuntime.class, "compareLess", type, type, int.class);
+            dependencyAnalyzer.linkMethod(method).use();
+        }
         for (Class<?> type : Arrays.asList(int.class, long.class)) {
             var method = new MethodReference(WasmRuntime.class, "compareUnsigned", type, type, int.class);
             dependencyAnalyzer.linkMethod(method).use();

@@ -304,7 +304,8 @@ public class TypeInferer {
         public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
                 NumericOperandType type) {
             switch (op) {
-                case COMPARE:
+                case COMPARE_LESS:
+                case COMPARE_GREATER:
                     types[receiver.getIndex()] = new InferenceType(InferenceKind.INT, 0);
                     break;
                 default:

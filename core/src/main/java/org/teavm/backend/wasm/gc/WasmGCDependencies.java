@@ -96,6 +96,10 @@ public class WasmGCDependencies {
             var method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
             analyzer.linkMethod(method).use();
         }
+        for (var type : Arrays.asList(float.class, double.class)) {
+            var method = new MethodReference(WasmRuntime.class, "compareLess", type, type, int.class);
+            analyzer.linkMethod(method).use();
+        }
         for (var type : Arrays.asList(int.class, long.class)) {
             var method = new MethodReference(WasmRuntime.class, "compareUnsigned", type, type, int.class);
             analyzer.linkMethod(method).use();

@@ -184,7 +184,8 @@ public class Interpreter {
                         case MODULO:
                             result = a % b;
                             break;
-                        case COMPARE:
+                        case COMPARE_LESS:
+                        case COMPARE_GREATER:
                             result = Integer.compare(a, b);
                             break;
                         case AND:
@@ -222,7 +223,8 @@ public class Interpreter {
                         case MODULO:
                             result = a % b;
                             break;
-                        case COMPARE:
+                        case COMPARE_LESS:
+                        case COMPARE_GREATER:
                             result = Long.compare(a, b);
                             break;
                         case AND:
@@ -260,7 +262,8 @@ public class Interpreter {
                         case MODULO:
                             result = a % b;
                             break;
-                        case COMPARE:
+                        case COMPARE_LESS:
+                        case COMPARE_GREATER:
                             result = Float.compare(a, b);
                             break;
                         case AND:
@@ -294,7 +297,8 @@ public class Interpreter {
                         case MODULO:
                             result = a % b;
                             break;
-                        case COMPARE:
+                        case COMPARE_LESS:
+                        case COMPARE_GREATER:
                             result = Double.compare(a, b);
                             break;
                         case AND:

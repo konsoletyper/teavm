@@ -306,8 +306,11 @@ public class GlobalValueNumbering implements MethodOptimization {
                 case MODULO:
                     value = "%";
                     break;
-                case COMPARE:
-                    value = "$";
+                case COMPARE_GREATER:
+                    value = "$>";
+                    break;
+                case COMPARE_LESS:
+                    value = "$<";
                     break;
                 case AND:
                     value = "&";
@@ -376,7 +379,8 @@ public class GlobalValueNumbering implements MethodOptimization {
                                 evaluatedConstant = p % q;
                             }
                             break;
-                        case COMPARE:
+                        case COMPARE_GREATER:
+                        case COMPARE_LESS:
                             evaluatedConstant = Integer.compare(p, q);
                             break;
                         case AND:
@@ -423,7 +427,8 @@ public class GlobalValueNumbering implements MethodOptimization {
                                 evaluatedConstant = p % q;
                             }
                             break;
-                        case COMPARE:
+                        case COMPARE_GREATER:
+                        case COMPARE_LESS:
                             evaluatedConstant = Long.compare(p, q);
                             break;
                         case AND:
@@ -470,8 +475,11 @@ public class GlobalValueNumbering implements MethodOptimization {
                                 evaluatedConstant = p % q;
                             }
                             break;
-                        case COMPARE:
+                        case COMPARE_GREATER:
                             evaluatedConstant = p > q ? 1 : p < q ? -1 : p == q ? 0 : 1;
+                            break;
+                        case COMPARE_LESS:
+                            evaluatedConstant = p > q ? 1 : p < q ? -1 : p == q ? 0 : -1;
                             break;
                         case AND:
                         case OR:
@@ -506,8 +514,11 @@ public class GlobalValueNumbering implements MethodOptimization {
                                 evaluatedConstant = p % q;
                             }
                             break;
-                        case COMPARE:
+                        case COMPARE_GREATER:
                             evaluatedConstant = p > q ? 1 : p < q ? -1 : p == q ? 0 : 1;
+                            break;
+                        case COMPARE_LESS:
+                            evaluatedConstant = p > q ? 1 : p < q ? -1 : p == q ? 0 : -1;
                             break;
                         case AND:
                         case OR:

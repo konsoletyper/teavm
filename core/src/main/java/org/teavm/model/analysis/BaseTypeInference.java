@@ -402,7 +402,8 @@ public abstract class BaseTypeInference<T> {
 
         @Override
         public void visit(BinaryInstruction insn) {
-            if (insn.getOperation() == BinaryOperation.COMPARE) {
+            if (insn.getOperation() == BinaryOperation.COMPARE_GREATER
+                    || insn.getOperation() == BinaryOperation.COMPARE_LESS) {
                 type(insn.getReceiver(), ValueType.INTEGER);
                 return;
             }

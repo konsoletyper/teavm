@@ -18,6 +18,7 @@ package org.teavm.ast.optimization;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.BinaryOperation;
 import org.teavm.ast.Expr;
+import org.teavm.ast.OperationType;
 import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnaryOperation;
 
@@ -41,13 +42,26 @@ final class ExprOptimizer {
                 case NOT_EQUALS:
                     return Expr.binary(BinaryOperation.EQUALS, binary.getType(), a, b, expr.getLocation());
                 case LESS:
-                    return Expr.binary(BinaryOperation.GREATER_OR_EQUALS, binary.getType(), a, b, expr.getLocation());
+                    if (binary.getType() == OperationType.INT || binary.getType() == OperationType.LONG) {
+                        return Expr.binary(BinaryOperation.GREATER_OR_EQUALS, binary.getType(), a, b,
+                                expr.getLocation());
+                    }
+                    break;
                 case LESS_OR_EQUALS:
-                    return Expr.binary(BinaryOperation.GREATER, binary.getType(), a, b, expr.getLocation());
+                    if (binary.getType() == OperationType.INT || binary.getType() == OperationType.LONG) {
+                        return Expr.binary(BinaryOperation.GREATER, binary.getType(), a, b, expr.getLocation());
+                    }
+                    break;
                 case GREATER:
-                    return Expr.binary(BinaryOperation.LESS_OR_EQUALS, binary.getType(), a, b, expr.getLocation());
+                    if (binary.getType() == OperationType.INT || binary.getType() == OperationType.LONG) {
+                        return Expr.binary(BinaryOperation.LESS_OR_EQUALS, binary.getType(), a, b, expr.getLocation());
+                    }
+                    break;
                 case GREATER_OR_EQUALS:
-                    return Expr.binary(BinaryOperation.LESS, binary.getType(), a, b, expr.getLocation());
+                    if (binary.getType() == OperationType.INT || binary.getType() == OperationType.LONG) {
+                        return Expr.binary(BinaryOperation.LESS, binary.getType(), a, b, expr.getLocation());
+                    }
+                    break;
                 default:
                     break;
             }
