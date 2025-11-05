@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.impl.reflection;
 
+import java.lang.annotation.Annotation;
+
 public class MethodInfo {
     public native final String name();
 
@@ -27,4 +29,6 @@ public class MethodInfo {
     public native final ClassList parameterTypes();
 
     public native final MethodCaller caller();
+
+    public native final Annotation[] annotations();
 }

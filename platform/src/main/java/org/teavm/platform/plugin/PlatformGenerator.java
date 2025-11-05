@@ -87,6 +87,9 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 context.writeExpr(context.getArgument(0));
                 context.getWriter().append(".$clinit()");
                 break;
+            case "annotationsFromJS":
+                context.writeExpr(context.getArgument(0));
+                break;
         }
     }
 

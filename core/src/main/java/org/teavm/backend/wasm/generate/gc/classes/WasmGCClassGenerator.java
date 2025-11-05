@@ -1908,6 +1908,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 arrayDataFieldName()));
     }
 
+    @Override
     public WasmArray getObjectArrayType() {
         var wasmArray = objectArrayType;
         if (wasmArray == null) {

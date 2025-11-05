@@ -63,6 +63,8 @@ class WasmGCReflectionGenerator implements WasmGCReflectionProvider {
                         names.structureField("@flags")));
                 fields.add(new WasmField(WasmType.INT32.asStorage(),
                         names.structureField("@accessLevel")));
+                fields.add(new WasmField(classInfoProvider.getObjectArrayType().getReference().asStorage(),
+                        names.structureField("@annotations")));
                 fields.add(new WasmField(classClass.getType().asStorage(),
                         names.structureField("@type")));
                 fields.add(new WasmField(getterType.asStorage(), names.structureField("@reader")));
@@ -102,6 +104,8 @@ class WasmGCReflectionGenerator implements WasmGCReflectionProvider {
                         names.structureField("@flags")));
                 fields.add(new WasmField(WasmType.INT32.asStorage(),
                         names.structureField("@accessLevel")));
+                fields.add(new WasmField(classInfoProvider.getObjectArrayType().getReference().asStorage(),
+                        names.structureField("@annotations")));
                 fields.add(new WasmField(classClass.getType().asStorage(),
                         names.structureField("@returnType")));
                 fields.add(new WasmField(getClassArrayType().getReference().asStorage(),

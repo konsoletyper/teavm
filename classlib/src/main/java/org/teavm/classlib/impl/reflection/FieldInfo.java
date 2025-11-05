@@ -15,12 +15,16 @@
  */
 package org.teavm.classlib.impl.reflection;
 
+import java.lang.annotation.Annotation;
+
 public class FieldInfo {
     public native final String name();
 
     public native final int modifiers();
 
     public native final int accessLevel();
+
+    public native final Annotation[] annotations();
 
     public native final Class<?> type();
 

@@ -17,6 +17,8 @@ package org.teavm.classlib.java.lang.reflect;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -93,10 +95,20 @@ public class ConstructorTest {
         assertEquals("42", instance.getB());
     }
 
+    @Test
+    @SkipPlatform(TestPlatform.JAVASCRIPT)
+    public void annotationsRead() throws Exception {
+        var constructor = ReflectableType.class.getDeclaredConstructor();
+        assertEquals(TestAnnot.class, constructor.getAnnotation(TestAnnot.class).annotationType());
+        constructor = ReflectableType.class.getDeclaredConstructor(int.class);
+        assertNull(constructor.getAnnotation(TestAnnot.class));
+    }
+
     static class ReflectableType {
         public int a;
         public Object b;
 
+        @TestAnnot
         @Reflectable protected ReflectableType() {
         }
 
@@ -120,5 +132,9 @@ public class ConstructorTest {
         public Object getB() {
             return b;
         }
+    }
+    
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface TestAnnot {
     }
 }

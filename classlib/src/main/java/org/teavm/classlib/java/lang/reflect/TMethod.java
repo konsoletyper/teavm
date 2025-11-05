@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import java.lang.annotation.Annotation;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.reflection.Flags;
 import org.teavm.classlib.impl.reflection.MethodCaller;
@@ -22,6 +23,7 @@ import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TObject;
+import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.platform.Platform;
 
 public class TMethod extends TAccessibleObject implements TMember {
@@ -32,9 +34,10 @@ public class TMethod extends TAccessibleObject implements TMember {
     private TClass<?> returnType;
     private TClass<?>[] parameterTypes;
     private MethodCaller caller;
+    private Object[] declaredAnnotations;
 
     public TMethod(TClass<?> declaringClass, String name, int flags, int accessLevel, TClass<?> returnType,
-            TClass<?>[] parameterTypes, MethodCaller caller) {
+            TClass<?>[] parameterTypes, MethodCaller caller, Annotation[] declaredAnnotations) {
         this.declaringClass = declaringClass;
         this.name = name;
         this.flags = flags;
@@ -42,6 +45,7 @@ public class TMethod extends TAccessibleObject implements TMember {
         this.returnType = returnType;
         this.parameterTypes = parameterTypes;
         this.caller = caller;
+        this.declaredAnnotations = declaredAnnotations;
     }
 
     @Override
@@ -134,5 +138,10 @@ public class TMethod extends TAccessibleObject implements TMember {
 
     public boolean isVarArgs() {
         return (flags & Flags.VARARGS) != 0;
+    }
+
+    @Override
+    public TAnnotation[] getDeclaredAnnotations() {
+        return declaredAnnotations != null ? (TAnnotation[]) declaredAnnotations.clone() : new TAnnotation[0];
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import java.lang.annotation.Annotation;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.reflection.Converter;
 import org.teavm.classlib.impl.reflection.Flags;
@@ -24,6 +25,7 @@ import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TInstantiationException;
 import org.teavm.classlib.java.lang.TObject;
+import org.teavm.classlib.java.lang.annotation.TAnnotation;
 
 public class TConstructor<T> extends TAccessibleObject implements TMember {
     private TClass<T> declaringClass;
@@ -32,15 +34,17 @@ public class TConstructor<T> extends TAccessibleObject implements TMember {
     private int accessLevel;
     private TClass<?>[] parameterTypes;
     private MethodCaller caller;
+    private Object[] declaredAnnotations;
 
     public TConstructor(TClass<T> declaringClass, String name, int modifiers, int accessLevel,
-            TClass<?>[] parameterTypes, MethodCaller caller) {
+            TClass<?>[] parameterTypes, MethodCaller caller, Annotation[] declaredAnnotations) {
         this.declaringClass = declaringClass;
         this.name = name;
         this.modifiers = modifiers;
         this.accessLevel = accessLevel;
         this.parameterTypes = parameterTypes;
         this.caller = caller;
+        this.declaredAnnotations = declaredAnnotations;
     }
 
     @Override
@@ -123,5 +127,10 @@ public class TConstructor<T> extends TAccessibleObject implements TMember {
 
     public boolean isVarArgs() {
         return (modifiers & Flags.VARARGS) != 0;
+    }
+
+    @Override
+    public TAnnotation[] getDeclaredAnnotations() {
+        return declaredAnnotations != null ? (TAnnotation[]) declaredAnnotations.clone() : new TAnnotation[0];
     }
 }

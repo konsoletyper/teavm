@@ -16,22 +16,15 @@
 package org.teavm.classlib.java.lang.reflect;
 
 import java.lang.annotation.Annotation;
-import java.lang.annotation.Retention;
-import java.util.ArrayList;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.AnnotationReader;
-import org.teavm.model.AnnotationValue;
-import org.teavm.model.ClassReader;
-import org.teavm.model.ElementModifier;
-import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 public class WasmGCAnnotationDependencyListener extends BaseAnnotationDependencyListener {
     public WasmGCAnnotationDependencyListener() {
-        super(true);
+        super(true, false);
     }
 
     @Override
@@ -58,91 +51,7 @@ public class WasmGCAnnotationDependencyListener extends BaseAnnotationDependency
                 return;
             }
 
-            for (var annotation : cls.getAnnotations().all()) {
-                agent.linkClass(annotation.getType());
-            }
-
-            propagateAnnotationImplementations(agent, cls, outputNode);
+            annotHelper.propagateAnnotationImplementations(agent, cls.getAnnotations().all(), outputNode);
         });
-    }
-
-    private void propagateAnnotationImplementations(DependencyAgent agent, ClassReader cls,
-            DependencyNode outputNode) {
-        var annotations = new ArrayList<AnnotationReader>();
-        for (var annot : cls.getAnnotations().all()) {
-            var annotType = agent.getClassSource().get(annot.getType());
-            if (annotType == null) {
-                continue;
-            }
-
-            var retention = annotType.getAnnotations().get(Retention.class.getName());
-            if (retention != null) {
-                String retentionPolicy = retention.getValue("value").getEnumValue().getFieldName();
-                if (retentionPolicy.equals("RUNTIME")) {
-                    annotations.add(annot);
-                }
-            }
-        }
-
-        for (var annotation : annotations) {
-            propagateAnnotationInstance(agent, annotation, outputNode);
-        }
-    }
-
-    private void propagateAnnotationInstance(DependencyAgent agent, AnnotationReader annotation,
-            DependencyNode outputNode) {
-        ClassReader annotationClass = agent.getClassSource().get(annotation.getType());
-        if (annotationClass == null) {
-            return;
-        }
-
-        var implementor = getAnnotationImplementor(agent, annotation.getType());
-        if (implementor != null) {
-            agent.linkClass(implementor).initClass(null);
-            outputNode.propagate(agent.getType(ValueType.object(implementor)));
-            for (var methodDecl : annotationClass.getMethods()) {
-                if (methodDecl.hasModifier(ElementModifier.STATIC)) {
-                    continue;
-                }
-                var value = annotation.getValue(methodDecl.getName());
-                if (value == null) {
-                    value = methodDecl.getAnnotationDefault();
-                }
-                var field = agent.linkField(new FieldReference(implementor, "$" + methodDecl.getName()));
-                propagateAnnotationValue(agent, value, methodDecl.getResultType(), field.getValue());
-            }
-        }
-    }
-
-    private void propagateAnnotationValue(DependencyAgent agent, AnnotationValue value, ValueType type,
-            DependencyNode outputNode) {
-        switch (value.getType()) {
-            case AnnotationValue.LIST: {
-                outputNode.propagate(agent.getType(type));
-                var itemType = ((ValueType.Array) type).getItemType();
-                for (var annotationValue : value.getList()) {
-                    propagateAnnotationValue(agent, annotationValue, itemType, outputNode.getArrayItem());
-                }
-                break;
-            }
-            case AnnotationValue.ENUM:
-                break;
-            case AnnotationValue.CLASS: {
-                var cls = value.getJavaClass();
-                while (cls instanceof ValueType.Array) {
-                    cls = ((ValueType.Array) cls).getItemType();
-                }
-                if (cls instanceof ValueType.Object) {
-                    var className = ((ValueType.Object) cls).getClassName();
-                    agent.linkClass(className).initClass(null);
-                }
-                outputNode.getClassValueNode().propagate(agent.getType(value.getJavaClass()));
-                outputNode.propagate(agent.getType(ValueType.object("java.lang.Class")));
-                break;
-            }
-            case AnnotationValue.ANNOTATION:
-                propagateAnnotationInstance(agent, value.getAnnotation(), outputNode);
-                break;
-        }
     }
 }

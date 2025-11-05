@@ -15,6 +15,9 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.lang.annotation.Retention;
+import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.teavm.backend.javascript.codegen.SourceWriter;
@@ -29,6 +32,8 @@ import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.AccessLevel;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
@@ -161,7 +166,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
                 .collect(Collectors.toSet());
 
         var skipPrivates = ReflectionDependencyListener.shouldSkipPrivates(cls);
-        generateCreateMembers(writer, skipPrivates, fieldsToExpose, field -> {
+        generateCreateMembers(context, writer, skipPrivates, fieldsToExpose, field -> {
             appendProperty(writer, "type", false, () -> context.typeToClassString(writer, field.getType()));
 
             appendProperty(writer, "getter", false, () -> {
@@ -201,7 +206,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         var methodsToExpose = accessibleMethods == null ? cls.getMethods() : cls.getMethods().stream()
                 .filter(m -> accessibleMethods.contains(m.getDescriptor()))
                 .collect(Collectors.toList());
-        generateCreateMembers(writer, skipPrivates, methodsToExpose, method -> {
+        generateCreateMembers(context, writer, skipPrivates, methodsToExpose, method -> {
             appendProperty(writer, "parameterTypes", false, () -> {
                 writer.append('[');
                 for (int i = 0; i < method.parameterCount(); ++i) {
@@ -230,8 +235,8 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         writer.outdent().append("];").softNewLine();
     }
 
-    private <T extends MemberReader> void generateCreateMembers(SourceWriter writer, boolean skipPrivates,
-            Iterable<T> members, MemberRenderer<T> renderer) {
+    private <T extends MemberReader> void generateCreateMembers(GeneratorContext context, SourceWriter writer,
+            boolean skipPrivates, Iterable<T> members, MemberRenderer<T> renderer) {
         boolean first = true;
         for (T member : members) {
             if (skipPrivates) {
@@ -252,16 +257,178 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
             appendProperty(writer, "modifiers", false, () -> writer.append(
                     ElementModifier.pack(member.readModifiers())));
             appendProperty(writer, "accessLevel", false, () -> writer.append(member.getLevel().ordinal()));
+            generateAnnotations(context, writer, member.getAnnotations().all());
             renderer.render(member);
             writer.outdent().softNewLine().append("}");
         }
+    }
+
+    private void generateAnnotations(GeneratorContext context, SourceWriter writer,
+            Iterable<? extends AnnotationReader> annotations) {
+        var annotationsToExpose = new ArrayList<AnnotationReader>();
+        for (var annotation : annotations) {
+            var annotationCls = context.getClassSource().get(annotation.getType());
+            if (annotationCls == null) {
+                continue;
+            }
+            var retention = annotationCls.getAnnotations().get(Retention.class.getName());
+            if (retention == null) {
+                continue;
+            }
+            if (Objects.equals(retention.getValue("value").getEnumValue().getFieldName(), "RUNTIME")) {
+                annotationsToExpose.add(annotation);
+            }
+        }
+        if (annotationsToExpose.isEmpty()) {
+            return;
+        }
+        writer.append(",").softNewLine();
+        writer.append("annotations").append(':').ws();
+        writer.appendFunction("$rt_wrapArray").append("(").appendClass("java.lang.annotation.Annotation")
+                .append(",").ws().append("[");
+        if (!annotationsToExpose.isEmpty()) {
+            generateAnnotation(context, writer, annotationsToExpose.get(0));
+            for (var i = 1; i < annotationsToExpose.size(); ++i) {
+                writer.append(",").ws();
+                generateAnnotation(context, writer, annotationsToExpose.get(i));
+            }
+        }
+        writer.append("])");
+    }
+
+    private void generateAnnotation(GeneratorContext context, SourceWriter writer, AnnotationReader annotation) {
+        var annotCls = context.getClassSource().get(annotation.getType());
+        var annotImpl = context.getClassSource().get(annotation.getType() + "$$_impl");
+
+        var arguments = new ArrayList<Fragment>();
+        var signature = new ArrayList<ValueType>();
+        for (var methodDecl : annotCls.getMethods()) {
+            if (methodDecl.hasModifier(ElementModifier.STATIC)) {
+                continue;
+            }
+            signature.add(methodDecl.getResultType());
+            var ownValue = annotation.getValue(methodDecl.getName());
+            var value = ownValue != null ? ownValue : methodDecl.getAnnotationDefault();
+            arguments.add(() -> generateAnnotationValue(context, writer, value, methodDecl.getResultType()));
+        }
+
+        signature.add(ValueType.VOID);
+        var ctor = new MethodReference(annotImpl.getName(), "<init>", signature.toArray(new ValueType[0]));
+        writer.appendInit(ctor).append("(");
+        if (!arguments.isEmpty()) {
+            arguments.get(0).render();
+            for (var i = 1; i < arguments.size(); ++i) {
+                writer.append(",").ws();
+                arguments.get(i).render();
+            }
+        }
+        writer.append(")");
+    }
+
+    private void generateAnnotationValue(GeneratorContext context, SourceWriter writer,
+            AnnotationValue value, ValueType type) {
+        switch (value.getType()) {
+            case AnnotationValue.BOOLEAN:
+                writer.append(value.getBoolean() ? "1" : "0");
+                break;
+            case AnnotationValue.CHAR:
+                writer.append((int) value.getChar());
+                break;
+            case AnnotationValue.BYTE:
+                writer.append(value.getByte());
+                break;
+            case AnnotationValue.SHORT:
+                writer.append(value.getShort());
+                break;
+            case AnnotationValue.INT:
+                writer.append(value.getInt());
+                break;
+            case AnnotationValue.LONG:
+                writer.append(String.valueOf(value.getLong()));
+                break;
+            case AnnotationValue.FLOAT:
+                writer.append(String.valueOf(value.getFloat()));
+                break;
+            case AnnotationValue.DOUBLE:
+                writer.append(String.valueOf(value.getDouble()));
+                break;
+            case AnnotationValue.STRING:
+                writer.appendFunction("$rt_str").append("(\"").append(RenderingUtil.escapeString(value.getString()))
+                        .append("\")");
+                break;
+            case AnnotationValue.LIST: {
+                var itemType = ((ValueType.Array) type).getItemType();
+                appendArrayConstructor(context, writer, itemType);
+                var list = value.getList();
+                writer.append("[");
+                if (!list.isEmpty()) {
+                    generateAnnotationValue(context, writer, list.get(0), itemType);
+                    for (var i = 1; i < list.size(); ++i) {
+                        writer.append(",").ws();
+                        generateAnnotationValue(context, writer, list.get(i), itemType);
+                    }
+                }
+                writer.append("])");
+                break;
+            }
+            case AnnotationValue.ANNOTATION:
+                generateAnnotation(context, writer, value.getAnnotation());
+                return;
+            case AnnotationValue.ENUM:
+                if (context.isDynamicInitializer(value.getEnumValue().getClassName())) {
+                    writer.append("(").appendClassInit(value.getEnumValue().getClassName()).append("(),").ws()
+                            .appendStaticField(value.getEnumValue()).append(")");
+                } else {
+                    writer.appendStaticField(value.getEnumValue());
+                }
+                break;
+            case AnnotationValue.CLASS:
+                context.typeToClassString(writer, type);
+                break;
+            default:
+                throw new IllegalArgumentException();
+        }
+    }
+
+    private void appendArrayConstructor(GeneratorContext context, SourceWriter writer, ValueType itemType) {
+        if (itemType instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) itemType).getKind()) {
+                case BOOLEAN:
+                    writer.appendFunction("$rt_createBooleanArrayFromData").append("(");
+                    return;
+                case BYTE:
+                    writer.appendFunction("$rt_createByteArrayFromData").append("(");
+                    return;
+                case SHORT:
+                    writer.appendFunction("$rt_createShortArrayFromData").append("(");
+                    return;
+                case CHARACTER:
+                    writer.appendFunction("$rt_createCharArrayFromData").append("(");
+                    return;
+                case INTEGER:
+                    writer.appendFunction("$rt_createIntArrayFromData").append("(");
+                    return;
+                case LONG:
+                    writer.appendFunction("$rt_createLongArrayFromData").append("(");
+                    return;
+                case FLOAT:
+                    writer.appendFunction("$rt_createFloatArrayFromData").append("(");
+                    return;
+                case DOUBLE:
+                    writer.appendFunction("$rt_createDoubleArrayFromData").append("(");
+                    return;
+            }
+        }
+        writer.appendFunction("$rt_wrapArray").append("(");
+        context.typeToClassString(writer, itemType);
+        writer.append(",").ws();
     }
 
     private void appendProperty(SourceWriter writer, String name, boolean first, Fragment value) {
         if (!first) {
             writer.append(",").softNewLine();
         }
-        writer.append(name).ws().append(':').ws();
+        writer.append(name).append(':').ws();
         value.render();
     }
 

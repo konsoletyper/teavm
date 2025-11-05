@@ -15,11 +15,15 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TSecurityException;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 
 public class TAccessibleObject implements TAnnotatedElement {
+    private Map<TClass<?>, TAnnotation> annotationMap;
+
     protected TAccessibleObject() {
     }
 
@@ -36,17 +40,29 @@ public class TAccessibleObject implements TAnnotatedElement {
     }
 
     @Override
+    public <T extends TAnnotation> T getDeclaredAnnotation(TClass<T> annotationClass) {
+        return getAnnotation(annotationClass);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     public <T extends TAnnotation> T getAnnotation(TClass<T> annotationClass) {
-        return null;
+        if (annotationMap == null) {
+            annotationMap = new HashMap<>();
+            for (var annotation : getDeclaredAnnotations()) {
+                annotationMap.put((TClass<?>) (Object) annotation.annotationType(), annotation);
+            }
+        }
+        return (T) annotationMap.get(annotationClass);
     }
 
     @Override
     public TAnnotation[] getAnnotations() {
-        return null;
+        return getDeclaredAnnotations();
     }
 
     @Override
     public TAnnotation[] getDeclaredAnnotations() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 }

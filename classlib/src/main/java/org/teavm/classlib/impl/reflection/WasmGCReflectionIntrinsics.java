@@ -18,6 +18,7 @@ package org.teavm.classlib.impl.reflection;
 import java.util.ArrayList;
 import java.util.Set;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.generate.gc.annotations.WasmGCAnnotationsHelper;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfo;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCReflectionProvider;
@@ -36,6 +37,7 @@ import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
+import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmFunctionReference;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
@@ -44,6 +46,7 @@ import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSignedType;
@@ -72,6 +75,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
     );
 
     private WasmFunction initReflectionFunction;
+    private WasmFunction wrapAnnotationsFunction;
 
     public WasmGCReflectionIntrinsics(ReflectionDependencyListener reflection) {
         this.reflection = reflection;
@@ -88,6 +92,10 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                         return fieldInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_MODIFIERS);
                     case "accessLevel":
                         return fieldInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_ACCESS);
+                    case "annotations":
+                        return wrapAnnotations(
+                                fieldInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_ANNOTATIONS),
+                                context);
                     case "type":
                         return fieldInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_TYPE);
                     case "reader":
@@ -120,6 +128,10 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                         return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_MODIFIERS);
                     case "accessLevel":
                         return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_ACCESS);
+                    case "annotations":
+                        return wrapAnnotations(
+                                methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_ANNOTATIONS),
+                                context);
                     case "returnType":
                         return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_RETURN_TYPE);
                     case "parameterTypes":
@@ -226,19 +238,61 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 arg, fieldIndex);
     }
 
+    private WasmExpression wrapAnnotations(WasmExpression expression, WasmGCIntrinsicContext context) {
+        return new WasmCall(getWrapAnnotationsFunction(context), expression);
+    }
+
+    private WasmFunction getWrapAnnotationsFunction(WasmGCIntrinsicContext context) {
+        if (wrapAnnotationsFunction == null) {
+            var annotArrayInfo = context.classInfoProvider().getClassInfo(ValueType.arrayOf(
+                    ValueType.object("java.lang.annotation.Annotation")));
+            var annotInfo = context.classInfoProvider().getClassInfo("java.lang.annotation.Annotation");
+            var objectArray = annotArrayInfo.getType();
+            var arrayDataType = context.classInfoProvider().getObjectArrayType().getReference();
+            var classClass = context.classInfoProvider().getClassInfo("java.lang.Class");
+            wrapAnnotationsFunction = new WasmFunction(context.functionTypes().of(objectArray, arrayDataType));
+            wrapAnnotationsFunction.setName(context.names().topLevel("@teavm.wrapAnnotations"));
+            context.module().functions.add(wrapAnnotationsFunction);
+            var param = new WasmLocal(arrayDataType);
+            wrapAnnotationsFunction.add(param);
+
+            var nullCheck = new WasmBlock(false);
+            nullCheck.setType(arrayDataType.composite.getNonNullReference().asBlock());
+            nullCheck.getBody().add(new WasmNullBranch(WasmNullCondition.NOT_NULL,
+                    new WasmGetLocal(param), nullCheck));
+            nullCheck.getBody().add(new WasmReturn(new WasmNullConstant(objectArray)));
+            wrapAnnotationsFunction.getBody().add(new WasmDrop(nullCheck));
+
+            var structNew = new WasmStructNew(annotArrayInfo.getStructure());
+            var arrayCls = new WasmCall(context.classInfoProvider().getGetArrayClassFunction(),
+                    new WasmGetGlobal(annotInfo.getPointer()));
+            var arrayVt = new WasmStructGet(classClass.getStructure(), arrayCls,
+                    context.classInfoProvider().getClassVtFieldOffset());
+            structNew.getInitializers().add(arrayVt);
+            structNew.getInitializers().add(new WasmNullConstant(WasmType.Reference.EQ));
+            structNew.getInitializers().add(new WasmCast(new WasmGetLocal(param),
+                    arrayDataType.composite.getNonNullReference()));
+            wrapAnnotationsFunction.getBody().add(structNew);
+        }
+        return wrapAnnotationsFunction;
+    }
+
     private WasmFunction getInitReflectionFunction(WasmGCIntrinsicContext context) {
         if (initReflectionFunction == null) {
             initReflectionFunction = new WasmFunction(context.functionTypes().of(null));
             initReflectionFunction.setName(context.names().topLevel("@teavm.initReflection"));
             context.module().functions.add(initReflectionFunction);
-            initReflectionFields(context, initReflectionFunction);
-            initReflectionMethods(context, initReflectionFunction);
+            var helper = new WasmGCAnnotationsHelper(context.hierarchy().getClassSource(),
+                    context.classInfoProvider(), context.strings());
+            initReflectionFields(context, initReflectionFunction, helper);
+            initReflectionMethods(context, initReflectionFunction, helper);
             initReflectionInstantiator(context, initReflectionFunction);
         }
         return initReflectionFunction;
     }
 
-    private void initReflectionFields(WasmGCIntrinsicContext context, WasmFunction function) {
+    private void initReflectionFields(WasmGCIntrinsicContext context, WasmFunction function,
+            WasmGCAnnotationsHelper annotationsHelper) {
         var wasmGcReflection = context.classInfoProvider().reflection();
         var classClass = context.classInfoProvider().getClassInfo("java.lang.Class");
         var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");
@@ -276,6 +330,11 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
 
                 fieldInit.getInitializers().add(new WasmInt32Constant(field.getLevel().ordinal()));
 
+                var fieldAnnotations = annotationsHelper.generateAnnotations(field.getAnnotations().all());
+                fieldInit.getInitializers().add(fieldAnnotations != null
+                        ? fieldAnnotations
+                        : new WasmNullConstant(context.classInfoProvider().getObjectArrayType().getReference()));
+
                 fieldInit.getInitializers().add(renderType(context, field.getType()));
 
                 if (accessibleFields != null && accessibleFields.contains(field.getName())
@@ -294,11 +353,13 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                     var setterType = context.functionTypes().of(null, objectClass.getType(), objectClass.getType());
                     fieldInit.getInitializers().add(new WasmNullConstant(setterType.getReference()));
                 }
+
             }
         }
     }
 
-    private void initReflectionMethods(WasmGCIntrinsicContext context, WasmFunction function) {
+    private void initReflectionMethods(WasmGCIntrinsicContext context, WasmFunction function,
+            WasmGCAnnotationsHelper annotationsHelper) {
         var wasmGcReflection = context.classInfoProvider().reflection();
         var classClass = context.classInfoProvider().getClassInfo("java.lang.Class");
         var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");
@@ -342,6 +403,11 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 methodInit.getInitializers().add(new WasmInt32Constant(ElementModifier.pack(method.readModifiers())));
 
                 methodInit.getInitializers().add(new WasmInt32Constant(method.getLevel().ordinal()));
+
+                var methodAnnotations = annotationsHelper.generateAnnotations(method.getAnnotations().all());
+                methodInit.getInitializers().add(methodAnnotations != null
+                        ? methodAnnotations
+                        : new WasmNullConstant(context.classInfoProvider().getObjectArrayType().getReference()));
 
                 methodInit.getInitializers().add(renderType(context, method.getResultType()));
 

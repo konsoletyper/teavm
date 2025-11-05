@@ -27,4 +27,7 @@ public interface JSMember extends JSObject {
 
     @JSProperty
     int getAccessLevel();
+
+    @JSProperty
+    JSObject getAnnotations();
 }

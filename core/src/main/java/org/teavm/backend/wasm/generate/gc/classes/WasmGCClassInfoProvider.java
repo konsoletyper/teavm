@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm.generate.gc.classes;
 
+import org.teavm.backend.wasm.model.WasmArray;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmGlobal;
 import org.teavm.backend.wasm.model.WasmStructure;
@@ -106,6 +107,8 @@ public interface WasmGCClassInfoProvider {
     int getServicesOffset();
 
     int getThrowableNativeOffset();
+
+    WasmArray getObjectArrayType();
 
     default WasmGCClassInfo getClassInfo(String name) {
         return getClassInfo(ValueType.object(name));

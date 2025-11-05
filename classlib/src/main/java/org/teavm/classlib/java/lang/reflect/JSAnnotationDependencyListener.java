@@ -44,7 +44,7 @@ public class JSAnnotationDependencyListener extends BaseAnnotationDependencyList
     private static final String ANNOTATIONS_READER_SUFFIX = "$$__annotations__$$";
 
     public JSAnnotationDependencyListener() {
-        super(false);
+        super(false, true);
     }
 
     @Override
@@ -163,7 +163,7 @@ public class JSAnnotationDependencyListener extends BaseAnnotationDependencyList
             return pe.constantNull(ValueType.object(annotation.getType()));
         }
 
-        String className = getAnnotationImplementor(agent, annotation.getType());
+        String className = annotHelper.getAnnotationImplementor(agent, annotation.getType());
         List<ValueEmitter> params = new ArrayList<>();
         for (MethodReader methodDecl : annotationClass.getMethods()) {
             AnnotationValue value = annotation.getValue(methodDecl.getName());

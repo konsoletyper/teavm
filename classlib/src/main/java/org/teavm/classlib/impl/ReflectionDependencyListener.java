@@ -15,9 +15,11 @@
  */
 package org.teavm.classlib.impl;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -30,6 +32,7 @@ import org.teavm.classlib.ReflectionSupplier;
 import org.teavm.classlib.impl.reflection.ClassList;
 import org.teavm.classlib.impl.reflection.FieldInfo;
 import org.teavm.classlib.impl.reflection.MethodInfo;
+import org.teavm.classlib.java.lang.reflect.AnnotationGenerationHelper;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyConsumer;
@@ -64,6 +67,12 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             Constructor[].class);
     private MethodReference getMethods = new MethodReference(Class.class, "getDeclaredMethods",
             Method[].class);
+    private MethodReference getFieldAnnotations = new MethodReference(Field.class, "getDeclaredAnnotations",
+            Annotation[].class);
+    private MethodReference getMethodAnnotations = new MethodReference(Method.class, "getDeclaredAnnotations",
+            Annotation[].class);
+    private MethodReference getConstructorAnnotations = new MethodReference(Constructor.class, "getDeclaredAnnotations",
+            Annotation[].class);
     private MethodReference forName = new MethodReference(Class.class, "forName", String.class, Boolean.class,
             ClassLoader.class, Class.class);
     private MethodReference classNewInstance = new MethodReference(Class.class, "newInstance", Object.class);
@@ -87,13 +96,20 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private Set<MethodReference> calledMethods = new HashSet<>();
     private Set<FieldReference> readFields = new HashSet<>();
     private Set<FieldReference> writtenFields = new HashSet<>();
+    private List<FieldReader> fieldsReadViaReflection = new ArrayList<>();
+    private List<MethodReader> methodsReadViaReflection = new ArrayList<>();
+    private DependencyNode fieldsAnnotationsConsumer;
+    private DependencyNode methodsAnnotationsConsumer;
 
     private boolean getReached;
     private boolean setReached;
     private boolean callReached;
+    private AnnotationGenerationHelper annotHelper;
 
-    public ReflectionDependencyListener(List<ReflectionSupplier> reflectionSuppliers) {
+    public ReflectionDependencyListener(List<ReflectionSupplier> reflectionSuppliers, boolean enumsAsInts,
+            boolean needAnnotImplCtor) {
         this.reflectionSuppliers = reflectionSuppliers;
+        annotHelper = new AnnotationGenerationHelper(enumsAsInts, needAnnotImplCtor);
     }
 
     public boolean isVirtual(MethodReference methodRef) {
@@ -135,11 +151,15 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 .propagate(agent.getType(ValueType.object("java.lang.String")));
         agent.linkMethod(new MethodReference(FieldInfo.class, "type", Class.class)).getResult()
                 .propagate(agent.getType(ValueType.object("java.lang.Class")));
+        agent.linkMethod(new MethodReference(FieldInfo.class, "annotations", Annotation[].class)).getResult()
+                .propagate(agent.getType(ValueType.parse(Annotation[].class)));
 
         agent.linkMethod(new MethodReference(MethodInfo.class, "name", String.class)).getResult()
                 .propagate(agent.getType(ValueType.object("java.lang.String")));
         agent.linkMethod(new MethodReference(MethodInfo.class, "returnType", Class.class)).getResult()
                 .propagate(agent.getType(ValueType.object("java.lang.Class")));
+        agent.linkMethod(new MethodReference(MethodInfo.class, "annotations", Annotation[].class)).getResult()
+                .propagate(agent.getType(ValueType.parse(Annotation[].class)));
         agent.linkMethod(new MethodReference(ClassList.class, "get", int.class, Class.class)).getResult()
                 .propagate(agent.getType(ValueType.object("java.lang.Class")));
 
@@ -233,10 +253,22 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                             }
                             linkType(agent, field.getType());
                             agent.linkField(field.getReference());
+                            fieldsReadViaReflection.add(field);
+                            if (fieldsAnnotationsConsumer != null) {
+                                annotHelper.propagateAnnotationImplementations(agent, field.getAnnotations().all(),
+                                        fieldsAnnotationsConsumer);
+                            }
                         }
                     }
                 }
             });
+        } else if (method.getReference().equals(getFieldAnnotations)) {
+            fieldsAnnotationsConsumer = method.getResult().getArrayItem();
+            method.getResult().propagate(agent.getType(ValueType.parse(Annotation[].class)));
+            for (var field : fieldsReadViaReflection) {
+                annotHelper.propagateAnnotationImplementations(agent, field.getAnnotations().all(),
+                        fieldsAnnotationsConsumer);
+            }
         } else if (method.getReference().equals(getConstructors) || method.getReference().equals(getMethods)) {
             method.getVariable(0).getClassValueNode().addConsumer(type -> {
                 if (type.getValueType() instanceof ValueType.Object) {
@@ -257,10 +289,24 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                             for (ValueType param : reflectableMethod.getParameterTypes()) {
                                 linkType(agent, param);
                             }
+                            if (methodsAnnotationsConsumer != null) {
+                                annotHelper.propagateAnnotationImplementations(agent,
+                                        reflectableMethod.getAnnotations().all(),
+                                        methodsAnnotationsConsumer);
+                            }
+                            methodsReadViaReflection.add(reflectableMethod);
                         }
                     }
                 }
             });
+        } else if (method.getReference().equals(getConstructorAnnotations)
+                || method.getReference().equals(getMethodAnnotations)) {
+            methodsAnnotationsConsumer = method.getResult().getArrayItem();
+            method.getResult().propagate(agent.getType(ValueType.parse(Annotation[].class)));
+            for (var reflectableMethod : methodsReadViaReflection) {
+                annotHelper.propagateAnnotationImplementations(agent, reflectableMethod.getAnnotations().all(),
+                        methodsAnnotationsConsumer);
+            }
         } else if (method.getReference().equals(forName) || method.getReference().equals(forNameShort)) {
             method.getResult().propagate(agent.getType(ValueType.object("java.lang.Class")));
             for (var className : classesFoundByName) {

@@ -16,14 +16,22 @@
 package org.teavm.classlib.java.lang.reflect;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
@@ -164,6 +172,27 @@ public class MethodTest {
         var method = ClassWithoutInitializerWithStaticMethod.class.getDeclaredMethod("foo");
         assertEquals("result:foo", method.invoke(null));
     }
+    
+    @Test
+    public void methodAnnotationsRead() throws Exception {
+        var acceptMethod = Foo.class.getMethod("accept", long.class);
+        var barMethod = Foo.class.getMethod("bar", Object.class);
+        assertEquals(List.of("TestAnnot"), extractAnnotations(acceptMethod));
+        assertEquals(List.of(), extractAnnotations(barMethod));
+
+        assertEquals(TestAnnot.class, acceptMethod.getAnnotation(TestAnnot.class).annotationType());
+        assertNull(barMethod.getAnnotation(TestAnnot.class));
+    }
+
+    @Test
+    @SkipPlatform(TestPlatform.JAVASCRIPT)
+    public void overriddenMethodAnnotations() throws Exception {        
+        var method = SubclassVirtualMethod.class.getDeclaredMethod("g");
+        assertNull(method.getAnnotation(TestAnnot.class));
+        
+        method = SuperclassVirtualMethod.class.getDeclaredMethod("g");
+        assertEquals(TestAnnot.class, method.getAnnotation(TestAnnot.class).annotationType());
+    }
 
     private void callMethods() {
         new Foo().bar(null);
@@ -193,11 +222,20 @@ public class MethodTest {
         }
         return sb.toString().replace("org.teavm.classlib.java.lang.reflect.MethodTest$", "");
     }
+    
+    private List<? extends String> extractAnnotations(AnnotatedElement elem) {
+        return Arrays.stream(elem.getDeclaredAnnotations())
+                .map(a -> a.annotationType().getSimpleName())
+                .filter(a -> !Objects.equals(a, "Reflectable"))
+                .collect(Collectors.toList());
+    }
 
     static class Foo {
+        @TestAnnot
         Object value;
 
         @Reflectable
+        @TestAnnot
         public void accept(long l) {
         }
 
@@ -257,6 +295,7 @@ public class MethodTest {
         }
 
         @Reflectable
+        @TestAnnot
         private String g() {
             return "super";
         }
@@ -328,5 +367,10 @@ public class MethodTest {
         public static String foo() {
             return "result:foo";
         }
+    }
+    
+    @Retention(RetentionPolicy.RUNTIME)
+    @Inherited
+    @interface TestAnnot {
     }
 }

@@ -53,6 +53,7 @@ import org.teavm.interop.DelegateTo;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.core.JSArray;
+import org.teavm.jso.core.JSObjects;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.PlatformObject;
@@ -372,7 +373,10 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
                     declaredFields[i] = new TField(this, jsField.getName(), jsField.getModifiers(),
                             jsField.getAccessLevel(), TClass.getClass(jsField.getType()),
                             FieldReader.forJs(jsField.getGetter()),
-                            FieldWriter.forJs(jsField.getSetter()));
+                            FieldWriter.forJs(jsField.getSetter()),
+                            !JSObjects.isUndefined(jsField.getAnnotations())
+                                ? Platform.annotationsFromJS(jsField.getAnnotations())
+                                : null);
                 }
             } else {
                 var infoList = getDeclaredFieldsImpl();
@@ -384,7 +388,8 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
                         var fieldInfo = infoList.get(i);
                         declaredFields[i] = new TField(this, fieldInfo.name(), fieldInfo.modifiers(),
                                 fieldInfo.accessLevel(), (TClass<?>) (Object) fieldInfo.type(),
-                                fieldInfo.reader(), fieldInfo.writer());
+                                fieldInfo.reader(), fieldInfo.writer(),
+                                fieldInfo.annotations());
                     }
                 }
             }
@@ -505,9 +510,13 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
                     for (int j = 0; j < parameterTypes.length; ++j) {
                         parameterTypes[j] = getClass(jsParameterTypes.get(j));
                     }
+                    var annotations = jsMethod.getAnnotations();
                     declaredConstructors[count++] = new TConstructor<>(this, jsMethod.getName(),
                             jsMethod.getModifiers(), jsMethod.getAccessLevel(), parameterTypes,
-                            MethodCaller.forJs(jsMethod.getCallable()));
+                            MethodCaller.forJs(jsMethod.getCallable()),
+                            !JSObjects.isUndefined(annotations)
+                                ? Platform.annotationsFromJS(jsMethod.getAnnotations())
+                                : null);
                 }
                 declaredConstructors = Arrays.copyOf(declaredConstructors, count);
             } else {
@@ -529,7 +538,7 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
                         }
                         declaredConstructors[count++] = new TConstructor<>(this, methodInfo.name(),
                                 methodInfo.modifiers(), methodInfo.accessLevel(), parameterTypes,
-                                methodInfo.caller());
+                                methodInfo.caller(), methodInfo.annotations());
                     }
                     declaredConstructors = Arrays.copyOf(declaredConstructors, count);
                 }
@@ -615,9 +624,13 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
                         parameterTypes[j] = getClass(jsParameterTypes.get(j));
                     }
                     TClass<?> returnType = getClass(jsMethod.getReturnType());
+                    var annotations = jsMethod.getAnnotations();
                     declaredMethods[count++] = new TMethod(this, jsMethod.getName(), jsMethod.getModifiers(),
                             jsMethod.getAccessLevel(), returnType, parameterTypes,
-                            MethodCaller.forJs(jsMethod.getCallable()));
+                            MethodCaller.forJs(jsMethod.getCallable()),
+                            !JSObjects.isUndefined(annotations)
+                                    ? Platform.annotationsFromJS(annotations)
+                                    : null);
                 }
                 declaredMethods = Arrays.copyOf(declaredMethods, count);
             } else {
@@ -640,7 +653,7 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
                         var returnType = methodInfo.returnType();
                         declaredMethods[count++] = new TMethod(this, methodInfo.name(), methodInfo.modifiers(),
                                 methodInfo.accessLevel(), (TClass<?>) (Object) returnType, parameterTypes,
-                                methodInfo.caller());
+                                methodInfo.caller(), methodInfo.annotations());
                     }
                     declaredMethods = Arrays.copyOf(declaredMethods, count);
                 }

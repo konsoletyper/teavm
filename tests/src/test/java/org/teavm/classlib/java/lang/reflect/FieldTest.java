@@ -15,9 +15,13 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -152,8 +156,22 @@ public class FieldTest {
         field.set(null, "w");
         assertEquals("w", ClassWithoutInitializerWithStaticField.foo);
     }
+    
+    @Test
+    @SkipPlatform(TestPlatform.JAVASCRIPT)
+    public void annotationsRead() throws Exception {
+        var field = ReflectableType.class.getDeclaredField("a");
+        var annot = field.getAnnotation(TestAnnot.class);
+        assertEquals(TestAnnot.class, annot.annotationType());
+        assertEquals(23, annot.a());
+        assertEquals("q", annot.b());
+        assertArrayEquals(new String[] { "w", "e" }, annot.c().strings());
+        field = ReflectableType.class.getDeclaredField("b");
+        assertNull(field.getAnnotation(TestAnnot.class));
+    }
 
     static class ReflectableType {
+        @TestAnnot(a = 23, b = "q", c = @InnerAnnot(strings = {"w", "e"})) 
         @Reflectable public int a;
         @Reflectable private boolean b;
         @Reflectable Object c;
@@ -211,5 +229,19 @@ public class FieldTest {
     static class ClassWithoutInitializerWithStaticField {
         @Reflectable
         public static String foo;
+    }
+    
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface TestAnnot {
+        int a();
+        
+        String b();
+        
+        InnerAnnot c();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface InnerAnnot {
+        String[] strings();
     }
 }

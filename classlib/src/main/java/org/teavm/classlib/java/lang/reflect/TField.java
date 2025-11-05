@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import java.lang.annotation.Annotation;
 import org.teavm.classlib.impl.reflection.FieldReader;
 import org.teavm.classlib.impl.reflection.FieldWriter;
 import org.teavm.classlib.impl.reflection.Flags;
@@ -22,6 +23,7 @@ import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TObject;
+import org.teavm.classlib.java.lang.annotation.TAnnotation;
 
 public class TField extends TAccessibleObject implements TMember {
     private TClass<?> declaringClass;
@@ -31,9 +33,10 @@ public class TField extends TAccessibleObject implements TMember {
     private TClass<?> type;
     private FieldReader getter;
     private FieldWriter setter;
+    private Object[] declaredAnnotations;
 
     public TField(TClass<?> declaringClass, String name, int modifiers, int accessLevel, TClass<?> type,
-            FieldReader getter, FieldWriter setter) {
+            FieldReader getter, FieldWriter setter, Annotation[] declaredAnnotations) {
         this.declaringClass = declaringClass;
         this.name = name;
         this.modifiers = modifiers;
@@ -41,6 +44,7 @@ public class TField extends TAccessibleObject implements TMember {
         this.type = type;
         this.getter = getter;
         this.setter = setter;
+        this.declaredAnnotations = declaredAnnotations;
     }
 
     @Override
@@ -123,5 +127,15 @@ public class TField extends TAccessibleObject implements TMember {
         if (setter == null) {
             throw new TIllegalAccessException();
         }
+    }
+
+    @Override
+    public TAnnotation[] getAnnotations() {
+        return getDeclaredAnnotations();
+    }
+
+    @Override
+    public TAnnotation[] getDeclaredAnnotations() {
+        return declaredAnnotations != null ? (TAnnotation[]) declaredAnnotations.clone() : new TAnnotation[0];
     }
 }

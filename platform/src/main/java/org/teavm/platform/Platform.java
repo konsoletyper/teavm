@@ -248,4 +248,7 @@ public final class Platform {
     public static PlatformClass getDeclaringClass(PlatformClass cls) {
         return cls.getMetadata().getDeclaringClass();
     }
+
+    @InjectedBy(PlatformGenerator.class)
+    public static native Annotation[] annotationsFromJS(JSObject obj);
 }

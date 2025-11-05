@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.impl;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
@@ -185,7 +186,9 @@ public class JCLPlugin implements TeaVMPlugin {
             for (ReflectionSupplier supplier : ServiceLoader.load(ReflectionSupplier.class, host.getClassLoader())) {
                 reflectionSuppliers.add(supplier);
             }
-            ReflectionDependencyListener reflection = new ReflectionDependencyListener(reflectionSuppliers);
+            var wasmGcHost = host.getExtension(TeaVMWasmGCHost.class);
+            ReflectionDependencyListener reflection = new ReflectionDependencyListener(reflectionSuppliers,
+                    wasmGcHost != null, wasmGcHost == null);
             host.addVirtualMethods(reflection::isVirtual);
             host.registerService(ReflectionDependencyListener.class, reflection);
             host.add(reflection);
@@ -200,7 +203,6 @@ public class JCLPlugin implements TeaVMPlugin {
                 wasmHost.add(context -> new DateTimeZoneProviderIntrinsic(context.getProperties()));
             }
 
-            var wasmGcHost = host.getExtension(TeaVMWasmGCHost.class);
             if (wasmGcHost != null) {
                 registerWasmGCReflection(wasmGcHost, reflection);
             }
@@ -318,6 +320,7 @@ public class JCLPlugin implements TeaVMPlugin {
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "modifiers", int.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "accessLevel", int.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "type", Class.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "annotations", Annotation[].class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "reader", FieldReader.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "writer", FieldWriter.class), intrinsics);
 
@@ -331,6 +334,7 @@ public class JCLPlugin implements TeaVMPlugin {
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "returnType", Class.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "parameterTypes", ClassList.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "caller", MethodCaller.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "annotations", Annotation[].class), intrinsics);
 
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfoList.class, "count", int.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfoList.class, "get", int.class, MethodInfo.class),
