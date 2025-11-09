@@ -25,54 +25,21 @@ import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TInstantiationException;
 import org.teavm.classlib.java.lang.TObject;
-import org.teavm.classlib.java.lang.annotation.TAnnotation;
 
-public class TConstructor<T> extends TAccessibleObject implements TMember {
-    private TClass<T> declaringClass;
+public class TConstructor<T> extends TExecutable implements TMember {
     private String name;
-    private int modifiers;
-    private int accessLevel;
-    private TClass<?>[] parameterTypes;
     private MethodCaller caller;
-    private Object[] declaredAnnotations;
 
     public TConstructor(TClass<T> declaringClass, String name, int modifiers, int accessLevel,
             TClass<?>[] parameterTypes, MethodCaller caller, Annotation[] declaredAnnotations) {
-        this.declaringClass = declaringClass;
+        super(declaringClass, modifiers, accessLevel, parameterTypes, declaredAnnotations);
         this.name = name;
-        this.modifiers = modifiers;
-        this.accessLevel = accessLevel;
-        this.parameterTypes = parameterTypes;
         this.caller = caller;
-        this.declaredAnnotations = declaredAnnotations;
-    }
-
-    @Override
-    public TClass<T> getDeclaringClass() {
-        return declaringClass;
     }
 
     @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public int getModifiers() {
-        return Flags.getModifiers(modifiers, accessLevel);
-    }
-
-    @Override
-    public boolean isSynthetic() {
-        return (modifiers & Flags.SYNTHETIC) != 0;
-    }
-
-    public TClass<?>[] getParameterTypes() {
-        return parameterTypes.clone();
-    }
-
-    public int getParameterCount() {
-        return parameterTypes.length;
     }
 
     @Override
@@ -96,7 +63,7 @@ public class TConstructor<T> extends TAccessibleObject implements TMember {
     @SuppressWarnings("unchecked")
     public T newInstance(Object... initargs) throws TInstantiationException, TIllegalAccessException,
             TIllegalArgumentException, TInvocationTargetException {
-        if ((modifiers & Flags.ABSTRACT) != 0) {
+        if ((flags & Flags.ABSTRACT) != 0) {
             throw new TInstantiationException();
         }
         if (caller == null) {
@@ -125,12 +92,9 @@ public class TConstructor<T> extends TAccessibleObject implements TMember {
         }
     }
 
-    public boolean isVarArgs() {
-        return (modifiers & Flags.VARARGS) != 0;
-    }
-
+    @SuppressWarnings("unchecked")
     @Override
-    public TAnnotation[] getDeclaredAnnotations() {
-        return declaredAnnotations != null ? (TAnnotation[]) declaredAnnotations.clone() : new TAnnotation[0];
+    public TTypeVariable<TConstructor<T>>[] getTypeParameters() {
+        return (TTypeVariable<TConstructor<T>>[]) new TTypeVariable<?>[0];
     }
 }

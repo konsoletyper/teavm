@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 by Joerg Hohwiller
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-public interface TType {
-    default String getTypeName() {
-        return toString();
-    }
+public interface TWildcardType extends TType {
+    TType[] getUpperBounds();
+
+    TType[] getLowerBounds();
 }

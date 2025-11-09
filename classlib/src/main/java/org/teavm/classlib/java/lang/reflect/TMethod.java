@@ -23,34 +23,19 @@ import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TObject;
-import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.platform.Platform;
 
-public class TMethod extends TAccessibleObject implements TMember {
-    private TClass<?> declaringClass;
+public class TMethod extends TExecutable implements TMember {
     private String name;
-    private int flags;
-    private int accessLevel;
     private TClass<?> returnType;
-    private TClass<?>[] parameterTypes;
     private MethodCaller caller;
-    private Object[] declaredAnnotations;
 
     public TMethod(TClass<?> declaringClass, String name, int flags, int accessLevel, TClass<?> returnType,
             TClass<?>[] parameterTypes, MethodCaller caller, Annotation[] declaredAnnotations) {
-        this.declaringClass = declaringClass;
+        super(declaringClass, flags, accessLevel, parameterTypes, declaredAnnotations);
         this.name = name;
-        this.flags = flags;
-        this.accessLevel = accessLevel;
         this.returnType = returnType;
-        this.parameterTypes = parameterTypes;
         this.caller = caller;
-        this.declaredAnnotations = declaredAnnotations;
-    }
-
-    @Override
-    public TClass<?> getDeclaringClass() {
-        return declaringClass;
     }
 
     @Override
@@ -58,21 +43,8 @@ public class TMethod extends TAccessibleObject implements TMember {
         return name;
     }
 
-    @Override
-    public int getModifiers() {
-        return Flags.getModifiers(flags, accessLevel);
-    }
-
     public TClass<?> getReturnType() {
         return returnType;
-    }
-
-    public TClass<?>[] getParameterTypes() {
-        return parameterTypes.clone();
-    }
-
-    public int getParameterCount() {
-        return parameterTypes.length;
     }
 
     @Override
@@ -131,17 +103,9 @@ public class TMethod extends TAccessibleObject implements TMember {
         return (flags & Flags.BRIDGE) != 0;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public boolean isSynthetic() {
-        return (flags & Flags.SYNTHETIC) != 0;
-    }
-
-    public boolean isVarArgs() {
-        return (flags & Flags.VARARGS) != 0;
-    }
-
-    @Override
-    public TAnnotation[] getDeclaredAnnotations() {
-        return declaredAnnotations != null ? (TAnnotation[]) declaredAnnotations.clone() : new TAnnotation[0];
+    public TTypeVariable<TMethod>[] getTypeParameters() {
+        return (TTypeVariable<TMethod>[]) new TTypeVariable<?>[0];
     }
 }

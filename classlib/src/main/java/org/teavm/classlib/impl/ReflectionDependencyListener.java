@@ -17,6 +17,7 @@ package org.teavm.classlib.impl;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -69,9 +70,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             Method[].class);
     private MethodReference getFieldAnnotations = new MethodReference(Field.class, "getDeclaredAnnotations",
             Annotation[].class);
-    private MethodReference getMethodAnnotations = new MethodReference(Method.class, "getDeclaredAnnotations",
-            Annotation[].class);
-    private MethodReference getConstructorAnnotations = new MethodReference(Constructor.class, "getDeclaredAnnotations",
+    private MethodReference getExecutableAnnotations = new MethodReference(Executable.class, "getDeclaredAnnotations",
             Annotation[].class);
     private MethodReference forName = new MethodReference(Class.class, "forName", String.class, Boolean.class,
             ClassLoader.class, Class.class);
@@ -299,8 +298,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                     }
                 }
             });
-        } else if (method.getReference().equals(getConstructorAnnotations)
-                || method.getReference().equals(getMethodAnnotations)) {
+        } else if (method.getReference().equals(getExecutableAnnotations)) {
             methodsAnnotationsConsumer = method.getResult().getArrayItem();
             method.getResult().propagate(agent.getType(ValueType.parse(Annotation[].class)));
             for (var reflectableMethod : methodsReadViaReflection) {

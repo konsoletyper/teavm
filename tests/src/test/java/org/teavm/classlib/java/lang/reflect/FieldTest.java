@@ -158,7 +158,6 @@ public class FieldTest {
     }
     
     @Test
-    @SkipPlatform(TestPlatform.JAVASCRIPT)
     public void annotationsRead() throws Exception {
         var field = ReflectableType.class.getDeclaredField("a");
         var annot = field.getAnnotation(TestAnnot.class);

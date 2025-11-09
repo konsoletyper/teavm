@@ -96,7 +96,6 @@ public class ConstructorTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.JAVASCRIPT)
     public void annotationsRead() throws Exception {
         var constructor = ReflectableType.class.getDeclaredConstructor();
         assertEquals(TestAnnot.class, constructor.getAnnotation(TestAnnot.class).annotationType());

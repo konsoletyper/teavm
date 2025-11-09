@@ -185,7 +185,6 @@ public class MethodTest {
     }
 
     @Test
-    @SkipPlatform(TestPlatform.JAVASCRIPT)
     public void overriddenMethodAnnotations() throws Exception {        
         var method = SubclassVirtualMethod.class.getDeclaredMethod("g");
         assertNull(method.getAnnotation(TestAnnot.class));

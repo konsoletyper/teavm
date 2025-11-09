@@ -41,12 +41,13 @@ import org.teavm.classlib.impl.reflection.JSMethodMember;
 import org.teavm.classlib.impl.reflection.MethodCaller;
 import org.teavm.classlib.impl.reflection.MethodInfoList;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
-import org.teavm.classlib.java.lang.reflect.TAnnotatedElement;
 import org.teavm.classlib.java.lang.reflect.TConstructor;
 import org.teavm.classlib.java.lang.reflect.TField;
+import org.teavm.classlib.java.lang.reflect.TGenericDeclaration;
 import org.teavm.classlib.java.lang.reflect.TMethod;
 import org.teavm.classlib.java.lang.reflect.TModifier;
 import org.teavm.classlib.java.lang.reflect.TType;
+import org.teavm.classlib.java.lang.reflect.TTypeVariable;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
@@ -61,7 +62,7 @@ import org.teavm.platform.PlatformSequence;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
-public final class TClass<T> extends TObject implements TAnnotatedElement, TType {
+public final class TClass<T> extends TObject implements TGenericDeclaration, TType {
     private static Map<String, TClass<?>> nameMap;
     String name;
     String simpleName;
@@ -1023,8 +1024,14 @@ public final class TClass<T> extends TObject implements TAnnotatedElement, TType
     }
 
     public TPackage getPackage() {
-        String name = (String) (Object) getName();
+        String name = getName();
         name = name.substring(0, name.lastIndexOf('.') + 1);
         return TPackage.getPackage(name);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public TTypeVariable<TClass<T>>[] getTypeParameters() {
+        return (TTypeVariable<TClass<T>>[]) new TTypeVariable<?>[0];
     }
 }
