@@ -298,7 +298,7 @@ public class ProgramParser {
             instructions.get(index).accept(methodVisitor);
             stackAfter[index] = stack;
             flushInstructions();
-            if (nextIndexes.length != 1) {
+            if (nextIndexes.length > 1) {
                 emitNextBasicBlock();
             }
             for (int next : nextIndexes) {
