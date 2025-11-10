@@ -166,6 +166,7 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     private int classMethodsOffset = -1;
     private int classInstantiatorOffset = -1;
     private int classInitializerOffset = -1;
+    private int classTypeParametersOffset = -1;
     private int previousRegularClassOffset = -1;
     private int enumConstantsFunctionOffset = -1;
     private int arrayLengthOffset = -1;
@@ -595,6 +596,11 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
     @Override
     public int getClassInitializerOffset() {
         return classInitializerOffset;
+    }
+
+    @Override
+    public int getClassTypeParametersOffset() {
+        return classTypeParametersOffset;
     }
 
     @Override
@@ -1854,6 +1860,10 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 classInitializerOffset = fields.size();
                 var instantiatorType = functionTypes.of(null).getReference();
                 fields.add(createClassField(instantiatorType.asStorage(), "initializer"));
+            }
+            if (metadataRequirements.hasGenerics()) {
+                classTypeParametersOffset = fields.size();
+                fields.add(createClassField(getObjectArrayType().getReference().asStorage(), "typeParameters"));
             }
             previousRegularClassOffset = fields.size();
             fields.add(createClassField(standardClasses.classClass().getType().asStorage(), "previous"));

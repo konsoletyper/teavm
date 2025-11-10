@@ -40,6 +40,7 @@ import org.teavm.classlib.impl.reflection.JSField;
 import org.teavm.classlib.impl.reflection.JSMethodMember;
 import org.teavm.classlib.impl.reflection.MethodCaller;
 import org.teavm.classlib.impl.reflection.MethodInfoList;
+import org.teavm.classlib.impl.reflection.ObjectList;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.classlib.java.lang.reflect.TConstructor;
 import org.teavm.classlib.java.lang.reflect.TField;
@@ -1032,6 +1033,17 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
     @SuppressWarnings("unchecked")
     @Override
     public TTypeVariable<TClass<T>>[] getTypeParameters() {
-        return (TTypeVariable<TClass<T>>[]) new TTypeVariable<?>[0];
+        initReflection();
+        var paramList = getTypeParametersImpl();
+        if (paramList == null) {
+            return (TTypeVariable<TClass<T>>[]) new TTypeVariable<?>[0];
+        }
+        var array = paramList.asArray();
+        var result = new TTypeVariable[array.length];
+        System.arraycopy(array, 0, result, 0, array.length);
+        return result;
     }
+
+    @InjectedBy(ClassGenerator.class)
+    private native ObjectList getTypeParametersImpl();
 }

@@ -344,4 +344,9 @@ public class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
     public String importModule(String name) {
         return context.importModule(name);
     }
+
+    @Override
+    public int lookupString(String string) {
+        return context.lookupString(string);
+    }
 }

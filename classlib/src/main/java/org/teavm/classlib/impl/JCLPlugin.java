@@ -38,6 +38,7 @@ import org.teavm.classlib.impl.reflection.FieldWriter;
 import org.teavm.classlib.impl.reflection.MethodCaller;
 import org.teavm.classlib.impl.reflection.MethodInfo;
 import org.teavm.classlib.impl.reflection.MethodInfoList;
+import org.teavm.classlib.impl.reflection.ObjectList;
 import org.teavm.classlib.impl.reflection.ReflectionTransformer;
 import org.teavm.classlib.impl.reflection.WasmGCReflectionIntrinsics;
 import org.teavm.classlib.impl.reflection.WasmGCReflectionTypeMapper;
@@ -315,6 +316,8 @@ public class JCLPlugin implements TeaVMPlugin {
         wasmGCHost.addMethodsOnCallSites(reflectionDependencyListener::getVirtualCallSites);
 
         var intrinsics = new WasmGCReflectionIntrinsics(reflectionDependencyListener);
+
+        wasmGCHost.addIntrinsic(new MethodReference(ObjectList.class, "asArray", Object[].class), intrinsics);
 
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "name", String.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "modifiers", int.class), intrinsics);

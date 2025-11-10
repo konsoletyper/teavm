@@ -148,3 +148,5 @@ let $rt_skip = (array, count) => count === 0 ? array : Array.prototype.slice.cal
 let $rt_callWithReceiver = f => function() {
     return f.apply(null, [this].concat(Array.prototype.slice.call(arguments)));
 }
+
+let $rt_undefinedAsNull = v => typeof v === 'undefined' ? null : v;

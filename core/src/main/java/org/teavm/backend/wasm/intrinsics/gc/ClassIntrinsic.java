@@ -102,6 +102,14 @@ public class ClassIntrinsic implements WasmGCIntrinsic {
                 );
             case "initializeImpl":
                 return generateInitialize(invocation, context);
+            case "getTypeParametersImpl": {
+                var cls = context.generate(invocation.getArguments().get(0));
+                var clsStruct = context.classInfoProvider().getClassInfo("java.lang.Class").getStructure();
+                var result = new WasmStructGet(clsStruct, cls,
+                        context.classInfoProvider().getClassTypeParametersOffset());
+                result.setLocation(invocation.getLocation());
+                return result;
+            }
             default:
                 throw new IllegalArgumentException("Unsupported invocation method: " + invocation.getMethod());
         }

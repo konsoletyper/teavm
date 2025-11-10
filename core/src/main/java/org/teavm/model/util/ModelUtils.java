@@ -53,6 +53,9 @@ public final class ModelUtils {
         target.setSimpleName(original.getSimpleName());
         target.getInnerClasses().addAll(original.getInnerClasses());
         copyAnnotations(original.getAnnotations(), target.getAnnotations());
+        if (original.getGenericParameters() != null) {
+            target.setGenericParameters(original.getGenericParameters());
+        }
         return target;
     }
 

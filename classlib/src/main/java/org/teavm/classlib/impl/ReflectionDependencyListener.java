@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -83,6 +84,8 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             Class[].class);
     private MethodReference constructorGetParameterTypes = new MethodReference(Constructor.class, "getParameterTypes",
             Class[].class);
+    private MethodReference classGetTypeParams = new MethodReference(Class.class, "getTypeParameters",
+            TypeVariable[].class);
     private Map<String, Set<String>> accessibleFieldCache = new LinkedHashMap<>();
     private Map<String, Set<MethodDescriptor>> accessibleMethodCache = new LinkedHashMap<>();
     private Set<String> classesWithReflectableFields = new LinkedHashSet<>();
@@ -320,6 +323,13 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.object("java.lang.Class"))));
             method.getResult().getArrayItem().propagate(agent.getType(ValueType.object("java.lang.Class")));
             typesInReflectableSignaturesNode.connect(method.getResult().getArrayItem().getClassValueNode());
+        } else if (method.getReference().equals(classGetTypeParams)) {
+            agent.linkMethod(new MethodReference("java.lang.reflect.TypeVariableImpl", "create",
+                    ValueType.object("java.lang.String"), ValueType.object("java.lang.reflect.TypeVariableImpl")))
+                    .propagate(1, agent.getType(ValueType.object("java.lang.String")))
+                    .use();
+            method.getResult().getArrayItem().propagate(agent.getType(ValueType.object(
+                    "java.lang.reflect.TypeVariableImpl")));
         }
     }
 

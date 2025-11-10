@@ -20,6 +20,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,6 +71,7 @@ public class ClassMetadataRequirements {
     private boolean hasGetInterfaces;
     private boolean hasGetFields;
     private boolean hasGetMethods;
+    private boolean hasGenerics;
 
     public ClassMetadataRequirements(DependencyInfo dependencyInfo) {
         MethodDependencyInfo getNameMethod = dependencyInfo.getMethod(GET_NAME_METHOD);
@@ -246,6 +248,9 @@ public class ClassMetadataRequirements {
                 requirements.computeIfAbsent(type, k -> new ClassInfo()).classInit = true;
             }
         }
+
+        hasGenerics = dependencyInfo.getMethod(new MethodReference(Class.class, "getTypeParameters",
+                TypeVariable[].class)) != null;
     }
 
     public Info getInfo(String className) {
@@ -330,6 +335,10 @@ public class ClassMetadataRequirements {
 
     public boolean hasClassInit() {
         return hasClassInit;
+    }
+
+    public boolean hasGenerics() {
+        return hasGenerics;
     }
 
     private void addClassesRequiringName(Map<ValueType, ClassInfo> target, ValueType[] source) {

@@ -68,6 +68,8 @@ public interface WasmGCClassInfoProvider {
 
     int getClassInitializerOffset();
 
+    int getClassTypeParametersOffset();
+
     int getPreviousRegularClassOffset();
 
     WasmGlobal getLastRegularClassGlobal();

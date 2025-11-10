@@ -73,6 +73,8 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
             ValueType.parse(Fiber.PlatformObject.class),
             ValueType.parse(Fiber.PlatformFunction.class)
     );
+    private MethodReference typeVarConstructor = new MethodReference("java.lang.reflect.TypeVariableImpl",
+            "create", ValueType.object("java.lang.String"), ValueType.object("java.lang.reflect.TypeVariableImpl"));
 
     private WasmFunction initReflectionFunction;
     private WasmFunction wrapAnnotationsFunction;
@@ -84,6 +86,22 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         switch (invocation.getMethod().getClassName()) {
+            case "org.teavm.classlib.impl.reflection.ObjectList": {
+                var arrayInfo = context.classInfoProvider().getClassInfo(ValueType.parse(Object[].class));
+                var objectInfo = context.classInfoProvider().getClassInfo("java.lang.Object");
+                var arrayDataType = context.classInfoProvider().getObjectArrayType();
+                var classClass = context.classInfoProvider().getClassInfo("java.lang.Class");
+                var structNew = new WasmStructNew(arrayInfo.getStructure());
+                var arrayCls = new WasmCall(context.classInfoProvider().getGetArrayClassFunction(),
+                        new WasmGetGlobal(objectInfo.getPointer()));
+                var arrayVt = new WasmStructGet(classClass.getStructure(), arrayCls,
+                        context.classInfoProvider().getClassVtFieldOffset());
+                structNew.getInitializers().add(arrayVt);
+                structNew.getInitializers().add(new WasmNullConstant(WasmType.Reference.EQ));
+                structNew.getInitializers().add(new WasmCast(context.generate(invocation.getArguments().get(0)),
+                        arrayDataType.getNonNullReference()));
+                return structNew;
+            }
             case "org.teavm.classlib.impl.reflection.FieldInfo":
                 switch (invocation.getMethod().getName()) {
                     case "name":
@@ -287,6 +305,9 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
             initReflectionFields(context, initReflectionFunction, helper);
             initReflectionMethods(context, initReflectionFunction, helper);
             initReflectionInstantiator(context, initReflectionFunction);
+            if (context.dependency().getMethod(typeVarConstructor) != null) {
+                new WasmGCReflectionGenericsHelper(context, initReflectionFunction).initReflectionGenerics();
+            }
         }
         return initReflectionFunction;
     }
@@ -472,6 +493,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
             ));
         }
     }
+
 
     private WasmFunction generateGetter(WasmGCIntrinsicContext context, FieldReader field) {
         var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");

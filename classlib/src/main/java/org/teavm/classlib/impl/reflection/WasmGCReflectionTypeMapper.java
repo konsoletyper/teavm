@@ -33,6 +33,9 @@ public class WasmGCReflectionTypeMapper implements WasmGCCustomTypeMapper {
     @Override
     public WasmType map(String className) {
         switch (className) {
+            case "org.teavm.classlib.impl.reflection.ObjectList":
+                return classInfoProvider.getObjectArrayType().getReference();
+
             case "org.teavm.classlib.impl.reflection.FieldInfo":
                 return classInfoProvider.reflection().getReflectionFieldType().getReference();
             case "org.teavm.classlib.impl.reflection.FieldInfoList":

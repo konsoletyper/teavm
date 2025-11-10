@@ -47,6 +47,8 @@ import org.teavm.model.ValueType;
 public class ClassGenerator implements Generator, Injector, DependencyPlugin {
     private static final FieldReference platformClassField =
             new FieldReference(Class.class.getName(), "platformClass");
+    private static final MethodReference typeVarConstructor = new MethodReference("java.lang.reflect.TypeVariableImpl",
+            "create", ValueType.object("java.lang.String"), ValueType.object("java.lang.reflect.TypeVariableImpl"));
     private static final MethodDescriptor CLINIT = new MethodDescriptor("<clinit>", void.class);
 
     @Override
@@ -66,6 +68,12 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
                 context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
                 context.getWriter().append('.').appendField(platformClassField);
                 context.getWriter().append(")");
+                break;
+            case "getTypeParametersImpl":
+                context.getWriter().appendFunction("$rt_undefinedAsNull").append("(");
+                context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
+                context.getWriter().append(".").appendField(platformClassField)
+                        .append(".$meta.typeParams").append(")");
                 break;
         }
     }
@@ -148,6 +156,14 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         }
         for (String className : reflection.getClassesWithReflectableMethods()) {
             generateCreateMethodsForClass(context, writer, className);
+        }
+        if (context.getDependency().getMethod(typeVarConstructor) != null) {
+            for (var className : context.getClassSource().getClassNames()) {
+                var cls = context.getClassSource().get(className);
+                if (cls != null) {
+                    generateClassTypeParameters(context, writer, cls);
+                }
+            }
         }
     }
 
@@ -233,6 +249,24 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         });
 
         writer.outdent().append("];").softNewLine();
+    }
+
+    private void generateClassTypeParameters(GeneratorContext context, SourceWriter writer, ClassReader cls) {
+        var parameters = cls.getGenericParameters();
+        if (parameters == null || parameters.length == 0) {
+            return;
+        }
+        writer.appendClass(cls.getName()).append(".$meta.typeParams")
+                .ws().append("=").ws().append('[');
+        for (int i = 0; i < parameters.length; ++i) {
+            var param = parameters[i];
+            if (i > 0) {
+                writer.append(",").ws();
+            }
+            writer.appendMethod(typeVarConstructor).append("(").appendFunction("$rt_s")
+                    .append("(" + context.lookupString(param.getName()) + "))");
+        }
+        writer.append("];").softNewLine();
     }
 
     private <T extends MemberReader> void generateCreateMembers(GeneratorContext context, SourceWriter writer,
