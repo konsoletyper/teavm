@@ -16,8 +16,6 @@
 package org.teavm.classlib.java.lang.reflect;
 
 import java.lang.annotation.Annotation;
-import org.teavm.classlib.PlatformDetector;
-import org.teavm.classlib.impl.reflection.Converter;
 import org.teavm.classlib.impl.reflection.Flags;
 import org.teavm.classlib.impl.reflection.MethodCaller;
 import org.teavm.classlib.java.lang.TClass;
@@ -83,13 +81,7 @@ public class TConstructor<T> extends TExecutable implements TMember {
             }
         }
 
-        if (PlatformDetector.isJavaScript()) {
-            var instance = Converter.toJava(declaringClass.newEmptyInstance());
-            caller.call(instance, initargs);
-            return (T) instance;
-        } else {
-            return (T) caller.call(null, initargs);
-        }
+        return (T) caller.call(null, initargs);
     }
 
     @SuppressWarnings("unchecked")

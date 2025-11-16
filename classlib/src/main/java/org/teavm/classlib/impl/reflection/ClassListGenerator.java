@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,17 +19,20 @@ import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
-public class ConverterInjector implements Injector {
+public class ClassListGenerator implements Injector {
     @Override
     public void generate(InjectorContext context, MethodReference methodRef) {
-        switch (methodRef.getName()) {
-            case "toJava":
-            case "fromJava":
+        switch (methodRef.getDescriptor().getName()) {
+            case "count":
                 context.writeExpr(context.getArgument(0));
+                context.getWriter().append(".length");
                 break;
-            case "arrayFromJava":
+            case "get":
+                context.getWriter().appendFunction("$rt_cls").append("(");
                 context.writeExpr(context.getArgument(0));
-                context.getWriter().append(".data");
+                context.getWriter().append("[");
+                context.writeExpr(context.getArgument(1));
+                context.getWriter().append("])");
                 break;
         }
     }

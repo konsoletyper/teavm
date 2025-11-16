@@ -15,8 +15,12 @@
  */
 package org.teavm.classlib.impl.reflection;
 
+import org.teavm.backend.javascript.spi.InjectedBy;
+
 public final class FieldInfoList {
+    @InjectedBy(MemberInfoListGenerator.class)
     public native int count();
 
+    @InjectedBy(MemberInfoListGenerator.class)
     public native FieldInfo get(int index);
 }

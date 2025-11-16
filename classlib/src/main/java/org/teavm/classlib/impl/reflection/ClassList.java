@@ -15,8 +15,12 @@
  */
 package org.teavm.classlib.impl.reflection;
 
+import org.teavm.backend.javascript.spi.InjectedBy;
+
 public class ClassList {
+    @InjectedBy(ClassListGenerator.class)
     public native int count();
 
+    @InjectedBy(ClassListGenerator.class)
     public native Class<?> get(int index);
 }

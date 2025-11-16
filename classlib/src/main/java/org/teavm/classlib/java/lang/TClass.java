@@ -32,13 +32,7 @@ import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassFlags;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.reflection.ClassSupport;
 import org.teavm.classlib.impl.reflection.FieldInfoList;
-import org.teavm.classlib.impl.reflection.FieldReader;
-import org.teavm.classlib.impl.reflection.FieldWriter;
 import org.teavm.classlib.impl.reflection.Flags;
-import org.teavm.classlib.impl.reflection.JSClass;
-import org.teavm.classlib.impl.reflection.JSField;
-import org.teavm.classlib.impl.reflection.JSMethodMember;
-import org.teavm.classlib.impl.reflection.MethodCaller;
 import org.teavm.classlib.impl.reflection.MethodInfoList;
 import org.teavm.classlib.impl.reflection.ObjectList;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
@@ -54,8 +48,6 @@ import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
-import org.teavm.jso.core.JSArray;
-import org.teavm.jso.core.JSObjects;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.PlatformObject;
@@ -366,39 +358,24 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
         }
         if (declaredFields == null) {
             initReflection();
-            if (PlatformDetector.isJavaScript()) {
-                JSClass jsClass = (JSClass) getPlatformClass().getMetadata();
-                JSArray<JSField> jsFields = jsClass.getFields();
-                declaredFields = new TField[jsFields.getLength()];
-                for (int i = 0; i < jsFields.getLength(); ++i) {
-                    JSField jsField = jsFields.get(i);
-                    declaredFields[i] = new TField(this, jsField.getName(), jsField.getModifiers(),
-                            jsField.getAccessLevel(), TClass.getClass(jsField.getType()),
-                            FieldReader.forJs(jsField.getGetter()),
-                            FieldWriter.forJs(jsField.getSetter()),
-                            !JSObjects.isUndefined(jsField.getAnnotations())
-                                ? Platform.annotationsFromJS(jsField.getAnnotations())
-                                : null);
-                }
+            var infoList = getDeclaredFieldsImpl();
+            if (infoList == null) {
+                declaredFields = new TField[0];
             } else {
-                var infoList = getDeclaredFieldsImpl();
-                if (infoList == null) {
-                    declaredFields = new TField[0];
-                } else {
-                    declaredFields = new TField[infoList.count()];
-                    for (var i = 0; i < declaredFields.length; ++i) {
-                        var fieldInfo = infoList.get(i);
-                        declaredFields[i] = new TField(this, fieldInfo.name(), fieldInfo.modifiers(),
-                                fieldInfo.accessLevel(), (TClass<?>) (Object) fieldInfo.type(),
-                                fieldInfo.reader(), fieldInfo.writer(),
-                                fieldInfo.annotations());
-                    }
+                declaredFields = new TField[infoList.count()];
+                for (var i = 0; i < declaredFields.length; ++i) {
+                    var fieldInfo = infoList.get(i);
+                    declaredFields[i] = new TField(this, fieldInfo.name(), fieldInfo.modifiers(),
+                            fieldInfo.accessLevel(), (TClass<?>) (Object) fieldInfo.type(),
+                            fieldInfo.reader(), fieldInfo.writer(),
+                            fieldInfo.annotations());
                 }
             }
         }
         return declaredFields.clone();
     }
 
+    @InjectedBy(ClassGenerator.class)
     private native FieldInfoList getDeclaredFieldsImpl();
 
     private static void initReflection() {
@@ -497,53 +474,27 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
 
         if (declaredConstructors == null) {
             initReflection();
-            if (PlatformDetector.isJavaScript()) {
-                JSClass jsClass = (JSClass) getPlatformClass().getMetadata();
-                JSArray<JSMethodMember> jsMethods = jsClass.getMethods();
-                declaredConstructors = new TConstructor[jsMethods.getLength()];
+            var methodInfoList = getDeclaredMethodsImpl();
+            if (methodInfoList == null) {
+                declaredConstructors = new TConstructor[0];
+            } else {
+                declaredConstructors = new TConstructor[methodInfoList.count()];
                 int count = 0;
-                for (int i = 0; i < jsMethods.getLength(); ++i) {
-                    JSMethodMember jsMethod = jsMethods.get(i);
-                    if (!jsMethod.getName().equals("<init>")) {
+                for (int i = 0; i < methodInfoList.count(); ++i) {
+                    var methodInfo = methodInfoList.get(i);
+                    if (!methodInfo.name().equals("<init>")) {
                         continue;
                     }
-                    PlatformSequence<PlatformClass> jsParameterTypes = jsMethod.getParameterTypes();
-                    TClass<?>[] parameterTypes = new TClass<?>[jsParameterTypes.getLength()];
+                    var paramTypeInfoList = methodInfo.parameterTypes();
+                    var parameterTypes = new TClass<?>[paramTypeInfoList.count()];
                     for (int j = 0; j < parameterTypes.length; ++j) {
-                        parameterTypes[j] = getClass(jsParameterTypes.get(j));
+                        parameterTypes[j] = (TClass<?>) (Object) paramTypeInfoList.get(j);
                     }
-                    var annotations = jsMethod.getAnnotations();
-                    declaredConstructors[count++] = new TConstructor<>(this, jsMethod.getName(),
-                            jsMethod.getModifiers(), jsMethod.getAccessLevel(), parameterTypes,
-                            MethodCaller.forJs(jsMethod.getCallable()),
-                            !JSObjects.isUndefined(annotations)
-                                ? Platform.annotationsFromJS(jsMethod.getAnnotations())
-                                : null);
+                    declaredConstructors[count++] = new TConstructor<>(this, methodInfo.name(),
+                            methodInfo.modifiers(), methodInfo.accessLevel(), parameterTypes,
+                            methodInfo.caller(), methodInfo.annotations());
                 }
                 declaredConstructors = Arrays.copyOf(declaredConstructors, count);
-            } else {
-                var methodInfoList = getDeclaredMethodsImpl();
-                if (methodInfoList == null) {
-                    declaredConstructors = new TConstructor[0];
-                } else {
-                    declaredConstructors = new TConstructor[methodInfoList.count()];
-                    int count = 0;
-                    for (int i = 0; i < methodInfoList.count(); ++i) {
-                        var methodInfo = methodInfoList.get(i);
-                        if (!methodInfo.name().equals("<init>")) {
-                            continue;
-                        }
-                        var paramTypeInfoList = methodInfo.parameterTypes();
-                        var parameterTypes = new TClass<?>[paramTypeInfoList.count()];
-                        for (int j = 0; j < parameterTypes.length; ++j) {
-                            parameterTypes[j] = (TClass<?>) (Object) paramTypeInfoList.get(j);
-                        }
-                        declaredConstructors[count++] = new TConstructor<>(this, methodInfo.name(),
-                                methodInfo.modifiers(), methodInfo.accessLevel(), parameterTypes,
-                                methodInfo.caller(), methodInfo.annotations());
-                    }
-                    declaredConstructors = Arrays.copyOf(declaredConstructors, count);
-                }
             }
         }
         return declaredConstructors.clone();
@@ -610,60 +561,34 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
         }
         if (declaredMethods == null) {
             initReflection();
-            if (PlatformDetector.isJavaScript()) {
-                JSClass jsClass = (JSClass) getPlatformClass().getMetadata();
-                JSArray<JSMethodMember> jsMethods = jsClass.getMethods();
-                declaredMethods = new TMethod[jsMethods.getLength()];
+            var methodInfoList = getDeclaredMethodsImpl();
+            if (methodInfoList == null) {
+                declaredMethods = new TMethod[0];
+            } else {
+                declaredMethods = new TMethod[methodInfoList.count()];
                 int count = 0;
-                for (int i = 0; i < jsMethods.getLength(); ++i) {
-                    JSMethodMember jsMethod = jsMethods.get(i);
-                    if (jsMethod.getName().equals("<init>") || jsMethod.getName().equals("<clinit>")) {
+                for (int i = 0; i < methodInfoList.count(); ++i) {
+                    var methodInfo = methodInfoList.get(i);
+                    if (methodInfo.name().equals("<init>") || methodInfo.name().equals("<clinit>")) {
                         continue;
                     }
-                    PlatformSequence<PlatformClass> jsParameterTypes = jsMethod.getParameterTypes();
-                    TClass<?>[] parameterTypes = new TClass<?>[jsParameterTypes.getLength()];
+                    var paramTypeInfoList = methodInfo.parameterTypes();
+                    var parameterTypes = new TClass<?>[paramTypeInfoList.count()];
                     for (int j = 0; j < parameterTypes.length; ++j) {
-                        parameterTypes[j] = getClass(jsParameterTypes.get(j));
+                        parameterTypes[j] = (TClass<?>) (Object) paramTypeInfoList.get(j);
                     }
-                    TClass<?> returnType = getClass(jsMethod.getReturnType());
-                    var annotations = jsMethod.getAnnotations();
-                    declaredMethods[count++] = new TMethod(this, jsMethod.getName(), jsMethod.getModifiers(),
-                            jsMethod.getAccessLevel(), returnType, parameterTypes,
-                            MethodCaller.forJs(jsMethod.getCallable()),
-                            !JSObjects.isUndefined(annotations)
-                                    ? Platform.annotationsFromJS(annotations)
-                                    : null);
+                    var returnType = methodInfo.returnType();
+                    declaredMethods[count++] = new TMethod(this, methodInfo.name(), methodInfo.modifiers(),
+                            methodInfo.accessLevel(), (TClass<?>) (Object) returnType, parameterTypes,
+                            methodInfo.caller(), methodInfo.annotations());
                 }
                 declaredMethods = Arrays.copyOf(declaredMethods, count);
-            } else {
-                var methodInfoList = getDeclaredMethodsImpl();
-                if (methodInfoList == null) {
-                    declaredMethods = new TMethod[0];
-                } else {
-                    declaredMethods = new TMethod[methodInfoList.count()];
-                    int count = 0;
-                    for (int i = 0; i < methodInfoList.count(); ++i) {
-                        var methodInfo = methodInfoList.get(i);
-                        if (methodInfo.name().equals("<init>") || methodInfo.name().equals("<clinit>")) {
-                            continue;
-                        }
-                        var paramTypeInfoList = methodInfo.parameterTypes();
-                        var parameterTypes = new TClass<?>[paramTypeInfoList.count()];
-                        for (int j = 0; j < parameterTypes.length; ++j) {
-                            parameterTypes[j] = (TClass<?>) (Object) paramTypeInfoList.get(j);
-                        }
-                        var returnType = methodInfo.returnType();
-                        declaredMethods[count++] = new TMethod(this, methodInfo.name(), methodInfo.modifiers(),
-                                methodInfo.accessLevel(), (TClass<?>) (Object) returnType, parameterTypes,
-                                methodInfo.caller(), methodInfo.annotations());
-                    }
-                    declaredMethods = Arrays.copyOf(declaredMethods, count);
-                }
             }
         }
         return declaredMethods.clone();
     }
 
+    @InjectedBy(ClassGenerator.class)
     private native MethodInfoList getDeclaredMethodsImpl();
 
     public TMethod getDeclaredMethod(String name, TClass<?>... parameterTypes) throws TNoSuchMethodException,

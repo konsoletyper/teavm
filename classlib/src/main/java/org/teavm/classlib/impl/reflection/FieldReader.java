@@ -15,18 +15,9 @@
  */
 package org.teavm.classlib.impl.reflection;
 
-import org.teavm.platform.Platform;
+import org.teavm.backend.javascript.spi.InjectedBy;
 
-public interface FieldReader {
-    Object read(Object instance);
-
-    static FieldReader forJs(JSFieldGetter getter) {
-        if (getter == null) {
-            return null;
-        }
-        return instance -> {
-            var result = getter.get(Platform.getPlatformObject(instance));
-            return Converter.toJava(result);
-        };
-    }
+public abstract class FieldReader {
+    @InjectedBy(MemberAccessGenerator.class)
+    public abstract Object read(Object instance);
 }

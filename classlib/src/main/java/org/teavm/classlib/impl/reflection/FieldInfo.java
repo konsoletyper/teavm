@@ -16,19 +16,27 @@
 package org.teavm.classlib.impl.reflection;
 
 import java.lang.annotation.Annotation;
+import org.teavm.backend.javascript.spi.InjectedBy;
 
 public class FieldInfo {
+    @InjectedBy(MemberInfoGenerator.class)
     public native final String name();
 
+    @InjectedBy(MemberInfoGenerator.class)
     public native final int modifiers();
 
+    @InjectedBy(MemberInfoGenerator.class)
     public native final int accessLevel();
 
+    @InjectedBy(MemberInfoGenerator.class)
     public native final Annotation[] annotations();
 
+    @InjectedBy(MemberInfoGenerator.class)
     public native final Class<?> type();
 
+    @InjectedBy(MemberInfoGenerator.class)
     public native final FieldReader reader();
 
+    @InjectedBy(MemberInfoGenerator.class)
     public native final FieldWriter writer();
 }
