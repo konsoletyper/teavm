@@ -753,4 +753,108 @@ public final class TMath extends TObject {
         }
         return Math.min(max, Math.max(value, min));
     }
+
+    public static double scalb(double d, int scaleFactor) {
+        if (scaleFactor == 0) {
+            return d;
+        }
+
+        var bits = Double.doubleToRawLongBits(d);
+        var exponent = (bits >>> 52) & 0x7FF;
+
+        // infinity and NaN cases
+        if (exponent == 0x7FF) {
+            return d;
+        }
+
+        var mantissa = bits & 0xFFFFFFFFFFFFFL;
+
+        // subnormal case
+        if (exponent == 0) {
+            if (scaleFactor < 0) {
+                mantissa >>>= Math.min(63, -scaleFactor);
+                return Double.longBitsToDouble((bits & 0xFFF0000000000000L) | mantissa);
+            }
+            var significantBits = 64 - Long.numberOfLeadingZeros(mantissa);
+
+            // we still stay subnormal after scaling up
+            if (significantBits + scaleFactor <= 52) {
+                mantissa <<= Math.min(63, scaleFactor);
+                return Double.longBitsToDouble((bits & 0xFFF0000000000000L) | mantissa);
+            }
+
+            // rescale up to normal and proceed with
+            var shift = 53 - significantBits;
+            mantissa = (mantissa << shift) & 0xFFFFFFFFFFFFFL;
+            exponent++;
+            scaleFactor -= shift;
+        }
+
+        // regular case
+
+        if (-scaleFactor >= exponent) {
+            // after rescaling down we get subnormal number
+            mantissa = (mantissa | 0x10000000000000L) >> Math.min(-scaleFactor - exponent + 1, 53);
+            exponent = 0;
+        } else if (scaleFactor > 0x77E - exponent) {
+            // after rescaling up we get infinity
+            return d < 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+        } else {
+            exponent += scaleFactor;
+        }
+
+        return Double.longBitsToDouble((bits & (1L << 63)) | (exponent << 52) | mantissa);
+    }
+
+    public static float scalb(float f, int scaleFactor) {
+        if (scaleFactor == 0) {
+            return f;
+        }
+
+        var bits = Float.floatToIntBits(f);
+        var exponent = (bits >>> 23) & 0xFF;
+
+        // infinity and NaN cases
+        if (exponent == 0xFF) {
+            return f;
+        }
+
+        var mantissa = bits & 0x7FFFFF;
+
+        // subnormal case
+        if (exponent == 0) {
+            if (scaleFactor < 0) {
+                mantissa >>>= Math.min(31, -scaleFactor);
+                return Float.intBitsToFloat((bits & 0x7F800000) | mantissa);
+            }
+            var significantBits = 32 - Integer.numberOfLeadingZeros(mantissa);
+
+            // we still stay subnormal after scaling up
+            if (significantBits + scaleFactor <= 23) {
+                mantissa <<= Math.min(31, scaleFactor);
+                return Float.intBitsToFloat((bits & 0x7F800000) | mantissa);
+            }
+
+            // rescale up to normal and proceed with
+            var shift = 24 - significantBits;
+            mantissa = (mantissa << shift) & 0x7FFFFF;
+            exponent++;
+            scaleFactor -= shift;
+        }
+
+        // regular case
+
+        if (-scaleFactor >= exponent) {
+            // after rescaling down we get subnormal number
+            mantissa = (mantissa | 0x800000) >> Math.min(-scaleFactor - exponent + 1, 24);
+            exponent = 0;
+        } else if (scaleFactor > 0xFE - exponent) {
+            // after rescaling up we get infinity
+            return f < 0 ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
+        } else {
+            exponent += scaleFactor;
+        }
+
+        return Float.intBitsToFloat((bits & (1 << 31)) | (exponent << 23) | mantissa);
+    }
 }

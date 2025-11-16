@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -310,5 +311,47 @@ public class MathTest {
         assertEquals(+2, Math.floorDiv(6, 3));
         assertEquals(-2, Math.floorDiv(-5, 3));
         assertEquals(-2, Math.floorDiv(-6, 3));
+    }
+    
+    @Test
+    public void scalbDouble() {
+        assertEquals(12.0, Math.scalb(3.0, 2), 0.01);
+        assertEquals(0.75, Math.scalb(3.0, -2), 0.01);
+        assertEquals(-0.75, Math.scalb(-3.0, -2), 0.01);
+        assertTrue(Double.isNaN(Math.scalb(Double.NaN, -2)));
+        assertTrue(Double.isNaN(Math.scalb(Double.NaN, 2)));
+        assertEquals(Double.POSITIVE_INFINITY, Math.scalb(3.0, 20000), 1.0);
+        assertEquals(Double.POSITIVE_INFINITY, Math.scalb(Double.POSITIVE_INFINITY, -100), 1.0);
+        assertEquals(Double.POSITIVE_INFINITY, Math.scalb(Double.POSITIVE_INFINITY, -20000), 1.0);
+        assertTrue(Math.scalb(3.0, -20000) == 0);
+        assertEquals(2.57e-322, Math.scalb(1.03e-321, -2), Double.MIN_VALUE);
+        assertEquals(4.11e-321, Math.scalb(1.03e-321, 2), Double.MIN_VALUE);
+        assertEquals(3.0e-323, Math.scalb(1.03e-321, -5), Double.MIN_VALUE);
+        assertEquals(0, Math.scalb(1.03e-321, -10), Double.MIN_VALUE);
+        assertEquals(0, Math.scalb(1.03e-321, -100), Double.MIN_VALUE);
+        assertEquals(1.807872510037101e-308, Math.scalb(1.03e-321, 44), Double.MIN_VALUE);
+        assertEquals(3.6157450200742022E-308, Math.scalb(1.03e-321, 45), Double.MIN_VALUE);
+        assertEquals(1.03e-321, Math.scalb(3.6157450200742022E-308, -45), Double.MIN_VALUE);
+    }
+    
+    @Test
+    public void scalbFloat() {
+        assertEquals(12f, Math.scalb(3f, 2), 0.01f);
+        assertEquals(0.75f, Math.scalb(3f, -2), 0.01f);
+        assertEquals(-0.75f, Math.scalb(-3f, -2), 0.01f);
+        assertTrue(Float.isNaN(Math.scalb(Float.NaN, -2)));
+        assertTrue(Float.isNaN(Math.scalb(Float.NaN, 2)));
+        assertEquals(Float.POSITIVE_INFINITY, Math.scalb(3f, 20000), 1f);
+        assertEquals(Float.POSITIVE_INFINITY, Math.scalb(Float.POSITIVE_INFINITY, -100), 1f);
+        assertEquals(Float.POSITIVE_INFINITY, Math.scalb(Float.POSITIVE_INFINITY, -20000), 1f);
+        assertTrue(Math.scalb(3f, -20000) == 0);
+        assertEquals(7.3e-44f, Math.scalb(2.91e-43f, -2), Float.MIN_VALUE);
+        assertEquals(1.166e-42f, Math.scalb(2.91e-43f, 2), Float.MIN_VALUE);
+        assertEquals(8.4e-45f, Math.scalb(2.91e-43f, -5), Float.MIN_VALUE);
+        assertEquals(0, Math.scalb(2.91e-43f, -10), Float.MIN_VALUE);
+        assertEquals(0, Math.scalb(2.91e-43f, -100), Float.MIN_VALUE);
+        assertEquals(9.550892e-39f, Math.scalb(2.91e-43f, 15), Float.MIN_VALUE);
+        assertEquals(1.9101783e-38f, Math.scalb(2.91e-43f, 16), Float.MIN_VALUE);
+        assertEquals(2.91e-43f, Math.scalb(1.9101783e-38f, -16), Float.MIN_VALUE);
     }
 }
