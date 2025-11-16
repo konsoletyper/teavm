@@ -15,15 +15,9 @@
  */
 package org.teavm.classlib.impl.reflection;
 
-import org.teavm.platform.Platform;
+import org.teavm.backend.javascript.spi.InjectedBy;
 
-public interface FieldWriter {
-    void write(Object instance, Object value);
-
-    static FieldWriter forJs(JSFieldSetter setter) {
-        if (setter == null) {
-            return null;
-        }
-        return (instance, value) -> setter.set(Platform.getPlatformObject(instance), Converter.fromJava(value));
-    }
+public abstract class FieldWriter {
+    @InjectedBy(MemberAccessGenerator.class)
+    public abstract void write(Object instance, Object value);
 }

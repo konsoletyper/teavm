@@ -309,6 +309,9 @@ public abstract class RenderingContext {
             holder = new InjectorHolder(null);
             if (!isBootstrap()) {
                 ClassReader cls = classSource.get(ref.getClassName());
+                if (cls == null) {
+                    cls = initialClassSource.get(ref.getClassName());
+                }
                 if (cls != null) {
                     MethodReader method = cls.getMethod(ref.getDescriptor());
                     if (method != null) {

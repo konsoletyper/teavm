@@ -69,6 +69,18 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
                 context.getWriter().append('.').appendField(platformClassField);
                 context.getWriter().append(")");
                 break;
+            case "getDeclaredFieldsImpl":
+                context.getWriter().appendFunction("$rt_undefinedAsNull").append("(");
+                context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
+                context.getWriter().append(".").appendField(platformClassField)
+                        .append(".$meta.fields").append(")");
+                break;
+            case "getDeclaredMethodsImpl":
+                context.getWriter().appendFunction("$rt_undefinedAsNull").append("(");
+                context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
+                context.getWriter().append(".").appendField(platformClassField)
+                        .append(".$meta.methods").append(")");
+                break;
             case "getTypeParametersImpl":
                 context.getWriter().appendFunction("$rt_undefinedAsNull").append("(");
                 context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
@@ -486,10 +498,14 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
     }
 
     private void renderCallable(GeneratorContext context, SourceWriter writer, MethodReader method) {
-        writer.append("function(obj,").ws().append("args)").ws().append("{").indent().softNewLine();
+        writer.append("(obj,").ws().append("args)").ws().append("=>").ws().append("{").indent().softNewLine();
 
         initClass(context, writer, method);
 
+        if (method.getReference().getName().equals("<init>")) {
+            writer.append("obj").ws().append("=").ws().append("new ")
+                    .appendClass(method.getReference().getClassName()).append(";").softNewLine();
+        }
         if (method.getResultType() != ValueType.VOID) {
             writer.append("return ");
         }
@@ -518,7 +534,9 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         }
         writer.append(");").softNewLine();
 
-        if (method.getResultType() == ValueType.VOID) {
+        if (method.getReference().getName().equals("<init>")) {
+            writer.append("return obj;").softNewLine();
+        } else if (method.getResultType() == ValueType.VOID) {
             writer.append("return null;").softNewLine();
         }
         writer.outdent().append("}");

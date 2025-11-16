@@ -16,19 +16,27 @@
 package org.teavm.classlib.impl.reflection;
 
 import java.lang.annotation.Annotation;
+import org.teavm.backend.javascript.spi.InjectedBy;
 
 public class MethodInfo {
+    @InjectedBy(MemberInfoGenerator.class)
     public native final String name();
 
+    @InjectedBy(MemberInfoGenerator.class)
     public native final int modifiers();
 
+    @InjectedBy(MemberInfoGenerator.class)
     public native final int accessLevel();
 
+    @InjectedBy(MemberInfoGenerator.class)
     public native final Class<?> returnType();
 
+    @InjectedBy(MemberInfoGenerator.class)
     public native final ClassList parameterTypes();
 
+    @InjectedBy(MemberInfoGenerator.class)
     public native final MethodCaller caller();
 
+    @InjectedBy(MemberInfoGenerator.class)
     public native final Annotation[] annotations();
 }

@@ -15,19 +15,9 @@
  */
 package org.teavm.classlib.impl.reflection;
 
-import org.teavm.platform.Platform;
+import org.teavm.backend.javascript.spi.InjectedBy;
 
-public interface MethodCaller {
-    Object call(Object instance, Object[] args);
-
-    static MethodCaller forJs(JSCallable callable) {
-        if (callable == null) {
-            return null;
-        }
-        return (instance, args) -> {
-            var jsArgs = Converter.arrayFromJava(args);
-            var result = callable.call(Platform.getPlatformObject(instance), jsArgs);
-            return Converter.toJava(result);
-        };
-    }
+public abstract class MethodCaller {
+    @InjectedBy(MemberAccessGenerator.class)
+    public abstract Object call(Object instance, Object[] args);
 }
