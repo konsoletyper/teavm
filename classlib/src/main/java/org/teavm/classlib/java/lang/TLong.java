@@ -423,4 +423,16 @@ public class TLong extends TNumber implements TComparable<TLong> {
     @GeneratedBy(LongNativeGenerator.class)
     @NoSideEffects
     public static native int compareUnsigned(long a, long b);
+    
+    public static long min(long a, long b) {
+        return TMath.min(a, b);
+    }
+
+    public static long max(long a, long b) {
+        return TMath.max(a, b);
+    }
+    
+    public static long sum(long a, long b) {
+        return a + b;
+    }
 }

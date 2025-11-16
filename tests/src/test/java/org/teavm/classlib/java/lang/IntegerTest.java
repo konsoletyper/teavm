@@ -319,4 +319,9 @@ public class IntegerTest {
     public void unsignedRightShift() {
         assertEquals(Integer.MIN_VALUE, Integer.MIN_VALUE >>> Integer.parseInt("0"));
     }
+    
+    @Test
+    public void toUnsignedLong() {
+        assertEquals(0xFFFFFFFFL, Integer.toUnsignedLong(-1));
+    }
 }

@@ -438,4 +438,12 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     public static int max(int a, int b) {
         return TMath.max(a, b);
     }
+
+    public static long toUnsignedLong(int n) {
+        return (long) n & 0xFFFFFFFFL;
+    }
+
+    public static int sum(int a, int b) {
+        return a + b;
+    }
 }
