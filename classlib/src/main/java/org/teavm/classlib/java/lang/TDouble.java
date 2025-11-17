@@ -36,6 +36,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     public static final int SIZE = 64;
     public static final int BYTES = SIZE / Byte.SIZE;
     public static final Class<Double> TYPE = double.class;
+    public static final int PRECISION = 53;
     private final double value;
 
     public TDouble(double value) {
@@ -353,5 +354,17 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         }
 
         return new String(buffer, 0, sz);
+    }
+
+    public static double sum(double a, double b) {
+        return a + b;
+    }
+
+    public static double min(double a, double b) {
+        return Math.min(a, b);
+    }
+
+    public static double max(double a, double b) {
+        return Math.max(a, b);
     }
 }

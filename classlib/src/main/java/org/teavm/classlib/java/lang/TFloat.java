@@ -33,6 +33,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     public static final int SIZE = 32;
     public static final int BYTES = SIZE / Byte.SIZE;
     public static final Class<Float> TYPE = float.class;
+    public static final int PRECISION = 24;
     private final float value;
 
     public TFloat(float value) {
@@ -349,5 +350,18 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         }
 
         return new String(buffer, 0, sz);
+    }
+
+
+    public static float sum(float a, float b) {
+        return a + b;
+    }
+
+    public static float min(float a, float b) {
+        return Math.min(a, b);
+    }
+
+    public static float max(float a, float b) {
+        return Math.max(a, b);
     }
 }
