@@ -39,4 +39,7 @@ public class MethodInfo {
 
     @InjectedBy(MemberInfoGenerator.class)
     public native final Annotation[] annotations();
+
+    @InjectedBy(MemberInfoGenerator.class)
+    public native final ObjectList typeParameters();
 }

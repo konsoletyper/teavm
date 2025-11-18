@@ -73,8 +73,6 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
             ValueType.parse(Fiber.PlatformObject.class),
             ValueType.parse(Fiber.PlatformFunction.class)
     );
-    private MethodReference typeVarConstructor = new MethodReference("java.lang.reflect.TypeVariableImpl",
-            "create", ValueType.object("java.lang.String"), ValueType.object("java.lang.reflect.TypeVariableImpl"));
 
     private WasmFunction initReflectionFunction;
     private WasmFunction wrapAnnotationsFunction;
@@ -156,6 +154,8 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                         return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_PARAMETER_TYPES);
                     case "caller":
                         return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_CALLER);
+                    case "typeParameters":
+                        return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_TYPE_PARAMETERS);
                     default:
                         break;
                 }
@@ -302,12 +302,13 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
             context.module().functions.add(initReflectionFunction);
             var helper = new WasmGCAnnotationsHelper(context.hierarchy().getClassSource(),
                     context.classInfoProvider(), context.strings());
-            initReflectionFields(context, initReflectionFunction, helper);
-            initReflectionMethods(context, initReflectionFunction, helper);
-            initReflectionInstantiator(context, initReflectionFunction);
-            if (context.dependency().getMethod(typeVarConstructor) != null) {
-                new WasmGCReflectionGenericsHelper(context, initReflectionFunction).initReflectionGenerics();
+            var genericsHelper = new WasmGCReflectionGenericsHelper(context, initReflectionFunction);
+            if (context.dependency().getMethod(WasmGCReflectionGenericsHelper.typeVarConstructor) != null) {
+                genericsHelper.initReflectionGenericsForClasses();
             }
+            initReflectionFields(context, initReflectionFunction, helper);
+            initReflectionMethods(context, initReflectionFunction, helper, genericsHelper);
+            initReflectionInstantiator(context, initReflectionFunction);
         }
         return initReflectionFunction;
     }
@@ -380,7 +381,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
     }
 
     private void initReflectionMethods(WasmGCIntrinsicContext context, WasmFunction function,
-            WasmGCAnnotationsHelper annotationsHelper) {
+            WasmGCAnnotationsHelper annotationsHelper, WasmGCReflectionGenericsHelper genericsHelper) {
         var wasmGcReflection = context.classInfoProvider().reflection();
         var classClass = context.classInfoProvider().getClassInfo("java.lang.Class");
         var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");
@@ -444,6 +445,15 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                     methodInit.getInitializers().add(new WasmFunctionReference(caller));
                 } else {
                     methodInit.getInitializers().add(new WasmNullConstant(callerType.getReference()));
+                }
+
+                var typeParameters = method.getTypeParameters();
+                if (typeParameters != null && typeParameters.length > 0
+                        && context.dependency().getMethod(WasmGCReflectionGenericsHelper.typeVarConstructor) != null) {
+                    methodInit.getInitializers().add(genericsHelper.writeTypeParameters(typeParameters));
+                } else {
+                    methodInit.getInitializers().add(new WasmNullConstant(
+                            context.classInfoProvider().getObjectArrayType().getReference()));
                 }
             }
         }

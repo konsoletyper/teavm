@@ -15,12 +15,14 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.classlib.support.Reflectable;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
 import org.teavm.junit.TeaVMTestRunner;
@@ -47,8 +49,24 @@ public class TypeTest {
                 .collect(Collectors.joining(", "));
         assertEquals("", s);
     }
-
+    
+    @Test
+    public void methodTypeParameters() throws Exception {
+        var cls = A.class;
+        var foo = cls.getMethod("foo");
+        assertArrayEquals(new TypeVariable<?>[0], foo.getTypeParameters());
+        
+        var bar = cls.getMethod("bar", Object.class);
+        assertEquals(1, bar.getTypeParameters().length);
+        assertEquals("S", bar.getTypeParameters()[0].getName());
+    }
+    
     interface A<T> {
+        @Reflectable
+        void foo();
+
+        @Reflectable
+        <S> void bar(S param); 
     }
 
     static class B<Q, W> {

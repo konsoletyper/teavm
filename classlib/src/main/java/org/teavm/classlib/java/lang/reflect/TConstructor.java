@@ -30,7 +30,7 @@ public class TConstructor<T> extends TExecutable implements TMember {
 
     public TConstructor(TClass<T> declaringClass, String name, int modifiers, int accessLevel,
             TClass<?>[] parameterTypes, MethodCaller caller, Annotation[] declaredAnnotations) {
-        super(declaringClass, modifiers, accessLevel, parameterTypes, declaredAnnotations);
+        super(declaringClass, modifiers, accessLevel, parameterTypes, declaredAnnotations, null);
         this.name = name;
         this.caller = caller;
     }
@@ -84,9 +84,4 @@ public class TConstructor<T> extends TExecutable implements TMember {
         return (T) caller.call(null, initargs);
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public TTypeVariable<TConstructor<T>>[] getTypeParameters() {
-        return (TTypeVariable<TConstructor<T>>[]) new TTypeVariable<?>[0];
-    }
 }

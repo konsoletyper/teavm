@@ -338,6 +338,7 @@ public class JCLPlugin implements TeaVMPlugin {
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "parameterTypes", ClassList.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "caller", MethodCaller.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "annotations", Annotation[].class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "typeParameters", ObjectList.class), intrinsics);
 
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfoList.class, "count", int.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfoList.class, "get", int.class, MethodInfo.class),

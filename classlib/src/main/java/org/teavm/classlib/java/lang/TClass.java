@@ -577,10 +577,17 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
                     for (int j = 0; j < parameterTypes.length; ++j) {
                         parameterTypes[j] = (TClass<?>) (Object) paramTypeInfoList.get(j);
                     }
+                    var typeParamsInfo = methodInfo.typeParameters();
+                    TTypeVariable<?>[] typeParams = null;
+                    if (typeParamsInfo != null) {
+                        var array = typeParamsInfo.asArray();
+                        typeParams = new TTypeVariable<?>[array.length];
+                        System.arraycopy(array, 0, typeParams, 0, array.length);
+                    }
                     var returnType = methodInfo.returnType();
                     declaredMethods[count++] = new TMethod(this, methodInfo.name(), methodInfo.modifiers(),
                             methodInfo.accessLevel(), (TClass<?>) (Object) returnType, parameterTypes,
-                            methodInfo.caller(), methodInfo.annotations());
+                            methodInfo.caller(), methodInfo.annotations(), typeParams);
                 }
                 declaredMethods = Arrays.copyOf(declaredMethods, count);
             }

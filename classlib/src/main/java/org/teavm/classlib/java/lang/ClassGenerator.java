@@ -234,6 +234,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         var methodsToExpose = accessibleMethods == null ? cls.getMethods() : cls.getMethods().stream()
                 .filter(m -> accessibleMethods.contains(m.getDescriptor()))
                 .collect(Collectors.toList());
+
         generateCreateMembers(context, writer, skipPrivates, methodsToExpose, method -> {
             appendProperty(writer, "parameterTypes", false, () -> {
                 writer.append('[');
@@ -258,6 +259,23 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
                     writer.append("null");
                 }
             });
+
+            var typeParameters = method.getTypeParameters();
+            if (typeParameters != null && typeParameters.length > 0
+                    && context.getDependency().getMethod(typeVarConstructor) != null) {
+                appendProperty(writer, "typeParameters", false, () -> {
+                    writer.append("[");
+                    for (int i = 0; i < typeParameters.length; ++i) {
+                        var param = typeParameters[i];
+                        if (i > 0) {
+                            writer.append(",").ws();
+                        }
+                        writer.appendMethod(typeVarConstructor).append("(").appendFunction("$rt_s")
+                                .append("(" + context.lookupString(param.getName()) + "))");
+                    }
+                    writer.append("]");
+                });
+            }
         });
 
         writer.outdent().append("];").softNewLine();

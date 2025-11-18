@@ -35,9 +35,10 @@ public class MemberInfoGenerator implements Injector {
                 context.getWriter().append(".").append(methodRef.getName());
                 break;
             case "annotations":
+            case "typeParameters":
                 context.getWriter().appendFunction("$rt_undefinedAsNull").append("(");
                 context.writeExpr(context.getArgument(0));
-                context.getWriter().append(".annotations)");
+                context.getWriter().append(".").append(methodRef.getName()).append(")");
                 break;
             case "returnType":
             case "type":

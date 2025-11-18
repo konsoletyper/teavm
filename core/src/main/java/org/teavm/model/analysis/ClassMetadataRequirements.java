@@ -20,7 +20,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,6 +50,8 @@ public class ClassMetadataRequirements {
             "getLength", Object.class, int.class);
     private static final MethodReference ARRAY_COPY = new MethodReference(System.class,
             "arraycopy", Object.class, int.class, Object.class, int.class, int.class, void.class);
+    static final MethodReference typeVarConstructor = new MethodReference("java.lang.reflect.TypeVariableImpl",
+            "create", ValueType.object("java.lang.String"), ValueType.object("java.lang.reflect.TypeVariableImpl"));
     private static final ClassInfo EMPTY_INFO = new ClassInfo();
     private Map<ValueType, ClassInfo> requirements = new HashMap<>();
     private boolean hasArrayGet;
@@ -249,8 +250,7 @@ public class ClassMetadataRequirements {
             }
         }
 
-        hasGenerics = dependencyInfo.getMethod(new MethodReference(Class.class, "getTypeParameters",
-                TypeVariable[].class)) != null;
+        hasGenerics = dependencyInfo.getMethod(typeVarConstructor) != null;
     }
 
     public Info getInfo(String className) {

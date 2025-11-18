@@ -31,8 +31,9 @@ public class TMethod extends TExecutable implements TMember {
     private MethodCaller caller;
 
     public TMethod(TClass<?> declaringClass, String name, int flags, int accessLevel, TClass<?> returnType,
-            TClass<?>[] parameterTypes, MethodCaller caller, Annotation[] declaredAnnotations) {
-        super(declaringClass, flags, accessLevel, parameterTypes, declaredAnnotations);
+            TClass<?>[] parameterTypes, MethodCaller caller, Annotation[] declaredAnnotations,
+            TTypeVariable<?>[] typeParameters) {
+        super(declaringClass, flags, accessLevel, parameterTypes, declaredAnnotations, typeParameters);
         this.name = name;
         this.returnType = returnType;
         this.caller = caller;
@@ -101,11 +102,5 @@ public class TMethod extends TExecutable implements TMember {
 
     public boolean isBridge() {
         return (flags & Flags.BRIDGE) != 0;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public TTypeVariable<TMethod>[] getTypeParameters() {
-        return (TTypeVariable<TMethod>[]) new TTypeVariable<?>[0];
     }
 }

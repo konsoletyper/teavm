@@ -26,14 +26,16 @@ public abstract class TExecutable extends TAccessibleObject implements TMember, 
     int accessLevel;
     TClass<?>[] parameterTypes;
     Object[] declaredAnnotations;
+    TTypeVariable<?>[] typeParameters;
 
     TExecutable(TClass<?> declaringClass, int flags, int accessLevel, TClass<?>[] parameterTypes,
-            Annotation[] declaredAnnotations) {
+            Annotation[] declaredAnnotations, TTypeVariable<?>[] typeParameters) {
         this.declaringClass = declaringClass;
         this.flags = flags;
         this.accessLevel = accessLevel;
         this.parameterTypes = parameterTypes;
         this.declaredAnnotations = declaredAnnotations;
+        this.typeParameters = typeParameters;
     }
 
     @Override
@@ -66,5 +68,10 @@ public abstract class TExecutable extends TAccessibleObject implements TMember, 
     @Override
     public TAnnotation[] getDeclaredAnnotations() {
         return declaredAnnotations != null ? (TAnnotation[]) declaredAnnotations.clone() : new TAnnotation[0];
+    }
+
+    @Override
+    public TTypeVariable<?>[] getTypeParameters() {
+        return typeParameters != null ? typeParameters.clone() : new TTypeVariable<?>[0];
     }
 }

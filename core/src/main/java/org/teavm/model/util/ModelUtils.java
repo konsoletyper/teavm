@@ -75,6 +75,7 @@ public final class ModelUtils {
         MethodHolder copy = new MethodHolder(method.getDescriptor());
         copy.setLevel(method.getLevel());
         copy.getModifiers().addAll(method.readModifiers());
+        copy.setTypeParameters(method.getTypeParameters());
         if (method.getProgram() != null && withProgram) {
             copy.setProgram(ProgramUtils.copy(method.getProgram()));
         }

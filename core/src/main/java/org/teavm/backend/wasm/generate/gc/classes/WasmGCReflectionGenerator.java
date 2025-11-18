@@ -111,6 +111,8 @@ class WasmGCReflectionGenerator implements WasmGCReflectionProvider {
                 fields.add(new WasmField(getClassArrayType().getReference().asStorage(),
                         names.structureField("@parameterTypes")));
                 fields.add(new WasmField(callerType.asStorage(), names.structureField("@caller")));
+                fields.add(new WasmField(classInfoProvider.getObjectArrayType().getReference().asStorage(),
+                        names.structureField("@typeParameters")));
             });
             module.types.add(reflectionMethodType);
         }

@@ -19,9 +19,11 @@ import org.teavm.backend.wasm.intrinsics.gc.WasmGCIntrinsicContext;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.expression.WasmArrayNewFixed;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.model.ClassReader;
+import org.teavm.model.GenericTypeParameter;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -30,12 +32,15 @@ class WasmGCReflectionGenericsHelper {
     private WasmFunction function;
     private WasmFunction variableConstructor;
 
+    static final MethodReference typeVarConstructor = new MethodReference("java.lang.reflect.TypeVariableImpl",
+            "create", ValueType.object("java.lang.String"), ValueType.object("java.lang.reflect.TypeVariableImpl"));
+
     WasmGCReflectionGenericsHelper(WasmGCIntrinsicContext context, WasmFunction function) {
         this.context = context;
         this.function = function;
     }
 
-    void initReflectionGenerics() {
+    void initReflectionGenericsForClasses() {
         for (var className : context.dependency().getReachableClasses()) {
             var cls = context.hierarchy().getClassSource().get(className);
             if (cls != null) {
@@ -49,12 +54,7 @@ class WasmGCReflectionGenericsHelper {
         if (params == null || params.length == 0) {
             return;
         }
-        var arrayType = context.classInfoProvider().getObjectArrayType();
-        var array = new WasmArrayNewFixed(arrayType);
-        for (var param : params) {
-            var nameRef = new WasmGetGlobal(context.strings().getStringConstant(param.getName()).global);
-            array.getElements().add(new WasmCall(getVariableConstructor(), nameRef));
-        }
+        var array = writeTypeParameters(params);
         var fieldOffset = context.classInfoProvider().getClassTypeParametersOffset();
         var clsInfo = context.classInfoProvider().getClassInfo(cls.getName());
         var clsCls = context.classInfoProvider().getClassInfo("java.lang.Class");
@@ -62,11 +62,19 @@ class WasmGCReflectionGenericsHelper {
                 fieldOffset, array));
     }
 
+    WasmExpression writeTypeParameters(GenericTypeParameter[] params) {
+        var arrayType = context.classInfoProvider().getObjectArrayType();
+        var array = new WasmArrayNewFixed(arrayType);
+        for (var param : params) {
+            var nameRef = new WasmGetGlobal(context.strings().getStringConstant(param.getName()).global);
+            array.getElements().add(new WasmCall(getVariableConstructor(), nameRef));
+        }
+        return array;
+    }
+
     private WasmFunction getVariableConstructor() {
         if (variableConstructor == null) {
-            variableConstructor = context.functions().forStaticMethod(new MethodReference(
-                    "java.lang.reflect.TypeVariableImpl", "create", ValueType.object("java.lang.String"),
-                    ValueType.object("java.lang.reflect.TypeVariableImpl")));
+            variableConstructor = context.functions().forStaticMethod(typeVarConstructor);
         }
         return variableConstructor;
     }

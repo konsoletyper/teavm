@@ -31,6 +31,7 @@ public interface WasmGCReflectionProvider {
     int FIELD_RETURN_TYPE = 4;
     int FIELD_PARAMETER_TYPES = 5;
     int FIELD_CALLER = 6;
+    int FIELD_TYPE_PARAMETERS = 7;
 
     WasmStructure getReflectionFieldType();
 
