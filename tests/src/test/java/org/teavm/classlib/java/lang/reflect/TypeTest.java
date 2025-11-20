@@ -17,6 +17,9 @@ package org.teavm.classlib.java.lang.reflect;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -25,6 +28,7 @@ import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Reflectable;
 import org.teavm.junit.EachTestCompiledSeparately;
 import org.teavm.junit.OnlyPlatform;
+import org.teavm.junit.SkipPlatform;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.junit.TestPlatform;
 
@@ -48,6 +52,8 @@ public class TypeTest {
                 .map(TypeVariable::getName)
                 .collect(Collectors.joining(", "));
         assertEquals("", s);
+        
+        assertEquals("T", A.class.getTypeParameters()[0].toString());
     }
     
     @Test
@@ -61,6 +67,25 @@ public class TypeTest {
         assertEquals("S", bar.getTypeParameters()[0].getName());
     }
     
+    @Test
+    @SkipPlatform(TestPlatform.WEBASSEMBLY_GC)
+    public void classTypeVariableBounds() {
+        TypeVariable<?>[] params = A.class.getTypeParameters();
+        assertEquals(1, params[0].getBounds().length);
+        assertEquals(Object.class, params[0].getBounds()[0]);
+        
+        params = B.class.getTypeParameters();
+        assertArrayEquals(new Type[] { params[0] }, params[1].getBounds());
+        
+        params = D.class.getTypeParameters();
+        var bounds = params[0].getBounds();
+        assertEquals(1, bounds.length);
+        assertTrue(bounds[0] instanceof ParameterizedType);
+        var pt = (ParameterizedType) bounds[0];
+        assertEquals(D.class, pt.getRawType());
+        assertEquals(params[0], pt.getActualTypeArguments()[0]);
+    }
+    
     interface A<T> {
         @Reflectable
         void foo();
@@ -69,9 +94,15 @@ public class TypeTest {
         <S> void bar(S param); 
     }
 
-    static class B<Q, W> {
+    static class B<Q, W extends Q> {
     }
     
     static class C {
     }
+    
+    static class D<T extends D<T>> {
+    }
+    
+    static class E<T extends A<Integer>, S extends A<? extends Long>, W extends A<? super Number>> {
+    } 
 }

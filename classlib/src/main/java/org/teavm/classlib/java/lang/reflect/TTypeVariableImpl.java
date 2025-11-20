@@ -15,12 +15,14 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import org.teavm.classlib.impl.reflection.ObjectList;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 
 public class TTypeVariableImpl implements TTypeVariable<TGenericDeclaration> {
-    TType[] bounds;
-    TGenericDeclaration declaration;
+    ObjectList boundsList;
+    private TType[] bounds;
+    public TGenericDeclaration declaration;
     private String name;
 
     private TTypeVariableImpl(String name) {
@@ -33,7 +35,16 @@ public class TTypeVariableImpl implements TTypeVariable<TGenericDeclaration> {
 
     @Override
     public TType[] getBounds() {
-        return bounds != null ? bounds : new TType[0];
+        if (bounds == null) {
+            if (boundsList == null) {
+                bounds = new TType[] { (TType) (Object) Object.class };
+            } else {
+                var array = boundsList.asArray();
+                bounds = new TType[array.length];
+                System.arraycopy(array, 0, bounds, 0, array.length);
+            }
+        }
+        return bounds.clone();
     }
 
     @Override
@@ -59,5 +70,10 @@ public class TTypeVariableImpl implements TTypeVariable<TGenericDeclaration> {
     @Override
     public TAnnotation[] getDeclaredAnnotations() {
         return new TAnnotation[0];
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }
