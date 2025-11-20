@@ -22,6 +22,10 @@ class TGenericArrayTypeImpl implements TGenericArrayType {
         this.genericComponentType = genericComponentType;
     }
 
+    static TGenericArrayTypeImpl create(TType genericComponentType) {
+        return new TGenericArrayTypeImpl(genericComponentType);
+    }
+
     @Override
     public TType getGenericComponentType() {
         return genericComponentType;

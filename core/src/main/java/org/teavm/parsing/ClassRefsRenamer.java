@@ -17,6 +17,7 @@ package org.teavm.parsing;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import org.teavm.interop.Remove;
 import org.teavm.interop.Rename;
@@ -108,7 +109,9 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
             renamedCls.getGenericInterfaces().add((GenericValueType.Object) rename(genericInterface));
         }
 
-        renamedCls.setGenericParameters(cls.getGenericParameters());
+        if (cls.getGenericParameters() != null) {
+            renamedCls.setGenericParameters(rename(cls.getGenericParameters()));
+        }
 
         for (var innerClass : cls.getInnerClasses()) {
             renamedCls.getInnerClasses().add(classNameMapper.apply(innerClass));
@@ -164,16 +167,25 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
         return typeParameters;
     }
 
-    private GenericTypeParameter rename(GenericTypeParameter typeParameter) {
-        GenericValueType.Reference classBound = typeParameter.getClassBound();
-        if (classBound != null) {
-            classBound = (GenericValueType.Reference) rename(classBound);
+    private GenericTypeParameter rename(GenericTypeParameter typeParam) {
+        var name = classNameMapper.apply(typeParam.getName());
+        var renamedClassBound = typeParam.getClassBound() != null
+                ? (GenericValueType.Reference) rename(typeParam.getClassBound())
+                : null;
+        var renamedInterfaceBounds = typeParam.getInterfaceBounds();
+        var interfacesRenamed = false;
+        for (var i = 0; i < renamedInterfaceBounds.length; ++i) {
+            var bound = (GenericValueType.Reference) rename(renamedInterfaceBounds[i]);
+            if (!bound.equals(renamedInterfaceBounds[i])) {
+                interfacesRenamed = true;
+                renamedInterfaceBounds[i] = bound;
+            }
         }
-        GenericValueType.Reference[] interfaceBounds = typeParameter.getInterfaceBounds();
-        for (int j = 0; j < interfaceBounds.length; ++j) {
-            interfaceBounds[j] = (GenericValueType.Reference) rename(interfaceBounds[j]);
+        if (interfacesRenamed || !Objects.equals(renamedClassBound, typeParam.getClassBound())
+                || name.equals(typeParam.getName())) {
+            return new GenericTypeParameter(name, renamedClassBound, renamedInterfaceBounds);
         }
-        return new GenericTypeParameter(typeParameter.getName(), classBound, interfaceBounds);
+        return typeParam;
     }
 
     public FieldHolder rename(FieldHolder field) {

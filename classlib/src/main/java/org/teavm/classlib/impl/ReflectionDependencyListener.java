@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,6 +35,7 @@ import org.teavm.classlib.ReflectionSupplier;
 import org.teavm.classlib.impl.reflection.ClassList;
 import org.teavm.classlib.impl.reflection.FieldInfo;
 import org.teavm.classlib.impl.reflection.MethodInfo;
+import org.teavm.classlib.impl.reflection.ObjectList;
 import org.teavm.classlib.java.lang.reflect.AnnotationGenerationHelper;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
@@ -49,6 +51,7 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
+import org.teavm.model.GenericValueType;
 import org.teavm.model.MemberReader;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
@@ -91,6 +94,20 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private ValueType.Object typeVariableImplType = ValueType.object("java.lang.reflect.TypeVariableImpl");
     private MethodReference typeVariableConstructor = new MethodReference("java.lang.reflect.TypeVariableImpl",
             "create", ValueType.object("java.lang.String"), typeVariableImplType);
+    private static final MethodReference parameterizedTypeConstructor = new MethodReference(
+            "java.lang.reflect.ParameterizedTypeImpl", "create", ValueType.parse(Class.class),
+            ValueType.parse(ObjectList.class), ValueType.object("java.lang.reflect.ParameterizedTypeImpl"));
+    private static final MethodReference typeVarGetBounds = new MethodReference(
+            "java.lang.reflect.TypeVariableImpl", "getBounds", ValueType.parse(Type[].class));
+    private static final MethodReference wildcardTypeUpper = new MethodReference(
+            "java.lang.reflect.WildcardTypeImpl", "upper", ValueType.parse(Type.class),
+            ValueType.object("java.lang.reflect.WildcardTypeImpl"));
+    private static final MethodReference wildcardTypeLower = new MethodReference(
+            "java.lang.reflect.WildcardTypeImpl", "lower", ValueType.parse(Type.class),
+            ValueType.object("java.lang.reflect.WildcardTypeImpl"));
+    private static final MethodReference genericArrayTypeCreate = new MethodReference(
+            "java.lang.reflect.GenericArrayTypeImpl", "create", ValueType.parse(Type.class),
+            ValueType.object("java.lang.reflect.GenericArrayTypeImpl"));
     private Map<String, Set<String>> accessibleFieldCache = new LinkedHashMap<>();
     private Map<String, Set<MethodDescriptor>> accessibleMethodCache = new LinkedHashMap<>();
     private Set<String> classesWithReflectableFields = new LinkedHashSet<>();
@@ -112,6 +129,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private boolean setReached;
     private boolean callReached;
     private AnnotationGenerationHelper annotHelper;
+    private boolean withGenerics;
 
     public ReflectionDependencyListener(List<ReflectionSupplier> reflectionSuppliers, boolean enumsAsInts,
             boolean needAnnotImplCtor) {
@@ -330,11 +348,80 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             typesInReflectableSignaturesNode.connect(method.getResult().getArrayItem().getClassValueNode());
         } else if (method.getReference().equals(classGetTypeParams)
                 || method.getReference().equals(executableGetTypeParams)) {
-            agent.linkMethod(typeVariableConstructor)
-                    .propagate(1, agent.getType(ValueType.object("java.lang.String")))
-                    .use();
+            linkGenerics(agent);
             method.getResult().getArrayItem().propagate(agent.getType(typeVariableImplType));
+        } else if (method.getReference().equals(typeVarGetBounds)) {
+            linkGenerics(agent);
+            method.getResult().propagate(agent.getType(ValueType.parse(Type[].class)));
+            propagateGenerics(agent, method.getResult().getArrayItem());
         }
+    }
+
+    private void linkGenerics(DependencyAgent agent) {
+        if (withGenerics) {
+            return;
+        }
+        withGenerics = true;
+        agent.linkMethod(typeVariableConstructor)
+                .propagate(1, agent.getType(ValueType.object("java.lang.String")))
+                .use();
+        agent.linkMethod(parameterizedTypeConstructor)
+                .propagate(1, agent.getType(ValueType.parse(Class.class)))
+                .use();
+        agent.linkMethod(wildcardTypeUpper).use();
+        agent.linkMethod(wildcardTypeLower).use();
+        agent.linkMethod(genericArrayTypeCreate).use();
+
+        var visited = new HashSet<GenericValueType>();
+        for (var className : agent.getReachableClasses()) {
+            linkTypeParameterBounds(agent, className, visited);
+        }
+        allClasses.addConsumer(type -> {
+            var valueType = type.getValueType();
+            if (valueType instanceof ValueType.Object) {
+                linkTypeParameterBounds(agent, ((ValueType.Object) valueType).getClassName(), new HashSet<>());
+            }
+        });
+    }
+
+    private void linkTypeParameterBounds(DependencyAgent agent, String className, Set<GenericValueType> visited) {
+        var cls = agent.getClassSource().get(className);
+        if (cls != null) {
+            return;
+        }
+        var params = cls.getGenericParameters();
+        if (params != null) {
+            for (var param : params) {
+                if (param.getClassBound() != null) {
+                    linkGenericType(agent, param.getClassBound(), visited);
+                }
+                for (var bound : param.getInterfaceBounds()) {
+                    linkGenericType(agent, bound, visited);
+                }
+            }
+        }
+    }
+
+    private void linkGenericType(DependencyAgent agent, GenericValueType type, Set<GenericValueType> visited) {
+        if (!visited.add(type)) {
+            return;
+        }
+        if (type instanceof GenericValueType.Object) {
+            var objType = (GenericValueType.Object) type;
+            linkTypeParameterBounds(agent, objType.getClassName(), visited);
+            var args = objType.getArguments();
+            for (var arg : args) {
+                linkGenericType(agent, arg.getValue(), visited);
+            }
+        }
+    }
+
+    private void propagateGenerics(DependencyAgent agent, DependencyNode target) {
+        target.propagate(agent.getType(ValueType.object("java.lang.Class")));
+        target.propagate(agent.getType(typeVariableImplType));
+        target.propagate(agent.getType(ValueType.object("java.lang.reflect.ParameterizedTypeImpl")));
+        target.propagate(agent.getType(ValueType.object("java.lang.reflect.WildcardTypeImpl")));
+        target.propagate(agent.getType(ValueType.object("java.lang.reflect.GenericArrayTypeImpl")));
     }
 
     public static boolean shouldSkipPrivates(ClassReader cls) {

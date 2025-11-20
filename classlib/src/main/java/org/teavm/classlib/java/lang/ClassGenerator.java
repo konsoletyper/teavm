@@ -16,7 +16,9 @@
 package org.teavm.classlib.java.lang;
 
 import java.lang.annotation.Retention;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,6 +30,7 @@ import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.classlib.impl.ReflectionDependencyListener;
+import org.teavm.classlib.impl.reflection.ObjectList;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
@@ -38,6 +41,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
+import org.teavm.model.GenericValueType;
 import org.teavm.model.MemberReader;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
@@ -49,6 +53,20 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
             new FieldReference(Class.class.getName(), "platformClass");
     private static final MethodReference typeVarConstructor = new MethodReference("java.lang.reflect.TypeVariableImpl",
             "create", ValueType.object("java.lang.String"), ValueType.object("java.lang.reflect.TypeVariableImpl"));
+    private static final MethodReference typeVarBounds = new MethodReference("java.lang.reflect.TypeVariableImpl",
+            "getBounds", ValueType.parse(Type[].class));
+    private static final MethodReference parameterizedTypeConstructor = new MethodReference(
+            "java.lang.reflect.ParameterizedTypeImpl", "create", ValueType.parse(Class.class),
+            ValueType.parse(ObjectList.class), ValueType.object("java.lang.reflect.ParameterizedTypeImpl"));
+    private static final MethodReference wildcardTypeUpper = new MethodReference(
+            "java.lang.reflect.WildcardTypeImpl", "upper", ValueType.parse(Type.class),
+            ValueType.object("java.lang.reflect.WildcardTypeImpl"));
+    private static final MethodReference wildcardTypeLower = new MethodReference(
+            "java.lang.reflect.WildcardTypeImpl", "lower", ValueType.parse(Type.class),
+            ValueType.object("java.lang.reflect.WildcardTypeImpl"));
+    private static final MethodReference genericArrayTypeCreate = new MethodReference(
+            "java.lang.reflect.GenericArrayTypeImpl", "create", ValueType.parse(Type.class),
+            ValueType.object("java.lang.reflect.GenericArrayTypeImpl"));
     private static final MethodDescriptor CLINIT = new MethodDescriptor("<clinit>", void.class);
 
     @Override
@@ -176,6 +194,14 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
                     generateClassTypeParameters(context, writer, cls);
                 }
             }
+            if (context.getDependency().getMethod(typeVarBounds) != null) {
+                for (var className : context.getClassSource().getClassNames()) {
+                    var cls = context.getClassSource().get(className);
+                    if (cls != null) {
+                        generateClassTypeParametersBounds(context, writer, cls);
+                    }
+                }
+            }
         }
     }
 
@@ -297,6 +323,116 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
                     .append("(" + context.lookupString(param.getName()) + "))");
         }
         writer.append("];").softNewLine();
+    }
+
+    private void generateClassTypeParametersBounds(GeneratorContext context, SourceWriter writer, ClassReader cls) {
+        var parameters = cls.getGenericParameters();
+        if (parameters == null || parameters.length == 0) {
+            return;
+        }
+        for (int i = 0; i < parameters.length; i++) {
+            var parameter = parameters[i];
+            var bounds = new ArrayList<GenericValueType.Reference>();
+            if (parameter.getClassBound() != null) {
+                var bound = parameter.getClassBound();
+                if (!(bound instanceof GenericValueType.Object)
+                        || !((GenericValueType.Object) bound).getClassName().equals("java.lang.Object")) {
+                    bounds.add(parameter.getClassBound());
+                }
+            }
+            var itfBounds = parameter.getInterfaceBounds();
+            if (itfBounds != null) {
+                bounds.addAll(List.of(itfBounds));
+            }
+            if (!bounds.isEmpty()) {
+                writer.appendClass(cls.getName()).append(".$meta.typeParams[").append(i).append("].")
+                        .appendField(new FieldReference(typeVarConstructor.getClassName(), "boundsList"))
+                        .ws().append("=").ws().append('[');
+
+                for (int j = 0; j < bounds.size(); ++j) {
+                    var bound = bounds.get(j);
+                    if (j > 0) {
+                        writer.append(",").ws();
+                    }
+                    generateGenericType(context, writer, cls, bound);
+                }
+                writer.append("];").softNewLine();
+            }
+        }
+    }
+
+    private void generateGenericType(GeneratorContext context, SourceWriter writer, ClassReader owningClass,
+            GenericValueType type) {
+        if (type instanceof GenericValueType.Variable) {
+            var typeVar = (GenericValueType.Variable) type;
+            var params = owningClass.getGenericParameters();
+            for (var i = 0; i < params.length; ++i) {
+                if (typeVar.getName().equals(params[i].getName())) {
+                    writer.appendClass(owningClass.getName()).append(".$meta.typeParams[").append(i).append("]");
+                    break;
+                }
+            }
+        } else if (type instanceof GenericValueType.Object) {
+            var parameterizedType = (GenericValueType.Object) type;
+            var typeArgs = parameterizedType.getArguments();
+            if (typeArgs == null || typeArgs.length == 0) {
+                writer.appendFunction("$rt_cls").append("(").appendClass(parameterizedType.getClassName()).append(")");
+            } else {
+                writer.appendMethod(parameterizedTypeConstructor).append("(");
+                writer.appendFunction("$rt_cls").append("(").appendClass(parameterizedType.getClassName()).append(")");
+                writer.append(",").ws().append('[');
+                for (var i = 0; i < typeArgs.length; ++i) {
+                    if (i > 0) {
+                        writer.append(",").ws();
+                    }
+                    generateGenericType(context, writer, owningClass, typeArgs[i]);
+                }
+                writer.append("])");
+            }
+        } else if (type instanceof GenericValueType.Array) {
+            var nonGenericType = type.asValueType();
+            if (nonGenericType == null) {
+                var arrayType = (GenericValueType.Array) type;
+                writer.appendMethod(genericArrayTypeCreate).append("(");
+                generateGenericType(context, writer, owningClass, arrayType.getItemType());
+                writer.append(")");
+            } else {
+                writer.appendFunction("$rt_cls").append("(");
+                context.typeToClassString(writer, nonGenericType);
+                writer.append(")");
+            }
+        } else if (type instanceof GenericValueType.Primitive) {
+            var primitiveType = (GenericValueType.Primitive) type;
+            writer.appendFunction("$rt_cls").append("(");
+            context.typeToClassString(writer, ValueType.primitive(primitiveType.getKind()));
+            writer.append(")");
+        } else if (type instanceof GenericValueType.Void) {
+            writer.appendFunction("$rt_cls").append("(");
+            context.typeToClassString(writer, ValueType.VOID);
+            writer.append(")");
+        }
+    }
+
+    private void generateGenericType(GeneratorContext context, SourceWriter writer, ClassReader owningClass,
+            GenericValueType.Argument arg) {
+        switch (arg.getKind()) {
+            case INVARIANT:
+                generateGenericType(context, writer, owningClass, arg.getValue());
+                break;
+            case ANY:
+                writer.appendMethod(wildcardTypeUpper).append("(null)");
+                break;
+            case COVARIANT:
+                writer.appendMethod(wildcardTypeUpper).append("(");
+                generateGenericType(context, writer, owningClass, arg.getValue());
+                writer.append(")");
+                break;
+            case CONTRAVARIANT:
+                writer.appendMethod(wildcardTypeLower).append("(");
+                generateGenericType(context, writer, owningClass, arg.getValue());
+                writer.append(")");
+                break;
+        }
     }
 
     private <T extends MemberReader> void generateCreateMembers(GeneratorContext context, SourceWriter writer,

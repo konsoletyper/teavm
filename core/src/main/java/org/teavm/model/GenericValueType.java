@@ -22,6 +22,8 @@ import java.util.Objects;
 public abstract class GenericValueType {
     private static final Argument[] EMPTY_ARRAY = new Argument[0];
 
+    public abstract ValueType asValueType();
+
     public static final class Primitive extends GenericValueType {
         private final PrimitiveType kind;
         private final int hash;
@@ -29,6 +31,11 @@ public abstract class GenericValueType {
         private Primitive(PrimitiveType kind) {
             this.kind = kind;
             hash = 17988782 ^ (kind.ordinal() * 31);
+        }
+
+        @Override
+        public ValueType asValueType() {
+            return ValueType.primitive(kind);
         }
 
         public PrimitiveType getKind() {
@@ -78,6 +85,11 @@ public abstract class GenericValueType {
 
     public static final class Void extends GenericValueType {
         private Void() {
+        }
+
+        @Override
+        public ValueType asValueType() {
+            return ValueType.VOID;
         }
 
         @Override
@@ -197,6 +209,11 @@ public abstract class GenericValueType {
         }
 
         @Override
+        public ValueType asValueType() {
+            return arguments == null || arguments.length == 0 ? ValueType.object(className) : null;
+        }
+
+        @Override
         void toString(StringBuilder sb) {
             sb.append("L");
             toStringImpl(sb);
@@ -287,6 +304,11 @@ public abstract class GenericValueType {
         }
 
         @Override
+        public ValueType asValueType() {
+            return null;
+        }
+
+        @Override
         public boolean equals(java.lang.Object obj) {
             if (obj == this) {
                 return true;
@@ -321,13 +343,18 @@ public abstract class GenericValueType {
         private final GenericValueType itemType;
         private int hash;
 
-
         public Array(GenericValueType itemType) {
             this.itemType = itemType;
         }
 
         public GenericValueType getItemType() {
             return itemType;
+        }
+
+        @Override
+        public ValueType asValueType() {
+            var item = itemType.asValueType();
+            return item != null ? ValueType.arrayOf(item) : null;
         }
 
         @Override

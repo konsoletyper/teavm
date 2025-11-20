@@ -43,6 +43,7 @@ import org.teavm.classlib.java.lang.reflect.TMethod;
 import org.teavm.classlib.java.lang.reflect.TModifier;
 import org.teavm.classlib.java.lang.reflect.TType;
 import org.teavm.classlib.java.lang.reflect.TTypeVariable;
+import org.teavm.classlib.java.lang.reflect.TTypeVariableImpl;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
@@ -973,6 +974,12 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
         var array = paramList.asArray();
         var result = new TTypeVariable[array.length];
         System.arraycopy(array, 0, result, 0, array.length);
+        for (var param : result) {
+            var paramImpl = (TTypeVariableImpl) param;
+            if (paramImpl.declaration == null) {
+                paramImpl.declaration = this;
+            }
+        }
         return result;
     }
 

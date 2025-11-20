@@ -15,21 +15,39 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import java.util.Arrays;
+import java.util.Objects;
+import org.teavm.classlib.impl.reflection.ObjectList;
 import org.teavm.classlib.java.lang.TClass;
 
 class TParameterizedTypeImpl implements TParameterizedType {
     private TClass<?> rawType;
-    private TType[] actualTypeArguments;
+    private ObjectList actualTypeArguments;
+    private TType[] actualTypeArgumentsArray;
     private TType ownerType;
 
-    TParameterizedTypeImpl(TClass<?> rawType, TType[] actualTypeArguments, TType ownerType) {
+    TParameterizedTypeImpl(TClass<?> rawType, ObjectList actualTypeArguments, TType ownerType) {
+        this.rawType = rawType;
         this.actualTypeArguments = actualTypeArguments;
         this.ownerType = ownerType;
     }
 
+    static TParameterizedTypeImpl create(TClass<?> rawType, ObjectList actualTypeArguments) {
+        return new TParameterizedTypeImpl(rawType, actualTypeArguments, null);
+    }
+
     @Override
     public TType[] getActualTypeArguments() {
-        return actualTypeArguments.clone();
+        if (actualTypeArgumentsArray == null) {
+            if (actualTypeArguments == null) {
+                actualTypeArgumentsArray = new TType[0];
+            } else {
+                var array = actualTypeArguments.asArray();
+                actualTypeArgumentsArray = new TType[array.length];
+                System.arraycopy(array, 0, actualTypeArgumentsArray, 0, array.length);
+            }
+        }
+        return actualTypeArgumentsArray.clone();
     }
 
     @Override
@@ -40,5 +58,34 @@ class TParameterizedTypeImpl implements TParameterizedType {
     @Override
     public TType getOwnerType() {
         return ownerType;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof TParameterizedTypeImpl)) {
+            return false;
+        }
+        var that = (TParameterizedTypeImpl) obj;
+        return rawType == that.rawType
+                && Objects.equals(ownerType, that.ownerType)
+                && Arrays.equals(getActualTypeArguments(), that.getActualTypeArguments());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(rawType, ownerType, Arrays.hashCode(getActualTypeArguments()));
+    }
+
+    @Override
+    public String toString() {
+        var args = getActualTypeArguments();
+        var sb = new StringBuilder(rawType.getName()).append('<').append(args[0]);
+        for (int i = 1; i < args.length; i++) {
+            sb.append(',').append(args[i]);
+        }
+        return sb.append(">").toString();
     }
 }
