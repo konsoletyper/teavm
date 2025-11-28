@@ -143,7 +143,7 @@ class WasmGCReflectionGenericsHelper {
         } else if (type instanceof GenericValueType.Variable) {
             var typeVar = (GenericValueType.Variable) type;
             if (contextMethod != null) {
-                var genericParameters = contextClass.getGenericParameters();
+                var genericParameters = contextMethod.getTypeParameters();
                 for (var i = 0; i < genericParameters.length; i++) {
                     var param = genericParameters[i];
                     if (param.getName().equals(typeVar.getName())) {
