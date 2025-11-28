@@ -32,7 +32,7 @@ public class TMethod extends TExecutable implements TMember {
 
     public TMethod(TClass<?> declaringClass, String name, int flags, int accessLevel, TClass<?> returnType,
             TClass<?>[] parameterTypes, MethodCaller caller, Annotation[] declaredAnnotations,
-            TTypeVariable<?>[] typeParameters) {
+            TTypeVariableImpl[] typeParameters) {
         super(declaringClass, flags, accessLevel, parameterTypes, declaredAnnotations, typeParameters);
         this.name = name;
         this.returnType = returnType;

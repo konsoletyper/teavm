@@ -15,6 +15,9 @@
  */
 package org.teavm.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class GenericTypeParameter {
     private String name;
     private GenericValueType.Reference classBound;
@@ -37,5 +40,19 @@ public class GenericTypeParameter {
 
     public GenericValueType.Reference[] getInterfaceBounds() {
         return interfaceBounds.clone();
+    }
+
+    public List<GenericValueType.Reference> extractAllBounds() {
+        var bounds = new ArrayList<GenericValueType.Reference>();
+        if (classBound != null && !isTrivialBound(classBound)) {
+            bounds.add(classBound);
+        }
+        bounds.addAll(List.of(interfaceBounds));
+        return bounds;
+    }
+
+    public static boolean isTrivialBound(GenericValueType.Reference bound) {
+        return bound instanceof GenericValueType.Object
+                && ((GenericValueType.Object) bound).getClassName().equals("java.lang.Object");
     }
 }

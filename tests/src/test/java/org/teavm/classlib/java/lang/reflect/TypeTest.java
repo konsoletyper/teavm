@@ -136,6 +136,24 @@ public class TypeTest {
         pt = (ParameterizedType) bounds[0];
         assertEquals(int[].class, pt.getActualTypeArguments()[0]);
     }
+
+    @Test
+    public void methodTypeVariableBounds() throws Exception {
+        var method = A.class.getMethod("a");
+        var params = method.getTypeParameters();
+        var bound = params[0].getBounds()[0];
+        assertEquals(A.class.getTypeParameters()[0], bound);
+
+        method = A.class.getMethod("b");
+        params = method.getTypeParameters();
+        bound = params[0].getBounds()[0];
+        assertEquals(Integer.class, bound);
+
+        method = A.class.getMethod("c");
+        params = method.getTypeParameters();
+        bound = params[1].getBounds()[0];
+        assertEquals(params[0], bound);
+    }
     
     interface A<T> {
         @Reflectable
@@ -143,6 +161,15 @@ public class TypeTest {
 
         @Reflectable
         <S> void bar(S param); 
+        
+        @Reflectable
+        <S extends T> S a();
+
+        @Reflectable
+        <S extends Integer> S b();
+
+        @Reflectable
+        <Q extends Number, W extends Q> W c();
     }
 
     static class B<Q, W extends Q> {

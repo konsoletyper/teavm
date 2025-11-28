@@ -25,12 +25,17 @@ public class TTypeVariableImpl implements TTypeVariable<TGenericDeclaration> {
     public TGenericDeclaration declaration;
     private String name;
 
-    private TTypeVariableImpl(String name) {
+    private TTypeVariableImpl(String name, ObjectList boundsList) {
         this.name = name;
+        this.boundsList = boundsList;
+    }
+
+    static TTypeVariableImpl create(String name, ObjectList boundsList) {
+        return new TTypeVariableImpl(name, boundsList);
     }
 
     static TTypeVariableImpl create(String name) {
-        return new TTypeVariableImpl(name);
+        return new TTypeVariableImpl(name, null);
     }
 
     @Override
@@ -41,7 +46,9 @@ public class TTypeVariableImpl implements TTypeVariable<TGenericDeclaration> {
             } else {
                 var array = boundsList.asArray();
                 bounds = new TType[array.length];
-                System.arraycopy(array, 0, bounds, 0, array.length);
+                for (var i = 0; i < array.length; ++i) {
+                    bounds[i] = TTypeVariableStub.resolve((TType) array[i], declaration);
+                }
             }
         }
         return bounds.clone();

@@ -20,7 +20,7 @@ import java.util.Objects;
 import org.teavm.classlib.impl.reflection.ObjectList;
 import org.teavm.classlib.java.lang.TClass;
 
-class TParameterizedTypeImpl implements TParameterizedType {
+class TParameterizedTypeImpl extends TLazyResolvedType implements TParameterizedType {
     private TClass<?> rawType;
     private ObjectList actualTypeArguments;
     private TType[] actualTypeArgumentsArray;
@@ -58,6 +58,19 @@ class TParameterizedTypeImpl implements TParameterizedType {
     @Override
     public TType getOwnerType() {
         return ownerType;
+    }
+
+    @Override
+    void resolve(TGenericDeclaration declaration) {
+        if (actualTypeArguments == null) {
+            actualTypeArgumentsArray = new TType[0];
+        } else {
+            var array = actualTypeArguments.asArray();
+            actualTypeArgumentsArray = new TType[array.length];
+            for (var i = 0; i < array.length; ++i) {
+                actualTypeArgumentsArray[i] = TTypeVariableStub.resolve((TType) array[i], declaration);
+            }
+        }
     }
 
     @Override

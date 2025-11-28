@@ -18,7 +18,7 @@ package org.teavm.classlib.java.lang.reflect;
 import java.util.Arrays;
 import java.util.Objects;
 
-class TWildcardTypeImpl implements TWildcardType {
+class TWildcardTypeImpl extends TLazyResolvedType implements TWildcardType {
     private TType[] upperBounds;
     private TType[] lowerBounds;
 
@@ -46,6 +46,20 @@ class TWildcardTypeImpl implements TWildcardType {
     @Override
     public TType[] getLowerBounds() {
         return lowerBounds.clone();
+    }
+
+    @Override
+    void resolve(TGenericDeclaration declaration) {
+        if (upperBounds != null) {
+            for (var i = 0; i < upperBounds.length; ++i) {
+                upperBounds[i] = TTypeVariableStub.resolve(upperBounds[i], declaration);
+            }
+        }
+        if (lowerBounds != null) {
+            for (var i = 0; i < lowerBounds.length; ++i) {
+                lowerBounds[i] = TTypeVariableStub.resolve(lowerBounds[i], declaration);
+            }
+        }
     }
 
     @Override

@@ -579,10 +579,10 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
                         parameterTypes[j] = (TClass<?>) (Object) paramTypeInfoList.get(j);
                     }
                     var typeParamsInfo = methodInfo.typeParameters();
-                    TTypeVariable<?>[] typeParams = null;
+                    TTypeVariableImpl[] typeParams = null;
                     if (typeParamsInfo != null) {
                         var array = typeParamsInfo.asArray();
-                        typeParams = new TTypeVariable<?>[array.length];
+                        typeParams = new TTypeVariableImpl[array.length];
                         System.arraycopy(array, 0, typeParams, 0, array.length);
                     }
                     var returnType = methodInfo.returnType();

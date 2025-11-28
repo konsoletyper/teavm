@@ -19,6 +19,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
+import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -91,14 +92,18 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             TypeVariable[].class);
     private MethodReference executableGetTypeParams = new MethodReference(Executable.class, "getTypeParameters",
             TypeVariable[].class);
-    private ValueType.Object typeVariableImplType = ValueType.object("java.lang.reflect.TypeVariableImpl");
-    private MethodReference typeVariableConstructor = new MethodReference("java.lang.reflect.TypeVariableImpl",
+    private static final String TYPE_VAR_IMPL = "java.lang.reflect.TypeVariableImpl";
+    private ValueType.Object typeVariableImplType = ValueType.object(TYPE_VAR_IMPL);
+    private MethodReference typeVariableConstructor = new MethodReference(TYPE_VAR_IMPL,
             "create", ValueType.object("java.lang.String"), typeVariableImplType);
+    private MethodReference typeVarConstructorBounds = new MethodReference(TYPE_VAR_IMPL,
+            "create", ValueType.object("java.lang.String"), ValueType.parse(ObjectList.class),
+            typeVariableImplType);
     private static final MethodReference parameterizedTypeConstructor = new MethodReference(
             "java.lang.reflect.ParameterizedTypeImpl", "create", ValueType.parse(Class.class),
             ValueType.parse(ObjectList.class), ValueType.object("java.lang.reflect.ParameterizedTypeImpl"));
     private static final MethodReference typeVarGetBounds = new MethodReference(
-            "java.lang.reflect.TypeVariableImpl", "getBounds", ValueType.parse(Type[].class));
+            TYPE_VAR_IMPL, "getBounds", ValueType.parse(Type[].class));
     private static final MethodReference wildcardTypeUpper = new MethodReference(
             "java.lang.reflect.WildcardTypeImpl", "upper", ValueType.parse(Type.class),
             ValueType.object("java.lang.reflect.WildcardTypeImpl"));
@@ -108,6 +113,15 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private static final MethodReference genericArrayTypeCreate = new MethodReference(
             "java.lang.reflect.GenericArrayTypeImpl", "create", ValueType.parse(Type.class),
             ValueType.object("java.lang.reflect.GenericArrayTypeImpl"));
+    private static final MethodReference typeVarStubCreate = new MethodReference(
+            "java.lang.reflect.TypeVariableStub", "create", ValueType.INTEGER,
+            ValueType.object("java.lang.reflect.TypeVariableStub"));
+    private static final MethodReference typeVarStubCreateWithLevel = new MethodReference(
+            "java.lang.reflect.TypeVariableStub", "create", ValueType.INTEGER, ValueType.INTEGER,
+            ValueType.object("java.lang.reflect.TypeVariableStub"));
+    private static final MethodReference typeVarStubResolve = new MethodReference(
+            "java.lang.reflect.TypeVariableStub", "resolve", ValueType.parse(Type.class),
+            ValueType.parse(GenericDeclaration.class), ValueType.parse(Type.class));
     private Map<String, Set<String>> accessibleFieldCache = new LinkedHashMap<>();
     private Map<String, Set<MethodDescriptor>> accessibleMethodCache = new LinkedHashMap<>();
     private Set<String> classesWithReflectableFields = new LinkedHashSet<>();
@@ -365,12 +379,21 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         agent.linkMethod(typeVariableConstructor)
                 .propagate(1, agent.getType(ValueType.object("java.lang.String")))
                 .use();
+        agent.linkMethod(typeVarConstructorBounds)
+                .propagate(1, agent.getType(ValueType.object("java.lang.String")))
+                .use();
         agent.linkMethod(parameterizedTypeConstructor)
                 .propagate(1, agent.getType(ValueType.parse(Class.class)))
                 .use();
         agent.linkMethod(wildcardTypeUpper).use();
         agent.linkMethod(wildcardTypeLower).use();
         agent.linkMethod(genericArrayTypeCreate).use();
+        agent.linkMethod(typeVarStubCreate).use();
+        agent.linkMethod(typeVarStubCreateWithLevel).use();
+
+        var stubResolve = agent.linkMethod(typeVarStubResolve);
+        propagateGenerics(agent, stubResolve.getVariable(1));
+        stubResolve.getVariable(1).propagate(agent.getType(ValueType.object("java.lang.reflect.TypeVariableStub")));
 
         var visited = new HashSet<GenericValueType>();
         for (var className : agent.getReachableClasses()) {

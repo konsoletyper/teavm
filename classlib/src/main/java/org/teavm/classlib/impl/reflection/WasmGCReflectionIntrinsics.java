@@ -389,6 +389,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 ValueType.object("java.lang.Object")));
         var callerType = context.functionTypes().of(objectClass.getType(), objectClass.getType(),
                 objectArrayClass.getType());
+        var withBounds = context.dependency().getMethod(WasmGCReflectionGenericsHelper.typeVarBounds) != null;
 
         for (var className : reflection.getClassesWithReflectableMethods()) {
             var cls = context.hierarchy().getClassSource().get(className);
@@ -450,7 +451,8 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 var typeParameters = method.getTypeParameters();
                 if (typeParameters != null && typeParameters.length > 0
                         && context.dependency().getMethod(WasmGCReflectionGenericsHelper.typeVarConstructor) != null) {
-                    methodInit.getInitializers().add(genericsHelper.writeTypeParameters(typeParameters));
+                    methodInit.getInitializers().add(genericsHelper.writeTypeParameters(typeParameters,
+                            cls, method, withBounds));
                 } else {
                     methodInit.getInitializers().add(new WasmNullConstant(
                             context.classInfoProvider().getObjectArrayType().getReference()));
