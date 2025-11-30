@@ -28,11 +28,11 @@ public interface MethodReader extends MemberReader {
 
     ValueType parameterType(int index);
 
-    int genericParameterCount();
-
     GenericValueType genericParameterType(int index);
 
     ValueType[] getParameterTypes();
+
+    GenericValueType[] getGenericParameterTypes();
 
     AnnotationContainerReader parameterAnnotation(int index);
 

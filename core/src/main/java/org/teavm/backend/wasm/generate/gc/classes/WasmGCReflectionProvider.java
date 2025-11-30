@@ -25,13 +25,16 @@ public interface WasmGCReflectionProvider {
     int FIELD_ANNOTATIONS = 3;
 
     int FIELD_TYPE = 4;
-    int FIELD_READER = 5;
-    int FIELD_WRITER = 6;
+    int FIELD_GENERIC_TYPE = 5;
+    int FIELD_READER = 6;
+    int FIELD_WRITER = 7;
 
     int FIELD_RETURN_TYPE = 4;
-    int FIELD_PARAMETER_TYPES = 5;
-    int FIELD_CALLER = 6;
-    int FIELD_TYPE_PARAMETERS = 7;
+    int FIELD_GENERIC_RETURN_TYPE = 5;
+    int FIELD_PARAMETER_TYPES = 6;
+    int FIELD_GENERIC_PARAMETER_TYPES = 7;
+    int FIELD_CALLER = 8;
+    int FIELD_TYPE_PARAMETERS = 9;
 
     WasmStructure getReflectionFieldType();
 

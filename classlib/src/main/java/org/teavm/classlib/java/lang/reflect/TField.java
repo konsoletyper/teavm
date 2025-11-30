@@ -31,17 +31,21 @@ public class TField extends TAccessibleObject implements TMember {
     private int modifiers;
     private int accessLevel;
     private TClass<?> type;
+    private TType genericType;
     private FieldReader getter;
     private FieldWriter setter;
     private Object[] declaredAnnotations;
 
     public TField(TClass<?> declaringClass, String name, int modifiers, int accessLevel, TClass<?> type,
-            FieldReader getter, FieldWriter setter, Annotation[] declaredAnnotations) {
+            Object genericType, FieldReader getter, FieldWriter setter, Annotation[] declaredAnnotations) {
         this.declaringClass = declaringClass;
         this.name = name;
         this.modifiers = modifiers;
         this.accessLevel = accessLevel;
         this.type = type;
+        this.genericType = genericType != null
+                ? TTypeVariableStub.resolve((TType) genericType, declaringClass)
+                : type;
         this.getter = getter;
         this.setter = setter;
         this.declaredAnnotations = declaredAnnotations;
@@ -73,6 +77,10 @@ public class TField extends TAccessibleObject implements TMember {
 
     public TClass<?> getType() {
         return type;
+    }
+
+    public TType getGenericType() {
+        return genericType;
     }
 
     @Override

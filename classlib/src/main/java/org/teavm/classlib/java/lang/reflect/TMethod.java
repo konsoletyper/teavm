@@ -28,14 +28,20 @@ import org.teavm.platform.Platform;
 public class TMethod extends TExecutable implements TMember {
     private String name;
     private TClass<?> returnType;
+    private TType genericReturnType;
+    private boolean genericReturnTypeResolved;
     private MethodCaller caller;
 
-    public TMethod(TClass<?> declaringClass, String name, int flags, int accessLevel, TClass<?> returnType,
-            TClass<?>[] parameterTypes, MethodCaller caller, Annotation[] declaredAnnotations,
+    public TMethod(TClass<?> declaringClass, String name, int flags, int accessLevel,
+            TClass<?> returnType, Object genericReturnType,
+            TClass<?>[] parameterTypes, Object[] genericParameterTypes,
+            MethodCaller caller, Annotation[] declaredAnnotations,
             TTypeVariableImpl[] typeParameters) {
-        super(declaringClass, flags, accessLevel, parameterTypes, declaredAnnotations, typeParameters);
+        super(declaringClass, flags, accessLevel, parameterTypes, genericParameterTypes, declaredAnnotations,
+                typeParameters);
         this.name = name;
         this.returnType = returnType;
+        this.genericReturnType = (TType) genericReturnType;
         this.caller = caller;
     }
 
@@ -46,6 +52,18 @@ public class TMethod extends TExecutable implements TMember {
 
     public TClass<?> getReturnType() {
         return returnType;
+    }
+
+    public TType getGenericReturnType() {
+        if (!genericReturnTypeResolved) {
+            genericReturnTypeResolved = true;
+            if (genericReturnType == null) {
+                genericReturnType = returnType;
+            } else {
+                genericReturnType = TTypeVariableStub.resolve(genericReturnType, this);
+            }
+        }
+        return genericReturnType;
     }
 
     @Override

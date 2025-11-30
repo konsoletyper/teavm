@@ -32,7 +32,13 @@ public class MethodInfo {
     public native final Class<?> returnType();
 
     @InjectedBy(MemberInfoGenerator.class)
+    public native final Object genericReturnType();
+
+    @InjectedBy(MemberInfoGenerator.class)
     public native final ClassList parameterTypes();
+
+    @InjectedBy(MemberInfoGenerator.class)
+    public native final ObjectList genericParameterTypes();
 
     @InjectedBy(MemberInfoGenerator.class)
     public native final MethodCaller caller();

@@ -15,6 +15,10 @@
  */
 package org.teavm.classlib.impl.reflection;
 
+import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Set;
 import org.teavm.ast.InvocationExpr;
@@ -77,6 +81,13 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
     private WasmFunction initReflectionFunction;
     private WasmFunction wrapAnnotationsFunction;
 
+    private static final MethodReference getGenericReturnType = new MethodReference(
+            Method.class, "getGenericReturnType", Type.class);
+    private static final MethodReference getGenericParameterTypes = new MethodReference(
+            Executable.class, "getGenericParameterTypes", Type[].class);
+    private static final MethodReference getGenericType = new MethodReference(
+            Field.class, "getGenericType", Type.class);
+
     public WasmGCReflectionIntrinsics(ReflectionDependencyListener reflection) {
         this.reflection = reflection;
     }
@@ -114,6 +125,8 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                                 context);
                     case "type":
                         return fieldInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_TYPE);
+                    case "genericType":
+                        return fieldInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_GENERIC_TYPE);
                     case "reader":
                         return fieldInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_READER);
                     case "writer":
@@ -150,8 +163,13 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                                 context);
                     case "returnType":
                         return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_RETURN_TYPE);
+                    case "genericReturnType":
+                        return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_GENERIC_RETURN_TYPE);
                     case "parameterTypes":
                         return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_PARAMETER_TYPES);
+                    case "genericParameterTypes":
+                        return methodInfoCall(invocation, context,
+                                WasmGCReflectionProvider.FIELD_GENERIC_PARAMETER_TYPES);
                     case "caller":
                         return methodInfoCall(invocation, context, WasmGCReflectionProvider.FIELD_CALLER);
                     case "typeParameters":
@@ -306,7 +324,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
             if (context.dependency().getMethod(WasmGCReflectionGenericsHelper.typeVarConstructor) != null) {
                 genericsHelper.initReflectionGenericsForClasses();
             }
-            initReflectionFields(context, initReflectionFunction, helper);
+            initReflectionFields(context, initReflectionFunction, helper, genericsHelper);
             initReflectionMethods(context, initReflectionFunction, helper, genericsHelper);
             initReflectionInstantiator(context, initReflectionFunction);
         }
@@ -314,10 +332,11 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
     }
 
     private void initReflectionFields(WasmGCIntrinsicContext context, WasmFunction function,
-            WasmGCAnnotationsHelper annotationsHelper) {
+            WasmGCAnnotationsHelper annotationsHelper, WasmGCReflectionGenericsHelper genericsHelper) {
         var wasmGcReflection = context.classInfoProvider().reflection();
         var classClass = context.classInfoProvider().getClassInfo("java.lang.Class");
         var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");
+        var withGenericType = context.dependency().getMethod(getGenericType) != null;
 
         for (var className : reflection.getClassesWithReflectableFields()) {
             var cls = context.hierarchy().getClassSource().get(className);
@@ -358,6 +377,11 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                         : new WasmNullConstant(context.classInfoProvider().getObjectArrayType().getReference()));
 
                 fieldInit.getInitializers().add(renderType(context, field.getType()));
+                if (withGenericType && field.getGenericType() != null) {
+                    fieldInit.getInitializers().add(genericsHelper.writeGenericType(cls, null, field.getGenericType()));
+                } else {
+                    fieldInit.getInitializers().add(new WasmNullConstant(objectClass.getType()));
+                }
 
                 if (accessibleFields != null && accessibleFields.contains(field.getName())
                         && reflection.isGetReached() && reflection.isRead(field.getReference())) {
@@ -387,9 +411,12 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
         var objectClass = context.classInfoProvider().getClassInfo("java.lang.Object");
         var objectArrayClass = context.classInfoProvider().getClassInfo(ValueType.arrayOf(
                 ValueType.object("java.lang.Object")));
+        var objectArrayType = context.classInfoProvider().getObjectArrayType();
         var callerType = context.functionTypes().of(objectClass.getType(), objectClass.getType(),
                 objectArrayClass.getType());
         var withBounds = context.dependency().getMethod(WasmGCReflectionGenericsHelper.typeVarBounds) != null;
+        var withGenericReturn = context.dependency().getMethod(getGenericReturnType) != null;
+        var withGenericParams = context.dependency().getMethod(getGenericParameterTypes) != null;
 
         for (var className : reflection.getClassesWithReflectableMethods()) {
             var cls = context.hierarchy().getClassSource().get(className);
@@ -430,15 +457,47 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                 var methodAnnotations = annotationsHelper.generateAnnotations(method.getAnnotations().all());
                 methodInit.getInitializers().add(methodAnnotations != null
                         ? methodAnnotations
-                        : new WasmNullConstant(context.classInfoProvider().getObjectArrayType().getReference()));
+                        : new WasmNullConstant(objectArrayType.getReference()));
 
                 methodInit.getInitializers().add(renderType(context, method.getResultType()));
+
+                if (withGenericReturn && method.getGenericResultType() != null) {
+                    methodInit.getInitializers().add(genericsHelper.writeGenericType(cls, method,
+                            method.getGenericResultType()));
+                } else {
+                    methodInit.getInitializers().add(new WasmNullConstant(objectClass.getType()));
+                }
 
                 var parametersArray = new WasmArrayNewFixed(wasmGcReflection.getClassArrayType());
                 for (var param : method.getParameterTypes()) {
                     parametersArray.getElements().add(renderType(context, param));
                 }
                 methodInit.getInitializers().add(parametersArray);
+
+                var hasGenericParameters = false;
+                if (withGenericParams) {
+                    for (var i = 0; i < method.parameterCount(); ++i) {
+                        if (method.genericParameterType(i) != null) {
+                            hasGenericParameters = true;
+                            break;
+                        }
+                    }
+                }
+                if (hasGenericParameters) {
+                    var genericParametersArray = new WasmArrayNewFixed(objectArrayType);
+                    for (var i = 0; i < method.parameterCount(); ++i) {
+                        var paramType = method.genericParameterType(i);
+                        if (paramType != null) {
+                            genericParametersArray.getElements().add(genericsHelper.writeGenericType(
+                                    cls, method, paramType));
+                        } else {
+                            genericParametersArray.getElements().add(new WasmNullConstant(objectClass.getType()));
+                        }
+                    }
+                    methodInit.getInitializers().add(genericParametersArray);
+                } else {
+                    methodInit.getInitializers().add(new WasmNullConstant(objectArrayType.getReference()));
+                }
 
                 if (accessibleMethods != null && accessibleMethods.contains(method.getDescriptor())
                         && reflection.isCallReached() && reflection.isCalled(method.getReference())) {
@@ -454,8 +513,7 @@ public class WasmGCReflectionIntrinsics implements WasmGCIntrinsic {
                     methodInit.getInitializers().add(genericsHelper.writeTypeParameters(typeParameters,
                             cls, method, withBounds));
                 } else {
-                    methodInit.getInitializers().add(new WasmNullConstant(
-                            context.classInfoProvider().getObjectArrayType().getReference()));
+                    methodInit.getInitializers().add(new WasmNullConstant(objectArrayType.getReference()));
                 }
             }
         }

@@ -16,6 +16,9 @@
 package org.teavm.classlib.java.lang;
 
 import java.lang.annotation.Retention;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,6 +81,12 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
     private static final MethodReference typeVarStubCreateWithLevel = new MethodReference(
             "java.lang.reflect.TypeVariableStub", "create", ValueType.INTEGER, ValueType.INTEGER,
             ValueType.object("java.lang.reflect.TypeVariableStub"));
+    private static final MethodReference getGenericReturnType = new MethodReference(
+            Method.class, "getGenericReturnType", Type.class);
+    private static final MethodReference getGenericParameterTypes = new MethodReference(
+            Executable.class, "getGenericParameterTypes", Type[].class);
+    private static final MethodReference getGenericType = new MethodReference(
+            Field.class, "getGenericType", Type.class);
     private static final MethodDescriptor CLINIT = new MethodDescriptor("<clinit>", void.class);
 
     @Override
@@ -224,8 +233,15 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
                 .collect(Collectors.toSet());
 
         var skipPrivates = ReflectionDependencyListener.shouldSkipPrivates(cls);
+        var needsGenericType = context.getDependency().getMethod(getGenericType) != null;
         generateCreateMembers(context, writer, skipPrivates, fieldsToExpose, field -> {
             appendProperty(writer, "type", false, () -> context.typeToClassString(writer, field.getType()));
+
+            if (needsGenericType && field.getGenericType() != null) {
+                appendProperty(writer, "genericType", false, () -> {
+                    generateGenericType(context, writer, cls, null, field.getGenericType());
+                });
+            }
 
             appendProperty(writer, "getter", false, () -> {
                 if (accessibleFields != null && accessibleFields.contains(field.getName())
@@ -265,6 +281,8 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
                 .filter(m -> accessibleMethods.contains(m.getDescriptor()))
                 .collect(Collectors.toList());
         var withBounds = context.getDependency().getMethod(typeVarBounds) != null;
+        var withGenericParameters = context.getDependency().getMethod(getGenericParameterTypes) != null;
+        var withGenericReturn = context.getDependency().getMethod(getGenericReturnType) != null;
 
         generateCreateMembers(context, writer, skipPrivates, methodsToExpose, method -> {
             appendProperty(writer, "parameterTypes", false, () -> {
@@ -278,9 +296,42 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
                 writer.append(']');
             });
 
+            var hasGenericParameters = false;
+            if (withGenericParameters) {
+                for (int i = 0; i < method.parameterCount(); ++i) {
+                    if (method.genericParameterType(i) != null) {
+                        hasGenericParameters = true;
+                        break;
+                    }
+                }
+            }
+            if (hasGenericParameters) {
+                appendProperty(writer, "genericParameterTypes", false, () -> {
+                    writer.append('[');
+                    for (int i = 0; i < method.parameterCount(); ++i) {
+                        var type = method.genericParameterType(i);
+                        if (i > 0) {
+                            writer.append(',').ws();
+                        }
+                        if (type != null) {
+                            generateGenericType(context, writer, cls, method, type);
+                        } else {
+                            writer.append("null");
+                        }
+                    }
+                    writer.append(']');
+                });
+            }
+
             appendProperty(writer, "returnType", false, () -> {
                 context.typeToClassString(writer, method.getResultType());
             });
+
+            if (withGenericReturn && method.getGenericResultType() != null) {
+                appendProperty(writer, "genericReturnType", false, () -> {
+                    generateGenericType(context, writer, cls, method, method.getGenericResultType());
+                });
+            }
 
             appendProperty(writer, "callable", false, () -> {
                 if (accessibleMethods != null && accessibleMethods.contains(method.getDescriptor())

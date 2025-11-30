@@ -67,6 +67,8 @@ class WasmGCReflectionGenerator implements WasmGCReflectionProvider {
                         names.structureField("@annotations")));
                 fields.add(new WasmField(classClass.getType().asStorage(),
                         names.structureField("@type")));
+                fields.add(new WasmField(objectClass.getType().asStorage(),
+                        names.structureField("@genericType")));
                 fields.add(new WasmField(getterType.asStorage(), names.structureField("@reader")));
                 fields.add(new WasmField(setterType.asStorage(), names.structureField("@writer")));
             });
@@ -98,21 +100,24 @@ class WasmGCReflectionGenerator implements WasmGCReflectionProvider {
                 var callerType = functionTypes.of(objectClass.getType(), objectClass.getType(),
                         objectArrayClass.getType()).getReference();
 
+                var objectArrayType = classInfoProvider.getObjectArrayType().getReference().asStorage();
                 fields.add(new WasmField(stringClass.getType().asStorage(),
                         names.structureField("@name")));
                 fields.add(new WasmField(WasmType.INT32.asStorage(),
                         names.structureField("@flags")));
                 fields.add(new WasmField(WasmType.INT32.asStorage(),
                         names.structureField("@accessLevel")));
-                fields.add(new WasmField(classInfoProvider.getObjectArrayType().getReference().asStorage(),
-                        names.structureField("@annotations")));
+                fields.add(new WasmField(objectArrayType, names.structureField("@annotations")));
                 fields.add(new WasmField(classClass.getType().asStorage(),
                         names.structureField("@returnType")));
+                fields.add(new WasmField(objectClass.getType().asStorage(),
+                        names.structureField("@genericReturnType")));
                 fields.add(new WasmField(getClassArrayType().getReference().asStorage(),
                         names.structureField("@parameterTypes")));
+                fields.add(new WasmField(objectArrayType,
+                        names.structureField("@genericParameterTypes")));
                 fields.add(new WasmField(callerType.asStorage(), names.structureField("@caller")));
-                fields.add(new WasmField(classInfoProvider.getObjectArrayType().getReference().asStorage(),
-                        names.structureField("@typeParameters")));
+                fields.add(new WasmField(objectArrayType, names.structureField("@typeParameters")));
             });
             module.types.add(reflectionMethodType);
         }

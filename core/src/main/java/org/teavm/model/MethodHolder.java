@@ -15,7 +15,6 @@
  */
 package org.teavm.model;
 
-import java.util.Objects;
 import java.util.function.Function;
 
 public class MethodHolder extends MemberHolder implements MethodReader {
@@ -54,18 +53,18 @@ public class MethodHolder extends MemberHolder implements MethodReader {
     }
 
     @Override
-    public int genericParameterCount() {
-        return genericParameterTypes != null ? genericParameterTypes.length : 0;
-    }
-
-    @Override
     public GenericValueType genericParameterType(int index) {
         return genericParameterTypes != null ? genericParameterTypes[index] : null;
     }
 
+    @Override
+    public GenericValueType[] getGenericParameterTypes() {
+        return genericParameterTypes != null ? genericParameterTypes.clone() : null;
+    }
+
     public void setGenericSignature(GenericValueType returnType, GenericValueType[] parameterTypes) {
-        genericReturnType = Objects.requireNonNull(returnType);
-        genericParameterTypes = parameterTypes.clone();
+        genericReturnType = returnType;
+        genericParameterTypes = parameterTypes != null ? parameterTypes.clone() : null;
     }
 
     public void removeGenericSignature() {

@@ -149,11 +149,13 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
         if (genericResultType != null) {
             genericResultType = rename(method.getGenericResultType());
         }
-        GenericValueType[] genericParameters = new GenericValueType[method.genericParameterCount()];
-        for (int i = 0; i < genericParameters.length; ++i) {
-            genericParameters[i] = rename(method.genericParameterType(i));
+        var genericParameters = method.getGenericParameterTypes();
+        if (genericParameters != null) {
+            for (int i = 0; i < genericParameters.length; ++i) {
+                genericParameters[i] = rename(method.genericParameterType(i));
+            }
         }
-        if (genericResultType != null) {
+        if (genericResultType != null || genericParameters != null) {
             renamedMethod.setGenericSignature(genericResultType, genericParameters);
         }
 

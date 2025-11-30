@@ -24,6 +24,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -154,6 +155,39 @@ public class TypeTest {
         bound = params[1].getBounds()[0];
         assertEquals(params[0], bound);
     }
+
+    @Test
+    public void genericFieldType() throws Exception {
+        var type = B.class.getDeclaredField("a").getGenericType();
+        assertEquals(B.class.getTypeParameters()[0], type);
+
+        type = B.class.getDeclaredField("b").getGenericType();
+        assertTrue(type instanceof ParameterizedType);
+        var pt = (ParameterizedType) type;
+        assertEquals(List.class, pt.getRawType());
+        assertEquals(B.class.getTypeParameters()[1], pt.getActualTypeArguments()[0]);
+        
+        type = B.class.getDeclaredField("c").getGenericType();
+        assertEquals(Number.class, type);
+    }
+    
+    @Test
+    public void genericMethodType() throws Exception {
+        var method = A.class.getMethod("bar", Object.class);
+        assertEquals(void.class, method.getGenericReturnType());
+        assertArrayEquals(new Type[] { method.getTypeParameters()[0] }, method.getGenericParameterTypes());
+        
+        method = A.class.getMethod("a");
+        assertEquals(method.getTypeParameters()[0], method.getGenericReturnType());
+        
+        method = A.class.getMethod("d", List.class);
+        assertEquals(A.class.getTypeParameters()[0], method.getGenericReturnType());
+        var type = method.getGenericParameterTypes()[0];
+        assertTrue(type instanceof ParameterizedType);
+        var pt = (ParameterizedType) type;
+        assertEquals(List.class, pt.getRawType());
+        assertEquals(A.class.getTypeParameters()[0], pt.getActualTypeArguments()[0]);
+    }
     
     interface A<T> {
         @Reflectable
@@ -170,9 +204,14 @@ public class TypeTest {
 
         @Reflectable
         <Q extends Number, W extends Q> W c();
+        
+        T d(List<T> param);
     }
 
     static class B<Q, W extends Q> {
+        Q a;
+        List<W> b;
+        Number c;
     }
     
     static class C {

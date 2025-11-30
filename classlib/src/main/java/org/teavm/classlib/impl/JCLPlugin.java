@@ -323,6 +323,7 @@ public class JCLPlugin implements TeaVMPlugin {
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "modifiers", int.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "accessLevel", int.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "type", Class.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "genericType", Object.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "annotations", Annotation[].class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "reader", FieldReader.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(FieldInfo.class, "writer", FieldWriter.class), intrinsics);
@@ -335,7 +336,10 @@ public class JCLPlugin implements TeaVMPlugin {
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "modifiers", int.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "accessLevel", int.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "returnType", Class.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "genericReturnType", Object.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "parameterTypes", ClassList.class), intrinsics);
+        wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "genericParameterTypes", ObjectList.class),
+                intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "caller", MethodCaller.class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "annotations", Annotation[].class), intrinsics);
         wasmGCHost.addIntrinsic(new MethodReference(MethodInfo.class, "typeParameters", ObjectList.class), intrinsics);

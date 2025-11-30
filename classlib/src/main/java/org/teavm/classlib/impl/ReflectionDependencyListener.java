@@ -82,14 +82,17 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private MethodReference classNewInstance = new MethodReference(Class.class, "newInstance", Object.class);
     private MethodReference forNameShort = new MethodReference(Class.class, "forName", String.class, Class.class);
     private MethodReference fieldGetType = new MethodReference(Field.class, "getType", Class.class);
+    private MethodReference fieldGetGenericType = new MethodReference(Field.class, "getGenericType", Type.class);
     private MethodReference fieldGetName = new MethodReference(Field.class, "getName", String.class);
     private MethodReference methodGetReturnType = new MethodReference(Method.class, "getReturnType", Class.class);
-    private MethodReference methodGetParameterTypes = new MethodReference(Method.class, "getParameterTypes",
-            Class[].class);
-    private MethodReference constructorGetParameterTypes = new MethodReference(Constructor.class, "getParameterTypes",
-            Class[].class);
+    private MethodReference methodGetGenericReturnType = new MethodReference(Method.class, "getGenericReturnType",
+            Type.class);
     private MethodReference classGetTypeParams = new MethodReference(Class.class, "getTypeParameters",
             TypeVariable[].class);
+    private MethodReference executableGetParameterTypes = new MethodReference(Executable.class, "getParameterTypes",
+            Class[].class);
+    private MethodReference executableGetGenericParameterTypes = new MethodReference(Executable.class,
+            "getGenericParameterTypes", Class[].class);
     private MethodReference executableGetTypeParams = new MethodReference(Executable.class, "getTypeParameters",
             TypeVariable[].class);
     private static final String TYPE_VAR_IMPL = "java.lang.reflect.TypeVariableImpl";
@@ -353,13 +356,19 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         } else if (method.getReference().equals(fieldGetType) || method.getReference().equals(methodGetReturnType)) {
             method.getResult().propagate(agent.getType(ValueType.object("java.lang.Class")));
             typesInReflectableSignaturesNode.connect(method.getResult().getClassValueNode());
+        } else if (method.getReference().equals(fieldGetGenericType)
+                || method.getReference().equals(methodGetGenericReturnType)) {
+            linkGenerics(agent);
+            propagateGenerics(agent, method.getResult());
         } else if (method.getReference().equals(fieldGetName)) {
             method.getResult().propagate(agent.getType(ValueType.object("java.lang.String")));
-        } else if (method.getReference().equals(methodGetParameterTypes)
-                || method.getReference().equals(constructorGetParameterTypes)) {
+        } else if (method.getReference().equals(executableGetParameterTypes)) {
             method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.object("java.lang.Class"))));
             method.getResult().getArrayItem().propagate(agent.getType(ValueType.object("java.lang.Class")));
             typesInReflectableSignaturesNode.connect(method.getResult().getArrayItem().getClassValueNode());
+        } else if (method.getReference().equals(executableGetGenericParameterTypes)) {
+            linkGenerics(agent);
+            propagateGenerics(agent, method.getResult().getArrayItem());
         } else if (method.getReference().equals(classGetTypeParams)
                 || method.getReference().equals(executableGetTypeParams)) {
             linkGenerics(agent);

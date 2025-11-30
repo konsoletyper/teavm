@@ -29,8 +29,10 @@ public class TConstructor<T> extends TExecutable implements TMember {
     private MethodCaller caller;
 
     public TConstructor(TClass<T> declaringClass, String name, int modifiers, int accessLevel,
-            TClass<?>[] parameterTypes, MethodCaller caller, Annotation[] declaredAnnotations) {
-        super(declaringClass, modifiers, accessLevel, parameterTypes, declaredAnnotations, null);
+            TClass<?>[] parameterTypes, Object[] genericParameterTypes,
+            MethodCaller caller, Annotation[] declaredAnnotations) {
+        super(declaringClass, modifiers, accessLevel, parameterTypes, genericParameterTypes,
+                declaredAnnotations, null);
         this.name = name;
         this.caller = caller;
     }

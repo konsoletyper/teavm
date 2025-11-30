@@ -25,15 +25,19 @@ public abstract class TExecutable extends TAccessibleObject implements TMember, 
     int flags;
     int accessLevel;
     TClass<?>[] parameterTypes;
+    Object[] genericParameterTypes;
+    TType[] resolvedGenericParameterTypes;
     Object[] declaredAnnotations;
     TTypeVariableImpl[] typeParameters;
 
-    TExecutable(TClass<?> declaringClass, int flags, int accessLevel, TClass<?>[] parameterTypes,
+    TExecutable(TClass<?> declaringClass, int flags, int accessLevel,
+            TClass<?>[] parameterTypes, Object[] genericParameterTypes,
             Annotation[] declaredAnnotations, TTypeVariableImpl[] typeParameters) {
         this.declaringClass = declaringClass;
         this.flags = flags;
         this.accessLevel = accessLevel;
         this.parameterTypes = parameterTypes;
+        this.genericParameterTypes = genericParameterTypes;
         this.declaredAnnotations = declaredAnnotations;
         this.typeParameters = typeParameters;
         if (typeParameters != null) {
@@ -59,6 +63,25 @@ public abstract class TExecutable extends TAccessibleObject implements TMember, 
 
     public int getParameterCount() {
         return parameterTypes.length;
+    }
+
+    public TType[] getGenericParameterTypes() {
+        if (resolvedGenericParameterTypes == null) {
+            resolvedGenericParameterTypes = new TType[parameterTypes.length];
+            if (genericParameterTypes == null) {
+                for (int i = 0; i < parameterTypes.length; i++) {
+                    resolvedGenericParameterTypes[i] = parameterTypes[i];
+                }
+            } else {
+                for (int i = 0; i < parameterTypes.length; i++) {
+                    var type = (TType) genericParameterTypes[i];
+                    resolvedGenericParameterTypes[i] = type != null
+                            ? TTypeVariableStub.resolve(type, this)
+                            : parameterTypes[i];
+                }
+            }
+        }
+        return resolvedGenericParameterTypes.clone();
     }
 
     @Override

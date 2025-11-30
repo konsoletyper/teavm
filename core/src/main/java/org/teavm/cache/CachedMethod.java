@@ -68,8 +68,8 @@ class CachedMethod extends CachedMember implements MethodReader {
     }
 
     @Override
-    public int genericParameterCount() {
-        return genericParameterTypes != null ? genericParameterTypes.length : 0;
+    public GenericValueType[] getGenericParameterTypes() {
+        return genericParameterTypes != null ? genericParameterTypes.clone() : null;
     }
 
     @Override

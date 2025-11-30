@@ -367,7 +367,8 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
                 for (var i = 0; i < declaredFields.length; ++i) {
                     var fieldInfo = infoList.get(i);
                     declaredFields[i] = new TField(this, fieldInfo.name(), fieldInfo.modifiers(),
-                            fieldInfo.accessLevel(), (TClass<?>) (Object) fieldInfo.type(),
+                            fieldInfo.accessLevel(),
+                            (TClass<?>) (Object) fieldInfo.type(), fieldInfo.genericType(),
                             fieldInfo.reader(), fieldInfo.writer(),
                             fieldInfo.annotations());
                 }
@@ -491,8 +492,10 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
                     for (int j = 0; j < parameterTypes.length; ++j) {
                         parameterTypes[j] = (TClass<?>) (Object) paramTypeInfoList.get(j);
                     }
+                    var genericParameterTypes = methodInfo.genericParameterTypes();
                     declaredConstructors[count++] = new TConstructor<>(this, methodInfo.name(),
                             methodInfo.modifiers(), methodInfo.accessLevel(), parameterTypes,
+                            genericParameterTypes != null ? genericParameterTypes.asArray() : null,
                             methodInfo.caller(), methodInfo.annotations());
                 }
                 declaredConstructors = Arrays.copyOf(declaredConstructors, count);
@@ -586,8 +589,13 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
                         System.arraycopy(array, 0, typeParams, 0, array.length);
                     }
                     var returnType = methodInfo.returnType();
+                    var genericParameterTypes = methodInfo.genericParameterTypes();
                     declaredMethods[count++] = new TMethod(this, methodInfo.name(), methodInfo.modifiers(),
-                            methodInfo.accessLevel(), (TClass<?>) (Object) returnType, parameterTypes,
+                            methodInfo.accessLevel(),
+                            (TClass<?>) (Object) returnType,
+                            methodInfo.genericReturnType(),
+                            parameterTypes,
+                            genericParameterTypes != null ? genericParameterTypes.asArray() : null,
                             methodInfo.caller(), methodInfo.annotations(), typeParams);
                 }
                 declaredMethods = Arrays.copyOf(declaredMethods, count);

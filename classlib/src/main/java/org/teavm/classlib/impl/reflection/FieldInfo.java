@@ -35,6 +35,9 @@ public class FieldInfo {
     public native final Class<?> type();
 
     @InjectedBy(MemberInfoGenerator.class)
+    public native final Object genericType();
+
+    @InjectedBy(MemberInfoGenerator.class)
     public native final FieldReader reader();
 
     @InjectedBy(MemberInfoGenerator.class)

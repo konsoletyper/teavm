@@ -76,6 +76,7 @@ public final class ModelUtils {
         copy.setLevel(method.getLevel());
         copy.getModifiers().addAll(method.readModifiers());
         copy.setTypeParameters(method.getTypeParameters());
+        copy.setGenericSignature(method.getGenericResultType(), method.getGenericParameterTypes());
         if (method.getProgram() != null && withProgram) {
             copy.setProgram(ProgramUtils.copy(method.getProgram()));
         }
@@ -94,6 +95,7 @@ public final class ModelUtils {
         copy.setLevel(field.getLevel());
         copy.getModifiers().addAll(field.readModifiers());
         copy.setType(field.getType());
+        copy.setGenericType(field.getGenericType());
         copy.setInitialValue(field.getInitialValue());
         copyAnnotations(field.getAnnotations(), copy.getAnnotations());
         return copy;
