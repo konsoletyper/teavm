@@ -993,4 +993,11 @@ public final class TClass<T> extends TObject implements TGenericDeclaration, TTy
 
     @InjectedBy(ClassGenerator.class)
     private native ObjectList getTypeParametersImpl();
+
+    @Override
+    public String getTypeName() {
+        return isArray()
+            ? getComponentType().getTypeName() + "[]"
+            : getName();
+    }
 }

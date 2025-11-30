@@ -85,9 +85,9 @@ class TWildcardTypeImpl extends TLazyResolvedType implements TWildcardType {
             if (upperBounds[0].equals(Object.class)) {
                 return "?";
             }
-            return "? extends " + upperBounds[0];
+            return "? extends " + upperBounds[0].getTypeName();
         } else {
-            return "? super " + lowerBounds[0];
+            return "? super " + lowerBounds[0].getTypeName();
         }
     }
 }

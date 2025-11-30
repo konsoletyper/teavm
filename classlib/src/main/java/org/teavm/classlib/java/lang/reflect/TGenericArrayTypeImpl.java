@@ -35,4 +35,9 @@ class TGenericArrayTypeImpl extends TLazyResolvedType implements TGenericArrayTy
     void resolve(TGenericDeclaration declaration) {
         genericComponentType = TTypeVariableStub.resolve(genericComponentType, declaration);
     }
+
+    @Override
+    public String toString() {
+        return genericComponentType.getTypeName() + "[]";
+    }
 }

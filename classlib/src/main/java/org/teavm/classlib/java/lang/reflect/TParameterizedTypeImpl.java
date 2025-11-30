@@ -95,9 +95,9 @@ class TParameterizedTypeImpl extends TLazyResolvedType implements TParameterized
     @Override
     public String toString() {
         var args = getActualTypeArguments();
-        var sb = new StringBuilder(rawType.getName()).append('<').append(args[0]);
+        var sb = new StringBuilder(rawType.getName()).append('<').append(args[0].getTypeName());
         for (int i = 1; i < args.length; i++) {
-            sb.append(',').append(args[i]);
+            sb.append(',').append(args[i].getTypeName());
         }
         return sb.append(">").toString();
     }

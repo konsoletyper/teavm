@@ -85,6 +85,7 @@ public class TypeTest {
         var pt = (ParameterizedType) bounds[0];
         assertEquals(D.class, pt.getRawType());
         assertEquals(params[0], pt.getActualTypeArguments()[0]);
+        assertEquals("org.teavm.classlib.java.lang.reflect.TypeTest$D<T>", bounds[0].getTypeName());
         
         params = E.class.getTypeParameters();
         bounds = params[0].getBounds();
@@ -92,6 +93,7 @@ public class TypeTest {
         pt = (ParameterizedType) bounds[0];
         assertEquals(A.class, pt.getRawType());
         assertEquals(Integer.class, pt.getActualTypeArguments()[0]);
+        assertEquals("org.teavm.classlib.java.lang.reflect.TypeTest$A<java.lang.Integer>", bounds[0].getTypeName());
         
         bounds = params[1].getBounds();
         assertTrue(bounds[0] instanceof ParameterizedType);
@@ -102,6 +104,8 @@ public class TypeTest {
         assertEquals(1, wildcard.getUpperBounds().length);
         assertEquals(Long.class, wildcard.getUpperBounds()[0]);
         assertEquals(0, wildcard.getLowerBounds().length);
+        assertEquals("org.teavm.classlib.java.lang.reflect.TypeTest$A<? extends java.lang.Long>",
+                bounds[0].getTypeName());
         
         bounds = params[2].getBounds();
         assertTrue(bounds[0] instanceof ParameterizedType);
@@ -113,6 +117,8 @@ public class TypeTest {
         assertEquals(Object.class, wildcard.getUpperBounds()[0]);
         assertEquals(1, wildcard.getLowerBounds().length);
         assertEquals(Number.class, wildcard.getLowerBounds()[0]);
+        assertEquals("org.teavm.classlib.java.lang.reflect.TypeTest$A<? super java.lang.Number>",
+                bounds[0].getTypeName());
 
         bounds = params[3].getBounds();
         assertTrue(bounds[0] instanceof ParameterizedType);
@@ -123,6 +129,7 @@ public class TypeTest {
         assertEquals(1, wildcard.getUpperBounds().length);
         assertEquals(Object.class, wildcard.getUpperBounds()[0]);
         assertEquals(0, wildcard.getLowerBounds().length);
+        assertEquals("org.teavm.classlib.java.lang.reflect.TypeTest$A<?>", bounds[0].getTypeName());
         
         params = F.class.getTypeParameters();
         bounds = params[1].getBounds();
@@ -131,11 +138,13 @@ public class TypeTest {
         assertTrue(pt.getActualTypeArguments()[0] instanceof GenericArrayType);
         var arrayType = (GenericArrayType) pt.getActualTypeArguments()[0];
         assertEquals(params[0], arrayType.getGenericComponentType());
+        assertEquals("org.teavm.classlib.java.lang.reflect.TypeTest$A<T[]>", bounds[0].getTypeName());
         
         bounds = params[2].getBounds();
         assertTrue(bounds[0] instanceof ParameterizedType);
         pt = (ParameterizedType) bounds[0];
         assertEquals(int[].class, pt.getActualTypeArguments()[0]);
+        assertEquals("org.teavm.classlib.java.lang.reflect.TypeTest$A<int[]>", bounds[0].getTypeName());
     }
 
     @Test
