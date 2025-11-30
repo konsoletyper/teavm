@@ -131,6 +131,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private Set<String> classesWithReflectableMethods = new LinkedHashSet<>();
     private DependencyNode allClasses;
     private DependencyNode typesInReflectableSignaturesNode;
+    private DependencyNode typesInGenericReflectableSignaturesNode;
     private Set<MethodReference> virtualMethods = new HashSet<>();
     private Set<MethodReference> virtualCallSites = new HashSet<>();
     private Set<String> classesFoundByName = new HashSet<>();
@@ -178,6 +179,7 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     public void started(DependencyAgent agent) {
         allClasses = agent.createNode();
         typesInReflectableSignaturesNode = agent.createNode();
+        typesInGenericReflectableSignaturesNode = agent.createNode();
 
         var constructorParamTypes = agent.linkField(new FieldReference(Constructor.class.getName(), "parameterTypes"))
                 .getValue();
@@ -295,6 +297,9 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                             }
                             linkType(agent, field.getType());
                             agent.linkField(field.getReference());
+                            if (field.getGenericType() != null) {
+                                linkGenericType(agent, field.getGenericType());
+                            }
                             fieldsReadViaReflection.add(field);
                             if (fieldsAnnotationsConsumer != null) {
                                 annotHelper.propagateAnnotationImplementations(agent, field.getAnnotations().all(),
@@ -330,6 +335,15 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                             linkType(agent, reflectableMethod.getResultType());
                             for (ValueType param : reflectableMethod.getParameterTypes()) {
                                 linkType(agent, param);
+                            }
+                            if (reflectableMethod.getGenericResultType() != null) {
+                                linkGenericType(agent, reflectableMethod.getGenericResultType());
+                            }
+                            var genericParamTypes = reflectableMethod.getGenericParameterTypes();
+                            if (genericParamTypes != null) {
+                                for (var param : genericParamTypes) {
+                                    linkGenericType(agent, param);
+                                }
                             }
                             if (methodsAnnotationsConsumer != null) {
                                 annotHelper.propagateAnnotationImplementations(agent,
@@ -404,19 +418,22 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         propagateGenerics(agent, stubResolve.getVariable(1));
         stubResolve.getVariable(1).propagate(agent.getType(ValueType.object("java.lang.reflect.TypeVariableStub")));
 
-        var visited = new HashSet<GenericValueType>();
         for (var className : agent.getReachableClasses()) {
-            linkTypeParameterBounds(agent, className, visited);
+            linkTypeParameterBounds(agent, className);
         }
         allClasses.addConsumer(type -> {
             var valueType = type.getValueType();
             if (valueType instanceof ValueType.Object) {
-                linkTypeParameterBounds(agent, ((ValueType.Object) valueType).getClassName(), new HashSet<>());
+                linkTypeParameterBounds(agent, ((ValueType.Object) valueType).getClassName());
             }
+        });
+
+        typesInGenericReflectableSignaturesNode.addConsumer(refType -> {
+            linkClass(agent, refType.getValueType());
         });
     }
 
-    private void linkTypeParameterBounds(DependencyAgent agent, String className, Set<GenericValueType> visited) {
+    private void linkTypeParameterBounds(DependencyAgent agent, String className) {
         var cls = agent.getClassSource().get(className);
         if (cls != null) {
             return;
@@ -425,25 +442,11 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         if (params != null) {
             for (var param : params) {
                 if (param.getClassBound() != null) {
-                    linkGenericType(agent, param.getClassBound(), visited);
+                    linkGenericType(agent, param.getClassBound());
                 }
                 for (var bound : param.getInterfaceBounds()) {
-                    linkGenericType(agent, bound, visited);
+                    linkGenericType(agent, bound);
                 }
-            }
-        }
-    }
-
-    private void linkGenericType(DependencyAgent agent, GenericValueType type, Set<GenericValueType> visited) {
-        if (!visited.add(type)) {
-            return;
-        }
-        if (type instanceof GenericValueType.Object) {
-            var objType = (GenericValueType.Object) type;
-            linkTypeParameterBounds(agent, objType.getClassName(), visited);
-            var args = objType.getArguments();
-            for (var arg : args) {
-                linkGenericType(agent, arg.getValue(), visited);
             }
         }
     }
@@ -454,6 +457,8 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         target.propagate(agent.getType(ValueType.object("java.lang.reflect.ParameterizedTypeImpl")));
         target.propagate(agent.getType(ValueType.object("java.lang.reflect.WildcardTypeImpl")));
         target.propagate(agent.getType(ValueType.object("java.lang.reflect.GenericArrayTypeImpl")));
+        typesInReflectableSignaturesNode.connect(target.getClassValueNode());
+        typesInGenericReflectableSignaturesNode.connect(target.getClassValueNode());
     }
 
     public static boolean shouldSkipPrivates(ClassReader cls) {
@@ -802,6 +807,24 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             agent.linkClass(((ValueType.Object) type).getClassName());
         } else if (type instanceof ValueType.Array) {
             linkClass(agent, ((ValueType.Array) type).getItemType());
+        }
+    }
+
+    private void linkGenericType(DependencyAgent agent, GenericValueType type) {
+        var simpleType = type.asValueType();
+        if (simpleType != null) {
+            return;
+        }
+        if (type instanceof GenericValueType.Array) {
+            linkGenericType(agent, ((GenericValueType.Array) type).getItemType());
+        } else if (type instanceof GenericValueType.Object) {
+            var objType = (GenericValueType.Object) type;
+            typesInGenericReflectableSignaturesNode.propagate(agent.getType(ValueType.object(objType.getClassName())));
+            for (var arg : objType.getArguments()) {
+                if (arg.getValue() != null) {
+                    linkGenericType(agent, arg.getValue());
+                }
+            }
         }
     }
 
