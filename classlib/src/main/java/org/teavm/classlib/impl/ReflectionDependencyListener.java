@@ -15,14 +15,35 @@
  */
 package org.teavm.classlib.impl;
 
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.CLASS_GET_TYPE_PARAMS;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.EXECUTABLE_GET_GENERIC_PARAMETER_TYPES;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.EXECUTABLE_GET_PARAMETER_TYPES;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.EXECUTABLE_GET_TYPE_PARAMS;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.FIELD_GET_GENERIC_TYPE;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.GENERIC_ARRAY_TYPE_CREATE;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.GENERIC_ARRAY_TYPE_IMPL;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.METHOD_GET_GENERIC_RETURN_TYPE;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.METHOD_GET_RETURN_TYPE;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.PARAM_TYPE_CREATE;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.PARAM_TYPE_CREATE_OWNER;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.PARAM_TYPE_IMPL;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_CREATE;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_CREATE_BOUNDS;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_GET_BOUNDS;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_IMPL_TYPE;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_STUB;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_STUB_CREATE;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_STUB_CREATE_LEVEL;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.TYPE_VAR_STUB_RESOLVE;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.WILDCARD_TYPE_IMPL;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.WILDCARD_TYPE_LOWER;
+import static org.teavm.classlib.impl.reflection.ReflectionMethods.WILDCARD_TYPE_UPPER;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
-import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,7 +57,6 @@ import org.teavm.classlib.ReflectionSupplier;
 import org.teavm.classlib.impl.reflection.ClassList;
 import org.teavm.classlib.impl.reflection.FieldInfo;
 import org.teavm.classlib.impl.reflection.MethodInfo;
-import org.teavm.classlib.impl.reflection.ObjectList;
 import org.teavm.classlib.java.lang.reflect.AnnotationGenerationHelper;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
@@ -82,49 +102,8 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private MethodReference classNewInstance = new MethodReference(Class.class, "newInstance", Object.class);
     private MethodReference forNameShort = new MethodReference(Class.class, "forName", String.class, Class.class);
     private MethodReference fieldGetType = new MethodReference(Field.class, "getType", Class.class);
-    private MethodReference fieldGetGenericType = new MethodReference(Field.class, "getGenericType", Type.class);
     private MethodReference fieldGetName = new MethodReference(Field.class, "getName", String.class);
-    private MethodReference methodGetReturnType = new MethodReference(Method.class, "getReturnType", Class.class);
-    private MethodReference methodGetGenericReturnType = new MethodReference(Method.class, "getGenericReturnType",
-            Type.class);
-    private MethodReference classGetTypeParams = new MethodReference(Class.class, "getTypeParameters",
-            TypeVariable[].class);
-    private MethodReference executableGetParameterTypes = new MethodReference(Executable.class, "getParameterTypes",
-            Class[].class);
-    private MethodReference executableGetGenericParameterTypes = new MethodReference(Executable.class,
-            "getGenericParameterTypes", Class[].class);
-    private MethodReference executableGetTypeParams = new MethodReference(Executable.class, "getTypeParameters",
-            TypeVariable[].class);
-    private static final String TYPE_VAR_IMPL = "java.lang.reflect.TypeVariableImpl";
-    private ValueType.Object typeVariableImplType = ValueType.object(TYPE_VAR_IMPL);
-    private MethodReference typeVariableConstructor = new MethodReference(TYPE_VAR_IMPL,
-            "create", ValueType.object("java.lang.String"), typeVariableImplType);
-    private MethodReference typeVarConstructorBounds = new MethodReference(TYPE_VAR_IMPL,
-            "create", ValueType.object("java.lang.String"), ValueType.parse(ObjectList.class),
-            typeVariableImplType);
-    private static final MethodReference parameterizedTypeConstructor = new MethodReference(
-            "java.lang.reflect.ParameterizedTypeImpl", "create", ValueType.parse(Class.class),
-            ValueType.parse(ObjectList.class), ValueType.object("java.lang.reflect.ParameterizedTypeImpl"));
-    private static final MethodReference typeVarGetBounds = new MethodReference(
-            TYPE_VAR_IMPL, "getBounds", ValueType.parse(Type[].class));
-    private static final MethodReference wildcardTypeUpper = new MethodReference(
-            "java.lang.reflect.WildcardTypeImpl", "upper", ValueType.parse(Type.class),
-            ValueType.object("java.lang.reflect.WildcardTypeImpl"));
-    private static final MethodReference wildcardTypeLower = new MethodReference(
-            "java.lang.reflect.WildcardTypeImpl", "lower", ValueType.parse(Type.class),
-            ValueType.object("java.lang.reflect.WildcardTypeImpl"));
-    private static final MethodReference genericArrayTypeCreate = new MethodReference(
-            "java.lang.reflect.GenericArrayTypeImpl", "create", ValueType.parse(Type.class),
-            ValueType.object("java.lang.reflect.GenericArrayTypeImpl"));
-    private static final MethodReference typeVarStubCreate = new MethodReference(
-            "java.lang.reflect.TypeVariableStub", "create", ValueType.INTEGER,
-            ValueType.object("java.lang.reflect.TypeVariableStub"));
-    private static final MethodReference typeVarStubCreateWithLevel = new MethodReference(
-            "java.lang.reflect.TypeVariableStub", "create", ValueType.INTEGER, ValueType.INTEGER,
-            ValueType.object("java.lang.reflect.TypeVariableStub"));
-    private static final MethodReference typeVarStubResolve = new MethodReference(
-            "java.lang.reflect.TypeVariableStub", "resolve", ValueType.parse(Type.class),
-            ValueType.parse(GenericDeclaration.class), ValueType.parse(Type.class));
+
     private Map<String, Set<String>> accessibleFieldCache = new LinkedHashMap<>();
     private Map<String, Set<MethodDescriptor>> accessibleMethodCache = new LinkedHashMap<>();
     private Set<String> classesWithReflectableFields = new LinkedHashSet<>();
@@ -367,27 +346,28 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             for (var className : classesFoundByName) {
                 method.getResult().getClassValueNode().propagate(agent.getType(ValueType.object(className)));
             }
-        } else if (method.getReference().equals(fieldGetType) || method.getReference().equals(methodGetReturnType)) {
+        } else if (method.getReference().equals(fieldGetType)
+                || method.getReference().equals(METHOD_GET_RETURN_TYPE)) {
             method.getResult().propagate(agent.getType(ValueType.object("java.lang.Class")));
             typesInReflectableSignaturesNode.connect(method.getResult().getClassValueNode());
-        } else if (method.getReference().equals(fieldGetGenericType)
-                || method.getReference().equals(methodGetGenericReturnType)) {
+        } else if (method.getReference().equals(FIELD_GET_GENERIC_TYPE)
+                || method.getReference().equals(METHOD_GET_GENERIC_RETURN_TYPE)) {
             linkGenerics(agent);
             propagateGenerics(agent, method.getResult());
         } else if (method.getReference().equals(fieldGetName)) {
             method.getResult().propagate(agent.getType(ValueType.object("java.lang.String")));
-        } else if (method.getReference().equals(executableGetParameterTypes)) {
+        } else if (method.getReference().equals(EXECUTABLE_GET_PARAMETER_TYPES)) {
             method.getResult().propagate(agent.getType(ValueType.arrayOf(ValueType.object("java.lang.Class"))));
             method.getResult().getArrayItem().propagate(agent.getType(ValueType.object("java.lang.Class")));
             typesInReflectableSignaturesNode.connect(method.getResult().getArrayItem().getClassValueNode());
-        } else if (method.getReference().equals(executableGetGenericParameterTypes)) {
+        } else if (method.getReference().equals(EXECUTABLE_GET_GENERIC_PARAMETER_TYPES)) {
             linkGenerics(agent);
             propagateGenerics(agent, method.getResult().getArrayItem());
-        } else if (method.getReference().equals(classGetTypeParams)
-                || method.getReference().equals(executableGetTypeParams)) {
+        } else if (method.getReference().equals(CLASS_GET_TYPE_PARAMS)
+                || method.getReference().equals(EXECUTABLE_GET_TYPE_PARAMS)) {
             linkGenerics(agent);
-            method.getResult().getArrayItem().propagate(agent.getType(typeVariableImplType));
-        } else if (method.getReference().equals(typeVarGetBounds)) {
+            method.getResult().getArrayItem().propagate(agent.getType(TYPE_VAR_IMPL_TYPE));
+        } else if (method.getReference().equals(TYPE_VAR_GET_BOUNDS)) {
             linkGenerics(agent);
             method.getResult().propagate(agent.getType(ValueType.parse(Type[].class)));
             propagateGenerics(agent, method.getResult().getArrayItem());
@@ -399,24 +379,32 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             return;
         }
         withGenerics = true;
-        agent.linkMethod(typeVariableConstructor)
+
+        agent.linkMethod(TYPE_VAR_CREATE)
                 .propagate(1, agent.getType(ValueType.object("java.lang.String")))
                 .use();
-        agent.linkMethod(typeVarConstructorBounds)
+        agent.linkMethod(TYPE_VAR_CREATE_BOUNDS)
                 .propagate(1, agent.getType(ValueType.object("java.lang.String")))
                 .use();
-        agent.linkMethod(parameterizedTypeConstructor)
+
+        agent.linkMethod(PARAM_TYPE_CREATE)
                 .propagate(1, agent.getType(ValueType.parse(Class.class)))
                 .use();
-        agent.linkMethod(wildcardTypeUpper).use();
-        agent.linkMethod(wildcardTypeLower).use();
-        agent.linkMethod(genericArrayTypeCreate).use();
-        agent.linkMethod(typeVarStubCreate).use();
-        agent.linkMethod(typeVarStubCreateWithLevel).use();
+        agent.linkMethod(PARAM_TYPE_CREATE_OWNER)
+                .propagate(1, agent.getType(ValueType.parse(Class.class)))
+                .use();
 
-        var stubResolve = agent.linkMethod(typeVarStubResolve);
+        agent.linkMethod(WILDCARD_TYPE_UPPER).use();
+        agent.linkMethod(WILDCARD_TYPE_LOWER).use();
+
+        agent.linkMethod(GENERIC_ARRAY_TYPE_CREATE).use();
+
+        agent.linkMethod(TYPE_VAR_STUB_CREATE).use();
+        agent.linkMethod(TYPE_VAR_STUB_CREATE_LEVEL).use();
+
+        var stubResolve = agent.linkMethod(TYPE_VAR_STUB_RESOLVE);
         propagateGenerics(agent, stubResolve.getVariable(1));
-        stubResolve.getVariable(1).propagate(agent.getType(ValueType.object("java.lang.reflect.TypeVariableStub")));
+        stubResolve.getVariable(1).propagate(agent.getType(ValueType.object(TYPE_VAR_STUB)));
 
         for (var className : agent.getReachableClasses()) {
             linkTypeParameterBounds(agent, className);
@@ -453,10 +441,10 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
 
     private void propagateGenerics(DependencyAgent agent, DependencyNode target) {
         target.propagate(agent.getType(ValueType.object("java.lang.Class")));
-        target.propagate(agent.getType(typeVariableImplType));
-        target.propagate(agent.getType(ValueType.object("java.lang.reflect.ParameterizedTypeImpl")));
-        target.propagate(agent.getType(ValueType.object("java.lang.reflect.WildcardTypeImpl")));
-        target.propagate(agent.getType(ValueType.object("java.lang.reflect.GenericArrayTypeImpl")));
+        target.propagate(agent.getType(TYPE_VAR_IMPL_TYPE));
+        target.propagate(agent.getType(ValueType.object(PARAM_TYPE_IMPL)));
+        target.propagate(agent.getType(ValueType.object(WILDCARD_TYPE_IMPL)));
+        target.propagate(agent.getType(ValueType.object(GENERIC_ARRAY_TYPE_IMPL)));
         typesInReflectableSignaturesNode.connect(target.getClassValueNode());
         typesInGenericReflectableSignaturesNode.connect(target.getClassValueNode());
     }
@@ -819,11 +807,15 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             linkGenericType(agent, ((GenericValueType.Array) type).getItemType());
         } else if (type instanceof GenericValueType.Object) {
             var objType = (GenericValueType.Object) type;
-            typesInGenericReflectableSignaturesNode.propagate(agent.getType(ValueType.object(objType.getClassName())));
+            typesInGenericReflectableSignaturesNode.propagate(agent.getType(
+                    ValueType.object(objType.getFullClassName())));
             for (var arg : objType.getArguments()) {
                 if (arg.getValue() != null) {
                     linkGenericType(agent, arg.getValue());
                 }
+            }
+            if (objType.getParent() != null) {
+                linkGenericType(agent, objType.getParent());
             }
         }
     }

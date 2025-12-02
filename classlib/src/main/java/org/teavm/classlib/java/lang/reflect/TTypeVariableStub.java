@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import org.teavm.classlib.java.lang.TClass;
+
 public class TTypeVariableStub implements TType {
     public final int level;
     public final int index;
@@ -38,7 +40,10 @@ public class TTypeVariableStub implements TType {
             if (stub.level == 0) {
                 type = declaration.getTypeParameters()[stub.index];
             } else {
-                type = ((TMember) declaration).getDeclaringClass().getTypeParameters()[stub.index];
+                var declaringClass = declaration instanceof TMember
+                        ? ((TMember) declaration).getDeclaringClass()
+                        : ((TClass<?>) declaration).getDeclaringClass();
+                type = declaringClass.getTypeParameters()[stub.index];
             }
         }
         if (type instanceof TLazyResolvedType) {

@@ -198,6 +198,26 @@ public class TypeTest {
         assertEquals(A.class.getTypeParameters()[0], pt.getActualTypeArguments()[0]);
     }
     
+    @Test
+    public void innerClass() throws Exception {
+        var param = Outer.Inner.class.getTypeParameters()[0];
+        assertEquals(Outer.class.getTypeParameters()[0], param.getBounds()[0]);
+        
+        var method = A.class.getMethod("e");
+        var type = method.getGenericReturnType();
+        assertEquals(
+                "org.teavm.classlib.java.lang.reflect.TypeTest$Outer<java.lang.Number>$Inner<java.lang.Integer>",
+                type.getTypeName());
+        assertTrue(type instanceof ParameterizedType);
+        var pt = (ParameterizedType) type;
+        assertEquals(Outer.Inner.class, pt.getRawType());
+        assertEquals(Integer.class, pt.getActualTypeArguments()[0]);
+        assertTrue(pt.getOwnerType() instanceof ParameterizedType);
+        pt = (ParameterizedType) pt.getOwnerType();
+        assertEquals(Outer.class, pt.getRawType());
+        assertEquals(Number.class, pt.getActualTypeArguments()[0]);
+    }
+    
     interface A<T> {
         @Reflectable
         void foo();
@@ -213,8 +233,12 @@ public class TypeTest {
 
         @Reflectable
         <Q extends Number, W extends Q> W c();
-        
+
+        @Reflectable
         T d(List<T> param);
+
+        @Reflectable
+        Outer<Number>.Inner<Integer> e();
     }
 
     static class B<Q, W extends Q> {
@@ -233,5 +257,10 @@ public class TypeTest {
     } 
     
     static class F<T, S extends A<T[]>, W extends A<int[]>> {
+    }
+    
+    static class Outer<T> {
+        class Inner<S extends T> {
+        }
     }
 }

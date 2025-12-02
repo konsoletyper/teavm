@@ -53,6 +53,6 @@ public class GenericTypeParameter {
 
     public static boolean isTrivialBound(GenericValueType.Reference bound) {
         return bound instanceof GenericValueType.Object
-                && ((GenericValueType.Object) bound).getClassName().equals("java.lang.Object");
+                && ((GenericValueType.Object) bound).getFullClassName().equals("java.lang.Object");
     }
 }

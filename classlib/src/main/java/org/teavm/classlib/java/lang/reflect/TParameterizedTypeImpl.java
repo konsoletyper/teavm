@@ -36,6 +36,10 @@ class TParameterizedTypeImpl extends TLazyResolvedType implements TParameterized
         return new TParameterizedTypeImpl(rawType, actualTypeArguments, null);
     }
 
+    static TParameterizedTypeImpl create(TClass<?> rawType, ObjectList actualTypeArguments, TType ownerType) {
+        return new TParameterizedTypeImpl(rawType, actualTypeArguments, ownerType);
+    }
+
     @Override
     public TType[] getActualTypeArguments() {
         if (actualTypeArgumentsArray == null) {
@@ -71,6 +75,9 @@ class TParameterizedTypeImpl extends TLazyResolvedType implements TParameterized
                 actualTypeArgumentsArray[i] = TTypeVariableStub.resolve((TType) array[i], declaration);
             }
         }
+        if (ownerType != null) {
+            ownerType = TTypeVariableStub.resolve(ownerType, declaration);
+        }
     }
 
     @Override
@@ -95,7 +102,13 @@ class TParameterizedTypeImpl extends TLazyResolvedType implements TParameterized
     @Override
     public String toString() {
         var args = getActualTypeArguments();
-        var sb = new StringBuilder(rawType.getName()).append('<').append(args[0].getTypeName());
+        var sb = new StringBuilder();
+        if (ownerType != null) {
+            sb.append(ownerType.getTypeName()).append("$").append(rawType.getSimpleName());
+        } else {
+            sb.append(rawType.getName());
+        }
+        sb.append('<').append(args[0].getTypeName());
         for (int i = 1; i < args.length; i++) {
             sb.append(',').append(args[i].getTypeName());
         }

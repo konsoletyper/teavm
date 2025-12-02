@@ -204,6 +204,10 @@ public abstract class GenericValueType {
             return className;
         }
 
+        public String getFullClassName() {
+            return parent != null ? parent.getFullClassName() + "$" + className : className;
+        }
+
         public Argument[] getArguments() {
             return arguments.length == 0 ? EMPTY_ARRAY : arguments.clone();
         }
