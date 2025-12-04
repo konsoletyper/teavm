@@ -93,7 +93,7 @@ import org.teavm.backend.wasm.transformation.SuspensionPointCollector;
 
 class CoroutineTransformationVisitor implements WasmExpressionVisitor {
     SuspensionPointCollector collector;
-    private WasmFunctionTypes functionTypes;
+    WasmFunctionTypes functionTypes;
     private CoroutineFunctions functions;
     private SwitchContainer currentSwitchContainer;
     WasmLocal stateLocal;
@@ -102,13 +102,17 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
     private int currentStateOffset;
     List<WasmExpression> resultList = new ArrayList<>();
     WasmBlock mainBlock;
-    private WasmTypeInference typeInference;
+    private WasmTypeInference typeInference = new WasmTypeInference();
     private List<WasmType> stackTypes = new ArrayList<>();
+    List<WasmBlock> stackBlocks = new ArrayList<>();
+    List<WasmType[]> stackAddedTypes = new ArrayList<>();
+    private CoroutineTypePropagationVisitor typePropagation;
+    static final WasmType[] TYPES_NONE = new WasmType[0];
 
     CoroutineTransformationVisitor(WasmFunctionTypes functionTypes, CoroutineFunctions functions) {
         this.functionTypes = functionTypes;
         this.functions = functions;
-        typeInference = new WasmTypeInference();
+        this.typePropagation = new CoroutineTypePropagationVisitor(this);
     }
 
     void init() {
@@ -167,6 +171,9 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
         resultList.clear();
         resultList.add(jumpInsideBlock);
         stackTypes = new ArrayList<>();
+        var blocksOnStack = stackBlocks.size();
+        stackBlocks.add(block);
+        stackAddedTypes.add(TYPES_NONE);
         var containingBlock = new WasmBlock(true);
         containingBlock.getBody().add(block);
         containingBlock.getBody().add(new WasmSetLocal(stateLocal, new WasmInt32Constant(currentStateOffset)));
@@ -178,6 +185,10 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
         oldSwitchContainer.jumpInsideBlock = jumpInsideBlock;
         addJumpsToOuterSwitches(currentSwitchContainer);
         visitMany(block.getBody());
+        if (blocksOnStack < stackBlocks.size()) {
+            stackBlocks.subList(blocksOnStack, stackBlocks.size()).clear();
+            stackAddedTypes.subList(blocksOnStack, stackAddedTypes.size()).clear();
+        }
         block.getBody().clear();
         block.getBody().addAll(resultList);
         resultList = oldResultList;
@@ -190,10 +201,17 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
         if (block.getBody().isEmpty()) {
             return;
         }
+        var blocksOnStack = stackBlocks.size();
+        stackBlocks.add(block);
         var typesOnStack = stackTypes.size();
+        stackAddedTypes.add(typesOnStack > 0 ? stackTypes.toArray(new WasmType[typesOnStack]) : TYPES_NONE);
         visitMany(block.getBody());
         if (typesOnStack < stackTypes.size()) {
             stackTypes.subList(typesOnStack, stackTypes.size()).clear();
+        }
+        if (blocksOnStack < stackBlocks.size()) {
+            stackBlocks.subList(blocksOnStack, stackBlocks.size()).clear();
+            stackAddedTypes.subList(blocksOnStack, stackAddedTypes.size()).clear();
         }
         stackTypes.addAll(block.getResultTypes());
         block.getBody().clear();
@@ -927,10 +945,24 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
         expr.acceptVisitor(typeInference);
         resultList.add(expr);
         var type = typeInference.getSingleResult();
+        if (!stackBlocks.isEmpty()) {
+            propagateTypes(expr);
+        }
         if (type != null) {
             stackTypes.add(type);
         }
         return type;
+    }
+
+    private void propagateTypes(WasmExpression expr) {
+        if (expr instanceof WasmBlock) {
+            typePropagation.propagateTypes((WasmBlock) expr);
+        } else if (expr instanceof WasmConditional) {
+            WasmConditional c = (WasmConditional) expr;
+            propagateTypes(c.getCondition());
+            typePropagation.propagateTypes(c.getThenBlock());
+            typePropagation.propagateTypes(c.getElseBlock());
+        }
     }
 
     private void popTypes(int count) {
