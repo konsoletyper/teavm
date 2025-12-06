@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2025 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,20 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.model.expression;
+package org.teavm.interop;
 
-import java.util.function.Function;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class WasmReplacingExpressionVisitor extends WasmBaseReplacingExpressionVisitor {
-    private Function<WasmExpression, WasmExpression> mapper;
-
-    public WasmReplacingExpressionVisitor(Function<WasmExpression, WasmExpression> mapper) {
-        this.mapper = mapper;
-    }
-
-    @Override
-    protected void visitDefault(WasmExpression expression) {
-        super.visitDefault(expression);
-        replaceCurrent(mapper.apply(expression));
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface NativeAsync {
 }

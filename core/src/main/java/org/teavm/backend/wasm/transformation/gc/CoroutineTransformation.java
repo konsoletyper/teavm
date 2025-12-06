@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.transformation.gc;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.function.Supplier;
 import org.teavm.backend.wasm.BaseWasmFunctionRepository;
@@ -55,7 +56,14 @@ public class CoroutineTransformation {
         for (var part : function.getBody()) {
             part.acceptVisitor(suspensionPoints);
         }
+        var nonOptimizableBlockCollector = new NonOptimizableBlockCollector();
+        nonOptimizableBlockCollector.suspendable = suspensionPoints;
+        nonOptimizableBlockCollector.nonOptimizableBlocks = new LinkedHashSet<>();
+        for (var part : function.getBody()) {
+            part.acceptVisitor(nonOptimizableBlockCollector);
+        }
         var transformationVisitor = new CoroutineTransformationVisitor(functionTypes, coroutineFunctions);
+        transformationVisitor.nonOptimizableBlocks = nonOptimizableBlockCollector.nonOptimizableBlocks;
         transformationVisitor.collector = suspensionPoints;
 
         var locals = List.copyOf(function.getLocalVariables());

@@ -289,6 +289,13 @@ public class WasmGCMethodGenerator implements BaseWasmFunctionRepository {
     private void generateCustomMethodBody(WasmGCCustomGenerator customGenerator, MethodReference method,
             WasmFunction function) {
         customGenerator.apply(method, function, customGeneratorContext);
+        var isSuspend = asyncMethods.contains(method);
+        if (isSuspend) {
+            if (coroutineTransformation == null) {
+                coroutineTransformation = new CoroutineTransformation(functionTypes, this, classInfoProvider);
+            }
+            coroutineTransformation.transform(function);
+        }
     }
 
     private void generateRegularMethodBody(MethodHolder method, WasmFunction function) {

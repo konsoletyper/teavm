@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.transformation.gc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -94,6 +95,7 @@ import org.teavm.backend.wasm.transformation.SuspensionPointCollector;
 
 class CoroutineTransformationVisitor implements WasmExpressionVisitor {
     SuspensionPointCollector collector;
+    Set<WasmBlock> nonOptimizableBlocks;
     private WasmFunctionTypes functionTypes;
     private CoroutineFunctions functions;
     private SwitchContainer currentSwitchContainer;
@@ -103,6 +105,7 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
     private int currentStateOffset;
     List<WasmExpression> resultList = new ArrayList<>();
     WasmBlock mainBlock;
+    private WasmBlock suspendBlock;
     private WasmTypeInference typeInference;
     private List<WasmType> stackTypes = new ArrayList<>();
 
@@ -115,6 +118,7 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
     void init() {
         currentSwitchContainer = createSwitchContainer();
         mainBlock = new WasmBlock(false);
+        suspendBlock = mainBlock;
     }
 
     void complete() {
@@ -196,6 +200,69 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
         if (block.getBody().isEmpty()) {
             return;
         }
+        if (nonOptimizableBlocks.contains(block)) {
+            splitRegularBlockFallback(block);
+        } else {
+            splitRegularBlockOptimized(block);
+        }
+    }
+
+    private void splitRegularBlockFallback(WasmBlock block) {
+        var oldResultList = resultList;
+        var oldStackTypes = stackTypes;
+        var oldSuspendBlock = suspendBlock;
+        resultList.add(new WasmSetLocal(stateLocal, new WasmInt32Constant(currentStateOffset)));
+        var restoreBlock = new WasmBlock(false);
+        var jumpInsideBlock = new WasmBlock(false);
+        jumpInsideBlock.getBody().addAll(resultList);
+        restoreBlock.setType(functionTypes.blockType(stackTypes));
+        restoreBlock.getBody().add(jumpInsideBlock);
+        jumpInsideBlock.getBody().add(new WasmBreak(restoreBlock));
+        for (var type : stackTypes) {
+            restore(restoreBlock.getBody(), type);
+        }
+        resultList.clear();
+        resultList.add(restoreBlock);
+        stackTypes = new ArrayList<>();
+        resultList.add(block);
+        resultList = new ArrayList<>();
+        var oldSwitchContainer = currentSwitchContainer;
+        currentSwitchContainer = createSwitchContainer();
+        oldSwitchContainer.jumpInsideBlock = jumpInsideBlock;
+        addJumpsToOuterSwitches(currentSwitchContainer);
+        suspendBlock = block;
+        visitMany(block.getBody());
+        block.getBody().clear();
+        block.getBody().addAll(resultList);
+        resultList = oldResultList;
+        currentSwitchContainer = oldSwitchContainer;
+        suspendBlock = oldSuspendBlock;
+        oldSwitchContainer.jumpInsideBlock = null;
+        stackTypes = oldStackTypes;
+
+        var suspendCheck = new WasmConditional(isSuspending());
+        var allTypes = new ArrayList<>(stackTypes);
+        allTypes.addAll(block.getResultTypes());
+        if (!allTypes.isEmpty()) {
+            suspendCheck.setType(functionTypes.get(new WasmSignature(allTypes, allTypes)).asBlock());
+        }
+        var resultTypes = block.getResultTypes();
+        for (var i = resultTypes.size() - 1; i >= 0; --i) {
+            suspendCheck.getThenBlock().getBody().add(new WasmDrop(new WasmPop(resultTypes.get(i))));
+        }
+        for (var i = stackTypes.size() - 1; i >= 0; --i) {
+            save(suspendCheck.getThenBlock().getBody(), stackTypes.get(i));
+        }
+        for (var type : suspendBlock.getResultTypes()) {
+            pushDefault(suspendCheck.getThenBlock().getBody(), type);
+        }
+        suspendCheck.getThenBlock().getBody().add(new WasmBreak(suspendBlock));
+        resultList.add(suspendCheck);
+
+        stackTypes.addAll(block.getResultTypes());
+    }
+
+    private void splitRegularBlockOptimized(WasmBlock block) {
         var typesOnStack = stackTypes.size();
         visitMany(block.getBody());
         if (typesOnStack < stackTypes.size()) {
@@ -536,7 +603,10 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
         for (var i = stackTypes.size() - 1 - returnTypes.size(); i >= 0; --i) {
             save(suspendCheck.getThenBlock().getBody(), stackTypes.get(i));
         }
-        suspendCheck.getThenBlock().getBody().add(new WasmBreak(mainBlock));
+        for (var type : suspendBlock.getResultTypes()) {
+            pushDefault(suspendCheck.getThenBlock().getBody(), type);
+        }
+        suspendCheck.getThenBlock().getBody().add(new WasmBreak(suspendBlock));
         resultList.add(suspendCheck);
 
         var sc = currentSwitchContainer;

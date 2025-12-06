@@ -21,6 +21,7 @@ import java.util.List;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
+import org.teavm.interop.NativeAsync;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.BasicBlock;
@@ -62,7 +63,8 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
         for (var method : List.copyOf(cls.getMethods())) {
             if (method.hasModifier(ElementModifier.NATIVE)
                     && method.getAnnotations().get(Async.class.getName()) != null
-                    && method.getAnnotations().get(GeneratedBy.class.getName()) == null) {
+                    && method.getAnnotations().get(GeneratedBy.class.getName()) == null
+                    && method.getAnnotations().get(NativeAsync.class.getName()) == null) {
                 ValueType[] signature = new ValueType[method.parameterCount() + 2];
                 for (int i = 0; i < method.parameterCount(); ++i) {
                     signature[i] = method.parameterType(i);
