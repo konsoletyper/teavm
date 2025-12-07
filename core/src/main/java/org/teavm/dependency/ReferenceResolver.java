@@ -51,6 +51,7 @@ import org.teavm.model.instructions.ConstructMultiArrayInstruction;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InstructionVisitor;
+import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.IsInstanceInstruction;
@@ -137,15 +138,20 @@ public class ReferenceResolver {
 
         @Override
         public void visit(CastInstruction insn) {
-            if (!checkType(insn, insn.getTargetType())) {
+            if (!typeAvailable(insn.getTargetType())) {
+                emitExceptionThrow(insn.getLocation(), ClassCastException.class.getName(), "Can't cast");
+                truncateBlock(insn);
                 shouldStop = true;
             }
         }
 
         @Override
         public void visit(IsInstanceInstruction insn) {
-            if (!checkType(insn, insn.getType())) {
-                shouldStop = true;
+            if (!typeAvailable(insn.getType())) {
+                var falseCst = new IntegerConstantInstruction();
+                falseCst.setLocation(insn.getLocation());
+                falseCst.setReceiver(insn.getReceiver());
+                insn.replace(falseCst);
             }
         }
 
@@ -278,6 +284,24 @@ public class ReferenceResolver {
             var result = classSource.resolve(f);
             return new FieldWrapper(result);
         }).value;
+    }
+
+    private boolean typeAvailable(ValueType type) {
+        while (type instanceof ValueType.Array) {
+            type = ((ValueType.Array) type).getItemType();
+        }
+        if (type instanceof ValueType.Object) {
+            return classAvailable(((ValueType.Object) type).getClassName());
+        }
+        return true;
+    }
+
+    private boolean classAvailable(String className) {
+        var cls = classSource.get(className);
+        if (cls == null) {
+            return false;
+        }
+        return checkPlatformSupported(cls.getAnnotations());
     }
 
     private boolean checkType(Instruction instruction, ValueType type) {
