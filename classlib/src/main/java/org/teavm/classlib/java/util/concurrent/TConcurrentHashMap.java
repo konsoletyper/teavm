@@ -275,6 +275,10 @@ public class TConcurrentHashMap<K, V> extends TAbstractMap<K, V>
         putAllImpl(map);
     }
 
+    public TConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyLevel) {
+        this(initialCapacity, loadFactor);
+    }
+
     @Override
     public void clear() {
         if (elementCount > 0) {
