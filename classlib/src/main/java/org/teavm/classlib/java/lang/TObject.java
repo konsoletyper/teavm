@@ -266,11 +266,11 @@ public class TObject {
                 var monitor = this.monitor;
                 if (monitor != null) {
                     if (monitor.id < 0) {
-                        monitor.id = WasmGCSupport.nextObjectId() & 0x7ffffff;
+                        monitor.id = WasmGCSupport.nextObjectId() & 0x7fffffff;
                     }
                     return monitor.id;
                 } else {
-                    identity = WasmGCSupport.nextObjectId() & 0x7ffffff;
+                    identity = WasmGCSupport.nextObjectId() & 0x7fffffff;
                     setWasmGCIdentity(identity);
                 }
             }
