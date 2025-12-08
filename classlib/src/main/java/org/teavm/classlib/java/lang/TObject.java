@@ -108,7 +108,11 @@ public class TObject {
     }
 
     private static void createMonitor(TObject o) {
-        if (PlatformDetector.isLowLevel()) {
+        if (PlatformDetector.isWebAssemblyGC()) {
+            int hashCode = o.wasmGCIdentity();
+            o.monitor = new Monitor();
+            o.monitor.id = hashCode;
+        } else if (PlatformDetector.isLowLevel()) {
             int hashCode = hashCodeLowLevel(o);
             o.monitor = new Monitor();
             o.monitor.id = hashCode;
