@@ -30,6 +30,7 @@ import static org.teavm.classlib.impl.reflection.ReflectionMethods.WILDCARD_TYPE
 import static org.teavm.classlib.impl.reflection.ReflectionMethods.WILDCARD_TYPE_UPPER;
 import java.lang.annotation.Retention;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -204,7 +205,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         }
 
         writer.appendClass(className).append(".$meta.fields").ws().append('=').ws().append('[').indent();
-        var fieldsToExpose = accessibleFields == null ? cls.getFields() : cls.getFields().stream()
+        var fieldsToExpose = accessibleFields == null ? Collections.<FieldReader>emptySet() : cls.getFields().stream()
                 .filter(f -> accessibleFields.contains(f.getName()))
                 .collect(Collectors.toSet());
 
@@ -253,9 +254,11 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         writer.appendClass(className).append(".$meta.methods").ws().append('=').ws().append('[').indent();
 
         var skipPrivates = ReflectionDependencyListener.shouldSkipPrivates(cls);
-        var methodsToExpose = accessibleMethods == null ? cls.getMethods() : cls.getMethods().stream()
-                .filter(m -> accessibleMethods.contains(m.getDescriptor()))
-                .collect(Collectors.toList());
+        var methodsToExpose = accessibleMethods == null
+                ? Collections.<MethodReader>emptySet()
+                : cls.getMethods().stream()
+                    .filter(m -> accessibleMethods.contains(m.getDescriptor()))
+                    .collect(Collectors.toList());
         var withBounds = context.getDependency().getMethod(TYPE_VAR_GET_BOUNDS) != null;
         var withGenericParameters = context.getDependency().getMethod(EXECUTABLE_GET_GENERIC_PARAMETER_TYPES) != null;
         var withGenericReturn = context.getDependency().getMethod(METHOD_GET_GENERIC_RETURN_TYPE) != null;

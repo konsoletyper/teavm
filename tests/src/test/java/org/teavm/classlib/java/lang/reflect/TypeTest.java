@@ -242,8 +242,13 @@ public class TypeTest {
     }
 
     static class B<Q, W extends Q> {
+        @Reflectable
         Q a;
+
+        @Reflectable
         List<W> b;
+
+        @Reflectable
         Number c;
     }
     
