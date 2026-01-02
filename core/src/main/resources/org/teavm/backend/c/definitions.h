@@ -24,9 +24,16 @@
 #endif
 
 #ifdef __GNUC__
-    #undef TEAVM_UNIX
-    #define TEAVM_UNIX 1
-    #include <stdalign.h>
+    #ifdef __MINGW32__
+        #undef TEAVM_UNIX
+        #define TEAVM_UNIX 0
+        #undef TEAVM_WINDOWS
+        #define TEAVM_WINDOWS 1
+    #else
+        #undef TEAVM_UNIX
+        #define TEAVM_UNIX 1
+        #include <stdalign.h>
+    #endif
 #endif
 
 #ifndef TEAVM_USE_SETJMP

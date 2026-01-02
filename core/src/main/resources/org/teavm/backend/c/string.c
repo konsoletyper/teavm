@@ -4,6 +4,21 @@
 #include <string.h>
 #include <stddef.h>
 
+#if defined(__MINGW32__)
+// Dummy implementations for MinGW since c16rtomb and mbrtoc16 may not be available
+size_t c16rtomb(char *restrict s, char16_t c16, mbstate_t *restrict ps) {
+    // Simple ASCII-only implementation
+    if (s) *s = (char) c16;
+    return 1;
+}
+
+size_t mbrtoc16(char16_t *restrict pc16, const char *restrict s, size_t n, mbstate_t *restrict ps) {
+    if (n == 0) return 0;
+    if (pc16) *pc16 = (char16_t) *s;
+    return 1;
+}
+#endif
+
 #if TEAVM_INCREMENTAL
 #define TEAVM_ALLOC_STACK(sz) TEAVM_ALLOC_STACK_DEF(sz, NULL)
 #endif
