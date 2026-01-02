@@ -285,6 +285,7 @@ public class MethodTest {
 
     static class InterfaceImplementor implements SuperInterface {
         @Override
+        @Reflectable
         public void f() {
         }
 

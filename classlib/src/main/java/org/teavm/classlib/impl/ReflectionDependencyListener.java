@@ -224,7 +224,11 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                     ClassReader cls = agent.getClassSource().get(className);
                     if (cls != null) {
                         var skipPrivates = shouldSkipPrivates(cls);
+                        var reflectable = getAccessibleFields(agent, className);
                         for (FieldReader field : cls.getFields()) {
+                            if (!reflectable.contains(field.getName())) {
+                                continue;
+                            }
                             if (skipPrivates) {
                                 if (field.getLevel() == AccessLevel.PRIVATE
                                         || field.getLevel() == AccessLevel.PACKAGE_PRIVATE) {
@@ -246,7 +250,11 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                     ClassReader cls = agent.getClassSource().get(className);
                     if (cls != null) {
                         var skipPrivates = shouldSkipPrivates(cls);
+                        var reflectable = getAccessibleMethods(agent, className);
                         for (MethodReader reflectableMethod : cls.getMethods()) {
+                            if (!reflectable.contains(reflectableMethod.getDescriptor())) {
+                                continue;
+                            }
                             if (skipPrivates) {
                                 if (reflectableMethod.getLevel() == AccessLevel.PRIVATE
                                         || reflectableMethod.getLevel() == AccessLevel.PACKAGE_PRIVATE) {
