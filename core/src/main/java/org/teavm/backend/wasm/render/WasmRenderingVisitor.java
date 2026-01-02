@@ -950,6 +950,8 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                     return "funcref";
                 case ARRAY:
                     return "arrayref";
+                case EXN:
+                    return "exnref";
                 case I31:
                     return "i31ref";
                 default:
