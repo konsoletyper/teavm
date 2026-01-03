@@ -18,7 +18,6 @@ package org.teavm.backend.wasm.intrinsics.gc;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.model.WasmNumType;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmFloat32Constant;
@@ -29,6 +28,7 @@ import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.expression.WasmSequence;
 
 public class FloatIntrinsic implements WasmGCIntrinsic {
     private static final int EXPONENT_BITS = 0x7F800000;
@@ -63,8 +63,7 @@ public class FloatIntrinsic implements WasmGCIntrinsic {
     }
 
     private WasmExpression testNaN(WasmExpression expression, WasmGCIntrinsicContext context) {
-        var block = new WasmBlock(false);
-        block.setType(WasmType.INT32.asBlock());
+        var block = new WasmSequence();
         var cache = context.exprCache().create(expression, WasmType.FLOAT32, expression.getLocation(),
                 block.getBody());
         block.getBody().add(new WasmFloatBinary(WasmFloatType.FLOAT32, WasmFloatBinaryOperation.NE,

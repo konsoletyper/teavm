@@ -76,6 +76,7 @@ import org.teavm.backend.wasm.model.expression.WasmPop;
 import org.teavm.backend.wasm.model.expression.WasmPush;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
+import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -174,6 +175,18 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         }
 
         blockInfoMap.remove(expression);
+        value = result;
+    }
+
+    @Override
+    public void visit(WasmSequence expression) {
+        var result = new CExpression();
+        for (var part : expression.getBody()) {
+            requiredType = null;
+            part.acceptVisitor(this);
+            result.getLines().addAll(value.getLines());
+        }
+
         value = result;
     }
 

@@ -78,6 +78,7 @@ import org.teavm.backend.wasm.model.expression.WasmPop;
 import org.teavm.backend.wasm.model.expression.WasmPush;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
+import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSignedType;
@@ -210,6 +211,13 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmBlock expression) {
         renderBlock(expression, expression.isLoop() ? "loop" : "block", true);
+    }
+
+    @Override
+    public void visit(WasmSequence expression) {
+        for (var part : expression.getBody()) {
+            line(part);
+        }
     }
 
     private void renderBlock(WasmBlock block, String name, boolean signature) {

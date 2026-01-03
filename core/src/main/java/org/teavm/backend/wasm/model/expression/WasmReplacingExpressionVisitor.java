@@ -45,6 +45,11 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmSequence expression) {
+        replaceExpressions(expression.getBody());
+    }
+
+    @Override
     public void visit(WasmBranch expression) {
         expression.getCondition().acceptVisitor(this);
         expression.setCondition(mapper.apply(expression.getCondition()));

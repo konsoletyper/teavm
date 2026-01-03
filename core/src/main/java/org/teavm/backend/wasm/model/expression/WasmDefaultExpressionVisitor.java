@@ -24,6 +24,13 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
+    public void visit(WasmSequence expression) {
+        for (var part : expression.getBody()) {
+            part.acceptVisitor(this);
+        }
+    }
+
+    @Override
     public void visit(WasmBranch expression) {
         expression.getCondition().acceptVisitor(this);
         if (expression.getResult() != null) {

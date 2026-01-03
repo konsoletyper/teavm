@@ -37,6 +37,7 @@ import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
+import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
@@ -76,7 +77,7 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
     private WasmExpression generateDoArrayCopy(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         var objStruct = context.classInfoProvider().getClassInfo(Object.class.getName()).getStructure();
         var arrayClsStruct = context.classInfoProvider().getArrayVirtualTableStructure();
-        var block = new WasmBlock(false);
+        var block = new WasmSequence();
 
         var source = context.exprCache().create(context.generate(invocation.getArguments().get(0)),
                 objStruct.getReference(), invocation.getLocation(), block.getBody());
@@ -127,7 +128,7 @@ public class SystemArrayCopyIntrinsic implements WasmGCIntrinsic {
             return null;
         }
 
-        var block = new WasmBlock(false);
+        var block = new WasmSequence();
 
         var wasmTargetArrayType = (WasmType.CompositeReference) context.typeMapper().mapType(
                 ValueType.arrayOf(targetItemType));

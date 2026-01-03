@@ -21,7 +21,6 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmHeap;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.model.WasmNumType;
-import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
@@ -31,6 +30,7 @@ import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
+import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.FieldReference;
@@ -111,7 +111,7 @@ public class GCIntrinsic implements WasmIntrinsic {
             case "availableBytes":
                 return intToLong(getStaticField(manager, "heapSize"));
             case "outOfMemory": {
-                WasmBlock block = new WasmBlock(false);
+                var block = new WasmSequence();
                 WasmCall call = new WasmCall(manager.getFunctions().forStaticMethod(PRINT_OUT_OF_MEMORY));
                 block.getBody().add(call);
                 block.getBody().add(new WasmUnreachable());

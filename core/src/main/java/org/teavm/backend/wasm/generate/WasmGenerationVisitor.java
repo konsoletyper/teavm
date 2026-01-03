@@ -67,6 +67,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmMemoryAccess;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
+import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
@@ -711,8 +712,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
     }
 
     private WasmExpression getMonitor(WasmExpression address, TextLocation location) {
-        var block = new WasmBlock(false);
-        block.setType(WasmType.INT32.asBlock());
+        var block = new WasmSequence();
         block.setLocation(location);
 
         var tmp = tempVars.acquire(WasmType.INT32);
@@ -772,8 +772,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
 
     @Override
     public void visit(NewArrayExpr expr) {
-        var block = new WasmBlock(false);
-        block.setType(mapType(ValueType.arrayOf(expr.getType())).asBlock());
+        var block = new WasmSequence();
 
         var callSiteId = generateCallSiteId(expr.getLocation());
         callSiteId.generateRegister(block.getBody(), expr.getLocation());
@@ -839,8 +838,7 @@ public class WasmGenerationVisitor extends BaseWasmGenerationVisitor {
         }
 
         var wasmArrayType = mapType(ValueType.arrayOf(expr.getType()));
-        var block = new WasmBlock(false);
-        block.setType(wasmArrayType.asBlock());
+        var block = new WasmSequence();
         var callSiteId = generateCallSiteId(expr.getLocation());
         callSiteId.generateRegister(block.getBody(), expr.getLocation());
 

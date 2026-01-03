@@ -104,6 +104,7 @@ import org.teavm.backend.wasm.model.expression.WasmIntUnary;
 import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
+import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.optimization.UnusedFunctionElimination;
@@ -1180,8 +1181,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                     WasmCall call = new WasmCall(function);
                     var arg = manager.generate(invocation.getArguments().get(0));
                     if (manager.isManagedMethodCall(entryPoint)) {
-                        var block = new WasmBlock(false);
-                        block.setType(WasmType.INT32.asBlock());
+                        var block = new WasmSequence();
                         var callSiteId = manager.generateCallSiteId(invocation.getLocation());
                         callSiteId.generateRegister(block.getBody(), invocation.getLocation());
                         block.getBody().add(arg);

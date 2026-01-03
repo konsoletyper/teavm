@@ -32,6 +32,7 @@ import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmIntUnary;
 import org.teavm.backend.wasm.model.expression.WasmIntUnaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
+import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSignedType;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
@@ -142,8 +143,7 @@ public class ObjectIntrinsic implements WasmGCIntrinsic {
         var objectStruct = objectInfo.getStructure();
         var classStruct = context.classInfoProvider().getClassInfo("java.lang.Class").getStructure();
 
-        var block = new WasmBlock(false);
-        block.setType(objectStruct.getReference().asBlock());
+        var block = new WasmSequence();
         var obj = context.exprCache().create(context.generate(invocation.getArguments().get(0)),
                 objectStruct.getReference(), invocation.getLocation(), block.getBody());
         var vt = new WasmStructGet(objectStruct, obj.expr(), WasmGCClassInfoProvider.VT_FIELD_OFFSET);

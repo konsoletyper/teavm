@@ -18,7 +18,6 @@ package org.teavm.backend.wasm.intrinsics.gc;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmHeap;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
@@ -27,14 +26,14 @@ import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
+import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 
 public class HeapIntrinsic implements WasmGCIntrinsic {
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmGCIntrinsicContext context) {
         var pagesVar = context.tempVars().acquire(WasmType.INT32);
-        var block = new WasmBlock(false);
-        block.setType(WasmType.INT32.asBlock());
+        var block = new WasmSequence();
         var bytes = context.generate(invocation.getArguments().get(0));
         WasmExpression pages = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB,
                 bytes, new WasmInt32Constant(1));

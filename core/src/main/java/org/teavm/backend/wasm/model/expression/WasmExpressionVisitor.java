@@ -16,6 +16,8 @@
 package org.teavm.backend.wasm.model.expression;
 
 public interface WasmExpressionVisitor {
+    void visit(WasmSequence expression);
+
     void visit(WasmBlock expression);
 
     void visit(WasmBranch expression);
