@@ -139,7 +139,7 @@ public class JsonParser {
 
         if (lastChar == ']') {
             nextChar(reader);
-            consumer.exitObject(errorReporter);
+            consumer.exitArray(errorReporter);
             return;
         }
 
