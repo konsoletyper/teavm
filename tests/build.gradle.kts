@@ -87,12 +87,8 @@ tasks.test {
             .orElse("./run-wasi.sh").get())
 
     systemProperty("teavm.junit.c", providers.gradleProperty("teavm.tests.c").orElse("true").get())
-    val osName = System.getProperty("os.name").lowercase()
-    val defaultCCompiler = if (osName.startsWith("windows")) {
-        "compile-c-windows-fast.bat"
-    } else "compile-c-unix-fast.sh"
     systemProperty("teavm.junit.c.compiler", providers.gradleProperty("teavm.tests.c.compiler")
-        .orElse(defaultCCompiler).get())
+        .orElse("compile-c-unix-fast.sh").get())
 
     val dependencies = configurations.testRuntimeClasspath.get()
             .incoming.resolutionResult.allDependencies
