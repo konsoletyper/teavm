@@ -605,7 +605,7 @@ int32_t teavm_file_write(int64_t file, int8_t* data, int32_t offset, int32_t siz
 }
 
 int32_t teavm_file_truncate(int64_t file, int32_t size) {
-  if (SetFilePointer((HANDLE) file, size, 0, where) == INVALID_SET_FILE_POINTER) {
+  if (SetFilePointer((HANDLE) file, size, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER) {
     return 0;
   }
   return SetEndOfFile((HANDLE) file);
