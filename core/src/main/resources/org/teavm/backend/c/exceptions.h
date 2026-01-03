@@ -39,10 +39,11 @@
         longjmp(teavm_stackTop->jmpTarget->buffer, id)
 
 
-    #if TEAVM_WINDOWS && !defined(__MINGW32__)
-        #define TEAVM_UNREACHABLE __assume(0);
-    #else
+    #if TEAVM_UNIX
         #define TEAVM_UNREACHABLE __builtin_unreachable();
+    #endif
+    #if TEAVM_WINDOWS
+        #define TEAVM_UNREACHABLE __assume(0);
     #endif
     #ifndef TEAVM_UNREACHABLE
         #define TEAVM_UNREACHABLE return;
