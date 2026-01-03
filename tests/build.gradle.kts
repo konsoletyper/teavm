@@ -88,7 +88,7 @@ tasks.test {
 
     systemProperty("teavm.junit.c", providers.gradleProperty("teavm.tests.c").orElse("true").get())
     systemProperty("teavm.junit.c.compiler", providers.gradleProperty("teavm.tests.c.compiler")
-        .orElse("compile-c-unix-fast.sh").get())
+            .orElse("compile-c-unix-fast.sh").get())
 
     val dependencies = configurations.testRuntimeClasspath.get()
             .incoming.resolutionResult.allDependencies
