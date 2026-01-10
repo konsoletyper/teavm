@@ -765,7 +765,9 @@ public class WasmGCClassGenerator implements WasmGCClassInfoProvider, WasmGCInit
                 }
             }
         };
-        annotationsGenerator.addClassAnnotations(name, classInfo);
+        if (!classInfo.heapStructure) {
+            annotationsGenerator.addClassAnnotations(name, classInfo);
+        }
     }
 
     private WasmExpression createInterfacesArray(ClassReader cls) {
