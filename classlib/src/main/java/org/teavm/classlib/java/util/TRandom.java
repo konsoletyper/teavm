@@ -51,7 +51,7 @@ public class TRandom extends TObject implements TRandomGenerator, TSerializable 
 
     @Override
     public long nextLong() {
-        return ((long) nextInt() << 32) | nextInt();
+        return ((long) nextInt() << 32) | (nextInt() & 0xFFFFFFFFL);
     }
 
     @Override

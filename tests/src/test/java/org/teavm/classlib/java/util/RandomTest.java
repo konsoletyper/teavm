@@ -171,4 +171,20 @@ public class RandomTest {
         double[] doubles = IntStream.range(0, 10000).mapToDouble(i -> rand.nextGaussian(30, 10)).toArray();
         assertTrue(DoubleStream.of(doubles).filter(d -> d < 0.0 || d > 60.0).count() < 100);
     }
+    
+    @Test
+    public void testLong() {
+        var rand = new Random();
+        var positive = 0;
+        var negative = 0;
+        for (var i = 0; i < 1000; ++i) {
+            var v = rand.nextLong();
+            if (v >= 0) {
+                positive++;
+            } else {
+                negative++;
+            }
+        }
+        assertTrue(Math.abs(positive - negative) < 50);
+    }
 }
