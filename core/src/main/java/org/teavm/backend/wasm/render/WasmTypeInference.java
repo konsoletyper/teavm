@@ -68,7 +68,6 @@ import org.teavm.backend.wasm.model.expression.WasmPop;
 import org.teavm.backend.wasm.model.expression.WasmPush;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
-import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -120,15 +119,6 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     @Override
     public void visit(WasmBlock expression) {
         setBlockType(expression.getType());
-    }
-
-    @Override
-    public void visit(WasmSequence expression) {
-        if (expression.getBody().isEmpty()) {
-            result = Collections.emptyList();
-        } else {
-            expression.getBody().getLast().acceptVisitor(this);
-        }
     }
 
     @Override

@@ -34,7 +34,6 @@ import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmIsNull;
-import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmThrow;
 import org.teavm.backend.wasm.runtime.gc.WasmGCSupport;
 import org.teavm.jso.impl.JSMethods;
@@ -171,7 +170,8 @@ class WasmGCJSIntrinsic implements WasmGCIntrinsic {
     }
 
     private WasmExpression throwCCEIfFalse(InvocationExpr invocation, WasmGCIntrinsicContext context) {
-        var block = new WasmSequence();
+        var block = new WasmBlock(false);
+        block.setType(WasmType.Reference.EXTERN.asBlock());
 
         var innerBlock = new WasmBlock(false);
         block.getBody().add(innerBlock);

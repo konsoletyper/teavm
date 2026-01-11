@@ -19,9 +19,9 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 import org.teavm.backend.wasm.model.expression.WasmStructSet;
 import org.teavm.backend.wasm.runtime.StringInternPool;
@@ -39,7 +39,7 @@ class StringInternPoolIntrinsic implements WasmGCIntrinsic {
                 return new WasmCall(createDerefFunction(context), weakRef);
             }
             case "setValue": {
-                var block = new WasmSequence();
+                var block = new WasmBlock(false);
                 var instance = context.exprCache().create(context.generate(invocation.getArguments().get(0)),
                         entryStruct.getReference(), invocation.getLocation(), block.getBody());
                 var value = context.generate(invocation.getArguments().get(1));

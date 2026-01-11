@@ -58,7 +58,6 @@ import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
-import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -137,12 +136,6 @@ public class SuspensionPointCollector extends WasmDefaultExpressionVisitor {
     public void visit(WasmBlock expression) {
         super.visit(expression);
         visitExpr(expression, WasmBlock::getBody);
-    }
-
-    @Override
-    public void visit(WasmSequence expression) {
-        super.visit(expression);
-        visitExpr(expression, WasmSequence::getBody);
     }
 
     @Override

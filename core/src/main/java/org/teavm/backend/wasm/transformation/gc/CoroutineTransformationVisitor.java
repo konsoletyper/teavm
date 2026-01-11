@@ -73,7 +73,6 @@ import org.teavm.backend.wasm.model.expression.WasmPop;
 import org.teavm.backend.wasm.model.expression.WasmPush;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
-import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -160,11 +159,6 @@ class CoroutineTransformationVisitor implements WasmExpressionVisitor {
         } else {
             splitRegularBlock(expression);
         }
-    }
-
-    @Override
-    public void visit(WasmSequence expression) {
-        visitMany(expression.getBody());
     }
 
     private void splitLoopBlock(WasmBlock block) {

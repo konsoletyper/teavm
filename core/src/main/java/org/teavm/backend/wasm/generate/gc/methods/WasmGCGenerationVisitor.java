@@ -85,7 +85,6 @@ import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmPop;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
-import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSignedType;
@@ -445,6 +444,8 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     protected void allocateObject(String className, TextLocation location, WasmLocal local,
             List<WasmExpression> target) {
         var classInfo = context.classInfoProvider().getClassInfo(className);
+        var block = new WasmBlock(false);
+        block.setType(classInfo.getType().asBlock());
         var targetVar = local;
         if (targetVar == null) {
             targetVar = tempVars.acquire(classInfo.getType());
@@ -513,7 +514,8 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
     @Override
     protected WasmExpression generateInstanceOf(WasmExpression expression, ValueType type) {
         context.classInfoProvider().getClassInfo(type);
-        var block = new WasmSequence();
+        var block = new WasmBlock(false);
+        block.setType(WasmType.INT32.asBlock());
         var supertypeCall = new WasmCall(context.supertypeFunctions().getIsSupertypeFunction(type));
         var vtRef = new WasmStructGet(
                 context.standardClasses().objectClass().getStructure(),
@@ -586,7 +588,8 @@ public class WasmGCGenerationVisitor extends BaseWasmGenerationVisitor {
             if (targetStruct.isSupertypeOf(sourceStruct)) {
                 canInsertCast = false;
             } else if (!sourceStruct.isSupertypeOf(targetStruct)) {
-                var block = new WasmSequence();
+                var block = new WasmBlock(false);
+                block.setType(targetType.asBlock());
                 block.setLocation(expr.getLocation());
                 block.getBody().add(new WasmDrop(result));
                 block.getBody().add(new WasmNullConstant(targetType));

@@ -24,11 +24,6 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
     }
 
     @Override
-    public void visit(WasmSequence expression) {
-        visitMany(expression.getBody());
-    }
-
-    @Override
     public void visit(WasmBranch expression) {
         visitDefault(expression.getCondition());
         if (expression.getResult() != null) {

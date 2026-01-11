@@ -75,7 +75,6 @@ import org.teavm.backend.wasm.model.expression.WasmPop;
 import org.teavm.backend.wasm.model.expression.WasmPush;
 import org.teavm.backend.wasm.model.expression.WasmReferencesEqual;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
-import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmSignedType;
@@ -191,15 +190,6 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
             }
             popLocation();
         }
-    }
-
-    @Override
-    public void visit(WasmSequence expression) {
-        pushLocation(expression);
-        for (var part : expression.getBody()) {
-            part.acceptVisitor(this);
-        }
-        popLocation();
     }
 
     private void writeBlockType(WasmBlockType type) {

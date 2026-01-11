@@ -39,7 +39,6 @@ import org.teavm.backend.wasm.model.expression.WasmNullBranch;
 import org.teavm.backend.wasm.model.expression.WasmNullCondition;
 import org.teavm.backend.wasm.model.expression.WasmNullConstant;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
-import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmSetGlobal;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
@@ -144,7 +143,8 @@ public class ServiceLoaderWasmGCSupport implements WasmGCCustomGeneratorFactory 
         private WasmExpression instantiateService(WasmGCCustomGeneratorContext context,
                 WasmFunction function, String implementationName) {
             var implementationInfo = context.classInfoProvider().getClassInfo(implementationName);
-            var block = new WasmSequence();
+            var block = new WasmBlock(false);
+            block.setType(context.typeMapper().mapType(ValueType.parse(Object.class)).asBlock());
             var tmpVar = new WasmLocal(implementationInfo.getType());
             function.add(tmpVar);
             var structNew = new WasmSetLocal(tmpVar, new WasmStructNewDefault(

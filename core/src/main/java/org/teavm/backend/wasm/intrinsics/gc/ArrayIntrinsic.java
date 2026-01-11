@@ -19,10 +19,10 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.gc.classes.WasmGCClassInfoProvider;
 import org.teavm.backend.wasm.model.WasmFunctionType;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmCallReference;
 import org.teavm.backend.wasm.model.expression.WasmCast;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmSequence;
 import org.teavm.backend.wasm.model.expression.WasmStructGet;
 
 public class ArrayIntrinsic implements WasmGCIntrinsic {
@@ -58,7 +58,9 @@ public class ArrayIntrinsic implements WasmGCIntrinsic {
         var vtStruct = context.classInfoProvider().getArrayVirtualTableStructure();
         var type = (WasmType.CompositeReference) vtStruct.getFields().get(offset).getUnpackedType();
         var functionType = (WasmFunctionType) type.composite;
-        var block = new WasmSequence();
+        var block = new WasmBlock(false);
+        var returnType = functionType.getSingleReturnType();
+        block.setType(returnType != null ? returnType.asBlock() : null);
 
         var originalObject = context.generate(invocation.getArguments().get(0));
         var object = context.exprCache().create(originalObject, objectStruct.getReference(),
