@@ -15,22 +15,17 @@
  */
 package org.teavm.backend.c.analyze;
 
-import com.carrotsearch.hppc.IntArrayList;
 import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntIntHashMap;
 import com.carrotsearch.hppc.IntIntMap;
-import com.carrotsearch.hppc.IntObjectHashMap;
-import com.carrotsearch.hppc.IntObjectMap;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.IntStack;
-import com.carrotsearch.hppc.LongHashSet;
-import com.carrotsearch.hppc.LongSet;
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
-import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +35,6 @@ import org.teavm.ast.BlockStatement;
 import org.teavm.ast.BreakStatement;
 import org.teavm.ast.ConditionalStatement;
 import org.teavm.ast.ContinueStatement;
-import org.teavm.ast.Expr;
 import org.teavm.ast.IdentifiedStatement;
 import org.teavm.ast.RecursiveVisitor;
 import org.teavm.ast.ReturnStatement;
@@ -56,9 +50,7 @@ import org.teavm.common.GraphBuilder;
 
 public class AstDefinitionUsageAnalysis {
     private GraphBuilder graphBuilder = new GraphBuilder();
-    private GraphBuilder exceptionGraphBuilder = new GraphBuilder();
     private Graph cfg;
-    private Graph exceptionGraph;
     private List<Node> nodes = new ArrayList<>();
     private int lastNode = -1;
     private IdentifiedStatement defaultBreakTarget;
@@ -68,12 +60,17 @@ public class AstDefinitionUsageAnalysis {
     private List<Definition> definitions = new ArrayList<>();
     private List<? extends Definition> readonlyDefinitions = Collections.unmodifiableList(definitions);
     private ObjectIntMap<Definition> definitionIds = new ObjectIntHashMap<>();
-    private List<VariableExpr> usages = new ArrayList<>();
+    private Map<AssignmentStatement, Definition> definitionsByStatements = new HashMap<>();
+    private List<Usage> usages = new ArrayList<>();
     private IntStack stack = new IntStack();
     private IntStack exceptionHandlerStack = new IntStack();
 
     public List<? extends Definition> getDefinitions() {
         return readonlyDefinitions;
+    }
+
+    public Definition getDefinition(AssignmentStatement statement) {
+        return definitionsByStatements.get(statement);
     }
 
     public void analyze(Statement statement) {
@@ -86,9 +83,7 @@ public class AstDefinitionUsageAnalysis {
         lastNode = createNode();
         statement.acceptVisitor(visitor);
         cfg = graphBuilder.build();
-        exceptionGraph = exceptionGraphBuilder.build();
         graphBuilder = null;
-        exceptionGraphBuilder = null;
         breakTargets = null;
         continueTargets = null;
         exceptionHandlerStack = null;
@@ -103,52 +98,33 @@ public class AstDefinitionUsageAnalysis {
     private int createNode() {
         int id = nodes.size();
         nodes.add(new Node());
-        for (IntCursor cursor : exceptionHandlerStack) {
-            exceptionGraphBuilder.addEdge(id, cursor.value);
-        }
         return id;
     }
 
     private void propagate() {
         while (!stack.isEmpty()) {
-            int exceptionHandlerId = stack.pop();
             int nodeId = stack.pop();
             int usageId = stack.pop();
-            int variableId = usages.get(usageId).getIndex();
+            var usage = usages.get(usageId);
+            var node = nodes.get(nodeId);
+            if (!node.usages.add(usageId)) {
+                continue;
+            }
 
-            Node node = nodes.get(nodeId);
-            if (exceptionHandlerId < 0) {
-                if (!node.usages.add(usageId)) {
+            int variableId = usage.getExpr().getIndex();
+            if (node.catchStatement != null) {
+                if (node.catchStatement.getExceptionVariable() != null
+                        && node.catchStatement.getExceptionVariable() == variableId) {
                     continue;
                 }
-                int definitionId = node.definitions.getOrDefault(variableId, -1);
-                if (definitionId >= 0) {
-                    Definition definition = definitions.get(definitionId);
-                    definition.usages.add(usages.get(usageId));
-                    continue;
-                }
-                if (variableId == node.exceptionVariable) {
-                    continue;
-                }
-            } else {
-                if (!node.handlerUsages.add(pack(usageId, exceptionHandlerId))) {
-                    continue;
-                }
-                IntArrayList definitionIds = node.handlerDefinitions.get(variableId);
-                if (definitionIds != null) {
-                    TryCatchStatement handlerStatement = nodes.get(exceptionHandlerId).catchStatement;
-                    Expr usage = usages.get(usageId);
-                    for (IntCursor cursor : definitionIds) {
-                        Definition definition = definitions.get(cursor.value);
-                        definition.usages.add(usages.get(usageId));
-                        Set<Expr> handlerUsages = definition.exceptionHandlingUsages.get(handlerStatement);
-                        if (handlerUsages == null) {
-                            handlerUsages = new LinkedHashSet<>();
-                            definition.exceptionHandlingUsages.put(handlerStatement, handlerUsages);
-                        }
-                        handlerUsages.add(usage);
-                    }
-                }
+                usage.liveInCatches.add(node.catchStatement);
+            }
+
+            int definitionId = node.definitions.getOrDefault(variableId, -1);
+            if (definitionId >= 0) {
+                var definition = definitions.get(definitionId);
+                definition.usages.add(usages.get(usageId));
+                continue;
             }
 
             if (nodeId < cfg.size()) {
@@ -156,17 +132,6 @@ public class AstDefinitionUsageAnalysis {
                     if (!nodes.get(predecessorId).usages.contains(usageId)) {
                         stack.push(usageId);
                         stack.push(predecessorId);
-                        stack.push(-1);
-                    }
-                }
-            }
-
-            if (nodeId < exceptionGraph.size()) {
-                for (int predecessorId : exceptionGraph.incomingEdges(nodeId)) {
-                    if (!nodes.get(predecessorId).handlerUsages.contains(usageId)) {
-                        stack.push(usageId);
-                        stack.push(predecessorId);
-                        stack.push(nodeId);
                     }
                 }
             }
@@ -265,22 +230,29 @@ public class AstDefinitionUsageAnalysis {
 
         @Override
         public void visit(TryCatchStatement statement) {
+            var nodeAfterBody = createNode();
             int handlerNode = createNode();
+            int nodeAfter = createNode();
             Node handlerNodeData = nodes.get(handlerNode);
             handlerNodeData.catchStatement = statement;
-            if (statement.getExceptionVariable() != null) {
-                handlerNodeData.exceptionVariable = statement.getExceptionVariable();
-            }
-            exceptionHandlerStack.push(handlerNode);
+            var nodeBefore = lastNode;
+            var entryNode = createNode();
+            nodes.get(entryNode).leavingCatchStatement = statement;
+            connect(nodeBefore, entryNode);
+            exceptionHandlerStack.push(nodeAfterBody);
+            lastNode = entryNode;
             visit(statement.getProtectedBody());
             exceptionHandlerStack.pop();
+            connect(lastNode, nodeAfterBody);
+            connect(entryNode, nodeAfterBody);
 
-            int node = lastNode;
             lastNode = handlerNode;
+            connect(nodeAfterBody, handlerNode);
             visit(statement.getHandler());
-            connect(lastNode, node);
+            connect(lastNode, nodeAfter);
+            connect(handlerNode, nodeAfter);
 
-            lastNode = node;
+            lastNode = nodeAfter;
         }
 
         @Override
@@ -331,18 +303,16 @@ public class AstDefinitionUsageAnalysis {
             statement.getRightValue().acceptVisitor(this);
             Definition definition = new Definition(statement, definitions.size(), leftIndex);
             definitions.add(definition);
+            definitionsByStatements.put(statement, definition);
             definitionIds.put(definition, definition.id);
-            if (lastNode >= 0) {
-                Node node = nodes.get(lastNode);
-                node.definitions.put(definition.variableIndex, definition.id);
-
-                IntArrayList handlerDefinitions = node.handlerDefinitions.get(leftIndex);
-                if (handlerDefinitions == null) {
-                    handlerDefinitions = new IntArrayList();
-                    node.handlerDefinitions.put(leftIndex, handlerDefinitions);
-                }
-                handlerDefinitions.add(definition.id);
+            var nodeId = createNode();
+            var node = nodes.get(nodeId);
+            connect(lastNode, nodeId);
+            for (var cursor : exceptionHandlerStack) {
+                graphBuilder.addEdge(nodeId, cursor.value);
             }
+            lastNode = nodeId;
+            node.definitions.put(definition.variableIndex, definition.id);
             return true;
         }
 
@@ -354,42 +324,33 @@ public class AstDefinitionUsageAnalysis {
 
             Node node = nodes.get(lastNode);
             int definitionId = node.definitions.getOrDefault(expr.getIndex(), -1);
+            int id = usages.size();
+            var usage = new Usage(expr);
+            usages.add(usage);
             if (definitionId >= 0) {
                 Definition definition = definitions.get(definitionId);
-                definition.usages.add(expr);
-            } else if (node.exceptionVariable != expr.getIndex()) {
-                int id = usages.size();
-                usages.add(expr);
+                definition.usages.add(usage);
                 node.usages.add(id);
+            } else {
                 stack.push(id);
                 stack.push(lastNode);
-                stack.push(0);
             }
         }
     };
 
-    static class Node {
+    private static class Node {
         IntIntMap definitions = new IntIntHashMap();
-        IntObjectMap<IntArrayList> handlerDefinitions = new IntObjectHashMap<>();
         IntSet usages = new IntHashSet();
-        LongSet handlerUsages = new LongHashSet();
         TryCatchStatement catchStatement;
-        int exceptionVariable = -1;
-    }
-
-    private static long pack(int a, int b) {
-        return ((long) a << 32) | b;
+        TryCatchStatement leavingCatchStatement;
     }
 
     public static class Definition {
         private AssignmentStatement statement;
         private int id;
         private int variableIndex;
-        final Set<Expr> usages = new LinkedHashSet<>();
-        private Set<? extends Expr> readonlyUsages = Collections.unmodifiableSet(usages);
-        final Map<TryCatchStatement, Set<Expr>> exceptionHandlingUsages = new LinkedHashMap<>();
-        private Map<? extends TryCatchStatement, Set<? extends Expr>> readonlyExceptionHandlingUsages =
-                Collections.unmodifiableMap(exceptionHandlingUsages);
+        private final Set<Usage> usages = new LinkedHashSet<>();
+        private Set<? extends Usage> readonlyUsages = Collections.unmodifiableSet(usages);
 
         Definition(AssignmentStatement statement, int id, int variableIndex) {
             this.statement = statement;
@@ -409,12 +370,26 @@ public class AstDefinitionUsageAnalysis {
             return variableIndex;
         }
 
-        public Set<? extends Expr> getUsages() {
+        public Collection<? extends Usage> getUsages() {
             return readonlyUsages;
         }
+    }
 
-        public Map<? extends TryCatchStatement, Set<? extends Expr>> getExceptionHandlingUsages() {
-            return readonlyExceptionHandlingUsages;
+    public static class Usage {
+        private final VariableExpr expr;
+        private List<TryCatchStatement> liveInCatches = new ArrayList<>();
+        private List<? extends TryCatchStatement> readonlyLiveInCatches = Collections.unmodifiableList(liveInCatches);
+
+        private Usage(VariableExpr expr) {
+            this.expr = expr;
+        }
+
+        public VariableExpr getExpr() {
+            return expr;
+        }
+
+        public List<? extends TryCatchStatement> getLiveInCatches() {
+            return readonlyLiveInCatches;
         }
     }
 }

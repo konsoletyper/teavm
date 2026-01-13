@@ -30,6 +30,7 @@ import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -1403,6 +1404,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     public void visit(TryCatchStatement statement) {
         List<TryCatchStatement> tryCatchStatements = new ArrayList<>();
         List<int[]> restoredVariablesByHandler = new ArrayList<>();
+        var variablesToBackup = new IntHashSet();
         while (true) {
             if (statement.getProtectedBody().size() != 1) {
                 break;
@@ -1414,9 +1416,12 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             tryCatchStatements.add(statement);
             restoredVariablesByHandler.add(volatileDefinitions.variablesToRestore(statement));
             statement = (TryCatchStatement) next;
+
+            variablesToBackup.addAll(volatileDefinitions.variablesToBackup(statement));
         }
         tryCatchStatements.add(statement);
         restoredVariablesByHandler.add(volatileDefinitions.variablesToRestore(statement));
+        variablesToBackup.addAll(volatileDefinitions.variablesToBackup(statement));
 
         int firstId = handlers.size();
         for (int i = 0; i < tryCatchStatements.size(); ++i) {
@@ -1425,6 +1430,14 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         }
 
         writer.println("TEAVM_TRY").indent();
+
+        var varsToBackupArray = variablesToBackup.toArray();
+        Arrays.sort(varsToBackupArray);
+        for (var varToBackup : varsToBackupArray) {
+            spilledVariables.add(varToBackup);
+            writer.println("teavm_spill_" + varToBackup + " = " + getVariableName(varToBackup) + ";");
+        }
+
         tryDepth++;
         visitMany(statement.getProtectedBody());
         tryDepth--;

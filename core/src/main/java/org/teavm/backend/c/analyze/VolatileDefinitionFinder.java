@@ -26,40 +26,33 @@ import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.RecursiveVisitor;
 import org.teavm.ast.Statement;
 import org.teavm.ast.TryCatchStatement;
-import org.teavm.ast.VariableExpr;
 
 public class VolatileDefinitionFinder {
     private static final int[] EMPTY_INT_ARRAY = new int[0];
-    private Map<AssignmentStatement, StackElement> defHandlers = new HashMap<>();
+    private Set<TryCatchStatement> outerTryCatches = new HashSet<>();
     private Set<AssignmentStatement> definitionsToBackup = new HashSet<>();
     private Map<TryCatchStatement, IntSet> usagesToRestoreByHandler = new HashMap<>();
+    private Map<TryCatchStatement, IntSet> definitionsToBackupOnEntry = new HashMap<>();
+    private Map<TryCatchStatement, IntHashSet> mutatedVars = new HashMap<>();
+    private AstDefinitionUsageAnalysis defuse;
 
     public void findVolatileDefinitions(Statement statement) {
-        AstDefinitionUsageAnalysis defuse = new AstDefinitionUsageAnalysis();
+        defuse = new AstDefinitionUsageAnalysis();
         defuse.analyze(statement);
         statement.acceptVisitor(handlerAnalyzer);
-
-        for (AstDefinitionUsageAnalysis.Definition definition : defuse.getDefinitions()) {
-            StackElement stack = defHandlers.get(definition.getStatement());
-            if (stack == null || definition.getExceptionHandlingUsages().isEmpty()) {
-                continue;
+        defuse = null;
+        usagesToRestoreByHandler.keySet().retainAll(mutatedVars.keySet());
+        definitionsToBackupOnEntry.keySet().retainAll(mutatedVars.keySet());
+        for (var entry : mutatedVars.entrySet()) {
+            var set = usagesToRestoreByHandler.get(entry.getKey());
+            if (set != null) {
+                set.retainAll(entry.getValue());
             }
-
-            while (stack != null) {
-                if (definition.getExceptionHandlingUsages().get(stack.statement) != null) {
-                    IntSet usagesToRestore = usagesToRestoreByHandler.get(stack.statement);
-                    if (usagesToRestore == null) {
-                        usagesToRestore = new IntHashSet();
-                        usagesToRestoreByHandler.put(stack.statement, usagesToRestore);
-                    }
-                    usagesToRestore.add(definition.getVariableIndex());
-                    definitionsToBackup.add(definition.getStatement());
-                }
-                stack = stack.next;
+            set = definitionsToBackupOnEntry.get(entry.getKey());
+            if (set != null) {
+                set.retainAll(entry.getValue());
             }
         }
-
-        defHandlers = null;
     }
 
     public boolean shouldBackup(AssignmentStatement statement) {
@@ -76,33 +69,43 @@ public class VolatileDefinitionFinder {
         return array;
     }
 
-    static class StackElement {
-        final TryCatchStatement statement;
-        final StackElement next;
-
-        StackElement(TryCatchStatement statement, StackElement next) {
-            this.statement = statement;
-            this.next = next;
+    public int[] variablesToBackup(TryCatchStatement tryCatch) {
+        var result = definitionsToBackupOnEntry.get(tryCatch);
+        if (result == null) {
+            return EMPTY_INT_ARRAY;
         }
+        var array = result.toArray();
+        Arrays.sort(array);
+        return array;
     }
 
     private RecursiveVisitor handlerAnalyzer = new RecursiveVisitor() {
-        StackElement surroundingTryCatches;
-
         @Override
         public void visit(TryCatchStatement statement) {
-            surroundingTryCatches = new StackElement(statement, surroundingTryCatches);
+            outerTryCatches.add(statement);
             visit(statement.getProtectedBody());
-            surroundingTryCatches = surroundingTryCatches.next;
-
+            outerTryCatches.remove(statement);
             visit(statement.getHandler());
         }
 
         @Override
         public void visit(AssignmentStatement statement) {
-            super.visit(statement);
-            if (statement.getLeftValue() instanceof VariableExpr && surroundingTryCatches != null) {
-                defHandlers.put(statement, surroundingTryCatches);
+            var definition = defuse.getDefinition(statement);
+            if (definition != null) {
+                for (var usage : definition.getUsages()) {
+                    for (var tryCatch : usage.getLiveInCatches()) {
+                        if (outerTryCatches.contains(tryCatch)) {
+                            definitionsToBackup.add(definition.getStatement());
+                            mutatedVars.computeIfAbsent(tryCatch, k -> new IntHashSet())
+                                    .add(definition.getVariableIndex());
+                        } else {
+                            definitionsToBackupOnEntry.computeIfAbsent(tryCatch, k -> new IntHashSet())
+                                    .add(definition.getVariableIndex());
+                        }
+                        usagesToRestoreByHandler.computeIfAbsent(tryCatch, k -> new IntHashSet())
+                                .add(definition.getVariableIndex());
+                    }
+                }
             }
         }
     };
