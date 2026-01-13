@@ -63,6 +63,26 @@ public abstract class Expr implements Cloneable {
         return expr;
     }
 
+    public static Expr and(Expr first, Expr second) {
+        return binary(BinaryOperation.AND, null, first, second);
+    }
+
+    public static Expr or(Expr first, Expr second) {
+        return binary(BinaryOperation.OR, null, first, second);
+    }
+
+    public static Expr addInt(Expr first, Expr second) {
+        return binary(BinaryOperation.ADD, OperationType.INT, first, second);
+    }
+
+    public static Expr divInt(Expr first, Expr second) {
+        return binary(BinaryOperation.DIVIDE, OperationType.INT, first, second);
+    }
+
+    public static Expr less(Expr first, Expr second) {
+        return binary(BinaryOperation.LESS, OperationType.INT, first, second);
+    }
+
     public static Expr binary(BinaryOperation op, OperationType type, Expr first, Expr second, TextLocation loc) {
         Expr expr = binary(op, type, first, second);
         expr.setLocation(loc);
@@ -146,7 +166,7 @@ public abstract class Expr implements Cloneable {
         return expr;
     }
 
-    public static InvocationExpr invokeStatic(MethodReference method, Expr[] arguments) {
+    public static InvocationExpr invokeStatic(MethodReference method, Expr... arguments) {
         InvocationExpr expr = new InvocationExpr();
         expr.setMethod(method);
         expr.setType(InvocationType.STATIC);
