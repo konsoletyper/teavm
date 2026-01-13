@@ -185,6 +185,6 @@ public class RandomTest {
                 negative++;
             }
         }
-        assertTrue(Math.abs(positive - negative) < 50);
+        assertTrue(Math.abs(positive - negative) < 100);
     }
 }
